@@ -14,7 +14,8 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 - [Strategic selection](docs/STRATEGY.md) — P141 competing theses and next investigation.
 - [Roadmap](docs/ROADMAP.md) — needs, work, career, then broader autonomy.
 - [Validation](docs/VALIDATION.md) — offline tests and future game certification.
-- [BI-001 sprint](plans/active/BI-001.md) — P04 scope, lanes, and handoff.
+- [BI-001 sprint](plans/active/BI-001.md) — merged bootstrap and proof.
+- [BI-002 game lab](plans/active/BI-002.md) — first bounded, reversible Sims gameplay test.
 
 ## First working experiment (offline only)
 Run from repository root with Python 3.11+ (dev harness version; **not** a claim about the game's embedded Python):

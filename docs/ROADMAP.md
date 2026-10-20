@@ -5,7 +5,7 @@ A module is not completed merely because a spec exists. Each reaches: designed -
 ## Milestones
 | Milestone | Intended experience | Earliest proof gate | Dependencies |
 | --- | --- | --- | --- |
-| **BI-001 foundation (now)** | Doctrine, ownership, prior-art decisions, offline policy scenario baseline, CI | Validator + offline unit tests, PR review | None |
+| **BI-001 foundation (merged 2026-10-20)** | Doctrine, ownership, prior-art decisions, offline policy scenario baseline, CI | Validator + offline unit tests, PR review | None |
 | **BI-002 needs/hunger** | Sims seek available food before dangerously low hunger without abandoning direct player commands | Vanilla A/B disposable-save trial with one reversible package | Game patch/tooling evidence, BI-001 |
 | **BI-003 needs expansion** | Sensible bladder, hygiene, sleep, meal decisions; no wasteful repeated activity | Need-specific package trials and conflict matrix | BI-002 |
 | **BI-004 earning income** | Appropriate autonomous income-generating actions when safe and available | Goal-sensitive decisions, payment confirmation, no duplication or endless queues | Relevant in-game actions and schedule rules |
