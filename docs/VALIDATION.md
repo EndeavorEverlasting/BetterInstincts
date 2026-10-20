@@ -5,6 +5,7 @@ From repo root:
 ```sh
 python -m unittest discover -s tests -v
 python scripts/validate_doctrine.py
+python scripts/check_tracked_assets.py
 python -m betterinstincts.priority
 ```
 No network, EA installation, privileged permissions, or external Python packages needed. CI proves only these offline checks, never game compatibility.

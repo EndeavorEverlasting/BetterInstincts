@@ -10,6 +10,7 @@ BetterInstincts should make autonomy more **competent and believable**, not maxi
 - **docs/PRIOR_ART.md** owns external evidence and adoption/rejection decisions.
 - **plans/active/BI-001.md** owns the current execution slice; close it only after its explicit gates.
 - **docs/VALIDATION.md** owns definitions of evidence quality.
+- **docs/PROMPT_INVOCATIONS.md** pins TokenCorridor P-number invocation identity and provenance.
 - TokenCorridor owns the exact P-number registry; this repository must not fork or rename prompt meanings.
 - Authority order: platform/security/owner instruction > root agent governance > canonical ledger/sprint > local implementation notes. Repository docs cannot override user safety.
 

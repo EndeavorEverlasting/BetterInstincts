@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fail-closed checks for canonical project doctrine and pointer continuity."""
 from pathlib import Path
+import ast
 import json
 import sys
 
@@ -10,6 +11,7 @@ REQUIRED = (
     "docs/ROADMAP.md", "docs/PRIOR_ART.md", "docs/VALIDATION.md",
     "docs/STRATEGY.md", "plans/active/BI-001.md",
     "betterinstincts/priority.py", "tests/test_priority.py",
+    "docs/PROMPT_INVOCATIONS.md", "scripts/check_tracked_assets.py",
     ".github/workflows/ci.yml",
 )
 MARKERS = (
@@ -37,6 +39,22 @@ def validate(root=ROOT):
     for word in ("explicit, user-selected Mods root", "disposable", "distribution"):
         if word not in doctrine:
             raise DoctrineViolation("SAFETY_DOCTRINE_LOST:" + word)
+    # Fail closed if the deliberately pure, offline policy starts depending on game,
+    # network, filesystem, or process APIs without an explicit integration gate.
+    source = (root / "betterinstincts/priority.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    disallowed = {"sims", "sims4", "os", "pathlib", "subprocess", "socket", "requests", "urllib"}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            mods = [alias.name.split(".")[0] for alias in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            mods = [(node.module or "").split(".")[0]]
+        else:
+            mods = []
+        if any(name in disallowed for name in mods):
+            raise DoctrineViolation("OFFLINE_POLICY_IO_IMPORT")
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in {"open", "exec", "eval", "__import__"}:
+            raise DoctrineViolation("OFFLINE_POLICY_IO_CALL")
     return {"state": "PASS", "root": "AGENTS.md", "required_files": len(REQUIRED),
             "proof_ceiling": "tracked governance content only; no live Sims validation"}
 

@@ -10,6 +10,7 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 - [Doctrine](docs/DOCTRINE.md) — product and safety boundaries.
 - [Project ledger](docs/LEDGER.md) — canonical vision, current evidence, decisions, and gates.
 - [External prior art](docs/PRIOR_ART.md) — P97 evidence and adoption choices.
+- [Prompt provenance](docs/PROMPT_INVOCATIONS.md) — exact TokenCorridor owners/definitions.
 - [Strategic selection](docs/STRATEGY.md) — P141 competing theses and next investigation.
 - [Roadmap](docs/ROADMAP.md) — needs, work, career, then broader autonomy.
 - [Validation](docs/VALIDATION.md) — offline tests and future game certification.
@@ -20,6 +21,7 @@ Run from repository root with Python 3.11+ (dev harness version; **not** a claim
 ```sh
 python -m unittest discover -s tests -v
 python scripts/validate_doctrine.py
+python scripts/check_tracked_assets.py
 python -m betterinstincts.priority
 ```
 The policy returns a **suggestion** for a fictional Sim snapshot and never touches a real game, save, queue, or Mods directory. The smallest gameplay next step is to inspect the live game's relevant autonomy tuning using Sims 4 Studio, select one specific base-game behavior, and produce/test a reversible package against a recorded patch.

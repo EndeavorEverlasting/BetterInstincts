@@ -11,6 +11,12 @@ class PolicyTests(unittest.TestCase):
     def test_unavailable_actions_never_invented(self):
         snap = SimSnapshot({"hunger": 0}, ("enjoy_leisure",))
         self.assertEqual(suggest(snap).action, "enjoy_leisure")
+    def test_unremedied_urgent_need_abstains(self):
+        snap = SimSnapshot({"hunger": 0}, ("earn_income", "enjoy_leisure"), aspiration="income")
+        self.assertIsNone(suggest(snap))
+    def test_other_urgent_remedy_still_eligible(self):
+        snap = SimSnapshot({"hunger": 0, "bladder": .1}, ("use_toilet", "enjoy_leisure"))
+        self.assertEqual(suggest(snap).action, "use_toilet")
     def test_player_direction_prevents_override(self):
         snap = SimSnapshot({"hunger": 0}, ("eat",), player_directed=True)
         self.assertIsNone(suggest(snap))

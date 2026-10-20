@@ -39,13 +39,19 @@ def suggest(snapshot: SimSnapshot) -> Optional[Suggestion]:
 
     options = set(snapshot.available_actions)
     urgent = []
+    has_urgent_unmet_need = False
     for index, (need, action) in enumerate(NEED_ACTIONS):
         value = snapshot.needs.get(need)
-        if value is not None and value < URGENT_BELOW and action in options:
-            urgent.append((value, index, action, need))
+        if value is not None and value < URGENT_BELOW:
+            has_urgent_unmet_need = True
+            if action in options:
+                urgent.append((value, index, action, need))
     if urgent:
         _, _, action, need = min(urgent)
         return Suggestion(action, "urgent_" + need)
+    # No eligible remedy: abstain rather than suggest leisure or work.
+    if has_urgent_unmet_need:
+        return None
 
     intent = {"income": "earn_income", "career": "career_prep"}
     candidate = intent.get(snapshot.aspiration)

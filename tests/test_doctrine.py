@@ -23,6 +23,17 @@ class DoctrineTests(unittest.TestCase):
             with self.assertRaisesRegex(DoctrineViolation, "GOVERNANCE_GAP"):
                 validate(ROOT)
 
+    def test_offline_policy_io_regression_rejected(self):
+        original = Path.read_text
+        def replaced(path, *args, **kwargs):
+            text = original(path, *args, **kwargs)
+            if path.name == "priority.py":
+                return "import os\n" + text
+            return text
+        with patch.object(Path, "read_text", autospec=True, side_effect=replaced):
+            with self.assertRaisesRegex(DoctrineViolation, "OFFLINE_POLICY_IO_IMPORT"):
+                validate(ROOT)
+
     def test_missing_product_vision_rejected(self):
         original = Path.read_text
         def replaced(path, *args, **kwargs):

@@ -15,8 +15,8 @@
 | --- | --- | --- |
 | Repository | VERIFIED | New public GitHub repo with initial README, MIT and Python gitignore; `main` initial commit f6d129ef84f7a31beb5ec3f2610e1e39bd9aa749. |
 | Tool ecosystem | RESEARCHED | See docs/PRIOR_ART.md; Python + XML tuning prevalent, but exact local game build not inspected. |
-| Doctrine | TARGETED IN BI-001 | Root governance + validator + CI proposed in this sprint; check merged commit before marking integrated. |
-| Decision policy | OFFLINE PROTOTYPE | Pure Python scorer + synthetic tests only; NOT a game mod. |
+| Doctrine | COMMITTED IN PR #1; CI VALIDATED | Root governance + validator + CI on feature branch; merge to main separately proved. |
+| Decision policy | OFFLINE PROTOTYPE + CI PASS | Pure Python scorer + synthetic tests only; NOT a game mod. CI proved 14 tests on initial sprint commit; rerun after subsequent edits. |
 | Game integration | UNPROVEN | No tested `.package` or `.ts4script`, no game observation. |
 | Live performance/compatibility | UNPROVEN | Requires local game and disposable saves. |
 | Public release | NOT AUTHORIZED | Requires docs/VALIDATION.md release gates. |
