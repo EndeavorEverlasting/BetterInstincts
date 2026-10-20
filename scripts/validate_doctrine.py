@@ -15,6 +15,7 @@ REQUIRED = (
     "scripts/live_cert.py", "scripts/check_backward_compat.py",
     "scripts/tuning_audit.py", "scripts/compatibility_status.py",
     ".cursor/rules/betterinstincts-compatibility.mdc",
+    ".github/CODEOWNERS", "docs/MAINTAINER_REVIEW.md",
     "betterinstincts/priority.py", "tests/test_priority.py",
     "docs/PROMPT_INVOCATIONS.md", "scripts/check_tracked_assets.py",
     ".github/workflows/ci.yml",

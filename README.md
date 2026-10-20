@@ -16,6 +16,7 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 - [Validation](docs/VALIDATION.md) — offline tests and future game certification.
 - [Multiple game-version compatibility](docs/COMPATIBILITY.md) — exact builds, immutable older certified profiles.
 - [Live-cert evidence workflow](docs/LIVE_CERT.md) — bounded local observations, progress hooks and numerical evaluator.
+- [Maintainer review contract](docs/MAINTAINER_REVIEW.md) — genuine game proof and CODEOWNERS limitations.
 - [Executable BI-002 game gate](plans/active/BI-002.execution.v1.json) — local agent cannot close before hunger is actually verified.
 - [BI-001 sprint](plans/active/BI-001.md) — merged bootstrap and proof.
 - [BI-002 game lab](plans/active/BI-002.md) — first bounded, reversible Sims gameplay test.

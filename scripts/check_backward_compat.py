@@ -30,6 +30,18 @@ def check(base_ref, root=ROOT, old_reader=git_read):
         raise CompatibilityError("BAD_BASE_CATALOG") from exc
     if old.get("schema") != current["schema"]:
         raise CompatibilityError("CATALOG_SCHEMA_REGRESSION")
+    # A certified build's source must be durable in the repository's preceding
+    # history, rather than an ephemeral feature-branch commit lost after squash.
+    if Path(root).resolve() == ROOT.resolve():
+        for row in current["profiles"]:
+            if row["status"] != "certified":
+                continue
+            profile = json.loads((ROOT / row["path"]).read_text(encoding="utf-8"))
+            source = profile["source_commit_sha"]
+            reachable = subprocess.run(["git", "merge-base", "--is-ancestor", source, base_ref],
+                                       cwd=ROOT, capture_output=True)
+            if reachable.returncode != 0:
+                raise CompatibilityError("CERTIFIED_SOURCE_NOT_IN_BASE_HISTORY:" + row["id"])
     active = {r["id"]: r for r in current["profiles"]}
     for previous in old.get("profiles", []):
         if previous.get("status") != "certified":
