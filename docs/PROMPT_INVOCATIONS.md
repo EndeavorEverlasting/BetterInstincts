@@ -4,6 +4,8 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 
 | ID | Verified title | Canonical prompt definition owner | Source blob SHA | Invoked in BI-001 as |
 | --- | --- | --- | --- | --- |
+| P07 | Repo Sprint Executor | `src/tokencorridor/interface/promptkit/registry/base/prompts.json` | `848728632c1243ebba023fa0012292a2ad33cada` | Implement, validate, commit, PR, integrate scoped horizon code |
+| P82 | Prototype-Measure-Refine Delivery Loop | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | Six-needs policy hypothesis, measurable offline prototype; `docs/HORIZON_DECISIONS.md` |
 | P00 | Governance Doctrine Installer | `src/tokencorridor/interface/promptkit/registry/base/prompts.json` | `848728632c1243ebba023fa0012292a2ad33cada` | AGENTS.md, docs/DOCTRINE.md, validator and CI: multiversion preservation |
 | P97 | Open-Source Prior-Art & Gap Analyst | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | docs/PRIOR_ART.md: reference implementation, gap map and adoption decisions |
 | P141 | Repository Strategic Opportunity Scout | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | docs/STRATEGY.md: compare/falsify competing theses, select next investigation |
