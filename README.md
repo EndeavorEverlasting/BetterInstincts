@@ -14,6 +14,10 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 - [Strategic selection](docs/STRATEGY.md) — P141 competing theses and next investigation.
 - [Roadmap](docs/ROADMAP.md) — needs, work, career, then broader autonomy.
 - [Validation](docs/VALIDATION.md) — offline tests and future game certification.
+- [Full product horizon](docs/HORIZON.md) — all six needs, balanced care, income, skills, then careers.
+- [Machine-readable dependency graph](plans/horizon.v1.json) — exact gate ownership and sequencing.
+- [P141/P82 selection and experiment](docs/HORIZON_DECISIONS.md) — hypothesis, baseline and falsifiers.
+- [Follow-on needs execution](plans/active/BI-003.execution.v1.json) — patch-specific local-agent work.
 - [Multiple game-version compatibility](docs/COMPATIBILITY.md) — exact builds, immutable older certified profiles.
 - [Live-cert evidence workflow](docs/LIVE_CERT.md) — bounded local observations, progress hooks and numerical evaluator.
 - [Maintainer review contract](docs/MAINTAINER_REVIEW.md) — genuine game proof and CODEOWNERS limitations.
@@ -28,6 +32,9 @@ python -m unittest discover -s tests -v
 python scripts/validate_doctrine.py
 python scripts/check_tracked_assets.py
 python -m betterinstincts.priority
+python -m scripts.eval_horizon
+python -m scripts.check_horizon
+python -m scripts.horizon_status
 ```
 The policy returns a **suggestion** for a fictional Sim snapshot and never touches a real game, save, queue, or Mods directory. The smallest gameplay next step is to inspect the live game's relevant autonomy tuning using Sims 4 Studio, select one specific base-game behavior, and produce/test a reversible package against a recorded patch.
 
