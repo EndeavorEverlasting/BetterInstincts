@@ -6,6 +6,8 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 REQUIRED = (
     "AGENTS.md", "docs/DOCTRINE.md", "docs/LEDGER.md",
     "docs/ROADMAP.md", "docs/PRIOR_ART.md", "docs/VALIDATION.md",
