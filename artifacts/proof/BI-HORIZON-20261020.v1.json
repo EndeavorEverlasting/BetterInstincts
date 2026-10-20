@@ -1,0 +1,37 @@
+{
+  "schema": "betterinstincts.horizon-proof/v1",
+  "date": "2026-10-20",
+  "repo": "EndeavorEverlasting/BetterInstincts",
+  "pr": 5,
+  "merge_commit": "1b5909aaedd31df42573b4a29f0badca1a8fef9a",
+  "post_merge_ci": {
+    "run_id": 39456997645,
+    "conclusion": "success"
+  },
+  "pr_head_ci": {
+    "run_id": 39456890961,
+    "conclusion": "success",
+    "python_tests": 65,
+    "horizon_stages": 12,
+    "synthetic_scenarios": 16
+  },
+  "artifacts": [
+    "betterinstincts/horizon.py",
+    "contracts/needs.v1.json",
+    "scripts/check_horizon.py",
+    "scripts/eval_horizon.py",
+    "scripts/horizon_status.py",
+    "plans/horizon.v1.json",
+    "plans/active/BI-003.execution.v1.json",
+    "docs/HORIZON.md",
+    "docs/HORIZON_DECISIONS.md"
+  ],
+  "proof_ceiling": "OFFLINE_REPOSITORY_CONTRACTS",
+  "gameplay_certified": false,
+  "local_game_host_observed": false,
+  "needs_balanced_live": false,
+  "income_live": false,
+  "skill_live": false,
+  "current_game_gate": "BI-002",
+  "next": "Game-capable agent must complete real hunger package and vanilla/modified/rollback trials; then individual remaining needs, joint balance, income, skills."
+}
