@@ -1,6 +1,6 @@
 # BetterInstincts — canonical agent entrypoint
 
-Read **docs/DOCTRINE.md**, **docs/LEDGER.md**, and **docs/PROMPT_INVOCATIONS.md** before designing or editing. Their tracked paths are authority for this project. **plans/active/BI-001.md** records the merged bootstrap; **plans/active/BI-002.md** owns the next game-lab gate. This file is intentionally short; do not silently bypass it or create alternate project ledgers.
+Read **docs/DOCTRINE.md**, **docs/LEDGER.md**, and **docs/PROMPT_INVOCATIONS.md** before designing or editing. Their tracked paths are authority for this project. **plans/active/BI-001.md** records the merged bootstrap; **plans/active/BI-002.md** owns the next game-lab gate.
 
 ## Parent objective
 Create a free, community-native Sims 4 autonomy mod that helps Sims meet needs, earn income, progress in careers, and enjoy their lives without overriding manual player control or personality. Do not confuse an offline policy prototype with a playable mod.
