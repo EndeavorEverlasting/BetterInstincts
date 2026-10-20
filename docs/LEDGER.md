@@ -1,6 +1,6 @@
 # Canonical project ledger
 
-**Repository:** EndeavorEverlasting/BetterInstincts  
+**Repository:** EndeavorEverlasting/BetterInstincts
 **Owner objective (2026-10-20):** A creative, freely distributed contribution to The Sims 4 modding community that makes Sims autonomously meet needs responsibly, generate income, improve career outcomes, and pursue more fulfilling lives. Start with an observable small win while retaining the entire multi-month vision here. Prefer community-standard languages/tooling and patterns; avoid inventing new systems unnecessarily.
 
 ## Non-negotiable product behavior
