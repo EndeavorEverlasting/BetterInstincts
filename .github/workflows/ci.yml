@@ -1,0 +1,39 @@
+name: Offline policy and doctrine
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Offline tests
+        run: python -m unittest discover -s tests -v
+      - name: Doctrine fails closed
+        run: python scripts/validate_doctrine.py
+      - name: Repo asset leakage prevention
+        run: python scripts/check_tracked_assets.py
+      - name: Commit whitespace hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
+          else
+            git diff --check HEAD^..HEAD
+          fi
+      - name: Offline policy demo
+        run: python -m betterinstincts.priority
+      - name: Compile source
+        run: python -m compileall -q betterinstincts scripts tests
