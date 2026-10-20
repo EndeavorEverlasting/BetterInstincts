@@ -35,6 +35,7 @@ jobs:
         run: |
           python -m scripts.check_horizon
           python -m scripts.eval_horizon
+          python -m scripts.horizon_status
       - name: Doctrine fails closed
         run: python scripts/validate_doctrine.py
       - name: Repo asset leakage prevention
