@@ -8,3 +8,8 @@
 /plans/active/BI-002.execution.v1.json @EndeavorEverlasting
 /scripts/check_backward_compat.py @EndeavorEverlasting
 /scripts/validate_doctrine.py @EndeavorEverlasting
+/plans/horizon.v1.json @EndeavorEverlasting
+/plans/active/BI-003.execution.v1.json @EndeavorEverlasting
+/contracts/needs.v1.json @EndeavorEverlasting
+/docs/HORIZON.md @EndeavorEverlasting
+/betterinstincts/horizon.py @EndeavorEverlasting
