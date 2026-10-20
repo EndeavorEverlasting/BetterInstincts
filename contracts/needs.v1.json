@@ -1,0 +1,33 @@
+{
+  "schema": "betterinstincts.needs/v1",
+  "scope": "standard-adult-six-needs-offline-hypothesis",
+  "urgency_threshold": 0.35,
+  "preemptive_threshold": 0.55,
+  "needs": [
+    {
+      "id": "hunger",
+      "action": "eat"
+    },
+    {
+      "id": "bladder",
+      "action": "use_toilet"
+    },
+    {
+      "id": "energy",
+      "action": "sleep"
+    },
+    {
+      "id": "hygiene",
+      "action": "wash"
+    },
+    {
+      "id": "fun",
+      "action": "have_fun"
+    },
+    {
+      "id": "social",
+      "action": "socialize"
+    }
+  ],
+  "note": "Thresholds and actions are offline hypotheses, NOT Sims tuning identifiers or calibrated game behavior."
+}
