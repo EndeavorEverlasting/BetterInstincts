@@ -18,7 +18,12 @@ def check(base_ref, root=ROOT, old_reader=git_read):
     current = load_catalog(root)
     old_raw = old_reader(base_ref, "compatibility/catalog.v1.json")
     if old_raw is None:
-        raise CompatibilityError("BASE_CATALOG_UNAVAILABLE")
+        # Initial bootstrap is legal ONLY when base has no compatibility tree.
+        prior = subprocess.run(["git", "ls-tree", "-r", "--name-only", base_ref, "--", "compatibility/"],
+                               cwd=ROOT, capture_output=True)
+        if prior.returncode != 0 or prior.stdout.strip():
+            raise CompatibilityError("BASE_CATALOG_UNAVAILABLE_WITH_PRIOR_PROFILES")
+        old_raw = json.dumps({"schema": current["schema"], "profiles": []}).encode()
     try:
         old = json.loads(old_raw)
     except (TypeError, ValueError) as exc:
