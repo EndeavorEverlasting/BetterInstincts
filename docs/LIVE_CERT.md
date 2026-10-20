@@ -9,7 +9,11 @@ From repo root (Python 3.11+; game Python is separate):
 python -m scripts.live_cert init --run-id bi002-local-001 --game-version 1.121.342.1030 --platform windows --sims4studio-build VERIFIED_LOCAL_BUILD
 python -m scripts.live_cert status --run-id bi002-local-001
 ```
-**Example version is instructional only**; replace with the exact main-menu version. Before any command: select disposable save and explicit Mods root; record game version, enabled packs, S4S version, targeted hunger tuning and worktree status. No automatic game path discovery.
+**Example version is instructional only**; replace with the exact main-menu version. First verify exact version support via `python -m scripts.compatibility_status --game-version ACTUAL_FULL_VERSION --platform windows --module hunger`; this currently returns UNKNOWN_VERSION (exit 3) because no game profile is certified. Unknown does not block **experimentation**, but it blocks supported-release claims.
+
+Before any command: select disposable save and explicit Mods root; record game version, enabled packs, S4S version, targeted hunger tuning and worktree status. No automatic game path discovery.
+
+After Sims 4 Studio has exported **one explicitly selected** XML tuning file, run `python -m scripts.tuning_audit --xml "ACTUAL_EXPORTED_XML_FILE"`. This emits the root's resource identifiers, tuning SHA256, and a shortlist of attribute-name hints without copying EA XML into source control. The heuristic list is investigative, not a list of certified safe scoring overrides.
 
 After **each actually observed** baseline, modified and rollback trial:
 ```sh
@@ -28,6 +32,9 @@ The last command creates `dist/live-cert/<run-id>/report.json` and exits nonzero
 ## Machine-observable progress and harness hooks
 - **INIT** creates a bounded run manifest; CLI refuses overwritten run IDs.
 - **RECORD** appends validated stage/trial rows and emits the updated counts/verdict as JSON; duplicate stages/trials, negative metrics, unsafe paths and excessively large event streams fail.
+- **STATUS** returns bounded counts, observation progress percentage (not certification percentage), outstanding stage, and next gate; no background daemon or polling.
+- **Compatibility query** uses exact patch, platform and module; an untested version explicitly returns UNKNOWN_VERSION (nonzero exit).
+- **Tuning auditor** inspects one explicitly selected XML read-only, bounded to 2MB, without copying game content to Git.
 - **STATUS** returns completion counts and `next_gate`, without mutating; agents can run this after each trial to report progress. No background daemon.
 - **ATTEST** adds manually verified identifiers/hashes; does not forge or infer data.
 - **EVALUATE** writes bounded report, returns numerical pass/fail/incomplete, never emits `CERTIFIED`.

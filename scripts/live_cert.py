@@ -70,7 +70,7 @@ def record(run_id, row, output=OUTPUT):
         raise EvidenceError("RUN_EVIDENCE_OVERSIZE")
     with target.open("a",encoding="utf-8") as sink:
         sink.write(line)
-    return evaluate(meta,trials+[row])
+    return status(run_id,output)
 
 def attest(run_id, package_sha256, tuning_source_sha256, tuning_resource_id, capture_ref,
            save_confirmed=False, mods_root_confirmed=False, output=OUTPUT):
@@ -90,6 +90,15 @@ def attest(run_id, package_sha256, tuning_source_sha256, tuning_resource_id, cap
 def status(run_id, output=OUTPUT, save_report=False):
     meta,trials=load(run_id,output)
     report=evaluate(meta,trials)
+    counts=report["counts"]
+    observed=min(counts["baseline"],5)+min(counts["modified"],5)+min(counts["rollback"],1)
+    report["progress"]={"observations_recorded":observed,"observations_required":11,
+                         "observations_percent":round(observed*100/11),
+                         "game_certification":"NOT_GRANTED_BY_CLI"}
+    report["next_stage"]=(
+        "baseline" if counts["baseline"]<5 else
+        "modified" if counts["modified"]<5 else
+        "rollback" if counts["rollback"]<1 else "review")
     report["run_id"]=run_id
     report["game_version"]=meta["game_version"]
     report["platform"]=meta["platform"]

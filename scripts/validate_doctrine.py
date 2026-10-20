@@ -13,6 +13,8 @@ REQUIRED = (
     "docs/COMPATIBILITY.md", "docs/LIVE_CERT.md", "plans/active/BI-002.execution.v1.json",
     "compatibility/catalog.v1.json", "betterinstincts/compatibility.py", "betterinstincts/live_eval.py",
     "scripts/live_cert.py", "scripts/check_backward_compat.py",
+    "scripts/tuning_audit.py", "scripts/compatibility_status.py",
+    ".cursor/rules/betterinstincts-compatibility.mdc",
     "betterinstincts/priority.py", "tests/test_priority.py",
     "docs/PROMPT_INVOCATIONS.md", "scripts/check_tracked_assets.py",
     ".github/workflows/ci.yml",

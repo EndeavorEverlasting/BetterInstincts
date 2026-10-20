@@ -17,11 +17,14 @@ class LabCLITests(unittest.TestCase):
             location=init("bi002-testing","1.111.2.1020","windows","synthetic-studio",out)
             self.assertTrue(location.is_relative_to(out))
             self.assertEqual(status("bi002-testing",out)["state"],"INCOMPLETE")
+            self.assertEqual(status("bi002-testing",out)["progress"]["observations_percent"],0)
             for n in range(1,6):
                 record("bi002-testing",row("baseline",n,100),out)
                 record("bi002-testing",row("modified",n,70),out)
             record("bi002-testing",row("rollback",1,100),out)
             self.assertEqual(status("bi002-testing",out)["state"],"MEASUREMENTS_FAIL")
+            self.assertEqual(status("bi002-testing",out)["progress"]["observations_percent"],100)
+            self.assertEqual(status("bi002-testing",out)["progress"]["game_certification"],"NOT_GRANTED_BY_CLI")
             attest("bi002-testing","a"*64,"b"*64,"synthetic-resource",
                    "capture:synthetic-fixture",True,True,out)
             self.assertEqual(status("bi002-testing",out,save_report=True)["state"],
