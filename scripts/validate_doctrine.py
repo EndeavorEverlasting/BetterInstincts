@@ -24,7 +24,9 @@ REQUIRED = (
     "docs/HORIZON.md", "docs/HORIZON_DECISIONS.md", "plans/horizon.v1.json",
     "plans/active/BI-003.execution.v1.json", "contracts/needs.v1.json",
     "betterinstincts/horizon.py", "scripts/eval_horizon.py",
-    "scripts/check_horizon.py", "tests/test_horizon.py", "tests/test_horizon_contract.py",
+    "scripts/check_horizon.py", "scripts/horizon_status.py",
+    "plans/active/BI-HORIZON.dispatch.v1.json",
+    "tests/test_horizon.py", "tests/test_horizon_contract.py", "tests/test_horizon_status.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
