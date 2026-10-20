@@ -1,0 +1,10 @@
+# Ownership routing only; mandatory approvals require GitHub branch rules.
+/AGENTS.md @EndeavorEverlasting
+/docs/DOCTRINE.md @EndeavorEverlasting
+/docs/LEDGER.md @EndeavorEverlasting
+/compatibility/ @EndeavorEverlasting
+/certifications/ @EndeavorEverlasting
+/plans/active/BI-002.md @EndeavorEverlasting
+/plans/active/BI-002.execution.v1.json @EndeavorEverlasting
+/scripts/check_backward_compat.py @EndeavorEverlasting
+/scripts/validate_doctrine.py @EndeavorEverlasting
