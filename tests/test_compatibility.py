@@ -2,10 +2,14 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from betterinstincts.compatibility import load_catalog, select_profile, CompatibilityError
+from betterinstincts.compatibility import load_catalog, select_profile, CompatibilityError, MODULES
 from scripts.check_backward_compat import check
 
 class CompatibilityTests(unittest.TestCase):
+    def test_every_needs_and_skill_workstream_can_have_patch_profiles(self):
+        self.assertTrue({"hunger","bladder","energy","hygiene","fun","social",
+                         "income","skills"}.issubset(MODULES))
+
     def test_empty_catalog_means_unknown_not_latest(self):
         cat = load_catalog(Path(__file__).resolve().parents[1])
         self.assertEqual(select_profile(cat, "1.128.90.1020", "windows", "hunger")["status"], "UNKNOWN_VERSION")

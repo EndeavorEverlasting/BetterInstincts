@@ -6,7 +6,8 @@ BetterInstincts should make autonomy more **competent and believable**, not maxi
 ## Engineering authority
 - Root **AGENTS.md** is the mandatory agent entrypoint.
 - **docs/LEDGER.md** owns product intent, facts, decisions, and proof state.
-- **docs/ROADMAP.md** owns accepted future capability slices.
+- **docs/ROADMAP.md**, **docs/HORIZON.md**, and **plans/horizon.v1.json** own accepted future capability slices and enforceable dependencies.
+- **plans/active/BI-003.execution.v1.json** owns follow-on work for bladder, energy, hygiene, fun and social once hunger is live-proven.
 - **docs/PRIOR_ART.md** owns external evidence and adoption/rejection decisions.
 - **plans/active/BI-001.md** is closed; **plans/active/BI-002.md** owns the non-optional hunger gameplay gate.
 - **docs/COMPATIBILITY.md** and **docs/LIVE_CERT.md** own version retention and bounded evaluation contracts.
@@ -23,6 +24,9 @@ Observe the game's native tuning and compare with community implementations **be
 Support multiple independently verified game builds. Do not equate newest with only-supported. Certified profile and proof bytes are immutable across future updates; patch updates add new profiles and compare tuning against prior local evidence. Do not silently reinterpret a certified older game's configuration. Match exact full game version, OS/platform and feature module; unknown patches fail closed. Mod version and game patch are different concepts. No real game build has yet been certified.
 
 BI-002 game-capable agent must actually perform the hunger A/B and rollback, attach evidence, and pass maintainer review before sprint closure. Without game access it remains BLOCKED and ACTIVE, not completed via handoff.
+
+## Long-horizon continuity (P141/P82/P07/P04)
+The governing trajectory is **all six adult needs -> cross-need balance -> steady observed income while maintaining needs -> observed skill growth while maintaining income and needs -> career advancement**. Never optimize away playfulness or player override. Maintain compatibility throughout all phases. Current priority remains BI-002 hunger; no downstream live completion without its full game proof. Offline six-need `horizon.py` is a separate experimental candidate; original four-need `priority.py` remains a baseline. The declarative threshold values are provisional, not actual game tuning. CI rejects missing needs, reordered income/skills dependencies, and absent parent governance. One game host agent must actually build and certify BI-002.
 
 ## Filesystem and storage policy
 Authoritative source: this Git repository. Tracked documentation and fixtures belong to their corresponding tracked directories. Generated builds belong under a single repo-local `dist/` (git-ignored); transient tests under OS-provided temporary directories, not home/Downloads/Desktop. Any future installation tool must require an **explicit, user-selected Mods root**; must preview intended changed files, allow uninstall, avoid writes outside its dedicated `BetterInstincts/` subfolder, and fail closed on unclear locations. Never traverse, rewrite, or copy `saves/`, EA game assets, Mods belonging to others, or configuration without explicit user consent. Never create persistent runtime caches/logs until a size, rotation, and retention policy is validated. No autorun/background scanners.

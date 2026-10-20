@@ -31,6 +31,11 @@ jobs:
             if [[ "$BASE" =~ ^0+$ ]]; then BASE="$(git rev-parse HEAD^)"; fi
           fi
           python -m scripts.check_backward_compat --base-ref "$BASE"
+      - name: Horizon dependency and scenario evaluators
+        run: |
+          python -m scripts.check_horizon
+          python -m scripts.eval_horizon
+          python -m scripts.horizon_status
       - name: Doctrine fails closed
         run: python scripts/validate_doctrine.py
       - name: Repo asset leakage prevention

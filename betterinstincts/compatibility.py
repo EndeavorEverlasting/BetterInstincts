@@ -10,7 +10,8 @@ ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{1,79}$")
 SHA_RE = re.compile(r"^[a-f0-9]{64}$")
 COMMIT_RE = re.compile(r"^[a-f0-9]{40}$")
 PLATFORMS = {"windows", "mac"}
-MODULES = {"hunger", "needs", "income", "career", "household", "social"}
+MODULES = {"hunger", "bladder", "energy", "hygiene", "fun", "social",
+           "needs", "income", "skills", "career", "household"}
 STATES = {"experimental", "certified"}
 
 class CompatibilityError(ValueError):

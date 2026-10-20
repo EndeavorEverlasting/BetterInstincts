@@ -6,6 +6,9 @@ From repo root:
 python -m unittest discover -s tests -v
 python scripts/validate_doctrine.py
 python scripts/check_tracked_assets.py
+python -m scripts.check_horizon
+python -m scripts.eval_horizon
+python -m scripts.horizon_status
 python -m scripts.check_backward_compat --base-ref <git-base-sha>
 python -m betterinstincts.priority
 ```
@@ -13,6 +16,9 @@ No network, EA installation, privileged permissions, or external Python packages
 
 ## Local cert progress and compatibility (game evidence UNPROVEN)
 Follow [the live-cert CLI instructions](LIVE_CERT.md) and [BI-002's executable gates](../plans/active/BI-002.execution.v1.json). Agents record observed trials, query status after every trial and deliver gameplay capture references. `MEASUREMENTS_PASS_REVIEW_REQUIRED` is **not a certificate**. CI protects older certified patch profiles; it cannot observe Sims or validate the package's in-game functionality. UNKNOWN_VERSION and UNVERIFIED must never be promoted silently.
+
+## Horizon offline-vs-gameplay proof
+The six-need policy (`betterinstincts/horizon.py`) and stage dependency graph (`plans/horizon.v1.json`) are **offline architecture**, not Sims integrations. Unit tests, a 12-needs-level plus income/skill scenario probe, and status CLI prove only policy invariants and current outstanding gate. `scripts.check_horizon` fails if any of the five successor needs, joint balance, income-before-skills order, or dependency topology disappears. Individual needs must later be certified per game patch, then jointly balanced; income needs observed in-game funds changes before skills, which need measured in-game skill increments.
 
 ## Gameplay gate (UNPROVEN)
 Record date, OS, base-game patch, installed DLC, Mods manifest, Sims 4 Studio build, tested package hash, explicit install destination (chosen by user), and a disposable test save. Never touch original/production saves. Perform repeatable baseline+modified sessions on the same reset state; avoid stale script caches when game instructions require clearing them. Keep reproducible notes/sanitized error logs. Stop and roll back if action loops, frozen queues, unexpected forced interactions, cross-household effects, performance regression or lost gameplay.

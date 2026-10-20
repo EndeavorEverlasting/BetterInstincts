@@ -1,24 +1,27 @@
-# Roadmap — preserve the whole BetterInstincts vision
+# BetterInstincts roadmap — no trajectory rediscovery
 
-A module is not completed merely because a spec exists. Each reaches: designed -> offline-tested -> built -> disposable-save integrated -> patch/compatibility tested -> publicly released. Each game update may invalidate later statuses.
+**Sequence accepted 2026-10-20:** six adult needs -> balance -> steady income with needs maintained -> skills with income and needs maintained -> career advancement. Throughout, preserve player choice, fun, and older certified game versions. Canonical execution graph: [plans/horizon.v1.json](../plans/horizon.v1.json). Human/readable owner: [HORIZON.md](HORIZON.md).
 
-## Milestones
-| Milestone | Intended experience | Earliest proof gate | Dependencies |
-| --- | --- | --- | --- |
-| **BI-001 foundation (merged 2026-10-20)** | Doctrine, ownership, prior-art decisions, offline policy scenario baseline, CI | Validator + offline unit tests, PR review | None |
-| **BI-002 needs/hunger** | Sims seek available food before dangerously low hunger without abandoning direct player commands | Vanilla A/B disposable-save trial with one reversible package | Game patch/tooling evidence, BI-001 |
-| **BI-003 needs expansion** | Sensible bladder, hygiene, sleep, meal decisions; no wasteful repeated activity | Need-specific package trials and conflict matrix | BI-002 |
-| **BI-004 earning income** | Appropriate autonomous income-generating actions when safe and available | Goal-sensitive decisions, payment confirmation, no duplication or endless queues | Relevant in-game actions and schedule rules |
-| **BI-005 careers** | Prep, skill building, work attendance, promotion tasks and career progress | Career-specific A/B gameplay incl. no-career and work-from-home cases | BI-004 and pack auditing |
-| **BI-006 household cooperation** | Sims distribute chores and care tasks without conflict/starvation | Multi-Sim trials, housemate fairness | Needs modules |
-| **BI-007 personalities & settings** | Traits, moods, relationships, leisure, autonomy strength/overrides | Diverse-playstyle fixtures; user-visible settings and disabling | Stable tuning/API integration |
-| **BI-008 compatibility & distribution** | Opt-in modules; clean upgrade/removal; reliable updates | Pack/version/mod-conflict matrix and release checklist | Observed gameplay stability |
+| Stage | Required result | Local game proof |
+| --- | --- | --- |
+| BI-001 (MERGED) | Doctrine, version retention, CI and offline hunger prototype | None claimed |
+| BI-002 (ACTIVE) | Hunger tuning and disposable-save trials | Authored reversible package, >=5 vanilla + >=5 modified trials, rollback, maintainer review |
+| BI-003A | Bladder behavior | Patch-specific autonomy experiment and safety |
+| BI-003B | Energy and sleep | Appropriate time, no exhaustion, no forced interruption |
+| BI-003C | Hygiene | Need-based behavior without obsessive repetition |
+| BI-003D | Fun | Respects personal preferences and balances other obligations |
+| BI-003E | Social | Mood/personality-sensitive socializing with no unwanted control |
+| BI-003F | Six-needs joint balance | Combined A/B trials; no thrash or neglected need; verified no-command-interruption |
+| BI-004 | Recurring income | Observed money delta per valid action, no fake earnings, no work loop |
+| BI-005 | Purposeful skill growth | Actual skill progress and time budget; income + needs remain stable |
+| BI-006 | Career growth | Attendance, requirements, promotions, work-from-home edge cases |
+| BI-007 | Household cooperation, traits, user settings | Multi-Sim fairness, character diversity, opt-outs |
+| BI-008 (CONTINUOUS) | Patch compatibility, performance, release quality | Previously proven profiles remain immutable; new patch individually certified |
 
-## All versions retention invariant
-Each module must maintain a matrix of exact certified Sims builds/platforms, with the older validated configs frozen. New patch -> new candidate and targeted tuning diff; no blanket migration. BI-002 must produce actual game evidence before its first profile can be certified. Read docs/COMPATIBILITY.md and docs/LIVE_CERT.md; repeated regression checks apply to all subsequent milestones.
+**Dependency rule:** No downstream *live completion* merely because its offline prototype passes. A local game-capable agent finishes the entire BI-002 hunger experiment. Once BI-002 is certified, BI-003A-E may proceed in parallel only with verified separate tuning/resources and writers. BI-003F gates BI-004; BI-004 gates BI-005; BI-005 gates BI-006. BI-008 accompanies every stage. Machine validator `python -m scripts.check_horizon`.
 
-## Product settings candidates (NOT IMPLEMENTED)
-Global mode: Off / Balanced / Proactive; independent Needs, Income, Career, Chores, Social, and Hobbies toggles; player-order protection mandatory. Design settings for one real mechanism before creating an elaborate UI. Document defaults, migration, pack requirements and per-Sim scope when supported.
+**Development floor:** `betterinstincts/priority.py` remains a stable four-need comparator. `betterinstincts/horizon.py` is the separate synthetic six-need policy candidate. `contracts/needs.v1.json` uses uncalibrated hypotheses and abstract action IDs; test results do not prove gameplay or compatibility. No globally running agent, camera, watcher, or data collection is authorized.
 
-## Critical safeguards
-Always preserve fun, autonomy boundaries, performance, and save safety. All milestones need baseline comparators and rollback steps. Requirements can be revised by user/community trials, with corrections written to docs/LEDGER.md.
+**Patch/version rule:** Exact version+platform+module, retain immutable certified profiles, no guessed fallback. New build -> new trial and profile, never silently replace old configuration. Parent rationale in [LEDGER.md](LEDGER.md).
+
+If game access is missing, preserve the blocked gate; continue safe conventional repo development and validators without reassigning local physical game proof to ChatGPT provider tools.

@@ -6,6 +6,8 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 REQUIRED = (
     "AGENTS.md", "docs/DOCTRINE.md", "docs/LEDGER.md",
     "docs/ROADMAP.md", "docs/PRIOR_ART.md", "docs/VALIDATION.md",
@@ -19,12 +21,19 @@ REQUIRED = (
     "betterinstincts/priority.py", "tests/test_priority.py",
     "docs/PROMPT_INVOCATIONS.md", "scripts/check_tracked_assets.py",
     ".github/workflows/ci.yml",
+    "docs/HORIZON.md", "docs/HORIZON_DECISIONS.md", "plans/horizon.v1.json",
+    "plans/active/BI-003.execution.v1.json", "contracts/needs.v1.json",
+    "betterinstincts/horizon.py", "scripts/eval_horizon.py",
+    "scripts/check_horizon.py", "scripts/horizon_status.py",
+    "plans/active/BI-HORIZON.dispatch.v1.json",
+    "tests/test_horizon.py", "tests/test_horizon_contract.py", "tests/test_horizon_status.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
     "Player first", "Save-safe", "Storage", "Performance",
     "Evidence", "Continuity", "CHANGED | PROVED | NEXT",
     "docs/COMPATIBILITY.md", "docs/LIVE_CERT.md", "BLOCKED_LOCAL_GAME_ACCESS",
+    "docs/HORIZON.md", "plans/horizon.v1.json", "six needs",
 )
 class DoctrineViolation(Exception):
     pass
@@ -77,6 +86,10 @@ def validate(root=ROOT):
         raise DoctrineViolation("PARENT_GAME_GATE_REDEFINED")
     if manifest.get("parent_on_block") != "ACTIVE" or manifest.get("blocked_state") != "BLOCKED_LOCAL_GAME_ACCESS":
         raise DoctrineViolation("BLOCKED_WORK_FALSE_COMPLETION")
+    from scripts.check_horizon import validate as check_horizon
+    from betterinstincts.horizon import validate_rules
+    check_horizon(json.loads((root / "plans/horizon.v1.json").read_text(encoding="utf-8")))
+    validate_rules(json.loads((root / "contracts/needs.v1.json").read_text(encoding="utf-8")))
     return {"state": "PASS", "root": "AGENTS.md", "required_files": len(REQUIRED),
             "proof_ceiling": "tracked governance content only; no live Sims validation"}
 

@@ -1,0 +1,182 @@
+{
+  "schema": "betterinstincts.horizon/v1",
+  "owner": "EndeavorEverlasting/BetterInstincts",
+  "parent_goal": "Needs stability and balance -> recurring income alongside needs maintenance -> skill development alongside both -> career growth; patch retention throughout",
+  "current_gate": "BI-002",
+  "stages": [
+    {
+      "id": "BI-002",
+      "title": "Hunger tuning and package",
+      "domain": "needs",
+      "depends_on": [],
+      "status": "ACTIVE_GAME_UNPROVEN",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "proof": [
+        "hunger_live_cert"
+      ],
+      "run": "plans/active/BI-002.execution.v1.json"
+    },
+    {
+      "id": "BI-003A",
+      "title": "Bladder autonomy",
+      "domain": "needs",
+      "depends_on": [
+        "BI-002"
+      ],
+      "status": "WAITING_GAME_GATE",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "proof": [
+        "bladder_live_cert"
+      ]
+    },
+    {
+      "id": "BI-003B",
+      "title": "Energy and sleep autonomy",
+      "domain": "needs",
+      "depends_on": [
+        "BI-002"
+      ],
+      "status": "WAITING_GAME_GATE",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "proof": [
+        "energy_live_cert"
+      ]
+    },
+    {
+      "id": "BI-003C",
+      "title": "Hygiene autonomy",
+      "domain": "needs",
+      "depends_on": [
+        "BI-002"
+      ],
+      "status": "WAITING_GAME_GATE",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "proof": [
+        "hygiene_live_cert"
+      ]
+    },
+    {
+      "id": "BI-003D",
+      "title": "Fun autonomy",
+      "domain": "needs",
+      "depends_on": [
+        "BI-002"
+      ],
+      "status": "WAITING_GAME_GATE",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "proof": [
+        "fun_live_cert"
+      ]
+    },
+    {
+      "id": "BI-003E",
+      "title": "Social autonomy",
+      "domain": "needs",
+      "depends_on": [
+        "BI-002"
+      ],
+      "status": "WAITING_GAME_GATE",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "proof": [
+        "social_live_cert"
+      ]
+    },
+    {
+      "id": "BI-003F",
+      "title": "Six-needs cross-balance",
+      "domain": "needs",
+      "depends_on": [
+        "BI-003A",
+        "BI-003B",
+        "BI-003C",
+        "BI-003D",
+        "BI-003E"
+      ],
+      "status": "WAITING_GAME_GATE",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "proof": [
+        "six_need_balance_live_cert",
+        "old_patch_regressions"
+      ]
+    },
+    {
+      "id": "BI-004",
+      "title": "Steady autonomous income",
+      "domain": "income",
+      "depends_on": [
+        "BI-003F"
+      ],
+      "status": "WAITING_GAME_GATE",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "proof": [
+        "income_transaction_evidence",
+        "income_repetition_no_loops",
+        "needs_protection"
+      ]
+    },
+    {
+      "id": "BI-005",
+      "title": "Deliberate autonomous skill growth",
+      "domain": "skills",
+      "depends_on": [
+        "BI-004"
+      ],
+      "status": "WAITING_GAME_GATE",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "proof": [
+        "skill_progress_observed",
+        "income_continues",
+        "needs_protection"
+      ]
+    },
+    {
+      "id": "BI-006",
+      "title": "Careers and advancement",
+      "domain": "careers",
+      "depends_on": [
+        "BI-005"
+      ],
+      "status": "WAITING_GAME_GATE",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "proof": [
+        "career_promotion_measured",
+        "work_schedule_respected",
+        "needs_protection"
+      ]
+    },
+    {
+      "id": "BI-007",
+      "title": "Households, personality and player preferences",
+      "domain": "behavior",
+      "depends_on": [
+        "BI-003F"
+      ],
+      "status": "DEFERRED",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "proof": [
+        "personality_diversity_eval",
+        "household_no_conflicts"
+      ]
+    },
+    {
+      "id": "BI-008",
+      "title": "Compatibility, performance and distribution",
+      "domain": "maintenance",
+      "depends_on": [
+        "BI-002"
+      ],
+      "status": "ONGOING",
+      "owner": "CI_OR_REMOTE_RUNNER + LOCAL_AGENT_RUNTIME",
+      "proof": [
+        "exact_patch_matrix",
+        "rollback",
+        "performance",
+        "previous_profiles_frozen"
+      ]
+    }
+  ],
+  "compatibility_rule": "An exact certified game patch/module is required per gate. Unknown is not certified; never mutate older accepted files.",
+  "proof_ceiling": "Roadmap readiness is never Sims live evidence",
+  "independent_work": "Code-only offline evaluators can advance for later phases while gameplay phase gates remain unproven.",
+  "convergence": "Every P07 implementation reports CHANGED | PROVED | NEXT and updates docs/LEDGER.md; unfinished game phases remain OPEN."
+}

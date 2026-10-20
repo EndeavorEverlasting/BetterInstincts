@@ -1,0 +1,168 @@
+{
+  "schema": "betterinstincts.need-workstreams/v1",
+  "parent": "BI-003F",
+  "current_gate": "BI-002",
+  "slices": [
+    {
+      "id": "BI-003A",
+      "need": "bladder",
+      "abstract_action": "use_toilet",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "depends_on": [
+        "BI-002"
+      ],
+      "status": "WAITING_HUNGER_CERT",
+      "mission": "Find exact patch tuning for bladder; author reversible package, verify real game A/B and rollback.",
+      "required": [
+        "real_patch_and_tuning_resource",
+        "baseline_five_trials",
+        "modified_five_trials",
+        "rollback_test",
+        "player_command_protection",
+        "version_specific_profile",
+        "maintainer_review"
+      ],
+      "code_owner": "betterinstincts/horizon.py",
+      "contract": "contracts/needs.v1.json",
+      "validation": "python -m scripts.eval_horizon",
+      "local_game_cert": "docs/LIVE_CERT.md",
+      "do_not_assume": "abstract action ID equals game interaction tuning ID"
+    },
+    {
+      "id": "BI-003B",
+      "need": "energy",
+      "abstract_action": "sleep",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "depends_on": [
+        "BI-002"
+      ],
+      "status": "WAITING_HUNGER_CERT",
+      "mission": "Find exact patch tuning for energy; author reversible package, verify real game A/B and rollback.",
+      "required": [
+        "real_patch_and_tuning_resource",
+        "baseline_five_trials",
+        "modified_five_trials",
+        "rollback_test",
+        "player_command_protection",
+        "version_specific_profile",
+        "maintainer_review"
+      ],
+      "code_owner": "betterinstincts/horizon.py",
+      "contract": "contracts/needs.v1.json",
+      "validation": "python -m scripts.eval_horizon",
+      "local_game_cert": "docs/LIVE_CERT.md",
+      "do_not_assume": "abstract action ID equals game interaction tuning ID"
+    },
+    {
+      "id": "BI-003C",
+      "need": "hygiene",
+      "abstract_action": "wash",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "depends_on": [
+        "BI-002"
+      ],
+      "status": "WAITING_HUNGER_CERT",
+      "mission": "Find exact patch tuning for hygiene; author reversible package, verify real game A/B and rollback.",
+      "required": [
+        "real_patch_and_tuning_resource",
+        "baseline_five_trials",
+        "modified_five_trials",
+        "rollback_test",
+        "player_command_protection",
+        "version_specific_profile",
+        "maintainer_review"
+      ],
+      "code_owner": "betterinstincts/horizon.py",
+      "contract": "contracts/needs.v1.json",
+      "validation": "python -m scripts.eval_horizon",
+      "local_game_cert": "docs/LIVE_CERT.md",
+      "do_not_assume": "abstract action ID equals game interaction tuning ID"
+    },
+    {
+      "id": "BI-003D",
+      "need": "fun",
+      "abstract_action": "have_fun",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "depends_on": [
+        "BI-002"
+      ],
+      "status": "WAITING_HUNGER_CERT",
+      "mission": "Find exact patch tuning for fun; author reversible package, verify real game A/B and rollback.",
+      "required": [
+        "real_patch_and_tuning_resource",
+        "baseline_five_trials",
+        "modified_five_trials",
+        "rollback_test",
+        "player_command_protection",
+        "version_specific_profile",
+        "maintainer_review"
+      ],
+      "code_owner": "betterinstincts/horizon.py",
+      "contract": "contracts/needs.v1.json",
+      "validation": "python -m scripts.eval_horizon",
+      "local_game_cert": "docs/LIVE_CERT.md",
+      "do_not_assume": "abstract action ID equals game interaction tuning ID"
+    },
+    {
+      "id": "BI-003E",
+      "need": "social",
+      "abstract_action": "socialize",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "depends_on": [
+        "BI-002"
+      ],
+      "status": "WAITING_HUNGER_CERT",
+      "mission": "Find exact patch tuning for social; author reversible package, verify real game A/B and rollback.",
+      "required": [
+        "real_patch_and_tuning_resource",
+        "baseline_five_trials",
+        "modified_five_trials",
+        "rollback_test",
+        "player_command_protection",
+        "version_specific_profile",
+        "maintainer_review"
+      ],
+      "code_owner": "betterinstincts/horizon.py",
+      "contract": "contracts/needs.v1.json",
+      "validation": "python -m scripts.eval_horizon",
+      "local_game_cert": "docs/LIVE_CERT.md",
+      "do_not_assume": "abstract action ID equals game interaction tuning ID"
+    }
+  ],
+  "composition": {
+    "id": "BI-003F",
+    "depends_on": [
+      "BI-003A",
+      "BI-003B",
+      "BI-003C",
+      "BI-003D",
+      "BI-003E"
+    ],
+    "required": [
+      "all_six_individually_game_certified",
+      "cross_need_competition",
+      "player_control",
+      "no_action_thrashing",
+      "performance_budget",
+      "old_patch_unchanged",
+      "manual_disposable_save_comparison"
+    ],
+    "status": "WAITING"
+  },
+  "parallelism": "Research/fixtures parallel when paths and resource ownership separate; mutations single writer per path; verified adapter required; no phantom delegation.",
+  "execution_environment": "LOCAL_AGENT_RUNTIME",
+  "provider_access": [
+    "GitHub"
+  ],
+  "forbidden": [
+    "EA original content commit",
+    "real saves",
+    "unselected Mods root",
+    "arbitrary user folders",
+    "unbounded timers"
+  ],
+  "no_game_state": "BLOCKED_LOCAL_GAME_ACCESS",
+  "parent_status_on_block": "ACTIVE",
+  "progress": "python -m scripts.live_cert status --run-id RUN_ID",
+  "release_proof": "exact patch, resource hash, package SHA, vanilla/modified/rollback, maintainer acceptance"
+}
