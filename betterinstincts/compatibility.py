@@ -8,6 +8,7 @@ SCHEMA = "betterinstincts.compatibility/v1"
 VERSION_RE = re.compile(r"^[0-9]+(?:\.[0-9]+){3}$")
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{1,79}$")
 SHA_RE = re.compile(r"^[a-f0-9]{64}$")
+COMMIT_RE = re.compile(r"^[a-f0-9]{40}$")
 PLATFORMS = {"windows", "mac"}
 MODULES = {"hunger", "needs", "income", "career", "household", "social"}
 STATES = {"experimental", "certified"}
@@ -51,15 +52,19 @@ def load_catalog(root):
             if v is not None and (not isinstance(v, str) or not SHA_RE.fullmatch(v)):
                 raise CompatibilityError("INVALID_SHA256")
         if row["status"] == "certified":
-            if not all(profile.get(k) for k in ("tuning_source_sha256", "package_sha256", "evidence_ref")):
+            if not all(profile.get(k) for k in ("tuning_source_sha256", "package_sha256", "evidence_ref", "source_commit_sha")):
                 raise CompatibilityError("CERTIFICATION_REQUIRES_PROOF_POINTERS")
+            if not isinstance(profile["source_commit_sha"], str) or not COMMIT_RE.fullmatch(profile["source_commit_sha"]):
+                raise CompatibilityError("INVALID_CERTIFIED_SOURCE_COMMIT")
             if not str(profile["evidence_ref"]).startswith("certifications/"):
                 raise CompatibilityError("INVALID_CERTIFICATION_POINTER")
             evidence = root / profile["evidence_ref"]
             if not evidence.is_file() or not evidence.resolve().is_relative_to((root / "certifications").resolve()):
                 raise CompatibilityError("MISSING_CERTIFICATION")
             cert = json.loads(evidence.read_text(encoding="utf-8"))
-            if cert.get("profile_id") != profile_id or cert.get("status") != "MAINTAINER_ACCEPTED":
+            if (cert.get("profile_id") != profile_id or cert.get("status") != "MAINTAINER_ACCEPTED"
+                or cert.get("game_version") != version or cert.get("package_sha256") != profile["package_sha256"]
+                or cert.get("source_commit_sha") != profile["source_commit_sha"]):
                 raise CompatibilityError("CERTIFICATION_NOT_ACCEPTED")
     return doc
 
