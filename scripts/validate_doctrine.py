@@ -3,6 +3,7 @@
 from pathlib import Path
 import ast
 import json
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,6 +65,11 @@ def validate(root=ROOT):
     lab = (root / "plans/active/BI-002.md").read_text(encoding="utf-8")
     if "BI-002 cannot be CLOSED" not in lab or "scripts.live_cert status" not in lab:
         raise DoctrineViolation("LOCAL_GAME_GATE_LOST")
+    if re.search(r"^# BI-002[^\n]*\\bCLOSED\\b", lab, flags=re.MULTILINE | re.IGNORECASE):
+        from betterinstincts.compatibility import load_catalog
+        catalog = load_catalog(root)
+        if not any(r.get("module") == "hunger" and r.get("status") == "certified" for r in catalog["profiles"]):
+            raise DoctrineViolation("HUNGER_SPRINT_CLOSURE_WITHOUT_GAME_CERT")
     manifest = json.loads((root / "plans/active/BI-002.execution.v1.json").read_text(encoding="utf-8"))
     required = ["actual_reversible_package", "five_vanilla_trials", "five_modified_trials",
                 "rollback_smoke", "measured_behavior_improvement", "player_queue_safety", "maintainer_review"]

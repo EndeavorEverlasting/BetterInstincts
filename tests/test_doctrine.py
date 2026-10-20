@@ -34,6 +34,17 @@ class DoctrineTests(unittest.TestCase):
             with self.assertRaisesRegex(DoctrineViolation, "OFFLINE_POLICY_IO_IMPORT"):
                 validate(ROOT)
 
+    def test_hunger_sprint_cannot_close_without_game_cert(self):
+        original = Path.read_text
+        def replaced(path, *args, **kwargs):
+            s = original(path, *args, **kwargs)
+            if path.name == "BI-002.md":
+                return s.replace("# BI-002 —", "# BI-002 CLOSED —")
+            return s
+        with patch.object(Path, "read_text", autospec=True, side_effect=replaced):
+            with self.assertRaisesRegex(DoctrineViolation, "HUNGER_SPRINT_CLOSURE_WITHOUT_GAME_CERT"):
+                validate(ROOT)
+
     def test_missing_product_vision_rejected(self):
         original = Path.read_text
         def replaced(path, *args, **kwargs):
