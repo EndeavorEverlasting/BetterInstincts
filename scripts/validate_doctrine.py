@@ -3,7 +3,6 @@
 from pathlib import Path
 import ast
 import json
-import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -65,7 +64,7 @@ def validate(root=ROOT):
     lab = (root / "plans/active/BI-002.md").read_text(encoding="utf-8")
     if "BI-002 cannot be CLOSED" not in lab or "scripts.live_cert status" not in lab:
         raise DoctrineViolation("LOCAL_GAME_GATE_LOST")
-    if re.search(r"^# BI-002[^\n]*\\bCLOSED\\b", lab, flags=re.MULTILINE | re.IGNORECASE):
+    if "CLOSED" in lab.splitlines()[0].upper():
         from betterinstincts.compatibility import load_catalog
         catalog = load_catalog(root)
         if not any(r.get("module") == "hunger" and r.get("status") == "certified" for r in catalog["profiles"]):
