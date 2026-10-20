@@ -1,2 +1,28 @@
 # BetterInstincts
-Smarter autonomy for The Sims 4. Improve everyday decisions, household routines, and self-care while preserving personality, player control, and the unexpected moments that make Sims fun.
+**Smarter Sims. Better decisions. More interesting lives.**
+
+An experimental, community-oriented autonomy mod project for **The Sims 4**. Make Sims more competent at meeting needs, building income, and progressing in careers while keeping their personalities, free time, autonomy, and the player's direct orders intact.
+
+> **Status: pre-alpha, not a playable mod.** The current Python decision-policy prototype is an offline experiment; it is **not connected to the game**, and no `.package` or `.ts4script` release has been validated.
+
+## Start here
+- [Agent instructions](AGENTS.md) — short, mandatory operating entrypoint.
+- [Doctrine](docs/DOCTRINE.md) — product and safety boundaries.
+- [Project ledger](docs/LEDGER.md) — canonical vision, current evidence, decisions, and gates.
+- [External prior art](docs/PRIOR_ART.md) — P97 evidence and adoption choices.
+- [Strategic selection](docs/STRATEGY.md) — P141 competing theses and next investigation.
+- [Roadmap](docs/ROADMAP.md) — needs, work, career, then broader autonomy.
+- [Validation](docs/VALIDATION.md) — offline tests and future game certification.
+- [BI-001 sprint](plans/active/BI-001.md) — P04 scope, lanes, and handoff.
+
+## First working experiment (offline only)
+Run from repository root with Python 3.11+ (dev harness version; **not** a claim about the game's embedded Python):
+```sh
+python -m unittest discover -s tests -v
+python scripts/validate_doctrine.py
+python -m betterinstincts.priority
+```
+The policy returns a **suggestion** for a fictional Sim snapshot and never touches a real game, save, queue, or Mods directory. The smallest gameplay next step is to inspect the live game's relevant autonomy tuning using Sims 4 Studio, select one specific base-game behavior, and produce/test a reversible package against a recorded patch.
+
+## Community
+Original code is MIT licensed. Please open an issue for compatibility observations or behavior proposals, with game version, installed packs, mods, reproducible steps, and sanitized logs. No EA-owned assets or saves, please. This is an independent fan project, **not affiliated with or endorsed by EA/Maxis**. Distribution is intended to be free and consistent with [EA's mod policy](https://help.ea.com/en/articles/the-sims/the-sims-4/mods-policy/).

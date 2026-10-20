@@ -1,0 +1,27 @@
+name: Offline policy and doctrine
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Offline tests
+        run: python -m unittest discover -s tests -v
+      - name: Doctrine fails closed
+        run: python scripts/validate_doctrine.py
+      - name: Offline policy demo
+        run: python -m betterinstincts.priority
+      - name: Compile source
+        run: python -m compileall -q betterinstincts scripts tests
