@@ -1,0 +1,37 @@
+{
+  "schema": "betterinstincts.bootstrap-proof/v1",
+  "recorded_date": "2026-10-20",
+  "repo": "EndeavorEverlasting/BetterInstincts",
+  "pr": 3,
+  "merge_commit": "9550ef66315cfd77c4cbc5044e8c9bae49d8a3be",
+  "ci": {
+    "run_id": 39374046727,
+    "conclusion": "success",
+    "url": "https://github.com/EndeavorEverlasting/BetterInstincts/actions/runs/39374046727",
+    "offline_tests": 46
+  },
+  "changed": [
+    "compatibility/catalog.v1.json",
+    "betterinstincts/compatibility.py",
+    "betterinstincts/live_eval.py",
+    "scripts/check_backward_compat.py",
+    "scripts/live_cert.py",
+    "scripts/tuning_audit.py",
+    "scripts/compatibility_status.py",
+    "plans/active/BI-002.execution.v1.json",
+    "AGENTS.md",
+    "docs/COMPATIBILITY.md",
+    "docs/LIVE_CERT.md",
+    ".cursor/rules/betterinstincts-compatibility.mdc",
+    ".github/CODEOWNERS"
+  ],
+  "proof_ceiling": "CI_VERIFIED_REPOSITORY_CONTRACTS_NOT_GAMEPLAY",
+  "gameplay_verified": false,
+  "certified_game_versions": 0,
+  "game_package_built": false,
+  "local_sims_version_observed": false,
+  "release_published": false,
+  "parent": "BI-002",
+  "parent_status": "ACTIVE_GAME_HOST_UNPROVEN",
+  "next": "Run BI-002 on a local game host: inspect real Sims patch and tuning; create single reversible hunger package; >=5 vanilla + >=5 modded trials + rollback, status after each, independent acceptance."
+}
