@@ -20,6 +20,8 @@ def run_root(run_id, output=OUTPUT):
     if not RUN_ID_RE.fullmatch(run_id):
         raise EvidenceError("INVALID_RUN_ID")
     base = output.resolve()
+    if output == OUTPUT and not base.is_relative_to(ROOT.resolve()):
+        raise EvidenceError("OUTPUT_ROOT_ESCAPES_REPOSITORY")
     path = output / run_id
     if not path.resolve().is_relative_to(base):
         raise EvidenceError("UNSAFE_RUN_PATH")
@@ -27,6 +29,8 @@ def run_root(run_id, output=OUTPUT):
 
 def load(run_id, output=OUTPUT):
     root = run_root(run_id,output)
+    if (root / "run.json").is_symlink() or (root / "observations.jsonl").is_symlink():
+        raise EvidenceError("RUN_FILE_SYMLINK_BLOCKED")
     meta = json.loads((root / "run.json").read_text(encoding="utf-8"))
     if meta.get("schema") != SCHEMA or meta.get("run_id") != run_id:
         raise EvidenceError("BAD_RUN_MANIFEST")

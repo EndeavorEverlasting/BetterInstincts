@@ -12,7 +12,7 @@
 
 ## Versioned contracts (already implemented)
 - `compatibility/catalog.v1.json` is the ONLY profile index. It deliberately begins **empty**: nobody has certified any real game build.
-- `compatibility/profiles/<profile_id>.json` owns one exact full Sims build string, OS platform (`windows`/`mac`), feature module, status (`experimental` / `certified`), tested tuning source SHA256, compiled package SHA256, and evidence pointer.
+- `compatibility/profiles/<profile_id>.json` owns one exact full Sims build string, OS platform (`windows`/`mac`), feature module, status (`experimental` / `certified`), tested tuning source SHA256, compiled package SHA256, original 40-hex source commit SHA, and evidence pointer. The maintainer's acceptance record must agree on the exact game version, source commit and compiled package hash.
 - Full game versions include all four fields (e.g. `1.121.342.1030` for Windows; Mac builds are a different four-field string). **Do not substitute a truncated three-field patch or claim PC/Mac equivalence**.
 - `python -m scripts.compatibility_status --game-version FULL_BUILD --platform windows --module hunger` is the agent-friendly exact-patch check and returns nonzero unless a certified profile is selected.
 - `betterinstincts.compatibility.select_profile` matches exact `game_version` + `platform` + `module`; unknown patch returns `UNKNOWN_VERSION`, experimental returns `UNVERIFIED`, multiple certified alternatives return `AMBIGUOUS` until a profile ID is selected. No nearest-newer/older, silent broad ranges, or fallback.
@@ -25,7 +25,7 @@
 3. For a new patch create **a new** experimental profile ID; preserve earlier profiles. Require explicit path `compatibility/profiles/<id>.json`, the schema fields listed above, and a known user-selected game-mod location for **manual** installation.
 4. Finish hunger A/B, rollback and mod-conflict game trials; call live-cert evaluator. Attach captured receipts (redact save names, user paths and personal data). A numerical pass is **review required**, not a certificate.
 5. Maintainer reviews artifact hash, actual package, resource IDs, gameplay capture, test version/OS and conflict matrix. Only then append a `certified` profile and `certifications/<id>.json` accepted review record. Never substitute synthetic CI fixtures for real game evidence.
-6. New Sims patch triggers new candidate profile and selective XML diff, **not edits to old certified files**. Keep prior release binaries/checksums accessible via archived release assets (future release process).
+6. New Sims patch triggers new candidate profile and selective XML diff, **not edits to old certified files**. Keep prior release binaries/checksums accessible via archived release assets (future release process). Rebuild only from the historical recorded source commit, never silently from current main. Compiled old artifacts are content-addressed, not reconstructed from today's code.
 
 ## Development artifacts versus player releases
 Use a repo-local `dist/` for generated packages and local run reports, ignored by git. No writes to the user's Docs/Electronic Arts, saves, or other mods except an explicitly reviewed, user-initiated dedicated Mods subfolder. A protected/locked profile must not be silently replaced. Publish a matrix of explicit validated game version/platform/module and optional dependencies; all untested combinations are UNKNOWN, not supported. An experimental profile is not selected for normal release.
