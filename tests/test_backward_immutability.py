@@ -28,7 +28,7 @@ class ImmutabilityTests(unittest.TestCase):
             }
             fake=lambda ref,path: oldfiles.get(path)
             self.assertEqual(check("test",root=root,old_reader=fake)["certified_preserved"],1)
-            source["package_sha256"]="c"*64
+            source["unreviewed_note"]="post-certification mutation"
             (root/row["path"]).write_text(json.dumps(source))
             with self.assertRaisesRegex(CompatibilityError,"CERTIFIED_PROFILE_CONTENT_CHANGED"):
                 check("test",root=root,old_reader=fake)
