@@ -1,0 +1,106 @@
+{
+  "schema": "betterinstincts.sprint-dispatch/v1",
+  "parent_goal": "All six needs balanced, then recurring income, then skills with maintenance of earlier systems",
+  "current_gate": "BI-002",
+  "runtime_partition": {
+    "host": "CURRENT_CHAT_RUNTIME",
+    "providers": [
+      "GITHUB"
+    ],
+    "physical_game_available": false,
+    "local_host": "LOCAL_AGENT_RUNTIME"
+  },
+  "parallel_execution": {
+    "status": "NOT_PROVEN",
+    "reason": "No verified autonomous local game-host agent adapter available to this chat session. GitHub CI is independently executing validation only.",
+    "fallback": "One writer per GitHub branch; CI validates; local game host must execute gameplay."
+  },
+  "lanes": [
+    {
+      "id": "RESEARCH",
+      "status": "IMPLEMENTED",
+      "host": "CURRENT_CHAT_RUNTIME",
+      "owns": [
+        "docs/HORIZON_DECISIONS.md",
+        "docs/HORIZON.md"
+      ],
+      "dependencies": [],
+      "proof": "committed docs"
+    },
+    {
+      "id": "POLICY",
+      "status": "IMPLEMENTED_OFFLINE",
+      "host": "CURRENT_CHAT_RUNTIME",
+      "owns": [
+        "betterinstincts/horizon.py",
+        "contracts/needs.v1.json"
+      ],
+      "dependencies": [
+        "RESEARCH"
+      ],
+      "proof": "unittest and synthetic evaluator"
+    },
+    {
+      "id": "GOVERNANCE",
+      "status": "IMPLEMENTED",
+      "host": "CURRENT_CHAT_RUNTIME",
+      "owns": [
+        "plans/horizon.v1.json",
+        "plans/active/BI-003.execution.v1.json",
+        "scripts/check_horizon.py",
+        "AGENTS.md",
+        "docs/DOCTRINE.md"
+      ],
+      "dependencies": [
+        "RESEARCH"
+      ],
+      "proof": "validator and CI"
+    },
+    {
+      "id": "CI",
+      "status": "AUTOMATED",
+      "host": "CI_OR_REMOTE_RUNNER",
+      "owns": [
+        ".github/workflows/ci.yml"
+      ],
+      "dependencies": [
+        "POLICY",
+        "GOVERNANCE"
+      ],
+      "proof": "GitHub Actions run"
+    },
+    {
+      "id": "GAME_HUNGER",
+      "status": "WAITING_FOR_LOCAL_GAME",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "owns": [
+        "patch-specific authored tuning and disposable-save evidence"
+      ],
+      "dependencies": [
+        "CI"
+      ],
+      "proof": "actual reversible package + 5 vanilla / 5 modified / rollback + review",
+      "first": "plans/active/BI-002.execution.v1.json"
+    },
+    {
+      "id": "OTHER_NEEDS",
+      "status": "WAITING_FOR_HUNGER_CERT",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "owns": [
+        "BI-003A",
+        "BI-003B",
+        "BI-003C",
+        "BI-003D",
+        "BI-003E",
+        "BI-003F"
+      ],
+      "dependencies": [
+        "GAME_HUNGER"
+      ],
+      "first": "plans/active/BI-003.execution.v1.json",
+      "proof": "patch-specific multi-need gameplay certifications"
+    }
+  ],
+  "safety": "GitHub repo evidence does not prove local game runtime; a blocked game lane stays active without a false completion receipt.",
+  "next_command": "python -m scripts.horizon_status"
+}
