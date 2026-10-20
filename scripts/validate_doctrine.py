@@ -9,13 +9,13 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = (
     "AGENTS.md", "docs/DOCTRINE.md", "docs/LEDGER.md",
     "docs/ROADMAP.md", "docs/PRIOR_ART.md", "docs/VALIDATION.md",
-    "docs/STRATEGY.md", "plans/active/BI-001.md",
+    "docs/STRATEGY.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
     "betterinstincts/priority.py", "tests/test_priority.py",
     "docs/PROMPT_INVOCATIONS.md", "scripts/check_tracked_assets.py",
     ".github/workflows/ci.yml",
 )
 MARKERS = (
-    "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md",
+    "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
     "Player first", "Save-safe", "Storage", "Performance",
     "Evidence", "Continuity", "CHANGED | PROVED | NEXT",
 )
