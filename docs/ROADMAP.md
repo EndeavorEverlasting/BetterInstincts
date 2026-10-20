@@ -14,6 +14,9 @@ A module is not completed merely because a spec exists. Each reaches: designed -
 | **BI-007 personalities & settings** | Traits, moods, relationships, leisure, autonomy strength/overrides | Diverse-playstyle fixtures; user-visible settings and disabling | Stable tuning/API integration |
 | **BI-008 compatibility & distribution** | Opt-in modules; clean upgrade/removal; reliable updates | Pack/version/mod-conflict matrix and release checklist | Observed gameplay stability |
 
+## All versions retention invariant
+Each module must maintain a matrix of exact certified Sims builds/platforms, with the older validated configs frozen. New patch -> new candidate and targeted tuning diff; no blanket migration. BI-002 must produce actual game evidence before its first profile can be certified. Read docs/COMPATIBILITY.md and docs/LIVE_CERT.md; repeated regression checks apply to all subsequent milestones.
+
 ## Product settings candidates (NOT IMPLEMENTED)
 Global mode: Off / Balanced / Proactive; independent Needs, Income, Career, Chores, Social, and Hobbies toggles; player-order protection mandatory. Design settings for one real mechanism before creating an elaborate UI. Document defaults, migration, pack requirements and per-Sim scope when supported.
 

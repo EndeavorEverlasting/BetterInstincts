@@ -13,6 +13,16 @@
 | [Deeper Social Autonomy](https://www.curseforge.com/sims4/mods/deeper-social-autonomy) | Distribution describes trait/mood/relationship-responsive choices and game-version list. Code uninspected. | DOCUMENTED_UNVERIFIED | ADAPT personality-respecting priorities; defer overlap until verified. |
 | [Sims 4 Studio workflow](https://github.com/DeviantGameMods/Sims4CommunityLibrary/blob/main/Documents/GitHub/GettingStarted.txt) | Tutorial shows extraction of vanilla tuning to `.package` and editing XML; must verify current GUI/runtime in local game. | DOCUMENTED UNVERIFIED for current patch | ADOPT as first local lab workflow. |
 
+## P97 supplement: multiversion mod support (2026-10-20)
+| Source | Verifiable precedent | Adopt/adapt/reject |
+| --- | --- | --- |
+| [Lot51 Core](https://github.com/lot51/core-library/blob/main/README.md) and [Core 1.37 backward compatibility release](https://lot51.cc/mods/core-library/releases/1.37) | Project documents semantic mod versions, minimum library versions, and an actual fix for compatibility regression affecting older Sims patches. DOCUMENTED + dated release evidence, not verified locally. | ADOPT explicit version support/dependency floors; ADAPT to full game build + platform; do not bundle third-party core by default. |
+| [Modders Reference XML comparisons](https://thesims4moddersreference.org/tutorials/creating-xml-compare/) | Describes per-game-patch tuning extraction and diffing without mixing earlier copies. DOCUMENTED workflow. | ADOPT local patch-specific diff and preserve old authored profiles; REJECT committing raw EA extracted files. |
+| [Oops19 Patch XML](https://github.com/Oops19/TS4-PatchXML) | Maintainer documents version-scoped caches and independently owned config, including patch application failures. DOCUMENTED source. | ADAPT version-scoped config; REJECT unproven automatic XPath patch dependency. |
+| [S4CL](https://github.com/DeviantGameMods/Sims4CommunityLibrary) | Documents minimum supported game patch rather than claiming any future game build works. DOCUMENTED. | ADOPT explicit release compatibility limits; UNKNOWN runtime applicability to hunger. |
+
+**Solved internally now:** offline decision-policy and exact-version catalog/CI retention mechanism. **Available to emulate:** patch XML diffs, compatibility listings, semantic dependency version bounds. **Project-specific missing:** actual patch-specific package and reproducible game A/B observations. **Evidence gap:** actual tested versions, tuning entry IDs, mod conflicts and local game hooks. None may be substituted with offline fixtures.
+
 ## Solved vs gap map
 - **AVAILABLE TO EMULATE EXTERNALLY:** per-need tuning modules, compatibility labeling, targeted game tuning workflow, common Python event APIs.
 - **PROJECT-SPECIFIC GAP:** unified *configurable* model balancing urgent needs, income, career, traits, leisure, and player intentions, **without** duplicate or invasive autonomy loops.

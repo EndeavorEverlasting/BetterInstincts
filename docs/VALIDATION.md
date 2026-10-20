@@ -6,9 +6,13 @@ From repo root:
 python -m unittest discover -s tests -v
 python scripts/validate_doctrine.py
 python scripts/check_tracked_assets.py
+python -m scripts.check_backward_compat --base-ref <git-base-sha>
 python -m betterinstincts.priority
 ```
 No network, EA installation, privileged permissions, or external Python packages needed. CI proves only these offline checks, never game compatibility.
+
+## Local cert progress and compatibility (game evidence UNPROVEN)
+Follow [the live-cert CLI instructions](LIVE_CERT.md) and [BI-002's executable gates](../plans/active/BI-002.execution.v1.json). Agents record observed trials, query status after every trial and deliver gameplay capture references. `MEASUREMENTS_PASS_REVIEW_REQUIRED` is **not a certificate**. CI protects older certified patch profiles; it cannot observe Sims or validate the package's in-game functionality. UNKNOWN_VERSION and UNVERIFIED must never be promoted silently.
 
 ## Gameplay gate (UNPROVEN)
 Record date, OS, base-game patch, installed DLC, Mods manifest, Sims 4 Studio build, tested package hash, explicit install destination (chosen by user), and a disposable test save. Never touch original/production saves. Perform repeatable baseline+modified sessions on the same reset state; avoid stale script caches when game instructions require clearing them. Keep reproducible notes/sanitized error logs. Stop and roll back if action loops, frozen queues, unexpected forced interactions, cross-household effects, performance regression or lost gameplay.

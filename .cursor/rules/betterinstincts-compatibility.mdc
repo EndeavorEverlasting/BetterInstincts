@@ -1,0 +1,8 @@
+---
+description: BetterInstincts Sims 4 multiversion and live gameplay certification invariant
+alwaysApply: true
+---
+
+Read AGENTS.md, docs/DOCTRINE.md, docs/LEDGER.md, docs/COMPATIBILITY.md, docs/LIVE_CERT.md and plans/active/BI-002.execution.v1.json before modifying game-related code.
+
+Do not modify/remove previously certified profile, game version configuration, source or acceptance evidence. Unknown patch is UNKNOWN, never latest. CI has an immutable-history check. The actual hunger experiment, local authored package, repeatable vanilla/modified gameplay and rollback remain in-scope for the game-capable local agent; do not close BI-002 based on plans or offline tests. Track every observed trial with `python -m scripts.live_cert record` and `status`; maintain evidence integrity. Do not touch real saves or install files without explicit user-selected target and reviewed scope. Game builds and gameplay cannot be inferred from GitHub status.

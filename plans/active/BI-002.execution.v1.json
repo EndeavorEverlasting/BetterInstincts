@@ -1,0 +1,74 @@
+{
+  "schema": "betterinstincts.execution-gates/v1",
+  "parent": "BI-002",
+  "parent_gate": "HUNGER_LIVE_CERTIFIED",
+  "state": "ACTIVE_GAME_HOST_UNPROVEN",
+  "closure_requires": [
+    "actual_reversible_package",
+    "five_vanilla_trials",
+    "five_modified_trials",
+    "rollback_smoke",
+    "measured_behavior_improvement",
+    "player_queue_safety",
+    "maintainer_review"
+  ],
+  "runtime": {
+    "local_game_required": true,
+    "host": "LOCAL_AGENT_RUNTIME",
+    "provider": "GITHUB",
+    "ci_cannot_certify": true
+  },
+  "lanes": [
+    {
+      "id": "GAME-1",
+      "deps": [],
+      "host": "LOCAL_AGENT_RUNTIME",
+      "owner": "game-capable agent",
+      "goal": "Observe exact game version and hunger tuning, record five genuine vanilla trials",
+      "gate": "five_vanilla_trials",
+      "status": "WAITING_FOR_LOCAL_GAME"
+    },
+    {
+      "id": "GAME-2",
+      "deps": [
+        "GAME-1"
+      ],
+      "host": "LOCAL_AGENT_RUNTIME",
+      "owner": "game-capable agent",
+      "goal": "Create/revert authored package; five actual modified trials and rollback",
+      "gate": "MEASUREMENTS_PASS_REVIEW_REQUIRED",
+      "status": "WAITING"
+    },
+    {
+      "id": "GAME-3",
+      "deps": [
+        "GAME-2"
+      ],
+      "host": "LOCAL_AGENT_RUNTIME",
+      "owner": "maintainer reviewer",
+      "goal": "Verify original evidence and package; certify a NEW profile only",
+      "gate": "maintainer_review",
+      "status": "WAITING"
+    },
+    {
+      "id": "CI-1",
+      "deps": [],
+      "host": "CI_OR_REMOTE_RUNNER",
+      "owner": "GitHub Actions",
+      "goal": "Run doctrine, exact patch, immutability and synthetic evaluator tests",
+      "gate": "repo_checks_pass",
+      "status": "AUTOMATED"
+    }
+  ],
+  "blocked_state": "BLOCKED_LOCAL_GAME_ACCESS",
+  "parent_on_block": "ACTIVE",
+  "progress_command": "python -m scripts.live_cert status --run-id RUN_ID",
+  "output_root": "dist/live-cert",
+  "forbidden": [
+    "real saves",
+    "other mods",
+    "EA asset redistribution",
+    "old certified configurations"
+  ],
+  "proof_ceiling": "synthetic_ci_cannot_establish_game_certification"
+}

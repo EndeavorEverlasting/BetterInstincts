@@ -20,6 +20,17 @@ jobs:
           python-version: "3.11"
       - name: Offline tests
         run: python -m unittest discover -s tests -v
+      - name: Protect older certified game builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE="${{ github.event.before }}"
+            if [[ "$BASE" =~ ^0+$ ]]; then BASE="$(git rev-parse HEAD^)"; fi
+          fi
+          python -m scripts.check_backward_compat --base-ref "$BASE"
       - name: Doctrine fails closed
         run: python scripts/validate_doctrine.py
       - name: Repo asset leakage prevention
