@@ -27,3 +27,7 @@ Read `docs/HORIZON.md`, `plans/horizon.v1.json` and `plans/active/BI-003.executi
 
 ## Completion contract
 Report CHANGED | PROVED | NEXT, including exact checks run/skipped, commit SHA, push/PR/merge, game patch and live-test status. A plan is not implementation; a green CI check is not playable-mod proof. Do not publish pre-alpha as a release.
+
+## Current P04 local certification handoff (2026-11-07)
+
+After the reviewed human judgment-learning implementation in [PR #41](https://github.com/EndeavorEverlasting/BetterInstincts/pull/41), local game-capable agents should read `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md` and `plans/active/BI-JUDGMENT-LEARNING-P04.execution.v1.json`. These are **local runtime acceptance instructions**, not proof of a launched process or a certified mod. Maintain **BI-002 hunger** as the first real product gate, preserve game/version/save safety, and never let learned advice override the player. Advance safely from these artifacts rather than reconstructing the vision from chat.
