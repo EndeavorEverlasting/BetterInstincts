@@ -17,7 +17,9 @@ OBJECTIVES = frozenset({
     "MAXIMIZE_GREEN",
     "MAXIMIZE_INDUSTRIAL",
     "BALANCED_ENV_GREEN",
+    "MAXIMIZE_YIELD",
 })
+ATTESTED = frozenset({"LOCAL_OBSERVED", "OPERATOR_ATTESTED"})
 
 
 class BuildOptimizeError(ValueError):
@@ -73,7 +75,10 @@ def _primary_score(row: Mapping[str, object], objective: str, cfg: Mapping[str, 
     obj = cfg["objectives"][objective]
     primary = obj["primary"]
     if primary == "combined_env_green":
-        return _stat(row, "lot_environment_gain") + 2 * _stat(row, "eco_footprint_green")
+        # Dual Env+Green max (2+2) outranks single-stat 2; aesthetics ignored.
+        env = _stat(row, "lot_environment_gain")
+        green = _stat(row, "eco_footprint_green")
+        return env + green + (env * green)
     return _stat(row, primary)
 
 
@@ -95,6 +100,45 @@ def _cost_key(row: Mapping[str, object]) -> int:
     return int(cost)
 
 
+def _secondary_tuple(
+    row: Mapping[str, object], objective: str, cfg: Mapping[str, object]
+) -> tuple:
+    """Build ascending sort keys after primary (lower is better after negation of stats)."""
+    keys: list = []
+    for token in cfg["objectives"][objective].get("secondary", []):
+        if token == "cost_asc":
+            keys.append(_cost_key(row))
+        elif token == "name_asc":
+            keys.append(str(row.get("name") or ""))
+        elif token in {
+            "lot_environment_gain",
+            "eco_footprint_green",
+            "eco_footprint_industrial",
+        }:
+            # Descending: negate so higher yield sorts first.
+            keys.append(-_stat(row, token))
+        else:
+            raise BuildOptimizeError("UNKNOWN_SECONDARY:" + str(token))
+    return tuple(keys)
+
+
+def _pack_allowed(
+    item: Mapping[str, object], packs: Optional[set], cfg: Mapping[str, object]
+) -> bool:
+    pack = str(item.get("pack") or "base")
+    if packs is None:
+        return True
+    if pack in packs:
+        return True
+    if (
+        cfg.get("policies", {}).get("include_unknown_pack_when_operator_attested")
+        and pack == "unknown"
+        and str(item.get("evidence_state") or "") in ATTESTED
+    ):
+        return True
+    return False
+
+
 def filter_catalog(
     *,
     category: Optional[str] = None,
@@ -109,8 +153,7 @@ def filter_catalog(
         item = dict(row)
         if category and item.get("category") != category:
             continue
-        pack = str(item.get("pack") or "base")
-        if packs is not None and pack not in packs:
+        if not _pack_allowed(item, packs, cfg):
             continue
         if budget is not None:
             if isinstance(budget, bool) or not isinstance(budget, (int, float)) or budget < 0:
@@ -146,10 +189,11 @@ def rank_items(
         score = _primary_score(row, objective, cfg)
         if score <= 0:
             continue
-        candidates.append((score, _cost_key(row), str(row["name"]), row))
-    candidates.sort(key=lambda t: (-t[0], t[1], t[2]))
+        secondary = _secondary_tuple(row, objective, cfg)
+        candidates.append((score, secondary, row))
+    candidates.sort(key=lambda t: (-t[0], t[1]))
     ranked = []
-    for score, _cost, _name, row in candidates[:limit]:
+    for score, _secondary, row in candidates[:limit]:
         entry = dict(row)
         entry["objective_score"] = score
         entry["projected_panels"] = None

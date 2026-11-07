@@ -21,8 +21,9 @@ def main(argv=None):
             "MAXIMIZE_GREEN",
             "MAXIMIZE_INDUSTRIAL",
             "BALANCED_ENV_GREEN",
+            "MAXIMIZE_YIELD",
         ],
-        help="Ranking objective (default: contract household default)",
+        help="Ranking objective (default: MAXIMIZE_YIELD / Env+Green return)",
     )
     p.add_argument(
         "--category",
