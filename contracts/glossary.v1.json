@@ -83,6 +83,38 @@
     "HOST_AUTOMATE": {
       "definition": "Presence-gated orchestrator that runs behavior_eval + host_stack + needs_force plans when HOST_MAY_AUTOMATE; never a default background daemon.",
       "owners": ["docs/HOST_AUTONOMY.md", "betterinstincts/host_automate.py"]
+    },
+    "HOUSEHOLD_FUNDS": {
+      "definition": "Observed or operator-supplied Simoleon balance for the active disposable household. Host money-stat input; not a save-file edit.",
+      "owners": ["contracts/host-funds.v1.json", "docs/HOST_BUDGET.md"]
+    },
+    "FEDERAL_SUBSIDY_PROMPT": {
+      "definition": "When funds are below 100, host shows a Sims-styled HOUSEHOLD NOTICE offering a Simolean federal bank boost; Yes runs durable funds inject.",
+      "owners": ["contracts/host-funds.v1.json", "scripts/funds_inject.py"]
+    },
+    "FUNDS_INJECT": {
+      "definition": "Mode-agnostic cheat sequence: Ctrl+Shift+C → testingcheats enabled true → Money N (best-effort) → motherlode chunks. Never force F1; never claimed as BI-004 earned income.",
+      "owners": ["contracts/host-funds.v1.json", "betterinstincts/funds_inject.py"]
+    },
+    "TESTINGCHEATS_ENABLED_TRUE": {
+      "definition": "Required console activation command before Money inject. Skipping it is a known live failure mode.",
+      "owners": ["contracts/host-funds.v1.json"]
+    },
+    "CHEAT_CONSOLE_CHORD": {
+      "definition": "Ctrl+Shift+C opens the Sims cheat console on PC in Live, Build, or Buy. Host funds inject must press this chord before testingcheats/Money/motherlode — never skip, never force F1 to open it.",
+      "owners": ["contracts/host-funds.v1.json", "scripts/funds_inject.py"]
+    },
+    "MODE_AGNOSTIC_FUNDS_INJECT": {
+      "definition": "Funds inject that preserves the operator's current mode (Live/Build/Buy); never forces F1 or Esc-spam while they build.",
+      "owners": ["contracts/host-funds.v1.json", "docs/HOST_AUTONOMY.md"]
+    },
+    "EARN_INCOME_CRITICAL": {
+      "definition": "Money-stat urgency when funds are desperate; earn path is never suppressed by purchase lockdown.",
+      "owners": ["contracts/host-budget.v1.json", "docs/HOST_BUDGET.md"]
+    },
+    "HOST_CRISIS_ANTI_PATTERN": {
+      "definition": "School Join (or leaving home) while needs/funds are critical — stranded the lab off-lot; Send Alone is mandatory.",
+      "owners": ["contracts/decision-prompts.v1.json", "betterinstincts/decision_eval.py"]
     }
   }
 }

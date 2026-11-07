@@ -31,6 +31,23 @@ See glossary: `PLAYER_FIRST`, `PLAYER_PLAYING`, `PLAYER_PRESENT_ON_CANVAS`, `HOS
 | `host_stack` | Compose viewport/behavior/instincts gates | none |
 | `host_listener` | Opt-in session + tick receipts | writes `dist/host-listener/` |
 | `host_automate` | Presence-gated plan; optional execute | optional SendInput via script |
+| `funds_inject` | Subsidy prompt (funds under 100) + mode-agnostic Money/motherlode inject | optional SendInput via `scripts/funds_inject` |
+
+## Household subsidy (funds under 100) — P95 mode-agnostic stack
+When observed funds are under **100**, host shows a Sims-styled **HOUSEHOLD NOTICE**
+("Oops, it looks like decisions were made… Simolean federal bank?"). **Yes** runs:
+
+```
+soft-focus Sims (no mode switch)
+  -> Ctrl+Shift+C          # cheat console in Live OR Build/Buy
+  -> testingcheats enabled true
+  -> Money N               # best-effort exact set
+  -> motherlode x chunks   # durable +50k (LOCAL_OBSERVED)
+```
+
+**Never force F1** while the operator is building — host works in tandem across
+Live / Build / Buy. No Esc spam (opens pause MENU). Foreground Sims still required
+or SendInput is ignored. Not BI-004 earned income; not a save-file edit.
 
 ## Success call stack (evaluate-only)
 ```

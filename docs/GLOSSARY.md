@@ -23,6 +23,14 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **MAP_TRAVEL** | Manage Worlds / phone travel to the lot with required objects. |
 | **IN_FRAME_WALK_THRASH** | Forbidden: making the Sim pathfind across the current frame instead of traveling. |
 | **CRITICAL_NEED** | Motive below `needs.v1.json` urgency threshold. |
+| **HOUSEHOLD_FUNDS** | Observed/operator Simoleon balance for the disposable household. |
+| **FEDERAL_SUBSIDY_PROMPT** | Funds under 100 → Sims-styled notice; Yes runs durable funds inject. |
+| **FUNDS_INJECT** | Ctrl+Shift+C → `testingcheats enabled true` → Money/motherlode in any mode (not BI-004 income). |
+| **TESTINGCHEATS_ENABLED_TRUE** | Required before Money; skipping it fails live inject. |
+| **CHEAT_CONSOLE_CHORD** | Ctrl+Shift+C opens the cheat console in Live/Build/Buy; required before testingcheats/Money. |
+| **MODE_AGNOSTIC_FUNDS_INJECT** | Inject preserves operator mode — never force F1 / Esc-spam while building. |
+| **EARN_INCOME_CRITICAL** | Broke money-stat; earn never blocked by purchase lockdown. |
+| **HOST_CRISIS_ANTI_PATTERN** | School Join under critical needs/funds — prefer Send Alone. |
 | **PROOF_CEILING** / **LOCAL_OBSERVED** / **GAME_CERTIFIED** | Evidence claim limits — see VALIDATION / LIVE_CERT. |
 
-Related matrices: `contracts/behavior-matrix.v1.json`, `contracts/player-presence.v1.json`, `contracts/needs-force.v1.json`, `contracts/host-listener.v1.json`.
+Related matrices: `contracts/behavior-matrix.v1.json`, `contracts/player-presence.v1.json`, `contracts/needs-force.v1.json`, `contracts/host-listener.v1.json`, `contracts/host-funds.v1.json`.
