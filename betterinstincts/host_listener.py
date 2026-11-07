@@ -14,6 +14,7 @@ from betterinstincts.behavior_eval import BehaviorEvalError, evaluate_queue
 from betterinstincts.host_stack import HostStackError, evaluate_turn
 from betterinstincts.instincts_host import InstinctsHostError, NeedSnapshot, plan, plan_to_dict
 from betterinstincts.needs_force import NeedsForceError, plan_force
+from betterinstincts.judgment_learning import JudgmentLearningError, recommend as recommend_judgment
 from betterinstincts.player_presence import PresenceProbe
 from betterinstincts.control_handoff import (
     DEFAULT_IDLE_MS,
@@ -146,6 +147,8 @@ def tick(
     *,
     presence_probe: PresenceProbe | None = None,
     idle_ms: int = DEFAULT_IDLE_MS,
+    learning_model: Mapping | None = None,
+    learning_query: Mapping | None = None,
 ) -> dict:
     """One evaluator pass for an ACTIVE session. Plan only — no SendInput."""
     cfg = load_contract()
@@ -161,6 +164,8 @@ def tick(
         raise HostListenerError("SESSION_TICK_BUDGET_EXCEEDED")
 
     obs = _load_observation(observation)
+    if (learning_model is None) != (learning_query is None):
+        raise HostListenerError("LEARNING_MODEL_AND_QUERY_REQUIRED_TOGETHER")
     # Presence gate: if operator is on-canvas / playing, yield before eval side-plans.
     if presence_probe is None:
         presence_probe = PresenceProbe(
@@ -250,6 +255,7 @@ def tick(
         "instincts": instincts,
         "host_stack": stack,
         "needs_force_plan": force,
+        "learning_hint": None,
         "listener_action": (
             "RECORD_EMULATION_PLAN"
             if disposition == "EMULATE"
@@ -266,6 +272,23 @@ def tick(
             "(re-probe presence first). Listener itself never SendInputs."
         ),
     }
+    # Learning has no input hooks and never changes host plans. Explicit
+    # model/query are required; a player-directed or unknown scene must abstain.
+    if learning_model is not None:
+        safe_query = dict(learning_query)
+        safe_query["player_directed"] = bool(obs["player_directed"])
+        safe_query["player_active"] = False  # Already yielded on active/unknown presence.
+        safe_query["scene_verified"] = bool(
+            safe_query.get("scene_verified")
+            and isinstance(obs.get("viewport"), dict)
+            and obs["viewport"].get("state") == "VIEWPORT_OK"
+        )
+        try:
+            receipt["learning_hint"] = recommend_judgment(learning_model, safe_query)
+        except JudgmentLearningError as exc:
+            raise HostListenerError("LEARNING_HINT_INVALID:" + str(exc)) from exc
+        # Recommendations NEVER execute: preserve existing behavior/needs owner.
+        receipt["learning_hint"]["execute_clicks"] = False
     meta["ticks"] = ticks + 1
     meta["last_tick_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     meta["last_disposition"] = disposition
