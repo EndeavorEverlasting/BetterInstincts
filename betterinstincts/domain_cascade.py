@@ -14,6 +14,7 @@ from betterinstincts.navigating_needs import (
     NavigatingNeedsError,
     evaluate_navigating_needs_turn,
 )
+from betterinstincts.need_service_base import NeedServiceBaseError, normalize_needs
 from betterinstincts.need_services import (
     NeedServicesError,
     compact_need_services,
@@ -32,9 +33,6 @@ from betterinstincts.teen_homework import TeenHomeworkError, evaluate_teen_homew
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "domain-cascade.v1.json"
-SIX = frozenset({"hunger", "bladder", "energy", "hygiene", "fun", "social"})
-
-
 class DomainCascadeError(ValueError):
     pass
 
@@ -61,14 +59,11 @@ def load_contract(path: Path = CONTRACT) -> dict:
 
 
 def _needs(raw: Mapping[str, float]) -> dict[str, float]:
-    if set(raw) != SIX:
-        raise DomainCascadeError("SIX_NEEDS_REQUIRED")
-    out = {}
-    for k, v in raw.items():
-        if isinstance(v, bool) or not isinstance(v, (int, float)) or not (0 <= float(v) <= 1):
-            raise DomainCascadeError("INVALID_NEED")
-        out[k] = float(v)
-    return out
+    """Reuse P124 need_service_base — do not fork six-need parsing here."""
+    try:
+        return normalize_needs(raw)
+    except NeedServiceBaseError as exc:
+        raise DomainCascadeError(str(exc)) from exc
 
 
 def _receipt(domain: str, *, gate: str, action: str, payload: Optional[dict] = None, findings: Sequence[str] = ()) -> dict:

@@ -227,3 +227,8 @@ Operator gap: gardening desire visible in moodlets without a durable way to chec
 ## 2026-11-07 — Domain cascade poll receipts (P124 + trifecta)
 
 **Operator:** Holistic cohesion across needs, Simoleon budget, career/school, skills/whims, and relationships via polling and cascading receipts — joined to the need-service load balancer rather than a second needs queue. **P124** peer owner [`docs/DOMAIN_CASCADE.md`](DOMAIN_CASCADE.md) / `contracts/domain-cascade.v1.json` / `betterinstincts/domain_cascade.py` / `python -m scripts.domain_cascade`. Cascade order: needs (+ navigating_needs + LB) → budget → career → skills_whims → relationships. Player-first halts; LB detach findings propagate. Proof ceiling `HOST_DOMAIN_CASCADE_POLL_RECEIPTS_NOT_DAEMON_NOT_LIVE_CERT`. Live multi-domain ticks OPEN. Does not close BI-002.
+
+## 2026-11-07 — P03 branch hygiene + P141 next gate
+
+**P03:** Merged PR #53 (LB glossary). Deleted remotes fully contained in `main` plus superseded need-service/LB/adapter-docs forks. Left diverged historical remotes untouched pending salvage. **P141:** selected land domain-cascade then issue #35 `screen_admit` adapters; BI-002 remains parent. See [STRATEGY.md](STRATEGY.md#2026-11-07--p141-scout-post-need-services-mainline--branch-hygiene-p03). **P124:** domain_cascade reuses `need_service_base.normalize_needs` instead of a forked six-need parser.
+

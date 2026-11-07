@@ -133,3 +133,28 @@ Canonical machine owners: `plans/horizon.v1.json`, `plans/active/BI-002.executio
 **Not now:** income/skills/career; listener daemons; CAS absolute-input maze migration beyond the shared left-click owner; treating P124 dedupe as live proof.
 
 **Proof ceiling:** scout + P124 readability refactor only. No P08 live sequence was executed against the building session. Parent gate remains BI-002 hunger certification.
+
+---
+
+## 2026-11-07 — P141 scout: post need-services mainline + branch hygiene (P03)
+
+**Authority.** Operator invoked **P03 → P141 → P124 → /trifecta** after observing unclean branch integration. Prompt identities: TokenCorridor `base/prompts.json` blob `848728632c1243ebba023fa0012292a2ad33cada` → **P03 Repository Evidence + First Sprint Executor**; `spec-architecture-prompts.v1.json` blob `5926a198a14567de55110ed19e922fc444b4dec7` → **P141** / **P124**. Floor: `main` after PR #52 (six-need tandem + LB) and PR #53 (LB glossary).
+
+### FACTS (P03 harvest, abbreviated)
+- Center of gravity: tandem need services + load-balance health on `main`; domain-cascade peer owner staged/committed on `feat/bi-domain-cascade-20261107`.
+- Fully merged remotes deleted: `feat/bi-need-services-tandem-20261107`, `feat/bi-need-lb-glossary-20261107`, `feat/bi-host-evaluator-20261107`, `feat/bi-game-host-launch-receipts-20261106`, `docs/bi-game-host-p04-canonical-handoff-20261106`, superseded `feat/bi-need-load-balance-health-20261107`, glossary-duplicate `feat/bi-adapter-handoff-barrier-20261107`.
+- Remaining diverged remotes still hold unique/unmerged history (p95 handoff, p97 listener, scene-map, modlab, live-baseline, etc.) — do not mass-delete without per-branch salvage review.
+- Stash/WIP still carries `screen_admit.py` and adapter script touches for issue #35; curious-catalog worktree at pre-#52 tip.
+
+### Competing theses
+| Thesis | Evidence | Offline-safe? | Result |
+| --- | --- | --- | --- |
+| A. BI-002 hunger live cert | Parent gate; 0/5 trials | No without operator Live | **SURVIVES as parent**; not this mutation |
+| B. Land domain-cascade peer owner on main | Committed local; joins LB without second needs queue | Yes | **SURVIVES — execute now via trifecta** |
+| C. Finish issue #35 `screen_admit` + adapter wraps | Prior P141 selection; untracked `screen_admit.py` | Yes offline | **SURVIVES — next after B** |
+| D. Bulk-delete remaining remote branches | Many still diverge with unique commits | Risky salvage | **REJECT mass delete**; salvage case-by-case |
+| E. Curious catalog product surface | Separate worktree; not on main | Yes later | **DEFER** behind C |
+
+**Selected thesis:** **B then C** — integrate domain cascade (P124 already factors it as peer owner; reuse `need_service_base` for need parsing), then resume adapter screen-admit. Parent A unchanged.
+
+**Route:** trifecta P08/P82/P07 on domain cascade → then P07 on `screen_admit` adapters. P08 live remains OPEN / operator-gated.

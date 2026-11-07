@@ -8,6 +8,7 @@ Evaluator: `python -m scripts.domain_cascade` / `betterinstincts.domain_cascade`
 - **Subject:** Needs, Simoleon budget, career/school/scenario, skills/whims, and relationships as **peer microsystems**.
 - **Job:** On each recurring observation (human, agent, or script), poll domains in horizon-safe order and emit cascading receipts so they can read each other.
 - **Join:** Need-service **load balance** (`docs/NEED_LOAD_BALANCE.md`) is the needs-lane balancer; this cascade respects its detach/windows instead of inventing a second needs queue.
+- **P124:** Need snapshots come from `need_service_base.normalize_needs` — do not fork six-need parsing in this module.
 - **Not:** A background daemon, EA autonomy rewrite, or BI-002 closure.
 
 ## Cascade order
