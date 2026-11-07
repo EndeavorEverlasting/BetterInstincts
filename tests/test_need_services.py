@@ -4,6 +4,7 @@ from betterinstincts.host_stack import evaluate_turn
 from betterinstincts.need_service_base import objects_free, normalize_needs
 from betterinstincts.need_services import (
     NeedServicesError,
+    compact_need_services,
     evaluate_need_lanes,
     evaluate_need_services,
     load_registry,
@@ -69,7 +70,31 @@ class NeedServicesTests(unittest.TestCase):
         self.assertEqual(result["next_gate"], "NEED_SERVICES_TANDEM")
         self.assertEqual(result["fallback"]["primary_need"], "hunger")
         self.assertIsNotNone(result["need_services"])
+        self.assertTrue(result["need_services"].get("compacted"))
+        self.assertNotIn("lanes", result["need_services"]["services"]["hunger"])
         self.assertIsNotNone(result["fun_service"])
+
+    def test_map_travel_outranks_need_services_off_lot(self):
+        result = evaluate_turn(
+            HUNGER_CRITICAL,
+            location_kind="school",
+            objects_on_current_lot=False,
+            queue=["read"],
+            available_objects=[],
+            viewport={"state": "VIEWPORT_OK"},
+        )
+        self.assertEqual(result["next_gate"], "MAP_TRAVEL_HOME_FIRST")
+        self.assertIsNotNone(result["need_services"])
+
+    def test_compact_strips_lanes(self):
+        full = evaluate_need_services(
+            HUNGER_CRITICAL,
+            available_objects=["fridge", "toilet", "bed"],
+        )
+        slim = compact_need_services(full)
+        self.assertTrue(slim["compacted"])
+        self.assertEqual(slim["primary_need"], "hunger")
+        self.assertNotIn("lanes", slim["services"]["hunger"])
 
     def test_fun_still_nested_when_guests(self):
         result = evaluate_turn(

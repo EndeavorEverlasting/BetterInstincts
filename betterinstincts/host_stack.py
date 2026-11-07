@@ -22,6 +22,7 @@ from betterinstincts.fun_service import (
 )
 from betterinstincts.need_services import (
     NeedServicesError,
+    compact_need_services,
     evaluate_need_services,
     should_attach_need_services,
 )
@@ -755,6 +756,26 @@ def evaluate_turn(
             "owner": "betterinstincts/event_balance.py",
             "forbidden": ["OUTDOOR_SOCIAL_DEFAULT"],
         }
+    elif behavior is not None and behavior["clarity"]["disposition"] in {
+        "OPTIMIZE", "EMULATE_THEN_OPTIMIZE"
+    } and behavior["clarity"].get("preferred_route") in {
+        "MAP_TRAVEL", "MAP_TRAVEL_IF_OBJECTS_OFF_LOT_ELSE_LOCAL_OBJECT"
+    } and not (
+        objects_on_current_lot if objects_on_current_lot is not None else location_kind == "home"
+    ):
+        # Off-lot critical needs outrank local need-service object plans.
+        fallback = {
+            "mechanism": "MAP_TRAVEL_HOME_FIRST",
+            "owner": "scripts/needs_force.py",
+            "contract": "contracts/needs-force.v1.json",
+            "command": (
+                "python -m scripts.needs_force run --location-kind "
+                f"{location_kind} --process-id PID --execute"
+            ),
+            "forbidden": ["IN_FRAME_WALK_THRASH", "RESUME", "DELETE_SAVE"],
+            "behavior_row": behavior["clarity"]["matched_row_id"],
+        }
+        next_gate = "MAP_TRAVEL_HOME_FIRST"
     elif need_services is not None and need_services["gate"] == "NEED_SERVICES_TANDEM":
         next_gate = "NEED_SERVICES_TANDEM"
         primary = need_services.get("primary_need")
@@ -798,25 +819,6 @@ def evaluate_turn(
                 "RESUME",
             ],
         }
-    elif behavior is not None and behavior["clarity"]["disposition"] in {
-        "OPTIMIZE", "EMULATE_THEN_OPTIMIZE"
-    } and behavior["clarity"].get("preferred_route") in {
-        "MAP_TRAVEL", "MAP_TRAVEL_IF_OBJECTS_OFF_LOT_ELSE_LOCAL_OBJECT"
-    } and not (
-        objects_on_current_lot if objects_on_current_lot is not None else location_kind == "home"
-    ):
-        fallback = {
-            "mechanism": "MAP_TRAVEL_HOME_FIRST",
-            "owner": "scripts/needs_force.py",
-            "contract": "contracts/needs-force.v1.json",
-            "command": (
-                "python -m scripts.needs_force run --location-kind "
-                f"{location_kind} --process-id PID --execute"
-            ),
-            "forbidden": ["IN_FRAME_WALK_THRASH", "RESUME", "DELETE_SAVE"],
-            "behavior_row": behavior["clarity"]["matched_row_id"],
-        }
-        next_gate = "MAP_TRAVEL_HOME_FIRST"
     elif decision is not None:
         next_gate = "RESOLVE_DECISION_PROMPT"
     elif risk.get("risk_level") in {"ELEVATED", "HIGH"} and risk.get("required_before_clicks"):
@@ -842,7 +844,9 @@ def evaluate_turn(
         "navigating_needs": navigating_needs,
         "event_balance": event_balance,
         "fun_service": fun_service,
-        "need_services": need_services,
+        "need_services": (
+            compact_need_services(need_services) if need_services is not None else None
+        ),
         "build_optimize": build_optimize,
         "instincts": instincts,
         "decision": decision,
