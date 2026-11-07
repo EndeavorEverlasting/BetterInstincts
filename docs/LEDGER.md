@@ -156,3 +156,11 @@ Operator: outdoor-social idiocy is avoidable — **Sit and Chat Here** on indoor
 **Proof ceiling:** synthetic call-stack/regression only until the live P08 interruption-and-resumption test on an authorized disposable lab save; no gameplay package or live hunger trials produced by this change. Other direct click adapters await explicit shared-barrier adoption. The Horizon path stays needs → income → skills → career and BI-002 stays ACTIVE.
 
 **P95/Trifecta second-pass correction:** add exclusive per-game-PID screen ownership across participating agent/host executors, and recheck session ACTIVE just before SendInput. `PAUSED_FOR_AGENT` identifies contention separately from human input. Prevalidate receipt paths so bad output destinations cannot trigger an unreceipted click. Tests cover concurrent-owner rejection and session deactivation. Still not a live-game claim.
+
+## 2026-11-07 — P124 then P141 after PR #34 / #38 (interrupt-safe)
+
+**Floor:** `main` included handoff (`85f0dab` / PR #34) and Sit-and-Chat indoor grounding (PR #38). Operator actively building in a live Sims session; host must not contend for the screen. Issue [#35](https://github.com/EndeavorEverlasting/BetterInstincts/issues/35) remains the P08 live handoff acceptance owner.
+
+**P124:** ranked duplicated Win32 left-click / wheel / right-drag helpers across host UI scripts as the highest-impact editability hotspot for the coming adapter-barrier work. Extracted behavior-preserving owner `scripts/win32_input.py`; `needs_force`, `host_menu`, `menu_blockers`, `funds_inject`, and `viewport_recover` now delegate. CAS absolute-move scripts deferred. Characterization in `tests/test_win32_input.py`. No live SendInput and no handoff-policy change.
+
+**P141:** refreshed [STRATEGY.md](STRATEGY.md#2026-11-07--p141-scout-post-handoff--sit-and-chat-floor-interrupt-safe). Selected next offline investigation: wrap remaining shared-control adapters under the existing `control_handoff` barrier (issue #35 adapter lane) via **P07**. Live P08 interruption/resume stays mandatory but **BLOCKED_OPERATOR_BUSY** while building. BI-002 hunger remains the parent product gate and is not closed by this scout/refactor.

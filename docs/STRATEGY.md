@@ -89,3 +89,47 @@ Canonical machine owners: `plans/horizon.v1.json`, `plans/active/BI-002.executio
 **Not now:** broader listener daemon; unbounded Sims AI rewrite; income/skills/career; feature-rich dashboards; unified-evaluator rewrite; adding another planner instead of a hunger observation.
 
 **Proof ceiling:** P141 strategic comparison **recorded in Git**, not live-executed; source files, PR #30 merged status, repository test descriptions and Cursor-provided counts do not prove a playable package. No game process, exact *currently running* patch, personal save, first hunger observation or maintainer review was accessed from this environment. First parent gate remains `BI-002` / `HUNGER_LIVE_CERTIFIED`.
+
+---
+
+## 2026-11-07 — P141 scout: post handoff + Sit-and-Chat floor (interrupt-safe)
+
+**Authority.** Operator invoked **P124 then P141** after PR #34 handoff merged and issue [#35](https://github.com/EndeavorEverlasting/BetterInstincts/issues/35) opened; floor also absorbed PR #38 Sit-and-Chat indoor grounding (`main` `5d30fe1` at scout start). Prompt identity: TokenCorridor `spec-architecture-prompts.v1.json` blob `5926a198a14567de55110ed19e922fc444b4dec7` → **P141**. This scout does **not** implement the selected initiative. Prior scouts above remain historical; this refresh answers what deserves the next bounded investigation **while the operator is actively building** (interruptability required; no host screen contention).
+
+### Situation model
+
+**CURRENT FACT:** `control_handoff` + exclusive per-PID lock gate `needs_force` SendInput and listener/planner paths; offline Trifecta tests and post-merge CI for PR #34 passed. Direct adapters `game_host` / `host_menu` / `funds_inject` / `viewport_recover` / `menu_blockers` (and CAS helpers) still issue SendInput outside that barrier ([HOST_AUTONOMY.md](HOST_AUTONOMY.md) boundary; issue #35). Sit-and-Chat is host-guidance only; live pie-menu dispatch remains OPEN. BI-002 certified profiles and hunger trials remain **0**. Live Sims process observed locally during scout (PID example 66096) with operator actively using the UI — host must yield.
+
+**DERIVED PATTERN:** The product bottleneck is no longer “missing arbitration design”; it is **uneven adoption + unproven live interruption/resume**, under a moving feature floor. Offline structural clarity of SendInput primitives (P124) reduces the cost of the next gate wrap without claiming P08 or hunger proof.
+
+### Competing theses
+
+| Thesis | Evidence; leverage; timing | Cheapest falsifier | Disposition |
+| --- | --- | --- | --- |
+| **A. Run issue #35 P08 live handoff sequence now** | Mandatory acceptance; only path that proves human↔host transfer | Operator is mid-build / recent input; running confirm/focus would fight for the screen | **SURVIVES as mandatory gate**; **BLOCKED_OPERATOR_BUSY** until explicit idle + disposable-save consent |
+| **B. Wrap remaining shared-control SendInput adapters under the same opt-in session + PID lock + idle recheck** | Issue #35 adapter lane; HOST_AUTONOMY boundary; duplicated click code was the P124 hotspot | If every execute path already imports `control_handoff` — falsified by inventory | **SURVIVES — SELECT** as next offline-safe investigation |
+| **C. First BI-002 vanilla hunger observation** | Still parent product gate; prior scout selected this | Same interrupt/busy and missing 5+5 package readiness; handoff incompleteness confounds hunger UI steps | **SURVIVES as parent**; **DEFER** as *next* mutation while adapters remain ungated and operator builds |
+| **D. Live Sit-and-Chat pie-menu SendInput** | PR #38 guidance landed; outdoor-social pain is real | Competes with handoff coverage; still not hunger cert | **DEFER** until B’s barrier exists for that click path |
+| **E. Broad autonomy / unified host engine rewrite** | Multiple host modules exist | Explicit prior rejection; risk of false live claims | **REJECTED** |
+
+### Decision matrix (no fake scores)
+
+| Direction | Parent leverage | Interrupt-safe now? | Reversibility | Select? |
+| --- | --- | --- | --- | --- |
+| A P08 live handoff | Direct UX proof for #35 | **No** while building | High if disposable save | Wait for operator idle |
+| **B adapter barrier adoption** | Makes A and hunger UI steps trustworthy | **Yes** (code/tests only) | High; per-adapter | **YES** |
+| C hunger observation | Closes BI-002 | No while building / ungated clicks | Medium | Later |
+| D Sit-and-Chat live | Event quality | No | Medium | Later under B |
+| E rewrite | Indirect | n/a | Low | No |
+
+**Selected thesis (HIGH confidence on priority):** finish **shared handoff protection on remaining direct-screen adapters** (issue #35 adapter coverage), using the P124 `scripts/win32_input` owner as the single mouse primitive seam — **without** claiming universal handoff or BI-002 closure. Live P08 (thesis A) remains mandatory and is the first action when the operator is idle on an authorized disposable lab save.
+
+**Cheapest discriminating investigation → route P07** (strategic uncertainty for the adapter lane is resolved; design already in HOST_AUTONOMY / control_handoff):
+1. Inventory every `--execute` SendInput caller; mark covered vs pending.
+2. Port `host_menu`, `menu_blockers`, `funds_inject`, `viewport_recover` (and other applicable shared-control paths) through session ACTIVE + `exclusive_screen_owner` + pre/post-focus `confirm`, preserving Build/Buy/CAS fail-closed behavior and never forcing Live while the operator builds.
+3. Focused offline regressions per adapter + one protected control that dry-run still plans without clicking.
+4. Stop before live focus/click unless the operator explicitly frees the screen for issue #35 P08.
+
+**Not now:** income/skills/career; listener daemons; CAS absolute-input maze migration beyond the shared left-click owner; treating P124 dedupe as live proof.
+
+**Proof ceiling:** scout + P124 readability refactor only. No P08 live sequence was executed against the building session. Parent gate remains BI-002 hunger certification.
