@@ -38,6 +38,10 @@ WIREFRAME_BRIGHT_LUMA = 40.0
 WIREFRAME_BRIGHT_FRAC_MIN = 0.00005
 WIREFRAME_BRIGHT_FRAC_MAX = 0.03
 WIREFRAME_MAX_LUMA_MIN = 48.0
+# Build/Buy purchase catalog strip: dark world + bright, high-variance bottom tray.
+# LOCAL_OBSERVED recovery after ENTER_BUILD_BUY_UNSTICK (Build hammer @ 1505,22).
+BUY_CATALOG_HUD_MEAN = 36.0
+BUY_CATALOG_HUD_STD = 22.0
 
 
 class ViewportError(ValueError):
@@ -260,7 +264,7 @@ def analyze_image(path: Path, *, step: int = 8, contract: dict | None = None) ->
         )
     if full_black:
         classification = "FULL_CLIENT_BLACK"
-        next_gate = str(gates.get(classification, "RECOVER_OR_AUTHORIZED_RESTART"))
+        next_gate = str(gates.get(classification, "ENTER_BUILD_BUY_UNSTICK"))
         return ViewportReport(
             state="VIEWPORT_ANOMALY",
             classification=classification,
@@ -274,6 +278,31 @@ def analyze_image(path: Path, *, step: int = 8, contract: dict | None = None) ->
             rca_summary=(
                 summary
                 + " | PrintWindow may omit DX wireframe; operator secondary-monitor sneak can still show mouse-tracking lot platform."
+                + " | Prefer ENTER_BUILD_BUY_UNSTICK (Build hammer) before Live toggle or restart."
+            ),
+            proof_ceiling="PRINTWINDOW_LUMA_CLASSIFIER_NOT_SCENE_CERTIFICATION",
+        )
+    buy_catalog = (
+        world_black
+        and hud_b.mean_luma >= BUY_CATALOG_HUD_MEAN
+        and hud_b.std_luma >= BUY_CATALOG_HUD_STD
+    )
+    if buy_catalog:
+        classification = "BUILD_BUY_CATALOG_RECOVERY"
+        return ViewportReport(
+            state="VIEWPORT_MODE_BUILD_BUY",
+            classification=classification,
+            scene_id=SCENE_ID,
+            width=width,
+            height=height,
+            regions=regions,
+            next_gate=str(gates.get(classification, "EXIT_BUY_TO_LIVE_OR_OPERATOR_SAVE_EXIT")),
+            recovery_ladder=ladder,
+            avoidance=avoidance,
+            rca_summary=(
+                summary
+                + " | Build/Buy catalog HUD present with dark world — black glitch unstuck into purchase mode;"
+                + " not Live Mode; withhold needs clicks (A7/H5)."
             ),
             proof_ceiling="PRINTWINDOW_LUMA_CLASSIFIER_NOT_SCENE_CERTIFICATION",
         )

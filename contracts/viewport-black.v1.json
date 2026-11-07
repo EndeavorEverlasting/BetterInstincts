@@ -175,10 +175,28 @@
       "requires_execute": true
     },
     {
+      "step": "ENTER_BUILD_BUY_UNSTICK",
+      "auto": true,
+      "requires_execute": true,
+      "click": [1505, 22],
+      "observed": "LOCAL_OBSERVED bi002-quiz-boot 2026-11-07: Build hammer alone cleared FULL_CLIENT_BLACK / wireframe into Build/Buy purchase catalog (High School Items) at Copperdale — the black-glitch unstick.",
+      "success_classification": "BUILD_BUY_CATALOG_RECOVERY",
+      "note": "Do NOT immediately click Live people; that can re-black or skip Buy recognition. Avoid Esc (Options MENU)."
+    },
+    {
+      "step": "EXIT_BUILD_BUY_TO_LIVE",
+      "auto": true,
+      "requires_execute": true,
+      "click": [1585, 35],
+      "when": "Still black after ENTER_BUILD_BUY_UNSTICK, or Buy recovered and Live Mode is the next host goal",
+      "note": "People icon from Build/Buy → Live. Not a needs-green claim."
+    },
+    {
       "step": "TOGGLE_BUILD_THEN_LIVE_CAMERA_RESET",
       "auto": true,
       "requires_execute": true,
-      "note": "Avoid Esc (Options MENU)."
+      "deprecated_by": "ENTER_BUILD_BUY_UNSTICK + EXIT_BUILD_BUY_TO_LIVE",
+      "note": "Legacy combined Build→Live; retained for ladder compatibility. Prefer split steps. Avoid Esc."
     },
     {
       "step": "RECHECK_PRINTWINDOW_ANALYZE",
@@ -190,15 +208,43 @@
       "auto": false,
       "requires_flags": ["--execute", "--authorize-restart"],
       "behavior": "Graceful TS4 close then disposable game_host launch; never Resume; never touch user-named saves; lab slot load only with existing save_guard.",
-      "when": "Still FULL_CLIENT_BLACK or VIEWPORT_NEAR_BLACK after camera ladder"
+      "when": "Still FULL_CLIENT_BLACK or VIEWPORT_NEAR_BLACK after camera + Build/Buy unstick ladder"
     }
   ],
   "host_next_gates": {
     "VIEWPORT_OK": "CONTINUE_HOST_LANE",
     "VIEWPORT_BLACK_HUD_ALIVE": "CAMERA_RECOVER_THEN_RECAPTURE",
     "VIEWPORT_NEAR_BLACK": "RECAPTURE_THEN_CAMERA_RECOVER",
-    "VOID_LOT_PLATFORM_WIREFRAME": "CAMERA_THEN_BUILD_LIVE_OR_RESTART",
-    "FULL_CLIENT_BLACK": "RECOVER_OR_AUTHORIZED_RESTART",
+    "VOID_LOT_PLATFORM_WIREFRAME": "ENTER_BUILD_BUY_UNSTICK",
+    "FULL_CLIENT_BLACK": "ENTER_BUILD_BUY_UNSTICK",
+    "BUILD_BUY_CATALOG_RECOVERY": "EXIT_BUY_TO_LIVE_OR_OPERATOR_SAVE_EXIT",
     "STILL_BLACK_AFTER_LADDER": "AUTHORIZED_GAME_RESTART_OR_OPERATOR"
-  }
+  },
+  "fallback_mechanisms": [
+    {
+      "id": "FB_BUILD_BUY_UNSTICK",
+      "trigger": ["FULL_CLIENT_BLACK", "VOID_LOT_PLATFORM_WIREFRAME", "VIEWPORT_NEAR_BLACK"],
+      "step": "ENTER_BUILD_BUY_UNSTICK",
+      "click": [1505, 22],
+      "owner": "scripts/viewport_recover.py",
+      "success": "BUILD_BUY_CATALOG_RECOVERY",
+      "durable_rule": "Game or host glitches that present as a black PrintWindow MUST run this Build-hammer unstick before needs clicks, Live assumptions, or rediscovering Buy-menu RCA in chat.",
+      "observed_run": "bi002-quiz-boot",
+      "observed_date": "2026-11-07"
+    },
+    {
+      "id": "FB_EXIT_BUY_OR_SAVE",
+      "trigger": ["BUILD_BUY_CATALOG_RECOVERY"],
+      "step": "EXIT_BUILD_BUY_TO_LIVE_OR_SAVE_EXIT",
+      "owner": "scripts/viewport_recover.py + operator Save and Exit",
+      "durable_rule": "Buy catalog after unstick is not Live Mode; exit Buy to Live only when Live is required, else authorized lab Save and Exit. Never needs clicks while in Buy."
+    },
+    {
+      "id": "FB_AUTHORIZED_RESTART",
+      "trigger": ["STILL_BLACK_AFTER_LADDER"],
+      "step": "AUTHORIZED_GAME_RESTART",
+      "owner": "scripts/viewport_recover.py --authorize-restart",
+      "durable_rule": "WM_CLOSE only after Build/Buy unstick fails; never Resume; disposable LabLab reload only."
+    }
+  ]
 }

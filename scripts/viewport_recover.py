@@ -7,8 +7,8 @@ touch user-named saves). RCA/avoidance/ladder: contracts/viewport-black.v1.json
 
 Examples:
   python -m scripts.viewport_recover --image dist/game-host/.../printwindow-after-black.png
-  python -m scripts.viewport_recover --capture --process-id 45380 --analyze-only
-  python -m scripts.viewport_recover --capture --process-id 45380 --execute --max-steps 4
+  python -m scripts.viewport_recover --capture --process-id 45380
+  python -m scripts.viewport_recover --capture --process-id 45380 --execute --max-steps 5
   python -m scripts.viewport_recover --capture --process-id 45380 --execute --authorize-restart \\
       --run-id bi002-quiz-boot
 """
@@ -36,8 +36,17 @@ from scripts.game_capture import GateError, capture_sims
 OUTPUT = ROOT / "dist" / "game-host"
 
 SIM_PORTRAIT = (290, 1020)
+# LOCAL_OBSERVED unstick: Build hammer alone → Buy catalog (bi002-quiz-boot 2026-11-07).
 HUD_BUILD = (1505, 22)
 HUD_LIVE_FROM_BUILD = (1585, 35)
+BUILD_BUY_SETTLE_SEC = 1.6
+
+
+def _build_buy_recovered(report) -> bool:
+    return (
+        getattr(report, "classification", None) == "BUILD_BUY_CATALOG_RECOVERY"
+        or getattr(report, "state", None) == "VIEWPORT_MODE_BUILD_BUY"
+    )
 
 
 def _send_click(x: int, y: int) -> None:
@@ -202,16 +211,47 @@ def run_recovery_step(step: str, *, process_id: int | None, authorize_restart: b
         _focus(process_id)
         _send_click(*SIM_PORTRAIT)
         return {"step": step, "click": list(SIM_PORTRAIT), "state": "STEP_DISPATCHED"}
-    if step == "TOGGLE_BUILD_THEN_LIVE_CAMERA_RESET":
+    if step == "ENTER_BUILD_BUY_UNSTICK":
+        # Primary black-glitch unstick: Build hammer only. Observed to surface Buy
+        # catalog chrome; do not chain Live here (can re-black / skip recognition).
         _focus(process_id)
         _send_click(*HUD_BUILD)
+        time.sleep(BUILD_BUY_SETTLE_SEC)
+        return {
+            "step": step,
+            "click": list(HUD_BUILD),
+            "state": "STEP_DISPATCHED",
+            "success_classification": "BUILD_BUY_CATALOG_RECOVERY",
+            "note": (
+                "Build hammer @ (1505,22) — LOCAL_OBSERVED black→Buy unstick; "
+                "withhold needs clicks; next EXIT_BUILD_BUY_TO_LIVE or Save and Exit"
+            ),
+            "forbidden_followups": ["NEEDS_OBJECT_CLICK", "RESUME"],
+        }
+    if step == "EXIT_BUILD_BUY_TO_LIVE":
+        _focus(process_id)
+        _send_click(*HUD_LIVE_FROM_BUILD)
         time.sleep(1.2)
+        return {
+            "step": step,
+            "click": list(HUD_LIVE_FROM_BUILD),
+            "state": "STEP_DISPATCHED",
+            "note": "People icon Live from Build/Buy; recheck PrintWindow before needs",
+        }
+    if step == "TOGGLE_BUILD_THEN_LIVE_CAMERA_RESET":
+        # Legacy combined path retained for ladder compatibility.
+        _focus(process_id)
+        _send_click(*HUD_BUILD)
+        time.sleep(BUILD_BUY_SETTLE_SEC)
         _send_click(*HUD_LIVE_FROM_BUILD)
         return {
             "step": step,
             "clicks": [list(HUD_BUILD), list(HUD_LIVE_FROM_BUILD)],
             "state": "STEP_DISPATCHED",
-            "note": "Esc avoided; Build→Live often re-centers camera",
+            "note": (
+                "Legacy Build→Live; prefer ENTER_BUILD_BUY_UNSTICK then "
+                "EXIT_BUILD_BUY_TO_LIVE. Esc avoided."
+            ),
         }
     if step == "RECHECK_PRINTWINDOW_ANALYZE":
         return {"step": step, "state": "DEFER_TO_CALLER_RECAPTURE"}
@@ -256,7 +296,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--authorize-restart", action="store_true",
                    help="Permit WM_CLOSE restart gate after camera ladder fails")
     p.add_argument("--run-id", default=None, help="Host run id for restart relaunch notes")
-    p.add_argument("--max-steps", type=int, default=4)
+    p.add_argument(
+        "--max-steps",
+        type=int,
+        default=5,
+        help="Include ENTER_BUILD_BUY_UNSTICK (step 4). Raise to reach Live exit / restart.",
+    )
     p.add_argument("--receipt", type=Path, default=None)
     p.add_argument("--risk-json", type=Path, default=None,
                    help="Optional JSON flags for predict_risk (empty_lot/night/...)")
@@ -291,7 +336,7 @@ def main(argv: list[str] | None = None) -> int:
 
         steps_run = []
         if args.execute and report.state == "VIEWPORT_ANOMALY":
-            max_steps = max(1, min(6, int(args.max_steps)))
+            max_steps = max(1, min(8, int(args.max_steps)))
             for step in report.recovery_ladder[:max_steps]:
                 if step == "RECHECK_PRINTWINDOW_ANALYZE":
                     recheck_path = Path(args.out) if args.out else OUTPUT / "viewport-recheck.png"
@@ -309,7 +354,25 @@ def main(argv: list[str] | None = None) -> int:
                     if report.state == "VIEWPORT_OK":
                         out["state"] = "RECOVERY_VIEWPORT_OK"
                         break
+                    if _build_buy_recovered(report):
+                        out["state"] = "RECOVERY_BUILD_BUY_UNSTUCK"
+                        out["next_gate"] = cfg["host_next_gates"]["BUILD_BUY_CATALOG_RECOVERY"]
+                        break
                     continue
+                # After Buy unstick, skip legacy combined toggle and Live exit unless
+                # the caller raised max-steps past ENTER and still wants Live.
+                if (
+                    step in {"TOGGLE_BUILD_THEN_LIVE_CAMERA_RESET", "EXIT_BUILD_BUY_TO_LIVE"}
+                    and _build_buy_recovered(report)
+                ):
+                    steps_run.append({
+                        "step": step,
+                        "state": "SKIPPED_BUILD_BUY_ALREADY_RECOVERED",
+                        "note": "Black glitch already unstuck into Buy; withhold auto Live",
+                    })
+                    out["state"] = "RECOVERY_BUILD_BUY_UNSTUCK"
+                    out["next_gate"] = cfg["host_next_gates"]["BUILD_BUY_CATALOG_RECOVERY"]
+                    break
                 step_result = run_recovery_step(
                     step,
                     process_id=args.process_id,
@@ -333,15 +396,21 @@ def main(argv: list[str] | None = None) -> int:
                     if report.state == "VIEWPORT_OK":
                         out["state"] = "RECOVERY_VIEWPORT_OK"
                         break
+                    if _build_buy_recovered(report):
+                        out["state"] = "RECOVERY_BUILD_BUY_UNSTUCK"
+                        out["next_gate"] = cfg["host_next_gates"]["BUILD_BUY_CATALOG_RECOVERY"]
+                        # Stop before chaining Live; Buy recovery is the black unstick.
+                        break
             else:
                 if out.get("state") is None:
-                    out["state"] = (
-                        "RECOVERY_ATTEMPTED_STILL_ANOMALY"
-                        if report.state == "VIEWPORT_ANOMALY"
-                        else "RECOVERY_VIEWPORT_OK"
-                    )
-                    if report.state == "VIEWPORT_ANOMALY":
+                    if _build_buy_recovered(report):
+                        out["state"] = "RECOVERY_BUILD_BUY_UNSTUCK"
+                        out["next_gate"] = cfg["host_next_gates"]["BUILD_BUY_CATALOG_RECOVERY"]
+                    elif report.state == "VIEWPORT_ANOMALY":
+                        out["state"] = "RECOVERY_ATTEMPTED_STILL_ANOMALY"
                         out["next_gate"] = cfg["host_next_gates"]["STILL_BLACK_AFTER_LADDER"]
+                    else:
+                        out["state"] = "RECOVERY_VIEWPORT_OK"
             out["steps"] = steps_run
             out["analyze_after"] = report_to_dict(report)
         else:
@@ -349,11 +418,12 @@ def main(argv: list[str] | None = None) -> int:
             if report.state == "VIEWPORT_ANOMALY" and not args.execute:
                 out["dry_run_next"] = (
                     "python -m scripts.viewport_recover --capture --process-id PID "
-                    "--execute --max-steps 4 --out dist/game-host/<run>/viewport-recover.png"
+                    "--execute --max-steps 5 --out dist/game-host/<run>/viewport-recover.png"
                 )
+                out["unstick_step"] = "ENTER_BUILD_BUY_UNSTICK"
                 out["restart_gate"] = (
-                    "If still black after camera ladder: add --authorize-restart --run-id <run> "
-                    "(WM_CLOSE only; relaunch disposable; never Resume)"
+                    "If still black after ENTER_BUILD_BUY_UNSTICK: continue ladder or "
+                    "add --authorize-restart --run-id <run> (WM_CLOSE only; never Resume)"
                 )
 
         if args.receipt is not None:

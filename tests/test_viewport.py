@@ -29,6 +29,13 @@ class ViewportTests(unittest.TestCase):
         self.assertTrue(any(h["id"] == "H5" for h in cfg["root_cause_analysis"]["leading_hypotheses"]))
         self.assertTrue(any(c["id"] == "C9" for c in cfg["root_cause_analysis"]["causal_chain"]))
         self.assertTrue(any(h["id"] == "H1" for h in cfg["root_cause_analysis"]["leading_hypotheses"]))
+        ladder = [row["step"] for row in cfg["recovery_ladder"]]
+        self.assertIn("ENTER_BUILD_BUY_UNSTICK", ladder)
+        self.assertLess(
+            ladder.index("ENTER_BUILD_BUY_UNSTICK"),
+            ladder.index("EXIT_BUILD_BUY_TO_LIVE"),
+        )
+        self.assertTrue(any(f["id"] == "FB_BUILD_BUY_UNSTICK" for f in cfg["fallback_mechanisms"]))
 
     def test_full_black_synthetic(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -58,9 +65,10 @@ class ViewportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "dark_world.png"
             img = Image.new("RGB", (1920, 1080), (2, 2, 2))
-            for y in range(980, 1080):
-                for x in range(0, 1920, 3):
-                    img.putpixel((x, y), (220, 200, 80))
+            # Top Live HUD only — uniform strip, not a Buy catalog tray.
+            for y in range(0, 70):
+                for x in range(1100, 1920, 2):
+                    img.putpixel((x, y), (180, 180, 180))
             img.save(path)
             report = analyze_image(path)
             self.assertEqual(report.classification, "VIEWPORT_BLACK_HUD_ALIVE")
@@ -80,7 +88,30 @@ class ViewportTests(unittest.TestCase):
             img.save(path)
             report = analyze_image(path, step=4)
             self.assertEqual(report.classification, "VOID_LOT_PLATFORM_WIREFRAME")
-            self.assertEqual(report.next_gate, "CAMERA_THEN_BUILD_LIVE_OR_RESTART")
+            self.assertEqual(report.next_gate, "ENTER_BUILD_BUY_UNSTICK")
+
+    def test_build_buy_catalog_recovery_classification(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "buy_catalog.png"
+            img = Image.new("RGB", (1920, 1080), (2, 2, 2))
+            # High-variance Buy tray along the bottom (catalog icons).
+            colors = [(220, 180, 60), (40, 120, 200), (200, 80, 80), (80, 200, 120)]
+            for y in range(960, 1080):
+                for x in range(0, 1920, 2):
+                    img.putpixel((x, y), colors[(x // 40) % len(colors)])
+            img.save(path)
+            report = analyze_image(path, step=4)
+            self.assertEqual(report.classification, "BUILD_BUY_CATALOG_RECOVERY")
+            self.assertEqual(report.state, "VIEWPORT_MODE_BUILD_BUY")
+            self.assertEqual(report.next_gate, "EXIT_BUY_TO_LIVE_OR_OPERATOR_SAVE_EXIT")
+
+    def test_enter_build_buy_unstick_step_is_dispatchable(self):
+        from scripts import viewport_recover as recover
+
+        self.assertTrue(hasattr(recover, "run_recovery_step"))
+        # Dry structural contract: step name + Build coords match LOCAL_OBSERVED unstick.
+        self.assertEqual(recover.HUD_BUILD, (1505, 22))
+        self.assertEqual(recover.HUD_LIVE_FROM_BUILD, (1585, 35))
 
     def test_predict_risk_elevated_after_cas_abort(self):
         risk = predict_risk({
@@ -104,9 +135,24 @@ class ViewportTests(unittest.TestCase):
             viewport=viewport,
             viewport_context={"after_cas_abort": True},
         )
-        self.assertNotEqual(out["next_gate"], "EXECUTE_INSTINCTS_PLAN")
+        self.assertEqual(out["next_gate"], "ENTER_BUILD_BUY_UNSTICK")
         self.assertEqual(out["viewport"]["classification"], "FULL_CLIENT_BLACK")
+        self.assertEqual(out["fallback"]["mechanism"], "ENTER_BUILD_BUY_UNSTICK")
         self.assertIn(out["viewport_risk"]["risk_level"], {"ELEVATED", "HIGH"})
+
+    def test_host_stack_build_buy_blocks_needs(self):
+        out = evaluate_turn(
+            {**SIX, "hunger": 0.05},
+            available_objects=("fridge",),
+            viewport={
+                "state": "VIEWPORT_MODE_BUILD_BUY",
+                "classification": "BUILD_BUY_CATALOG_RECOVERY",
+                "next_gate": "EXIT_BUY_TO_LIVE_OR_OPERATOR_SAVE_EXIT",
+            },
+        )
+        self.assertEqual(out["next_gate"], "EXIT_BUY_TO_LIVE_OR_OPERATOR_SAVE_EXIT")
+        self.assertEqual(out["fallback"]["mechanism"], "BUILD_BUY_CATALOG_RECOVERY")
+        self.assertNotEqual(out["next_gate"], "EXECUTE_INSTINCTS_PLAN")
 
     def test_observed_black_capture_if_present(self):
         if not OBSERVED_BLACK.is_file():
