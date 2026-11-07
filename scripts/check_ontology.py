@@ -74,6 +74,31 @@ def is_behavior_mutation(path: str) -> bool:
     return False
 
 
+def ontology_for_consultation(data: dict, current: dict, root: Path = ROOT) -> dict:
+    """Resolve a receipt's original Git blob, not today's edited ontology.
+
+    A later ontology revision must never retroactively rewrite what an agent
+    consulted. The historical version is used for the recorded concept IDs.
+    """
+    sha = data.get("ontology_blob_sha")
+    if not isinstance(sha, str) or len(sha) != 40 or any(c not in "0123456789abcdef" for c in sha):
+        raise ValueError("CONSULTATION_ONTOLOGY_VERSION_MISMATCH")
+    raw = (root / ONTOLOGY).read_bytes()
+    current_sha = hashlib.sha1(f"blob {len(raw)}\\0".encode() + raw).hexdigest()
+    if sha == current_sha:
+        return current
+    try:
+        prior = git("cat-file", "blob", sha, root=root)
+        payload = json.loads(prior)
+        if hashlib.sha1(f"blob {len(prior.encode('utf-8'))}\\0".encode() + prior.encode("utf-8")).hexdigest() != sha:
+            # git() strips whitespace; validate Git's blob identity directly.
+            git("cat-file", "-e", sha, root=root)
+        validate_ontology(payload, root)
+        return payload
+    except (ValueError, json.JSONDecodeError) as exc:
+        raise ValueError("CONSULTATION_ONTOLOGY_VERSION_MISMATCH") from exc
+
+
 def validate_consultation(data: dict, ontology: dict, changed: list[str], root: Path = ROOT) -> None:
     if data.get("schema") != "betterinstincts.ontology-consultation/v1":
         raise ValueError("CONSULTATION_SCHEMA_INVALID")
@@ -83,22 +108,17 @@ def validate_consultation(data: dict, ontology: dict, changed: list[str], root: 
             raise ValueError(f"CONSULTATION_FIELD_MISSING:{field}")
     if data.get("ontology") != str(ONTOLOGY):
         raise ValueError("CONSULTATION_WRONG_ONTOLOGY")
-    raw = (root / ONTOLOGY).read_bytes()
-    blob = hashlib.sha1(f"blob {len(raw)}\0".encode() + raw).hexdigest()
-    if data.get("ontology_blob_sha") != blob:
-        raise ValueError("CONSULTATION_ONTOLOGY_VERSION_MISMATCH")
+    reference = ontology_for_consultation(data, ontology, root)
     if data.get("game_build_scope") != "REPOSITORY_OFFLINE_ONLY" and not data.get("game_build_scope", "").startswith("EXACT_GAME_BUILD:"):
         raise ValueError("CONSULTATION_GAME_BUILD_AMBIGUOUS")
     if data.get("evidence_ceiling") == "GAME_CERTIFIED" and data.get("game_build_scope") == "REPOSITORY_OFFLINE_ONLY":
         raise ValueError("CONSULTATION_OFFLINE_PROOF_INFLATED")
-    concepts = set(ontology["concepts"])
-    invs = {x["id"] for x in ontology["invariants"]}
+    concepts = set(reference["concepts"])
+    invs = {x["id"] for x in reference["invariants"]}
     if set(data["affected_concepts"]) - concepts:
         raise ValueError("CONSULTATION_UNKNOWN_CONCEPT")
     if set(data["invariants_checked"]) - invs:
         raise ValueError("CONSULTATION_UNKNOWN_INVARIANT")
-    if not set(data["invariants_checked"]):
-        raise ValueError("CONSULTATION_NO_INVARIANTS")
     universal = {"BI-ONT-001", "BI-ONT-002", "BI-ONT-003", "BI-ONT-005", "BI-ONT-006", "BI-ONT-008", "BI-ONT-010", "BI-ONT-012"}
     if not universal.issubset(set(data["invariants_checked"])):
         raise ValueError("CONSULTATION_UNIVERSAL_INVARIANTS_MISSING")
@@ -146,28 +166,41 @@ def manifest_precedes(path: str, first_change: str, root: Path = ROOT) -> bool:
 
 
 def check_branch(base: str, root: Path = ROOT) -> tuple[int, int]:
+    """Check EVERY behavior mutation commit against consultation in its parent.
+
+    A receipt added later cannot legitimize earlier changes. Separate sprints
+    can consult different historical ontology revisions without rewriting them.
+    """
     ontology = read_json(root / ONTOLOGY)
     validate_ontology(ontology, root)
     mutated = changed_in_branch(base, root)
-    if not mutated:
-        return (0, 0)
-    first = first_mutation_commit(base, root)
-    if first is None:
-        raise ValueError("FIRST_MUTATION_COMMIT_NOT_FOUND")
-    candidate_paths = git("diff", "--name-only", f"{base}...HEAD", root=root).splitlines()
-    manifests = [p for p in candidate_paths if p.startswith(str(CONSULTATIONS) + "/") and p.endswith(".json")]
-    good = []
-    for path in manifests:
-        if not manifest_precedes(path, first, root):
+    used: set[str] = set()
+    for commit in git("rev-list", "--reverse", f"{base}..HEAD", root=root).splitlines():
+        paths = [
+            p for p in git("diff-tree", "--no-commit-id", "--name-only", "-r", commit, root=root).splitlines()
+            if is_behavior_mutation(p)
+        ]
+        if not paths:
             continue
-        try:
-            validate_consultation(read_json(root / path), ontology, mutated, root)
-            good.append(path)
-        except ValueError:
-            continue
-    if not good:
-        raise ValueError("ONTOLOGY_CONSULTATION_REQUIRED_BEFORE_PROTOTYPE")
-    return (len(mutated), len(good))
+        parent = commit + "^"
+        manifests = [
+            p for p in git("ls-tree", "-r", "--name-only", parent, "--", str(CONSULTATIONS), root=root).splitlines()
+            if p.endswith(".json")
+        ]
+        for path in paths:
+            matching = None
+            for manifest in manifests:
+                try:
+                    recorded = json.loads(git("show", f"{parent}:{manifest}", root=root))
+                    validate_consultation(recorded, ontology, [path], root)
+                    matching = manifest
+                    break
+                except (ValueError, KeyError, TypeError, json.JSONDecodeError):
+                    continue
+            if matching is None:
+                raise ValueError(f"ONTOLOGY_CONSULTATION_REQUIRED_BEFORE_PROTOTYPE:{commit}:{path}")
+            used.add(matching)
+    return (len(mutated), len(used))
 
 
 def main() -> int:
