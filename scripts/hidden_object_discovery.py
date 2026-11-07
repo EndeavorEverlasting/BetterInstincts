@@ -10,7 +10,8 @@ import sys
 from pathlib import Path
 
 from betterinstincts.hidden_object_discovery import (
-    DiscoveryError, ROOT, load_contract, plan_discovery, review_catalog_entry,
+    DiscoveryError, ROOT, audit_p04_receipt, load_contract, p04_guide,
+    plan_discovery, review_catalog_entry,
 )
 
 
@@ -31,6 +32,9 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("categories", help="Inspect static discovery hints")
+    commands.add_parser("guide", help="P04-required complete ordered operator recipe; no game input")
+    audit = commands.add_parser("audit", help="Fail-closed structural receipt audit, never live certification")
+    audit.add_argument("--observation", required=True, help="Existing local host receipt JSON under dist/")
     plan = commands.add_parser("plan", help="Emit manual-only, evidence-gated instructions")
     plan.add_argument("--observation", required=True, help="Existing JSON under dist/")
     plan.add_argument("--category", default="all")
@@ -42,6 +46,10 @@ def main(argv=None) -> int:
     try:
         if args.command == "categories":
             result = load_contract()["search_contract"]["classes"]
+        elif args.command == "guide":
+            result = p04_guide()
+        elif args.command == "audit":
+            result = audit_p04_receipt(_read_observation(args.observation))
         elif args.command == "plan":
             result = plan_discovery(
                 _read_observation(args.observation),
@@ -52,7 +60,7 @@ def main(argv=None) -> int:
         else:
             result = review_catalog_entry(_read_observation(args.observation))
         print(json.dumps(result, indent=2, sort_keys=True))
-        return 2 if result.get("state") == "ABSTAIN" else 0
+        return 2 if result.get("state") in ("ABSTAIN", "P04_EVIDENCE_INCOMPLETE") else 0
     except (DiscoveryError, ValueError, OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
         print(json.dumps({"state": "DISCOVERY_FAIL_CLOSED", "error": str(exc)}), file=sys.stderr)
         return 2

@@ -8,6 +8,16 @@ Help the operator **find** hidden, environmental and potentially free Build/Buy 
 
 This builds on the existing `curious_catalog` seam rather than replacing its gardening opportunity queue. General discovery is an operator-requested host service: no autorun on boot, no whim-triggered keystrokes, no game-speed changes, no consumption of the player queue. Return to the original Sim needs / income / skill goals when the user finishes.
 
+## P04 compulsory recipe retrieval and local host evidence
+
+A bare text handoff is insufficient. Every BetterInstincts P04 invocation must **discover** this workstream from `AGENTS.md` and fetch the exact active recipe through `python -m scripts.hidden_object_discovery guide` (works without game access). That command exposes all five numbered `operator_playbook.ordered_steps` in the sole typed contract: `OPEN_CHEAT_CONSOLE` → `ENABLE_CHEATS` → `REVEAL_HIDDEN_OBJECTS` → `ENTER_BUILD_BUY` → `SELECT_DEBUG_RESULTS`.
+
+These preserve the operator's precise directions: `Ctrl+Shift+C` on PC/Mac (four triggers on consoles), top-left cheat box, `testingcheats true` + Enter, `bb.showhiddenobjects` + Enter, optionally `bb.showliveeditobjects` + Enter, console close, hammer-and-wrench or patch-verified `F2`, bottom-left search `debug`, click an **observed** `DEBUG` suggestion. Look for toothbrushes, dirty dishes, crystals, ponds, invisible lights and world props. Observe—not assume—confirmation toast, item availability, installed packs, usable state and each price.
+
+After genuine host observations, the P04 lane must use `python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json`. The audit requires exactly five ordered step receipts, a real `observation_ref` and independently gated `control_permit_ref` for each, the named UI gate, local player/save/scene facts and at least one reviewed catalog result. Missing/altered evidence returns `P04_EVIDENCE_INCOMPLETE`; structurally complete receipts return `P04_EVIDENCE_SHAPE_COMPLETE_PENDING_INDEPENDENT_REVIEW`, **never gameplay certification**. This is an evidence-shape audit only: real camera frames and human claims still require independent verification. The local game agent remains responsible for getting and inspecting those observations, not creating placeholder proof.
+
+The repository CI checks `python -m scripts.check_hidden_object_p04` so removing this recipe, the P04 entrypoint or the machine dispatch breaks tests. The local host must not use the recipe to auto-enable cheats, touch speed, purchase, place or mutate protected saves. This lane is relevant when the user's parent objective involves hidden item discovery; otherwise it is inventoried and deferred, **not** an unrelated blocker.
+
 ## Deterministic path
 
 The operator supplied this **requested workflow order** for the manual host:

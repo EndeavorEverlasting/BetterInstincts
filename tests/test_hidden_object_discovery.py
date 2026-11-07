@@ -4,7 +4,8 @@ from __future__ import annotations
 import unittest
 
 from betterinstincts.hidden_object_discovery import (
-    DiscoveryError, load_contract, plan_discovery, review_catalog_entry,
+    DiscoveryError, audit_p04_receipt, load_contract, p04_guide,
+    plan_discovery, review_catalog_entry,
 )
 
 
@@ -105,6 +106,146 @@ class HiddenObjectDiscoveryTests(unittest.TestCase):
         before = dict(observation)
         plan_discovery(observation, category="lighting")
         self.assertEqual(observation, before)
+
+
+
+class P04OperatorGuideTests(unittest.TestCase):
+    def valid_receipt(self):
+        guide = p04_guide()
+        return {
+            "schema": "betterinstincts.hidden-object-discovery-receipt/v1",
+            "exact_game_build": "1.121.361.1020",
+            "platform": "windows",
+            "save_attestation": "OPERATOR_ATTESTED_DISPOSABLE_LAB",
+            "player_explicit_opt_in": True,
+            "player_idle": True,
+            "host_control_lease": "HOST_EXCLUSIVE",
+            "game_paused": True,
+            "capture_quality": "CONTENT_PRESENT",
+            "viewport": "NORMAL",
+            "final_scene_id": "build_buy",
+            "live_edit_requested": False,
+            "game_speed_unchanged": True,
+            "player_queue_unchanged": True,
+            "scene_cues": {"visual_ref": "capture:build-buy", "operator_ref": "operator:confirmed"},
+            "steps": [
+                {
+                    "step_id": item["step_id"],
+                    "observed_gate": item["proof_gate"],
+                    "observation_ref": "capture:step-" + str(i + 1),
+                    "control_permit_ref": "host-permit:" + str(i + 1),
+                    "outcome": "OBSERVED",
+                }
+                for i, item in enumerate(guide["steps"])
+            ],
+            "catalog_entries": [
+                {
+                    "operator_reviewed": True, "result_visible": True,
+                    "capture_ref": "capture:item-001", "item_label": "Some current item",
+                    "price_simoleons": 0,
+                },
+            ],
+        }
+
+    def test_p04_guide_always_exposes_five_user_steps_and_platforms(self):
+        guide = p04_guide()
+        self.assertEqual(guide["state"], "P04_PLAYBOOK_RETRIEVED_NO_GAME_ACTION")
+        self.assertEqual([x["step_id"] for x in guide["steps"]], [
+            "OPEN_CHEAT_CONSOLE", "ENABLE_CHEATS", "REVEAL_HIDDEN_OBJECTS",
+            "ENTER_BUILD_BUY", "SELECT_DEBUG_RESULTS",
+        ])
+        self.assertEqual([x["number"] for x in guide["steps"]], [1, 2, 3, 4, 5])
+        self.assertEqual(guide["console_commands"], ["testingcheats true", "bb.showhiddenobjects"])
+        self.assertEqual(guide["optional_live_edit_command"], "bb.showliveeditobjects")
+        self.assertEqual(guide["platform_console_chords"]["windows"], ["CTRL", "SHIFT", "C"])
+        self.assertEqual(guide["platform_console_chords"]["playstation"], ["L1", "R1", "L2", "R2"])
+        self.assertEqual(guide["platform_console_chords"]["xbox"], ["LB", "RB", "LT", "RT"])
+        self.assertEqual(guide["steps"][3]["keyboard_shortcut_hint"], "F2 (keyboard; verify current patch)")
+        self.assertEqual(guide["steps"][4]["search_term"], "debug")
+        self.assertFalse(guide["host_action_authorized"])
+
+    def test_p04_guide_rejects_removed_or_reordered_step(self):
+        cfg = load_contract()
+        cfg["operator_playbook"]["ordered_steps"][0]["step_id"] = "SKIP_CONSOLE"
+        with self.assertRaisesRegex(DiscoveryError, "P04_PLAYBOOK_SEQUENCE_CHANGED"):
+            p04_guide(cfg=cfg)
+
+    def test_audit_structurally_complete_not_game_cert(self):
+        proof = audit_p04_receipt(self.valid_receipt())
+        self.assertEqual(proof["state"], "P04_EVIDENCE_SHAPE_COMPLETE_PENDING_INDEPENDENT_REVIEW")
+        self.assertEqual(proof["steps_structurally_checked"], 5)
+        self.assertEqual(proof["observed_zero_price_claims_in_receipt"], 1)
+        self.assertFalse(proof["live_certified"])
+        self.assertFalse(proof["host_action_authorized"])
+
+    def test_audit_rejects_skipped_reordered_or_forged_generic_steps(self):
+        edits = [
+            lambda r: r["steps"].pop(2),
+            lambda r: r["steps"].reverse(),
+            lambda r: r["steps"][4].pop("observed_gate"),
+            lambda r: r["steps"][3].update(observation_ref=""),
+            lambda r: r["steps"][0].update(control_permit_ref=""),
+            lambda r: r["steps"][1].update(outcome="ASSUMED"),
+            lambda r: r["steps"][1].update(observation_ref="capture:step-1"),
+        ]
+        for edit in edits:
+            with self.subTest(edit=edits.index(edit)):
+                receipt = self.valid_receipt()
+                edit(receipt)
+                self.assertEqual(audit_p04_receipt(receipt)["state"], "P04_EVIDENCE_INCOMPLETE")
+
+    def test_audit_rejects_unsafe_unproven_game_state(self):
+        for field, bad in [
+            ("exact_game_build", "latest"), ("player_idle", False),
+            ("host_control_lease", "NONE"), ("save_attestation", "BI_TMP_NAME_ONLY"),
+            ("player_explicit_opt_in", False), ("game_paused", False),
+            ("capture_quality", "BLACK"), ("final_scene_id", "live_mode"),
+            ("game_speed_unchanged", False), ("player_queue_unchanged", False),
+            ("live_edit_requested", None),
+        ]:
+            with self.subTest(field=field):
+                receipt = self.valid_receipt()
+                receipt[field] = bad
+                self.assertEqual(audit_p04_receipt(receipt)["state"], "P04_EVIDENCE_INCOMPLETE")
+
+    def test_audit_optional_liveedit_and_no_global_free_claim(self):
+        receipt = self.valid_receipt()
+        receipt["live_edit_requested"] = True
+        self.assertIn("OPTIONAL_LIVE_EDIT_UNVERIFIED", audit_p04_receipt(receipt)["problems"])
+        receipt["live_edit_observation"] = {
+            "observation_ref": "capture:live-edit-step", "outcome": "OBSERVED",
+        }
+        self.assertEqual(
+            audit_p04_receipt(receipt)["state"],
+            "P04_EVIDENCE_SHAPE_COMPLETE_PENDING_INDEPENDENT_REVIEW",
+        )
+        receipt["all_items_free"] = True
+        self.assertIn("UNSUPPORTED_GLOBAL_CATALOG_CLAIM", audit_p04_receipt(receipt)["problems"])
+
+    def test_audit_requires_actual_item_review_not_blank_or_false_free(self):
+        receipt = self.valid_receipt()
+        receipt["catalog_entries"] = []
+        self.assertIn("REVIEWED_CATALOG_ENTRIES_REQUIRED", audit_p04_receipt(receipt)["problems"])
+        receipt = self.valid_receipt()
+        receipt["catalog_entries"][0]["operator_reviewed"] = False
+        self.assertIn("CATALOG_ENTRY_UNVERIFIED:1", audit_p04_receipt(receipt)["problems"])
+        receipt = self.valid_receipt()
+        del receipt["catalog_entries"][0]["price_simoleons"]
+        proof = audit_p04_receipt(receipt)
+        self.assertEqual(proof["observed_zero_price_claims_in_receipt"], 0)
+        self.assertEqual(proof["price_unknown_entries_in_receipt"], 1)
+
+    def test_audit_console_requires_achievement_ack(self):
+        receipt = self.valid_receipt()
+        receipt["platform"] = "xbox"
+        self.assertIn("CONSOLE_ACHIEVEMENT_ACK_MISSING", audit_p04_receipt(receipt)["problems"])
+        receipt["acknowledge_testingcheats_trophy_risk"] = True
+        self.assertEqual(
+            audit_p04_receipt(receipt)["state"],
+            "P04_EVIDENCE_SHAPE_COMPLETE_PENDING_INDEPENDENT_REVIEW",
+        )
+
+
 
 
 if __name__ == "__main__":

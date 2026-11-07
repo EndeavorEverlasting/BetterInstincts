@@ -77,6 +77,8 @@ jobs:
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: python -m scripts.check_ontology --base-ref "$PR_BASE_SHA"
+      - name: P04 hidden-object five-step guide and mandatory handoff routing
+        run: python -m scripts.check_hidden_object_p04
       - name: Scene and save safety contract
         run: python -m scripts.check_scene_contract
       - name: Repo asset leakage prevention
