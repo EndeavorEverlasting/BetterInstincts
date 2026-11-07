@@ -1,0 +1,328 @@
+{
+  "schema": "betterinstincts.game-host-dispatch/v1",
+  "parent": "BI-002",
+  "parent_gate": "HUNGER_LIVE_CERTIFIED",
+  "state": "ACTIVE_GAME_HOST_UNPROVEN",
+  "source_main_sha": "c5fd5f16f78568050b3ba5aced9a525f85185c2c",
+  "source_pr": 11,
+  "ci": {
+    "workflow_run_id": 42335351712,
+    "head_sha": "c196b2682cd9a39618d3d1605977878f954f8cea",
+    "conclusion": "success",
+    "proof_ceiling": "SYNTHETIC_CI_ONLY"
+  },
+  "parallelism": {
+    "ready_graph_width": 2,
+    "actual_parallel_workers_launched": 0,
+    "observed_parallelism": false,
+    "status": "UNPROVEN_LOCAL_ADAPTER_REQUIRED",
+    "autonomy_gap": "Attach an authorized Windows game-capable local agent; probe independent worker availability without manipulating user saves"
+  },
+  "generic_moonwake_dispatch_runner": "NOT_INSTALLED_IN_BETTERINSTINCTS",
+  "forbidden": [
+    "personal_saves",
+    "other_mods",
+    "auto_discovery_user_profile",
+    "EA_asset_redistribution",
+    "unbounded_background_telemetry",
+    "false_game_certification"
+  ],
+  "lanes": [
+    {
+      "lane_id": "REPO-IMPLEMENTATION",
+      "mission": "Implement and merge explicit launch, chosen/new save UI and bounded receipts",
+      "dependencies": [],
+      "execution_environment": "CURRENT_CHAT_RUNTIME",
+      "provider_access": [
+        {
+          "provider_family": "GitHub",
+          "operation": "PR code write and merge",
+          "authority_state": "VERIFIED",
+          "mutation_authority": true
+        }
+      ],
+      "required_capabilities": [
+        "GitHub connector"
+      ],
+      "owned_mutation_surfaces": [
+        "scripts/game_host.py",
+        "tests/test_game_host.py",
+        "docs/GAME_HOST.md"
+      ],
+      "forbidden_surfaces": [
+        "saves",
+        "Mods",
+        "user game installation"
+      ],
+      "execution_adapter": "GitHub provider current chat",
+      "launch_action": "PR #11",
+      "expected_artifact": "main:c5fd5f16f78568050b3ba5aced9a525f85185c2c",
+      "validation": [
+        "GitHub CI run 42335351712"
+      ],
+      "convergence_owner": "BetterInstincts/main",
+      "status": "MERGED",
+      "proof_ceiling": "SOURCE_INTEGRATED_NOT_GAME_RUN",
+      "evidence_inputs": [
+        {
+          "evidence_type": "git_commit",
+          "source_owner": "BetterInstincts",
+          "sanitized_ref": "public:BetterInstincts/main/c5fd5f16",
+          "revision_or_freshness": "c5fd5f16",
+          "visibility": "PUBLIC_TRACKED",
+          "proof_ceiling": "COMMITTED"
+        }
+      ]
+    },
+    {
+      "lane_id": "CI-REGRESSION",
+      "mission": "Run synthetic compatibility, horizon, doctrine, asset, compile and game-host tests",
+      "dependencies": [
+        "REPO-IMPLEMENTATION"
+      ],
+      "execution_environment": "CI_OR_REMOTE_RUNNER",
+      "provider_access": [
+        {
+          "provider_family": "GitHub Actions",
+          "operation": "CI",
+          "authority_state": "VERIFIED",
+          "mutation_authority": false
+        }
+      ],
+      "required_capabilities": [
+        "Python3.11"
+      ],
+      "owned_mutation_surfaces": [],
+      "forbidden_surfaces": [
+        "live game files"
+      ],
+      "execution_adapter": "GitHub Actions",
+      "launch_action": "workflow run 42335351712",
+      "expected_artifact": "run conclusion success",
+      "validation": [
+        "GitHub Actions run 42335351712"
+      ],
+      "convergence_owner": "BetterInstincts/main",
+      "status": "SUCCESS",
+      "proof_ceiling": "OFFLINE_SYNTHETIC_ONLY",
+      "evidence_inputs": [
+        {
+          "evidence_type": "github_workflow",
+          "source_owner": "BetterInstincts",
+          "sanitized_ref": "public:BetterInstincts/actions/42335351712",
+          "revision_or_freshness": "2026-11-07",
+          "visibility": "PUBLIC_TRACKED",
+          "proof_ceiling": "OFFLINE_CI"
+        }
+      ]
+    },
+    {
+      "lane_id": "GAME-BOOT",
+      "mission": "Launch installed Sims and select new or verified disposable save; attest Live Mode",
+      "dependencies": [
+        "REPO-IMPLEMENTATION"
+      ],
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [
+        {
+          "provider_family": "LOCAL_WINDOWS_GAME",
+          "operation": "process GUI launch",
+          "authority_state": "UNKNOWN",
+          "mutation_authority": false
+        }
+      ],
+      "required_capabilities": [
+        "Windows game desktop",
+        "game installation",
+        "GUI screenshot templates",
+        "Python local"
+      ],
+      "owned_mutation_surfaces": [
+        "dist/game-host/<run-id> local ignored receipts",
+        "explicit disposable game session"
+      ],
+      "forbidden_surfaces": [
+        "personal saves",
+        "other mods",
+        "guessed save selection",
+        "host arbitrary home folders"
+      ],
+      "execution_adapter": "UNCONNECTED_LOCAL_GAME_AGENT",
+      "launch_action": "python -m scripts.game_host plan --profile dist/game-host/local-profile.json && python -m scripts.game_host launch --profile dist/game-host/local-profile.json --run-id bi002-first-boot --execute",
+      "expected_artifact": "actual Live Mode capture ref and exact full patch",
+      "validation": [
+        "python -m scripts.game_host status --run-id bi002-first-boot",
+        "actual game screenshot and patch evidence"
+      ],
+      "convergence_owner": "game-capable local agent",
+      "status": "WAITING_FOR_LOCAL_GAME",
+      "proof_ceiling": "NO_LOCAL_GAME_PROOF",
+      "evidence_inputs": [
+        {
+          "evidence_type": "source_commit",
+          "source_owner": "BetterInstincts",
+          "sanitized_ref": "public:BetterInstincts/main/c5fd5f16",
+          "revision_or_freshness": "c5fd5f16",
+          "visibility": "PUBLIC_TRACKED",
+          "proof_ceiling": "CODE_READY_ONLY"
+        }
+      ]
+    },
+    {
+      "lane_id": "TUNING-READONLY",
+      "mission": "Inspect installed patch hunger tuning with Sims 4 Studio and scripts.tuning_audit",
+      "dependencies": [
+        "REPO-IMPLEMENTATION"
+      ],
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [
+        {
+          "provider_family": "LOCAL_WINDOWS_GAME",
+          "operation": "read-only installed tuning",
+          "authority_state": "UNKNOWN",
+          "mutation_authority": false
+        }
+      ],
+      "required_capabilities": [
+        "Sims 4 Studio",
+        "exact game version",
+        "read-only XML export"
+      ],
+      "owned_mutation_surfaces": [
+        "local untracked tuning-audit receipt"
+      ],
+      "forbidden_surfaces": [
+        "EA XML tracked Git",
+        "game patch edits",
+        "other mods",
+        "personal saves"
+      ],
+      "execution_adapter": "UNCONNECTED_LOCAL_GAME_AGENT",
+      "launch_action": "python -m scripts.tuning_audit --xml EXPLICIT_EXPORTED_XML_FILE",
+      "expected_artifact": "actual tuning fingerprint and approved narrow candidate",
+      "validation": [
+        "tuning resource IDs and SHA256 verified against local game"
+      ],
+      "convergence_owner": "game-capable local agent",
+      "status": "WAITING_FOR_LOCAL_GAME",
+      "proof_ceiling": "TUNING_NOT_INSPECTED",
+      "evidence_inputs": []
+    },
+    {
+      "lane_id": "HUNGER-LIVE",
+      "mission": "Build reversible hunger package; >=5 vanilla >=5 modified rollback trials and player queue checks",
+      "dependencies": [
+        "GAME-BOOT",
+        "TUNING-READONLY"
+      ],
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [
+        {
+          "provider_family": "LOCAL_WINDOWS_GAME",
+          "operation": "disposable game test",
+          "authority_state": "UNKNOWN",
+          "mutation_authority": false
+        }
+      ],
+      "required_capabilities": [
+        "disposable save",
+        "explicit Mods subfolder",
+        "Sims4Studio",
+        "game capture"
+      ],
+      "owned_mutation_surfaces": [
+        "BetterInstincts-only chosen Mods subfolder after consent",
+        "dist/live-cert/<run-id>"
+      ],
+      "forbidden_surfaces": [
+        "personal saves",
+        "other mods",
+        "older certified profiles"
+      ],
+      "execution_adapter": "UNCONNECTED_LOCAL_GAME_AGENT",
+      "launch_action": "python -m scripts.live_cert init --run-id BI002_ACTUAL_RUN --game-version ACTUAL_FULL_VERSION --platform windows --sims4studio-build VERIFIED_BUILD",
+      "expected_artifact": "five baseline/five modified/rollback evidence, hashes and numerical reviewer gate",
+      "validation": [
+        "python -m scripts.live_cert status --run-id BI002_ACTUAL_RUN",
+        "python -m scripts.live_cert evaluate --run-id BI002_ACTUAL_RUN"
+      ],
+      "convergence_owner": "BI-002 game-capable agent",
+      "status": "WAITING",
+      "proof_ceiling": "NO_HUNGER_GAMEPLAY_OBSERVED",
+      "evidence_inputs": []
+    },
+    {
+      "lane_id": "SENSOR-BRIDGE",
+      "mission": "Implement patch-specific opt-in real in-game object sample source for allowlisted snapshots",
+      "dependencies": [
+        "GAME-BOOT",
+        "TUNING-READONLY"
+      ],
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [
+        {
+          "provider_family": "LOCAL_WINDOWS_GAME",
+          "operation": "versioned game hook inspection",
+          "authority_state": "UNKNOWN",
+          "mutation_authority": false
+        }
+      ],
+      "required_capabilities": [
+        "verified Sims hook API",
+        "bounded object metrics",
+        "privacy safe snapshots"
+      ],
+      "owned_mutation_surfaces": [
+        "new version-specific sensor source and isolated tests"
+      ],
+      "forbidden_surfaces": [
+        "per-frame scans",
+        "unbounded log",
+        "personal identifiers",
+        "unsupported Sims APIs"
+      ],
+      "execution_adapter": "UNCONNECTED_LOCAL_GAME_AGENT",
+      "launch_action": "Verify actual game API, then produce bounded JSONL and run python -m scripts.game_host poll --run-id RUN_ID --sample-file EXPLICIT_JSONL",
+      "expected_artifact": "verified capture-to-snapshot provenance",
+      "validation": [
+        "synthetic regression",
+        "local real capture review"
+      ],
+      "convergence_owner": "game-capable local agent",
+      "status": "WAITING",
+      "proof_ceiling": "INGESTER_ONLY_NO_SENSOR",
+      "evidence_inputs": []
+    },
+    {
+      "lane_id": "MAINTAINER-REVIEW",
+      "mission": "Review observed hunger mod, rollback, exact version and author certification",
+      "dependencies": [
+        "HUNGER-LIVE"
+      ],
+      "execution_environment": "OPERATOR_OR_PHYSICAL_RUNTIME",
+      "provider_access": [],
+      "required_capabilities": [
+        "real game evidence",
+        "review authority"
+      ],
+      "owned_mutation_surfaces": [
+        "new exact patch compatibility profile after proof"
+      ],
+      "forbidden_surfaces": [
+        "old certified profile bytes",
+        "unsupported release"
+      ],
+      "execution_adapter": "LOCAL_MAINTAINER",
+      "launch_action": "Independent review per docs/LIVE_CERT.md",
+      "expected_artifact": "separate signed patch verdict",
+      "validation": [
+        "actual package SHA and trial captures",
+        "player agency and rollback"
+      ],
+      "convergence_owner": "BetterInstincts maintainer",
+      "status": "WAITING",
+      "proof_ceiling": "NOT_CERTIFIED",
+      "evidence_inputs": []
+    }
+  ]
+}
