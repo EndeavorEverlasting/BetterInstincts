@@ -10,7 +10,7 @@ import argparse
 import json
 import sys
 
-from betterinstincts.control_handoff import HandoffError, confirm, decide
+from betterinstincts.control_handoff import HandoffError, confirm, decide, screen_owner_busy
 from betterinstincts.host_listener import HostListenerError, status
 from betterinstincts.player_presence import probe_windows
 
@@ -38,6 +38,14 @@ def main(argv: list[str] | None = None) -> int:
                 session_active=active,
                 idle_ms=args.idle_ms,
             )
+        if result["screen_control_allowed"] and screen_owner_busy(args.process_id):
+            result = {
+                **result,
+                "state": "PAUSED_FOR_AGENT",
+                "owner": "ANOTHER_EXECUTOR",
+                "reason": "SCREEN_OWNER_BUSY",
+                "screen_control_allowed": False,
+            }
         print(json.dumps(result, sort_keys=True))
         return 0 if result["screen_control_allowed"] else 3
     except (HandoffError, HostListenerError, OSError, TypeError, ValueError) as exc:
