@@ -1,0 +1,48 @@
+{
+  "schema": "betterinstincts.player-presence/v1",
+  "version": 1,
+  "glossary": "contracts/glossary.v1.json",
+  "proof_ceiling": "PRESENCE_PROBE_NOT_INPUT_HOOK_OR_LIVE_CERT",
+  "states": [
+    "PLAYER_PLAYING",
+    "HOST_MAY_AUTOMATE",
+    "UNKNOWN_PRESENCE"
+  ],
+  "rules": {
+    "PLAYER_PLAYING": {
+      "any_of": [
+        "foreground_is_sims_and_cursor_in_client",
+        "foreground_is_sims_and_input_within_grace",
+        "operator_declared_playing",
+        "player_directed_queue"
+      ],
+      "host": "YIELD_TO_PLAYER"
+    },
+    "HOST_MAY_AUTOMATE": {
+      "all_of": [
+        "listener_or_automate_session_active",
+        "not_PLAYER_PLAYING",
+        "presence_probe_succeeded"
+      ],
+      "host": "EVALUATE_AND_OPTIONAL_EXECUTE"
+    },
+    "UNKNOWN_PRESENCE": {
+      "when": "probe_failed_or_ambiguous",
+      "host": "YIELD_TO_PLAYER"
+    }
+  },
+  "grace_ms_default": 2500,
+  "forbidden": [
+    "GLOBAL_MOUSE_HOOK_WITHOUT_OPT_IN",
+    "BACKGROUND_DAEMON_DEFAULT",
+    "SENDINPUT_WHILE_PLAYER_PLAYING",
+    "ASSUME_IDLE_FROM_CLOCK_ALONE"
+  ],
+  "probe_fields": [
+    "foreground_is_sims",
+    "cursor_in_client",
+    "client_rect",
+    "last_input_age_ms",
+    "operator_declared_playing"
+  ]
+}

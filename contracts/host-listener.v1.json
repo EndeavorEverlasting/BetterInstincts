@@ -1,0 +1,57 @@
+{
+  "schema": "betterinstincts.host-listener/v1",
+  "version": 1,
+  "glossary": "contracts/glossary.v1.json",
+  "behavior_matrix": "contracts/behavior-matrix.v1.json",
+  "proof_ceiling": "OPT_IN_BOUNDED_LISTENER_NOT_DAEMON_OR_LIVE_CERT",
+  "activation": {
+    "default": "INACTIVE",
+    "require_explicit_activate": true,
+    "forbid_autorun": true,
+    "forbid_github_actions_as_listener": true,
+    "forbid_background_thread_in_library": true
+  },
+  "bounds": {
+    "max_session_bytes": 64000,
+    "max_observation_bytes": 32000,
+    "max_ticks_per_session": 64,
+    "max_queue_items": 16,
+    "min_tick_interval_sec": 1.0,
+    "max_tick_interval_sec": 120.0,
+    "receipt_root": "dist/host-listener"
+  },
+  "inputs": {
+    "observation_schema": "betterinstincts.host-listener.observation/v1",
+    "required_fields": ["needs", "queue", "location_kind", "capture_ref"],
+    "location_kinds": ["home", "school", "community", "work", "unknown"],
+    "note": "Observations are operator/sensor JSON. Listener does not invent queue contents from screenshots unless a future calibrated sensor is separately certified."
+  },
+  "pipeline": [
+    "load_session",
+    "validate_observation",
+    "player_presence_classify",
+    "yield_if_player_playing",
+    "behavior_eval",
+    "instincts_plan",
+    "host_stack_evaluate_turn",
+    "needs_force_route_if_optimize",
+    "emit_receipt"
+  ],
+  "player_presence": "contracts/player-presence.v1.json",
+  "on_emulate": {
+    "action": "RECORD_EMULATION_PLAN",
+    "execute_clicks": false,
+    "note": "Default listener is evaluate-only. Live SendInput requires separate --execute on needs_force/host_menu with disposable confirmation."
+  },
+  "on_optimize": {
+    "action": "RECORD_OPTIMIZATION_PLAN",
+    "prefer": "MAP_TRAVEL",
+    "forbid": ["IN_FRAME_WALK_THRASH", "RESUME", "DELETE_SAVE"]
+  },
+  "host_commands": {
+    "activate": "python -m scripts.host_listener activate --session-id ID",
+    "status": "python -m scripts.host_listener status --session-id ID",
+    "tick": "python -m scripts.host_listener tick --session-id ID --observation PATH",
+    "deactivate": "python -m scripts.host_listener deactivate --session-id ID"
+  }
+}

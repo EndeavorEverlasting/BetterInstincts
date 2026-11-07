@@ -1,0 +1,117 @@
+{
+  "schema": "betterinstincts.behavior-matrix/v1",
+  "version": 1,
+  "glossary": "contracts/glossary.v1.json",
+  "proof_ceiling": "OFFLINE_MATRIX_NOT_LIVE_QUEUE_PROOF",
+  "urgency_threshold_ref": "contracts/needs.v1.json#urgency_threshold",
+  "fluff_actions": ["read", "browse", "practice_skill", "whim", "computer_ casually", "watch_tv_optional"],
+  "critical_actions": ["eat", "use_toilet", "sleep", "wash", "grab_quick_meal", "have_meal", "nap"],
+  "travel_actions": ["travel_home", "manage_worlds_travel", "phone_travel", "map_play_home"],
+  "walk_thrash_signals": ["walk", "go_here", "route_fail_loop", "in_frame_pathfind"],
+  "rows": [
+    {
+      "id": "PLAYER_DIRECTED",
+      "when": {"player_directed": true},
+      "verdict": "GOOD_BEHAVIOR",
+      "disposition": "EMULATE",
+      "optimize_allowed": false,
+      "reason": "Player first — never cancel or rewrite explicit player queue."
+    },
+    {
+      "id": "CRITICAL_NEGLECT_FLUFF",
+      "when": {
+        "any_critical_need": true,
+        "queue_intersects_fluff": true,
+        "queue_misses_critical_actions": true
+      },
+      "verdict": "BAD_BEHAVIOR",
+      "disposition": "OPTIMIZE",
+      "optimize_allowed": true,
+      "preferred_route": "MAP_TRAVEL_IF_OBJECTS_OFF_LOT_ELSE_LOCAL_OBJECT",
+      "forbidden_routes": ["IN_FRAME_WALK_THRASH"],
+      "reason": "Fluff queued while bladder/hunger/energy critical — replace with critical recovery."
+    },
+    {
+      "id": "WALK_THRASH_UNDER_CRITICAL",
+      "when": {
+        "any_critical_need": true,
+        "queue_intersects_walk_thrash": true
+      },
+      "verdict": "BAD_BEHAVIOR",
+      "disposition": "OPTIMIZE",
+      "optimize_allowed": true,
+      "preferred_route": "MAP_TRAVEL",
+      "forbidden_routes": ["IN_FRAME_WALK_THRASH"],
+      "reason": "Walk/pathfind thrash does not satisfy critical needs; travel to the lot that has the object."
+    },
+    {
+      "id": "CRITICAL_ALIGNED_LOCAL",
+      "when": {
+        "any_critical_need": true,
+        "queue_intersects_critical_actions": true,
+        "objects_on_current_lot": true
+      },
+      "verdict": "GOOD_BEHAVIOR",
+      "disposition": "EMULATE_THEN_OPTIMIZE",
+      "optimize_allowed": true,
+      "optimize_scope": "ROUTING_AND_ORDER_ONLY",
+      "reason": "Good intent (eat/sleep/etc.) — emulate; optimize only cancel-prefix fluff and object order."
+    },
+    {
+      "id": "CRITICAL_ALIGNED_OFF_LOT",
+      "when": {
+        "any_critical_need": true,
+        "queue_intersects_critical_actions": true,
+        "objects_on_current_lot": false
+      },
+      "verdict": "GOOD_BEHAVIOR",
+      "disposition": "EMULATE_THEN_OPTIMIZE",
+      "optimize_allowed": true,
+      "preferred_route": "MAP_TRAVEL",
+      "forbidden_routes": ["IN_FRAME_WALK_THRASH"],
+      "reason": "Good intent but wrong lot — keep eat/sleep goal; travel via map/phone, do not walk in-frame."
+    },
+    {
+      "id": "NONCRITICAL_LEISURE",
+      "when": {
+        "any_critical_need": false,
+        "queue_intersects_fluff": true
+      },
+      "verdict": "GOOD_BEHAVIOR",
+      "disposition": "EMULATE_THEN_OPTIMIZE",
+      "optimize_allowed": true,
+      "optimize_scope": "OPTIONAL_FUN_SOCIAL_BALANCE",
+      "reason": "Leisure OK when needs not critical; optional optimize toward weaker motives without thrash."
+    },
+    {
+      "id": "EMPTY_QUEUE_CRITICAL",
+      "when": {
+        "any_critical_need": true,
+        "queue_empty": true
+      },
+      "verdict": "BAD_BEHAVIOR",
+      "disposition": "OPTIMIZE",
+      "optimize_allowed": true,
+      "preferred_route": "MAP_TRAVEL_IF_OBJECTS_OFF_LOT_ELSE_LOCAL_OBJECT",
+      "reason": "Passed out / empty queue under critical needs — host must inject recovery plan."
+    }
+  ],
+  "disposition_matrix": {
+    "GOOD_BEHAVIOR": {
+      "default": "EMULATE_THEN_OPTIMIZE",
+      "player_directed": "EMULATE"
+    },
+    "BAD_BEHAVIOR": {
+      "default": "OPTIMIZE"
+    }
+  },
+  "evaluator_clarity_required": [
+    "verdict",
+    "disposition",
+    "matched_row_id",
+    "optimize_allowed",
+    "preferred_route",
+    "forbidden_routes",
+    "reason"
+  ]
+}

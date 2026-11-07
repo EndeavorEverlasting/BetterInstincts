@@ -8,6 +8,8 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 ## Start here
 - [Agent instructions](AGENTS.md) — short, mandatory operating entrypoint.
 - [Doctrine](docs/DOCTRINE.md) — product and safety boundaries.
+- [Glossary](docs/GLOSSARY.md) — host/evaluator vocabulary (emulate, optimize, presence).
+- [Host autonomy (P95)](docs/HOST_AUTONOMY.md) — opt-in listener, player-presence, map-travel force.
 - [Project ledger](docs/LEDGER.md) — canonical vision, current evidence, decisions, and gates.
 - [External prior art](docs/PRIOR_ART.md) — P97 evidence and adoption choices.
 - [Prompt provenance](docs/PROMPT_INVOCATIONS.md) — exact TokenCorridor owners/definitions.
