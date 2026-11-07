@@ -1,0 +1,102 @@
+{
+  "schema": "betterinstincts.needs-force/v1",
+  "version": 2,
+  "game_version": "1.121.361.1020",
+  "client": "borderless_1920x1080",
+  "glossary": "contracts/glossary.v1.json",
+  "proof_ceiling": "LOCAL_OBSERVED_COORDINATE_FORCE_NOT_LIVE_CERT",
+  "rca": {
+    "date": "2026-11-07",
+    "run_id": "bi002-lablab-reboot",
+    "summary": "Critical Hunger/Energy at Copperdale High School. Autonomy queued Read / walk thrash. Operator correction: do NOT click distant in-frame objects to make the Sim walk; traverse MAP (Manage Worlds / phone travel) to the lot that has fridge/bed, then interact.",
+    "failure_modes": [
+      "IN_FRAME_WALK_THRASH",
+      "READ_OVER_CRITICAL_HUNGER",
+      "AUTONOMY_IGNORES_DIRE_MOTIVES",
+      "NAUSEA_THROW_UP_IF_HUNGER_FAILS",
+      "PASSED_OUT_EMPTY_QUEUE"
+    ],
+    "captures": [
+      "dist/game-host/bi002-lablab-reboot/steer-needs-now.png",
+      "dist/game-host/bi002-lablab-reboot/needs-force-now.png",
+      "dist/game-host/bi002-lablab-reboot/needs-force-after-cancel.png"
+    ]
+  },
+  "forbidden_always": [
+    "RESUME",
+    "DELETE_SAVE",
+    "TOUCH_RICHARDSON",
+    "LEAVE_CRITICAL_NEEDS_TO_AUTONOMY",
+    "IN_FRAME_WALK_THRASH",
+    "QUEUE_FUN_OR_SKILL_OVER_CRITICAL_HUNGER_ENERGY"
+  ],
+  "decision_rule": {
+    "if_critical_and_required_objects_off_lot": "MAP_TRAVEL_FIRST",
+    "if_critical_and_objects_on_lot": "LOCAL_OBJECT_AFTER_CANCEL_FLUFF",
+    "never": "IN_FRAME_WALK_THRASH"
+  },
+  "priority_order": ["bladder", "hunger", "energy", "hygiene", "fun", "social"],
+  "steps": [
+    {
+      "id": "pause_live",
+      "gate": "PAUSE_BEFORE_QUEUE_MUTATION",
+      "execution": "HOST_SENDINPUT",
+      "click": [920, 1035]
+    },
+    {
+      "id": "cancel_fluff_queue",
+      "gate": "CANCEL_FLUFF_QUEUE",
+      "execution": "HOST_SENDINPUT",
+      "click": [70, 1015],
+      "alt_clicks": [[98, 987], [55, 1005]],
+      "note": "Cancel read/walk disc only — do not issue Go Here."
+    },
+    {
+      "id": "open_manage_worlds",
+      "gate": "MAP_TRAVEL_HOME",
+      "execution": "HOST_SENDINPUT",
+      "click": [1558, 22],
+      "note": "Live HUD Manage Worlds pin — preferred travel surface."
+    },
+    {
+      "id": "save_and_go_manage_worlds_if_prompted",
+      "gate": "MAP_TRAVEL_HOME",
+      "execution": "HOST_SENDINPUT",
+      "click": [960, 556],
+      "note": "Save and Go to Manage Worlds blue text if modal appears."
+    },
+    {
+      "id": "select_home_lot_bargain_bend",
+      "gate": "MAP_TRAVEL_HOME",
+      "execution": "HOST_SENDINPUT",
+      "click": [1400, 840],
+      "note": "Bargain Bend home (fridge LOCAL_OBSERVED). Map pick — not in-frame walk."
+    },
+    {
+      "id": "confirm_play_home_lot",
+      "gate": "MAP_TRAVEL_HOME",
+      "execution": "HOST_SENDINPUT",
+      "click": [1840, 1005],
+      "note": "Bottom-right Play into home Live."
+    },
+    {
+      "id": "force_eat_home_fridge",
+      "gate": "FORCE_CRITICAL_HUNGER_HOME",
+      "need": "hunger",
+      "execution": "HOST_SENDINPUT",
+      "click": [1100, 250],
+      "requires": "on_home_lot_with_fridge",
+      "note": "Only after MAP_TRAVEL lands on Bargain Bend."
+    },
+    {
+      "id": "unpause_speed2",
+      "gate": "RESUME_AFTER_FORCE_QUEUE",
+      "execution": "HOST_SENDINPUT",
+      "click": [955, 1035]
+    }
+  ],
+  "host_commands": {
+    "plan": "python -m scripts.needs_force plan --location-kind school",
+    "execute": "python -m scripts.needs_force run --location-kind school --process-id PID --execute --run-id RUN"
+  }
+}

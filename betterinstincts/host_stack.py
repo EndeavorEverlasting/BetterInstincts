@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Mapping, Optional, Sequence
 
+from betterinstincts.behavior_eval import BehaviorEvalError, evaluate_queue
 from betterinstincts.decision_eval import (
     DecisionEvalError,
     measure_need_deltas,
@@ -40,11 +41,17 @@ def evaluate_turn(
     host_action: Optional[str] = None,
     viewport: Optional[Mapping[str, object]] = None,
     viewport_context: Optional[Mapping[str, object]] = None,
+    location_kind: str = "unknown",
+    objects_on_current_lot: Optional[bool] = None,
+    queue: Optional[Sequence[str]] = None,
 ) -> dict:
     """Compose viewport safety + instincts + optional dialog for one host turn.
 
     Viewport anomalies outrank needs actions: do not click world objects while
     PrintWindow is black. See contracts/viewport-black.v1.json.
+
+    When critical needs are off-lot, next_gate becomes MAP_TRAVEL_HOME_FIRST —
+    never IN_FRAME_WALK_THRASH (glossary).
     """
     try:
         snap = NeedSnapshot(
@@ -65,11 +72,25 @@ def evaluate_turn(
         if prior_needs is not None:
             influence = measure_need_deltas(prior_needs, needs, host_action=host_action)
         risk = predict_risk(viewport_context or {})
-    except (InstinctsHostError, DecisionEvalError, ViewportError) as exc:
+        behavior = None
+        if queue is not None:
+            on_lot = (
+                bool(objects_on_current_lot)
+                if objects_on_current_lot is not None
+                else (location_kind == "home")
+            )
+            behavior = evaluate_queue(
+                needs,
+                queue,
+                player_directed=player_directed,
+                objects_on_current_lot=on_lot,
+                location_kind=location_kind,
+                capture_ref=capture_ref,
+            )
+    except (InstinctsHostError, DecisionEvalError, ViewportError, BehaviorEvalError) as exc:
         raise HostStackError(str(exc)) from exc
 
-    # Priority: viewport/fallback glitches > decision modal > needs plan > save.
-    # Black→Buy unstick is host fallback (ENTER_BUILD_BUY_UNSTICK), not a rediscovery.
+    # Priority: viewport/fallback > player > behavior optimize (map travel) > decision > needs.
     next_gate = "EXECUTE_INSTINCTS_PLAN"
     fallback = None
     if viewport is not None and viewport.get("state") != "VIEWPORT_OK":
@@ -105,6 +126,25 @@ def evaluate_turn(
         next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
     elif sim_absent:
         next_gate = "SIM_ABSENT_HOST_PREP_ONLY"
+    elif behavior is not None and behavior["clarity"]["disposition"] in {
+        "OPTIMIZE", "EMULATE_THEN_OPTIMIZE"
+    } and behavior["clarity"].get("preferred_route") in {
+        "MAP_TRAVEL", "MAP_TRAVEL_IF_OBJECTS_OFF_LOT_ELSE_LOCAL_OBJECT"
+    } and not (
+        objects_on_current_lot if objects_on_current_lot is not None else location_kind == "home"
+    ):
+        fallback = {
+            "mechanism": "MAP_TRAVEL_HOME_FIRST",
+            "owner": "scripts/needs_force.py",
+            "contract": "contracts/needs-force.v1.json",
+            "command": (
+                "python -m scripts.needs_force run --location-kind "
+                f"{location_kind} --process-id PID --execute"
+            ),
+            "forbidden": ["IN_FRAME_WALK_THRASH", "RESUME", "DELETE_SAVE"],
+            "behavior_row": behavior["clarity"]["matched_row_id"],
+        }
+        next_gate = "MAP_TRAVEL_HOME_FIRST"
     elif decision is not None:
         next_gate = "RESOLVE_DECISION_PROMPT"
     elif risk.get("risk_level") in {"ELEVATED", "HIGH"} and risk.get("required_before_clicks"):
@@ -119,6 +159,7 @@ def evaluate_turn(
         "capture_ref": capture_ref,
         "next_gate": next_gate,
         "fallback": fallback,
+        "behavior": behavior,
         "instincts": instincts,
         "decision": decision,
         "influence": influence,

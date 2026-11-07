@@ -38,6 +38,15 @@ REQUIRED = (
     "contracts/host-menu.v1.json", "betterinstincts/host_menu.py",
     "betterinstincts/menu_blockers.py", "scripts/host_menu.py",
     "scripts/menu_blockers.py", "tests/test_host_menu.py",
+    "contracts/glossary.v1.json", "docs/GLOSSARY.md",
+    "contracts/behavior-matrix.v1.json", "contracts/host-listener.v1.json",
+    "contracts/player-presence.v1.json", "contracts/needs-force.v1.json",
+    "docs/HOST_AUTONOMY.md",
+    "betterinstincts/glossary.py", "betterinstincts/behavior_eval.py",
+    "betterinstincts/player_presence.py", "betterinstincts/needs_force.py",
+    "betterinstincts/host_listener.py", "betterinstincts/host_automate.py",
+    "scripts/host_listener.py", "scripts/needs_force.py", "scripts/host_automate.py",
+    "tests/test_host_autonomy.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

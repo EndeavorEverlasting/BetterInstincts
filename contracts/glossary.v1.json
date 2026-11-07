@@ -1,0 +1,88 @@
+{
+  "schema": "betterinstincts.glossary/v1",
+  "version": 1,
+  "authority": "docs/GLOSSARY.md",
+  "note": "Canonical host/evaluator vocabulary. Prefer these IDs over inventing synonyms. Cross-link DOCTRINE, HOST_EVAL, VALIDATION, SCENE_INTELLIGENCE.",
+  "terms": {
+    "PLAYER_FIRST": {
+      "definition": "Explicit player-directed queue or command outranks autonomy, host suggestions, and optimization.",
+      "owners": ["docs/DOCTRINE.md", "AGENTS.md"]
+    },
+    "QUEUE_OBSERVATION": {
+      "definition": "Operator- or sensor-attested list of current/pending Sim interactions (ids/labels only). Not a Sims API hook.",
+      "owners": ["contracts/host-listener.v1.json"]
+    },
+    "GOOD_BEHAVIOR": {
+      "definition": "Queued action class that advances the highest-urgency unmet need (or preserves player direction) without forbidden save/resume actions.",
+      "owners": ["contracts/behavior-matrix.v1.json"]
+    },
+    "BAD_BEHAVIOR": {
+      "definition": "Queued action that neglects critical motives, thrash-walks in-frame, or prefers fluff (read/skill/whim) over bladder/hunger/energy when those are critical.",
+      "owners": ["contracts/behavior-matrix.v1.json"]
+    },
+    "EMULATE": {
+      "definition": "Reproduce the same intent class as the observed good queue (e.g. eat→eat). Does not invent new goals. May still route better under OPTIMIZE_ROUTING.",
+      "owners": ["contracts/behavior-matrix.v1.json"]
+    },
+    "OPTIMIZE": {
+      "definition": "Replace or reorder a bad or suboptimal queue toward critical-need recovery using durable host transitions (map travel, cancel fluff). Never optimizes away player direction.",
+      "owners": ["contracts/behavior-matrix.v1.json", "docs/DOCTRINE.md"]
+    },
+    "EMULATE_THEN_OPTIMIZE": {
+      "definition": "Keep the good intent, but change routing/latency (e.g. Manage Worlds / phone travel home instead of in-frame walk thrash).",
+      "owners": ["contracts/behavior-matrix.v1.json"]
+    },
+    "IN_FRAME_WALK_THRASH": {
+      "definition": "Host failure mode: clicking distant same-lot objects so the Sim pathfinds endlessly within the PrintWindow frame. Forbidden when a map/travel transition reaches the lot that has the required object.",
+      "owners": ["contracts/needs-force.v1.json"]
+    },
+    "MAP_TRAVEL": {
+      "definition": "Host transition via Manage Worlds pin or phone travel to the destination lot, then Live object interaction. Preferred over IN_FRAME_WALK_THRASH for off-lot or missing-object critical recovery.",
+      "owners": ["contracts/needs-force.v1.json", "docs/GAME_HOST.md"]
+    },
+    "CRITICAL_NEED": {
+      "definition": "Motive level below contracts/needs.v1.json urgency_threshold (default 0.35).",
+      "owners": ["contracts/needs.v1.json", "betterinstincts/instincts_host.py"]
+    },
+    "HOST_LISTENER": {
+      "definition": "Opt-in, bounded session that accepts queue/needs observations and runs host evaluators. Inactive until the operator activates it. Not a background daemon or GHA job.",
+      "owners": ["contracts/host-listener.v1.json"]
+    },
+    "HOST_EVALUATOR": {
+      "definition": "Read-only deterministic scorer over supplied observations (host_eval, instincts_host, behavior_eval, decision_eval). Does not click the game.",
+      "owners": ["docs/HOST_EVAL.md", "betterinstincts/host_eval.py"]
+    },
+    "PROOF_CEILING": {
+      "definition": "Explicit maximum claim allowed for an artifact (e.g. OFFLINE, LOCAL_OBSERVED, NOT_LIVE_CERT).",
+      "owners": ["docs/VALIDATION.md", "docs/LIVE_CERT.md"]
+    },
+    "LOCAL_OBSERVED": {
+      "definition": "Observed on a real local game session with capture/receipt; not GAME_CERTIFIED and not CI-substitutable.",
+      "owners": ["docs/VALIDATION.md", "docs/LIVE_CERT.md"]
+    },
+    "GAME_CERTIFIED": {
+      "definition": "Maintainer-accepted live certification for an exact patch/module after BI-002 gates. Offline green never grants this.",
+      "owners": ["docs/LIVE_CERT.md", "docs/COMPATIBILITY.md"]
+    },
+    "PLAYER_PRESENT_ON_CANVAS": {
+      "definition": "Foreground window is the Sims client AND cursor lies inside the game client rectangle.",
+      "owners": ["contracts/player-presence.v1.json", "docs/HOST_AUTONOMY.md"]
+    },
+    "PLAYER_PLAYING": {
+      "definition": "Operator is actively playing: on-canvas presence, recent input within grace, operator-declared playing, or player-directed queue. Host must YIELD_TO_PLAYER.",
+      "owners": ["contracts/player-presence.v1.json", "docs/DOCTRINE.md"]
+    },
+    "HOST_MAY_AUTOMATE": {
+      "definition": "Opt-in session is ACTIVE, presence is not PLAYER_PLAYING, and probe succeeded. Host may evaluate and, only with explicit --execute, SendInput.",
+      "owners": ["contracts/player-presence.v1.json", "docs/HOST_AUTONOMY.md"]
+    },
+    "YIELD_TO_PLAYER": {
+      "definition": "Host refuses SendInput and does not rewrite the queue because the player is playing or presence is unknown.",
+      "owners": ["contracts/player-presence.v1.json", "AGENTS.md"]
+    },
+    "HOST_AUTOMATE": {
+      "definition": "Presence-gated orchestrator that runs behavior_eval + host_stack + needs_force plans when HOST_MAY_AUTOMATE; never a default background daemon.",
+      "owners": ["docs/HOST_AUTONOMY.md", "betterinstincts/host_automate.py"]
+    }
+  }
+}
