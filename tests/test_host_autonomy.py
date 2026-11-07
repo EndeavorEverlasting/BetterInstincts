@@ -26,7 +26,9 @@ class HostAutonomyTests(unittest.TestCase):
         cfg = load_glossary()
         self.assertIn("IN_FRAME_WALK_THRASH", cfg["terms"])
         self.assertIn("HOST_MAY_AUTOMATE", cfg["terms"])
+        self.assertIn("SIT_AND_CHAT_HERE_INDOOR", cfg["terms"])
         self.assertIn("manage worlds", define("MAP_TRAVEL").lower())
+        self.assertIn("sit and chat", define("SIT_AND_CHAT_HERE").lower())
 
     def test_fluff_under_critical_is_optimize(self):
         out = evaluate_queue(CRITICAL, ["read"], objects_on_current_lot=False, location_kind="school")

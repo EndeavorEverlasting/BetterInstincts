@@ -33,36 +33,43 @@
         "falsifier": "Indoor free social tiles exist AND interactions still always start outdoors"
       },
       {
-        "id": "H2_INDOOR_SPOTS_OCCUPIED",
+        "id": "H9_GREET_WITHOUT_SEAT_GROUNDING",
         "rank": 2,
+        "claim": "Friendly greet / Go Here / click-Sim socials fail to ground the conversation on an indoor seat, so pathing still resolves to the outdoor meetup point",
+        "status": "LEADING",
+        "falsifier": "Sit and Chat Here (or equivalent seat-grounded social) keeps both Sims indoors while greet/Go Here still exits"
+      },
+      {
+        "id": "H2_INDOOR_SPOTS_OCCUPIED",
+        "rank": 3,
         "claim": "Indoor chairs/stand spots occupied so autonomy picks outdoor free tiles",
         "status": "PLAUSIBLE",
         "falsifier": "Observed free indoor floor/stand space with still-outdoor routing"
       },
       {
         "id": "H3_UMBRELLA_WEATHER_PULL",
-        "rank": 3,
+        "rank": 4,
         "claim": "Rain + umbrella social affordance pulls pairs outside",
         "status": "PLAUSIBLE",
         "falsifier": "Same outdoor default on clear weather"
       },
       {
         "id": "H4_SIDEWALK_STILL_ON_LOT",
-        "rank": 4,
+        "rank": 5,
         "claim": "Sidewalk counts as valid venue lot social space, so autonomy treats it as fine",
         "status": "PLAUSIBLE",
         "falsifier": "Autonomy prefers marked indoor social objects when free"
       },
       {
         "id": "H5_NEGATIVE_SPACE_UNTAGGED",
-        "rank": 5,
+        "rank": 6,
         "claim": "Indoor open floor is not tagged as social routing tiles",
         "status": "OPEN",
         "falsifier": "Go Here / indoor Sim click succeeds without outdoor prefix"
       },
       {
         "id": "H6_MOOD_ANGRY_AUTONOMY",
-        "rank": 6,
+        "rank": 7,
         "claim": "Angry/scared moodlets bias outdoor conversation routing",
         "status": "PLAUSIBLE",
         "owner": "contracts/moodlets.v1.json",
@@ -70,20 +77,20 @@
       },
       {
         "id": "H7_CLICK_TARGET_OUTDOOR_SIM",
-        "rank": 7,
+        "rank": 8,
         "claim": "Host/player social clicks resolve to Sims already outdoors",
         "status": "OPERATOR_DEPENDENT",
         "falsifier": "Indoor-only target selection still exits"
       },
       {
         "id": "H8_VENUE_TOO_SMALL",
-        "rank": 8,
+        "rank": 9,
         "claim": "Venue footprint too small / object density forces outdoor",
         "status": "OPERATOR_SUSPECTED",
         "falsifier": "Larger venue or cleared density removes outdoor default"
       }
     ],
-    "host_disposition": "Treat repeated outdoor social prefix during indoor event with free indoor capacity as BAD_BEHAVIOR / OPTIMIZE routing — cancel outdoor walk, retarget indoor Sim or Go Here indoors. Do not claim EA autonomy rewrite until patch-specific tuning proof."
+    "host_disposition": "Treat repeated outdoor social prefix during indoor event with free indoor capacity as BAD_BEHAVIOR / OPTIMIZE routing — cancel outdoor walk, then ground conversation with Sit and Chat Here on an indoor seat before weaker Go Here / greet retargets. Do not claim EA autonomy rewrite until patch-specific tuning proof."
   },
   "call_stack": {
     "order": [
@@ -118,9 +125,26 @@
         "when": ["event_active", "outdoor_social_prefix", "indoor_capacity_observed"],
         "verdict": "BAD_BEHAVIOR",
         "disposition": "OPTIMIZE",
-        "action": "CANCEL_OUTDOOR_WALK_RETARGET_INDOOR",
-        "preferred_routes": ["CLICK_INDOOR_SIM", "GO_HERE_INDOOR", "USE_INDOOR_SOCIAL_OBJECT"],
-        "forbidden_routes": ["IN_FRAME_WALK_THRASH_ACROSS_LOT", "REPEATED_OUTDOOR_GREET"]
+        "action": "CANCEL_OUTDOOR_WALK_SIT_AND_CHAT_HERE",
+        "primary_route": "SIT_AND_CHAT_HERE_INDOOR",
+        "preferred_routes": [
+          "SIT_AND_CHAT_HERE_INDOOR",
+          "USE_INDOOR_SOCIAL_OBJECT",
+          "CLICK_INDOOR_SIM_ALREADY_INDOORS",
+          "GO_HERE_INDOOR"
+        ],
+        "route_notes": {
+          "SIT_AND_CHAT_HERE_INDOOR": "Click indoor sofa/chair/bench (or free seat surface) → pie menu Sit and Chat Here (or locale-equivalent). Seats the conversation so pathing cannot re-resolve to the outdoor meetup.",
+          "USE_INDOOR_SOCIAL_OBJECT": "Fallback when Sit and Chat is unavailable: Sit Here then Chat With from the seated Sim.",
+          "CLICK_INDOOR_SIM_ALREADY_INDOORS": "Only when the target Sim is already indoors; never click an outdoor umbrella pair.",
+          "GO_HERE_INDOOR": "Weak fallback — can still re-trigger outdoor meetup routing (H9)."
+        },
+        "forbidden_routes": [
+          "IN_FRAME_WALK_THRASH_ACROSS_LOT",
+          "REPEATED_OUTDOOR_GREET",
+          "GREET_WITHOUT_SEAT_GROUNDING",
+          "GO_HERE_THAT_RE_ROUTES_OUTDOOR"
+        ]
       },
       "EVENT_GOAL_PROGRESS": {
         "when": ["event_active", "event_goals_incomplete", "survival_ok"],
@@ -152,13 +176,20 @@
     "OUTDOOR_SOCIAL_DEFAULT_WITH_INDOOR_CAPACITY",
     "EVENT_GOAL_NEGLECT_WHILE_SPAMMING_SIDEWALK_CHAT",
     "LEAVE_PARTY_FOR_HOMEWORK_WHILE_TIMER_ACTIVE_AND_SURVIVAL_OK",
-    "IN_FRAME_WALK_THRASH_TO_FOLLOW_GUESTS_OUTSIDE"
+    "IN_FRAME_WALK_THRASH_TO_FOLLOW_GUESTS_OUTSIDE",
+    "GREET_OR_GO_HERE_WITHOUT_SIT_AND_CHAT_GROUNDING"
   ],
   "open_items": [
     {
       "id": "VENUE_SIZE_OR_TUNING_PROOF",
       "status": "OPEN",
       "summary": "Confirm whether larger venue / indoor social objects change outdoor default; may need Studio object/routing evidence later",
+      "blocks_bi002": false
+    },
+    {
+      "id": "SIT_AND_CHAT_HERE_LIVE_DISPATCH",
+      "status": "OPEN",
+      "summary": "LOCAL_OBSERVED pie-menu availability asserted by operator; host SendInput / pie-menu click for Sit and Chat Here not yet live-proved on an exact patch",
       "blocks_bi002": false
     }
   ]

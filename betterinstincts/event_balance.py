@@ -83,6 +83,7 @@ def evaluate_event_turn(
     findings = []
     if outdoor_social_prefix and indoor_capacity_observed and event_active:
         findings.append("OUTDOOR_SOCIAL_DEFAULT_WITH_INDOOR_CAPACITY")
+        findings.append("GREET_OR_GO_HERE_WITHOUT_SIT_AND_CHAT_GROUNDING")
     if event_active and goals and outdoor_social_prefix:
         findings.append("EVENT_GOAL_NEGLECT_WHILE_SPAMMING_SIDEWALK_CHAT")
     findings.extend(mood.get("findings", []))
@@ -108,13 +109,19 @@ def evaluate_event_turn(
         preferred_routes = ["VENUE_OBJECT_IF_PRESENT", "MAP_TRAVEL_HOME"]
     elif event_active and outdoor_social_prefix and indoor_capacity_observed:
         gate = "EVENT_INDOOR_ROUTING"
-        action = "CANCEL_OUTDOOR_WALK_RETARGET_INDOOR"
+        indoor_gate = cfg["call_stack"]["gates"]["EVENT_INDOOR_ROUTING"]
+        action = str(indoor_gate.get("action") or "CANCEL_OUTDOOR_WALK_SIT_AND_CHAT_HERE")
         disposition = "OPTIMIZE"
-        preferred_routes = list(
-            cfg["call_stack"]["gates"]["EVENT_INDOOR_ROUTING"]["preferred_routes"]
-        )
+        preferred_routes = list(indoor_gate["preferred_routes"])
+        primary = str(indoor_gate.get("primary_route") or "SIT_AND_CHAT_HERE_INDOOR")
+        if preferred_routes and preferred_routes[0] != primary:
+            preferred_routes = [primary, *[r for r in preferred_routes if r != primary]]
         if "TENSE_MOOD_OUTDOOR_SOCIAL" in mood.get("findings", []):
-            preferred_routes = ["CLICK_INDOOR_SIM", "GO_HERE_INDOOR", *preferred_routes]
+            # Tense mood reinforces seat-grounding first — never outdoor greet spam.
+            preferred_routes = [
+                "SIT_AND_CHAT_HERE_INDOOR",
+                *[r for r in preferred_routes if r != "SIT_AND_CHAT_HERE_INDOOR"],
+            ]
     elif event_active and goals and not survival_critical:
         gate = "EVENT_GOAL_PROGRESS"
         action = "QUEUE_INCOMPLETE_EVENT_GOALS_INDOOR"
@@ -149,6 +156,7 @@ def evaluate_event_turn(
         "action": action,
         "disposition": disposition,
         "preferred_routes": preferred_routes,
+        "primary_route": preferred_routes[0] if preferred_routes else None,
         "findings": sorted(set(findings)),
         "survival_critical": survival_critical,
         "fun_urgent": fun_urgent,

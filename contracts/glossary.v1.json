@@ -61,8 +61,16 @@
       "owners": ["contracts/event-balance.v1.json", "docs/EVENT_BALANCE.md"]
     },
     "EVENT_INDOOR_ROUTING": {
-      "definition": "Call-stack gate that cancels outdoor social prefix and retargets indoor Sim, Go Here, or indoor social object.",
+      "definition": "Call-stack gate that cancels outdoor social prefix and grounds conversation indoors, preferring Sit and Chat Here before weaker Go Here / greet retargets.",
       "owners": ["contracts/event-balance.v1.json", "betterinstincts/event_balance.py"]
+    },
+    "SIT_AND_CHAT_HERE": {
+      "definition": "Sit and Chat Here: indoor seat pie-menu interaction that seats conversational partners and starts chat in place, preventing outdoor meetup re-routing.",
+      "owners": ["contracts/event-balance.v1.json", "docs/EVENT_BALANCE.md"]
+    },
+    "SIT_AND_CHAT_HERE_INDOOR": {
+      "definition": "Preferred EVENT_INDOOR_ROUTING host route: click indoor sofa/chair/bench → Sit and Chat Here (locale-equivalent).",
+      "owners": ["contracts/event-balance.v1.json", "betterinstincts/host_stack.py"]
     },
     "EVENT_BALANCE_STACK": {
       "definition": "Host priority stack balancing player, viewport, survival needs, indoor routing, event goals, Fun-via-goals, homework, then other needs.",
