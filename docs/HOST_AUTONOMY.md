@@ -42,6 +42,7 @@ See glossary: `PLAYER_FIRST`, `PLAYER_PLAYING`, `PLAYER_PRESENT_ON_CANVAS`, `HOS
 | `host_listener` | Opt-in session + tick receipts | writes `dist/host-listener/` |
 | `host_automate` | Presence-gated plan; optional execute | optional SendInput via script |
 | `funds_inject` | Subsidy prompt (funds under 100) + mode-agnostic Money/motherlode inject | optional SendInput via `scripts/funds_inject` |
+| `curious_catalog` | Opt-in rare/money garden Buy shelves; plan-only reveal; never game speed | `scripts/curious_catalog` |
 
 ## Household subsidy (funds under 100) — P95 mode-agnostic stack
 When observed funds are under **100**, host shows a Sims-styled **HOUSEHOLD NOTICE**

@@ -22,6 +22,7 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 - [Event balance](docs/EVENT_BALANCE.md) — outdoor-social RCA + hosted-event call stack.
 - [Event goals](docs/EVENT_GOALS.md) — HUD goal → indoor pie-menu action catalog.
 - [Fun service](docs/FUN_SERVICE.md) — parallel Fun lanes under guest/object contention.
+- [Curious Catalog](docs/CURIOUS_CATALOG.md) — on-whim rare/alien/hydroponic Buy shelves; never autoruns or speeds sim.
 - [Moodlets](docs/MOODLETS.md) — supplied emotion/moodlet strip for host routing.
 - [Machine-readable dependency graph](plans/horizon.v1.json) — exact gate ownership and sequencing.
 - [P141/P82 selection and experiment](docs/HORIZON_DECISIONS.md) — hypothesis, baseline and falsifiers.

@@ -51,5 +51,7 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **LOT_ENVIRONMENT_GAIN** | Wall/Buy décor stat → room Environment Score / Decorated Happy moodlets; stacks per panel. |
 | **ECO_FOOTPRINT_GREEN** / **ECO_FOOTPRINT_INDUSTRIAL** | Eco Lifestyle neighborhood Clean Air vs Gross Air contributions; maximize objectives are mutually exclusive. |
 | **BUILD_OPTIMIZE_PLAN** | Evaluate-only ranked catalog receipt (`build_optimize`); no live paint until P08 disposable Build proof. |
+| **CURIOUS_CATALOG** | Opt-in hidden Buy shelves for rare/money gardening; never on startup; never touch game speed. |
+| **SHOW_HIDDEN_OBJECTS** | Console line `bb.showhiddenobjects` only — never type `buydebug` or slash-join. |
 
 Related matrices: `contracts/behavior-matrix.v1.json`, `contracts/player-presence.v1.json`, `contracts/needs-force.v1.json`, `contracts/host-listener.v1.json`, `contracts/host-funds.v1.json`, `contracts/build-optimize.v1.json`.

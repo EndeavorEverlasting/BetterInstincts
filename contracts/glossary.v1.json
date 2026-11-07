@@ -506,6 +506,21 @@
         "contracts/navigating-needs.v1.json",
         "docs/NAVIGATING_NEEDS.md"
       ]
+    },
+    "CURIOUS_CATALOG": {
+      "definition": "Opt-in immersive chance-card workflow for hidden Buy rare/money gardening objects via bb.showhiddenobjects. Never autoruns; never touches game speed; never types buydebug.",
+      "owners": [
+        "contracts/curious-catalog.v1.json",
+        "docs/CURIOUS_CATALOG.md",
+        "betterinstincts/curious_catalog.py"
+      ]
+    },
+    "SHOW_HIDDEN_OBJECTS": {
+      "definition": "Durable console line bb.showhiddenobjects (buydebug is a nickname only). Requires testingcheats first; one command per line.",
+      "owners": [
+        "contracts/curious-catalog.v1.json",
+        "docs/CURIOUS_CATALOG.md"
+      ]
     }
   }
 }
