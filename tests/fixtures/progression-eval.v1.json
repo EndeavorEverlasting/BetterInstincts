@@ -1,0 +1,133 @@
+{
+  "schema": "betterinstincts.progression-eval-suite/v1",
+  "cases": [
+    {
+      "case_id": "repo_floor_honest_zero_product",
+      "mode": "live_repo",
+      "evidence": {
+        "hunger_trials": {"baseline": 0, "modified": 0, "rollback": 0}
+      },
+      "expect": {
+        "verdict": "SCAFFOLDING_AHEAD_OF_GAME",
+        "findings": [],
+        "product_progression_rate": 0.0
+      }
+    },
+    {
+      "case_id": "promote_ci_as_certified",
+      "mode": "live_repo",
+      "evidence": {
+        "claim_level": "GAME_CERTIFIED",
+        "hunger_trials": {"baseline": 0, "modified": 0, "rollback": 0}
+      },
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": ["PROMOTE_OFFLINE_CI_AS_GAME_CERTIFIED"],
+        "product_progression_rate": 0.0
+      }
+    },
+    {
+      "case_id": "claim_playable_without_profile",
+      "mode": "live_repo",
+      "evidence": {
+        "claim_level": "PLAYABLE_MOD"
+      },
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": ["CLAIM_PLAYABLE_WITHOUT_CERTIFIED_PROFILE"],
+        "product_progression_rate": 0.0
+      }
+    },
+    {
+      "case_id": "close_bi002_without_trials",
+      "mode": "live_repo",
+      "evidence": {
+        "close_bi002": true,
+        "hunger_trials": {"baseline": 1, "modified": 0, "rollback": 0}
+      },
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": ["CLOSE_BI002_WITHOUT_TRIALS"],
+        "product_progression_rate": 0.0
+      }
+    },
+    {
+      "case_id": "income_before_needs_balance",
+      "mode": "live_repo",
+      "evidence": {
+        "income_before_needs_balance": true
+      },
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": ["INCOME_BEFORE_NEEDS_BALANCE"],
+        "product_progression_rate": 0.0
+      }
+    },
+    {
+      "case_id": "skills_before_income",
+      "mode": "live_repo",
+      "evidence": {
+        "skills_before_income": true
+      },
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": ["SKILLS_BEFORE_INCOME"],
+        "product_progression_rate": 0.0
+      }
+    },
+    {
+      "case_id": "career_before_skills",
+      "mode": "live_repo",
+      "evidence": {
+        "career_before_skills": true
+      },
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": ["CAREER_BEFORE_SKILLS"],
+        "product_progression_rate": 0.0
+      }
+    },
+    {
+      "case_id": "partial_hunger_certified_overlay",
+      "mode": "fixture_overlay",
+      "evidence": {
+        "certified_stage_ids": ["BI-002"],
+        "hunger_trials": {"baseline": 5, "modified": 5, "rollback": 1}
+      },
+      "expect": {
+        "verdict": "PRODUCT_IN_PROGRESS",
+        "findings": [],
+        "product_progression_rate": 0.1
+      }
+    },
+    {
+      "case_id": "full_trajectory_overlay",
+      "mode": "fixture_overlay",
+      "evidence": {
+        "certified_stage_ids": [
+          "BI-002", "BI-003A", "BI-003B", "BI-003C", "BI-003D", "BI-003E",
+          "BI-003F", "BI-004", "BI-005", "BI-006"
+        ],
+        "hunger_trials": {"baseline": 5, "modified": 5, "rollback": 1}
+      },
+      "expect": {
+        "verdict": "TRAJECTORY_COMPLETE",
+        "findings": [],
+        "product_progression_rate": 1.0
+      }
+    },
+    {
+      "case_id": "fabricate_cert_flag",
+      "mode": "live_repo",
+      "evidence": {
+        "fabricate_cert_without_catalog": true,
+        "certified_stage_ids": ["BI-002"]
+      },
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": ["PROMOTE_OFFLINE_CI_AS_GAME_CERTIFIED"],
+        "product_progression_rate": 0.0
+      }
+    }
+  ]
+}

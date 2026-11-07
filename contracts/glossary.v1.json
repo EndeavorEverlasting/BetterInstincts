@@ -52,6 +52,10 @@
       "definition": "Read-only deterministic scorer over supplied observations (host_eval, instincts_host, behavior_eval, decision_eval). Does not click the game.",
       "owners": ["docs/HOST_EVAL.md", "betterinstincts/host_eval.py"]
     },
+    "PROGRESSION_EVALUATOR": {
+      "definition": "Repository eval framework scoring vision markers, CI scaffolding, and GAME_CERTIFIED product progression rate. Offline green never raises product_progression_rate.",
+      "owners": ["docs/PROGRESSION_EVAL.md", "betterinstincts/progression_eval.py"]
+    },
     "PROOF_CEILING": {
       "definition": "Explicit maximum claim allowed for an artifact (e.g. OFFLINE, LOCAL_OBSERVED, NOT_LIVE_CERT).",
       "owners": ["docs/VALIDATION.md", "docs/LIVE_CERT.md"]

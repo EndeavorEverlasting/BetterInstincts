@@ -16,6 +16,7 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 - [Strategic selection](docs/STRATEGY.md) — P141 competing theses and next investigation.
 - [Roadmap](docs/ROADMAP.md) — needs, work, career, then broader autonomy.
 - [Validation](docs/VALIDATION.md) — offline tests and future game certification.
+- [Progression eval (P67/P62)](docs/PROGRESSION_EVAL.md) — CI honesty vs product progression rate.
 - [Full product horizon](docs/HORIZON.md) — all six needs, balanced care, income, skills, then careers.
 - [Machine-readable dependency graph](plans/horizon.v1.json) — exact gate ownership and sequencing.
 - [P141/P82 selection and experiment](docs/HORIZON_DECISIONS.md) — hypothesis, baseline and falsifiers.
@@ -37,6 +38,7 @@ python -m betterinstincts.priority
 python -m scripts.eval_horizon
 python -m scripts.check_horizon
 python -m scripts.horizon_status
+python -m scripts.progression_eval --repo-only
 ```
 The policy returns a **suggestion** for a fictional Sim snapshot and never touches a real game, save, queue, or Mods directory. The smallest gameplay next step is to inspect the live game's relevant autonomy tuning using Sims 4 Studio, select one specific base-game behavior, and produce/test a reversible package against a recorded patch.
 
