@@ -1,0 +1,685 @@
+{
+  "schema": "betterinstincts.ontology/v1",
+  "revision": 2,
+  "state": "CANDIDATE_REVIEW_NOT_RUNTIME_AUTHORITY",
+  "owner": "BetterInstincts",
+  "source_main_sha": "502f66efc0eedd4136d6a8cd0879f566c3f3612f",
+  "goal": "Shared, extensible semantics for better game-native autonomy: six needs and sustainable finances first, concurrent goal coordination and continuity across situations, with player authority and game-safe evidence gates.",
+  "authority": "docs/DOCTRINE.md and AGENTS.md govern; this ontology references rather than replaces existing contract owners.",
+  "namespaces": {
+    "world": "GAME_BUILD,HOUSEHOLD,SIM,NEED,LOCATION,GAME_OBJECT",
+    "perception": "GAME_SCENE,VIEWPORT_STATE,OBSERVATION,NEED_STATE,MOODLET,CLAIM",
+    "agency": "PLAYER_INTENT,PLAYER_PRESENCE,ACTION_QUEUE,GOAL,OPPORTUNITY,AFFORDANCE,ACTION_PROPOSAL,CONTROL_PERMIT,HOST_ACTION",
+    "learning": "OUTCOME,REVIEWED_JUDGMENT,LEARNING_MODEL",
+    "governance": "HOST_SESSION,SAVE_SLOT,INCIDENT,PROOF_RECEIPT",
+    "orchestration": "SITUATION,DOMAIN_CAPABILITY,GOAL_THREAD,ACTIVITY,RESOURCE_CLAIM,TIME_WINDOW,CONTINGENCY,INTERRUPTION,RESUME_CONDITION,MECHANIC_PATH,COORDINATION_CYCLE"
+  },
+  "evidence_states": [
+    "UNKNOWN",
+    "HYPOTHESIS",
+    "DOCUMENTED_UNVERIFIED",
+    "LOCAL_OBSERVED",
+    "GAME_CERTIFIED",
+    "REJECTED"
+  ],
+  "action_states": [
+    "IDEA",
+    "PROTOTYPE_OFFLINE",
+    "EVALUATED_OFFLINE",
+    "LAB_PERMISSION_PENDING",
+    "LAB_ATTEMPTED",
+    "LAB_OUTCOME_OBSERVED",
+    "RELEASE_CERTIFIED"
+  ],
+  "concepts": {
+    "GAME_BUILD": {
+      "kind": "context",
+      "definition": "Exact Sims 4 version, platform, packs and compatibility profile.",
+      "canonical_owner": "docs/COMPATIBILITY.md"
+    },
+    "HOST_SESSION": {
+      "kind": "context",
+      "definition": "Explicitly activated bounded agent session, never equivalent to permission to click.",
+      "canonical_owner": "contracts/host-listener.v1.json"
+    },
+    "GAME_SCENE": {
+      "kind": "state",
+      "definition": "Classified UI surface and permitted candidate transitions.",
+      "canonical_owner": "contracts/game-scenes.v1.json"
+    },
+    "VIEWPORT_STATE": {
+      "kind": "state",
+      "definition": "Rendering/capture state independent of a verified game scene.",
+      "canonical_owner": "contracts/viewport-black.v1.json"
+    },
+    "SAVE_SLOT": {
+      "kind": "entity",
+      "definition": "Save with provenance-bound protection class, not inferred from its name.",
+      "canonical_owner": "contracts/save-policy.v1.json"
+    },
+    "HOUSEHOLD": {
+      "kind": "entity",
+      "definition": "In-game household; its identity alone grants no host authority.",
+      "canonical_owner": "contracts/save-policy.v1.json"
+    },
+    "SIM": {
+      "kind": "entity",
+      "definition": "A game character whose needs, preferences and autonomy are contextual.",
+      "canonical_owner": "contracts/sim-profile.v1.json"
+    },
+    "PLAYER_INTENT": {
+      "kind": "intent",
+      "definition": "Explicit user directive or player-directed interaction that outranks agent autonomy.",
+      "canonical_owner": "contracts/player-presence.v1.json"
+    },
+    "PLAYER_PRESENCE": {
+      "kind": "state",
+      "definition": "Observed activity/uncertainty that controls whether the host must yield.",
+      "canonical_owner": "contracts/player-presence.v1.json"
+    },
+    "NEED": {
+      "kind": "entity",
+      "definition": "Hunger, bladder, energy, hygiene, fun or social motive.",
+      "canonical_owner": "contracts/needs.v1.json"
+    },
+    "NEED_STATE": {
+      "kind": "state",
+      "definition": "Time-bound and source-qualified reading of a Sim motive.",
+      "canonical_owner": "contracts/need-services.v1.json"
+    },
+    "PERSONALITY": {
+      "kind": "context",
+      "definition": "Traits, likes, dislikes and style; prevents a universal robotic policy.",
+      "canonical_owner": "contracts/sim-profile.v1.json"
+    },
+    "MOODLET": {
+      "kind": "observation_subject",
+      "definition": "Observed emotion/moodlet context; never fabricated from an uncalibrated screenshot.",
+      "canonical_owner": "contracts/moodlets.v1.json"
+    },
+    "LOCATION": {
+      "kind": "entity",
+      "definition": "World, neighborhood, lot or indoor zone relevant to a plan.",
+      "canonical_owner": "contracts/game-scenes.v1.json"
+    },
+    "GAME_OBJECT": {
+      "kind": "entity",
+      "definition": "Target object with observed interaction availability/occupancy.",
+      "canonical_owner": "contracts/need-lanes.v1.json"
+    },
+    "AFFORDANCE": {
+      "kind": "state",
+      "definition": "Action feasible here and now given object, scene, patch and player restrictions.",
+      "canonical_owner": "contracts/behavior-matrix.v1.json"
+    },
+    "ACTION_QUEUE": {
+      "kind": "state",
+      "definition": "Observed current and pending interactions, with player-directed ownership distinction.",
+      "canonical_owner": "contracts/host-listener.v1.json"
+    },
+    "GOAL": {
+      "kind": "intent",
+      "definition": "Needs, school, event, scenario, income, skill or career target with dependency context.",
+      "canonical_owner": "contracts/scenario-goals.v1.json"
+    },
+    "OPPORTUNITY": {
+      "kind": "hypothesis",
+      "definition": "Candidate useful interaction; benefit and availability require independent support.",
+      "canonical_owner": "contracts/social-opportunity.v1.json"
+    },
+    "OBSERVATION": {
+      "kind": "evidence",
+      "definition": "Captured bounded datum with source, timestamp, patch and provenance.",
+      "canonical_owner": "contracts/host-listener.v1.json"
+    },
+    "CLAIM": {
+      "kind": "epistemic",
+      "definition": "Interpretation of observations with an explicit evidence status and falsifier.",
+      "canonical_owner": "contracts/viewport-black.v1.json"
+    },
+    "ACTION_PROPOSAL": {
+      "kind": "decision",
+      "definition": "Advisory suggested behavior linked to preconditions, target, expected effect and safety gates.",
+      "canonical_owner": "contracts/behavior-matrix.v1.json"
+    },
+    "CONTROL_PERMIT": {
+      "kind": "authority",
+      "definition": "Short-lived permission for a specific host step after presence, scene, save and opt-in checks.",
+      "canonical_owner": "betterinstincts/screen_admit.py"
+    },
+    "HOST_ACTION": {
+      "kind": "event",
+      "definition": "Guarded attempted UI action, separate from a suggestion and from a successful outcome.",
+      "canonical_owner": "betterinstincts/control_handoff.py"
+    },
+    "OUTCOME": {
+      "kind": "evidence",
+      "definition": "Observed after-state, adverse effect, or failure, not assumed from a click.",
+      "canonical_owner": "docs/LIVE_CERT.md"
+    },
+    "REVIEWED_JUDGMENT": {
+      "kind": "evidence",
+      "definition": "Explicitly consented human evaluation of context, action and outcome.",
+      "canonical_owner": "contracts/judgment-learning.v1.json"
+    },
+    "LEARNING_MODEL": {
+      "kind": "model",
+      "definition": "Bounded contextual action recommendations, advisory and never executable authority.",
+      "canonical_owner": "contracts/judgment-learning.v1.json"
+    },
+    "INCIDENT": {
+      "kind": "event",
+      "definition": "Anomaly with observations, hypotheses, falsifiers and recovery evidence.",
+      "canonical_owner": "contracts/viewport-black.v1.json"
+    },
+    "PROOF_RECEIPT": {
+      "kind": "evidence",
+      "definition": "Artifact identifying exact observation, check, branch, game patch and proof ceiling.",
+      "canonical_owner": "docs/VALIDATION.md"
+    },
+    "SITUATION": {
+      "kind": "context",
+      "definition": "Time-bounded changing combination of observed game state, actors, opportunities, unknowns and currently relevant constraints.",
+      "canonical_owner": "contracts/domain-cascade.v1.json"
+    },
+    "DOMAIN_CAPABILITY": {
+      "kind": "extensibility",
+      "definition": "Open registration of a goal/evaluation domain; no fixed allowed-domain list or automatic execution authority.",
+      "canonical_owner": "contracts/domain-cascade.v1.json"
+    },
+    "GOAL_THREAD": {
+      "kind": "intent",
+      "definition": "Continuing objective with actor scope, dependencies, status and resumption context; not erased by one interrupted activity.",
+      "canonical_owner": "contracts/scenario-goals.v1.json"
+    },
+    "ACTIVITY": {
+      "kind": "process",
+      "definition": "A proposed or ongoing unit of work serving a goal; evaluation may be concurrent while game action follows actual constraints.",
+      "canonical_owner": "contracts/domain-cascade.v1.json"
+    },
+    "RESOURCE_CLAIM": {
+      "kind": "constraint",
+      "definition": "Scoped exclusive or shared use of time, objects, funds, attention or interaction capacity that makes candidate activities conflict or coexist.",
+      "canonical_owner": "contracts/need-load-balance.v1.json"
+    },
+    "TIME_WINDOW": {
+      "kind": "constraint",
+      "definition": "Observed or hypothesized interval/deadline during which an option matters; uncertainty must be recorded rather than invented.",
+      "canonical_owner": "contracts/event-goals.v1.json"
+    },
+    "CONTINGENCY": {
+      "kind": "event",
+      "definition": "Unexpected or time-sensitive situation that may require re-ranking goals, but never waives player or safety gates.",
+      "canonical_owner": "contracts/event-balance.v1.json"
+    },
+    "INTERRUPTION": {
+      "kind": "transition",
+      "definition": "Recorded suspension/preemption of an activity including cause, prior intent, pending work and observations.",
+      "canonical_owner": "contracts/domain-cascade.v1.json"
+    },
+    "RESUME_CONDITION": {
+      "kind": "policy",
+      "definition": "Explicit conditions to reconsider a suspended goal after a contingency without blindly replaying stale actions.",
+      "canonical_owner": "contracts/domain-cascade.v1.json"
+    },
+    "MECHANIC_PATH": {
+      "kind": "design_decision",
+      "definition": "Game-native tuning/interaction or a justified extension through which a goal might be served, distinct from its desired outcome.",
+      "canonical_owner": "docs/DOCTRINE.md"
+    },
+    "COORDINATION_CYCLE": {
+      "kind": "process",
+      "definition": "Bounded evaluation of multiple domain receipts plus shared resources, contingencies and continuity that emits advisory plans, not host permits.",
+      "canonical_owner": "contracts/domain-cascade.v1.json"
+    }
+  },
+  "relations": [
+    {
+      "from": "HOST_SESSION",
+      "predicate": "BINDS_BUILD",
+      "to": "GAME_BUILD"
+    },
+    {
+      "from": "HOST_SESSION",
+      "predicate": "OBSERVES_SCENE",
+      "to": "GAME_SCENE"
+    },
+    {
+      "from": "GAME_SCENE",
+      "predicate": "HAS_VIEWPORT",
+      "to": "VIEWPORT_STATE"
+    },
+    {
+      "from": "HOST_SESSION",
+      "predicate": "TARGETS_SAVE",
+      "to": "SAVE_SLOT"
+    },
+    {
+      "from": "SAVE_SLOT",
+      "predicate": "CONTAINS_HOUSEHOLD",
+      "to": "HOUSEHOLD"
+    },
+    {
+      "from": "HOUSEHOLD",
+      "predicate": "CONTAINS_SIM",
+      "to": "SIM"
+    },
+    {
+      "from": "SIM",
+      "predicate": "HAS_NEED",
+      "to": "NEED"
+    },
+    {
+      "from": "OBSERVATION",
+      "predicate": "MEASURES",
+      "to": "NEED_STATE"
+    },
+    {
+      "from": "NEED_STATE",
+      "predicate": "DESCRIBES",
+      "to": "NEED"
+    },
+    {
+      "from": "OBSERVATION",
+      "predicate": "SUPPORTS_OR_REFUTES",
+      "to": "CLAIM"
+    },
+    {
+      "from": "CLAIM",
+      "predicate": "CHARACTERIZES",
+      "to": "GAME_SCENE"
+    },
+    {
+      "from": "SIM",
+      "predicate": "HAS_PERSONALITY",
+      "to": "PERSONALITY"
+    },
+    {
+      "from": "OBSERVATION",
+      "predicate": "DESCRIBES",
+      "to": "MOODLET"
+    },
+    {
+      "from": "SIM",
+      "predicate": "HAS_ACTION_QUEUE",
+      "to": "ACTION_QUEUE"
+    },
+    {
+      "from": "ACTION_QUEUE",
+      "predicate": "MAY_CONTAIN",
+      "to": "PLAYER_INTENT"
+    },
+    {
+      "from": "LOCATION",
+      "predicate": "HAS_OBJECT",
+      "to": "GAME_OBJECT"
+    },
+    {
+      "from": "GAME_OBJECT",
+      "predicate": "OFFERS",
+      "to": "AFFORDANCE"
+    },
+    {
+      "from": "OPPORTUNITY",
+      "predicate": "REQUIRES",
+      "to": "AFFORDANCE"
+    },
+    {
+      "from": "GOAL",
+      "predicate": "MAY_SUGGEST",
+      "to": "OPPORTUNITY"
+    },
+    {
+      "from": "ACTION_PROPOSAL",
+      "predicate": "AIMS_AT",
+      "to": "GOAL"
+    },
+    {
+      "from": "ACTION_PROPOSAL",
+      "predicate": "REQUIRES",
+      "to": "CONTROL_PERMIT"
+    },
+    {
+      "from": "CONTROL_PERMIT",
+      "predicate": "AUTHORIZES_ONE_STEP_OF",
+      "to": "HOST_ACTION"
+    },
+    {
+      "from": "HOST_ACTION",
+      "predicate": "MUST_HAVE",
+      "to": "OUTCOME"
+    },
+    {
+      "from": "REVIEWED_JUDGMENT",
+      "predicate": "EVALUATES",
+      "to": "OUTCOME"
+    },
+    {
+      "from": "LEARNING_MODEL",
+      "predicate": "TRAINS_ONLY_FROM",
+      "to": "REVIEWED_JUDGMENT"
+    },
+    {
+      "from": "LEARNING_MODEL",
+      "predicate": "MAY_SUGGEST",
+      "to": "ACTION_PROPOSAL"
+    },
+    {
+      "from": "INCIDENT",
+      "predicate": "CONTAINS",
+      "to": "CLAIM"
+    },
+    {
+      "from": "PROOF_RECEIPT",
+      "predicate": "ATTESTS",
+      "to": "OBSERVATION"
+    },
+    {
+      "from": "SITUATION",
+      "predicate": "CONTEXTUALIZES",
+      "to": "GOAL_THREAD"
+    },
+    {
+      "from": "DOMAIN_CAPABILITY",
+      "predicate": "EVALUATES",
+      "to": "GOAL_THREAD"
+    },
+    {
+      "from": "SIM",
+      "predicate": "PURSUES",
+      "to": "GOAL_THREAD"
+    },
+    {
+      "from": "HOUSEHOLD",
+      "predicate": "MAY_SHARE",
+      "to": "GOAL_THREAD"
+    },
+    {
+      "from": "GOAL_THREAD",
+      "predicate": "MAY_SCHEDULE",
+      "to": "ACTIVITY"
+    },
+    {
+      "from": "ACTIVITY",
+      "predicate": "CLAIMS",
+      "to": "RESOURCE_CLAIM"
+    },
+    {
+      "from": "ACTIVITY",
+      "predicate": "VALID_DURING",
+      "to": "TIME_WINDOW"
+    },
+    {
+      "from": "CONTINGENCY",
+      "predicate": "MAY_PREEMPT",
+      "to": "ACTIVITY"
+    },
+    {
+      "from": "INTERRUPTION",
+      "predicate": "SUSPENDS",
+      "to": "ACTIVITY"
+    },
+    {
+      "from": "INTERRUPTION",
+      "predicate": "RETAINS",
+      "to": "GOAL_THREAD"
+    },
+    {
+      "from": "GOAL_THREAD",
+      "predicate": "WAITS_FOR",
+      "to": "RESUME_CONDITION"
+    },
+    {
+      "from": "GOAL_THREAD",
+      "predicate": "PREFERS",
+      "to": "MECHANIC_PATH"
+    },
+    {
+      "from": "COORDINATION_CYCLE",
+      "predicate": "OBSERVES",
+      "to": "SITUATION"
+    },
+    {
+      "from": "COORDINATION_CYCLE",
+      "predicate": "WEIGHS",
+      "to": "RESOURCE_CLAIM"
+    },
+    {
+      "from": "COORDINATION_CYCLE",
+      "predicate": "MAY_SUGGEST",
+      "to": "ACTION_PROPOSAL"
+    },
+    {
+      "from": "OBSERVATION",
+      "predicate": "MAY_INDICATE",
+      "to": "CONTINGENCY"
+    },
+    {
+      "from": "OUTCOME",
+      "predicate": "MAY_SATISFY",
+      "to": "RESUME_CONDITION"
+    }
+  ],
+  "invariants": [
+    {
+      "id": "BI-ONT-001",
+      "term": "PLAYER_FIRST",
+      "rule": "Explicit player commands or uncertain presence yield; autonomous actions never interrupt player-directed interactions.",
+      "owned_by": [
+        "contracts/player-presence.v1.json",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-002",
+      "term": "SAVE_PROTECTED_BY_DEFAULT",
+      "rule": "Unknown and user saves are protected; lab-looking names are never proof of authorization.",
+      "owned_by": [
+        "contracts/save-policy.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-003",
+      "term": "GAME_BUILD_EXACT",
+      "rule": "No latest-patch fallback, cross-build evidence promotion, or changes to older certified profile bytes.",
+      "owned_by": [
+        "docs/COMPATIBILITY.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-004",
+      "term": "SCENE_DOUBLE_CUE",
+      "rule": "A scene classification needs two genuinely source-distinct observations; placeholders are not observations.",
+      "owned_by": [
+        "contracts/game-scenes.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-005",
+      "term": "UNKNOWN_MEANS_ABSTAIN",
+      "rule": "Ambiguous scene, presence, action availability, provenance or patch prevents execution.",
+      "owned_by": [
+        "docs/SCENE_INTELLIGENCE.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-006",
+      "term": "OBSERVATION_IS_NOT_AUTHORIZATION",
+      "rule": "Observation, confidence, learned score and evaluator PASS never grant SendInput rights.",
+      "owned_by": [
+        "betterinstincts/screen_admit.py"
+      ]
+    },
+    {
+      "id": "BI-ONT-007",
+      "term": "LEARNING_REVIEWED_OPT_IN",
+      "rule": "Only explicit operator-reviewed semantic judgments may train; learned output remains advisory.",
+      "owned_by": [
+        "contracts/judgment-learning.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-008",
+      "term": "ACTION_OUTCOME_SEPARATE",
+      "rule": "Intent, planned action, attempted click, observed outcome and game certification are separate statuses.",
+      "owned_by": [
+        "docs/LIVE_CERT.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-009",
+      "term": "HORIZON_AND_CHARACTER",
+      "rule": "Six needs precede sustainable income, skills and career; preserve rest, personality and fun.",
+      "owned_by": [
+        "docs/DOCTRINE.md",
+        "plans/horizon.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-010",
+      "term": "HOST_SESSION_BOUNDED",
+      "rule": "No implicit background recorder, hidden daemon, telemetry, auto-training or unbounded polls.",
+      "owned_by": [
+        "contracts/host-listener.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-011",
+      "term": "INCIDENT_HYPOTHESES_REVERSIBLE",
+      "rule": "A dark frame alone does not prove Live mode; keep alternative diagnoses and test recovery safely.",
+      "owned_by": [
+        "contracts/viewport-black.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-012",
+      "term": "LIVE_PROOF_NOT_CI",
+      "rule": "Offline tests are not playable-mod certification; BI-002's real vanilla/modified gameplay gate remains open.",
+      "owned_by": [
+        "AGENTS.md",
+        "docs/VALIDATION.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-013",
+      "term": "GAME_NATIVE_FIRST_NOT_ONLY",
+      "rule": "Prefer improving native Sims mechanics; permit separately justified creative extensions and engineering approaches. Game-native preference never licenses unsafe actions.",
+      "owned_by": [
+        "docs/DOCTRINE.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-014",
+      "term": "CONTINUITY_OF_INTENT",
+      "rule": "Preemption preserves the affected goal, reason, state and recheck/resume condition; never silently discards or blindly replays an earlier action.",
+      "owned_by": [
+        "contracts/domain-cascade.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-015",
+      "term": "EVALUATE_CONCURRENTLY_EXECUTE_CONSTRAINED",
+      "rule": "Domain evaluations may run in tandem but cannot treat shared time, object access, attention or player-controlled queues as unlimited concurrent game actions.",
+      "owned_by": [
+        "contracts/domain-cascade.v1.json",
+        "contracts/need-load-balance.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-016",
+      "term": "CONTINGENCIES_ARE_EVIDENCE_BOUND",
+      "rule": "Urgent time-sensitive events may trigger bounded reprioritization only on supported observations; hypothetical events never manufacture host authority.",
+      "owned_by": [
+        "contracts/event-balance.v1.json",
+        "contracts/player-presence.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-017",
+      "term": "OPEN_DOMAIN_AND_SCOPE",
+      "rule": "Sim, household and world scales and future domains are extensions, not exclusive competing centers; a closed capability list is not product doctrine.",
+      "owned_by": [
+        "docs/DOCTRINE.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-018",
+      "term": "OUTCOMES_NOT_CLICKS",
+      "rule": "Score claimed utility and completion from observed outcomes, not merely a selected proposal or attempted interaction; no offline pass as game certificate.",
+      "owned_by": [
+        "docs/LIVE_CERT.md"
+      ]
+    }
+  ],
+  "interpretation_rules": [
+    "An OBSERVATION has a source, capture reference, timestamp, exact patch/platform and independent-vs-correlated provenance.",
+    "A CLAIM is not a fact merely because it was repeated in agent prose; include evidence_state and possible falsifier.",
+    "A GOAL may rank opportunities, but never bypass PLAYER_INTENT, SAVE_SLOT, GAME_SCENE or CONTROL_PERMIT.",
+    "A LEARNING_MODEL may recommend only and cannot upgrade a HYPOTHESIS, acquire CONTROL_PERMIT or mark GAME_CERTIFIED.",
+    "An absent/outdated ontology mapping is a reason to document and reconcile the semantic gap before prototyping; it is not license to fabricate a concept.",
+    "A GOAL_THREAD belongs to an actor/scope and outlives a particular ACTIVITY; interruption records a reason and revalidation before any resume.",
+    "DOMAIN_CAPABILITY is open-world metadata, not a closed enumeration of Sims 4 mechanics; a candidate extension cannot bypass player, save, scene, build or host admission.",
+    "Parallel evaluation does not imply simultaneous exclusive object use or parallel SendInput; selection remains a proposal until separately authorized.",
+    "A CONTINGENCY's urgency, deadline and possible action path are hypotheses until supported by real game/version observations; no universal burglar behavior assumption."
+  ],
+  "mutation_consultation": {
+    "trigger": "Before drafting behavior-changing prototypes, tuning, agent plans, host click paths or learning-policy mutations; then repeat during review and before merge.",
+    "required": [
+      "proposed_capability",
+      "affected_concepts",
+      "relevant_canonical_owners",
+      "invariants_checked",
+      "game_build_scope",
+      "evidence_ceiling",
+      "player_save_control_impact",
+      "expected_outcome",
+      "negative_tests",
+      "rollback_path",
+      "unresolved_unknowns"
+    ],
+    "decision": [
+      "ADMIT_FOR_OFFLINE_PROTOTYPE",
+      "REQUIRE_ONTOLOGY_AMENDMENT",
+      "BLOCK_UNSAFE",
+      "DEFER_FOR_GAME_EVIDENCE"
+    ],
+    "enforcement_state": "GIT_HISTORY_CI_AND_LOCAL_PREFLIGHT_CANDIDATE_NO_BRANCH_PROTECTION_OR_LIVE_HOST_ATTESTATION"
+  },
+  "migration": "Add new evidence and concept revisions with provenance; never rewrite previously certified patch-specific evidence. Change semantic identifiers only by versioned migration and regression review.",
+  "product_identity": {
+    "mission": "Improve The Sims 4's natural autonomy and ability to sustain needs, income, character and other responsibilities without constant player micromanagement.",
+    "foundation": "Game-native mechanics first, not exclusively; observable value, safety and compatibility decide when extensions are justified.",
+    "core_challenge": [
+      "six-need maintenance",
+      "reliable sustainable income and bills",
+      "asynchronous coordination across all current and future domains"
+    ],
+    "capability_ceiling": "OPEN; no concept, list of domains, level of agency or implementation technology is a prohibition unless an explicit owned safety or compatibility rule applies.",
+    "architecture_policy": "Ontology defines shared meanings, invariants and interfaces; it must not prescribe a scheduler, one Sim/household/world as exclusive center, or a closed list of modules.",
+    "non_goals": [
+      "mandatory economy simulation",
+      "rewriting Sims 4 autonomy by default",
+      "game action without a separate control permit",
+      "trading personality or player intent for throughput"
+    ]
+  },
+  "orchestration_contract": {
+    "program_seam": "Existing domain_cascade is the cross-domain poll owner; existing need_load_balance is the needs resource-health owner; semantic advisory layer composes receipts and goal-thread continuity without replacing either.",
+    "success_stack": [
+      "bounded observation and validated scene/build/presence context",
+      "domain_cascade.poll_cascade emits per-domain read-only receipts",
+      "semantic advisory weighs open-domain goals, resource conflicts, time windows and contextual contingencies",
+      "emit advisory selected/deferred/suspended/resumable goal threads",
+      "separate screen_admit checks player/save/scene/build and issues at most one-step permit",
+      "host executor attempts authorized game action and records separately observed outcome"
+    ],
+    "failure_stack": [
+      "uncertain scene/build, player present or unapproved save => no host action",
+      "unsupported contingency => no forced preemption",
+      "resource conflict => defer activity, preserve goal thread",
+      "failed or stale activity => keep goal, reset assumptions, reassess rather than blindly retry"
+    ],
+    "control_boundary": "No semantic advisory score, learned preference, goal priority, or emergency label grants CONTROL_PERMIT.",
+    "scales": "sim, household, world or future actor scope are optional, extensible labels; no central actor class is exclusive."
+  }
+}

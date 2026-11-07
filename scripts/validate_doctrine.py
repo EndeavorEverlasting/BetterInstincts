@@ -39,6 +39,9 @@ REQUIRED = (
     "betterinstincts/menu_blockers.py", "scripts/host_menu.py",
     "scripts/menu_blockers.py", "tests/test_host_menu.py",
     "contracts/glossary.v1.json", "docs/GLOSSARY.md",
+    "contracts/ontology.v1.json", "docs/ONTOLOGY.md",
+    "scripts/check_ontology.py", "scripts/semantic_preflight.py",
+    "betterinstincts/semantic_advisory.py", "tests/test_semantic_advisory.py",
     "contracts/behavior-matrix.v1.json", "contracts/host-listener.v1.json",
     "contracts/player-presence.v1.json", "contracts/needs-force.v1.json",
     "docs/HOST_AUTONOMY.md",
@@ -109,6 +112,7 @@ MARKERS = (
     "docs/COMPATIBILITY.md", "docs/LIVE_CERT.md", "BLOCKED_LOCAL_GAME_ACCESS",
     "docs/HORIZON.md", "plans/horizon.v1.json", "six needs",
     "docs/SCENE_INTELLIGENCE.md", "Unknown/user saves",
+    "docs/ONTOLOGY.md", "scripts/semantic_preflight.py",
 )
 class DoctrineViolation(Exception):
     pass

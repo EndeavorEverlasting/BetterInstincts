@@ -3,6 +3,9 @@
 ## Product contract
 BetterInstincts should make autonomy more **competent and believable**, not maximize task throughput at any cost. A Sim may rest, socialize, pursue a hobby, or behave imperfectly. Explicit player direction always outranks mod suggestions. Pursuit of work/career must consider time, energy, relationships, traits, mood, and user settings after those capabilities are observed in the game.
 
+## Product identity and capability freedom
+BetterInstincts improves the game's natural mechanics through safe, coordinated autonomy: six needs and financial sustainability are the core challenge; boot/save/scene/host infrastructure enables it rather than replacing it. Evaluate all relevant domains concurrently, respect real time/object/attention constraints, preserve ongoing goals when interrupted, and revalidate before resumption. Prefer native mechanics without prohibiting demonstrated, reversible extensions, new domains, economy experiments, or alternative engineering techniques. None of those extensions is a prerequisite to BI-002 without a proved dependency. The versioned semantic owner is `contracts/ontology.v1.json`; its consultation gate is not a game execution permit.
+
 ## Engineering authority
 - Root **AGENTS.md** is the mandatory agent entrypoint.
 - **docs/LEDGER.md** owns product intent, facts, decisions, and proof state.

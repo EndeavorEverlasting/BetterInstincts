@@ -64,8 +64,19 @@ jobs:
         run: python -m unittest tests.test_navigating_needs -v
       - name: Moodlet strip host sensing
         run: python -m unittest tests.test_moodlets -v
+      - name: Semantic orchestration offline and consultation tests
+        run: python -m unittest tests.test_semantic_advisory tests.test_ontology_gate -v
+      - name: Local agent semantic preflight canary (no game access)
+        run: python -m scripts.semantic_preflight --consultation contracts/consultations/BI-SEMANTIC-ORCHESTRATION-20261107.v1.json --operation repo_mutation --file betterinstincts/semantic_advisory.py
       - name: Doctrine fails closed
         run: python scripts/validate_doctrine.py
+      - name: Ontology schema and canonical owner integrity
+        run: python -m scripts.check_ontology
+      - name: Ontology consultation predates prototype mutation (PR)
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python -m scripts.check_ontology --base-ref "$PR_BASE_SHA"
       - name: Scene and save safety contract
         run: python -m scripts.check_scene_contract
       - name: Repo asset leakage prevention

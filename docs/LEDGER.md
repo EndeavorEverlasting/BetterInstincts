@@ -3,6 +3,9 @@
 **Repository:** EndeavorEverlasting/BetterInstincts
 **Owner objective (2026-10-20):** A creative, freely distributed contribution to The Sims 4 modding community that makes Sims autonomously meet needs responsibly, generate income, improve career outcomes, and pursue more fulfilling lives. Start with an observable small win while retaining the entire multi-month vision here. Prefer community-standard languages/tooling and patterns; avoid inventing new systems unnecessarily.
 
+## 2026-11-07 ontology refinement — candidate semantic layer
+Operator direction: game-native instincts first, but no arbitrary cap on future engineering or creative mechanisms. Needs plus financially sustainable autonomy remain the core, with existing cross-domain load-balancing retained. Goal threads must survive justified contingency preemption and be re-evaluated before resuming; multiple domains may be assessed together but that never grants simultaneous game input. Scoped ontology consultation must precede experiments, behavioral edits, and game sampling. Authoritative machine graph: `contracts/ontology.v1.json`; offline seam: `betterinstincts/semantic_advisory.py`; local preflight: `scripts/semantic_preflight.py`. Until independently observed, the extension and any burglar-specific strategy remain hypotheses; BI-002 gameplay certification unchanged and ACTIVE. Repository integration and local live-game evidence are separate statuses.
+
 ## Non-negotiable product behavior
 1. Player agency outranks all autonomy suggestions.
 2. Needs and safety outrank money/career efficiency; leisure and character remain meaningful.
