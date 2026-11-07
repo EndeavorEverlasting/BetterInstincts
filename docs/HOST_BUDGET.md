@@ -1,7 +1,7 @@
 # Host budget & needs-item securing (P95)
 
-**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect  
-**Provenance:** `spec-architecture-prompts.v1.json` blob `5926a198a14567de55110ed19e922fc444b4dec7`  
+**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
+**Provenance:** `spec-architecture-prompts.v1.json` blob `5926a198a14567de55110ed19e922fc444b4dec7`
 **Vocabulary:** [GLOSSARY.md](GLOSSARY.md) · Autonomy parent: [HOST_AUTONOMY.md](HOST_AUTONOMY.md)
 
 ## User outcomes
@@ -14,12 +14,12 @@
 `HOUSEHOLD_FUNDS`, `EMERGENCY_RESERVE`, `SOFT_BUDGET_FLOOR`, `NEED_OBJECT_GAP`, `SECURE_NEED_OBJECT`, `HOLD_PURCHASE`, `BUDGET_LOCKDOWN`, `CHEAPEST_ADEQUATE`, `EARN_BEFORE_SPEND`.
 
 ## Priority (invariant with doctrine/horizon)
-1. Player direction  
-2. Viewport / presence yield  
-3. Critical need **use** if object already owned (MAP_TRAVEL home — not walk thrash)  
-4. **SECURE_NEED_OBJECT** only if gap + affordable after reserve  
-5. Moodlet relief that is free/cheap (shower if owned, talk, etc.)  
-6. `earn_income` when funds below soft floor and needs not critically blocked  
+1. Player direction
+2. Viewport / presence yield
+3. Critical need **use** if object already owned (MAP_TRAVEL home — not walk thrash)
+4. **SECURE_NEED_OBJECT** only if gap + affordable after reserve
+5. Moodlet relief that is free/cheap (shower if owned, talk, etc.)
+6. `earn_income` when funds below soft floor and needs not critically blocked
 7. Skills only after needs objects exist and funds ≥ soft floor (horizon order)
 
 ## Module map
