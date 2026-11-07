@@ -107,3 +107,6 @@ Local checkout fast-forwarded to `4cf8cf22`. `python -m scripts.check_scene_cont
 
 ## 2026-11-07 — P95/P67/P62 host journey evaluator (offline)
 Implemented version-bound chosen-save boot/map/Live, two scene cues, registered disposable save safety, viewport/restart and critical-needs Join regressions, separate needs/optional whims/skills deltas, CI and a read-only runner. Fixed host_stack control precedence for absent/busy/player-directed Sims. Offline proof only; live black recovery, needs-green and BI-002 hunger 5+5 certification remain unproven. See docs/HOST_EVAL.md.
+
+## 2026-11-07 — Buy-menu stuck RCA + Save and Exit (LOCAL_OBSERVED)
+Operator correction on `bi002-quiz-boot` (pid 45380, patch `1.121.361.1020`): the durable stuck surface was **Build/Buy purchase catalog** at Copperdale High School (High School Items tray), not Live Mode void. Camera ladder alone stayed anomalous; WM_CLOSE posted without immediate exit; recovered UI showed Save Game? → **Save and Exit** → SAVING… → `TS4_x64` process count 0. Contract updated: C9, H5 (rank 1), A7. Receipt `dist/game-host/bi002-quiz-boot/save-exit-receipt.json` (Git-ignored). Six needs green, `BI_CONT_` Save As, and BI-002 hunger 5+5 remain **NOT_OBSERVED**.

@@ -25,6 +25,9 @@ class ViewportTests(unittest.TestCase):
         self.assertIn("root_cause_analysis", cfg)
         self.assertGreaterEqual(len(cfg["recovery_ladder"]), 5)
         self.assertTrue(any(a["id"] == "A2" for a in cfg["avoidance"]))
+        self.assertTrue(any(a["id"] == "A7" for a in cfg["avoidance"]))
+        self.assertTrue(any(h["id"] == "H5" for h in cfg["root_cause_analysis"]["leading_hypotheses"]))
+        self.assertTrue(any(c["id"] == "C9" for c in cfg["root_cause_analysis"]["causal_chain"]))
         self.assertTrue(any(h["id"] == "H1" for h in cfg["root_cause_analysis"]["leading_hypotheses"]))
 
     def test_full_black_synthetic(self):
