@@ -1,8 +1,11 @@
 # Build / Buy optimize program design (P95)
 
-**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect  
-**Provenance:** `spec-architecture-prompts.v1.json` blob `5926a198a14567de55110ed19e922fc444b4dec7`  
-**Trifecta:** P08 live apply remains evaluate-only until disposable Build Mode proof; P82 scored ranking; P07 owns this seam.  
+**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
+
+**Provenance:** `spec-architecture-prompts.v1.json` blob `5926a198a14567de55110ed19e922fc444b4dec7`
+
+**Trifecta:** P08 live apply remains evaluate-only until disposable Build Mode proof; P82 scored ranking; P07 owns this seam.
+
 **/design upstreams:** `impeccable`, `UP-A85AD9DC3`, `UP-REDERIVE-2026-1103-01`, `mattpocock-wayfinder`, `UP-40FE662CF`
 
 ## User outcomes
