@@ -19,26 +19,39 @@
     "date": "2026-11-07",
     "patch": "1.121.361.1020",
     "lot": "Bargain Bend",
-    "item": "Brick & Plaster",
-    "stats": {
-      "lot_environment_gain": 1,
-      "eco_footprint_industrial": 1
-    },
-    "capture_ref": "operator:wall-covering-tooltip-20261107",
-    "note": "Build Mode tooltip; stats stack per wall panel; Shift+click applies whole room/exterior"
+    "items": [
+      {
+        "item": "Veins of Gold Marble Walls",
+        "stats": {"lot_environment_gain": 2, "eco_footprint_green": 2},
+        "placement": "interior and exterior",
+        "capture_ref": "operator:veins-gold-marble-20261107"
+      },
+      {
+        "item": "Working Bricks",
+        "stats": {"lot_environment_gain": 2, "eco_footprint_green": 2},
+        "placement": "exterior (yield over aesthetics)",
+        "capture_ref": "operator:working-bricks-20261107"
+      },
+      {
+        "item": "Brick & Plaster",
+        "stats": {"lot_environment_gain": 1, "eco_footprint_industrial": 1},
+        "capture_ref": "operator:wall-covering-tooltip-20261107"
+      }
+    ],
+    "note": "Operator-attested dual max 2/2 is the current yield floor for Env+Green; aesthetics are not a ranking factor. Stats stack per wall panel; Shift+click applies whole room/exterior."
   },
   "objectives": {
     "MAXIMIZE_ENV": {
       "primary": "lot_environment_gain",
-      "secondary": ["cost_asc", "name_asc"],
+      "secondary": ["eco_footprint_green", "cost_asc", "name_asc"],
       "exclude_eco": null,
-      "benefit": "Raises room Environment Score toward Decorated / Beautifully Decorated Happy moodlets"
+      "benefit": "Raises room Environment Score toward Decorated / Beautifully Decorated Happy moodlets; ties break toward Green yield"
     },
     "MAXIMIZE_GREEN": {
       "primary": "eco_footprint_green",
       "secondary": ["lot_environment_gain", "cost_asc", "name_asc"],
       "exclude_eco": "industrial",
-      "benefit": "Neighborhood Clean Air / green utopia effects (Eco Lifestyle)"
+      "benefit": "Neighborhood Clean Air / green utopia effects (Eco Lifestyle); ties break toward Environment Gain"
     },
     "MAXIMIZE_INDUSTRIAL": {
       "primary": "eco_footprint_industrial",
@@ -50,17 +63,27 @@
       "primary": "combined_env_green",
       "secondary": ["lot_environment_gain", "eco_footprint_green", "cost_asc", "name_asc"],
       "exclude_eco": "industrial",
-      "benefit": "Prefer items that raise Environment Gain without industrial footprint"
+      "benefit": "Household yield default: maximize Env+Green contribution for Decorated + Clean Air moodlets (not aesthetics)"
+    },
+    "MAXIMIZE_YIELD": {
+      "primary": "combined_env_green",
+      "secondary": ["lot_environment_gain", "eco_footprint_green", "cost_asc", "name_asc"],
+      "exclude_eco": "industrial",
+      "benefit": "Alias of BALANCED_ENV_GREEN for host automation: moodlet/return yield over visual taste"
     }
   },
   "policies": {
     "stacking": "PER_WALL_PANEL",
     "unknown_stat": "FAIL_CLOSED_ZERO",
     "unknown_catalog_id": "REJECT",
-    "default_household_objective": "BALANCED_ENV_GREEN",
+    "default_household_objective": "MAXIMIZE_YIELD",
+    "ranking_priority": "YIELD_OVER_AESTHETICS",
+    "observed_max_env": 2,
+    "observed_max_green": 2,
     "player_first": true,
     "never_mutate_saves": true,
     "never_auto_discover_install": true,
+    "include_unknown_pack_when_operator_attested": true,
     "execute_requires": ["HOST_MAY_AUTOMATE", "DISPOSABLE_LAB", "EXPLICIT_SESSION"],
     "apply_technique_note": "Hold Shift and click to apply a wall covering to the whole room or exterior",
     "green_vs_industrial": "MUTUALLY_EXCLUSIVE_OBJECTIVES"
@@ -80,9 +103,42 @@
     "EP09": {"label": "Eco Lifestyle", "required_for": ["eco_footprint_green", "eco_footprint_industrial"]},
     "GP02": {"label": "Spa Day", "required": false},
     "EP19": {"label": "Horse Ranch", "required": false},
-    "EP20": {"label": "Enchanted by Nature", "required": false}
+    "EP20": {"label": "Enchanted by Nature", "required": false},
+    "unknown": {"label": "Pack not yet identified", "required": false}
   },
   "catalog": [
+    {
+      "id": "wall.veins_of_gold_marble",
+      "name": "Veins of Gold Marble Walls",
+      "category": "wall_covering",
+      "pack": "unknown",
+      "cost": null,
+      "lot_environment_gain": 2,
+      "eco_footprint_green": 2,
+      "eco_footprint_industrial": 0,
+      "evidence_state": "LOCAL_OBSERVED",
+      "capture_ref": "operator:veins-gold-marble-20261107",
+      "aliases": [
+        "veins of gold marble walls",
+        "veins of gold marble",
+        "veins of gold"
+      ],
+      "note": "Operator yield pick: dual max Env+Green on interior and exterior; pack ID TBD"
+    },
+    {
+      "id": "wall.working_bricks",
+      "name": "Working Bricks",
+      "category": "wall_covering",
+      "pack": "unknown",
+      "cost": null,
+      "lot_environment_gain": 2,
+      "eco_footprint_green": 2,
+      "eco_footprint_industrial": 0,
+      "evidence_state": "LOCAL_OBSERVED",
+      "capture_ref": "operator:working-bricks-20261107",
+      "aliases": ["working bricks"],
+      "note": "Operator yield pick on exterior despite aesthetics; dual max Env+Green; pack ID TBD"
+    },
     {
       "id": "wall.brick_and_plaster",
       "name": "Brick & Plaster",

@@ -25,7 +25,7 @@ class BuildOptimizeTests(unittest.TestCase):
         self.assertEqual(brick["lot_environment_gain"], 1)
         self.assertEqual(brick["eco_footprint_industrial"], 1)
 
-    def test_maximize_env_prefers_gain_2_when_packs_owned(self):
+    def test_maximize_env_prefers_dual_yield_over_env_only(self):
         ranked = rank_items(
             "MAXIMIZE_ENV",
             category="wall_covering",
@@ -34,9 +34,13 @@ class BuildOptimizeTests(unittest.TestCase):
         )
         self.assertTrue(ranked)
         self.assertEqual(ranked[0]["lot_environment_gain"], 2)
-        self.assertIn(ranked[0]["id"], {"wall.matchstick_magic", "wall.wildwood_whimsy"})
+        self.assertEqual(ranked[0]["eco_footprint_green"], 2)
+        self.assertIn(
+            ranked[0]["id"],
+            {"wall.veins_of_gold_marble", "wall.working_bricks"},
+        )
 
-    def test_maximize_env_base_only_falls_back_to_env1(self):
+    def test_maximize_env_attested_unknown_pack_still_ranks(self):
         ranked = rank_items(
             "MAXIMIZE_ENV",
             category="wall_covering",
@@ -44,10 +48,11 @@ class BuildOptimizeTests(unittest.TestCase):
             limit=3,
         )
         self.assertTrue(ranked)
-        self.assertEqual(ranked[0]["lot_environment_gain"], 1)
+        self.assertEqual(ranked[0]["lot_environment_gain"], 2)
+        self.assertEqual(ranked[0]["eco_footprint_green"], 2)
         self.assertNotEqual(ranked[0]["id"], "wall.matchstick_magic")
 
-    def test_maximize_green_prefers_log_siding_excludes_industrial(self):
+    def test_maximize_green_prefers_dual_yield_excludes_industrial(self):
         ranked = rank_items(
             "MAXIMIZE_GREEN",
             category="wall_covering",
@@ -55,8 +60,12 @@ class BuildOptimizeTests(unittest.TestCase):
             limit=5,
         )
         self.assertTrue(ranked)
-        self.assertEqual(ranked[0]["id"], "wall.log_siding")
         self.assertEqual(ranked[0]["eco_footprint_green"], 2)
+        self.assertEqual(ranked[0]["lot_environment_gain"], 2)
+        self.assertIn(
+            ranked[0]["id"],
+            {"wall.veins_of_gold_marble", "wall.working_bricks"},
+        )
         ids = {r["id"] for r in ranked}
         self.assertNotIn("wall.brick_and_plaster", ids)
 
@@ -70,6 +79,23 @@ class BuildOptimizeTests(unittest.TestCase):
         self.assertEqual(ranked[0]["id"], "wall.brick_and_plaster")
         self.assertGreaterEqual(ranked[0]["eco_footprint_industrial"], 1)
 
+    def test_maximize_yield_picks_dual_max(self):
+        ranked = rank_items(
+            "MAXIMIZE_YIELD",
+            category="wall_covering",
+            owned_packs=["base", "EP09", "GP02", "EP19", "EP20"],
+            limit=5,
+        )
+        self.assertTrue(ranked)
+        best = ranked[0]
+        self.assertEqual(best["lot_environment_gain"], 2)
+        self.assertEqual(best["eco_footprint_green"], 2)
+        # Dual 2/2 score must beat Env-only 2 (Matchstick) and Green-only 2 (Log Siding).
+        matchstick = next(r for r in ranked if r["id"] == "wall.matchstick_magic")
+        self.assertGreater(best["objective_score"], matchstick["objective_score"])
+        ids = {r["id"] for r in ranked}
+        self.assertNotIn("wall.brick_and_plaster", ids)
+
     def test_balanced_excludes_industrial_brick(self):
         ranked = rank_items(
             "BALANCED_ENV_GREEN",
@@ -80,6 +106,10 @@ class BuildOptimizeTests(unittest.TestCase):
         ids = {r["id"] for r in ranked}
         self.assertNotIn("wall.brick_and_plaster", ids)
         self.assertTrue(any(r["lot_environment_gain"] >= 1 for r in ranked))
+        self.assertIn(
+            ranked[0]["id"],
+            {"wall.veins_of_gold_marble", "wall.working_bricks"},
+        )
 
     def test_stacking_multiplies_panels(self):
         cfg = load_contract()
@@ -109,14 +139,27 @@ class BuildOptimizeTests(unittest.TestCase):
 
     def test_evaluate_plan_ready_execute_false(self):
         result = evaluate_build_optimize(
-            "MAXIMIZE_ENV",
+            "MAXIMIZE_YIELD",
             owned_packs=["base", "GP02", "EP20"],
             panels=16,
         )
         self.assertEqual(result["state"], "BUILD_OPTIMIZE_PLAN_READY")
         self.assertEqual(result["best"]["lot_environment_gain"], 2)
+        self.assertEqual(result["best"]["eco_footprint_green"], 2)
         self.assertFalse(result["plan"]["execute_allowed"])
         self.assertEqual(result["projection"]["lot_environment_gain_total"], 32)
+        self.assertEqual(result["projection"]["eco_footprint_green_total"], 32)
+
+    def test_resolve_veins_and_working_bricks(self):
+        cfg = load_contract()
+        veins = resolve_item("Veins of Gold Marble Walls", cfg["catalog"])
+        bricks = resolve_item("working bricks", cfg["catalog"])
+        self.assertIsNotNone(veins)
+        self.assertIsNotNone(bricks)
+        self.assertEqual(veins["lot_environment_gain"], 2)
+        self.assertEqual(veins["eco_footprint_green"], 2)
+        self.assertEqual(bricks["lot_environment_gain"], 2)
+        self.assertEqual(bricks["eco_footprint_green"], 2)
 
     def test_unknown_objective_fails_closed(self):
         with self.assertRaises(BuildOptimizeError):
@@ -148,13 +191,14 @@ class BuildOptimizeTests(unittest.TestCase):
         out = evaluate_turn(
             needs,
             available_objects=("fridge", "toilet", "bed", "shower", "computer", "chair"),
-            build_objective="MAXIMIZE_ENV",
+            build_objective="MAXIMIZE_YIELD",
             build_owned_packs=("base", "GP02", "EP20"),
             build_panels=10,
             build_or_buy_mode=True,
         )
         self.assertEqual(out["next_gate"], "BUILD_OPTIMIZE_EVALUATE_ONLY")
         self.assertEqual(out["build_optimize"]["best"]["lot_environment_gain"], 2)
+        self.assertEqual(out["build_optimize"]["best"]["eco_footprint_green"], 2)
         self.assertFalse(out["fallback"]["execute_allowed"])
 
 

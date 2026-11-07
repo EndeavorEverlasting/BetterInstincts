@@ -144,6 +144,9 @@ Operator: outdoor-social idiocy is avoidable — **Sit and Chat Here** on indoor
 ## 2026-11-07 — Build/Buy optimize catalog (P95 + /design + trifecta)
 Operator Build Mode tooltip on Bargain Bend (**Brick & Plaster**: Lot Environment Gain 1, Eco Footprint Industrial 1). P95 program: deterministic maximize for Environment Gain / Green / Industrial / balanced Env+Green via versioned catalog (Spa Day / Enchanted env+2, Horse Ranch green+2 attested). Owners: `contracts/build-optimize.v1.json`, `docs/BUILD_OPTIMIZE.md`, `betterinstincts/build_optimize.py`, `scripts/build_optimize.py`, host_stack optional gate. Proof ceiling: offline ranking only — live Shift+apply paint and neighborhood meter observation remain OPEN. Does not close BI-002.
 
+## 2026-11-07 — Yield walls: dual Env+Green max 2/2 (P95 + trifecta)
+Operator lab: **Veins of Gold Marble Walls** and **Working Bricks** each LOCAL_OBSERVED at Lot Environment Gain **2** and Eco Footprint Green **2** (operator max found); applied interior/exterior for yield over aesthetics. Catalog + `MAXIMIZE_YIELD` default; dual-stat score beats Env-only or Green-only 2s; unknown pack still ranks when operator-attested. Pack IDs TBD. Live apply / meter proof still OPEN; BI-002 hunger still ACTIVE.
+
 ## 2026-11-07 — P141 strategic scout after progression evaluator merge
 
 **Owner objective retained:** free, community-native, player-first Sims 4 autonomy: responsible adult needs and cross-need balance before sustainable **observed** income, then skills, then careers, while preserving leisure/personality, reversibility, per-Sim control, patch-specific safety and no save mutation. **This is the product, not an offline scoring engine.** PR #30 (`main` `9f238fb`) brought vision/scaffolding/product rates and CI honesty; recorded product progression and hunger trials remain **0.0**. Repository history includes locally observed game navigation and Live Mode, but no qualifying hunger experiment.
