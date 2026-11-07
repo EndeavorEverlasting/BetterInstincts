@@ -7,6 +7,7 @@ it cannot attest that a human actually read the record.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -64,9 +65,9 @@ def validate_ontology(data: dict, root: Path = ROOT) -> None:
 
 
 def is_behavior_mutation(path: str) -> bool:
-    if path in ("AGENTS.md", ".github/workflows/ci.yml"):
+    if path == "AGENTS.md":
         return True
-    if path.startswith((".cursor/rules/", "betterinstincts/", "scripts/", "tests/")):
+    if path.startswith((".github/workflows/", ".cursor/rules/", "betterinstincts/", "scripts/", "tests/", "compatibility/")):
         return True
     if path.startswith("contracts/") and path.endswith(".json"):
         return not (path == str(ONTOLOGY) or path.startswith(str(CONSULTATIONS) + "/"))
@@ -80,6 +81,16 @@ def validate_consultation(data: dict, ontology: dict, changed: list[str], root: 
         value = data.get(field)
         if value is None or value == "" or value == []:
             raise ValueError(f"CONSULTATION_FIELD_MISSING:{field}")
+    if data.get("ontology") != str(ONTOLOGY):
+        raise ValueError("CONSULTATION_WRONG_ONTOLOGY")
+    raw = (root / ONTOLOGY).read_bytes()
+    blob = hashlib.sha1(f"blob {len(raw)}\0".encode() + raw).hexdigest()
+    if data.get("ontology_blob_sha") != blob:
+        raise ValueError("CONSULTATION_ONTOLOGY_VERSION_MISMATCH")
+    if data.get("game_build_scope") != "REPOSITORY_OFFLINE_ONLY" and not data.get("game_build_scope", "").startswith("EXACT_GAME_BUILD:"):
+        raise ValueError("CONSULTATION_GAME_BUILD_AMBIGUOUS")
+    if data.get("evidence_ceiling") == "GAME_CERTIFIED" and data.get("game_build_scope") == "REPOSITORY_OFFLINE_ONLY":
+        raise ValueError("CONSULTATION_OFFLINE_PROOF_INFLATED")
     concepts = set(ontology["concepts"])
     invs = {x["id"] for x in ontology["invariants"]}
     if set(data["affected_concepts"]) - concepts:
@@ -88,6 +99,9 @@ def validate_consultation(data: dict, ontology: dict, changed: list[str], root: 
         raise ValueError("CONSULTATION_UNKNOWN_INVARIANT")
     if not set(data["invariants_checked"]):
         raise ValueError("CONSULTATION_NO_INVARIANTS")
+    universal = {"BI-ONT-001", "BI-ONT-002", "BI-ONT-003", "BI-ONT-005", "BI-ONT-006", "BI-ONT-008", "BI-ONT-010", "BI-ONT-012"}
+    if not universal.issubset(set(data["invariants_checked"])):
+        raise ValueError("CONSULTATION_UNIVERSAL_INVARIANTS_MISSING")
     if data["decision"] not in DECISIONS:
         raise ValueError("CONSULTATION_DECISION_INVALID")
     for owner in data["relevant_canonical_owners"]:
