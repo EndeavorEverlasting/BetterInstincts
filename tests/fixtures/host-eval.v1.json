@@ -65,7 +65,7 @@
         "after": {
           "hunger": 0.9,
           "bladder": 0.9,
-          "energy": 0.4,
+          "energy": 0.9,
           "hygiene": 0.9,
           "fun": 0.9,
           "social": 0.9
@@ -147,7 +147,7 @@
         "after": {
           "hunger": 0.9,
           "bladder": 0.9,
-          "energy": 0.4,
+          "energy": 0.9,
           "hygiene": 0.9,
           "fun": 0.9,
           "social": 0.9
@@ -235,7 +235,7 @@
         "after": {
           "hunger": 0.9,
           "bladder": 0.9,
-          "energy": 0.4,
+          "energy": 0.9,
           "hygiene": 0.9,
           "fun": 0.9,
           "social": 0.9
@@ -318,7 +318,7 @@
         "after": {
           "hunger": 0.9,
           "bladder": 0.9,
-          "energy": 0.4,
+          "energy": 0.9,
           "hygiene": 0.9,
           "fun": 0.9,
           "social": 0.9
@@ -403,7 +403,7 @@
         "after": {
           "hunger": 0.9,
           "bladder": 0.9,
-          "energy": 0.4,
+          "energy": 0.9,
           "hygiene": 0.9,
           "fun": 0.9,
           "social": 0.9
@@ -487,7 +487,7 @@
         "after": {
           "hunger": 0.9,
           "bladder": 0.9,
-          "energy": 0.4,
+          "energy": 0.9,
           "hygiene": 0.9,
           "fun": 0.9,
           "social": 0.9
@@ -572,7 +572,7 @@
         "after": {
           "hunger": 0.9,
           "bladder": 0.9,
-          "energy": 0.4,
+          "energy": 0.9,
           "hygiene": 0.9,
           "fun": 0.9,
           "social": 0.9
@@ -658,7 +658,7 @@
         "after": {
           "hunger": 0.9,
           "bladder": 0.9,
-          "energy": 0.4,
+          "energy": 0.9,
           "hygiene": 0.9,
           "fun": 0.9,
           "social": 0.9
@@ -826,7 +826,7 @@
         "after": {
           "hunger": 0.9,
           "bladder": 0.9,
-          "energy": 0.4,
+          "energy": 0.9,
           "hygiene": 0.9,
           "fun": 0.9,
           "social": 0.9
@@ -909,7 +909,7 @@
         "after": {
           "hunger": 0.9,
           "bladder": 0.9,
-          "energy": 0.4,
+          "energy": 0.9,
           "hygiene": 0.9,
           "fun": 0.9,
           "social": 0.9
@@ -991,7 +991,7 @@
         "after": {
           "hunger": 0.9,
           "bladder": 0.9,
-          "energy": 0.4,
+          "energy": 0.9,
           "hygiene": 0.9,
           "fun": 0.9,
           "social": 0.9
@@ -1100,7 +1100,7 @@
         "after": {
           "hunger": 0.9,
           "bladder": 0.9,
-          "energy": 0.4,
+          "energy": 0.9,
           "hygiene": 0.9,
           "fun": 0.9,
           "social": 0.9
