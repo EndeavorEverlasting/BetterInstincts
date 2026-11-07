@@ -6,6 +6,7 @@ import json
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from scripts.check_ontology import (
@@ -77,6 +78,40 @@ class OntologyContractTests(unittest.TestCase):
             preflight(path, operation="repo_mutation", files=("betterinstincts/unmapped.py",))
         with self.assertRaisesRegex(SemanticPreflightError, "MUTATION_PATH_INVALID"):
             preflight(path, operation="repo_mutation", files=("../untrusted.py",))
+
+    def test_blocked_and_deferred_consultations_fail_for_game_sampling(self):
+        """A game preflight without file mutations must still reject a deny."""
+        consult = "contracts/consultations/BI-P83-PREFLIGHT-INTENT-20261107.v1.json"
+        real_read = read_json
+        actual = read_json(ROOT / consult)
+        for denied in ("BLOCK_UNSAFE", "DEFER_FOR_GAME_EVIDENCE",
+                       "REQUIRE_ONTOLOGY_AMENDMENT"):
+            candidate = copy.deepcopy(actual)
+            candidate["decision"] = denied
+            with self.subTest(decision=denied):
+                with patch(
+                    "scripts.semantic_preflight.read_json",
+                    side_effect=lambda path: candidate if Path(path).name ==
+                        "BI-P83-PREFLIGHT-INTENT-20261107.v1.json" else real_read(path),
+                ):
+                    with self.assertRaisesRegex(SemanticPreflightError, "CONSULTATION_NOT_ADMITTED"):
+                        preflight(consult, operation="game_sampling",
+                                  exact_game_build="1.121.361.1020")
+
+    def test_accepted_scoped_consultation_is_not_game_authority(self):
+        consult = "contracts/consultations/BI-P83-PREFLIGHT-INTENT-20261107.v1.json"
+        candidate = copy.deepcopy(read_json(ROOT / consult))
+        candidate["game_build_scope"] = "EXACT_GAME_BUILD:TEST_ONLY_1.2.3"
+        real_read = read_json
+        with patch(
+            "scripts.semantic_preflight.read_json",
+            side_effect=lambda path: candidate if Path(path).name ==
+                "BI-P83-PREFLIGHT-INTENT-20261107.v1.json" else real_read(path),
+        ):
+            result = preflight(consult, operation="game_sampling",
+                               exact_game_build="TEST_ONLY_1.2.3")
+        self.assertEqual(result["status"], "ONTOLOGY_PREFLIGHT_PASS_NOT_GAME_AUTHORITY")
+        self.assertIsNone(result["control_permit"])
 
     def test_preprototype_receipt_is_valid(self):
         validate_consultation(
