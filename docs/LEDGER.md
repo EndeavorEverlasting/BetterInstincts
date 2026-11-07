@@ -223,3 +223,12 @@ Operator gap: gardening desire visible in moodlets without a durable way to chec
 ## 2026-11-07 — Need-service load balance + assumption windows (P95 + trifecta)
 
 **Operator:** Parallel need microsystems should load-balance with health checks; when one is off, host detaches that call stack, opens a new assumption window (scene/assumptions/options reset), and reweights exploration. Deterministic **P95** program design in [`docs/NEED_LOAD_BALANCE.md`](NEED_LOAD_BALANCE.md) / `contracts/need-load-balance.v1.json` / `betterinstincts/need_load_balance.py`. Wired through `need_services` → host gates `NEED_SERVICES_TANDEM` | `NEED_SERVICES_LOAD_BALANCE`. Decision prompts still outrank need-service plans. Non-urgent guest-blocked siblings stay DEGRADED. Proof ceiling `HOST_NEED_LB_HEALTH_ASSUMPTION_WINDOW_NOT_DAEMON_NOT_EA_API`. Does not close BI-002.
+
+## 2026-11-07 — Domain cascade poll receipts (P124 + trifecta)
+
+**Operator:** Holistic cohesion across needs, Simoleon budget, career/school, skills/whims, and relationships via polling and cascading receipts — joined to the need-service load balancer rather than a second needs queue. **P124** peer owner [`docs/DOMAIN_CASCADE.md`](DOMAIN_CASCADE.md) / `contracts/domain-cascade.v1.json` / `betterinstincts/domain_cascade.py` / `python -m scripts.domain_cascade`. Cascade order: needs (+ navigating_needs + LB) → budget → career → skills_whims → relationships. Player-first halts; LB detach findings propagate. Proof ceiling `HOST_DOMAIN_CASCADE_POLL_RECEIPTS_NOT_DAEMON_NOT_LIVE_CERT`. Live multi-domain ticks OPEN. Does not close BI-002.
+
+## 2026-11-07 — P03 branch hygiene + P141 next gate
+
+**P03:** Merged PR #53 (LB glossary). Deleted remotes fully contained in `main` plus superseded need-service/LB/adapter-docs forks. Left diverged historical remotes untouched pending salvage. **P141:** selected land domain-cascade then issue #35 `screen_admit` adapters; BI-002 remains parent. See [STRATEGY.md](STRATEGY.md#2026-11-07--p141-scout-post-need-services-mainline--branch-hygiene-p03). **P124:** domain_cascade reuses `need_service_base.normalize_needs` instead of a forked six-need parser.
+

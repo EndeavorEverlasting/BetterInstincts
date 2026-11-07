@@ -202,6 +202,14 @@
         "betterinstincts/need_load_balance.py"
       ]
     },
+    "DOMAIN_CASCADE": {
+      "definition": "Ordered poll bus that emits cascading receipts across needs (with LB), budget, career, skills/whims, and relationships on each observation — not a background daemon.",
+      "owners": [
+        "contracts/domain-cascade.v1.json",
+        "docs/DOMAIN_CASCADE.md",
+        "betterinstincts/domain_cascade.py"
+      ]
+    },
     "MOODLET_STRIP": {
       "definition": "Bottom-left Sim emotion and moodlet icons. Host logic requires supplied labels; absence is SENSOR_NOT_SUPPLIED.",
       "owners": [

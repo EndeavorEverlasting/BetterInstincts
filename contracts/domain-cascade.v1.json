@@ -1,0 +1,59 @@
+{
+  "schema": "betterinstincts.domain-cascade/v1",
+  "version": 1,
+  "authority": "docs/DOMAIN_CASCADE.md",
+  "proof_ceiling": "HOST_DOMAIN_CASCADE_POLL_RECEIPTS_NOT_DAEMON_NOT_LIVE_CERT",
+  "design_brief": {
+    "subject": "Polling cascade of domain receipts across needs, budget, career, skills, relationships, whims",
+    "job": "Let parallel host microsystems speak via ordered receipts on every recurring observation — regardless of human, agent, or script player",
+    "architecture": "Thin poll bus over existing evaluators; respects need_load_balance; never a background daemon"
+  },
+  "poll_domains": [
+    {
+      "id": "needs",
+      "owner": "betterinstincts/need_services.py",
+      "lb": "betterinstincts/need_load_balance.py",
+      "related": ["navigating_needs"]
+    },
+    {
+      "id": "budget",
+      "owner": "betterinstincts/budget_eval.py",
+      "stat": "simoleons"
+    },
+    {
+      "id": "career",
+      "owners": [
+        "betterinstincts/school_day.py",
+        "betterinstincts/teen_homework.py",
+        "betterinstincts/scenario_goals.py"
+      ]
+    },
+    {
+      "id": "skills_whims",
+      "owner": "betterinstincts/sim_profile.py"
+    },
+    {
+      "id": "relationships",
+      "owner": "betterinstincts/social_opportunity.py"
+    }
+  ],
+  "cascade_order": [
+    "needs",
+    "budget",
+    "career",
+    "skills_whims",
+    "relationships"
+  ],
+  "rules": {
+    "player_first_halts_cascade": true,
+    "needs_lb_detach_propagates": true,
+    "later_domains_see_prior_receipts": true,
+    "compact_receipts_for_listener": true
+  },
+  "anti_patterns": [
+    "BACKGROUND_DOMAIN_POLL_DAEMON",
+    "IGNORE_NEED_LOAD_BALANCE",
+    "CAREER_BEFORE_NEEDS_WHEN_CRITICAL",
+    "REINVENT_PER_DOMAIN_ORCHESTRATOR"
+  ]
+}
