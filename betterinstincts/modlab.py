@@ -8,6 +8,8 @@ import os
 from pathlib import Path, PurePosixPath
 import zipfile
 
+from betterinstincts.dbpf import DbpfError, read_package_index
+
 SCHEMA = "betterinstincts.modlab.inventory.v1"
 MAX_FILES = 10_000
 MAX_ZIP_ENTRIES = 2_000
@@ -108,11 +110,24 @@ def inspect_mods_root(root: str | Path, *, max_files: int = MAX_FILES) -> dict:
                 if not candidate.is_file():
                     findings.append({"path": relative, "code": "NON_FILE_SKIPPED"})
                     continue
-                item = {"path": relative, "kind": "package" if suffix == ".package" else "script", "bytes": stat.st_size, "modules": [], "issues": []}
+                item = {
+                    "path": relative,
+                    "kind": "package" if suffix == ".package" else "script",
+                    "bytes": stat.st_size,
+                    "modules": [],
+                    "package_index": None,
+                    "issues": [],
+                }
                 if suffix == ".package":
                     with candidate.open("rb") as stream:
                         if stream.read(4) != b"DBPF":
                             item["issues"].append("INVALID_PACKAGE_MAGIC")
+                        else:
+                            try:
+                                item["package_index"] = read_package_index(candidate)
+                                item["issues"].extend(item["package_index"].get("issues", []))
+                            except DbpfError as exc:
+                                item["issues"].append(str(exc))
                 else:
                     item["modules"], item["issues"] = _script_modules(candidate)
                     if len(Path(relative).parts) > 2:
@@ -131,5 +146,8 @@ def inspect_mods_root(root: str | Path, *, max_files: int = MAX_FILES) -> dict:
         "items": entries,
         "module_overlap_candidates": overlaps,
         "findings": sorted(findings, key=lambda item: (item["path"], item["code"])),
-        "proof_ceiling": "FILE_METADATA_AND_ARCHIVE_NAMES_ONLY_NOT_RESOURCE_CONFLICT_OR_GAMEPLAY_PROOF",
+        "proof_ceiling": (
+            "FILE_METADATA_ARCHIVE_NAMES_AND_PACKAGE_INDEX_KEYS_ONLY_"
+            "NOT_RESOURCE_CONFLICT_TUNING_OR_GAMEPLAY_PROOF"
+        ),
     }
