@@ -102,6 +102,8 @@ class GameHostTests(unittest.TestCase):
         host.confirm("bi002-game-host", "capture:chosen-test", "1.121.1.1030", True)
         self.assertEqual(host.status("bi002-game-host")["state"],
                          "LIVE_REPORTED_UNREVIEWED")
+        self.assertEqual(host.status("bi002-game-host")["game_version"],
+                         "1.121.1.1030")
 
     def test_new_game_only_requests_cas_not_live_game(self):
         cfg, digest = self.launch_fake("new")
@@ -114,6 +116,22 @@ class GameHostTests(unittest.TestCase):
         with self.assertRaisesRegex(host.GateError, "AMBIGUOUS_UI_TARGET"):
             host.navigate("bi002-game-host", cfg, digest, True, True, gui=gui)
         self.assertFalse(gui.clicked)
+
+    def test_partial_ui_click_is_checkpointed_and_never_replayed(self):
+        cfg, digest = self.launch_fake()
+
+        class PartialGui(FakeGui):
+            def locateAllOnScreen(self, template, grayscale=False):
+                self.count += 1
+                return [object()] if self.count == 1 else [object(), object()]
+
+        gui = PartialGui(0)
+        with self.assertRaisesRegex(host.GateError, "AMBIGUOUS_UI_TARGET"):
+            host.navigate("bi002-game-host", cfg, digest, True, True, gui=gui)
+        self.assertEqual(len(gui.clicked), 1)
+        self.assertEqual(host.status("bi002-game-host")["state"], "UI_CLICK_DISPATCHED")
+        with self.assertRaisesRegex(host.GateError, "LAUNCH_DISPATCH_REQUIRED"):
+            host.navigate("bi002-game-host", cfg, digest, True, True, gui=FakeGui())
 
     def test_profile_mutation_blocked_after_launch(self):
         cfg, digest = self.launch_fake()
