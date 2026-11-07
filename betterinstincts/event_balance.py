@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
+from betterinstincts.moodlets import MoodletError, evaluate_moodlets
+
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "event-balance.v1.json"
 NEEDS = ROOT / "contracts" / "needs.v1.json"
@@ -55,6 +57,8 @@ def evaluate_event_turn(
     player_directed: bool = False,
     already_busy: bool = False,
     viewport_ok: bool = True,
+    emotion: Optional[str] = None,
+    moodlets: Sequence[str] = (),
     capture_ref: str = "capture:event-turn",
 ) -> dict:
     """Return the highest-priority call-stack gate for one hosted-event turn."""
@@ -64,11 +68,24 @@ def evaluate_event_turn(
     survival_critical = sorted(n for n in SURVIVAL if snap[n] < thr)
     fun_urgent = snap["fun"] < thr
     goals = [str(g) for g in event_goals_incomplete if isinstance(g, str) and g]
+    try:
+        mood = evaluate_moodlets(
+            emotion=emotion,
+            moodlets=moodlets,
+            needs=snap,
+            outdoor_social_prefix=outdoor_social_prefix,
+            indoor_capacity_observed=indoor_capacity_observed,
+            event_active=event_active,
+            capture_ref=capture_ref,
+        )
+    except MoodletError as exc:
+        raise EventBalanceError(str(exc)) from exc
     findings = []
     if outdoor_social_prefix and indoor_capacity_observed and event_active:
         findings.append("OUTDOOR_SOCIAL_DEFAULT_WITH_INDOOR_CAPACITY")
     if event_active and goals and outdoor_social_prefix:
         findings.append("EVENT_GOAL_NEGLECT_WHILE_SPAMMING_SIDEWALK_CHAT")
+    findings.extend(mood.get("findings", []))
 
     stack = list(cfg["call_stack"]["order"])
     gate = "LEISURE_OR_IDLE"
@@ -96,6 +113,8 @@ def evaluate_event_turn(
         preferred_routes = list(
             cfg["call_stack"]["gates"]["EVENT_INDOOR_ROUTING"]["preferred_routes"]
         )
+        if "TENSE_MOOD_OUTDOOR_SOCIAL" in mood.get("findings", []):
+            preferred_routes = ["CLICK_INDOOR_SIM", "GO_HERE_INDOOR", *preferred_routes]
     elif event_active and goals and not survival_critical:
         gate = "EVENT_GOAL_PROGRESS"
         action = "QUEUE_INCOMPLETE_EVENT_GOALS_INDOOR"
@@ -118,6 +137,9 @@ def evaluate_event_turn(
         action = "RECOVER_IF_NOT_COVERED_BY_EVENT"
         disposition = "EMULATE_THEN_OPTIMIZE"
 
+    if "TENSE_MOOD_OUTDOOR_SOCIAL" in mood.get("findings", []):
+        findings.append("MOODLET_REINFORCES_INDOOR_ROUTING")
+
     leading = [h["id"] for h in cfg["rca"]["hypotheses"] if h.get("status") == "LEADING"]
     return {
         "schema": "betterinstincts.event-balance-result/v1",
@@ -133,6 +155,7 @@ def evaluate_event_turn(
         "event_active": event_active,
         "goals_incomplete": goals,
         "homework_pending": homework_pending,
+        "moodlets": mood,
         "call_stack_order": stack,
         "rca_leading": leading,
         "proof_ceiling": cfg["proof_ceiling"],

@@ -21,6 +21,7 @@ from betterinstincts.instincts_host import (
     plan,
     plan_to_dict,
 )
+from betterinstincts.moodlets import MoodletError, evaluate_moodlets
 from betterinstincts.viewport import ViewportError, predict_risk
 
 
@@ -50,14 +51,17 @@ def evaluate_turn(
     outdoor_social_prefix: bool = False,
     indoor_capacity_observed: bool = False,
     homework_pending: bool = False,
+    emotion: Optional[str] = None,
+    moodlets: Sequence[str] = (),
 ) -> dict:
-    """Compose viewport safety + instincts + optional dialog for one host turn.
+    """Compose viewport, moodlets, event-balance, instincts, and dialog gates.
 
     Viewport anomalies outrank needs actions: do not click world objects while
     PrintWindow is black. See contracts/viewport-black.v1.json.
 
     When critical needs are off-lot, next_gate becomes MAP_TRAVEL_HOME_FIRST —
-    never IN_FRAME_WALK_THRASH (glossary).
+    never IN_FRAME_WALK_THRASH (glossary). Moodlets are supplied observations
+    (portrait strip); absence is SENSOR_NOT_SUPPLIED — never vision-invented.
     """
     try:
         snap = NeedSnapshot(
@@ -80,6 +84,15 @@ def evaluate_turn(
         risk = predict_risk(viewport_context or {})
         behavior = None
         event_balance = None
+        moodlet_eval = evaluate_moodlets(
+            emotion=emotion,
+            moodlets=moodlets,
+            needs=needs,
+            outdoor_social_prefix=outdoor_social_prefix,
+            indoor_capacity_observed=indoor_capacity_observed,
+            event_active=event_active,
+            capture_ref=capture_ref,
+        )
         if queue is not None:
             on_lot = (
                 bool(objects_on_current_lot)
@@ -106,6 +119,8 @@ def evaluate_turn(
                 player_directed=player_directed,
                 already_busy=already_busy,
                 viewport_ok=bool(viewport_ok),
+                emotion=emotion,
+                moodlets=moodlets,
                 capture_ref=capture_ref,
             )
     except (
@@ -114,6 +129,7 @@ def evaluate_turn(
         ViewportError,
         BehaviorEvalError,
         EventBalanceError,
+        MoodletError,
     ) as exc:
         raise HostStackError(str(exc)) from exc
 
@@ -225,6 +241,7 @@ def evaluate_turn(
         "next_gate": next_gate,
         "fallback": fallback,
         "behavior": behavior,
+        "moodlets": moodlet_eval,
         "event_balance": event_balance,
         "instincts": instincts,
         "decision": decision,

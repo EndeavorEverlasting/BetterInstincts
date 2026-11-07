@@ -30,6 +30,7 @@ See glossary: `PLAYER_FIRST`, `PLAYER_PLAYING`, `PLAYER_PRESENT_ON_CANVAS`, `HOS
 | `needs_force` | MAP_TRAVEL-first recovery plan | none in library |
 | `host_stack` | Compose viewport/behavior/event-balance/instincts gates | none |
 | `event_balance` | Outdoor-social RCA + event/needs/homework call stack | none |
+| `moodlets` | Supplied emotion/moodlet strip → need pressure + routing bias | none |
 | `host_listener` | Opt-in session + tick receipts | writes `dist/host-listener/` |
 | `host_automate` | Presence-gated plan; optional execute | optional SendInput via script |
 | `funds_inject` | Subsidy prompt (funds under 100) + mode-agnostic Money/motherlode inject | optional SendInput via `scripts/funds_inject` |
@@ -57,7 +58,8 @@ operator activates listener/automate session
   -> player_presence.classify (FG Sims? cursor in client?)
   -> if PLAYER_PLAYING: YIELD_TO_PLAYER (stop)
   -> behavior_eval.evaluate_queue
-  -> host_stack.evaluate_turn
+  -> moodlets.evaluate_moodlets (supplied HUD strip; else SENSOR_NOT_SUPPLIED)
+  -> host_stack.evaluate_turn (event_balance + moodlet-aware indoor routing)
   -> needs_force.plan_force when OPTIMIZE / off-lot critical
   -> receipt under dist/ (ignored)
 ```

@@ -135,6 +135,9 @@ Encoded North Star → Continuity opener in `contracts/horizon-continuity.v1.jso
 ## 2026-11-07 — Event balance call stack (outdoor-social RCA)
 Operator: lounge party socials always walk outdoors in rain despite indoor negative space; event goals lag; needs + homework collide. /design + trifecta: `contracts/event-balance.v1.json`, `docs/EVENT_BALANCE.md`, `betterinstincts/event_balance.py`, host_stack gates `EVENT_INDOOR_ROUTING` / `SURVIVAL_NEEDS_BEFORE_EVENT` / homework hold. Leading RCA `H1_VENUE_OUTDOOR_MEETUP`. LOCAL_OBSERVED capture `operator:event-outdoor-social-20261107`. Proof ceiling: host call stack, not EA autonomy rewrite; BI-002 hunger still open.
 
+## 2026-11-07 — Moodlet strip sensing (P95 + P124 holism)
+Gap: host ignored bottom-left emotion/moodlets (VERY ANGRY + scared/angry/uncomfortable) that steer behavior and pressure needs. Added `contracts/moodlets.v1.json`, `betterinstincts/moodlets.py`, wired through `host_stack` + `event_balance` (`TENSE_MOOD_OUTDOOR_SOCIAL` reinforces indoor retarget). H6 mood RCA promoted PLAUSIBLE. Proof ceiling: supplied labels only (`SENSOR_NOT_SUPPLIED` if absent). Control-handoff tests isolated to temp lock root to clear SCREEN_OWNER_BUSY flake.
+
 ## 2026-11-07 — P141 strategic scout after progression evaluator merge
 
 **Owner objective retained:** free, community-native, player-first Sims 4 autonomy: responsible adult needs and cross-need balance before sustainable **observed** income, then skills, then careers, while preserving leisure/personality, reversibility, per-Sim control, patch-specific safety and no save mutation. **This is the product, not an offline scoring engine.** PR #30 (`main` `9f238fb`) brought vision/scaffolding/product rates and CI honesty; recorded product progression and hunger trials remain **0.0**. Repository history includes locally observed game navigation and Live Mode, but no qualifying hunger experiment.

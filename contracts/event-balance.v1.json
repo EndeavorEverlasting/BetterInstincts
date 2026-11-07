@@ -64,8 +64,9 @@
         "id": "H6_MOOD_ANGRY_AUTONOMY",
         "rank": 6,
         "claim": "Angry/scared moodlets bias outdoor conversation routing",
-        "status": "WEAK",
-        "falsifier": "Neutral mood still always exits"
+        "status": "PLAUSIBLE",
+        "owner": "contracts/moodlets.v1.json",
+        "falsifier": "Neutral mood still always exits; or indoor retarget succeeds despite tense moodlets"
       },
       {
         "id": "H7_CLICK_TARGET_OUTDOOR_SIM",
