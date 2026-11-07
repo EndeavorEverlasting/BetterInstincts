@@ -128,6 +128,15 @@ def _load_observation(raw: Mapping) -> dict:
         raise HostListenerError("OBSERVATION_QUEUE_INVALID")
     if location not in {"home", "school", "community", "work", "unknown"}:
         raise HostListenerError("OBSERVATION_LOCATION_INVALID")
+    school_goals = raw.get("school_goals_incomplete") or ()
+    if not isinstance(school_goals, (list, tuple)):
+        raise HostListenerError("OBSERVATION_SCHOOL_GOALS_INVALID")
+    pinned = raw.get("pinned_whims") or ()
+    if not isinstance(pinned, (list, tuple)):
+        raise HostListenerError("OBSERVATION_PINNED_WHIMS_INVALID")
+    traits = raw.get("traits") or ()
+    if not isinstance(traits, (list, tuple)):
+        raise HostListenerError("OBSERVATION_TRAITS_INVALID")
     return {
         "needs": {k: float(needs[k]) for k in SIX},
         "queue": [str(x) for x in queue],
@@ -138,6 +147,15 @@ def _load_observation(raw: Mapping) -> dict:
         "available_objects": tuple(raw.get("available_objects") or ()),
         "capture_ref": str(raw.get("capture_ref") or "capture:listener"),
         "viewport": raw.get("viewport"),
+        "school_day_active": bool(raw.get("school_day_active", False)),
+        "school_goals_incomplete": [str(x) for x in school_goals],
+        "school_phase": (str(raw["school_phase"]) if raw.get("school_phase") else None),
+        "pinned_whims": [str(x) for x in pinned],
+        "homework_pending": bool(raw.get("homework_pending", False)),
+        "emotion": (str(raw["emotion"]) if raw.get("emotion") else None),
+        "moodlets": [str(x) for x in (raw.get("moodlets") or ())],
+        "traits": [str(x) for x in traits],
+        "whims": [str(x) for x in (raw.get("whims") or ())],
     }
 
 
@@ -235,6 +253,15 @@ def tick(
             location_kind=obs["location_kind"],
             objects_on_current_lot=obs["objects_on_current_lot"],
             queue=obs["queue"],
+            school_day_active=obs["school_day_active"],
+            school_goals_incomplete=obs["school_goals_incomplete"],
+            school_phase=obs["school_phase"],
+            pinned_whims=obs["pinned_whims"],
+            homework_pending=obs["homework_pending"],
+            emotion=obs["emotion"],
+            moodlets=obs["moodlets"],
+            traits=obs["traits"],
+            whims=obs["whims"] or obs["pinned_whims"],
         )
         force = plan_force(
             location_kind=obs["location_kind"],

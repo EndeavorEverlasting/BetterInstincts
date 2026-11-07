@@ -23,6 +23,7 @@ from betterinstincts.instincts_host import (
 )
 from betterinstincts.build_optimize import BuildOptimizeError, evaluate_build_optimize
 from betterinstincts.moodlets import MoodletError, evaluate_moodlets
+from betterinstincts.school_day import SchoolDayError, evaluate_school_day_turn
 from betterinstincts.sim_profile import SkillInput, SimProfileError, evaluate_sim_profile
 from betterinstincts.viewport import ViewportError, predict_risk
 
@@ -54,6 +55,11 @@ def evaluate_turn(
     outdoor_social_prefix: bool = False,
     indoor_capacity_observed: bool = False,
     homework_pending: bool = False,
+    school_day_active: bool = False,
+    school_goals_incomplete: Sequence[str] = (),
+    school_phase: Optional[str] = None,
+    school_profile: str = "high_school_years",
+    pinned_whims: Sequence[str] = (),
     emotion: Optional[str] = None,
     moodlets: Sequence[str] = (),
     sim_name: Optional[str] = None,
@@ -83,6 +89,9 @@ def evaluate_turn(
     Optional Simology/skills/preferences/whims attach a read-only sim_profile
     (docs/SIM_PROFILE.md); never authorizes practice_skill or BI-005 closure.
 
+    Optional school_day_active / school_goals_incomplete attach High School Years
+    top-left goal planning (docs/SCHOOL_DAY.md); homework on premises fails closed.
+
     Optional build_objective runs evaluate-only Build/Buy catalog ranking
     (docs/BUILD_OPTIMIZE.md); never paints walls from this pure module.
     """
@@ -107,6 +116,7 @@ def evaluate_turn(
         risk = predict_risk(viewport_context or {})
         behavior = None
         event_balance = None
+        school_day = None
         moodlet_eval = evaluate_moodlets(
             emotion=emotion,
             moodlets=moodlets,
@@ -116,6 +126,7 @@ def evaluate_turn(
             event_active=event_active,
             capture_ref=capture_ref,
         )
+        whim_labels = list(whims) + [w for w in pinned_whims if w not in whims]
         sim_profile = evaluate_sim_profile(
             sim_name=sim_name,
             life_stage=life_stage,
@@ -125,7 +136,7 @@ def evaluate_turn(
             skills=skills,
             likes=likes,
             dislikes=dislikes,
-            whims=whims,
+            whims=whim_labels,
             emotion=emotion,
             moodlets=moodlets,
             needs=needs,
@@ -145,7 +156,26 @@ def evaluate_turn(
                 location_kind=location_kind,
                 capture_ref=capture_ref,
             )
-        if event_active or outdoor_social_prefix or homework_pending:
+        if school_day_active or school_goals_incomplete or (
+            homework_pending and location_kind == "school"
+        ):
+            school_day = evaluate_school_day_turn(
+                needs,
+                school_day_active=school_day_active or bool(school_goals_incomplete),
+                school_goals_incomplete=school_goals_incomplete,
+                school_phase=school_phase or "morning_free_time",
+                location_kind=location_kind,
+                homework_pending=homework_pending,
+                pinned_whims=pinned_whims or whim_labels,
+                queue=tuple(queue or ()),
+                player_directed=player_directed,
+                already_busy=already_busy,
+                school_profile=school_profile,
+                capture_ref=capture_ref,
+            )
+        if event_active or outdoor_social_prefix or (
+            homework_pending and not (school_day_active or location_kind == "school")
+        ):
             viewport_ok = viewport is None or viewport.get("state") == "VIEWPORT_OK"
             event_balance = evaluate_event_turn(
                 needs,
@@ -247,6 +277,49 @@ def evaluate_turn(
         }
     elif sim_absent:
         next_gate = "SIM_ABSENT_HOST_PREP_ONLY"
+    elif school_day is not None and school_day["gate"] == "SURVIVAL_NEEDS_CRITICAL":
+        next_gate = "SURVIVAL_NEEDS_BEFORE_SCHOOL"
+        fallback = {
+            "mechanism": "SURVIVAL_NEEDS_CRITICAL",
+            "owner": "betterinstincts/school_day.py",
+            "contract": "contracts/school-day.v1.json",
+            "action": school_day["action"],
+            "survival_critical": school_day["survival_critical"],
+            "forbidden": ["SCHOOL_GOAL_SPAM_WHILE_STARVING", "RESUME"],
+        }
+    elif school_day is not None and school_day["gate"] == "SCHOOL_DAY_GOAL_PROGRESS":
+        next_gate = "SCHOOL_DAY_GOAL_PROGRESS"
+        goal_plan = school_day.get("goal_plan") or {}
+        fallback = {
+            "mechanism": school_day["action"],
+            "owner": "betterinstincts/school_day.py",
+            "contract": "contracts/school-day.v1.json",
+            "goals_incomplete": school_day.get("goals_incomplete") or [],
+            "next_goal": goal_plan.get("next_goal"),
+            "next_actions": goal_plan.get("next_actions") or [],
+            "primary_route": school_day.get("primary_route") or goal_plan.get("primary_route"),
+            "preferred_routes": school_day.get("preferred_routes")
+            or goal_plan.get("preferred_routes")
+            or [],
+            "phase": school_day.get("school_phase"),
+            "pinned_whims_matched": (goal_plan.get("pinned_whims_matched") if goal_plan else None) or [],
+            "forbidden": [
+                "HOMEWORK_DURING_SCHOOL_DAY",
+                "HOMEWORK_ON_SCHOOL_PREMISES",
+                "ATHLETIC_THRASH_WHILE_NOT_STUMBLE_PINNED",
+                "LEAVE_SCHOOL_WHILE_STUDY_GOAL_OPEN",
+                "RESUME",
+            ],
+        }
+    elif school_day is not None and school_day["gate"] == "HOMEWORK_PREMISES_BLOCKED":
+        next_gate = "HOMEWORK_PREMISES_BLOCKED"
+        fallback = {
+            "mechanism": school_day["action"],
+            "owner": "betterinstincts/school_day.py",
+            "contract": "contracts/school-day.v1.json",
+            "forbidden": ["HOMEWORK_ON_SCHOOL_PREMISES", "RESUME"],
+            "resume_when": ["after_school_at_home", "school_day_ended"],
+        }
     elif event_balance is not None and event_balance["gate"] == "SURVIVAL_NEEDS_CRITICAL":
         next_gate = "SURVIVAL_NEEDS_BEFORE_EVENT"
         fallback = {
@@ -341,6 +414,7 @@ def evaluate_turn(
         "behavior": behavior,
         "moodlets": moodlet_eval,
         "sim_profile": sim_profile,
+        "school_day": school_day,
         "event_balance": event_balance,
         "build_optimize": build_optimize,
         "instincts": instincts,
