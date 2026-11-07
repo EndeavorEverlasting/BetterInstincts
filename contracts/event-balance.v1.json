@@ -1,0 +1,165 @@
+{
+  "schema": "betterinstincts.event-balance/v1",
+  "version": 1,
+  "authority": "docs/EVENT_BALANCE.md",
+  "proof_ceiling": "HOST_CALL_STACK_AND_RCA_NOT_GAME_AI_REWRITE",
+  "design_brief": {
+    "subject": "Hosted social event balance + outdoor-social routing",
+    "audience": "local host agent and operator",
+    "job": "Codify RCA and a priority call stack for event goals, critical needs, homework, and indoor venue routing so balancing is not chat-only",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose before chrome"},
+      {"id": "UP-A85AD9DC3", "mechanism": "call-stack / journey storytelling"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ],
+    "forbidden_chrome": "No event dashboard UI; contracts + evaluators only"
+  },
+  "local_observed": {
+    "date": "2026-11-07",
+    "patch": "1.121.361.1020",
+    "household": "LabLab",
+    "scene": "hosted_lounge_party_rain",
+    "observation": "Every social interaction routed Sims onto outdoor sidewalk under umbrella despite indoor negative space, rain, and incomplete event goals; Fun/Energy pressuring while party timer advances",
+    "capture_ref": "operator:event-outdoor-social-20261107"
+  },
+  "rca": {
+    "symptom": "OUTDOOR_SOCIAL_DEFAULT_DURING_INDOOR_EVENT",
+    "hypotheses": [
+      {
+        "id": "H1_VENUE_OUTDOOR_MEETUP",
+        "rank": 1,
+        "claim": "Event/venue greeting or social routing defaults to outdoor meetup / lot edge points",
+        "status": "LEADING",
+        "falsifier": "Indoor free social tiles exist AND interactions still always start outdoors"
+      },
+      {
+        "id": "H2_INDOOR_SPOTS_OCCUPIED",
+        "rank": 2,
+        "claim": "Indoor chairs/stand spots occupied so autonomy picks outdoor free tiles",
+        "status": "PLAUSIBLE",
+        "falsifier": "Observed free indoor floor/stand space with still-outdoor routing"
+      },
+      {
+        "id": "H3_UMBRELLA_WEATHER_PULL",
+        "rank": 3,
+        "claim": "Rain + umbrella social affordance pulls pairs outside",
+        "status": "PLAUSIBLE",
+        "falsifier": "Same outdoor default on clear weather"
+      },
+      {
+        "id": "H4_SIDEWALK_STILL_ON_LOT",
+        "rank": 4,
+        "claim": "Sidewalk counts as valid venue lot social space, so autonomy treats it as fine",
+        "status": "PLAUSIBLE",
+        "falsifier": "Autonomy prefers marked indoor social objects when free"
+      },
+      {
+        "id": "H5_NEGATIVE_SPACE_UNTAGGED",
+        "rank": 5,
+        "claim": "Indoor open floor is not tagged as social routing tiles",
+        "status": "OPEN",
+        "falsifier": "Go Here / indoor Sim click succeeds without outdoor prefix"
+      },
+      {
+        "id": "H6_MOOD_ANGRY_AUTONOMY",
+        "rank": 6,
+        "claim": "Angry/scared moodlets bias outdoor conversation routing",
+        "status": "PLAUSIBLE",
+        "owner": "contracts/moodlets.v1.json",
+        "falsifier": "Neutral mood still always exits; or indoor retarget succeeds despite tense moodlets"
+      },
+      {
+        "id": "H7_CLICK_TARGET_OUTDOOR_SIM",
+        "rank": 7,
+        "claim": "Host/player social clicks resolve to Sims already outdoors",
+        "status": "OPERATOR_DEPENDENT",
+        "falsifier": "Indoor-only target selection still exits"
+      },
+      {
+        "id": "H8_VENUE_TOO_SMALL",
+        "rank": 8,
+        "claim": "Venue footprint too small / object density forces outdoor",
+        "status": "OPERATOR_SUSPECTED",
+        "falsifier": "Larger venue or cleared density removes outdoor default"
+      }
+    ],
+    "host_disposition": "Treat repeated outdoor social prefix during indoor event with free indoor capacity as BAD_BEHAVIOR / OPTIMIZE routing — cancel outdoor walk, retarget indoor Sim or Go Here indoors. Do not claim EA autonomy rewrite until patch-specific tuning proof."
+  },
+  "call_stack": {
+    "order": [
+      "PLAYER_FIRST_OR_BUSY",
+      "VIEWPORT_OK",
+      "SURVIVAL_NEEDS_CRITICAL",
+      "EVENT_INDOOR_ROUTING",
+      "EVENT_GOAL_PROGRESS",
+      "EVENT_FUN_VIA_GOALS",
+      "HOMEWORK_HOLD_OR_SCHEDULE",
+      "NONCRITICAL_NEEDS",
+      "LEISURE_OR_IDLE"
+    ],
+    "gates": {
+      "PLAYER_FIRST_OR_BUSY": {
+        "when": ["player_directed", "already_busy", "PLAYER_PLAYING"],
+        "action": "YIELD_OR_EMULATE_ONLY",
+        "forbidden": ["CANCEL_PLAYER_QUEUE", "FORCE_INDOOR"]
+      },
+      "VIEWPORT_OK": {
+        "when": ["viewport_not_ok"],
+        "action": "RECOVER_VIEWPORT_BEFORE_EVENT_CLICKS"
+      },
+      "SURVIVAL_NEEDS_CRITICAL": {
+        "needs": ["bladder", "hunger", "energy"],
+        "threshold_ref": "contracts/needs.v1.json#urgency_threshold",
+        "action": "RECOVER_SURVIVAL_NEED_LOCAL_OR_MAP_TRAVEL",
+        "outranks": ["EVENT_GOAL_PROGRESS", "HOMEWORK_HOLD_OR_SCHEDULE", "LEISURE_OR_IDLE"],
+        "note": "Energy red during party still outranks greet spam; prefer venue toilet/bed/food if present else MAP_TRAVEL home"
+      },
+      "EVENT_INDOOR_ROUTING": {
+        "when": ["event_active", "outdoor_social_prefix", "indoor_capacity_observed"],
+        "verdict": "BAD_BEHAVIOR",
+        "disposition": "OPTIMIZE",
+        "action": "CANCEL_OUTDOOR_WALK_RETARGET_INDOOR",
+        "preferred_routes": ["CLICK_INDOOR_SIM", "GO_HERE_INDOOR", "USE_INDOOR_SOCIAL_OBJECT"],
+        "forbidden_routes": ["IN_FRAME_WALK_THRASH_ACROSS_LOT", "REPEATED_OUTDOOR_GREET"]
+      },
+      "EVENT_GOAL_PROGRESS": {
+        "when": ["event_active", "event_goals_incomplete", "survival_ok"],
+        "action": "QUEUE_INCOMPLETE_EVENT_GOALS_INDOOR",
+        "goal_priority": ["drink", "be_silly", "tell_jokes", "friendly_greet_or_socialize", "talk_about_food"],
+        "note": "Timer-bound goals outrank homework and non-event fluff while event is active"
+      },
+      "EVENT_FUN_VIA_GOALS": {
+        "when": ["event_active", "fun_urgent", "survival_ok"],
+        "action": "SATISFY_FUN_THROUGH_EVENT_GOALS_NOT_LEAVE",
+        "forbidden": ["LEAVE_EVENT_FOR_TV_OR_PHONE_FLUFF"]
+      },
+      "HOMEWORK_HOLD_OR_SCHEDULE": {
+        "when": ["homework_pending"],
+        "action": "HOLD_UNTIL_EVENT_ENDS_OR_SURVIVAL_FORCES_HOME",
+        "except_when": ["school_dialog_forces_choice", "energy_critical_and_no_venue_rest"],
+        "note": "Homework is durable obligation but not mid-party outdoor thrash"
+      },
+      "NONCRITICAL_NEEDS": {
+        "needs": ["hygiene", "fun", "social"],
+        "action": "RECOVER_IF_NOT_COVERED_BY_EVENT"
+      },
+      "LEISURE_OR_IDLE": {
+        "action": "ALLOW_IMPERFECT_SOCIAL_LEISURE"
+      }
+    }
+  },
+  "anti_patterns": [
+    "OUTDOOR_SOCIAL_DEFAULT_WITH_INDOOR_CAPACITY",
+    "EVENT_GOAL_NEGLECT_WHILE_SPAMMING_SIDEWALK_CHAT",
+    "LEAVE_PARTY_FOR_HOMEWORK_WHILE_TIMER_ACTIVE_AND_SURVIVAL_OK",
+    "IN_FRAME_WALK_THRASH_TO_FOLLOW_GUESTS_OUTSIDE"
+  ],
+  "open_items": [
+    {
+      "id": "VENUE_SIZE_OR_TUNING_PROOF",
+      "status": "OPEN",
+      "summary": "Confirm whether larger venue / indoor social objects change outdoor default; may need Studio object/routing evidence later",
+      "blocks_bi002": false
+    }
+  ]
+}

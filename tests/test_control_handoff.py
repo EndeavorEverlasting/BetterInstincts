@@ -6,6 +6,8 @@ import io
 import json
 import unittest
 from contextlib import redirect_stdout
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from betterinstincts.control_handoff import HandoffError, as_presence, confirm, decide, exclusive_screen_owner, screen_owner_busy
@@ -33,6 +35,19 @@ def probe(age=None, **kwargs):
 
 
 class ControlHandoffTests(unittest.TestCase):
+    def setUp(self):
+        # Isolate screen locks from leftover dist/host-listener locks on the host.
+        self._lock_tmp = TemporaryDirectory()
+        self._lock_patch = patch(
+            "betterinstincts.control_handoff.LOCK_ROOT",
+            Path(self._lock_tmp.name),
+        )
+        self._lock_patch.start()
+
+    def tearDown(self):
+        self._lock_patch.stop()
+        self._lock_tmp.cleanup()
+
     def test_no_opt_in_session_stays_paused(self):
         result = decide(probe(120000), session_active=False)
         self.assertFalse(result["screen_control_allowed"])

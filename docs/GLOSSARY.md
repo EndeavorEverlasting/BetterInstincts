@@ -17,6 +17,11 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **HOST_AUTOMATE** | Presence-gated orchestrator over behavior + needs-force plans. |
 | **HOST_EVALUATOR** | Read-only scorer (`host_eval`, `behavior_eval`, etc.). |
 | **PROGRESSION_EVALUATOR** | P67/P62 CI honesty + product-rate scorer (`progression_eval`). Separates scaffolding from GAME_CERTIFIED trajectory progress. |
+| **OUTDOOR_SOCIAL_DEFAULT** | Event/venue anti-pattern: social interactions route outdoors (sidewalk/umbrella) despite free indoor capacity. |
+| **EVENT_INDOOR_ROUTING** | Host gate: cancel outdoor social prefix; retarget indoor Sim / Go Here / indoor object. |
+| **EVENT_BALANCE_STACK** | Priority stack: player → viewport → survival needs → indoor routing → event goals → Fun-via-goals → homework hold → other needs. |
+| **MOODLET_STRIP** | Bottom-left emotion + moodlet icons; must be supplied to host evals (not inventable from screenshots). |
+| **MOODLET_AWARE_ROUTING** | Gate: tense moodlets + outdoor social + indoor capacity reinforce indoor retarget; uncomfortable aligns with survival relief. |
 | **GOOD_BEHAVIOR** / **BAD_BEHAVIOR** | Matrix verdicts over queue × critical needs. |
 | **EMULATE** | Keep the same intent class as a good queue. |
 | **OPTIMIZE** | Replace bad/suboptimal queue; never override player direction. |

@@ -1,0 +1,142 @@
+{
+  "schema": "betterinstincts.moodlets/v1",
+  "version": 1,
+  "authority": "docs/MOODLETS.md",
+  "proof_ceiling": "SUPPLIED_MOODLET_OBSERVATIONS_NOT_VISION_API",
+  "design_brief": {
+    "subject": "Sim emotion + moodlet sensing for host call stacks",
+    "audience": "local host agent",
+    "job": "Account for HUD moodlets/emotions that steer autonomy and pressure needs — including angry/scared outdoor-social bias during events",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose clarity"},
+      {"id": "UP-A85AD9DC3", "mechanism": "call-stack storytelling"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ]
+  },
+  "local_observed": {
+    "date": "2026-11-07",
+    "patch": "1.121.361.1020",
+    "emotion": "VERY_ANGRY",
+    "moodlets": ["scared", "angry", "uncomfortable"],
+    "capture_ref": "operator:event-outdoor-social-20261107",
+    "note": "Bottom-left portrait/moodlet strip was not previously ingested by host_stack"
+  },
+  "emotions": {
+    "VERY_ANGRY": {
+      "family": "anger",
+      "severity": "high",
+      "need_pressure": ["fun", "social"],
+      "social_routing_bias": "AVOID_TENSE_OUTDOOR_IF_INDOOR_CAPACITY",
+      "host_disposition": "OPTIMIZE"
+    },
+    "ANGRY": {
+      "family": "anger",
+      "severity": "medium",
+      "need_pressure": ["fun", "social"],
+      "social_routing_bias": "PREFER_CALM_INDOOR",
+      "host_disposition": "EMULATE_THEN_OPTIMIZE"
+    },
+    "SCARED": {
+      "family": "fear",
+      "severity": "medium",
+      "need_pressure": ["fun", "bladder", "energy"],
+      "social_routing_bias": "PREFER_SAFE_INDOOR",
+      "host_disposition": "OPTIMIZE"
+    },
+    "UNCOMFORTABLE": {
+      "family": "discomfort",
+      "severity": "low",
+      "need_pressure": ["bladder", "hygiene", "energy"],
+      "social_routing_bias": "NEUTRAL",
+      "host_disposition": "EMULATE_THEN_OPTIMIZE"
+    },
+    "HAPPY": {
+      "family": "positive",
+      "severity": "low",
+      "need_pressure": [],
+      "social_routing_bias": "NEUTRAL",
+      "host_disposition": "EMULATE"
+    },
+    "FINE": {
+      "family": "neutral",
+      "severity": "none",
+      "need_pressure": [],
+      "social_routing_bias": "NEUTRAL",
+      "host_disposition": "EMULATE"
+    },
+    "UNKNOWN": {
+      "family": "unknown",
+      "severity": "unknown",
+      "need_pressure": [],
+      "social_routing_bias": "NEUTRAL",
+      "host_disposition": "EMULATE"
+    }
+  },
+  "moodlets": {
+    "angry": {
+      "aliases": ["enraged", "furious", "steam"],
+      "emotion_hint": "ANGRY",
+      "need_links": ["fun", "social"],
+      "relief": ["be_silly", "drink", "friendly_indoor_social", "free_mood_relief"],
+      "event_note": "May bias tense social routing outdoors — retarget indoor when capacity exists"
+    },
+    "scared": {
+      "aliases": ["terrified", "spooked", "ghost"],
+      "emotion_hint": "SCARED",
+      "need_links": ["fun", "bladder", "energy"],
+      "relief": ["leave_scary_context", "indoor_safe_space", "comfort_object"],
+      "event_note": "Fear + rain/umbrella outdoor chat is a poor event goal path"
+    },
+    "uncomfortable": {
+      "aliases": ["strained", "grossed_out"],
+      "emotion_hint": "UNCOMFORTABLE",
+      "need_links": ["bladder", "hygiene", "energy"],
+      "relief": ["use_toilet", "wash", "sit_rest"],
+      "event_note": "Check survival needs before more greet spam"
+    },
+    "embarrassed": {
+      "aliases": ["mortified"],
+      "emotion_hint": "UNCOMFORTABLE",
+      "need_links": ["social", "fun"],
+      "relief": ["friendly_indoor_social", "be_silly"],
+      "event_note": null
+    },
+    "playful": {
+      "aliases": ["silly"],
+      "emotion_hint": "HAPPY",
+      "need_links": ["fun"],
+      "relief": ["be_silly", "tell_jokes"],
+      "event_note": "Align with incomplete event silly/joke goals indoors"
+    },
+    "tired": {
+      "aliases": ["exhausted", "drowsy"],
+      "emotion_hint": "UNCOMFORTABLE",
+      "need_links": ["energy"],
+      "relief": ["sleep", "nap", "energy_drink_if_budget"],
+      "event_note": "Survival energy outranks event goals"
+    },
+    "hungry": {
+      "aliases": ["starving", "peckish"],
+      "emotion_hint": "UNCOMFORTABLE",
+      "need_links": ["hunger"],
+      "relief": ["eat", "grab_quick_meal"],
+      "event_note": "Survival hunger outranks event goals"
+    },
+    "bored": {
+      "aliases": ["unfulfilled"],
+      "emotion_hint": "FINE",
+      "need_links": ["fun"],
+      "relief": ["be_silly", "drink", "event_goal"],
+      "event_note": "Prefer event Fun goals over leaving party"
+    }
+  },
+  "call_stack_gate": "MOODLET_AWARE_ROUTING",
+  "host_rules": [
+    "Moodlets are operator- or sensor-supplied labels — never inferred from a screenshot classifier claim",
+    "Survival need meters still outrank moodlet relief when bladder/hunger/energy are critical",
+    "Tense moodlets (angry/scared) + outdoor_social_prefix + indoor_capacity => reinforce EVENT_INDOOR_ROUTING",
+    "Uncomfortable + low bladder/hygiene => prefer toilet/wash before more social queue",
+    "Free moodlet relief preferred over paid Buy while budget-constrained (host-budget)",
+    "Absence of moodlet observations is SENSOR_NOT_SUPPLIED — do not invent"
+  ]
+}

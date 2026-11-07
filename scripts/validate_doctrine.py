@@ -55,6 +55,12 @@ REQUIRED = (
     "contracts/horizon-continuity.v1.json", "docs/HORIZON_CONTINUITY.md",
     "betterinstincts/horizon_continuity.py", "scripts/check_horizon_continuity.py",
     "tests/test_horizon_continuity.py",
+    "contracts/event-balance.v1.json", "docs/EVENT_BALANCE.md",
+    "betterinstincts/event_balance.py", "scripts/event_balance.py",
+    "tests/test_event_balance.py",
+    "contracts/moodlets.v1.json", "docs/MOODLETS.md",
+    "betterinstincts/moodlets.py", "scripts/moodlets.py",
+    "tests/test_moodlets.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
