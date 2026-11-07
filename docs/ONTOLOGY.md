@@ -1,6 +1,6 @@
-# BetterInstincts ontology — v1, revision 2 semantic candidate
+# BetterInstincts ontology — v1, revision 2 (merged offline semantics)
 
-**Status:** candidate for semantic review; not a runtime authorization layer or proof of Sims gameplay. Machine graph: `contracts/ontology.v1.json`. Base inspection: `502f66efc0ee` on `main`, November 7, 2026.
+**Status:** offline semantic contract and CI validators merged in [PR #57](https://github.com/EndeavorEverlasting/BetterInstincts/pull/57); canonical P04 handoff merged in [PR #58](https://github.com/EndeavorEverlasting/BetterInstincts/pull/58). Machine graph: `contracts/ontology.v1.json`. Its machine `state` remains a **candidate for runtime adoption**; it is neither game-input authority nor proof of Sims gameplay. Historical inspection base: `502f66efc0ee`, November 7, 2026.
 
 ## Why this exists
 BetterInstincts already has canonical domain contracts and a glossary. This **integrates their meaning without replacing their owners**. It captures what exists in the game, what was actually observed, what is merely inferred, what the player wants, what an agent proposes, and what an independently gated action could do. A model recommendation never grants control.
@@ -59,7 +59,7 @@ A behavior mutation starts with an **ontology consultation receipt**, before the
 4. Emits one of `ADMIT_FOR_OFFLINE_PROTOTYPE`, `REQUIRE_ONTOLOGY_AMENDMENT`, `BLOCK_UNSAFE`, or `DEFER_FOR_GAME_EVIDENCE` with source references.
 5. Repeats consultation on changed scope at review/merge. Old receipts do not cover different patch builds, actions or UI states.
 
-Repository CI runs the Git-history consultation gate and `scripts/semantic_preflight.py` provides a local agent preflight. Neither Git history nor a CLI PASS proves human reading, host authorization, required GitHub status checks, or live Sims gameplay.
+Repository CI runs the Git-history consultation gate, and `scripts/semantic_preflight.py` provides a local agent preflight. A consultation whose decision is `BLOCK_UNSAFE`, `DEFER_FOR_GAME_EVIDENCE`, or `REQUIRE_ONTOLOGY_AMENDMENT` **cannot pass the preflight**, including sampling without changed-file paths. Neither Git history nor a CLI PASS proves human reading, host authorization, configured branch protection, or live Sims gameplay.
 
 ## Example: hunger recovery without deleting a player's intention
 `SIM → NEED/NEED_STATE → OBSERVATION → CLAIM → GOAL → OPPORTUNITY → AFFORDANCE → ACTION_PROPOSAL` is the *reasoning* path. Before an actual guarded input, the host also needs `HOST_SESSION + GAME_BUILD + GAME_SCENE + SAVE_SLOT + PLAYER_PRESENCE → CONTROL_PERMIT`. After attempted input, a separate `OUTCOME` and `PROOF_RECEIPT` record what actually happened. Missing any execution gate means **abstain from execution**; it does not prevent read-only analysis.
@@ -72,7 +72,7 @@ Repository CI runs the Git-history consultation gate and `scripts/semantic_prefl
 - An offline evaluator PASS cannot change `GAME_CERTIFIED` or close BI-002.
 - A change confined to documentation can evolve ontology without claiming gameplay proof; a behavior change without consultation cannot pass review.
 
-**Acceptance posture:** semantic review first; then wire the consultation manifest, deterministic validator, negative regression tests, CI status check, and repository protection to enforce it. No main merge or live gameplay change is implied by this candidate.
+**Acceptance posture:** consultation manifests, Git-history validator, negative regression tests, local preflight and PR CI are **implemented and merged**. Repository branch-protection enforcement is **not independently verified**; the local game host is **not certified**. For the P83 correction, a suspended goal must carry explicit revalidation tied to the *current* cascade capture before it can be selected again. A contingency from an older capture cannot preempt a new turn. Neither mechanism authorizes input.
 
 ## Local agent preflight before mutation, sampling or experiment
 Before changing a behavioral file, run `python -m scripts.semantic_preflight --consultation contracts/consultations/BI-SEMANTIC-ORCHESTRATION-20261107.v1.json --operation repo_mutation --file betterinstincts/semantic_advisory.py` with the **actual** proposed paths and a consultation that predates their first mutation. For read-only offline experiments use `--operation offline_experiment`. For real game sampling or experimentation use `--operation game_sampling` or `game_experiment` and a *new* consultation scoped to `EXACT_GAME_BUILD:<version>` and `--exact-game-build <version>`; the current offline receipt must fail these operations. Independently observe player/presence/save/scene/control admission before any real UI input. P04 passes these requirements into the local game-capable agent rather than manufacturing live proof here.
