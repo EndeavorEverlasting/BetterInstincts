@@ -14,7 +14,7 @@ Integrated by: `host_stack` when `NAVIGATING_NEEDS_TANDEM` (and build-mode yield
 
 ## Why tandem (not replace)
 
-The panel already teaches the same six-need remedies BetterInstincts cares about (toilet, shower/bath, nap, cook/quick meal, read/TV, socialize). Host logic should **amplify** that surface: when hunger is critical and “Cook a Meal or Have a Quick Meal” is incomplete, queue fridge quick-meal/cook rather than inventing a parallel path that ignores the quest. Fall through to instincts only when the **worst** urgent motive is not among the currently visible panel goals (e.g. bladder critical while only Fun/Social tips show). If the panel covers the worst urgent, stay in tandem even if other motives are also urgent.
+The panel already teaches the same six-need remedies BetterInstincts cares about (toilet, shower/bath, nap, cook/quick meal, read/TV, socialize). Host logic should **amplify** that surface: when hunger is critical and “Cook a Meal or Have a Quick Meal” is incomplete, queue fridge quick-meal/cook rather than inventing a parallel path that ignores the quest. Fall through to **need_services** (then instincts) when the **worst** urgent motive is not among the currently visible panel goals (e.g. bladder critical while only Fun/Social tips show). If the panel covers the worst urgent, stay in tandem even if other motives are also urgent.
 
 Sibling Discovery Quest **Scoring Simoleons** stays under `docs/SCENARIO_GOALS.md` (income/craft/career). Do not merge those catalogs.
 
@@ -45,7 +45,7 @@ Operator called out the Navigating Needs top-left suggestions as the intuitive t
 supplied Navigating Needs goals + motives + build/school flags
   -> navigating_needs.evaluate_navigating_needs_turn
   -> host_stack.next_gate (NAVIGATING_NEEDS_TANDEM | BUILD_OR_BUY_YIELD)
-  -> uncovered urgent -> fall through to instincts / MAP_TRAVEL
+  -> uncovered urgent -> need_services tandem / instincts / MAP_TRAVEL
 ```
 
 School day and Build/Buy outrank tandem. Tandem outranks scenario scoring when both would otherwise compete.

@@ -149,6 +149,28 @@
       "definition": "Guests or sibling Sims occupy shared Fun objects; host prefers personal_portable and other free lanes.",
       "owners": ["contracts/fun-service.v1.json", "betterinstincts/fun_service.py"]
     },
+    "NEED_SERVICES_TANDEM": {
+      "definition": "Host gate that plans hunger/bladder/energy/hygiene/fun/social as independent services in parallel and picks the primary READY need by motive urgency.",
+      "owners": [
+        "contracts/need-services.v1.json",
+        "docs/NEED_SERVICES.md",
+        "betterinstincts/need_services.py"
+      ]
+    },
+    "NEED_SERVICE_BASE": {
+      "definition": "P124 shared helpers (normalize needs, object freeness, lane planner) that every need service must reuse instead of reinventing parsers.",
+      "owners": [
+        "betterinstincts/need_service_base.py",
+        "docs/NEED_SERVICES.md"
+      ]
+    },
+    "NEED_LANES": {
+      "definition": "Lane catalogs for non-Fun motives (hunger, bladder, energy, hygiene, social); Fun keeps contracts/fun-service.v1.json.",
+      "owners": [
+        "contracts/need-lanes.v1.json",
+        "betterinstincts/need_services.py"
+      ]
+    },
     "MOODLET_STRIP": {
       "definition": "Bottom-left Sim emotion and moodlet icons. Host logic requires supplied labels; absence is SENSOR_NOT_SUPPLIED.",
       "owners": [
@@ -432,10 +454,11 @@
       ]
     },
     "URGENT_NEED_WITHOUT_PANEL_GOAL": {
-      "definition": "An urgent motive is not covered by currently incomplete Navigating Needs panel goals; fall through to instincts rather than waiting on a non-visible discovery goal.",
+      "definition": "An urgent motive is not covered by currently incomplete Navigating Needs panel goals; fall through to need_services (then instincts) rather than waiting on a non-visible discovery goal.",
       "owners": [
         "contracts/navigating-needs.v1.json",
-        "docs/NAVIGATING_NEEDS.md"
+        "docs/NAVIGATING_NEEDS.md",
+        "docs/NEED_SERVICES.md"
       ]
     },
     "BUILD_OR_BUY_YIELD": {

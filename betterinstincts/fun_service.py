@@ -9,14 +9,21 @@ import json
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
+from betterinstincts.need_service_base import (
+    NeedServiceBaseError,
+    life_stage_ok,
+    normalize_needs,
+    norm_token,
+    objects_free,
+    survival_critical,
+    threshold_pair,
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "fun-service.v1.json"
-NEEDS = ROOT / "contracts" / "needs.v1.json"
-SIX = frozenset({"hunger", "bladder", "energy", "hygiene", "fun", "social"})
-SURVIVAL = frozenset({"bladder", "hunger", "energy"})
 
 
-class FunServiceError(ValueError):
+class FunServiceError(NeedServiceBaseError):
     pass
 
 
@@ -32,61 +39,10 @@ def load_contract(path: Path = CONTRACT) -> dict:
     return data
 
 
-def _threshold_pair() -> tuple[float, float]:
-    cfg = json.loads(NEEDS.read_text(encoding="utf-8"))
-    return float(cfg["urgency_threshold"]), float(cfg["preemptive_threshold"])
-
-
-def _needs(raw: Mapping[str, float]) -> dict[str, float]:
-    if set(raw) != SIX:
-        raise FunServiceError("SIX_NEEDS_REQUIRED")
-    out = {}
-    for k, v in raw.items():
-        if isinstance(v, bool) or not isinstance(v, (int, float)) or not (0 <= float(v) <= 1):
-            raise FunServiceError("INVALID_NEED")
-        out[k] = float(v)
-    return out
-
-
-def _norm(text: str) -> str:
-    return str(text or "").strip().lower().replace("-", "_").replace(" ", "_")
-
-
 def _is_playful(emotion: Optional[str], moodlets: Sequence[str]) -> bool:
-    if emotion and "playful" in _norm(emotion):
+    if emotion and "playful" in norm_token(emotion):
         return True
-    return any("playful" in _norm(m) for m in moodlets)
-
-
-def _objects_free(
-    required: Sequence[str],
-    available: set[str],
-    occupied: set[str],
-) -> bool:
-    if not required:
-        return True
-    # Activity is usable if any required object is available and not occupied.
-    for obj in required:
-        o = _norm(obj)
-        if o in occupied:
-            continue
-        if not available or o in available or any(o in a or a in o for a in available):
-            return True
-    # If available_objects empty → unknown inventory; allow personal_portable-style guess
-    # only when required objects are never listed as occupied.
-    if not available:
-        return not any(_norm(obj) in occupied for obj in required)
-    return False
-
-
-def _life_ok(lane: dict, life_stage: str, traits: Sequence[str]) -> bool:
-    stages = {_norm(s) for s in lane.get("life_stages", [])}
-    if not stages:
-        return True
-    if _norm(life_stage) in stages:
-        return True
-    also = {_norm(t) for t in lane.get("also_trait", [])}
-    return bool(also.intersection({_norm(t) for t in traits}))
+    return any("playful" in norm_token(m) for m in moodlets)
 
 
 def should_attach_fun_service(
@@ -98,8 +54,8 @@ def should_attach_fun_service(
     """Attach whenever Fun is urgent/low or guests contend for lot activities."""
     if force:
         return True
-    snap = _needs(needs)
-    urgent, preemptive = _threshold_pair()
+    snap = normalize_needs(needs)
+    _, preemptive = threshold_pair()
     if snap["fun"] < preemptive:
         return True
     return bool(guests_present) and snap["fun"] < 0.75
@@ -125,16 +81,19 @@ def evaluate_fun_service(
 ) -> dict:
     """Plan Fun recovery across independent lanes; prefer free/portable under contention."""
     cfg = load_contract()
-    snap = _needs(needs)
-    urgent, preemptive = _threshold_pair()
-    survival_critical = sorted(n for n in SURVIVAL if snap[n] < urgent)
+    try:
+        snap = normalize_needs(needs)
+    except NeedServiceBaseError as exc:
+        raise FunServiceError(str(exc)) from exc
+    urgent, preemptive = threshold_pair()
+    survival = survival_critical(snap, urgent)
     fun_level = snap["fun"]
     fun_urgent = fun_level < urgent
     fun_low = fun_level < preemptive
     playful = _is_playful(emotion, moodlets)
-    available = {_norm(o) for o in available_objects if str(o).strip()}
-    occupied = {_norm(o) for o in occupied_objects if str(o).strip()}
-    claimed = {_norm(c) for c in sibling_lane_claims if str(c).strip()}
+    available = {norm_token(o) for o in available_objects if str(o).strip()}
+    occupied = {norm_token(o) for o in occupied_objects if str(o).strip()}
+    claimed = {norm_token(c) for c in sibling_lane_claims if str(c).strip()}
     findings: list[str] = []
 
     if player_directed or already_busy:
@@ -154,7 +113,7 @@ def evaluate_fun_service(
             "proof_ceiling": cfg["proof_ceiling"],
         }
 
-    if survival_critical:
+    if survival:
         return {
             "schema": "betterinstincts.fun-service-result/v1",
             "state": "FUN_SERVICE_DEFERRED",
@@ -167,7 +126,7 @@ def evaluate_fun_service(
             "primary_route": None,
             "next_actions": [],
             "findings": ["SURVIVAL_OUTRANKS_FUN"],
-            "survival_critical": survival_critical,
+            "survival_critical": survival,
             "fun_level": fun_level,
             "proof_ceiling": cfg["proof_ceiling"],
         }
@@ -197,7 +156,7 @@ def evaluate_fun_service(
         lane = cfg["lanes"].get(lane_id)
         if not isinstance(lane, dict):
             continue
-        if not _life_ok(lane, life_stage, traits):
+        if not life_stage_ok(lane, life_stage, traits):
             lane_results.append(
                 {
                     "id": lane_id,
@@ -207,7 +166,7 @@ def evaluate_fun_service(
                 }
             )
             continue
-        requires_emo = {_norm(e).upper() for e in lane.get("requires_emotion", [])}
+        requires_emo = {norm_token(e).upper() for e in lane.get("requires_emotion", [])}
         if requires_emo and not playful:
             lane_results.append(
                 {
@@ -237,12 +196,12 @@ def evaluate_fun_service(
             objs = list(act.get("objects", []))
             if act.get("playful") == "requires" and not playful:
                 continue
-            if not _objects_free(objs, available, occupied):
-                blocked.extend(_norm(o) for o in objs)
+            if not objects_free(objs, available, occupied):
+                blocked.extend(norm_token(o) for o in objs)
                 continue
             # Prefer not recommending objects that are occupied even as soft matches.
-            if any(_norm(o) in occupied for o in objs):
-                blocked.extend(_norm(o) for o in objs)
+            if any(norm_token(o) in occupied for o in objs):
+                blocked.extend(norm_token(o) for o in objs)
                 continue
             ready_actions.append(
                 {
@@ -285,9 +244,9 @@ def evaluate_fun_service(
         findings.append("IGNORE_PORTABLE_FUN_WHEN_GUESTS_PRESENT")
 
     # Queue already doing fun? reinforce rather than thrash.
-    qnorm = " ".join(_norm(q).replace("_", " ") for q in queue)
+    qnorm = " ".join(norm_token(q).replace("_", " ") for q in queue)
     queue_covers = any(
-        any( _norm(lab).replace("_", " ") in qnorm for lab in act.get("labels", []) )
+        any(norm_token(lab).replace("_", " ") in qnorm for lab in act.get("labels", []))
         for act in next_actions
     )
     if queue and queue_covers:

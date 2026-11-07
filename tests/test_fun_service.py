@@ -93,7 +93,9 @@ class FunServiceTests(unittest.TestCase):
             guests_present=True,
             viewport={"state": "VIEWPORT_OK"},
         )
-        self.assertEqual(result["next_gate"], "FUN_SERVICE_PLAN")
+        # Composed through need_services orchestrator; Fun remains nested.
+        self.assertEqual(result["next_gate"], "NEED_SERVICES_TANDEM")
+        self.assertEqual(result["fallback"]["primary_need"], "fun")
         self.assertEqual(result["fallback"]["primary_route"], "PHONE_GAME")
         self.assertIn("personal_portable", result["fun_service"]["parallel_ready"])
 

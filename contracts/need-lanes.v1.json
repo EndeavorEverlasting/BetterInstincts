@@ -1,0 +1,220 @@
+{
+  "schema": "betterinstincts.need-lanes/v1",
+  "version": 1,
+  "authority": "docs/NEED_SERVICES.md",
+  "proof_ceiling": "HOST_NEED_LANE_CATALOG_NOT_EA_TUNING_API",
+  "note": "Peer lane catalogs for hunger/bladder/energy/hygiene/social. Fun remains contracts/fun-service.v1.json (richer playful catalog). Reuse betterinstincts.need_service_base.",
+  "services": {
+    "hunger": {
+      "service_id": "need.hunger",
+      "lane_priority": ["quick_meal", "cook", "grill_or_microwave"],
+      "lanes": {
+        "quick_meal": {
+          "service_id": "need.hunger.quick_meal",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "QUICK_MEAL",
+              "labels": ["have a quick meal", "quick meal", "grab a quick meal"],
+              "objects": ["fridge"],
+              "steps": ["CLICK_FRIDGE", "PIE_QUICK_MEAL"]
+            }
+          ]
+        },
+        "cook": {
+          "service_id": "need.hunger.cook",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "COOK_MEAL",
+              "labels": ["cook", "cook a meal", "make food"],
+              "objects": ["fridge", "stove"],
+              "steps": ["CLICK_FRIDGE_OR_STOVE", "PIE_COOK"]
+            }
+          ]
+        },
+        "grill_or_microwave": {
+          "service_id": "need.hunger.alt_heat",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "MICROWAVE_OR_GRILL",
+              "labels": ["microwave", "grill food"],
+              "objects": ["microwave", "grill"],
+              "steps": ["CLICK_MICROWAVE_OR_GRILL", "PIE_HEAT_FOOD"]
+            }
+          ]
+        }
+      }
+    },
+    "bladder": {
+      "service_id": "need.bladder",
+      "lane_priority": ["toilet", "outdoor_relief"],
+      "lanes": {
+        "toilet": {
+          "service_id": "need.bladder.toilet",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "USE_TOILET",
+              "labels": ["use toilet", "relieve", "toilet"],
+              "objects": ["toilet"],
+              "steps": ["CLICK_TOILET", "PIE_USE_TOILET"]
+            }
+          ]
+        },
+        "outdoor_relief": {
+          "service_id": "need.bladder.outdoor",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "PRIVY_BUSH",
+              "labels": ["use bush", "privy bush"],
+              "objects": ["privy_bush", "bush"],
+              "steps": ["CLICK_BUSH", "PIE_RELIEVE"]
+            }
+          ]
+        }
+      }
+    },
+    "energy": {
+      "service_id": "need.energy",
+      "lane_priority": ["sleep", "nap", "power_nap_seat"],
+      "lanes": {
+        "sleep": {
+          "service_id": "need.energy.sleep",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "SLEEP_IN_BED",
+              "labels": ["sleep", "go to bed"],
+              "objects": ["bed", "cot"],
+              "steps": ["CLICK_BED", "PIE_SLEEP"]
+            }
+          ]
+        },
+        "nap": {
+          "service_id": "need.energy.nap",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "TAKE_NAP",
+              "labels": ["take a nap", "nap", "rest"],
+              "objects": ["bed", "sofa", "couch"],
+              "steps": ["CLICK_BED_OR_SOFA", "PIE_TAKE_NAP"]
+            }
+          ]
+        },
+        "power_nap_seat": {
+          "service_id": "need.energy.seat_rest",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "REST_ON_CHAIR",
+              "labels": ["sit and rest", "relax"],
+              "objects": ["chair", "recliner"],
+              "steps": ["CLICK_CHAIR", "PIE_RELAX"]
+            }
+          ]
+        }
+      }
+    },
+    "hygiene": {
+      "service_id": "need.hygiene",
+      "lane_priority": ["shower", "bath", "sink_wash"],
+      "lanes": {
+        "shower": {
+          "service_id": "need.hygiene.shower",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "TAKE_SHOWER",
+              "labels": ["take a shower", "shower"],
+              "objects": ["shower"],
+              "steps": ["CLICK_SHOWER", "PIE_TAKE_SHOWER"]
+            }
+          ]
+        },
+        "bath": {
+          "service_id": "need.hygiene.bath",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "TAKE_BATH",
+              "labels": ["take a bath", "bathe", "bubble bath"],
+              "objects": ["bathtub"],
+              "steps": ["CLICK_TUB", "PIE_TAKE_BATH"]
+            }
+          ]
+        },
+        "sink_wash": {
+          "service_id": "need.hygiene.sink",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "WASH_HANDS",
+              "labels": ["wash hands", "brush teeth"],
+              "objects": ["sink"],
+              "steps": ["CLICK_SINK", "PIE_WASH"]
+            }
+          ]
+        }
+      }
+    },
+    "social": {
+      "service_id": "need.social",
+      "lane_priority": ["portable_phone", "sit_and_chat", "sim_chat", "computer_social"],
+      "lane_priority_when_guests": ["sit_and_chat", "sim_chat", "portable_phone", "computer_social"],
+      "lanes": {
+        "portable_phone": {
+          "service_id": "need.social.phone",
+          "contention_class": "personal",
+          "activities": [
+            {
+              "id": "PHONE_CALL_OR_TEXT",
+              "labels": ["call", "text", "chat on phone"],
+              "objects": ["phone", "smartphone"],
+              "steps": ["SELECT_SIM", "PIE_PHONE_SOCIAL"]
+            }
+          ]
+        },
+        "sit_and_chat": {
+          "service_id": "need.social.sit_and_chat",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "SIT_AND_CHAT_HERE",
+              "labels": ["sit and chat here", "sit and chat"],
+              "objects": ["sofa", "chair", "loveseat", "bench"],
+              "steps": ["CLICK_INDOOR_SEAT", "PIE_SIT_AND_CHAT_HERE"]
+            }
+          ]
+        },
+        "sim_chat": {
+          "service_id": "need.social.sim_chat",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "FRIENDLY_CHAT",
+              "labels": ["get to know", "friendly chat", "talk to", "socialize"],
+              "objects": ["sim", "visitor", "housemate"],
+              "steps": ["CLICK_OTHER_SIM", "PIE_FRIENDLY_SOCIAL"]
+            }
+          ]
+        },
+        "computer_social": {
+          "service_id": "need.social.computer",
+          "contention_class": "shared",
+          "activities": [
+            {
+              "id": "COMPUTER_SOCIAL",
+              "labels": ["browse social", "chat online"],
+              "objects": ["computer"],
+              "steps": ["CLICK_FREE_COMPUTER", "PIE_SOCIAL_WEB"]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
