@@ -123,7 +123,8 @@ class NavigatingNeedsTests(unittest.TestCase):
         self.assertEqual(result["fallback"]["primary_route"], "QUICK_MEAL_OR_COOK")
         self.assertIsNotNone(result["navigating_needs"])
 
-    def test_host_stack_uncovered_urgent_uses_instincts(self):
+    def test_host_stack_uncovered_urgent_uses_need_services(self):
+        # Panel goal uncovered → fall through; tandem need services own bladder before instincts.
         result = evaluate_turn(
             BLADDER_CRITICAL_FUN_PANEL,
             navigating_needs_active=True,
@@ -131,8 +132,9 @@ class NavigatingNeedsTests(unittest.TestCase):
             available_objects=("fridge", "toilet", "bed", "shower", "tv", "phone"),
             viewport={"state": "VIEWPORT_OK"},
         )
-        self.assertEqual(result["next_gate"], "EXECUTE_INSTINCTS_PLAN")
+        self.assertEqual(result["next_gate"], "NEED_SERVICES_TANDEM")
         self.assertEqual(result["navigating_needs"]["gate"], "URGENT_NEED_WITHOUT_PANEL_GOAL")
+        self.assertEqual(result["need_services"]["primary_need"], "bladder")
         self.assertEqual(result["instincts"]["next_need"], "bladder")
 
     def test_host_stack_build_yield(self):

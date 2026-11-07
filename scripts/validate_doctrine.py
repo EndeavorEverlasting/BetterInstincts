@@ -89,6 +89,10 @@ REQUIRED = (
     "contracts/fun-service.v1.json", "docs/FUN_SERVICE.md",
     "betterinstincts/fun_service.py", "scripts/fun_service.py",
     "tests/test_fun_service.py",
+    "contracts/need-services.v1.json", "contracts/need-lanes.v1.json",
+    "docs/NEED_SERVICES.md",
+    "betterinstincts/need_service_base.py", "betterinstincts/need_services.py",
+    "scripts/need_services.py", "tests/test_need_services.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

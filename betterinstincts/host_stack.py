@@ -20,6 +20,11 @@ from betterinstincts.fun_service import (
     evaluate_fun_service,
     should_attach_fun_service,
 )
+from betterinstincts.need_services import (
+    NeedServicesError,
+    evaluate_need_services,
+    should_attach_need_services,
+)
 from betterinstincts.instincts_host import (
     InstinctsHostError,
     NeedSnapshot,
@@ -136,8 +141,8 @@ def evaluate_turn(
     Optional Simology/skills/preferences/whims attach a read-only sim_profile
     (docs/SIM_PROFILE.md); never authorizes practice_skill or BI-005 closure.
 
-    Fun is owned by fun_service (docs/FUN_SERVICE.md): parallel activity lanes
-    with guest/object contention — not a monolith have_fun stub.
+    Fun is owned by fun_service (docs/FUN_SERVICE.md); all six motives compose via
+    need_services (docs/NEED_SERVICES.md) using shared need_service_base (P124).
 
     Optional school_day_active / school_goals_incomplete attach High School Years
     top-left goal planning (docs/SCHOOL_DAY.md); homework on premises fails closed.
@@ -173,6 +178,7 @@ def evaluate_turn(
     teen_homework = None
     scenario = None
     fun_service = None
+    need_services = None
     try:
         snap = NeedSnapshot(
             needs=needs,
@@ -342,10 +348,29 @@ def evaluate_turn(
                 event_profile=event_profile,
                 capture_ref=capture_ref,
             )
-        if should_attach_fun_service(needs, guests_present=guests_present):
-            event_fun_via = bool(
-                event_balance is not None and event_balance.get("gate") == "EVENT_FUN_VIA_GOALS"
+        event_fun_via = bool(
+            event_balance is not None and event_balance.get("gate") == "EVENT_FUN_VIA_GOALS"
+        )
+        if should_attach_need_services(needs, guests_present=guests_present):
+            need_services = evaluate_need_services(
+                needs,
+                available_objects=tuple(available_objects or ()),
+                occupied_objects=tuple(occupied_objects or ()),
+                guests_present=guests_present,
+                emotion=emotion,
+                moodlets=moodlets,
+                life_stage=life_stage or "young_adult",
+                traits=traits,
+                queue=tuple(queue or ()),
+                player_directed=player_directed,
+                already_busy=already_busy,
+                event_active=event_active,
+                event_fun_via_goals=event_fun_via,
+                sibling_lane_claims={"fun": tuple(sibling_fun_lane_claims or ())},
+                capture_ref=capture_ref,
             )
+            fun_service = (need_services.get("services") or {}).get("fun")
+        elif should_attach_fun_service(needs, guests_present=guests_present):
             fun_service = evaluate_fun_service(
                 needs,
                 available_objects=tuple(available_objects or ()),
@@ -376,6 +401,7 @@ def evaluate_turn(
         SchoolDayError,
         SocialOpportunityError,
         FunServiceError,
+        NeedServicesError,
         NavigatingNeedsError,
     ) as exc:
         raise HostStackError(str(exc)) from exc
@@ -729,6 +755,26 @@ def evaluate_turn(
             "owner": "betterinstincts/event_balance.py",
             "forbidden": ["OUTDOOR_SOCIAL_DEFAULT"],
         }
+    elif need_services is not None and need_services["gate"] == "NEED_SERVICES_TANDEM":
+        next_gate = "NEED_SERVICES_TANDEM"
+        primary = need_services.get("primary_need")
+        fallback = {
+            "mechanism": need_services["action"],
+            "owner": "betterinstincts/need_services.py",
+            "contract": "contracts/need-services.v1.json",
+            "primary_need": primary,
+            "primary_route": need_services.get("primary_route"),
+            "preferred_routes": need_services.get("preferred_routes") or [],
+            "next_actions": need_services.get("next_actions") or [],
+            "parallel_ready_needs": need_services.get("parallel_ready_needs") or [],
+            "architecture": need_services.get("architecture"),
+            "forbidden": [
+                "REINVENT_NEED_PARSER_PER_AGENT",
+                "MONOLITH_SINGLE_QUEUE_FOR_ALL_NEEDS",
+                "BACKGROUND_NEED_DAEMON",
+                "RESUME",
+            ],
+        }
     elif fun_service is not None and fun_service["gate"] in {
         "FUN_SERVICE_PLAN",
         "FUN_SERVICE_BLOCKED",
@@ -796,6 +842,7 @@ def evaluate_turn(
         "navigating_needs": navigating_needs,
         "event_balance": event_balance,
         "fun_service": fun_service,
+        "need_services": need_services,
         "build_optimize": build_optimize,
         "instincts": instincts,
         "decision": decision,

@@ -54,6 +54,10 @@ jobs:
         run: python -m unittest tests.test_event_goals -v
       - name: Fun service tandem lanes
         run: python -m unittest tests.test_fun_service -v
+      - name: Need services six-need tandem
+        run: python -m unittest tests.test_need_services -v
+      - name: Navigating Needs panel tandem
+        run: python -m unittest tests.test_navigating_needs -v
       - name: Moodlet strip host sensing
         run: python -m unittest tests.test_moodlets -v
       - name: Doctrine fails closed

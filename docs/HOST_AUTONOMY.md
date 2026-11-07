@@ -15,7 +15,7 @@
 | --- | --- |
 | Governance | AGENTS.md, DOCTRINE (Player first, no background scanners) |
 | Harness | unittest, validate_doctrine, CI FakeGui |
-| Program | glossary, behavior matrix, host listener, player presence, needs-force, event goals, fun service, host_stack |
+| Program | glossary, behavior matrix, host listener, player presence, needs-force, event goals, need services (six-need tandem + fun), navigating needs, host_stack |
 | Live adapters | scripts/* SendInput / PrintWindow — only after evaluate-only plan |
 
 ## Domain vocabulary (do not reinvent)
@@ -28,7 +28,11 @@ See glossary: `PLAYER_FIRST`, `PLAYER_PLAYING`, `PLAYER_PRESENT_ON_CANVAS`, `HOS
 | `behavior_eval` | Queue×needs → verdict/disposition | none |
 | `player_presence` | Focus+cursor → presence state | none (probe injectable) |
 | `needs_force` | MAP_TRAVEL-first recovery plan | none in library |
-| `host_stack` | Compose viewport/behavior/event-balance/instincts gates | none |
+| `host_stack` | Compose viewport/behavior/event-balance/need-services/instincts gates | none |
+| `need_service_base` | P124 shared need/object/lane helpers | none |
+| `need_services` | Six-need tandem orchestrator (Fun nested) | none |
+| `fun_service` | Rich Fun lanes under guest contention | none |
+| `navigating_needs` | Discovery Quest panel tandem | none |
 | `event_balance` | Outdoor-social RCA + event/needs/homework call stack | none |
 | `moodlets` | Supplied emotion/moodlet strip → need pressure + routing bias | none |
 | `sim_profile` | Supplied Simology/skills/preferences/whims + moodlets → read-only inspect | none |
