@@ -51,3 +51,6 @@ Mark CURRENT FACT, OBSERVED IMPLEMENTED, DOCUMENTED UNVERIFIED, INFERRED, EVIDEN
 
 ## Next parent gate
 Execute [BI-002](../plans/active/BI-002.md): prove **one** reversible tuning-based, base-game hunger autonomy improvement against a vanilla comparison on a disposable save; if tuning cannot implement this, capture falsifying evidence and route the smallest justified script adapter. CI alone cannot close this gate.
+
+## 2026-11-06 — BI-004 custom Mod Lab bootstrap
+New additive read-only Mod Lab (docs/MOD_LAB.md; plans/active/BI-004.md) inventories .package header metadata and .ts4script Zip module names under an explicitly selected Mods root. It does not parse package TGI keys, execute scripts, install mods, certify game patches, change files, or prove skill gains. The local-game BI-002 hunger gate and all earlier multiversion/horizon protections remain unchanged. The final PR/merge/CI proof and P04 local handoff must be appended only after provider verification.

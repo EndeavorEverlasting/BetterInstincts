@@ -40,3 +40,7 @@ The policy returns a **suggestion** for a fictional Sim snapshot and never touch
 
 ## Community
 Original code is MIT licensed. Please open an issue for compatibility observations or behavior proposals, with game version, installed packs, mods, reproducible steps, and sanitized logs. No EA-owned assets or saves, please. This is an independent fan project, **not affiliated with or endorsed by EA/Maxis**. Distribution is intended to be free and consistent with [EA's mod policy](https://help.ea.com/en/articles/the-sims/the-sims-4/mods-policy/).
+
+## Read-only Mod Lab bootstrap
+- [Mod Lab and API reconnaissance](docs/MOD_LAB.md) — explicit Mods root, .package header and .ts4script module-name inventory; no writes.
+- [BI-004 sprint](plans/active/BI-004.md) — first custom manager seam; preserves BI-002 gameplay and the needs/income/skills horizon.
