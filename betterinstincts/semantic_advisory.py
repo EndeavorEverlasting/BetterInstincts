@@ -73,6 +73,15 @@ def _observed_event(row: Mapping, known: set[str]) -> dict | None:
     }
 
 
+def _retain_intent(suspended: list[dict], goal_id: str | None, reason: str, capture: str) -> None:
+    if goal_id and all(item["goal_id"] != goal_id for item in suspended):
+        suspended.append({
+            "goal_id": goal_id, "reason": reason,
+            "resume_condition": "FRESH_REVALIDATION_AFTER_INTERRUPTION",
+            "observation_ref": capture, "revalidation_required": True,
+        })
+
+
 def compose_semantic_turn(
     cascade: Mapping,
     goals: Sequence[Mapping],
@@ -104,6 +113,7 @@ def compose_semantic_turn(
         if isinstance(entry, Mapping) and isinstance(entry.get("goal_id"), str)
     ]
     if player_directed or cascade.get("state") == "DOMAIN_CASCADE_YIELDED" or cascade.get("gate") == "PLAYER_FIRST_OR_BUSY":
+        _retain_intent(suspended, prior_id, "PLAYER_ACTIVITY_YIELD", capture)
         return {
             "schema": "betterinstincts.semantic-advisory/v1",
             "capture_ref": capture, "state": "YIELD_TO_PLAYER",
@@ -126,7 +136,7 @@ def compose_semantic_turn(
     ranked = sorted(
         active,
         key=lambda g: (
-            -(200 + event_by_goal[g["id"]]["urgency"] if g["id"] in event_by_goal else g["priority"]),
+            -max(g["priority"], event_by_goal[g["id"]]["urgency"] if g["id"] in event_by_goal else 0),
             0 if g["mechanic_path"] == "native" else 1,
             g["id"],
         ),
@@ -134,11 +144,10 @@ def compose_semantic_turn(
     chosen = ranked[0] if ranked else None
     current_id = chosen["id"] if chosen else None
     preempted = bool(prior_id and current_id and prior_id != current_id and current_id in event_by_goal)
-    if preempted and all(item["goal_id"] != prior_id for item in suspended):
-        suspended.append({
-            "goal_id": prior_id, "reason": "OBSERVED_CONTINGENCY_PREEMPTION",
-            "revalidation_required": True,
-        })
+    if preempted:
+        _retain_intent(suspended, prior_id, "OBSERVED_CONTINGENCY_PREEMPTION", capture)
+    if current_id is None:
+        _retain_intent(suspended, prior_id, "NO_READY_GOALS", capture)
     resume_candidates = [
         item["goal_id"] for item in suspended
         if item["goal_id"] in by_id and by_id[item["goal_id"]]["status"] == "READY"
@@ -159,6 +168,9 @@ def compose_semantic_turn(
         "contingency_preemption": preempted,
         "suspended": suspended,
         "resume_candidates": sorted(set(resume_candidates)),
+        "resume_selected_requires_revalidation": any(
+            row["goal_id"] == current_id for row in suspended
+        ),
         "evaluated_domains": sorted({g["domain"] for g in normalized}),
         "resource_conflicts": resource_conflicts,
         "control_permit": None,
