@@ -22,9 +22,31 @@
   },
   "inputs": {
     "observation_schema": "betterinstincts.host-listener.observation/v1",
-    "required_fields": ["needs", "queue", "location_kind", "capture_ref"],
-    "location_kinds": ["home", "school", "community", "work", "unknown"],
-    "note": "Observations are operator/sensor JSON. Listener does not invent queue contents from screenshots unless a future calibrated sensor is separately certified."
+    "required_fields": [
+      "needs",
+      "queue",
+      "location_kind",
+      "capture_ref"
+    ],
+    "location_kinds": [
+      "home",
+      "school",
+      "community",
+      "work",
+      "unknown"
+    ],
+    "note": "Observations are operator/sensor JSON. Listener does not invent queue contents from screenshots unless a future calibrated sensor is separately certified.",
+    "optional_school_day_fields": [
+      "school_day_active",
+      "school_goals_incomplete",
+      "school_phase",
+      "pinned_whims",
+      "homework_pending",
+      "emotion",
+      "moodlets",
+      "traits",
+      "whims"
+    ]
   },
   "pipeline": [
     "load_session",
@@ -34,6 +56,7 @@
     "behavior_eval",
     "instincts_plan",
     "host_stack_evaluate_turn",
+    "school_day_goal_plan_if_active",
     "needs_force_route_if_optimize",
     "emit_receipt"
   ],
@@ -46,7 +69,11 @@
   "on_optimize": {
     "action": "RECORD_OPTIMIZATION_PLAN",
     "prefer": "MAP_TRAVEL",
-    "forbid": ["IN_FRAME_WALK_THRASH", "RESUME", "DELETE_SAVE"]
+    "forbid": [
+      "IN_FRAME_WALK_THRASH",
+      "RESUME",
+      "DELETE_SAVE"
+    ]
   },
   "host_commands": {
     "activate": "python -m scripts.host_listener activate --session-id ID",

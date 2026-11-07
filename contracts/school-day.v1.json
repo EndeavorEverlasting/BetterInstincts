@@ -1,0 +1,212 @@
+{
+  "schema": "betterinstincts.school-day/v1",
+  "version": 1,
+  "authority": "docs/SCHOOL_DAY.md",
+  "proof_ceiling": "HOST_SCHOOL_DAY_GOAL_CATALOG_NOT_EA_TUNING_API_NOT_CAREER_CERT",
+  "design_brief": {
+    "subject": "High School Years day goals → concrete Sims interactions",
+    "audience": "local host agent + operator during school lot",
+    "job": "Map top-left school goals and phases to sedentary-safe host plans; block homework on premises when panel disallows it",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose before chrome"},
+      {"id": "UP-A85AD9DC3", "mechanism": "journey / call-stack storytelling"},
+      {"id": "UP-0F2FB5920", "mechanism": "iterate with measurement"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ],
+    "forbidden_chrome": "No school-day dashboard UI; contracts + evaluators only"
+  },
+  "local_observed": {
+    "date": "2026-11-07",
+    "patch": "1.121.361.1020",
+    "household": "LabLab",
+    "scene": "high_school_years_morning_free_time",
+    "observation": "Top-left school goals (Study for Exams, etc.) were hard to satisfy during morning free time while homework could not be done on school premises; Clumsy Not Stumble whim favored sedentary study",
+    "capture_ref": "operator:school-day-goals-20261107"
+  },
+  "default_profile": "high_school_years",
+  "profiles": {
+    "high_school_years": {
+      "aliases": ["high_school", "high school years", "hsy", "school"],
+      "goal_priority": [
+        "study_for_exams",
+        "attend_class",
+        "participate",
+        "socialize_at_school"
+      ],
+      "note": "High School Years pack school day; survival still outranks goals"
+    }
+  },
+  "phases": {
+    "morning_free_time": {
+      "aliases": ["morning free time", "free time", "morning_free", "high school free time"],
+      "homework_allowed": false,
+      "note": "Morning free time on school lot — homework deferred until home"
+    },
+    "class_time": {
+      "aliases": ["class", "in class", "class_time"],
+      "homework_allowed": false
+    },
+    "lunch": {
+      "aliases": ["lunch", "lunch break"],
+      "homework_allowed": false
+    },
+    "after_school": {
+      "aliases": ["after school", "after_school", "dismissal"],
+      "homework_allowed": true
+    }
+  },
+  "career_panel": {
+    "homework": {
+      "allowed_on_school_premises": false,
+      "note": "Career/school homework panel disallows doing homework on school premises per operator observation"
+    }
+  },
+  "pinned_whims": {
+    "not_stumble": {
+      "aliases": [
+        "not stumble",
+        "not_stumble",
+        "not stumble for 4 hours",
+        "not stumble for four hours"
+      ],
+      "prefer_goals": ["study_for_exams"],
+      "sedentary_only": true,
+      "host_note": "Clumsy whim — prefer desk study over athletic queue"
+    }
+  },
+  "goals": {
+    "study_for_exams": {
+      "hud_aliases": [
+        "study_for_exams",
+        "study for exams",
+        "study",
+        "exams",
+        "study for exam"
+      ],
+      "display_hint": "Study for Exams",
+      "satisfies_needs": ["fun"],
+      "target_kind": "school_desk_or_sim",
+      "preferred_targets": ["school_desk", "homework_desk", "computer_lab", "library_table"],
+      "satisfying_interactions": [
+        {
+          "id": "HIGH_SCHOOL_STUDY_FOR_EXAMS",
+          "labels": ["study for exams", "study", "do homework", "research"],
+          "steps": [
+            "CLICK_ACTIVE_SIM_OR_SCHOOL_DESK",
+            "PIE_HIGH_SCHOOL",
+            "PIE_STUDY_FOR_EXAMS"
+          ],
+          "sedentary": true,
+          "stumble_safe": true,
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["practice athletic", "go jogging", "workout", "stumble"],
+      "host_note": "High School pie → Study for Exams; sedentary for Not Stumble whim"
+    },
+    "attend_class": {
+      "hud_aliases": ["attend_class", "attend class", "go to class"],
+      "display_hint": "Attend Class",
+      "target_kind": "classroom",
+      "preferred_targets": ["classroom_door", "class_schedule"],
+      "satisfying_interactions": [
+        {
+          "id": "ATTEND_CLASS_HSY",
+          "labels": ["attend class", "go to class", "join class"],
+          "steps": ["CLICK_CLASSROOM_OR_SCHEDULE", "PIE_ATTEND_CLASS"],
+          "sedentary": true,
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["skip class", "leave school"],
+      "host_note": "Class rabbit-hole / schedule interaction"
+    },
+    "participate": {
+      "hud_aliases": ["participate", "participate in class", "raise hand"],
+      "display_hint": "Participate",
+      "target_kind": "class_activity",
+      "satisfying_interactions": [
+        {
+          "id": "PARTICIPATE_IN_CLASS",
+          "labels": ["participate", "raise hand", "answer question"],
+          "steps": ["ENSURE_IN_CLASS_OR_DESK", "PIE_PARTICIPATE"],
+          "sedentary": true,
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["text on phone", "sleep in class"],
+      "host_note": "Participation goal during class phase"
+    },
+    "socialize_at_school": {
+      "hud_aliases": [
+        "socialize_at_school",
+        "socialize at school",
+        "socialize",
+        "talk to classmates"
+      ],
+      "display_hint": "Socialize at School",
+      "satisfies_needs": ["social", "fun"],
+      "target_kind": "sim",
+      "preferred_targets": ["classmate", "friend_at_school"],
+      "satisfying_interactions": [
+        {
+          "id": "SCHOOL_FRIENDLY_SOCIAL",
+          "labels": ["chat", "friendly", "get to know", "socialize"],
+          "steps": ["CLICK_CLASSMATE_INDOORS", "PIE_FRIENDLY_CHAT"],
+          "sedentary": false,
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["leave lot", "mean interactions"],
+      "host_note": "Indoor school social preferred over lot-edge wander"
+    }
+  },
+  "call_stack": {
+    "order": [
+      "PLAYER_FIRST_OR_BUSY",
+      "SURVIVAL_NEEDS_CRITICAL",
+      "SCHOOL_DAY_GOAL_PROGRESS",
+      "HOMEWORK_PREMISES_BLOCKED",
+      "HOMEWORK_AT_HOME",
+      "SCHOOL_DAY_INACTIVE",
+      "LEISURE_OR_IDLE"
+    ],
+    "gates": {
+      "PLAYER_FIRST_OR_BUSY": {
+        "when": ["player_directed", "already_busy"],
+        "action": "YIELD_OR_EMULATE_ONLY"
+      },
+      "SURVIVAL_NEEDS_CRITICAL": {
+        "needs": ["hunger", "bladder", "energy"],
+        "threshold": 0.35,
+        "action": "RECOVER_SURVIVAL_NEED_LOCAL_OR_MAP_TRAVEL",
+        "outranks": ["SCHOOL_DAY_GOAL_PROGRESS", "HOMEWORK_AT_HOME"]
+      },
+      "SCHOOL_DAY_GOAL_PROGRESS": {
+        "when": ["school_day_active", "school_goals_incomplete", "survival_ok"],
+        "action": "QUEUE_INCOMPLETE_SCHOOL_GOALS",
+        "goal_catalog": "contracts/school-day.v1.json"
+      },
+      "HOMEWORK_PREMISES_BLOCKED": {
+        "when": ["homework_pending", "location_school", "premises_homework_forbidden"],
+        "action": "DEFER_HOMEWORK_UNTIL_HOME",
+        "forbidden": ["DO_HOMEWORK_ON_SCHOOL_LOT"]
+      },
+      "HOMEWORK_AT_HOME": {
+        "when": ["homework_pending", "location_home", "survival_ok"],
+        "action": "QUEUE_HOMEWORK_AT_HOME"
+      },
+      "SCHOOL_DAY_INACTIVE": {
+        "when": ["not_school_day_active"],
+        "action": "NO_SCHOOL_DAY_ROUTING"
+      },
+      "LEISURE_OR_IDLE": {
+        "action": "ALLOW_SCHOOL_LOT_LEISURE"
+      }
+    }
+  },
+  "call_stack_gates": [
+    "SCHOOL_DAY_GOAL_PROGRESS",
+    "HOMEWORK_PREMISES_BLOCKED"
+  ]
+}
