@@ -21,6 +21,7 @@ from betterinstincts.instincts_host import (
     plan,
     plan_to_dict,
 )
+from betterinstincts.build_optimize import BuildOptimizeError, evaluate_build_optimize
 from betterinstincts.moodlets import MoodletError, evaluate_moodlets
 from betterinstincts.viewport import ViewportError, predict_risk
 
@@ -53,6 +54,11 @@ def evaluate_turn(
     homework_pending: bool = False,
     emotion: Optional[str] = None,
     moodlets: Sequence[str] = (),
+    build_objective: Optional[str] = None,
+    build_owned_packs: Optional[Sequence[str]] = None,
+    build_budget: Optional[float] = None,
+    build_panels: int = 1,
+    build_or_buy_mode: bool = False,
 ) -> dict:
     """Compose viewport, moodlets, event-balance, instincts, and dialog gates.
 
@@ -62,6 +68,9 @@ def evaluate_turn(
     When critical needs are off-lot, next_gate becomes MAP_TRAVEL_HOME_FIRST —
     never IN_FRAME_WALK_THRASH (glossary). Moodlets are supplied observations
     (portrait strip); absence is SENSOR_NOT_SUPPLIED — never vision-invented.
+
+    Optional build_objective runs evaluate-only Build/Buy catalog ranking
+    (docs/BUILD_OPTIMIZE.md); never paints walls from this pure module.
     """
     try:
         snap = NeedSnapshot(
@@ -130,8 +139,24 @@ def evaluate_turn(
         BehaviorEvalError,
         EventBalanceError,
         MoodletError,
+        BuildOptimizeError,
     ) as exc:
         raise HostStackError(str(exc)) from exc
+
+    build_optimize = None
+    if build_objective is not None:
+        try:
+            build_optimize = evaluate_build_optimize(
+                build_objective,
+                owned_packs=build_owned_packs or ("base",),
+                budget=build_budget,
+                panels=build_panels,
+                player_directed=player_directed,
+                build_or_buy_mode=build_or_buy_mode,
+                capture_ref=capture_ref,
+            )
+        except BuildOptimizeError as exc:
+            raise HostStackError(str(exc)) from exc
 
     # Priority: viewport/fallback > player > survival/event stack > behavior map travel > decision > needs.
     next_gate = "EXECUTE_INSTINCTS_PLAN"
@@ -167,6 +192,27 @@ def evaluate_turn(
             next_gate = "EXIT_BUY_TO_LIVE_OR_OPERATOR_SAVE_EXIT"
     elif player_directed or already_busy:
         next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
+    elif (
+        build_optimize is not None
+        and build_optimize.get("state") == "BUILD_OPTIMIZE_PLAN_READY"
+        and build_or_buy_mode
+        and not player_directed
+    ):
+        next_gate = "BUILD_OPTIMIZE_EVALUATE_ONLY"
+        fallback = {
+            "mechanism": "BUILD_OPTIMIZE_PLAN",
+            "owner": "betterinstincts/build_optimize.py",
+            "contract": "contracts/build-optimize.v1.json",
+            "best": build_optimize.get("best"),
+            "objective": build_optimize.get("objective"),
+            "execute_allowed": False,
+            "forbidden": [
+                "SENDINPUT_WITHOUT_SESSION",
+                "TOUCH_USER_SAVES",
+                "RESUME",
+                "FORCE_MODE_WHILE_PLAYER_PLAYING",
+            ],
+        }
     elif sim_absent:
         next_gate = "SIM_ABSENT_HOST_PREP_ONLY"
     elif event_balance is not None and event_balance["gate"] == "SURVIVAL_NEEDS_CRITICAL":
@@ -250,6 +296,7 @@ def evaluate_turn(
         "behavior": behavior,
         "moodlets": moodlet_eval,
         "event_balance": event_balance,
+        "build_optimize": build_optimize,
         "instincts": instincts,
         "decision": decision,
         "influence": influence,
