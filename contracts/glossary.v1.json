@@ -333,6 +333,21 @@
         "contracts/school-day.v1.json",
         "betterinstincts/school_day.py"
       ]
+    },
+    "SCENARIO_GOAL_PROGRESS": {
+      "definition": "Host gate that queues incomplete scenario scoring HUD goals when survival needs are green and school day does not outrank.",
+      "owners": [
+        "contracts/scenario-goals.v1.json",
+        "docs/SCENARIO_GOALS.md",
+        "betterinstincts/scenario_goals.py"
+      ]
+    },
+    "SCENARIO_CAREER_DEFERRED": {
+      "definition": "Scenario get_career goal is blocked until allow_career, needs_game_certified, and income_game_observed; earn/craft precede career.",
+      "owners": [
+        "contracts/scenario-goals.v1.json",
+        "docs/SCENARIO_GOALS.md"
+      ]
     }
   }
 }

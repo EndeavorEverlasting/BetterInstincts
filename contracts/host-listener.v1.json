@@ -46,6 +46,14 @@
       "moodlets",
       "traits",
       "whims"
+    ],
+    "optional_scenario_fields": [
+      "scenario_active",
+      "scenario_goals_incomplete",
+      "scenario_profile",
+      "allow_career",
+      "needs_game_certified",
+      "income_game_observed"
     ]
   },
   "pipeline": [
@@ -57,6 +65,7 @@
     "instincts_plan",
     "host_stack_evaluate_turn",
     "school_day_goal_plan_if_active",
+    "scenario_goal_plan_if_active",
     "needs_force_route_if_optimize",
     "emit_receipt"
   ],

@@ -131,6 +131,9 @@ def _load_observation(raw: Mapping) -> dict:
     school_goals = raw.get("school_goals_incomplete") or ()
     if not isinstance(school_goals, (list, tuple)):
         raise HostListenerError("OBSERVATION_SCHOOL_GOALS_INVALID")
+    scenario_goals = raw.get("scenario_goals_incomplete") or ()
+    if not isinstance(scenario_goals, (list, tuple)):
+        raise HostListenerError("OBSERVATION_SCENARIO_GOALS_INVALID")
     pinned = raw.get("pinned_whims") or ()
     if not isinstance(pinned, (list, tuple)):
         raise HostListenerError("OBSERVATION_PINNED_WHIMS_INVALID")
@@ -149,6 +152,12 @@ def _load_observation(raw: Mapping) -> dict:
         "viewport": raw.get("viewport"),
         "school_day_active": bool(raw.get("school_day_active", False)),
         "school_goals_incomplete": [str(x) for x in school_goals],
+        "scenario_active": bool(raw.get("scenario_active", False)),
+        "scenario_goals_incomplete": [str(x) for x in scenario_goals],
+        "scenario_profile": str(raw.get("scenario_profile") or "scoring_simoleons"),
+        "allow_career": bool(raw.get("allow_career", False)),
+        "needs_game_certified": bool(raw.get("needs_game_certified", False)),
+        "income_game_observed": bool(raw.get("income_game_observed", False)),
         "school_phase": (str(raw["school_phase"]) if raw.get("school_phase") else None),
         "pinned_whims": [str(x) for x in pinned],
         "homework_pending": bool(raw.get("homework_pending", False)),
@@ -258,6 +267,12 @@ def tick(
             school_phase=obs["school_phase"],
             pinned_whims=obs["pinned_whims"],
             homework_pending=obs["homework_pending"],
+            scenario_active=obs["scenario_active"],
+            scenario_goals_incomplete=obs["scenario_goals_incomplete"],
+            scenario_profile=obs["scenario_profile"],
+            allow_career=obs["allow_career"],
+            needs_game_certified=obs["needs_game_certified"],
+            income_game_observed=obs["income_game_observed"],
             emotion=obs["emotion"],
             moodlets=obs["moodlets"],
             traits=obs["traits"],

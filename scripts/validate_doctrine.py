@@ -73,6 +73,9 @@ REQUIRED = (
     "contracts/sim-profile.v1.json", "docs/SIM_PROFILE.md",
     "betterinstincts/sim_profile.py", "scripts/sim_profile.py",
     "tests/test_sim_profile.py",
+    "contracts/scenario-goals.v1.json", "docs/SCENARIO_GOALS.md",
+    "betterinstincts/scenario_goals.py", "scripts/scenario_goals.py",
+    "tests/test_scenario_goals.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
