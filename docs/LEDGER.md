@@ -141,8 +141,14 @@ Gap: host ignored bottom-left emotion/moodlets (VERY ANGRY + scared/angry/uncomf
 ## 2026-11-07 — Sit and Chat Here indoor grounding (P95 + trifecta)
 Operator: outdoor-social idiocy is avoidable — **Sit and Chat Here** on indoor seating grounds conversation so pathing cannot re-resolve to the sidewalk meetup. P95 updates `EVENT_INDOOR_ROUTING` primary route to `SIT_AND_CHAT_HERE_INDOOR`; action `CANCEL_OUTDOOR_WALK_SIT_AND_CHAT_HERE`; RCA `H9_GREET_WITHOUT_SEAT_GROUNDING` LEADING; glossary terms; host_stack fallback carries `primary_route`. Live pie-menu SendInput still OPEN (`SIT_AND_CHAT_HERE_LIVE_DISPATCH`). Does not close BI-002.
 
+## 2026-11-07 — Event goal → action catalog (P95 + trifecta)
+Operator: hard to discover which interactions satisfy social-event HUD goals. Added `contracts/event-goals.v1.json` + `betterinstincts/event_goals.py` mapping lounge-party goals (drink, be_silly, tell_jokes, friendly_socialize, talk_about_food) to concrete indoor pie-menu steps; wired through `event_balance.goal_plan` and host_stack `EVENT_GOAL_PROGRESS` fallback. Queue match flags non-covering greets. Live HUD tick confirmation OPEN (`GOAL_TICK_LIVE_CONFIRMATION`). Does not close BI-002.
+
 ## 2026-11-07 — Build/Buy optimize catalog (P95 + /design + trifecta)
 Operator Build Mode tooltip on Bargain Bend (**Brick & Plaster**: Lot Environment Gain 1, Eco Footprint Industrial 1). P95 program: deterministic maximize for Environment Gain / Green / Industrial / balanced Env+Green via versioned catalog (Spa Day / Enchanted env+2, Horse Ranch green+2 attested). Owners: `contracts/build-optimize.v1.json`, `docs/BUILD_OPTIMIZE.md`, `betterinstincts/build_optimize.py`, `scripts/build_optimize.py`, host_stack optional gate. Proof ceiling: offline ranking only — live Shift+apply paint and neighborhood meter observation remain OPEN. Does not close BI-002.
+
+## 2026-11-07 — Yield walls: dual Env+Green max 2/2 (P95 + trifecta)
+Operator lab: **Veins of Gold Marble Walls** and **Working Bricks** each LOCAL_OBSERVED at Lot Environment Gain **2** and Eco Footprint Green **2** (operator max found); applied interior/exterior for yield over aesthetics. Catalog + `MAXIMIZE_YIELD` default; dual-stat score beats Env-only or Green-only 2s; unknown pack still ranks when operator-attested. Pack IDs TBD. Live apply / meter proof still OPEN; BI-002 hunger still ACTIVE.
 
 ## 2026-11-07 — P141 strategic scout after progression evaluator merge
 

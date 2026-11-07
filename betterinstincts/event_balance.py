@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
+from betterinstincts.event_goals import EventGoalsError, plan_event_goals
 from betterinstincts.moodlets import MoodletError, evaluate_moodlets
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,6 +60,8 @@ def evaluate_event_turn(
     viewport_ok: bool = True,
     emotion: Optional[str] = None,
     moodlets: Sequence[str] = (),
+    queue: Sequence[str] = (),
+    event_profile: str = "lounge_party",
     capture_ref: str = "capture:event-turn",
 ) -> dict:
     """Return the highest-priority call-stack gate for one hosted-event turn."""
@@ -78,7 +81,16 @@ def evaluate_event_turn(
             event_active=event_active,
             capture_ref=capture_ref,
         )
-    except MoodletError as exc:
+        goal_plan = None
+        if event_active and goals:
+            goal_plan = plan_event_goals(
+                goals,
+                event_profile=event_profile,
+                queue=queue,
+                outdoor_social_prefix=outdoor_social_prefix,
+                capture_ref=capture_ref,
+            )
+    except (MoodletError, EventGoalsError) as exc:
         raise EventBalanceError(str(exc)) from exc
     findings = []
     if outdoor_social_prefix and indoor_capacity_observed and event_active:
@@ -87,6 +99,8 @@ def evaluate_event_turn(
     if event_active and goals and outdoor_social_prefix:
         findings.append("EVENT_GOAL_NEGLECT_WHILE_SPAMMING_SIDEWALK_CHAT")
     findings.extend(mood.get("findings", []))
+    if goal_plan:
+        findings.extend(goal_plan.get("findings", []))
 
     stack = list(cfg["call_stack"]["order"])
     gate = "LEISURE_OR_IDLE"
@@ -126,7 +140,7 @@ def evaluate_event_turn(
         gate = "EVENT_GOAL_PROGRESS"
         action = "QUEUE_INCOMPLETE_EVENT_GOALS_INDOOR"
         disposition = "EMULATE_THEN_OPTIMIZE"
-        preferred_routes = ["INDOOR_GOAL_ACTION"]
+        preferred_routes = list((goal_plan or {}).get("preferred_routes") or ["INDOOR_GOAL_ACTION"])
         if fun_urgent:
             findings.append("FUN_VIA_EVENT_GOALS")
             gate = "EVENT_FUN_VIA_GOALS"
@@ -164,6 +178,7 @@ def evaluate_event_turn(
         "goals_incomplete": goals,
         "homework_pending": homework_pending,
         "moodlets": mood,
+        "goal_plan": goal_plan,
         "call_stack_order": stack,
         "rca_leading": leading,
         "proof_ceiling": cfg["proof_ceiling"],

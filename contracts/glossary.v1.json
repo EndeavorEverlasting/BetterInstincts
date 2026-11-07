@@ -76,6 +76,14 @@
       "definition": "Host priority stack balancing player, viewport, survival needs, indoor routing, event goals, Fun-via-goals, homework, then other needs.",
       "owners": ["docs/EVENT_BALANCE.md", "betterinstincts/host_stack.py"]
     },
+    "EVENT_GOAL_ACTION": {
+      "definition": "Concrete pie-menu or object interaction catalogued as satisfying a social-event HUD goal.",
+      "owners": ["contracts/event-goals.v1.json", "docs/EVENT_GOALS.md"]
+    },
+    "EVENT_GOAL_PLAN": {
+      "definition": "Host plan that maps incomplete event goals to prioritized indoor satisfying interactions and queue coverage.",
+      "owners": ["betterinstincts/event_goals.py", "betterinstincts/host_stack.py"]
+    },
     "MOODLET_STRIP": {
       "definition": "Bottom-left Sim emotion and moodlet icons. Host logic requires supplied labels; absence is SENSOR_NOT_SUPPLIED.",
       "owners": ["contracts/moodlets.v1.json", "docs/MOODLETS.md"]

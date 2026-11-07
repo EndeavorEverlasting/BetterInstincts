@@ -21,6 +21,7 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **EVENT_INDOOR_ROUTING** | Host gate: cancel outdoor social; prefer Sit and Chat Here before weaker Go Here / greet. |
 | **SIT_AND_CHAT_HERE** / **SIT_AND_CHAT_HERE_INDOOR** | Seat-grounded indoor chat; primary fix for outdoor-social default. |
 | **EVENT_BALANCE_STACK** | Priority stack: player → viewport → survival needs → indoor routing → event goals → Fun-via-goals → homework hold → other needs. |
+| **EVENT_GOAL_ACTION** / **EVENT_GOAL_PLAN** | Catalogued pie-menu actions that satisfy HUD event goals; host plan over incomplete goals. |
 | **MOODLET_STRIP** | Bottom-left emotion + moodlet icons; must be supplied to host evals (not inventable from screenshots). |
 | **MOODLET_AWARE_ROUTING** | Gate: tense moodlets + outdoor social + indoor capacity reinforce indoor retarget; uncomfortable aligns with survival relief. |
 | **GOOD_BEHAVIOR** / **BAD_BEHAVIOR** | Matrix verdicts over queue × critical needs. |

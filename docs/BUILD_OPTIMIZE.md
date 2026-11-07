@@ -9,10 +9,11 @@
 **/design upstreams:** `impeccable`, `UP-A85AD9DC3`, `UP-REDERIVE-2026-1103-01`, `mattpocock-wayfinder`, `UP-40FE662CF`
 
 ## User outcomes
-1. Host can **deterministically** name the best wall covering / Buy item for a stated objective (Environment Gain, Green footprint, Industrial footprint, or balanced Env+Green).
+1. Host can **deterministically** name the best wall covering / Buy item for a stated objective (Environment Gain, Green footprint, Industrial footprint, or yield Env+Green).
 2. Ranking uses a **versioned catalog** of attested tooltip stats — not invented OCR and not “whatever looks nice.”
 3. Automation **plans** Apply (Shift+whole-room) without fighting the player; execute stays gated on `HOST_MAY_AUTOMATE` + disposable lab + explicit session.
-4. Green vs Industrial are **mutually exclusive objectives** — household default prefers Clean Air moodlets, not Gross Air.
+4. Green vs Industrial are **mutually exclusive objectives** — household default is `MAXIMIZE_YIELD` (Decorated + Clean Air moodlets). Aesthetics are never a ranking factor.
+5. Current LOCAL_OBSERVED dual max floor: **Veins of Gold Marble Walls** and **Working Bricks** (Env 2 + Green 2).
 
 ## Governance vs harness vs program
 | Layer | Owns |

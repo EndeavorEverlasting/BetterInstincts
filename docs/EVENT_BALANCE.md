@@ -29,7 +29,7 @@ Open: venue size / social-object tagging (`VENUE_SIZE_OR_TUNING_PROOF`); live pi
 2. Viewport OK
 3. Survival needs critical (bladder / hunger / energy)
 4. **Event indoor routing** — cancel outdoor social; ground with Sit and Chat Here
-5. Event goal progress (indoor)
+5. Event goal progress (indoor) — see [`EVENT_GOALS.md`](EVENT_GOALS.md) for drink / be silly / jokes / socialize / food-talk actions
 6. Fun via event goals (do not leave party for fluff)
 7. Homework hold until event ends (unless survival forces home)
 8. Noncritical needs
