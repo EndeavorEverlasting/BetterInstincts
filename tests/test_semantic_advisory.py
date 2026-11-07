@@ -39,6 +39,7 @@ class SemanticAdvisoryTests(unittest.TestCase):
         event = {
             "goal_id": "call-police", "urgency": 90,
             "deadline_ticks": 2, "observation_ref": "synthetic:verified-cue",
+            "capture_ref": "synthetic:semantic-test",
             "evidence_state": "LOCAL_OBSERVED",
         }
         result = compose_semantic_turn(
@@ -53,12 +54,14 @@ class SemanticAdvisoryTests(unittest.TestCase):
     def test_unverified_or_expired_event_cannot_force_preemption(self):
         for event in [
             {"goal_id": "call-police", "urgency": 999,
-             "observation_ref": "synthetic:x", "evidence_state": "HYPOTHESIS"},
+             "observation_ref": "synthetic:x", "evidence_state": "HYPOTHESIS",
+             "capture_ref": "synthetic:semantic-test"},
             {"goal_id": "call-police", "urgency": 999,
              "observation_ref": "synthetic:x", "evidence_state": "LOCAL_OBSERVED",
-             "deadline_ticks": 0},
+             "capture_ref": "synthetic:semantic-test", "deadline_ticks": 0},
             {"goal_id": "call-police", "urgency": 999,
-             "observation_ref": "", "evidence_state": "LOCAL_OBSERVED"},
+             "observation_ref": "", "evidence_state": "LOCAL_OBSERVED",
+             "capture_ref": "synthetic:semantic-test"},
         ]:
             result = compose_semantic_turn(
                 self.cascade, self.goals, contingencies=[event],
@@ -73,6 +76,7 @@ class SemanticAdvisoryTests(unittest.TestCase):
             previous={"selected_goal_id": "earn-rent"},
             contingencies=[{"goal_id": "call-police", "urgency": 1000,
                            "observation_ref": "synthetic:cue",
+                           "capture_ref": "synthetic:semantic-test",
                            "evidence_state": "LOCAL_OBSERVED"}],
         )
         self.assertEqual(result["state"], "YIELD_TO_PLAYER")
@@ -86,7 +90,8 @@ class SemanticAdvisoryTests(unittest.TestCase):
     def test_contingency_does_not_override_stronger_observed_priority(self):
         goals = [dict(self.goals[1], priority=100), self.goals[2]]
         event = {"goal_id": "call-police", "urgency": 90,
-                 "observation_ref": "synthetic:event", "evidence_state": "LOCAL_OBSERVED"}
+                 "observation_ref": "synthetic:event", "evidence_state": "LOCAL_OBSERVED",
+                 "capture_ref": "synthetic:semantic-test"}
         result = compose_semantic_turn(self.cascade, goals, contingencies=[event],
                                        previous={"selected_goal_id": "eat"})
         self.assertEqual(result["selected_goal_id"], "eat")
@@ -111,6 +116,56 @@ class SemanticAdvisoryTests(unittest.TestCase):
         result = compose_semantic_turn(self.cascade, self.goals, previous=prior)
         self.assertIn("earn-rent", result["resume_candidates"])
         self.assertTrue(result["suspended"][0]["revalidation_required"])
+
+    def test_suspended_ready_goal_cannot_resume_without_current_revalidation(self):
+        previous = {"selected_goal_id": "call-police", "suspended": [{
+            "goal_id": "earn-rent", "reason": "OBSERVED_CONTINGENCY_PREEMPTION",
+            "resume_condition": "FRESH_REVALIDATION_AFTER_INTERRUPTION",
+            "observation_ref": "synthetic:prior-tick"
+        }]}
+        earn = dict(self.goals[0], priority=1000)
+        report = compose_semantic_turn(self.cascade, [earn], previous=previous)
+        self.assertEqual(report["state"], "NO_READY_GOALS")
+        self.assertIsNone(report["selected_goal_id"])
+        self.assertEqual(report["revalidation_pending"], ["earn-rent"])
+        self.assertEqual(report["suspended"][0]["observation_ref"], "synthetic:prior-tick")
+        self.assertEqual(report["resumed_goals"], [])
+        self.assertIsNone(report["control_permit"])
+
+        # A stale proof from another tick must not re-enable the thread.
+        stale = dict(earn, revalidated_capture_ref="synthetic:prior-tick",
+                     revalidation_outcome="SAFE_TO_RECONSIDER")
+        report = compose_semantic_turn(self.cascade, [stale], previous=previous)
+        self.assertIsNone(report["selected_goal_id"])
+
+        fresh = dict(earn, revalidated_capture_ref="synthetic:semantic-test",
+                     revalidation_outcome="SAFE_TO_RECONSIDER")
+        report = compose_semantic_turn(self.cascade, [fresh], previous=previous)
+        self.assertEqual(report["selected_goal_id"], "earn-rent")
+        self.assertEqual(report["resumed_goals"], ["earn-rent"])
+        self.assertEqual(report["suspended"], [])
+        self.assertFalse(report["resume_selected_requires_revalidation"])
+        self.assertIsNone(report["control_permit"])
+
+    def test_expired_context_cannot_reuse_previous_urgent_event(self):
+        previous_event = {
+            "goal_id": "call-police", "urgency": 900,
+            "capture_ref": "synthetic:prior-tick",
+            "observation_ref": "synthetic:old-cue",
+            "evidence_state": "LOCAL_OBSERVED",
+        }
+        report = compose_semantic_turn(self.cascade, self.goals, contingencies=[previous_event],
+                                       previous={"selected_goal_id": "eat"})
+        self.assertEqual(report["selected_goal_id"], "eat")
+        self.assertFalse(report["contingency_preemption"])
+        # The same event is admissible as read-only signal when freshly observed,
+        # but it still confers no authority to click or modify a game.
+        fresh = dict(previous_event, capture_ref="synthetic:semantic-test")
+        report = compose_semantic_turn(self.cascade, self.goals, contingencies=[fresh],
+                                       previous={"selected_goal_id": "eat"})
+        self.assertEqual(report["selected_goal_id"], "call-police")
+        self.assertTrue(report["contingency_preemption"])
+        self.assertIsNone(report["control_permit"])
 
     def test_bad_evidence_and_duplicate_thread_fail(self):
         with self.assertRaisesRegex(SemanticAdvisoryError, "CASCADE_RECEIPT_REQUIRED"):
