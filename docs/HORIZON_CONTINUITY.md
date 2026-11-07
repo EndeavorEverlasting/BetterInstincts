@@ -1,7 +1,7 @@
 # Horizon continuity — North Star → Continuity opener
 
-Machine owner: [`contracts/horizon-continuity.v1.json`](../contracts/horizon-continuity.v1.json).  
-Product trajectory owner: [`HORIZON.md`](HORIZON.md) + `plans/horizon.v1.json`.  
+Machine owner: [`contracts/horizon-continuity.v1.json`](../contracts/horizon-continuity.v1.json).
+Product trajectory owner: [`HORIZON.md`](HORIZON.md) + `plans/horizon.v1.json`.
 Selected next investigation: **BI-002 GAME-1** ([STRATEGY.md](STRATEGY.md) 2026-11-07 P141 scout).
 
 ## Design brief (IA / contracts — not a UI)
@@ -16,12 +16,12 @@ Selected next investigation: **BI-002 GAME-1** ([STRATEGY.md](STRATEGY.md) 2026-
 
 Exact strings live in the contract `parent_prompts` object:
 
-1. North star  
-2. Owner objective  
-3. Product contract  
-4. Non-negotiables (five)  
-5. Horizon trajectory (`needs → income → skills → career`)  
-6. First win / proof ceiling (BI-002; CI ≠ playable)  
+1. North star
+2. Owner objective
+3. Product contract
+4. Non-negotiables (five)
+5. Horizon trajectory (`needs → income → skills → career`)
+6. First win / proof ceiling (BI-002; CI ≠ playable)
 7. Continuity opener (paste into a fresh chat)
 
 ## Selected next work
