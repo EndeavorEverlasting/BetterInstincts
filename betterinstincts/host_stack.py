@@ -778,6 +778,9 @@ def evaluate_turn(
             "behavior_row": behavior["clarity"]["matched_row_id"],
         }
         next_gate = "MAP_TRAVEL_HOME_FIRST"
+    elif decision is not None:
+        # Active chance-card / decision prompt outranks local need-service plans.
+        next_gate = "RESOLVE_DECISION_PROMPT"
     elif need_services is not None and need_services["gate"] in {
         "NEED_SERVICES_TANDEM",
         "NEED_SERVICES_LOAD_BALANCE",
@@ -831,8 +834,6 @@ def evaluate_turn(
                 "RESUME",
             ],
         }
-    elif decision is not None:
-        next_gate = "RESOLVE_DECISION_PROMPT"
     elif risk.get("risk_level") in {"ELEVATED", "HIGH"} and risk.get("required_before_clicks"):
         next_gate = "PRINTWINDOW_ANALYZE_BEFORE_CLICKS"
     elif instincts.get("all_needs_green"):
