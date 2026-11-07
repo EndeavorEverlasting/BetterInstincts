@@ -7,6 +7,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 DISPATCH = ROOT / "plans/active/BI-GAME-HOST.dispatch.v1.json"
 HANDOFF = ROOT / "plans/active/BI-GAME-HOST.HANDOFF.md"
+RUNBOOK = ROOT / "docs/GAME_HOST.md"
 
 
 class GameHostDispatchTests(unittest.TestCase):
@@ -14,6 +15,7 @@ class GameHostDispatchTests(unittest.TestCase):
     def setUpClass(cls):
         cls.plan = json.loads(DISPATCH.read_text(encoding="utf-8"))
         cls.text = HANDOFF.read_text(encoding="utf-8")
+        cls.runbook = RUNBOOK.read_text(encoding="utf-8")
 
     def test_parent_hunger_stays_active_and_uncertified(self):
         self.assertEqual(self.plan["parent"], "BI-002")
@@ -67,6 +69,13 @@ class GameHostDispatchTests(unittest.TestCase):
         self.assertIn("P82", self.text)
         self.assertIn("P07", self.text)
         self.assertIn("P04", self.text)
+
+    def test_runbook_keeps_cas_focus_caveat_and_click_ceiling(self):
+        # First real boot: minimized windows and focus-steal must not be promoted to Live Mode.
+        self.assertIn("CLICK_DISPATCH_ONLY", self.runbook)
+        self.assertIn("minimized", self.runbook.lower())
+        self.assertIn("Live Mode", self.runbook)
+        self.assertIn("never uses Resume", self.runbook)
 
 
 if __name__ == "__main__":
