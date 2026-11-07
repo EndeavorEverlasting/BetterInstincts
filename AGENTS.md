@@ -27,3 +27,5 @@ Read `docs/HORIZON.md`, `plans/horizon.v1.json` and `plans/active/BI-003.executi
 
 ## Completion contract
 Report CHANGED | PROVED | NEXT, including exact checks run/skipped, commit SHA, push/PR/merge, game patch and live-test status. A plan is not implementation; a green CI check is not playable-mod proof. Do not publish pre-alpha as a release.
+
+P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md` (BI-002 active).

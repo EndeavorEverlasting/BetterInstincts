@@ -1,0 +1,156 @@
+{
+  "schema": "betterinstincts.p04-learning-handoff/v1",
+  "title": "Reviewed judgment learning — local game certification",
+  "repo": "EndeavorEverlasting/BetterInstincts",
+  "source_main_sha": "13815fe5a6437e1351a95dbcfbd6026cf7317c64",
+  "source_pr": "https://github.com/EndeavorEverlasting/BetterInstincts/pull/41",
+  "execution_owner": "LOCAL_AGENT_RUNTIME",
+  "provider_routes": [
+    "GITHUB"
+  ],
+  "entrypoint": "docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md",
+  "priority": "BI-002_HUNGER_LIVE_CERT_REMAINS_PARENT",
+  "boundaries": {
+    "live_game_required": true,
+    "access_in_current_chat": false,
+    "operator_review_required_for_every_training_label": true,
+    "explicit_disposable_save": true,
+    "no_unapproved_save_changes": true,
+    "no_hidden_background_tasks": true,
+    "no_silent_key_or_mouse_capture": true,
+    "no_automatic_sims_actions_from_learning": true,
+    "no_game_version_guessing": true,
+    "immutable_certified_versions": true
+  },
+  "launch_order": [
+    {
+      "lane_id": "GATE-0",
+      "host": "CI_OR_REMOTE_RUNNER",
+      "status": "PR_CHECKS_PASS_MAIN_POST_MERGE_TO_VERIFY",
+      "dependencies": [],
+      "mission": "Verify exact main build and learning tests; retain CI vs game proof distinction",
+      "run": [
+        "python -m unittest tests.test_judgment_learning tests.test_listener_learning -v",
+        "python -m unittest discover -s tests -v",
+        "python -m scripts.check_horizon",
+        "python -m scripts.progression_eval --repo-only"
+      ],
+      "mutation_scope": [],
+      "forbidden": [
+        "claim_game_certified"
+      ],
+      "evidence_owner": "GITHUB_ACTIONS"
+    },
+    {
+      "lane_id": "GAME-1",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "status": "WAITING_FOR_LOCAL_GAME",
+      "dependencies": [
+        "GATE-0"
+      ],
+      "mission": "Read game host and verify latest exact patch/PID, authorized disposable LAB save, scenes and active human control policy",
+      "read_first": [
+        "AGENTS.md",
+        "docs/GAME_HOST.md",
+        "docs/SCENE_INTELLIGENCE.md",
+        "docs/HOST_AUTONOMY.md",
+        "docs/JUDGMENT_LEARNING.md",
+        "docs/LIVE_CERT.md",
+        "plans/active/BI-002.execution.v1.json"
+      ],
+      "evidence_owner": "dist/game-host",
+      "forbidden": [
+        "RESUME_UNVERIFIED_SAVE",
+        "COPY_RAW_MEDIA_TO_GIT",
+        "ASSUME_HISTORICAL_PID_CURRENT"
+      ]
+    },
+    {
+      "lane_id": "LEARN-1",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "status": "WAITING_REAL_REVIEWED_OBSERVATIONS",
+      "dependencies": [
+        "GAME-1"
+      ],
+      "mission": "Obtain reviewed player decisions, create compact reviewed semantic examples using explicit record, measure prequential contextual vs context-free baseline; must abstain when weak",
+      "run": [
+        "python -m scripts.judgment_learning --help",
+        "python -m scripts.judgment_learning record --help",
+        "python -m scripts.judgment_learning train --help"
+      ],
+      "evidence_owner": "dist/judgment-learning",
+      "forbidden": [
+        "FABRICATE_HUMAN_REVIEW",
+        "LABEL_UNOBSERVED_OUTCOME",
+        "AUTO_TRAIN_ON_CLICKS",
+        "PRIVATE_RECORDS_IN_GIT"
+      ]
+    },
+    {
+      "lane_id": "P08-1",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "status": "WAITING_GAME_1_AND_LEARN_1",
+      "dependencies": [
+        "GAME-1",
+        "LEARN-1"
+      ],
+      "mission": "Demonstrate actual listener advisory during eligible idle, abstention during operator play, verified scene, no queue rewrite or learned SendInput, and reviewed outcome improvement or falsification",
+      "read_first": [
+        "docs/JUDGMENT_LEARNING.md",
+        "docs/LIVE_CERT.md",
+        "docs/HOST_AUTONOMY.md"
+      ],
+      "evidence_owner": "dist/host-listener",
+      "forbidden": [
+        "EQUATE_CLICK_DISPATCH_WITH_OBSERVED_EFFECT",
+        "CLAIM_PLAYABLE_MOD_FROM_CI"
+      ]
+    },
+    {
+      "lane_id": "BI002-1",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "status": "ACTIVE_PRODUCT_GATE_NOT_CLOSED",
+      "dependencies": [
+        "GAME-1"
+      ],
+      "mission": "Continue exact-patch reversible hunger package, ≥5 vanilla and ≥5 modified live trials, rollback, player queue safety, maintainer review",
+      "read_first": [
+        "plans/active/BI-002.md",
+        "plans/active/BI-002.execution.v1.json",
+        "docs/LIVE_CERT.md"
+      ],
+      "evidence_owner": "dist/live-cert",
+      "forbidden": [
+        "USE_LEARNING_AS_HUNGER_CERT",
+        "TOUCH_PERSONAL_SAVES"
+      ]
+    }
+  ],
+  "convergence": {
+    "owner": "LOCAL_AGENT_RUNTIME",
+    "receipt_fields": [
+      "source_commit",
+      "actual_full_game_patch",
+      "actual_process_id",
+      "disposable_save_attestation",
+      "reviewed_examples_count",
+      "prequential_coverage",
+      "prequential_precision",
+      "baseline_coverage",
+      "baseline_precision",
+      "player_override_observed",
+      "scene_evidence_refs",
+      "learning_hint_state",
+      "queue_preserved",
+      "bi002_vanilla_count",
+      "bi002_modified_count",
+      "rollback_status",
+      "maintainer_review_status"
+    ],
+    "report": "CHANGED | PROVED | NEXT",
+    "do_not_promote": "OFFLINE_REVIEWED_DEMONSTRATIONS_ONLY_TO_GAME_CERTIFIED",
+    "next_parent_gate": "BI-002_HUNGER_LIVE_CERT",
+    "first_command": "python -m unittest tests.test_judgment_learning tests.test_listener_learning -v"
+  },
+  "proof_ceiling": "P04_REPO_HANDOFF_ONLY_LOCAL_GAME_NOT_LAUNCHED_BY_CURRENT_CHAT"
+}
