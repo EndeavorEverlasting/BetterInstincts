@@ -70,6 +70,7 @@ class SemanticAdvisoryTests(unittest.TestCase):
     def test_player_override_is_a_yield_not_a_better_rank(self):
         result = compose_semantic_turn(
             self.cascade, self.goals, player_directed=True,
+            previous={"selected_goal_id": "earn-rent"},
             contingencies=[{"goal_id": "call-police", "urgency": 1000,
                            "observation_ref": "synthetic:cue",
                            "evidence_state": "LOCAL_OBSERVED"}],
@@ -77,8 +78,24 @@ class SemanticAdvisoryTests(unittest.TestCase):
         self.assertEqual(result["state"], "YIELD_TO_PLAYER")
         self.assertIsNone(result["selected_goal_id"])
         self.assertIsNone(result["control_permit"])
+        self.assertEqual(result["suspended"][0]["goal_id"], "earn-rent")
+        self.assertEqual(result["suspended"][0]["reason"], "PLAYER_ACTIVITY_YIELD")
         yielded = dict(self.cascade, state="DOMAIN_CASCADE_YIELDED")
         self.assertEqual(compose_semantic_turn(yielded, self.goals)["state"], "YIELD_TO_PLAYER")
+
+    def test_contingency_does_not_override_stronger_observed_priority(self):
+        goals = [dict(self.goals[1], priority=100), self.goals[2]]
+        event = {"goal_id": "call-police", "urgency": 90,
+                 "observation_ref": "synthetic:event", "evidence_state": "LOCAL_OBSERVED"}
+        result = compose_semantic_turn(self.cascade, goals, contingencies=[event],
+                                       previous={"selected_goal_id": "eat"})
+        self.assertEqual(result["selected_goal_id"], "eat")
+        self.assertFalse(result["contingency_preemption"])
+
+    def test_intent_survives_no_ready_goals(self):
+        result = compose_semantic_turn(self.cascade, [], previous={"selected_goal_id": "earn-rent"})
+        self.assertEqual(result["state"], "NO_READY_GOALS")
+        self.assertEqual(result["suspended"][0]["goal_id"], "earn-rent")
 
     def test_future_domains_and_extensions_do_not_require_ontology_rewrite(self):
         extra = {"id": "community-market", "domain": "world.economy.v3", "priority": 50,
