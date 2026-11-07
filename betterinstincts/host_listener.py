@@ -140,6 +140,15 @@ def _load_observation(raw: Mapping) -> dict:
     traits = raw.get("traits") or ()
     if not isinstance(traits, (list, tuple)):
         raise HostListenerError("OBSERVATION_TRAITS_INVALID")
+    inv = raw.get("inventory_has_homework")
+    if inv is not None and not isinstance(inv, bool):
+        raise HostListenerError("OBSERVATION_INVENTORY_HOMEWORK_INVALID")
+    on_lot_hw = raw.get("homework_on_lot")
+    if on_lot_hw is not None and not isinstance(on_lot_hw, bool):
+        raise HostListenerError("OBSERVATION_HOMEWORK_ON_LOT_INVALID")
+    life_stage = raw.get("life_stage")
+    if life_stage is not None and not isinstance(life_stage, str):
+        raise HostListenerError("OBSERVATION_LIFE_STAGE_INVALID")
     return {
         "needs": {k: float(needs[k]) for k in SIX},
         "queue": [str(x) for x in queue],
@@ -161,6 +170,9 @@ def _load_observation(raw: Mapping) -> dict:
         "school_phase": (str(raw["school_phase"]) if raw.get("school_phase") else None),
         "pinned_whims": [str(x) for x in pinned],
         "homework_pending": bool(raw.get("homework_pending", False)),
+        "inventory_has_homework": inv if isinstance(inv, bool) else None,
+        "homework_on_lot": on_lot_hw if isinstance(on_lot_hw, bool) else None,
+        "life_stage": (str(life_stage) if life_stage else None),
         "emotion": (str(raw["emotion"]) if raw.get("emotion") else None),
         "moodlets": [str(x) for x in (raw.get("moodlets") or ())],
         "traits": [str(x) for x in traits],
@@ -267,6 +279,9 @@ def tick(
             school_phase=obs["school_phase"],
             pinned_whims=obs["pinned_whims"],
             homework_pending=obs["homework_pending"],
+            inventory_has_homework=obs["inventory_has_homework"],
+            homework_on_lot=obs["homework_on_lot"],
+            life_stage=obs["life_stage"],
             scenario_active=obs["scenario_active"],
             scenario_goals_incomplete=obs["scenario_goals_incomplete"],
             scenario_profile=obs["scenario_profile"],

@@ -76,6 +76,10 @@ REQUIRED = (
     "contracts/scenario-goals.v1.json", "docs/SCENARIO_GOALS.md",
     "betterinstincts/scenario_goals.py", "scripts/scenario_goals.py",
     "tests/test_scenario_goals.py",
+    "contracts/teen-homework.v1.json", "docs/TEEN_HOMEWORK.md",
+    "docs/CAREER_PERFORMANCE.md",
+    "betterinstincts/teen_homework.py", "scripts/teen_homework.py",
+    "tests/test_teen_homework.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
