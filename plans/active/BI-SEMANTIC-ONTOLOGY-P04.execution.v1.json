@@ -1,0 +1,228 @@
+{
+  "schema": "betterinstincts.p04-semantic-local-certification/v1",
+  "name": "BetterInstincts ontology-first local gameplay certification handoff",
+  "repository": "EndeavorEverlasting/BetterInstincts",
+  "source_main_sha": "091fa6d2ae49de54fd3536b8f7aa6913006df49d",
+  "source_pr": "https://github.com/EndeavorEverlasting/BetterInstincts/pull/57",
+  "source_ci": "https://github.com/EndeavorEverlasting/BetterInstincts/actions/runs/42423191457",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha_at_handoff": "eda1b4664714ca21a3caa659e40cbd6061ac36c8",
+  "entrypoint": "docs/handoff/BI-SEMANTIC-ONTOLOGY-P04-2026-11-07.md",
+  "parent_goal": "BI-002_HUNGER_LIVE_CERT_REMAINS_ACTIVE",
+  "execution_owner": "LOCAL_AGENT_RUNTIME",
+  "provider_routes": [
+    "GITHUB"
+  ],
+  "current_chat_runtime_completion": {
+    "source_merged": true,
+    "source_main_ci": "PASS_POST_MERGE",
+    "branch_sha": "091fa6d2ae49de54fd3536b8f7aa6913006df49d",
+    "unit_tests": 433,
+    "unit_tests_skipped": 1,
+    "historical_ontology_chronology": "ONTOLOGY_GATE_PASS changed=9 early_consultations=2",
+    "live_game_observation": "NOT_OBSERVED",
+    "local_adapter_launched": false,
+    "operator_save_authorization": "NOT_OBSERVED"
+  },
+  "parallelism": {
+    "capability": "DEPENDENCY_GRAPH_CAN_ALLOW_READ_ONLY_SEMANTIC_WORK_ALONGSIDE_GAME_LAB_ONLY_WITH_DISJOINT_WRITES",
+    "observed_parallelism": false,
+    "generic_moonwake_dispatch_cli": "UNAVAILABLE_AT_VERIFIED_MOONWAKE_MAIN_PATHS",
+    "handoff_is_not_launch": true,
+    "game_session_is_exclusive": "Only one authorized host controller may send real Sims input at once"
+  },
+  "launch_order": [
+    {
+      "id": "GATE-0",
+      "host": "CI_OR_REMOTE_RUNNER",
+      "status": "PROVED",
+      "dependencies": [],
+      "mission": "Confirm ontology integration and post-merge regression pass; already completed in source runtime",
+      "provider": "GITHUB",
+      "evidence": "GitHub Actions run 42423191457",
+      "forbidden": [
+        "REPEAT_AS_LOCAL_UNPROVEN_WORK",
+        "PROMOTE_CI_TO_GAME_PROOF"
+      ]
+    },
+    {
+      "id": "LOCAL-0",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "status": "WAITING_LOCAL_AGENT",
+      "dependencies": [
+        "GATE-0"
+      ],
+      "mission": "Refresh existing clean safe checkout of main; read ontology and concept owners before any experiments, repository edits, bootstrapping or gameplay sampling; run repo preflight and characterize exact game environment read-only",
+      "read_first": [
+        "AGENTS.md",
+        "docs/ONTOLOGY.md",
+        "contracts/ontology.v1.json",
+        "docs/DOCTRINE.md",
+        "docs/LEDGER.md",
+        "docs/SCENE_INTELLIGENCE.md",
+        "docs/COMPATIBILITY.md",
+        "docs/LIVE_CERT.md",
+        "plans/active/BI-002.execution.v1.json"
+      ],
+      "run": [
+        "python -m scripts.check_ontology",
+        "python -m unittest tests.test_ontology_gate tests.test_semantic_advisory -v",
+        "python -m scripts.semantic_preflight --consultation contracts/consultations/BI-SEMANTIC-ORCHESTRATION-20261107.v1.json --operation offline_experiment"
+      ],
+      "gate": "ONT_CONSULTED_LOCAL_SAFE_BASELINE",
+      "evidence_owner": "dist/semantic-local",
+      "forbidden": [
+        "ASSUME_MAIN_CHECKOUT_CURRENT",
+        "MUTATE_PLAYER_SAVE",
+        "AUTO_DISCOVER_PRIVATE_MODS_ROOT",
+        "START_UNCONSENTED_GAME_AUTOMATION"
+      ]
+    },
+    {
+      "id": "BUILD-1",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "status": "WAITING_EXACT_GAME_BUILD_AND_AUTHORIZED_SAVE",
+      "dependencies": [
+        "LOCAL-0"
+      ],
+      "mission": "Observe exact patch/platform/packs and independently verify disposable lab save, game runtime, Studio tooling and player occupancy; write a new patch-exact ontology consultation before first live sample or game-affecting change",
+      "run": [
+        "python -m scripts.compatibility_status --game-version ACTUAL_FULL_VERSION --platform windows --module hunger",
+        "python -m scripts.semantic_preflight --consultation contracts/consultations/NEW_SCOPED_GAME_CONSULTATION.v1.json --operation game_sampling --exact-game-build ACTUAL_FULL_VERSION"
+      ],
+      "required_consultation": {
+        "schema": "betterinstincts.ontology-consultation/v1",
+        "must_pin_current_git_blob": true,
+        "game_build_scope": "EXACT_GAME_BUILD:ACTUAL_FULL_VERSION",
+        "required_decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+        "required_owners": "read_concept_owners_before_writing",
+        "prerun": "write and commit a consultation record before mutation or first gameplay experiment; do not invent version, sample, or proof"
+      },
+      "evidence_owner": "dist/game-host",
+      "gate": "EXACT_PATCH_SCENE_SAVE_PLAYER_AUTHORITY_ATTESTED",
+      "forbidden": [
+        "ASSUME_DISPOSABLE_BY_FILENAME",
+        "GIT_COMMIT_RAW_GAME_MEDIA",
+        "REUSE_OFFLINE_ONLY_RECEIPT_FOR_GAME"
+      ]
+    },
+    {
+      "id": "SEM-1",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "status": "READY_FOR_OFFLINE_ONLY_AFTER_LOCAL_0",
+      "dependencies": [
+        "LOCAL-0"
+      ],
+      "mission": "Compare goal-thread advisory against existing domain_cascade and need_load_balance, and measure preemption/resumption, resource conflicts, player yield, and open-domain behavior using synthetic or explicitly authorized observations; keep game controls disabled",
+      "run": [
+        "python -m unittest tests.test_semantic_advisory tests.test_ontology_gate -v"
+      ],
+      "evidence_owner": "dist/semantic-local",
+      "gate": "OFFLINE_ONLY",
+      "parallel_safe_with": [
+        "GAME-1"
+      ],
+      "forbidden": [
+        "REPLACE_DOMAIN_CASCADE",
+        "CLAIM_BURGLAR_BEHAVIOR_IS_UNIVERSAL",
+        "CREATE_OWN_HOST_PERMIT"
+      ]
+    },
+    {
+      "id": "GAME-1",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "status": "WAITING_BUILD_1",
+      "dependencies": [
+        "BUILD-1"
+      ],
+      "mission": "BI-002 real vanilla hunger baseline: five distinct actual trials with patch, selected save, evidence ref and no player override; do not lose current game state/character intent",
+      "run": [
+        "python -m scripts.live_cert status --run-id ACTUAL_LOCAL_RUN_ID"
+      ],
+      "evidence_owner": "dist/live-cert",
+      "gate": "AT_LEAST_FIVE_VANILLA_OBSERVED",
+      "forbidden": [
+        "FAKE_VANILLA_TRIALS",
+        "UNAPPROVED_INPUT"
+      ]
+    },
+    {
+      "id": "GAME-2",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "status": "WAITING_GAME_1",
+      "dependencies": [
+        "GAME-1"
+      ],
+      "mission": "Inspect actual game tuning, author exactly one reversible package through supported Sims tooling, execute five modified controlled trials, run rollback and confirm normal queues and player priority",
+      "evidence_owner": "dist/live-cert",
+      "gate": "AT_LEAST_FIVE_MODIFIED_PLUS_ROLLBACK_OBSERVED",
+      "forbidden": [
+        "UNSUPPORTED_BUILD_CERTIFICATION",
+        "MAKE_MOD_FROM_SYNTHETIC_EVIDENCE",
+        "EDIT_USER_SAVES"
+      ]
+    },
+    {
+      "id": "P08-1",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "status": "WAITING_GAME_2",
+      "dependencies": [
+        "GAME-2",
+        "SEM-1"
+      ],
+      "mission": "Only with explicit new lab consultation and host permission, observe semantic layer across player idle/active and a real time-sensitive contingency where available; avoid forcing a hypothetical burglar scenario; capture action outcomes and resumed-intent evidence",
+      "evidence_owner": "dist/semantic-live",
+      "gate": "PATCH_SPECIFIC_LIVE_EVIDENCE_OR_EXPLICIT_INCONCLUSIVE",
+      "forbidden": [
+        "INFER_URGENCY_FROM_ONE_SCREENSHOT",
+        "SENDINPUT_FROM_LEARNED_SCORE",
+        "REPLAY_SUSPENDED_ACTION_WITHOUT_REVALIDATION"
+      ]
+    },
+    {
+      "id": "REVIEW-1",
+      "host": "OPERATOR_OR_PHYSICAL_RUNTIME",
+      "status": "WAITING_GAME_2",
+      "dependencies": [
+        "GAME-2"
+      ],
+      "mission": "Independently review package hashes, actual vanilla/modified evidence, rollback, player queue safety and patch-specific decision",
+      "evidence_owner": "private_operator_and_sanitized_repo_receipts",
+      "gate": "MAINTAINER_SIGNOFF_REQUIRED",
+      "forbidden": [
+        "AUTOCERTIFY_FROM_CI",
+        "AUTOCERTIFY_FROM_CLICKS"
+      ]
+    },
+    {
+      "id": "CONVERGE",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "status": "WAITING_REVIEW",
+      "dependencies": [
+        "REVIEW-1",
+        "P08-1"
+      ],
+      "mission": "Update owners and ledger with independently demonstrated outcomes, preserve baseline/certification distinctions, issue reviewed PR for each demonstrated change; continue outstanding gates where possible",
+      "run": [
+        "python -m scripts.check_horizon",
+        "python -m scripts.progression_eval --repo-only",
+        "python -m scripts.live_cert status --run-id ACTUAL_LOCAL_RUN_ID"
+      ],
+      "evidence_owner": "docs/LEDGER.md and existing active BI-002 plan",
+      "gate": "BI-002_CERTIFIED_ONLY_WHEN_HUMAN_REVIEW_AND_ALL_ACTUAL_GAME_GATES_PASS",
+      "forbidden": [
+        "CLOSE_BI002_FROM_OFFLINE_CI",
+        "TREAT_P04_AS_EXECUTED_GAME_SESSION"
+      ]
+    }
+  ],
+  "privacy_safety": [
+    "No private game media, user names, saves, paths or credentials in public GitHub",
+    "No unattended daemon, polling beyond bounded opt-in listener, automatic input, or UI capture without approval",
+    "No new mandatory world economy or ungrounded mod frameworks",
+    "Preserve current active writers, dirty checkouts and older certified patch evidence"
+  ],
+  "next_first_command": "python -m unittest tests.test_ontology_gate tests.test_semantic_advisory -v",
+  "local_game_proof_ceiling": "WAITING_LOCAL_GAME_NOT_EXECUTED_IN_CURRENT_CHAT",
+  "final_report_contract": "CHANGED | PROVED | NEXT with actual game version, patch, per-stage distinct trial counts, evidence refs, runtime placement, branch/commit, and independent reviewer outcome"
+}

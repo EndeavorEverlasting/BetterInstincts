@@ -1,0 +1,70 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-P04-SEMANTIC-ROUTING-20261107",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "eda1b4664714ca21a3caa659e40cbd6061ac36c8",
+  "proposed_capability": "Post-integration repository-wide P04 local game certification handoff routing via root AGENTS.md without changing game behavior",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "SAVE_SLOT",
+    "PLAYER_PRESENCE",
+    "GOAL_THREAD",
+    "CONTINGENCY",
+    "RESUME_CONDITION",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT",
+    "COORDINATION_CYCLE"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "docs/LIVE_CERT.md",
+    "plans/active/BI-002.execution.v1.json",
+    "contracts/ontology.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "POST_MERGE_REPOSITORY_ROUTING_NO_LOCAL_GAME_EXECUTION",
+  "player_save_control_impact": "NONE; repo only; all game observation/experiment work deferred to approved local game host",
+  "expected_outcome": "New P04 handoff is discoverable from root AGENTS, points to live-first ontology consultation, preserves BI-002 as parent, independently tracks game proof versus CI",
+  "negative_tests": [
+    "unverified save never treated disposable",
+    "offline consultation refused for real game sample",
+    "no fabricated local agent dispatch",
+    "no Sims game action from GitHub/CI",
+    "chronology check rejects edit ahead of consultation"
+  ],
+  "rollback_path": "Revert this P04 documentation/routing PR on main; no game installs or saved games touched",
+  "unresolved_unknowns": [
+    "Local game patch, Sims 4 Studio build, Mods root, current process, and player-owned save cannot be established from GitHub",
+    "Moonwake generic dispatch CLI/schema paths not available in current connected Moonwake main; do not claim it ran"
+  ],
+  "files_expected": [
+    "AGENTS.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "ONTOLOGY_CONSULTED_BEFORE_ROOT_P04_ROUTING_EDIT",
+  "source_main_sha": "091fa6d2ae49de54fd3536b8f7aa6913006df49d"
+}

@@ -3,7 +3,7 @@
 Before edits/samples/experiments, read `docs/ONTOLOGY.md` + owners; commit `contracts/consultations/` first; run `scripts/semantic_preflight.py`. Read **docs/DOCTRINE.md**, **docs/LEDGER.md**, **docs/PROMPT_INVOCATIONS.md**. **plans/active/BI-001.md** merged; **plans/active/BI-002.md** owns game-lab gate.
 
 ## Parent objective
-Create a free, community-native Sims 4 autonomy mod that helps Sims meet needs, earn income, progress in careers, and enjoy their lives without overriding manual player control or personality. Do not confuse an offline policy prototype with a playable mod.
+Build a free, community-native Sims 4 mod for needs, income, careers, fun and personality without overriding player control. An offline policy prototype is not a playable mod.
 
 ## Mandatory preflight
 Refresh repo HEAD/branch, PRs, status and game/version. Declare HOST, providers, scopes, collisions, tests, proof and parent gate. Resolve P-numbers using Moonwake's exact catalog.
@@ -28,4 +28,4 @@ Read `docs/HORIZON.md`, `plans/horizon.v1.json` and `plans/active/BI-003.executi
 ## Completion contract
 Report CHANGED | PROVED | NEXT, including exact checks run/skipped, commit SHA, push/PR/merge, game patch and live-test status. A plan is not implementation; a green CI check is not playable-mod proof. Do not publish pre-alpha as a release.
 
-P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md` (BI-002 active).
+P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`; ontology: `docs/handoff/BI-SEMANTIC-ONTOLOGY-P04-2026-11-07.md` (BI-002 active).
