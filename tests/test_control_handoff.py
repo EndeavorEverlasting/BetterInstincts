@@ -8,7 +8,7 @@ import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
-from betterinstincts.control_handoff import HandoffError, as_presence, confirm, decide
+from betterinstincts.control_handoff import HandoffError, as_presence, confirm, decide, exclusive_screen_owner
 from betterinstincts.host_automate import plan_automation
 from betterinstincts.player_presence import PresenceProbe
 from scripts import needs_force
@@ -111,6 +111,16 @@ class ControlHandoffTests(unittest.TestCase):
         obs = {**OBS, "player_directed": True}
         result = plan_automation(obs, probe(9000), session_active=True)
         self.assertEqual(result["state"], "YIELD_TO_PLAYER")
+
+    def test_same_game_process_has_only_one_agent_screen_owner(self):
+        process_id = 624286
+        with exclusive_screen_owner(process_id):
+            with self.assertRaisesRegex(HandoffError, "SCREEN_OWNER_BUSY"):
+                with exclusive_screen_owner(process_id):
+                    pass
+        # Normal exit releases ownership, and another explicit action can start.
+        with exclusive_screen_owner(process_id):
+            pass
 
     def test_live_click_executor_demands_exact_session_and_one_step(self):
         with patch.object(needs_force.sys, "platform", "win32"):
