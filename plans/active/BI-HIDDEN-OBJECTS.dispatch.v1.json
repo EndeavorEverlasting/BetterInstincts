@@ -1,0 +1,214 @@
+{
+  "schema_version": "betterinstincts.hidden-object-dispatch/v1",
+  "sprint": "BI-HIDDEN-OBJECTS",
+  "repo": "EndeavorEverlasting/BetterInstincts",
+  "prompt": {
+    "id": "P04",
+    "owner_repo": "EndeavorEverlasting/Moonwake",
+    "catalog": "harness/exports/prompt-invocation-catalog.v1.json",
+    "name": "[PARALLEL] Repo-Aware Sprint + Harness Factoring Distributor"
+  },
+  "source": "plans/active/BI-HIDDEN-OBJECTS.P04.md",
+  "parent": {
+    "id": "BI-002",
+    "state": "ACTIVE_UNPROVEN",
+    "live_trials": {
+      "vanilla": 0,
+      "modified": 0
+    },
+    "does_this_feature_close_parent": false
+  },
+  "implementation": {
+    "branch": "feat/bi-hidden-object-host-p04-20261107",
+    "consultation": "contracts/consultations/BI-HIDDEN-OBJECTS-20261107.v1.json",
+    "contract": "contracts/hidden-object-discovery.v1.json",
+    "cli": "python -m scripts.hidden_object_discovery",
+    "module": "betterinstincts.hidden_object_discovery",
+    "tests": "python -m unittest tests.test_hidden_object_discovery -v"
+  },
+  "proof_ceiling": "OFFLINE_GITHUB_SOURCE_AND_CI_ONLY_NO_WINDOWS_GAME_HOST",
+  "parallel_execution": {
+    "required_when_graph_width_at_least": 2,
+    "true_parallel_not_yet_proven": true,
+    "autonomy_gap": "No observed native local Windows-game worker API attached to this ChatGPT provider runtime; CI and local-game capture cannot be considered parallel until separately evidenced."
+  },
+  "lanes": [
+    {
+      "lane_id": "ONTOLOGY_FIRST",
+      "mission": "Pre-implementation ontology consultation",
+      "dependencies": [],
+      "execution_environment": "CURRENT_CHAT_RUNTIME",
+      "provider_access": [
+        "GitHub"
+      ],
+      "required_capabilities": [
+        "repo_write"
+      ],
+      "owned_mutation_surfaces": [
+        "contracts/consultations/BI-HIDDEN-OBJECTS-20261107.v1.json"
+      ],
+      "forbidden_surfaces": [
+        "user_saves",
+        "local_game_input"
+      ],
+      "adapter": "GitHub contents API",
+      "launch_action": "Committed as first feature-branch change",
+      "status": "COMMITTED",
+      "return_contract": "GitHub commit SHA and consultation readback",
+      "validation": "check_ontology"
+    },
+    {
+      "lane_id": "OFFLINE_SOURCE",
+      "mission": "Opt-in discovery planner, CLI and unit tests",
+      "dependencies": [
+        "ONTOLOGY_FIRST"
+      ],
+      "execution_environment": "CURRENT_CHAT_RUNTIME",
+      "provider_access": [
+        "GitHub"
+      ],
+      "required_capabilities": [
+        "repo_file_writes"
+      ],
+      "owned_mutation_surfaces": [
+        "contracts/hidden-object-discovery.v1.json",
+        "betterinstincts/hidden_object_discovery.py",
+        "scripts/hidden_object_discovery.py",
+        "tests/test_hidden_object_discovery.py",
+        "docs/HIDDEN_OBJECT_DISCOVERY.md"
+      ],
+      "forbidden_surfaces": [
+        "curious_catalog behavioral rewrite",
+        "user_saves",
+        "live_sendinput"
+      ],
+      "adapter": "GitHub contents API",
+      "launch_action": "Commit source and regression tests to feature branch",
+      "status": "SOURCE_COMMITTED_TESTS_UNVERIFIED",
+      "return_contract": "Git commits and readback",
+      "validation": "python -m unittest tests.test_hidden_object_discovery -v"
+    },
+    {
+      "lane_id": "CI_PROOF",
+      "mission": "Chronology, unit, full suite and compatibility check",
+      "dependencies": [
+        "OFFLINE_SOURCE"
+      ],
+      "execution_environment": "CI_OR_REMOTE_RUNNER",
+      "provider_access": [
+        "GitHub Actions"
+      ],
+      "required_capabilities": [
+        "repo_checkout",
+        "python3",
+        "tests"
+      ],
+      "owned_mutation_surfaces": [],
+      "forbidden_surfaces": [
+        "game_input",
+        "unsafe_tracked_outputs"
+      ],
+      "adapter": "PR CI",
+      "launch_action": "Open feature PR; inspect actual workflow checks",
+      "status": "NOT_YET_OBSERVED",
+      "return_contract": "Actual action run URL, conclusion, tests and commit",
+      "validation": "python -m unittest discover -s tests -v",
+      "convergence_owner": "repository maintainer"
+    },
+    {
+      "lane_id": "WINDOWS_SCENE",
+      "mission": "Obtain current exact-build two-source Build/Buy UI and save/consent evidence",
+      "dependencies": [
+        "OFFLINE_SOURCE"
+      ],
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [],
+      "required_capabilities": [
+        "Windows Sims process",
+        "screen observation",
+        "scene_map",
+        "save_guard",
+        "player-presence lease"
+      ],
+      "owned_mutation_surfaces": [
+        "dist/game-host/"
+      ],
+      "forbidden_surfaces": [
+        "tracked_saves",
+        "unconsented_UI",
+        "repository_protected_files"
+      ],
+      "adapter": "existing local game host after explicit attachment",
+      "launch_action": "python -m scripts.hidden_object_discovery categories",
+      "status": "AWAITING_LOCAL_GAME_HOST",
+      "return_contract": "Sanitized exact-build observation and independent admission",
+      "validation": "python -m scripts.semantic_preflight --operation game_sampling --consultation NEW_EXACT_BUILD_RECEIPT --exact-game-build ACTUAL_FULL_VERSION",
+      "convergence_owner": "local game agent"
+    },
+    {
+      "lane_id": "WINDOWS_CATALOG",
+      "mission": "Perform approved single-step discovery and review observed item prices",
+      "dependencies": [
+        "WINDOWS_SCENE",
+        "CI_PROOF"
+      ],
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [],
+      "required_capabilities": [
+        "player authority",
+        "Build/Buy capture",
+        "per-input screen_admit"
+      ],
+      "owned_mutation_surfaces": [
+        "dist/game-host/"
+      ],
+      "forbidden_surfaces": [
+        "unbounded_scan",
+        "blind_purchase",
+        "speed_changes",
+        "bulk_place",
+        "user_saves"
+      ],
+      "adapter": "existing game host adapter after step-level admission",
+      "launch_action": "python -m scripts.hidden_object_discovery plan --observation dist/game-host/hidden-object-observation.json --category all",
+      "status": "AWAITING_HOST_EVIDENCE",
+      "return_contract": "reviewed item-by-item capture receipts and price classification",
+      "validation": "Per-step independent scene/lease/consent checks",
+      "convergence_owner": "local game agent"
+    },
+    {
+      "lane_id": "BI002_HUNGER",
+      "mission": "Preserve independent hunger certification progression",
+      "dependencies": [],
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [],
+      "required_capabilities": [
+        "actual Sims 4 client",
+        "live trials",
+        "rollback"
+      ],
+      "owned_mutation_surfaces": [
+        "BI-002 own branch and ignored dist receipts"
+      ],
+      "forbidden_surfaces": [
+        "overlap_windows_catalog_game_ui"
+      ],
+      "adapter": "local BI-002 harness",
+      "launch_action": "Follow plans/active/BI-002.execution.v1.json after obtaining exclusive game UI",
+      "status": "ACTIVE_UNPROVEN",
+      "return_contract": "5 vanilla + 5 modified real observed trials, rollback and review",
+      "validation": "docs/LIVE_CERT.md",
+      "convergence_owner": "BI-002 maintainer"
+    }
+  ],
+  "safety": {
+    "game_version_policy": "EXACT_ONLY",
+    "save_policy": "UNKNOWN_PROTECTED",
+    "on_unknown": "ABSTAIN",
+    "no_autorun": true,
+    "never_touch_speed": true,
+    "never_sendinput_from_planner": true,
+    "all_item_prices": "UNKNOWN_UNTIL_OBSERVED"
+  },
+  "no_actual_parallel_dispatch_claim": true
+}
