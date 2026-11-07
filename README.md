@@ -63,3 +63,7 @@ Original code is MIT licensed. Please open an issue for compatibility observatio
 - `python -m scripts.check_scene_contract` validates the state graph, chosen-save gate and protected-default policy; no screenshots or game launch performed.
 
 - [P04 Scene Intelligence canonical handoff](plans/active/BI-SCENE-MAP.HANDOFF.md) and [typed dispatch](plans/active/BI-SCENE-MAP.dispatch.v1.json) — current offline evidence, protected-save policy and live Windows host execution order.
+
+## Hidden objects — P04 host discovery
+- [General hidden-item discovery](docs/HIDDEN_OBJECT_DISCOVERY.md) — opt-in, read-only game-host planner for `bb.showhiddenobjects` and optional `bb.showliveeditobjects`; deterministic categories, per-item price evidence, no auto-clicks or game-speed changes.
+- [Local-agent P04 launch order](plans/active/BI-HIDDEN-OBJECTS.P04.md) and [typed dispatch](plans/active/BI-HIDDEN-OBJECTS.dispatch.v1.json) — exact patch and scene gates remain owned by the Windows game host; BI-002 hunger is still active.
