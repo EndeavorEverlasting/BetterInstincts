@@ -1,0 +1,103 @@
+{
+  "schema": "betterinstincts.host-budget/v1",
+  "version": 1,
+  "glossary": "contracts/glossary.v1.json",
+  "proof_ceiling": "OFFLINE_BUDGET_POLICY_NOT_LIVE_CATALOG_CERT",
+  "observed": {
+    "run_id": "bi002-lablab-reboot",
+    "date": "2026-11-07",
+    "funds_after_sleep_surface": 638,
+    "note": "Operator purchased sleep surface; funds fell from ~§12k through ~§2k to LOCAL_OBSERVED §638. Budget lockdown is material."
+  },
+  "floors": {
+    "emergency_reserve": 400,
+    "soft_budget_floor": 2000,
+    "note": "Never spend below emergency_reserve. Below soft_budget_floor prefer EARN_BEFORE_SPEND and USE_EXISTING."
+  },
+  "priority": [
+    "player_direction",
+    "viewport_presence",
+    "use_owned_critical_objects",
+    "secure_cheapest_adequate_for_critical_gaps",
+    "free_moodlet_relief",
+    "earn_income_when_below_soft_floor",
+    "skills_only_after_needs_objects_and_soft_floor"
+  ],
+  "need_object_priority": ["bladder", "hunger", "energy", "hygiene", "fun", "social"],
+  "catalog": [
+    {
+      "id": "fridge_used_budget",
+      "need": "hunger",
+      "object_class": "fridge",
+      "label": "Crisponix Budget Dee-Lux (Used)",
+      "price": 215,
+      "adequacy": "adequate",
+      "evidence": "LOCAL_OBSERVED"
+    },
+    {
+      "id": "toilet_cheap",
+      "need": "bladder",
+      "object_class": "toilet",
+      "label": "cheap toilet (catalog TBD)",
+      "price": 250,
+      "adequacy": "adequate",
+      "evidence": "ESTIMATED_CATALOG_HINT"
+    },
+    {
+      "id": "cot_or_cheap_bed",
+      "need": "energy",
+      "object_class": "bed",
+      "label": "operator sleep surface / cheap bed or cot",
+      "price": 300,
+      "adequacy": "adequate",
+      "evidence": "OPERATOR_PURCHASE_2026-11-07_PRICE_APPROX"
+    },
+    {
+      "id": "shower_cheap",
+      "need": "hygiene",
+      "object_class": "shower",
+      "label": "cheap shower (catalog TBD)",
+      "price": 250,
+      "adequacy": "adequate",
+      "evidence": "ESTIMATED_CATALOG_HINT"
+    },
+    {
+      "id": "chess_or_cheap_fun",
+      "need": "fun",
+      "object_class": "chess",
+      "label": "cheap fun object",
+      "price": 100,
+      "adequacy": "adequate",
+      "evidence": "ESTIMATED_CATALOG_HINT"
+    },
+    {
+      "id": "phone_owned",
+      "need": "social",
+      "object_class": "phone",
+      "label": "Sim phone (no purchase)",
+      "price": 0,
+      "adequacy": "adequate",
+      "evidence": "BASE_GAME_ALWAYS"
+    }
+  ],
+  "forbidden_purchases_when_below_soft_floor": [
+    "luxury_furniture",
+    "decorative_only",
+    "high_end_electronics",
+    "duplicate_need_object_class"
+  ],
+  "rules": {
+    "spend_max": "funds - emergency_reserve",
+    "secure_only_if": [
+      "need_urgency_in_critical_or_low",
+      "object_class_missing",
+      "cheapest_adequate_price_le_spend_max"
+    ],
+    "hold_if": [
+      "price_gt_spend_max",
+      "funds_lt_soft_budget_floor_and_need_not_critical",
+      "duplicate_owned"
+    ],
+    "lockdown_if": "funds < emergency_reserve"
+  }
+}

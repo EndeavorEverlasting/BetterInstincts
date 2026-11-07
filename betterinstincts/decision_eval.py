@@ -18,8 +18,14 @@ from betterinstincts.instincts_host import InstinctsHostError, NeedSnapshot, all
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "contracts" / "decision-prompts.v1.json"
 
-SAFE_TAGS = frozenset({"ethical", "safe", "preserve_performance", "stable_mood", "host_prep", "rabbit_hole", "keep_home_lot"})
-RISK_TAGS = frozenset({"theft", "risk_reputation", "risk_school", "risk_mood", "leave_home_lot", "blocks_home_build", "travel_with_sim"})
+SAFE_TAGS = frozenset({
+    "ethical", "safe", "preserve_performance", "stable_mood", "host_prep",
+    "rabbit_hole", "keep_home_lot", "funds_recovery", "player_choice",
+})
+RISK_TAGS = frozenset({
+    "theft", "risk_reputation", "risk_school", "risk_mood",
+    "leave_home_lot", "blocks_home_build", "travel_with_sim", "host_crisis_anti_pattern",
+})
 
 
 class DecisionEvalError(ValueError):
@@ -85,7 +91,14 @@ def _needs_critical(needs: Mapping[str, float], urgent: float = 0.35) -> bool:
     return any(v < urgent for v in needs.values())
 
 
-def score_option(option: dict, *, needs_critical: bool, prefer_home_control: bool) -> ScoredOption:
+def score_option(
+    option: dict,
+    *,
+    needs_critical: bool,
+    prefer_home_control: bool,
+    funds_critical: bool = False,
+    funds_low: bool = False,
+) -> ScoredOption:
     tags = tuple(str(t) for t in option.get("tags", []))
     score = 0.0
     rationale = []
@@ -100,9 +113,17 @@ def score_option(option: dict, *, needs_critical: bool, prefer_home_control: boo
         if any(t in SAFE_TAGS for t in tags):
             score += 3.0
             rationale.append("boost_safe_under_critical_needs")
-        if any(t in {"theft", "risk_school", "risk_reputation", "leave_home_lot"} for t in tags):
+        if any(t in {"theft", "risk_school", "risk_reputation", "leave_home_lot", "host_crisis_anti_pattern"} for t in tags):
             score -= 4.0
             rationale.append("penalize_risky_under_critical_needs")
+    # Broke household: never Join / leave home — money + sleep objects live at home.
+    if funds_critical or funds_low:
+        if "keep_home_lot" in tags or "host_prep" in tags:
+            score += 5.0 if funds_critical else 3.0
+            rationale.append("boost_home_control_under_money_stress")
+        if any(t in {"leave_home_lot", "travel_with_sim", "host_crisis_anti_pattern"} for t in tags):
+            score -= 8.0 if funds_critical else 5.0
+            rationale.append("forbid_school_join_under_money_stress")
     if prefer_home_control:
         if "keep_home_lot" in tags or "host_prep" in tags:
             score += 3.0
@@ -126,15 +147,41 @@ def recommend(
     catalog: dict | None = None,
     prefer_home_control: bool = False,
     urgent_threshold: float = 0.35,
+    funds: Optional[float] = None,
+    soft_budget_floor: float = 2000.0,
+    emergency_reserve: float = 400.0,
 ) -> DecisionRecommendation:
     prompt = get_prompt(prompt_id, catalog)
     critical = _needs_critical(needs, urgent_threshold)
+    funds_critical = False
+    funds_low = False
+    if funds is not None:
+        if isinstance(funds, bool) or not isinstance(funds, (int, float)) or funds < 0:
+            raise DecisionEvalError("INVALID_FUNDS")
+        funds_critical = float(funds) < float(emergency_reserve)
+        funds_low = float(funds) < float(soft_budget_floor)
+    # Crisis auto-forces home control (Send Alone) — operator RCA: Join stranded the lab.
+    force_home = prefer_home_control or critical or funds_critical or funds_low
+    if force_home and prompt_id == "school.attend.join_or_send_alone":
+        prefer_home_control = True
     ranked = tuple(sorted(
-        (score_option(opt, needs_critical=critical, prefer_home_control=prefer_home_control)
+        (score_option(
+            opt,
+            needs_critical=critical,
+            prefer_home_control=prefer_home_control,
+            funds_critical=funds_critical,
+            funds_low=funds_low,
+         )
          for opt in prompt["options"]),
         key=lambda s: (-s.score, s.option_id),
     ))
     best = ranked[0]
+    # Hard gate: under crisis never recommend Join for school attendance.
+    if prompt_id == "school.attend.join_or_send_alone" and (critical or funds_critical or funds_low):
+        for item in ranked:
+            if item.option_id == "send_alone":
+                best = item
+                break
     # Tie or all negative under unknown: fall back to catalog default when present.
     default = prompt.get("default_when_unknown_needs")
     if default and ranked[0].score == ranked[1].score:

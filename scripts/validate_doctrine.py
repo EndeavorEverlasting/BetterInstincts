@@ -47,6 +47,8 @@ REQUIRED = (
     "betterinstincts/host_listener.py", "betterinstincts/host_automate.py",
     "scripts/host_listener.py", "scripts/needs_force.py", "scripts/host_automate.py",
     "tests/test_host_autonomy.py",
+    "contracts/host-funds.v1.json", "betterinstincts/funds_inject.py",
+    "scripts/funds_inject.py", "tests/test_funds_inject.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

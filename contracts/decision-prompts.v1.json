@@ -43,7 +43,7 @@
         {
           "option_id": "join",
           "label": "Join",
-          "tags": ["travel_with_sim", "leave_home_lot", "blocks_home_build"]
+          "tags": ["travel_with_sim", "leave_home_lot", "blocks_home_build", "host_crisis_anti_pattern"]
         },
         {
           "option_id": "send_alone",
@@ -52,7 +52,39 @@
         }
       ],
       "default_when_unknown_needs": "send_alone",
-      "notes": "When home needs are critical or empty-lot prep is unfinished, Send Alone keeps host control of home."
+      "force_send_alone_when": [
+        "needs_critical",
+        "funds_critical",
+        "funds_low",
+        "home_objects_incomplete",
+        "prefer_home_control"
+      ],
+      "notes": "LOCAL_OBSERVED RCA 2026-11-07: Joining Charlee at Copperdale under unfinished home + critical needs/funds stranded the host off-lot, blocked sleep/eat objects, burned money, and collapsed the lab life. Send Alone is mandatory under crisis — keep Bargain Bend under host control."
+    },
+    {
+      "prompt_id": "host.funds.federal_subsidy",
+      "title": "HOUSEHOLD NOTICE",
+      "repeatable": true,
+      "scene_tags": ["host", "funds", "subsidy", "live"],
+      "narrative_tokens": [
+        "decisions were made",
+        "Simolean federal bank",
+        "household subsidy"
+      ],
+      "options": [
+        {
+          "option_id": "accept_subsidy",
+          "label": "Yes, Please",
+          "tags": ["safe", "host_prep", "funds_recovery"]
+        },
+        {
+          "option_id": "decline_subsidy",
+          "label": "No Thanks",
+          "tags": ["ethical", "player_choice"]
+        }
+      ],
+      "default_when_unknown_needs": "accept_subsidy",
+      "notes": "Host overlay when household funds < 100. Yes → scripts.funds_inject (testingcheats enabled true then Money N). Not BI-004 earned income."
     }
   ]
 }
