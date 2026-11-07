@@ -147,3 +147,13 @@ def exclusive_screen_owner(process_id: int) -> Iterator[None]:
                 lock.unlink()
         finally:
             os.close(fd)
+
+
+def screen_owner_busy(process_id: int) -> bool:
+    """Advisory status for read-only agents; exclusive_screen_owner is authority."""
+    if isinstance(process_id, bool) or not isinstance(process_id, int) or process_id <= 0:
+        raise HandoffError("EXACT_GAME_PROCESS_ID_REQUIRED")
+    if LOCK_ROOT.is_symlink():
+        raise HandoffError("SCREEN_LOCK_ROOT_UNSAFE")
+    lock = LOCK_ROOT / ("screen-" + str(process_id) + ".lock")
+    return lock.exists() or lock.is_symlink()
