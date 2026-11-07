@@ -1,0 +1,57 @@
+{
+  "schema": "betterinstincts.horizon-continuity/v1",
+  "version": 1,
+  "authority": "docs/HORIZON_CONTINUITY.md",
+  "design_brief": {
+    "subject": "BetterInstincts horizon continuity contract",
+    "audience": "local game-capable agents and maintainers",
+    "job": "Keep North Star through Continuity opener machine-checkable; route next effort to BI-002 GAME-1 evidence, not synthetic expansion or product chrome",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose clarity before surface"},
+      {"id": "UP-A85AD9DC3", "mechanism": "lane/trajectory storytelling without dashboard chrome"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ],
+    "forbidden_chrome": "No Mod Lab / progression dashboard UI; STRATEGY thesis D remains REJECTED"
+  },
+  "parent_prompts": {
+    "north_star": "Create a free, community-native Sims 4 autonomy mod that helps Sims meet needs, earn income, progress in careers, and enjoy their lives without overriding manual player control or personality. Do not confuse an offline policy prototype with a playable mod.",
+    "owner_objective": "A creative, freely distributed contribution to The Sims 4 modding community that makes Sims autonomously meet needs responsibly, generate income, improve career outcomes, and pursue more fulfilling lives. Start with an observable small win while retaining the entire multi-month vision here. Prefer community-standard languages/tooling and patterns; avoid inventing new systems unnecessarily.",
+    "product_contract": "BetterInstincts should make autonomy more competent and believable, not maximize task throughput at any cost. A Sim may rest, socialize, pursue a hobby, or behave imperfectly. Explicit player direction always outranks mod suggestions. Pursuit of work/career must consider time, energy, relationships, traits, mood, and user settings after those capabilities are observed in the game.",
+    "non_negotiables": [
+      "Player agency outranks all autonomy suggestions.",
+      "Needs and safety outrank money/career efficiency; leisure and character remain meaningful.",
+      "Different Sims should not converge on one robotic optimization loop.",
+      "Behavior must be configurable, individually defeatable, reversible, and performant.",
+      "No save alteration, arbitrary user directories, telemetry, hidden background tasks, or mass changes."
+    ],
+    "horizon_trajectory": "All six adult needs → cross-need balance → steady observed income while maintaining needs → observed skill growth while maintaining income and needs → career advancement. Never optimize away playfulness or player override. Operator priority is unequivocally needs → income → skills → career. Do not substitute generic productivity for a balanced, fun Sims experience.",
+    "first_win_proof_ceiling": "First investigation: one observable base-game needs behavior (hunger) and its tuning/priority mechanism, not whole-game AI replacement. Plans, handoffs, and offline CI do not close BI-002. A plan is not implementation; a green CI check is not playable-mod proof.",
+    "continuity_opener": "Parent objective: BetterInstincts — free, community-native Sims 4 autonomy that helps Sims meet needs, earn income, advance careers, and enjoy life without overriding the player or personality. Current gate: BI-002 hunger live cert on an exact game patch with reversible package, ≥5 vanilla / ≥5 modified trials, rollback, and player-queue safety. Downstream stays locked to needs → income → skills → career. Offline prototypes are not game proof. Player first. Save-safe. Report CHANGED | PROVED | NEXT."
+  },
+  "selected_investigation": {
+    "source": "docs/STRATEGY.md#2026-11-07-p141-scout",
+    "thesis": "A",
+    "name": "BI-002 GAME-1",
+    "owner": "LOCAL_GAME_CAPABLE_AGENT",
+    "next": "Verify running patch, enter authorized disposable LAB Live Mode with two cues, record one genuine vanilla hunger trial via scripts.live_cert, then advance toward 5+5 + package + rollback + review",
+    "abstain_when": [
+      "PLAYER_PLAYING",
+      "BUILD_OR_BUY_MODE_ACTIVE",
+      "VIEWPORT_BLACK",
+      "UNKNOWN_SCENE",
+      "USER_OR_UNKNOWN_SAVE"
+    ]
+  },
+  "open_items": [
+    {
+      "id": "FUNDS_PREFERRED_NON_MOTHERLODE",
+      "status": "OPEN",
+      "summary": "A more efficient exact-funds host path than looping motherlode is believed to exist; motherlode chunks remain the interim durable substitute.",
+      "interim": "motherlode x ceil(remaining/50000) after testingcheats via Ctrl+Shift+C",
+      "not": "BI-004 earned income",
+      "owner": "contracts/host-funds.v1.json",
+      "blocks_bi002": false
+    }
+  ],
+  "proof_ceiling": "CONTRACT_AND_DOCS_ONLY_UNTIL_LIVE_CERT_ROWS_EXIST"
+}

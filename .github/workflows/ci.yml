@@ -36,6 +36,7 @@ jobs:
       - name: Horizon dependency and scenario evaluators
         run: |
           python -m scripts.check_horizon
+          python -m scripts.check_horizon_continuity
           python -m scripts.eval_horizon
           python -m scripts.horizon_status
       - name: Deterministic P95 P67 P62 host eval suite

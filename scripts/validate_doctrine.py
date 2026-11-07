@@ -52,6 +52,9 @@ REQUIRED = (
     "contracts/progression-eval.v1.json", "docs/PROGRESSION_EVAL.md",
     "betterinstincts/progression_eval.py", "scripts/progression_eval.py",
     "tests/test_progression_eval.py", "tests/fixtures/progression-eval.v1.json",
+    "contracts/horizon-continuity.v1.json", "docs/HORIZON_CONTINUITY.md",
+    "betterinstincts/horizon_continuity.py", "scripts/check_horizon_continuity.py",
+    "tests/test_horizon_continuity.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

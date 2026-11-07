@@ -18,6 +18,7 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 - [Validation](docs/VALIDATION.md) — offline tests and future game certification.
 - [Progression eval (P67/P62)](docs/PROGRESSION_EVAL.md) — CI honesty vs product progression rate.
 - [Full product horizon](docs/HORIZON.md) — all six needs, balanced care, income, skills, then careers.
+- [Horizon continuity](docs/HORIZON_CONTINUITY.md) — North Star → Continuity opener + BI-002 GAME-1.
 - [Machine-readable dependency graph](plans/horizon.v1.json) — exact gate ownership and sequencing.
 - [P141/P82 selection and experiment](docs/HORIZON_DECISIONS.md) — hypothesis, baseline and falsifiers.
 - [Follow-on needs execution](plans/active/BI-003.execution.v1.json) — patch-specific local-agent work.
