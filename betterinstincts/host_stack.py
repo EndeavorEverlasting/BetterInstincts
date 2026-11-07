@@ -182,12 +182,19 @@ def evaluate_turn(
     elif event_balance is not None and event_balance["gate"] == "EVENT_INDOOR_ROUTING":
         next_gate = "EVENT_INDOOR_ROUTING"
         fallback = {
-            "mechanism": "CANCEL_OUTDOOR_WALK_RETARGET_INDOOR",
+            "mechanism": event_balance["action"],
             "owner": "betterinstincts/event_balance.py",
             "contract": "contracts/event-balance.v1.json",
+            "primary_route": event_balance.get("primary_route") or "SIT_AND_CHAT_HERE_INDOOR",
             "preferred_routes": event_balance["preferred_routes"],
             "rca_leading": event_balance["rca_leading"],
-            "forbidden": ["IN_FRAME_WALK_THRASH_ACROSS_LOT", "REPEATED_OUTDOOR_GREET", "RESUME"],
+            "forbidden": [
+                "IN_FRAME_WALK_THRASH_ACROSS_LOT",
+                "REPEATED_OUTDOOR_GREET",
+                "GREET_WITHOUT_SEAT_GROUNDING",
+                "GO_HERE_THAT_RE_ROUTES_OUTDOOR",
+                "RESUME",
+            ],
         }
     elif event_balance is not None and event_balance["gate"] in {
         "EVENT_GOAL_PROGRESS",

@@ -134,7 +134,7 @@
   "host_rules": [
     "Moodlets are operator- or sensor-supplied labels — never inferred from a screenshot classifier claim",
     "Survival need meters still outrank moodlet relief when bladder/hunger/energy are critical",
-    "Tense moodlets (angry/scared) + outdoor_social_prefix + indoor_capacity => reinforce EVENT_INDOOR_ROUTING",
+    "Tense moodlets (angry/scared) + outdoor_social_prefix + indoor_capacity => reinforce EVENT_INDOOR_ROUTING with SIT_AND_CHAT_HERE_INDOOR first",
     "Uncomfortable + low bladder/hygiene => prefer toilet/wash before more social queue",
     "Free moodlet relief preferred over paid Buy while budget-constrained (host-budget)",
     "Absence of moodlet observations is SENSOR_NOT_SUPPLIED — do not invent"

@@ -140,8 +140,10 @@ def evaluate_moodlets(
         gate = "MOODLET_AWARE_ROUTING"
         disposition = "OPTIMIZE"
         bias = "AVOID_TENSE_OUTDOOR_IF_INDOOR_CAPACITY"
-        if "CANCEL_OUTDOOR_WALK_RETARGET_INDOOR" not in relief:
-            relief = ["CANCEL_OUTDOOR_WALK_RETARGET_INDOOR", *relief]
+        if "SIT_AND_CHAT_HERE_INDOOR" not in relief:
+            relief = ["SIT_AND_CHAT_HERE_INDOOR", "CANCEL_OUTDOOR_WALK_SIT_AND_CHAT_HERE", *relief]
+        elif "CANCEL_OUTDOOR_WALK_SIT_AND_CHAT_HERE" not in relief:
+            relief = ["CANCEL_OUTDOOR_WALK_SIT_AND_CHAT_HERE", *relief]
     elif "UNCOMFORTABLE_ALIGN_SURVIVAL" in findings:
         gate = "MOODLET_AWARE_ROUTING"
         disposition = "OPTIMIZE"

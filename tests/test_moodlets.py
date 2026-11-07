@@ -39,7 +39,8 @@ class MoodletTests(unittest.TestCase):
         self.assertIn("scared", report["moodlets"])
         self.assertIn("TENSE_MOOD_OUTDOOR_SOCIAL", report["findings"])
         self.assertEqual(report["gate"], "MOODLET_AWARE_ROUTING")
-        self.assertIn("CANCEL_OUTDOOR_WALK_RETARGET_INDOOR", report["relief"])
+        self.assertIn("SIT_AND_CHAT_HERE_INDOOR", report["relief"])
+        self.assertIn("CANCEL_OUTDOOR_WALK_SIT_AND_CHAT_HERE", report["relief"])
 
     def test_host_stack_carries_moodlets(self):
         result = evaluate_turn(

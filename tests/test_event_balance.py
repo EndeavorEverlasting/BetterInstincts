@@ -37,9 +37,19 @@ class EventBalanceTests(unittest.TestCase):
             indoor_capacity_observed=True,
         )
         self.assertEqual(report["gate"], "EVENT_INDOOR_ROUTING")
-        self.assertEqual(report["action"], "CANCEL_OUTDOOR_WALK_RETARGET_INDOOR")
+        self.assertEqual(report["action"], "CANCEL_OUTDOOR_WALK_SIT_AND_CHAT_HERE")
+        self.assertEqual(report["primary_route"], "SIT_AND_CHAT_HERE_INDOOR")
+        self.assertEqual(report["preferred_routes"][0], "SIT_AND_CHAT_HERE_INDOOR")
         self.assertIn("OUTDOOR_SOCIAL_DEFAULT_WITH_INDOOR_CAPACITY", report["findings"])
-        self.assertIn("CLICK_INDOOR_SIM", report["preferred_routes"])
+        self.assertIn("GREET_OR_GO_HERE_WITHOUT_SIT_AND_CHAT_GROUNDING", report["findings"])
+        self.assertIn("H9_GREET_WITHOUT_SEAT_GROUNDING", report["rca_leading"])
+
+    def test_contract_sit_and_chat_is_primary_route(self):
+        cfg = load_contract()
+        gate = cfg["call_stack"]["gates"]["EVENT_INDOOR_ROUTING"]
+        self.assertEqual(gate["primary_route"], "SIT_AND_CHAT_HERE_INDOOR")
+        self.assertEqual(gate["preferred_routes"][0], "SIT_AND_CHAT_HERE_INDOOR")
+        self.assertIn("GREET_WITHOUT_SEAT_GROUNDING", gate["forbidden_routes"])
 
     def test_energy_critical_outranks_event_goals(self):
         report = evaluate_event_turn(
@@ -109,7 +119,9 @@ class EventBalanceTests(unittest.TestCase):
             viewport={"state": "VIEWPORT_OK"},
         )
         self.assertEqual(result["next_gate"], "EVENT_INDOOR_ROUTING")
-        self.assertEqual(result["event_balance"]["action"], "CANCEL_OUTDOOR_WALK_RETARGET_INDOOR")
+        self.assertEqual(result["event_balance"]["action"], "CANCEL_OUTDOOR_WALK_SIT_AND_CHAT_HERE")
+        self.assertEqual(result["fallback"]["primary_route"], "SIT_AND_CHAT_HERE_INDOOR")
+        self.assertEqual(result["fallback"]["preferred_routes"][0], "SIT_AND_CHAT_HERE_INDOOR")
 
     def test_invalid_needs(self):
         with self.assertRaises(EventBalanceError):

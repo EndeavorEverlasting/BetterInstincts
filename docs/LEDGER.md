@@ -138,6 +138,9 @@ Operator: lounge party socials always walk outdoors in rain despite indoor negat
 ## 2026-11-07 — Moodlet strip sensing (P95 + P124 holism)
 Gap: host ignored bottom-left emotion/moodlets (VERY ANGRY + scared/angry/uncomfortable) that steer behavior and pressure needs. Added `contracts/moodlets.v1.json`, `betterinstincts/moodlets.py`, wired through `host_stack` + `event_balance` (`TENSE_MOOD_OUTDOOR_SOCIAL` reinforces indoor retarget). H6 mood RCA promoted PLAUSIBLE. Proof ceiling: supplied labels only (`SENSOR_NOT_SUPPLIED` if absent). Control-handoff tests isolated to temp lock root to clear SCREEN_OWNER_BUSY flake.
 
+## 2026-11-07 — Sit and Chat Here indoor grounding (P95 + trifecta)
+Operator: outdoor-social idiocy is avoidable — **Sit and Chat Here** on indoor seating grounds conversation so pathing cannot re-resolve to the sidewalk meetup. P95 updates `EVENT_INDOOR_ROUTING` primary route to `SIT_AND_CHAT_HERE_INDOOR`; action `CANCEL_OUTDOOR_WALK_SIT_AND_CHAT_HERE`; RCA `H9_GREET_WITHOUT_SEAT_GROUNDING` LEADING; glossary terms; host_stack fallback carries `primary_route`. Live pie-menu SendInput still OPEN (`SIT_AND_CHAT_HERE_LIVE_DISPATCH`). Does not close BI-002.
+
 ## 2026-11-07 — P141 strategic scout after progression evaluator merge
 
 **Owner objective retained:** free, community-native, player-first Sims 4 autonomy: responsible adult needs and cross-need balance before sustainable **observed** income, then skills, then careers, while preserving leisure/personality, reversibility, per-Sim control, patch-specific safety and no save mutation. **This is the product, not an offline scoring engine.** PR #30 (`main` `9f238fb`) brought vision/scaffolding/product rates and CI honesty; recorded product progression and hunger trials remain **0.0**. Repository history includes locally observed game navigation and Live Mode, but no qualifying hunger experiment.
