@@ -46,6 +46,21 @@ def validate_ontology(data: dict, root: Path = ROOT) -> None:
         owner = concept.get("canonical_owner")
         if not isinstance(owner, str) or not (root / owner).is_file():
             raise ValueError(f"CONCEPT_OWNER_MISSING:{name}")
+    if int(data.get("revision", 0)) >= 2:
+        identity = data.get("product_identity") or {}
+        if not isinstance(identity, dict) or "OPEN" not in identity.get("capability_ceiling", ""):
+            raise ValueError("ONTOLOGY_OPEN_CAPABILITY_FREEDOM_MISSING")
+        required_semantics = {
+            "SITUATION", "DOMAIN_CAPABILITY", "GOAL_THREAD", "ACTIVITY",
+            "RESOURCE_CLAIM", "TIME_WINDOW", "CONTINGENCY", "INTERRUPTION",
+            "RESUME_CONDITION", "MECHANIC_PATH", "COORDINATION_CYCLE",
+        }
+        if not required_semantics.issubset(concepts):
+            raise ValueError("ONTOLOGY_SEMANTIC_CONCEPTS_MISSING")
+        required_invariants = {"BI-ONT-013", "BI-ONT-014", "BI-ONT-015",
+                               "BI-ONT-016", "BI-ONT-017", "BI-ONT-018"}
+        if not required_invariants.issubset({x.get("id") for x in data.get("invariants", [])}):
+            raise ValueError("ONTOLOGY_SEMANTIC_INVARIANTS_MISSING")
     relations = data.get("relations", [])
     if not isinstance(relations, list) or not relations:
         raise ValueError("ONTOLOGY_RELATIONS_MISSING")
