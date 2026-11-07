@@ -677,6 +677,59 @@
           "target": "options_menu",
           "gate": "OPERATOR_CONFIRMATION",
           "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "live_viewport_black",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "live_viewport_black",
+      "family": "live_anomaly",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "live:printwindow_near_uniform_black"
+        },
+        {
+          "source": "operator",
+          "token": "client_restored_but_viewport_unreadable"
+        }
+      ],
+      "ux_regions": [
+        "live",
+        "camera",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "LOCAL_OBSERVED 2026-11-07 on patch 1.121.361.1020 borderless 1920x1080 after Manage Worlds reload onto empty night Bargain Bend; PrintWindow full-client black while TS4_x64 remained non-iconic",
+        "May be camera underground, zero lights on empty lot at night, or DX content not visible; classify with betterinstincts.viewport before recovery",
+        "Desktop/computer-use screenshots conflict with Sims focus; prefer PrintWindow + scripts/viewport_recover.py",
+        "No action is automatically authorized by classification; Esc opens Options MENU — avoid as first recovery"
+      ],
+      "evidence_state": "LOCAL_OBSERVED_PRINTWINDOW_BLACK_NOT_CERTIFIED",
+      "transitions": [
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "build_buy",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "manage_worlds_confirm",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "options_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
         }
       ]
     },
