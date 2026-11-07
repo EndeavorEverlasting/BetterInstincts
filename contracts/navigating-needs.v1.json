@@ -1,0 +1,259 @@
+{
+  "schema": "betterinstincts.navigating-needs/v1",
+  "version": 1,
+  "authority": "docs/NAVIGATING_NEEDS.md",
+  "proof_ceiling": "HOST_NAVIGATING_NEEDS_TANDEM_CATALOG_NOT_EA_API_NOT_BI002_CERT",
+  "design_brief": {
+    "subject": "Discovery Quest Navigating Needs panel → motive-aligned host actions",
+    "audience": "local host agent + operator when top-left Navigating Needs is active in Live Mode",
+    "job": "Work in tandem with EA's Navigating Needs suggestions: prefer panel-aligned need remedies ordered by motive urgency; never invent HUD goals; never fight the panel with unrelated fluff while incomplete goals remain",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose before chrome"},
+      {"id": "UP-A85AD9DC3", "mechanism": "journey / call-stack storytelling"},
+      {"id": "UP-0F2FB5920", "mechanism": "iterate with measurement"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ],
+    "forbidden_chrome": "No second Needs dashboard UI; contracts + evaluators only"
+  },
+  "local_observed": {
+    "date": "2026-11-07",
+    "patch": "1.121.361.1020",
+    "household": "LabLab",
+    "scene": "bargain_bend_build_mode",
+    "observation": "Operator noted Navigating Needs top-left Live panel suggesting need actions; live capture this pass was Build Mode (panel not shown). Discovery Quest goals documented from public walkthrough + operator intent; Live HUD tick confirmation OPEN.",
+    "capture_ref": "operator:navigating-needs-tandem-20261107"
+  },
+  "tandem_thesis": {
+    "hypothesis": "When Navigating Needs is active, ordering incomplete panel goals by linked motive urgency and queuing catalog interactions that satisfy both the motive and the quest outperforms ignoring the panel or inventing parallel need clicks.",
+    "falsifier": "Host queues non-panel fluff while incomplete Navigating Needs goals remain, invents goal labels without operator supply, or blocks an urgent motive whose goal is not currently among the visible incomplete goals.",
+    "ui_note": "At most three goals display at once; completing one reveals the next until all six are done."
+  },
+  "default_profile": "navigating_needs",
+  "profiles": {
+    "navigating_needs": {
+      "aliases": [
+        "navigating needs",
+        "discovery navigating needs",
+        "needs discovery quest",
+        "navigating_needs_quest"
+      ],
+      "goal_priority_fallback": [
+        "use_toilet",
+        "cook_or_quick_meal",
+        "take_nap",
+        "shower_or_bath",
+        "read_or_watch_tv",
+        "socialize"
+      ],
+      "forbidden": [
+        "invent_panel_goals",
+        "ignore_panel_for_unrelated_fluff",
+        "force_f1_while_build_buy"
+      ],
+      "note": "Fallback order matches instincts survival bias when motive levels are equal"
+    }
+  },
+  "goals": {
+    "socialize": {
+      "hud_aliases": [
+        "socialize",
+        "socialize with another sim",
+        "socialize with someone",
+        "talk to another sim",
+        "chat with another sim"
+      ],
+      "display_hint": "Socialize with another Sim",
+      "linked_need": "social",
+      "target_kind": "sim_social",
+      "preferred_targets": ["housemate", "neighbor", "visitor", "phone"],
+      "satisfying_interactions": [
+        {
+          "id": "CHAT_WITH_SIM",
+          "labels": ["get to know", "friendly social", "chat", "talk to", "socialize"],
+          "steps": ["CLICK_OTHER_SIM_OR_PHONE", "PIE_FRIENDLY_SOCIAL"],
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["ignore panel", "read book only", "watch tv only"],
+      "host_note": "Ticks Social motive and Navigating Needs socialize goal"
+    },
+    "use_toilet": {
+      "hud_aliases": [
+        "use_toilet",
+        "use a toilet",
+        "use toilet",
+        "toilet"
+      ],
+      "display_hint": "Use a toilet",
+      "linked_need": "bladder",
+      "target_kind": "toilet",
+      "preferred_targets": ["toilet", "privy_bush"],
+      "satisfying_interactions": [
+        {
+          "id": "USE_TOILET",
+          "labels": ["use toilet", "relieve", "toilet"],
+          "steps": ["CLICK_TOILET", "PIE_USE_TOILET"],
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["go here without toilet", "build catalog browse"],
+      "host_note": "Ticks Bladder and panel toilet goal"
+    },
+    "shower_or_bath": {
+      "hud_aliases": [
+        "shower_or_bath",
+        "take a shower or bath",
+        "take a shower",
+        "take a bath",
+        "shower",
+        "bath",
+        "bathe"
+      ],
+      "display_hint": "Take a shower or bath",
+      "linked_need": "hygiene",
+      "target_kind": "shower_or_bathtub",
+      "preferred_targets": ["shower", "bathtub"],
+      "satisfying_interactions": [
+        {
+          "id": "SHOWER_OR_BATH",
+          "labels": ["take a shower", "take a bath", "shower", "bathe", "wash"],
+          "steps": ["CLICK_SHOWER_OR_TUB", "PIE_SHOWER_OR_BATH"],
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["wash hands only", "brush teeth only"],
+      "host_note": "Panel requires shower/bath, not partial hygiene"
+    },
+    "read_or_watch_tv": {
+      "hud_aliases": [
+        "read_or_watch_tv",
+        "read a book or watch tv",
+        "read a book",
+        "watch tv",
+        "watch television",
+        "read book"
+      ],
+      "display_hint": "Read a book or watch TV",
+      "linked_need": "fun",
+      "target_kind": "book_or_tv",
+      "preferred_targets": ["book", "bookshelf", "tv", "stereo"],
+      "satisfying_interactions": [
+        {
+          "id": "READ_OR_WATCH_TV",
+          "labels": ["read a book", "watch tv", "watch television", "read", "watch"],
+          "steps": ["CLICK_BOOK_OR_TV", "PIE_READ_OR_WATCH"],
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["computer game only", "workout only", "chess only"],
+      "host_note": "Panel-specified Fun path; do not substitute unrelated Fun while this goal is incomplete"
+    },
+    "take_nap": {
+      "hud_aliases": [
+        "take_nap",
+        "take a nap",
+        "nap",
+        "take nap"
+      ],
+      "display_hint": "Take a nap",
+      "linked_need": "energy",
+      "target_kind": "bed_or_sofa",
+      "preferred_targets": ["bed", "sofa", "couch", "cot"],
+      "satisfying_interactions": [
+        {
+          "id": "TAKE_NAP",
+          "labels": ["take a nap", "nap", "sleep", "rest"],
+          "steps": ["CLICK_BED_OR_SOFA", "PIE_TAKE_NAP"],
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["energy drink only", "coffee only"],
+      "host_note": "Nap ticks Energy and panel nap goal"
+    },
+    "cook_or_quick_meal": {
+      "hud_aliases": [
+        "cook_or_quick_meal",
+        "cook a meal or have a quick meal",
+        "cook a meal",
+        "have a quick meal",
+        "quick meal",
+        "cook meal",
+        "eat"
+      ],
+      "display_hint": "Cook a Meal or Have a Quick Meal",
+      "linked_need": "hunger",
+      "target_kind": "fridge_or_stove",
+      "preferred_targets": ["fridge", "stove", "microwave"],
+      "satisfying_interactions": [
+        {
+          "id": "QUICK_MEAL_OR_COOK",
+          "labels": [
+            "have a quick meal",
+            "quick meal",
+            "cook",
+            "make food",
+            "grab a quick meal",
+            "eat"
+          ],
+          "steps": ["CLICK_FRIDGE", "PIE_QUICK_MEAL_OR_COOK", "CONFIRM_IF_NEEDED"],
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["motherlode", "order delivery only when fridge available"],
+      "host_note": "Primary hunger tandem with BI-002-aligned eat path when panel shows cook/quick meal"
+    }
+  },
+  "urgency": {
+    "urgent_threshold": 0.35,
+    "preemptive_threshold": 0.55,
+    "source": "contracts/needs.v1.json"
+  },
+  "call_stack": {
+    "order": [
+      "PLAYER_FIRST_OR_BUSY",
+      "BUILD_OR_BUY_YIELD",
+      "SCHOOL_DAY_OUTRANKS_NAVIGATING_NEEDS",
+      "URGENT_NEED_WITHOUT_PANEL_GOAL",
+      "NAVIGATING_NEEDS_TANDEM",
+      "NAVIGATING_NEEDS_INACTIVE",
+      "LEISURE_OR_IDLE"
+    ],
+    "gates": {
+      "PLAYER_FIRST_OR_BUSY": {
+        "when": ["player_directed", "already_busy"],
+        "action": "YIELD_OR_EMULATE_ONLY"
+      },
+      "BUILD_OR_BUY_YIELD": {
+        "when": ["build_or_buy_mode"],
+        "action": "ABSTAIN_NAVIGATING_NEEDS_WHILE_BUILDING",
+        "forbidden": ["FORCE_F1", "NEEDS_OBJECT_CLICK"]
+      },
+      "SCHOOL_DAY_OUTRANKS_NAVIGATING_NEEDS": {
+        "when": ["school_day_active"],
+        "action": "DEFER_NAVIGATING_NEEDS_TO_SCHOOL_DAY"
+      },
+      "URGENT_NEED_WITHOUT_PANEL_GOAL": {
+        "when": ["uncovered_urgent_worse_than_panel_covered_urgent"],
+        "action": "FALL_THROUGH_TO_INSTINCTS_FOR_UNCOVERED_URGENT",
+        "note": "Fall through only when the worst urgent motive is not among visible panel goals; if the panel covers the worst urgent (e.g. cook while social also urgent), stay in tandem"
+      },
+      "NAVIGATING_NEEDS_TANDEM": {
+        "when": ["navigating_needs_active", "goals_incomplete", "panel_covers_urgent_or_no_urgent"],
+        "action": "QUEUE_PANEL_ALIGNED_NEED_REMEDY",
+        "goal_catalog": "contracts/navigating-needs.v1.json"
+      },
+      "NAVIGATING_NEEDS_INACTIVE": {
+        "when": ["not_navigating_needs_active"],
+        "action": "NO_NAVIGATING_NEEDS_ROUTING"
+      },
+      "LEISURE_OR_IDLE": {
+        "action": "ALLOW_DEFAULT_INSTINCTS"
+      }
+    }
+  },
+  "call_stack_gates": [
+    "NAVIGATING_NEEDS_TANDEM",
+    "BUILD_OR_BUY_YIELD",
+    "URGENT_NEED_WITHOUT_PANEL_GOAL"
+  ]
+}
