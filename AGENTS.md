@@ -6,15 +6,15 @@ Read **docs/DOCTRINE.md**, **docs/LEDGER.md**, and **docs/PROMPT_INVOCATIONS.md*
 Create a free, community-native Sims 4 autonomy mod that helps Sims meet needs, earn income, progress in careers, and enjoy their lives without overriding manual player control or personality. Do not confuse an offline policy prototype with a playable mod.
 
 ## Mandatory preflight
-Refresh repo, branch, HEAD, status, PRs and current game/version evidence before mutation. Declare actual HOST, providers, owned/forbidden paths, collisions, dependencies, checks, proof ceiling, and parent gate. Resolve P-numbers only from TokenCorridor's canonical resolver/catalog; no guessed prompt interpretations.
+Refresh repo HEAD/branch, PRs, status and game/version. Declare HOST, providers, scopes, collisions, tests, proof and parent gate. Resolve P-numbers using Moonwake's exact catalog.
 
 ## Invariants
 - **Player first:** no interruption of explicit player commands; no uncontrolled repeated autonomy loops.
-- **Save-safe:** do not edit, migrate, delete, or overwrite user saves or game files. Use disposable saves for live tests only.
+- **Save-safe:** never edit, migrate, delete or overwrite user saves or game files. Unknown/user saves stay protected; a lab-like name never proves disposability.
 - **Storage:** never write to arbitrary user-profile directories, auto-discover installs, or bulk-copy game assets. No background daemons, scheduled scans, network telemetry, or unbounded logs.
 - **Community-native:** inspect credible mod precedent and licensing before introducing frameworks; favor tuning before script hooks if it really fits.
 - **Performance:** bounded event work; no per-frame global scans or busy-waits. No runtime hooks until measured in a disposable game.
-- **Evidence:** tests, built artifacts, commit, PR, merged status, and live game behavior are separate proof levels; never inflate them.
+- **Evidence:** separate tests, builds, PR, merge and live behavior. Scenes need two independent cues; unknown means no action. See docs/SCENE_INTELLIGENCE.md.
 - **Continuity:** preserve and update docs/LEDGER.md, docs/ROADMAP.md, and the owning sprint with accepted corrections; no chat-only critical decisions.
 
 ## Multiversion + real-game closure

@@ -1,0 +1,1437 @@
+{
+  "schema": "betterinstincts.scene-catalog/v1",
+  "catalog_revision": 1,
+  "game_version": "1.121.361.1020",
+  "platform": "windows",
+  "coverage": "CANDIDATE_TAXONOMY_NOT_COMPLETE_OR_VISUALLY_CALIBRATED",
+  "calibration": "CANDIDATE_UNVERIFIED_EXCEPT_CAS_FIRST_BOOT_REFERENCE",
+  "global_forbidden_actions": [
+    "RESUME",
+    "DELETE_SAVE",
+    "OVERWRITE_SAVE",
+    "TOUCH_USER_SAVE",
+    "AUTO_SELECT_UNKNOWN_SAVE",
+    "AUTO_TRANSITION"
+  ],
+  "version_policy": "EXACT_MATCH_ONLY_NO_LATEST_FALLBACK",
+  "observations_contract": {
+    "supported_sources": [
+      "visual",
+      "operator"
+    ],
+    "required_distinct_sources": 2,
+    "max_observations": 32,
+    "never_evidence_of_live_certification": true
+  },
+  "scenes": [
+    {
+      "id": "launcher_game_tile",
+      "family": "launcher",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "launcher:game_tile"
+        },
+        {
+          "source": "operator",
+          "token": "start_game"
+        }
+      ],
+      "ux_regions": [
+        "launcher",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "startup_splash",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "startup_splash",
+      "family": "startup",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "screen:splash_art"
+        },
+        {
+          "source": "operator",
+          "token": "branding_visible"
+        }
+      ],
+      "ux_regions": [
+        "startup",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "startup_loading",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "startup_loading",
+      "family": "loading",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "screen:loading_spinner"
+        },
+        {
+          "source": "operator",
+          "token": "startup_not_interactive"
+        }
+      ],
+      "ux_regions": [
+        "loading",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "main_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "error_dialog",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "main_menu",
+      "family": "menu",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "menu:new_and_load"
+        },
+        {
+          "source": "operator",
+          "token": "home_navigation_visible"
+        }
+      ],
+      "ux_regions": [
+        "menu",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "new_game_entry",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "load_game_picker",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "gallery_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "library_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "options_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "marketplace_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "exit_confirm",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "new_game_entry",
+      "family": "new_game",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "screen:new_game_entry"
+        },
+        {
+          "source": "operator",
+          "token": "new_game_intent"
+        }
+      ],
+      "ux_regions": [
+        "new_game",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "cas_story_prompt",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "cas_editor",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "load_game_picker",
+      "family": "save_picker",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "menu:save_tiles"
+        },
+        {
+          "source": "operator",
+          "token": "load_slots_visible"
+        }
+      ],
+      "ux_regions": [
+        "save_picker",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "load_slot_details",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "main_menu",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "load_slot_details",
+      "family": "save_picker",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "menu:slot_details"
+        },
+        {
+          "source": "operator",
+          "token": "specific_slot_visible"
+        }
+      ],
+      "ux_regions": [
+        "save_picker",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "worlds_loading",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "load_game_picker",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "cas_story_prompt",
+      "family": "cas",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "cas:story_quiz"
+        },
+        {
+          "source": "operator",
+          "token": "quiz_choices_visible"
+        }
+      ],
+      "ux_regions": [
+        "cas",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "PRIOR_SESSION_CAS_OBSERVED_NOT_TEMPLATE_CERTIFIED",
+      "transitions": [
+        {
+          "target": "cas_editor",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "cas_editor",
+      "family": "cas",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "cas:character_editor"
+        },
+        {
+          "source": "operator",
+          "token": "sim_creation_controls"
+        }
+      ],
+      "ux_regions": [
+        "cas",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "household_placement",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "gallery_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "library_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "main_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "household_placement",
+      "family": "world",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "world:household_place"
+        },
+        {
+          "source": "operator",
+          "token": "placement_choice_visible"
+        }
+      ],
+      "ux_regions": [
+        "world",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "worlds_loading",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "neighborhood_map",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "worlds_loading",
+      "family": "loading",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "screen:world_loading"
+        },
+        {
+          "source": "operator",
+          "token": "world_load_in_progress"
+        }
+      ],
+      "ux_regions": [
+        "loading",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "world_selection",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "neighborhood_map",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "lot_loading",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "world_selection",
+      "family": "map",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "map:world_grid"
+        },
+        {
+          "source": "operator",
+          "token": "world_tiles_visible"
+        }
+      ],
+      "ux_regions": [
+        "map",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "neighborhood_map",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "main_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "neighborhood_map",
+      "family": "map",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "map:neighborhood_lots"
+        },
+        {
+          "source": "operator",
+          "token": "lot_icons_visible"
+        }
+      ],
+      "ux_regions": [
+        "map",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "lot_details",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "world_selection",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "manage_households",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "gallery_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "library_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "lot_details",
+      "family": "map",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "map:lot_card"
+        },
+        {
+          "source": "operator",
+          "token": "lot_actions_visible"
+        }
+      ],
+      "ux_regions": [
+        "map",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "lot_loading",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "build_buy",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "household_placement",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "neighborhood_map",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "lot_loading",
+      "family": "loading",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "screen:lot_loading"
+        },
+        {
+          "source": "operator",
+          "token": "lot_load_in_progress"
+        }
+      ],
+      "ux_regions": [
+        "loading",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "build_buy",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "error_dialog",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "live_mode",
+      "family": "live",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "live:sim_portraits_and_needs"
+        },
+        {
+          "source": "operator",
+          "token": "live_controls_visible"
+        }
+      ],
+      "ux_regions": [
+        "live",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "pause_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "build_buy",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "travel_picker",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "gallery_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "library_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "manage_worlds_confirm",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "options_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "build_buy",
+      "family": "build",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "build:catalog_and_grid"
+        },
+        {
+          "source": "operator",
+          "token": "build_controls_visible"
+        }
+      ],
+      "ux_regions": [
+        "build",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "gallery_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "library_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "pause_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "gallery_home",
+      "family": "gallery",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "gallery:browse_tabs"
+        },
+        {
+          "source": "operator",
+          "token": "community_content_visible"
+        }
+      ],
+      "ux_regions": [
+        "gallery",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "gallery_detail",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "library_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "main_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "cas_editor",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "build_buy",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "neighborhood_map",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "gallery_detail",
+      "family": "gallery",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "gallery:creation_detail"
+        },
+        {
+          "source": "operator",
+          "token": "gallery_item_selected"
+        }
+      ],
+      "ux_regions": [
+        "gallery",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "gallery_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "library_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "household_placement",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "library_home",
+      "family": "library",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "library:my_library_tab"
+        },
+        {
+          "source": "operator",
+          "token": "local_creations_visible"
+        }
+      ],
+      "ux_regions": [
+        "library",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "library_detail",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "gallery_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "main_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "cas_editor",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "build_buy",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "neighborhood_map",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "library_detail",
+      "family": "library",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "library:creation_detail"
+        },
+        {
+          "source": "operator",
+          "token": "library_item_selected"
+        }
+      ],
+      "ux_regions": [
+        "library",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "library_home",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "household_placement",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "manage_households",
+      "family": "map",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "households:manager_list"
+        },
+        {
+          "source": "operator",
+          "token": "household_rows_visible"
+        }
+      ],
+      "ux_regions": [
+        "map",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "household_detail",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "neighborhood_map",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "household_detail",
+      "family": "map",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "households:detail_panel"
+        },
+        {
+          "source": "operator",
+          "token": "household_actions_visible"
+        }
+      ],
+      "ux_regions": [
+        "map",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "manage_households",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "neighborhood_map",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "travel_picker",
+      "family": "travel",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "travel:destination_select"
+        },
+        {
+          "source": "operator",
+          "token": "travel_actions_visible"
+        }
+      ],
+      "ux_regions": [
+        "travel",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "travel_loading",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "travel_loading",
+      "family": "loading",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "screen:travel_loading"
+        },
+        {
+          "source": "operator",
+          "token": "travel_in_progress"
+        }
+      ],
+      "ux_regions": [
+        "loading",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "neighborhood_map",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "manage_worlds_confirm",
+      "family": "modal",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "modal:manage_worlds"
+        },
+        {
+          "source": "operator",
+          "token": "leave_lot_confirmation"
+        }
+      ],
+      "ux_regions": [
+        "modal",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "world_selection",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "neighborhood_map",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "pause_menu",
+      "family": "overlay",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "menu:pause_controls"
+        },
+        {
+          "source": "operator",
+          "token": "paused_game_visible"
+        }
+      ],
+      "ux_regions": [
+        "overlay",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "options_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "options_menu",
+      "family": "overlay",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "menu:options"
+        },
+        {
+          "source": "operator",
+          "token": "settings_actions_visible"
+        }
+      ],
+      "ux_regions": [
+        "overlay",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "main_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "build_buy",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "settings_panel",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "save_dialog",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "save_as_dialog",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "exit_confirm",
+          "gate": "REVIEW_AND_SAVE_POLICY",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "settings_panel",
+      "family": "overlay",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "menu:settings_tabs"
+        },
+        {
+          "source": "operator",
+          "token": "settings_controls_visible"
+        }
+      ],
+      "ux_regions": [
+        "overlay",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "options_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "save_dialog",
+      "family": "modal",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "modal:save_dialog"
+        },
+        {
+          "source": "operator",
+          "token": "save_confirmation_visible"
+        }
+      ],
+      "ux_regions": [
+        "modal",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "options_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "save_as_dialog",
+      "family": "modal",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "modal:save_as_dialog"
+        },
+        {
+          "source": "operator",
+          "token": "save_as_fields_visible"
+        }
+      ],
+      "ux_regions": [
+        "modal",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "options_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "exit_confirm",
+      "family": "modal",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "modal:exit_confirm"
+        },
+        {
+          "source": "operator",
+          "token": "exit_actions_visible"
+        }
+      ],
+      "ux_regions": [
+        "modal",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "main_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "marketplace_home",
+      "family": "overlay",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "marketplace:browse"
+        },
+        {
+          "source": "operator",
+          "token": "store_cards_visible"
+        }
+      ],
+      "ux_regions": [
+        "overlay",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "main_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "error_dialog",
+      "family": "modal",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "modal:game_error"
+        },
+        {
+          "source": "operator",
+          "token": "error_controls_visible"
+        }
+      ],
+      "ux_regions": [
+        "modal",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "main_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "unknown",
+      "family": "unknown",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "unknown"
+        },
+        {
+          "source": "operator",
+          "token": "unknown"
+        }
+      ],
+      "ux_regions": [
+        "unknown",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "UI identity is a hypothesis until an exact-build local capture is reviewed",
+        "Focus and visible overlays may change scene identity",
+        "No action is automatically authorized by classification"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": []
+    }
+  ]
+}

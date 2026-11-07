@@ -27,6 +27,10 @@ REQUIRED = (
     "scripts/check_horizon.py", "scripts/horizon_status.py",
     "plans/active/BI-HORIZON.dispatch.v1.json",
     "tests/test_horizon.py", "tests/test_horizon_contract.py", "tests/test_horizon_status.py",
+    "docs/SCENE_INTELLIGENCE.md", "contracts/game-scenes.v1.json", "contracts/save-policy.v1.json",
+    "betterinstincts/scenes.py", "betterinstincts/save_policy.py",
+    "scripts/scene_map.py", "scripts/save_guard.py", "scripts/check_scene_contract.py",
+    "tests/test_scene_map.py", "tests/test_save_policy.py", "tests/test_game_host_save_guard.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
@@ -34,6 +38,7 @@ MARKERS = (
     "Evidence", "Continuity", "CHANGED | PROVED | NEXT",
     "docs/COMPATIBILITY.md", "docs/LIVE_CERT.md", "BLOCKED_LOCAL_GAME_ACCESS",
     "docs/HORIZON.md", "plans/horizon.v1.json", "six needs",
+    "docs/SCENE_INTELLIGENCE.md", "Unknown/user saves",
 )
 class DoctrineViolation(Exception):
     pass
@@ -90,6 +95,8 @@ def validate(root=ROOT):
     from betterinstincts.horizon import validate_rules
     check_horizon(json.loads((root / "plans/horizon.v1.json").read_text(encoding="utf-8")))
     validate_rules(json.loads((root / "contracts/needs.v1.json").read_text(encoding="utf-8")))
+    from scripts.check_scene_contract import check as check_scene_contract
+    check_scene_contract(root)
     return {"state": "PASS", "root": "AGENTS.md", "required_files": len(REQUIRED),
             "proof_ceiling": "tracked governance content only; no live Sims validation"}
 

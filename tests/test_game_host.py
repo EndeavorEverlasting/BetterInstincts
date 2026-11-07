@@ -44,9 +44,25 @@ class GameHostTests(unittest.TestCase):
         for name in templates:
             (self.root / (name + ".png")).write_bytes(b"test fixture")
         cfg = {"schema": host.SCHEMA, "platform": "windows",
-               "game_executable": str(self.exe), "game_version": None,
+               "game_executable": str(self.exe), "game_version": None if mode == "new" else "1.121.1.1030",
                "save_mode": mode, "save_alias": alias,
                "templates": {n: n + ".png" for n in templates}}
+        if mode == "chosen":
+            # Synthetic operator approval only: no actual Sims save is opened.
+            from betterinstincts.save_policy import MANIFEST_SCHEMA
+            cfg.update({"save_alias": "BI_TMP_HOST_TEST_01" if alias == "BI_TEST_01" else alias,
+                        "save_registry": "synthetic-save-registry.json",
+                        "selected_save_id": "slot:synthetic-lab-01",
+                        "selected_save_capture_ref": "capture:synthetic-tile-01"})
+            register = {"schema": MANIFEST_SCHEMA, "entries": [{
+                "save_id": "slot:synthetic-lab-01", "alias": cfg["save_alias"],
+                "classification": "LAB_DISPOSABLE", "origin": "LAB_CREATED",
+                "lab_origin_confirmed": True, "creation_run_id": "original-lab-run",
+                "authorized_run_id": "bi002-game-host",
+                "capture_ref": "capture:synthetic-tile-01",
+                "game_version": "1.121.1.1030", "operator_confirmed": True
+            }]}
+            (self.root / "synthetic-save-registry.json").write_text(json.dumps(register), encoding="utf-8")
         path = self.root / "host-profile.json"
         path.write_text(json.dumps(cfg), encoding="utf-8")
         obj, digest = host.profile(path)

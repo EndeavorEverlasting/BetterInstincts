@@ -1,0 +1,47 @@
+{
+  "schema": "betterinstincts.save-policy/v1",
+  "version": 1,
+  "default_classification": "UNKNOWN_PROTECTED",
+  "labels": {
+    "LAB_DISPOSABLE": {
+      "hint_pattern": "^BI_TMP_[A-Z0-9_]{4,48}$",
+      "permitted_intents": [
+        "SELECT_FOR_PLAY"
+      ],
+      "retention": "EXPLICIT_LAB_ONLY",
+      "requires_origin": "LAB_CREATED",
+      "requires_capture_and_run_binding": true
+    },
+    "LAB_CONTINUATION": {
+      "hint_pattern": "^BI_CONT_[A-Z0-9_]{4,48}$",
+      "permitted_intents": [
+        "SELECT_FOR_PLAY"
+      ],
+      "retention": "PRESERVE_NO_AUTOMATIC_DELETION",
+      "requires_origin": "LAB_CREATED",
+      "requires_capture_and_run_binding": true
+    },
+    "USER_PROTECTED": {
+      "hint_pattern": null,
+      "permitted_intents": [],
+      "retention": "PERMANENTLY_PROTECTED"
+    },
+    "UNKNOWN_PROTECTED": {
+      "hint_pattern": null,
+      "permitted_intents": [],
+      "retention": "PERMANENTLY_PROTECTED"
+    }
+  },
+  "always_denied": [
+    "DELETE",
+    "OVERWRITE",
+    "RESUME",
+    "AUTO_SELECT",
+    "MIGRATE",
+    "MODIFY_GAME_SAVE",
+    "LOAD_USER_SAVE"
+  ],
+  "promotion_rule": "NAME_ALONE_NEVER_AUTHORIZES_DISPOSABILITY",
+  "live_proof": "LOCAL_OPERATOR_ATTESTATION_ONLY_NOT_SAVE_ORIGIN_FORENSICS",
+  "source": "operator-selected same-folder private manifest, not scan of game saves"
+}

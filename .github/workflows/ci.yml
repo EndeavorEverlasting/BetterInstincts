@@ -38,6 +38,8 @@ jobs:
           python -m scripts.horizon_status
       - name: Doctrine fails closed
         run: python scripts/validate_doctrine.py
+      - name: Scene and save safety contract
+        run: python -m scripts.check_scene_contract
       - name: Repo asset leakage prevention
         run: python scripts/check_tracked_assets.py
       - name: Commit whitespace hygiene
