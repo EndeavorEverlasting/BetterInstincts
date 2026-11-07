@@ -102,15 +102,20 @@ def ontology_for_consultation(data: dict, current: dict, root: Path = ROOT) -> d
     current_sha = hashlib.sha1(f"blob {len(raw)}\\0".encode() + raw).hexdigest()
     if sha == current_sha:
         return current
+    result = subprocess.run(
+        ["git", "cat-file", "blob", sha], cwd=root,
+        capture_output=True, check=False,
+    )
+    if result.returncode:
+        raise ValueError("CONSULTATION_ONTOLOGY_VERSION_MISMATCH")
+    blob = result.stdout
+    if hashlib.sha1(f"blob {len(blob)}\\0".encode() + blob).hexdigest() != sha:
+        raise ValueError("CONSULTATION_ONTOLOGY_VERSION_MISMATCH")
     try:
-        prior = git("cat-file", "blob", sha, root=root)
-        payload = json.loads(prior)
-        if hashlib.sha1(f"blob {len(prior.encode('utf-8'))}\\0".encode() + prior.encode("utf-8")).hexdigest() != sha:
-            # git() strips whitespace; validate Git's blob identity directly.
-            git("cat-file", "-e", sha, root=root)
-        validate_ontology(payload, root)
-        return payload
-    except (ValueError, json.JSONDecodeError) as exc:
+        prior = json.loads(blob.decode("utf-8"))
+        validate_ontology(prior, root)
+        return prior
+    except (UnicodeDecodeError, ValueError, json.JSONDecodeError) as exc:
         raise ValueError("CONSULTATION_ONTOLOGY_VERSION_MISMATCH") from exc
 
 
