@@ -8,15 +8,18 @@ import json
 import time
 from pathlib import Path
 from typing import Mapping, Sequence
+from dataclasses import replace
 
 from betterinstincts.behavior_eval import BehaviorEvalError, evaluate_queue
 from betterinstincts.host_stack import HostStackError, evaluate_turn
 from betterinstincts.instincts_host import InstinctsHostError, NeedSnapshot, plan, plan_to_dict
 from betterinstincts.needs_force import NeedsForceError, plan_force
-from betterinstincts.player_presence import (
-    PlayerPresenceError,
-    PresenceProbe,
-    classify as classify_presence,
+from betterinstincts.player_presence import PresenceProbe
+from betterinstincts.control_handoff import (
+    DEFAULT_IDLE_MS,
+    HandoffError,
+    as_presence,
+    decide,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -142,6 +145,7 @@ def tick(
     observation: Mapping,
     *,
     presence_probe: PresenceProbe | None = None,
+    idle_ms: int = DEFAULT_IDLE_MS,
 ) -> dict:
     """One evaluator pass for an ACTIVE session. Plan only — no SendInput."""
     cfg = load_contract()
@@ -164,23 +168,19 @@ def tick(
             cursor_in_client=False,
             operator_declared_playing=bool(observation.get("operator_declared_playing", False)),
             player_directed_queue=bool(obs["player_directed"]),
-            probe_ok=True,
+            probe_ok=False,  # No OS probe is not proof of idle.
         )
-    else:
-        # Merge observation player_directed into probe if set.
-        if obs["player_directed"] and not presence_probe.player_directed_queue:
-            presence_probe = PresenceProbe(
-                foreground_is_sims=presence_probe.foreground_is_sims,
-                cursor_in_client=presence_probe.cursor_in_client,
-                last_input_age_ms=presence_probe.last_input_age_ms,
-                operator_declared_playing=presence_probe.operator_declared_playing,
-                player_directed_queue=True,
-                probe_ok=presence_probe.probe_ok,
-            )
+    if obs["player_directed"] or observation.get("operator_declared_playing"):
+        presence_probe = replace(
+            presence_probe,
+            player_directed_queue=presence_probe.player_directed_queue or obs["player_directed"],
+            operator_declared_playing=presence_probe.operator_declared_playing or bool(observation.get("operator_declared_playing")),
+        )
     try:
-        presence = classify_presence(presence_probe, session_active=True)
-    except PlayerPresenceError as exc:
+        handoff = decide(presence_probe, session_active=True, idle_ms=idle_ms)
+    except HandoffError as exc:
         raise HostListenerError(str(exc)) from exc
+    presence = as_presence(handoff)
     if presence["host"] == "YIELD_TO_PLAYER":
         ticks = ticks + 1
         meta["ticks"] = ticks
@@ -191,6 +191,7 @@ def tick(
             "session_id": session_id,
             "tick": ticks,
             "presence": presence,
+            "handoff": handoff,
             "listener_action": "YIELD_TO_PLAYER",
             "execute_clicks": False,
             "proof_ceiling": cfg.get("proof_ceiling"),
@@ -244,6 +245,7 @@ def tick(
         "session_id": session_id,
         "tick": ticks + 1,
         "presence": presence,
+        "handoff": handoff,
         "behavior": behavior,
         "instincts": instincts,
         "host_stack": stack,
