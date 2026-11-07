@@ -3,13 +3,19 @@
 
 Codified transitions (not agentic rediscovery):
   splash wait → dismiss MEMORY BOOST → LOAD GAME → Play LabLab
+  → pick LabLab domicile on map → lot Play
+  → SELECT A SIM TO PLAY (Charlee) → Play into Live
+
+Resume from any known scene:
+  python -m scripts.host_menu run --from-scene select_sim_to_play --process-id PID --execute
 
 Never Resume / Delete / Richardson.
 
 Examples:
   python -m scripts.host_menu plan --journey reboot
+  python -m scripts.host_menu plan --from-scene manage_worlds_or_map
   python -m scripts.host_menu run --journey reboot --process-id PID --execute --run-id bi002-lablab-reboot
-  python -m scripts.host_menu run --journey reboot --from-step play_lablab_slot --process-id PID --execute
+  python -m scripts.host_menu run --from-scene select_sim_to_play --process-id PID --execute
 """
 from __future__ import annotations
 
@@ -23,7 +29,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from betterinstincts.host_menu import HostMenuError, plan_journey
+from betterinstincts.host_menu import HostMenuError, plan_from_scene, plan_journey
 from betterinstincts.menu_blockers import assert_safe_action
 
 OUTPUT = ROOT / "dist" / "game-host"
@@ -76,21 +82,30 @@ def run_journey(
     process_id: int | None,
     execute: bool,
     from_step: str | None,
+    from_scene: str | None,
     run_id: str | None,
     settle_sec: float,
 ) -> dict:
-    plan = plan_journey(journey, from_step=from_step)
+    if from_scene:
+        plan = plan_from_scene(from_scene, journey=journey)
+    else:
+        plan = plan_journey(journey, from_step=from_step)
     out: dict = {
         "plan": plan,
         "execute": bool(execute),
         "run_id": run_id,
         "process_id": process_id,
+        "from_scene": from_scene,
         "proof_ceiling": "HOST_MENU_CLICK_DISPATCH_NOT_LIVE_CERT",
     }
+    if plan.get("state") == "HOST_MENU_ALREADY_AT_TERMINAL":
+        out["state"] = "ALREADY_AT_TERMINAL"
+        out["next"] = plan.get("next")
+        return out
     if not execute:
         out["state"] = "DRY_RUN"
         out["next"] = (
-            "python -m scripts.host_menu run --journey reboot --process-id PID "
+            "python -m scripts.host_menu run --from-scene SCENE --process-id PID "
             "--execute --run-id RUN"
         )
         return out
@@ -115,6 +130,8 @@ def run_journey(
         dispatched.append({
             "id": step["id"],
             "gate": step["gate"],
+            "substep": step.get("substep"),
+            "scene_id": step.get("scene_id"),
             "click": [x, y],
             "state": "CLICK_DISPATCHED",
             "to": step["to"],
@@ -124,7 +141,7 @@ def run_journey(
     out["state"] = "HOST_MENU_JOURNEY_DISPATCHED"
     out["next"] = (
         "python -m scripts.game_capture --process-id PID --analyze; "
-        "confirm Live/map CONTENT_PRESENT before needs clicks; "
+        "confirm Live CONTENT_PRESENT before needs clicks; "
         "use ENTER_BUILD_BUY_UNSTICK if black"
     )
     return out
@@ -136,10 +153,14 @@ def main(argv: list[str] | None = None) -> int:
     plan_p = sub.add_parser("plan")
     plan_p.add_argument("--journey", default="reboot")
     plan_p.add_argument("--from-step", default=None)
+    plan_p.add_argument("--from-scene", default=None,
+                        help="Resume at scene substeps (e.g. select_sim_to_play)")
     run_p = sub.add_parser("run")
     run_p.add_argument("--journey", default="reboot")
     run_p.add_argument("--from-step", default=None,
                        help="Resume journey at this transition id (e.g. play_lablab_slot)")
+    run_p.add_argument("--from-scene", default=None,
+                       help="Resume at scene substeps (domicile/map/profile/…)")
     run_p.add_argument("--process-id", type=int, default=None)
     run_p.add_argument("--execute", action="store_true")
     run_p.add_argument("--run-id", default=None)
@@ -148,13 +169,17 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
     try:
         if args.command == "plan":
-            result = plan_journey(args.journey, from_step=args.from_step)
+            if args.from_scene:
+                result = plan_from_scene(args.from_scene, journey=args.journey)
+            else:
+                result = plan_journey(args.journey, from_step=args.from_step)
         else:
             result = run_journey(
                 journey=args.journey,
                 process_id=args.process_id,
                 execute=bool(args.execute),
                 from_step=args.from_step,
+                from_scene=args.from_scene,
                 run_id=args.run_id,
                 settle_sec=float(args.settle_sec),
             )

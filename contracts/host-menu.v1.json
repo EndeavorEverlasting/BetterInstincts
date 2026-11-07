@@ -1,16 +1,30 @@
 {
   "schema": "betterinstincts.host-menu/v1",
-  "version": 1,
+  "version": 2,
   "game_version": "1.121.361.1020",
   "client": "borderless_1920x1080",
   "proof_ceiling": "LOCAL_OBSERVED_COORDINATE_JOURNEY_NOT_LIVE_CERT",
+  "scene_aliases": {
+    "splash": "splash_or_loading",
+    "loading": "splash_or_loading",
+    "memory_boost": "memory_boost_modal",
+    "load_game": "load_game_picker",
+    "manage_worlds": "manage_worlds_or_map",
+    "neighborhood_map": "manage_worlds_or_map",
+    "map": "manage_worlds_or_map",
+    "lot_details": "lablab_lot_selected",
+    "select_sim": "select_sim_to_play",
+    "household_profile": "select_sim_to_play",
+    "live": "live_mode"
+  },
   "forbidden_always": [
     "RESUME",
     "READ_FAQ",
     "DELETE_SAVE",
     "TOUCH_RICHARDSON",
     "STORE_TAB",
-    "PLAY_SCENARIO"
+    "PLAY_SCENARIO",
+    "EMPTY_LOT_CAS_PERSON"
   ],
   "observed": {
     "run_id": "bi002-lablab-reboot",
@@ -18,8 +32,59 @@
     "captures": [
       "dist/game-host/bi002-lablab-reboot/memory-boost-modal-before.png",
       "dist/game-host/bi002-lablab-reboot/main-menu-after-memory-boost.png",
-      "dist/game-host/bi002-lablab-reboot/load-picker-now.png"
+      "dist/game-host/bi002-lablab-reboot/load-picker-now.png",
+      "dist/game-host/bi002-lablab-reboot/after-host-menu-play.png",
+      "dist/game-host/bi002-lablab-reboot/select-sim-now.png"
     ]
+  },
+  "scenes": {
+    "splash_or_loading": {
+      "family": "boot",
+      "next_transition": "boot_to_main_menu",
+      "substeps": []
+    },
+    "memory_boost_modal": {
+      "family": "modal",
+      "next_transition": "dismiss_memory_boost",
+      "substeps": ["dismiss_memory_boost_x"],
+      "note": "EA MEMORY BOOST IS NOW ON — dismiss X before any Load Game click"
+    },
+    "main_menu": {
+      "family": "menu",
+      "next_transition": "open_load_game",
+      "substeps": ["open_load_game"],
+      "note": "Never main-menu Resume"
+    },
+    "load_game_picker": {
+      "family": "save_picker",
+      "next_transition": "play_lablab_slot",
+      "substeps": ["select_lablab_save_row", "play_lablab_slot"],
+      "note": "LabLab My Saved Game 3 only — never Richardson"
+    },
+    "manage_worlds_or_map": {
+      "family": "map",
+      "next_transition": "select_lablab_domicile",
+      "substeps": ["select_lablab_domicile"],
+      "note": "Pick LabLab domicile/estate on Willow Creek map"
+    },
+    "lablab_lot_selected": {
+      "family": "map",
+      "next_transition": "confirm_play_lablab_lot",
+      "substeps": ["confirm_play_lablab_lot"],
+      "note": "Lot panel open (LabLab 30x20) — bottom-right Play triangle"
+    },
+    "select_sim_to_play": {
+      "family": "modal",
+      "next_transition": "select_charlee_profile",
+      "substeps": ["select_charlee_profile", "confirm_play_after_sim"],
+      "note": "SELECT A SIM TO PLAY — pick household profile before Live"
+    },
+    "live_mode": {
+      "family": "live",
+      "next_transition": null,
+      "substeps": [],
+      "note": "Terminal for menu journey; viewport_recover / needs host takes over"
+    }
   },
   "transitions": [
     {
@@ -37,9 +102,10 @@
       "gate": "DISMISS_MEMORY_BOOST",
       "execution": "HOST_SENDINPUT",
       "click": [1427, 188],
+      "substep": "dismiss_memory_boost_x",
       "scene_id": "memory_boost_modal",
       "forbidden": ["RESUME", "READ_FAQ"],
-      "note": "LOCAL_OBSERVED: EA MEMORY BOOST IS NOW ON covers Load Game after reboot. Modal X only."
+      "note": "Modal X only."
     },
     {
       "id": "open_load_game",
@@ -48,8 +114,9 @@
       "gate": "OPEN_LOAD_GAME",
       "execution": "HOST_SENDINPUT",
       "click": [202, 575],
+      "substep": "open_load_game",
       "forbidden": ["RESUME"],
-      "note": "Click LOAD GAME text — never the Resume plumbob row above it."
+      "note": "LOAD GAME text — never Resume plumbob row."
     },
     {
       "id": "play_lablab_slot",
@@ -58,31 +125,70 @@
       "gate": "PLAY_LAB_DISPOSABLE",
       "execution": "HOST_SENDINPUT",
       "click": [1295, 340],
+      "substep": "play_lablab_slot",
       "save_alias": "BI_TMP_LABLAB_01",
       "forbidden": ["DELETE", "TOUCH_RICHARDSON"],
-      "note": "Play on selected My Saved Game 3 / LabLab row only. Richardson slots are USER_PROTECTED. Main-menu Resume remains globally forbidden."
+      "note": "Play on LabLab My Saved Game 3 row only."
+    },
+    {
+      "id": "select_lablab_domicile",
+      "from": "manage_worlds_or_map",
+      "to": "lablab_lot_selected",
+      "gate": "SELECT_LABLAB_DOMICILE",
+      "execution": "HOST_SENDINPUT",
+      "click": [1409, 871],
+      "substep": "select_lablab_domicile",
+      "save_alias": "BI_TMP_LABLAB_01",
+      "forbidden": ["DELETE", "TOUCH_RICHARDSON", "EMPTY_LOT_CAS_PERSON"],
+      "note": "Pick LabLab domicile/estate on map (plumbob/tip). Alias of enter_live_from_map_lablab."
     },
     {
       "id": "enter_live_from_map_lablab",
       "from": "manage_worlds_or_map",
       "to": "lablab_lot_selected",
-      "gate": "SELECT_LABLAB_LOT",
+      "gate": "SELECT_LABLAB_DOMICILE",
       "execution": "HOST_SENDINPUT",
       "click": [1409, 871],
+      "substep": "select_lablab_domicile",
       "save_alias": "BI_TMP_LABLAB_01",
       "forbidden": ["DELETE", "TOUCH_RICHARDSON", "EMPTY_LOT_CAS_PERSON"],
-      "note": "LOCAL_OBSERVED Willow Creek map tip RESUME PLAYING: LabLab — lot select, NOT main-menu Resume. Click LabLab plumbob/tip centroid."
+      "note": "Legacy id retained; same as select_lablab_domicile."
     },
     {
       "id": "confirm_play_lablab_lot",
       "from": "lablab_lot_selected",
-      "to": "live_mode",
+      "to": "select_sim_to_play",
       "gate": "CONFIRM_PLAY_LABLAB_LOT",
       "execution": "HOST_SENDINPUT",
       "click": [1840, 1005],
+      "substep": "confirm_play_lablab_lot",
       "save_alias": "BI_TMP_LABLAB_01",
       "forbidden": ["DELETE", "TOUCH_RICHARDSON", "EMPTY_LOT_CAS_PERSON", "BUILD_MODE_WRENCH"],
-      "note": "LOCAL_OBSERVED: after LabLab lot panel (30x20), click bottom-right circular Play triangle into Live — never empty-lot CAS person."
+      "note": "Bottom-right Play after domicile selected — may open SELECT A SIM TO PLAY."
+    },
+    {
+      "id": "select_charlee_profile",
+      "from": "select_sim_to_play",
+      "to": "select_sim_to_play",
+      "gate": "SELECT_HOUSEHOLD_PROFILE",
+      "execution": "HOST_SENDINPUT",
+      "click": [838, 392],
+      "substep": "select_charlee_profile",
+      "save_alias": "BI_TMP_LABLAB_01",
+      "forbidden": ["DELETE", "TOUCH_RICHARDSON"],
+      "note": "LOCAL_OBSERVED select-sim-now.png: Charlee LabLab portrait center ≈ (838,392)."
+    },
+    {
+      "id": "confirm_play_after_sim",
+      "from": "select_sim_to_play",
+      "to": "live_mode",
+      "gate": "CONFIRM_PLAY_AFTER_SIM",
+      "execution": "HOST_SENDINPUT",
+      "click": [1840, 1005],
+      "substep": "confirm_play_after_sim",
+      "save_alias": "BI_TMP_LABLAB_01",
+      "forbidden": ["DELETE", "TOUCH_RICHARDSON", "EMPTY_LOT_CAS_PERSON"],
+      "note": "After profile selected, bottom-right Play into Live Mode."
     }
   ],
   "reboot_journey": [
@@ -90,11 +196,25 @@
     "dismiss_memory_boost",
     "open_load_game",
     "play_lablab_slot",
-    "enter_live_from_map_lablab",
-    "confirm_play_lablab_lot"
+    "select_lablab_domicile",
+    "confirm_play_lablab_lot",
+    "select_charlee_profile",
+    "confirm_play_after_sim"
+  ],
+  "required_journey_gates": [
+    "WAIT_PRINTWINDOW_CONTENT",
+    "DISMISS_MEMORY_BOOST",
+    "OPEN_LOAD_GAME",
+    "PLAY_LAB_DISPOSABLE",
+    "SELECT_LABLAB_DOMICILE",
+    "CONFIRM_PLAY_LABLAB_LOT",
+    "SELECT_HOUSEHOLD_PROFILE",
+    "CONFIRM_PLAY_AFTER_SIM"
   ],
   "host_commands": {
     "plan": "python -m scripts.host_menu plan --journey reboot",
-    "execute": "python -m scripts.host_menu run --journey reboot --process-id PID --execute --run-id RUN"
+    "from_scene": "python -m scripts.host_menu plan --from-scene select_sim_to_play",
+    "execute": "python -m scripts.host_menu run --journey reboot --process-id PID --execute --run-id RUN",
+    "execute_from_scene": "python -m scripts.host_menu run --from-scene SCENE --process-id PID --execute --run-id RUN"
   }
 }

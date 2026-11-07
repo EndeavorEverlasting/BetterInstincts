@@ -220,6 +220,48 @@
       ]
     },
     {
+      "id": "select_sim_to_play",
+      "family": "modal",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "modal:select_sim_to_play"
+        },
+        {
+          "source": "operator",
+          "token": "household_profile_grid_visible"
+        }
+      ],
+      "ux_regions": [
+        "modal",
+        "map",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "LOCAL_OBSERVED 2026-11-07 bi002-lablab-reboot: SELECT A SIM TO PLAY after LabLab lot Play",
+        "Host must pick household profile (Charlee LabLab) then bottom-right Play — never empty-lot CAS person",
+        "Durable journey: contracts/host-menu.v1.json scene select_sim_to_play + scripts/host_menu.py --from-scene"
+      ],
+      "evidence_state": "LOCAL_OBSERVED",
+      "transitions": [
+        {
+          "target": "lot_loading",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "neighborhood_map",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
       "id": "new_game_entry",
       "family": "new_game",
       "required_cues": [
@@ -594,6 +636,11 @@
       "transitions": [
         {
           "target": "lot_loading",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "select_sim_to_play",
           "gate": "OPERATOR_CONFIRMATION",
           "execution": "MANUAL_ONLY"
         },
