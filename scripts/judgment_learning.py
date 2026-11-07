@@ -71,6 +71,16 @@ def main(argv: list[str] | None = None) -> int:
     rec_p = sub.add_parser("recommend")
     rec_p.add_argument("--model", type=Path, required=True)
     rec_p.add_argument("--query", type=Path, required=True)
+    teach_p = sub.add_parser("record", help="Append one operator-reviewed semantic example (never passive recording)")
+    teach_p.add_argument("--context", type=Path, required=True)
+    teach_p.add_argument("--game-version", required=True)
+    teach_p.add_argument("--platform", choices=("windows", "linux", "macos"), required=True)
+    teach_p.add_argument("--action", required=True)
+    teach_p.add_argument("--outcome", choices=("helpful", "harmful"), required=True)
+    teach_p.add_argument("--observation-ref", required=True)
+    teach_p.add_argument("--examples-out", type=Path, required=True)
+    teach_p.add_argument("--operator-reviewed", action="store_true")
+    teach_p.add_argument("--explicit-opt-in", action="store_true")
     args = parser.parse_args(argv)
     try:
         if args.command == "train":
@@ -86,6 +96,34 @@ def main(argv: list[str] | None = None) -> int:
                       "proof_ceiling": "OFFLINE_MODEL_NOT_SIMS_CERTIFICATION"}
             if args.evaluation_out:
                 result["evaluation_path"] = _write(args.evaluation_out, evaluation)
+        elif args.command == "record":
+            if not args.explicit_opt_in or not args.operator_reviewed:
+                raise JudgmentLearningError("EXPLICIT_REVIEW_AND_OPT_IN_REQUIRED")
+            context = _load(args.context)
+            record = {
+                "schema": "betterinstincts.judgment-example/v1",
+                "game_version": args.game_version, "platform": args.platform,
+                "context": context, "action": args.action, "outcome": args.outcome,
+                "operator_reviewed": True, "opt_in": True,
+                "observation_ref": args.observation_ref,
+            }
+            destination = _path(args.examples_out)
+            existing = _load(args.examples_out) if destination.is_file() else []
+            if not isinstance(existing, list):
+                raise JudgmentLearningError("INVALID_EXISTING_EXAMPLES")
+            if any(isinstance(row, dict) and row.get("observation_ref") == args.observation_ref
+                   for row in existing):
+                raise JudgmentLearningError("DUPLICATE_REVIEWED_EXAMPLE")
+            rows = [*existing, record]
+            # Full batch validation before altering the owned local examples file.
+            learn(rows, game_version=args.game_version, platform=args.platform)
+            result = {
+                "state": "REVIEWED_EXAMPLE_RECORDED",
+                "count": len(rows),
+                "examples_path": _write(args.examples_out, rows),
+                "execute_clicks": False,
+                "proof_ceiling": "OPERATOR_REVIEWED_LABEL_NOT_GAME_CERTIFICATION",
+            }
         else:
             result = recommend(_load(args.model), _load(args.query))
         print(json.dumps(result, sort_keys=True))
