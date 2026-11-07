@@ -147,6 +147,22 @@
     "HOST_CRISIS_ANTI_PATTERN": {
       "definition": "School Join (or leaving home) while needs/funds are critical — stranded the lab off-lot; Send Alone is mandatory.",
       "owners": ["contracts/decision-prompts.v1.json", "betterinstincts/decision_eval.py"]
+    },
+    "LOT_ENVIRONMENT_GAIN": {
+      "definition": "Build/Buy item stat that raises room Environment Score toward Decorated / Beautifully Decorated Happy moodlets; stacks per wall panel.",
+      "owners": ["contracts/build-optimize.v1.json", "docs/BUILD_OPTIMIZE.md"]
+    },
+    "ECO_FOOTPRINT_GREEN": {
+      "definition": "Eco Lifestyle lot contribution toward neighborhood Clean Air / green utopia moodlets; mutually exclusive maximize objective vs industrial.",
+      "owners": ["contracts/build-optimize.v1.json", "docs/BUILD_OPTIMIZE.md"]
+    },
+    "ECO_FOOTPRINT_INDUSTRIAL": {
+      "definition": "Eco Lifestyle lot contribution toward smog / Gross Air; opt-in storytelling maximize only — excluded from green/balanced household defaults.",
+      "owners": ["contracts/build-optimize.v1.json", "docs/BUILD_OPTIMIZE.md"]
+    },
+    "BUILD_OPTIMIZE_PLAN": {
+      "definition": "Evaluate-only ranked Build/Buy catalog receipt for a stated objective; execute_allowed stays false until disposable Build Mode P08 proof.",
+      "owners": ["betterinstincts/build_optimize.py", "docs/BUILD_OPTIMIZE.md"]
     }
   }
 }

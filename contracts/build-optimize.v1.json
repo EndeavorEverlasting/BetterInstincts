@@ -1,0 +1,203 @@
+{
+  "schema": "betterinstincts.build-optimize/v1",
+  "version": 1,
+  "authority": "docs/BUILD_OPTIMIZE.md",
+  "proof_ceiling": "OFFLINE_CATALOG_RANKING_NOT_LIVE_BUILD_DISPATCH",
+  "design_brief": {
+    "subject": "Sims 4 Build/Buy catalog ranking for Lot Environment Gain and Eco Footprint",
+    "audience": "local host agent and disposable-lab builder automation",
+    "job": "Deterministically pick the best wall coverings and Buy items per objective without inventing tooltip OCR as truth",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose clarity before catalog UI"},
+      {"id": "UP-A85AD9DC3", "mechanism": "call-stack storytelling for optimize journeys"},
+      {"id": "UP-REDERIVE-2026-1103-01", "mechanism": "ordered constraints: player-first, save-safe, fail-closed unknown"},
+      {"id": "mattpocock-wayfinder", "mechanism": "decision map for Green vs Industrial objectives"},
+      {"id": "UP-40FE662CF", "mechanism": "validate ranking before any host click path"}
+    ]
+  },
+  "local_observed": {
+    "date": "2026-11-07",
+    "patch": "1.121.361.1020",
+    "lot": "Bargain Bend",
+    "item": "Brick & Plaster",
+    "stats": {
+      "lot_environment_gain": 1,
+      "eco_footprint_industrial": 1
+    },
+    "capture_ref": "operator:wall-covering-tooltip-20261107",
+    "note": "Build Mode tooltip; stats stack per wall panel; Shift+click applies whole room/exterior"
+  },
+  "objectives": {
+    "MAXIMIZE_ENV": {
+      "primary": "lot_environment_gain",
+      "secondary": ["cost_asc", "name_asc"],
+      "exclude_eco": null,
+      "benefit": "Raises room Environment Score toward Decorated / Beautifully Decorated Happy moodlets"
+    },
+    "MAXIMIZE_GREEN": {
+      "primary": "eco_footprint_green",
+      "secondary": ["lot_environment_gain", "cost_asc", "name_asc"],
+      "exclude_eco": "industrial",
+      "benefit": "Neighborhood Clean Air / green utopia effects (Eco Lifestyle)"
+    },
+    "MAXIMIZE_INDUSTRIAL": {
+      "primary": "eco_footprint_industrial",
+      "secondary": ["cost_asc", "name_asc"],
+      "exclude_eco": "green",
+      "benefit": "Opt-in polluted / dystopian footprint; Gross Air Uncomfortable — storytelling only"
+    },
+    "BALANCED_ENV_GREEN": {
+      "primary": "combined_env_green",
+      "secondary": ["lot_environment_gain", "eco_footprint_green", "cost_asc", "name_asc"],
+      "exclude_eco": "industrial",
+      "benefit": "Prefer items that raise Environment Gain without industrial footprint"
+    }
+  },
+  "policies": {
+    "stacking": "PER_WALL_PANEL",
+    "unknown_stat": "FAIL_CLOSED_ZERO",
+    "unknown_catalog_id": "REJECT",
+    "default_household_objective": "BALANCED_ENV_GREEN",
+    "player_first": true,
+    "never_mutate_saves": true,
+    "never_auto_discover_install": true,
+    "execute_requires": ["HOST_MAY_AUTOMATE", "DISPOSABLE_LAB", "EXPLICIT_SESSION"],
+    "apply_technique_note": "Hold Shift and click to apply a wall covering to the whole room or exterior",
+    "green_vs_industrial": "MUTUALLY_EXCLUSIVE_OBJECTIVES"
+  },
+  "categories": {
+    "wall_covering": {
+      "stack_unit": "wall_panel",
+      "build_mode_tray": "Wall Coverings"
+    },
+    "buy_object": {
+      "stack_unit": "placed_instance",
+      "build_mode_tray": "Buy"
+    }
+  },
+  "packs": {
+    "base": {"label": "Base Game", "required": false},
+    "EP09": {"label": "Eco Lifestyle", "required_for": ["eco_footprint_green", "eco_footprint_industrial"]},
+    "GP02": {"label": "Spa Day", "required": false},
+    "EP19": {"label": "Horse Ranch", "required": false},
+    "EP20": {"label": "Enchanted by Nature", "required": false}
+  },
+  "catalog": [
+    {
+      "id": "wall.brick_and_plaster",
+      "name": "Brick & Plaster",
+      "category": "wall_covering",
+      "pack": "base",
+      "cost": 8,
+      "lot_environment_gain": 1,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 1,
+      "evidence_state": "LOCAL_OBSERVED",
+      "capture_ref": "operator:wall-covering-tooltip-20261107",
+      "aliases": ["brick & plaster", "brick and plaster"]
+    },
+    {
+      "id": "wall.matchstick_magic",
+      "name": "Matchstick Magic",
+      "category": "wall_covering",
+      "pack": "GP02",
+      "cost": null,
+      "lot_environment_gain": 2,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "evidence_state": "OPERATOR_ATTESTED",
+      "capture_ref": "operator:spa-day-env2-20261107",
+      "aliases": ["matchstick magic"]
+    },
+    {
+      "id": "wall.wildwood_whimsy",
+      "name": "Wildwood Whimsy",
+      "category": "wall_covering",
+      "pack": "EP20",
+      "cost": null,
+      "lot_environment_gain": 2,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "evidence_state": "OPERATOR_ATTESTED",
+      "capture_ref": "operator:enchanted-env2-20261107",
+      "aliases": ["wildwood whimsy"]
+    },
+    {
+      "id": "wall.log_siding",
+      "name": "Log Siding",
+      "category": "wall_covering",
+      "pack": "EP19",
+      "cost": null,
+      "lot_environment_gain": 0,
+      "eco_footprint_green": 2,
+      "eco_footprint_industrial": 0,
+      "evidence_state": "OPERATOR_ATTESTED",
+      "capture_ref": "operator:horse-ranch-green2-20261107",
+      "aliases": ["log siding"]
+    },
+    {
+      "id": "wall.generic_env1",
+      "name": "Generic Environment +1 Covering",
+      "category": "wall_covering",
+      "pack": "base",
+      "cost": null,
+      "lot_environment_gain": 1,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:env1-floor",
+      "aliases": ["generic env1"],
+      "note": "Placeholder for any covering with Environment Gain 1 and no eco modifier"
+    },
+    {
+      "id": "wall.generic_green1",
+      "name": "Generic Green Footprint +1 Covering",
+      "category": "wall_covering",
+      "pack": "EP09",
+      "cost": null,
+      "lot_environment_gain": 0,
+      "eco_footprint_green": 1,
+      "eco_footprint_industrial": 0,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:green1-floor",
+      "aliases": ["generic green1"]
+    },
+    {
+      "id": "buy.placeholder_decor_env1",
+      "name": "Placeholder Decor Object (Env +1)",
+      "category": "buy_object",
+      "pack": "base",
+      "cost": 50,
+      "lot_environment_gain": 1,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:buy-env1",
+      "aliases": ["placeholder decor"],
+      "note": "Seed Buy-mode object row until live tooltip capture expands the catalog"
+    }
+  ],
+  "call_stack": {
+    "evaluate_only": [
+      "OPERATOR_OR_HOST_QUERY",
+      "LOAD_BUILD_OPTIMIZE_CONTRACT",
+      "FILTER_OWNED_PACKS_AND_BUDGET",
+      "RANK_BY_OBJECTIVE",
+      "EMIT_PLAN_RECEIPT"
+    ],
+    "live_execute_future": [
+      "HOST_MAY_AUTOMATE",
+      "DISPOSABLE_LAB_CONFIRMED",
+      "BUILD_OR_BUY_MODE_ACTIVE",
+      "SELECT_CATALOG_THUMB",
+      "APPLY_WITH_SHIFT_WHOLE_ROOM",
+      "CAPTURE_PROOF"
+    ],
+    "gates": {
+      "PLAYER_PLAYING": "YIELD_TO_PLAYER",
+      "CATALOG_EMPTY_AFTER_FILTER": "ABSTAIN_NO_ELIGIBLE_ITEMS",
+      "UNKNOWN_OBJECTIVE": "FAIL_CLOSED",
+      "INDUSTRIAL_IN_GREEN_OBJECTIVE": "EXCLUDE"
+    }
+  }
+}

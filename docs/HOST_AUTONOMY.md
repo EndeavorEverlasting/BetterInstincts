@@ -31,6 +31,7 @@ See glossary: `PLAYER_FIRST`, `PLAYER_PLAYING`, `PLAYER_PRESENT_ON_CANVAS`, `HOS
 | `host_stack` | Compose viewport/behavior/event-balance/instincts gates | none |
 | `event_balance` | Outdoor-social RCA + event/needs/homework call stack | none |
 | `moodlets` | Supplied emotion/moodlet strip → need pressure + routing bias | none |
+| `build_optimize` | Deterministic Build/Buy catalog rank (Env Gain / Eco Footprint) | none |
 | `host_listener` | Opt-in session + tick receipts | writes `dist/host-listener/` |
 | `host_automate` | Presence-gated plan; optional execute | optional SendInput via script |
 | `funds_inject` | Subsidy prompt (funds under 100) + mode-agnostic Money/motherlode inject | optional SendInput via `scripts/funds_inject` |
@@ -143,3 +144,11 @@ Use a **real observed** disposable session, exact PID, and a valid bounded `host
 **Trifecta interpretation:** P08 live proof cannot run here without an authorized local game window; P82 uses paired synthetic inputs and interruption falsifiers; P07 implements reusable code, tests and repository integration. A full live pass must additionally prove *both* user interruption and subsequent idle resumption on a real disposable Sims game session, with zero host-input collision and an unchanged player queue.
 
 **Agent ↔ host serialization refinement:** a single exclusive file lock per verified Sims PID under the ignored repo `dist/host-listener/` root prevents two cooperating executors from controlling the same game window concurrently. The action script holds it from before focus through the single click and receipt, and releases it normally. A competing `needs_force` execution fails `SCREEN_OWNER_BUSY`; the one-shot status CLI reports `PAUSED_FOR_AGENT` rather than claiming the host is ready. A stale lock **never expires automatically**: agents must establish the old owner is gone before a deliberate local recovery. This is an opt-in single-writer seam, not a system-wide OS mutex for unrelated desktop applications or unmodified legacy UI executors.
+
+## 2026-11-07 — P95 Build/Buy optimize (Environment Gain + Eco Footprint)
+
+**Terminal user value:** disposable-lab host can name and plan the **best** wall covering / Buy item for Lot Environment Gain and Eco Footprint objectives with deterministic catalog logic — not aesthetic guessing.
+
+**Selected seam:** `betterinstincts/build_optimize.py` + `contracts/build-optimize.v1.json`; optional `host_stack` gate `BUILD_OPTIMIZE_EVALUATE_ONLY` when `build_objective` + `build_or_buy_mode` are supplied. CLI: `python -m scripts.build_optimize --objective MAXIMIZE_ENV --owned-packs base,GP02,EP20`. Full design: [BUILD_OPTIMIZE.md](BUILD_OPTIMIZE.md).
+
+**Invariants:** player-directed yields; Green vs Industrial mutually exclusive; stacking per wall panel; `execute_allowed=false` until P08 disposable Build Mode apply proof; catalog rows require evidence_state (LOCAL_OBSERVED Brick & Plaster tooltip on Bargain Bend). Does **not** close BI-002 hunger.

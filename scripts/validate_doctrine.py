@@ -61,6 +61,9 @@ REQUIRED = (
     "contracts/moodlets.v1.json", "docs/MOODLETS.md",
     "betterinstincts/moodlets.py", "scripts/moodlets.py",
     "tests/test_moodlets.py",
+    "contracts/build-optimize.v1.json", "docs/BUILD_OPTIMIZE.md",
+    "betterinstincts/build_optimize.py", "scripts/build_optimize.py",
+    "tests/test_build_optimize.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
