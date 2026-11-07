@@ -75,7 +75,7 @@ class HostAutonomyTests(unittest.TestCase):
             {"needs": CRITICAL, "queue": ["read", "walk"], "location_kind": "school",
              "objects_on_current_lot": False, "capture_ref": "capture:t",
              "available_objects": ()},
-            PresenceProbe(False, False),
+            PresenceProbe(False, False, last_input_age_ms=9000),
             session_active=True,
         )
         self.assertEqual(out["state"], "HOST_AUTOMATION_PLANNED")
@@ -121,7 +121,7 @@ class HostAutonomyTests(unittest.TestCase):
                     "capture_ref": "capture:unit2",
                     "available_objects": (),
                 },
-                presence_probe=PresenceProbe(False, False),
+                presence_probe=PresenceProbe(False, False, last_input_age_ms=9000),
             )
             self.assertEqual(opt["listener_action"], "RECORD_OPTIMIZATION_PLAN")
             self.assertEqual(opt["needs_force_plan"]["route"], "MAP_TRAVEL")
