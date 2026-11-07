@@ -1,0 +1,91 @@
+{
+  "schema_version": "betterinstincts.scene-map.dispatch/v1",
+  "sprint": "BI-SCENE-MAP",
+  "repository": "EndeavorEverlasting/BetterInstincts",
+  "source": "plans/active/BI-SCENE-MAP.HANDOFF.md",
+  "implementation": {
+    "pr": 15,
+    "merge_sha": "709646ce11cc1ee1fb80848f66c9130230b3721f",
+    "head_sha": "aed48729072aa3a96a9d73dde8dc6bbcca15d4da",
+    "post_merge_ci_url": "https://github.com/EndeavorEverlasting/BetterInstincts/actions/runs/42373287837",
+    "post_merge_ci_conclusion": "success",
+    "offline_tests_passed": 139,
+    "scene_count": 35
+  },
+  "parent": {
+    "id": "BI-002",
+    "state": "ACTIVE",
+    "first_live_observation": "CAS_ONLY",
+    "game_version": "1.121.361.1020",
+    "live_mode_observed": false,
+    "baseline_trials": 0,
+    "modified_trials": 0,
+    "rollback_observed": false
+  },
+  "safety": {
+    "unknown_save": "UNKNOWN_PROTECTED",
+    "user_save": "USER_PROTECTED",
+    "auto_delete": false,
+    "auto_overwrite": false,
+    "auto_resume": false,
+    "auto_scene_transition": false,
+    "save_name_is_authority": false
+  },
+  "local_host_status": "UNCONNECTED_FROM_CHAT_RUNTIME",
+  "first_local_command": "python -m scripts.check_scene_contract",
+  "next_operator_action": "Verify current game screen; complete disposable CAS and lot placement, enter Live Mode; capture reference; only then confirm and begin vanilla hunger baseline",
+  "lanes": [
+    {
+      "id": "REPO_GOVERNANCE",
+      "host": "CURRENT_CHAT_RUNTIME",
+      "state": "MERGED",
+      "owner": "P00_P01_P95",
+      "proof": "TRACKED_AND_CI"
+    },
+    {
+      "id": "REPO_BUILD",
+      "host": "CI_OR_REMOTE_RUNNER",
+      "state": "SUCCESS",
+      "owner": "P82_P07",
+      "proof": "OFFLINE_TESTS"
+    },
+    {
+      "id": "SCENE_CAPTURE",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "state": "PENDING",
+      "owner": "WINDOWS_LOCAL_GAME_AGENT",
+      "proof": "REAL_SCENE_CAPTURES_REQUIRED"
+    },
+    {
+      "id": "SAVE_OWNERSHIP",
+      "host": "OPERATOR_OR_PHYSICAL_RUNTIME",
+      "state": "PENDING_REAL_IDENTITY",
+      "owner": "LAB_OPERATOR",
+      "proof": "NO_NAME_ONLY_DISPOSABILITY"
+    },
+    {
+      "id": "HUNGER_LIVE",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "state": "ACTIVE_UNPROVEN",
+      "owner": "BI-002",
+      "proof": "FIVE_VANILLA_FIVE_MODIFIED_ROLLBACK_AND_REVIEW"
+    },
+    {
+      "id": "HANDOFF",
+      "host": "CURRENT_CHAT_RUNTIME",
+      "state": "TRACKED",
+      "owner": "P04",
+      "proof": "REPOSITORY_RECEIPT_ONLY"
+    }
+  ],
+  "forbidden": [
+    "personal_save_mutation",
+    "blind_resume",
+    "overwrite_save",
+    "delete_save",
+    "auto_latest_patch",
+    "fabricate_scene_capture",
+    "certify_synthetic_test",
+    "new_ui_in_this_sprint"
+  ]
+}
