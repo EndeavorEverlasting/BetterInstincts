@@ -1,0 +1,58 @@
+{
+  "schema": "betterinstincts.decision-prompts/v1",
+  "version": 1,
+  "proof_ceiling": "CATALOGUED_HEURISTICS_NOT_GAME_TUNING_OR_LIVE_CERTIFICATION",
+  "prompts": [
+    {
+      "prompt_id": "school.geology.rock_collection",
+      "title": "ROCK COLLECTION",
+      "repeatable": true,
+      "scene_tags": ["school", "chance_card", "geology", "high_school"],
+      "narrative_tokens": [
+        "rock collection",
+        "Geology",
+        "valuable rocks",
+        "teacher might not know"
+      ],
+      "options": [
+        {
+          "option_id": "try_to_take_a_rock",
+          "label": "Try to take a Rock",
+          "tags": ["theft", "risk_reputation", "risk_school", "risk_mood"]
+        },
+        {
+          "option_id": "no_stealing_today",
+          "label": "No stealing today",
+          "tags": ["ethical", "safe", "preserve_performance", "stable_mood"]
+        }
+      ],
+      "default_when_unknown_needs": "no_stealing_today",
+      "notes": "LOCAL_OBSERVED 2026-11-07 on Charlee LabLab school lot; prefer no theft under critical needs."
+    },
+    {
+      "prompt_id": "school.attend.join_or_send_alone",
+      "title": "GO TO CLASS",
+      "repeatable": true,
+      "scene_tags": ["school", "travel", "attendance"],
+      "narrative_tokens": [
+        "about to go to class",
+        "join her",
+        "go alone"
+      ],
+      "options": [
+        {
+          "option_id": "join",
+          "label": "Join",
+          "tags": ["travel_with_sim", "leave_home_lot", "blocks_home_build"]
+        },
+        {
+          "option_id": "send_alone",
+          "label": "Send Alone",
+          "tags": ["rabbit_hole", "keep_home_lot", "safe", "host_prep"]
+        }
+      ],
+      "default_when_unknown_needs": "send_alone",
+      "notes": "When home needs are critical or empty-lot prep is unfinished, Send Alone keeps host control of home."
+    }
+  ]
+}
