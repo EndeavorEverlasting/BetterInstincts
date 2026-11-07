@@ -25,6 +25,7 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **FUN_SERVICE** / **FUN_LANE** / **FUN_CONTENTION** | Parallel Fun activity services; free-lane pick when guests occupy shared objects. |
 | **NEED_SERVICES_TANDEM** / **NEED_SERVICE_BASE** / **NEED_LANES** | Six-need tandem registry + P124 shared helpers; Fun nested, other motives use need-lanes. |
 | **NEED_SERVICE_HEALTH** / **NEED_SERVICE_DETACH** / **ASSUMPTION_WINDOW** / **NEED_LOAD_BALANCE** | LB health probe, detach dead stacks, reweighted exploration windows; see `docs/NEED_LOAD_BALANCE.md`. |
+| **DOMAIN_CASCADE** | Ordered poll receipts across needs→budget→career→skills/whims→relationships; respects LB detach; see `docs/DOMAIN_CASCADE.md`. |
 | **NAVIGATING_NEEDS_TANDEM** | Discovery Quest panel goals in tandem with host; uncovered urgent falls to need_services. |
 | **MOODLET_STRIP** | Bottom-left emotion + moodlet icons; must be supplied to host evals (not inventable from screenshots). |
 | **MOODLET_AWARE_ROUTING** | Gate: tense moodlets + outdoor social + indoor capacity reinforce indoor retarget; uncomfortable aligns with survival relief. |

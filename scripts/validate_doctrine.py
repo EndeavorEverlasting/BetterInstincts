@@ -95,6 +95,9 @@ REQUIRED = (
     "scripts/need_services.py", "tests/test_need_services.py",
     "contracts/need-load-balance.v1.json", "docs/NEED_LOAD_BALANCE.md",
     "betterinstincts/need_load_balance.py", "tests/test_need_load_balance.py",
+    "contracts/domain-cascade.v1.json", "docs/DOMAIN_CASCADE.md",
+    "betterinstincts/domain_cascade.py", "scripts/domain_cascade.py",
+    "tests/test_domain_cascade.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
