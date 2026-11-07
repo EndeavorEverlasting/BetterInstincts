@@ -61,11 +61,15 @@ Once the agent independently observes the intended disposable Live Mode state, r
 
 **First executable Windows host gate**:
 1. Inspect current checkout status and pull the merged main safely (no destructive reset). Identify current TS4_x64 process/window using the existing local-game capability; independently verify current PID, executable and intended disposable session before any WM_CLOSE. If no matching process remains, do not attempt to close historical PID 45380.
-2. If matching session is still anomalous, use the existing gated recovery command with CURRENT_CONFIRMED_PID (not historical PID):
+2. If matching session is still anomalous, run the **durable black→Buy host fallback** first (do not rediscover):
 
-   python -m scripts.viewport_recover --capture --process-id CURRENT_CONFIRMED_PID --execute --authorize-restart --run-id bi002-quiz-boot --out dist/game-host/bi002-quiz-boot/viewport-restart.png --receipt dist/game-host/bi002-quiz-boot/viewport-restart-receipt.json
+   python -m scripts.viewport_recover --capture --process-id CURRENT_CONFIRMED_PID --execute --max-steps 5 --out dist/game-host/<run>/viewport-unstick.png --receipt dist/game-host/<run>/viewport-unstick-receipt.json
 
-   The authorization is limited to the previously described disposable lab restart. Verify WM_CLOSE dispatch, then actual process exit; WM_CLOSE_POSTED is not exit proof. Do not use TerminateProcess, and do not blindly replay a receipt.
+   Expect ladder step `ENTER_BUILD_BUY_UNSTICK` (Build hammer `(1505,22)`) and success `RECOVERY_BUILD_BUY_UNSTUCK` / `BUILD_BUY_CATALOG_RECOVERY`. That is host logic, not chat lore. Only if still black after unstick, authorize restart:
+
+   python -m scripts.viewport_recover --capture --process-id CURRENT_CONFIRMED_PID --execute --authorize-restart --run-id <run> --max-steps 8 --out dist/game-host/<run>/viewport-restart.png --receipt dist/game-host/<run>/viewport-restart-receipt.json
+
+   Verify WM_CLOSE then actual process exit; WM_CLOSE_POSTED is not exit proof. Never TerminateProcess, Resume, or blind receipt replay.
 3. Relaunch and select ONLY the registered LAB_CREATED LabLab disposable save through the existing game_host + save_guard path. Use a fresh run ID if the previous receipt namespace cannot safely be reused. Never Resume. Verify PrintWindow CONTENT_PRESENT *and* independent map/Live scene cues before performing need clicks. PrintWindow can miss DX wireframe, so treat a conflicting secondary-display observation as an anomaly requiring investigation.
 4. Prefer Send Alone to Join while needs are critical; maintain control of the home lot. Inspect six need levels and real object availability; obtain/place safe lab objects for food, bathroom, energy, hygiene, fun and social. Respect player direction and busy/absent state; do not execute a needs click until the host gate is safe. Record before/after needs and host action IDs.
 5. Run the deterministic evaluator on real **operator/sensor-attested** observations, not the committed synthetic fixtures:

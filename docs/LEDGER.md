@@ -110,3 +110,6 @@ Implemented version-bound chosen-save boot/map/Live, two scene cues, registered 
 
 ## 2026-11-07 — Buy-menu stuck RCA + Save and Exit (LOCAL_OBSERVED)
 Operator correction on `bi002-quiz-boot` (pid 45380, patch `1.121.361.1020`): the durable stuck surface was **Build/Buy purchase catalog** at Copperdale High School (High School Items tray), not Live Mode void. Camera ladder alone stayed anomalous; WM_CLOSE posted without immediate exit; recovered UI showed Save Game? → **Save and Exit** → SAVING… → `TS4_x64` process count 0. Contract updated: C9, H5 (rank 1), A7. Receipt `dist/game-host/bi002-quiz-boot/save-exit-receipt.json` (Git-ignored). Six needs green, `BI_CONT_` Save As, and BI-002 hunger 5+5 remain **NOT_OBSERVED**.
+
+## 2026-11-07 — Codified black→Buy host fallback (ENTER_BUILD_BUY_UNSTICK)
+Durable host logic so future agents do not rediscover the unstick: `contracts/viewport-black.v1.json` `fallback_mechanisms.FB_BUILD_BUY_UNSTICK`, ladder step `ENTER_BUILD_BUY_UNSTICK` (Build hammer only), classifier `BUILD_BUY_CATALOG_RECOVERY`, recoverer stop-state `RECOVERY_BUILD_BUY_UNSTUCK`, and `host_stack.evaluate_turn` `fallback` routing for black viewports. Live exit is a separate step. Patch-like host behavior; not GAME_CERTIFIED.

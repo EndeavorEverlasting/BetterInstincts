@@ -68,10 +68,39 @@ def evaluate_turn(
     except (InstinctsHostError, DecisionEvalError, ViewportError) as exc:
         raise HostStackError(str(exc)) from exc
 
-    # Priority: unreadable viewport > open decision modal > needs plan > save.
+    # Priority: viewport/fallback glitches > decision modal > needs plan > save.
+    # Black→Buy unstick is host fallback (ENTER_BUILD_BUY_UNSTICK), not a rediscovery.
     next_gate = "EXECUTE_INSTINCTS_PLAN"
+    fallback = None
     if viewport is not None and viewport.get("state") != "VIEWPORT_OK":
+        classification = str(viewport.get("classification") or "")
         next_gate = str(viewport.get("next_gate") or "VERIFY_VIEWPORT_BEFORE_ACTION")
+        if classification in {
+            "FULL_CLIENT_BLACK",
+            "VOID_LOT_PLATFORM_WIREFRAME",
+            "VIEWPORT_NEAR_BLACK",
+            "VIEWPORT_BLACK_HUD_ALIVE",
+        }:
+            fallback = {
+                "mechanism": "ENTER_BUILD_BUY_UNSTICK",
+                "owner": "scripts/viewport_recover.py",
+                "contract": "contracts/viewport-black.v1.json",
+                "command": (
+                    "python -m scripts.viewport_recover --capture --process-id PID "
+                    "--execute --max-steps 5"
+                ),
+                "success_classification": "BUILD_BUY_CATALOG_RECOVERY",
+                "forbidden": ["NEEDS_OBJECT_CLICK", "RESUME", "TerminateProcess"],
+            }
+            next_gate = "ENTER_BUILD_BUY_UNSTICK"
+        elif classification == "BUILD_BUY_CATALOG_RECOVERY" or viewport.get("state") == "VIEWPORT_MODE_BUILD_BUY":
+            fallback = {
+                "mechanism": "BUILD_BUY_CATALOG_RECOVERY",
+                "owner": "scripts/viewport_recover.py",
+                "next": "EXIT_BUY_TO_LIVE_OR_OPERATOR_SAVE_EXIT",
+                "forbidden": ["NEEDS_OBJECT_CLICK", "RESUME"],
+            }
+            next_gate = "EXIT_BUY_TO_LIVE_OR_OPERATOR_SAVE_EXIT"
     elif player_directed or already_busy:
         next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
     elif sim_absent:
@@ -89,6 +118,7 @@ def evaluate_turn(
         "state": "HOST_TURN_EVALUATED",
         "capture_ref": capture_ref,
         "next_gate": next_gate,
+        "fallback": fallback,
         "instincts": instincts,
         "decision": decision,
         "influence": influence,
