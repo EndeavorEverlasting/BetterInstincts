@@ -24,9 +24,14 @@
     "contract": "contracts/hidden-object-discovery.v1.json",
     "cli": "python -m scripts.hidden_object_discovery",
     "module": "betterinstincts.hidden_object_discovery",
-    "tests": "python -m unittest tests.test_hidden_object_discovery -v"
+    "tests": "python -m unittest tests.test_hidden_object_discovery -v",
+    "original_feature_branch": "feat/bi-hidden-object-host-p04-20261107",
+    "current_target": "main (feature previously merged in PR #59; refresh before use)",
+    "enforcement_branch": "feat/bi-p04-debug-playbook-enforcement-20261107",
+    "guide": "python -m scripts.hidden_object_discovery guide",
+    "audit": "python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json"
   },
-  "proof_ceiling": "OFFLINE_GITHUB_SOURCE_AND_CI_ONLY_NO_WINDOWS_GAME_HOST",
+  "proof_ceiling": "OFFLINE_P04_GUIDE_AND_RECEIPT_SHAPE_CHECKS_PLUS_CI; REAL_GAME_BEHAVIOR_UNPROVEN",
   "parallel_execution": {
     "required_when_graph_width_at_least": 2,
     "true_parallel_not_yet_proven": true,
@@ -112,7 +117,7 @@
       "launch_action": "Open feature PR; inspect actual workflow checks",
       "status": "NOT_YET_OBSERVED",
       "return_contract": "Actual action run URL, conclusion, tests and commit",
-      "validation": "python -m unittest discover -s tests -v",
+      "validation": "python -m scripts.check_hidden_object_p04; python -m unittest tests.test_hidden_object_discovery -v; full CI and ontology chronology",
       "convergence_owner": "repository maintainer"
     },
     {
@@ -139,11 +144,19 @@
         "repository_protected_files"
       ],
       "adapter": "existing local game host after explicit attachment",
-      "launch_action": "python -m scripts.hidden_object_discovery categories",
+      "launch_action": "python -m scripts.hidden_object_discovery guide; then inspect current host for exact patch, scene, save and consent",
       "status": "AWAITING_LOCAL_GAME_HOST",
       "return_contract": "Sanitized exact-build observation and independent admission",
       "validation": "python -m scripts.semantic_preflight --operation game_sampling --consultation NEW_EXACT_BUILD_RECEIPT --exact-game-build ACTUAL_FULL_VERSION",
-      "convergence_owner": "local game agent"
+      "convergence_owner": "local game agent",
+      "mandatory_preflight_command": "python -m scripts.hidden_object_discovery guide",
+      "evidence_inputs": [
+        "actual_game_build",
+        "two_source_current_scene",
+        "operator_lab_save_consent",
+        "host_exclusive_control_lease"
+      ],
+      "blocker_if_missing": "P04_EVIDENCE_INCOMPLETE_OR_AWAITING_LOCAL_GAME_HOST"
     },
     {
       "lane_id": "WINDOWS_CATALOG",
@@ -172,9 +185,23 @@
       "adapter": "existing game host adapter after step-level admission",
       "launch_action": "python -m scripts.hidden_object_discovery plan --observation dist/game-host/hidden-object-observation.json --category all",
       "status": "AWAITING_HOST_EVIDENCE",
-      "return_contract": "reviewed item-by-item capture receipts and price classification",
-      "validation": "Per-step independent scene/lease/consent checks",
-      "convergence_owner": "local game agent"
+      "return_contract": "Ordered five-step observed UI receipts + per-item labels/pack/price; no unobserved all-free claim",
+      "validation": "python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json plus independent capture review",
+      "convergence_owner": "local game agent",
+      "mandatory_evidence_steps": [
+        "OPEN_CHEAT_CONSOLE",
+        "ENABLE_CHEATS",
+        "REVEAL_HIDDEN_OBJECTS",
+        "ENTER_BUILD_BUY",
+        "SELECT_DEBUG_RESULTS"
+      ],
+      "audit_command": "python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json",
+      "evidence_inputs": [
+        "actual_step_observation_refs",
+        "per_step_control_permit_refs",
+        "visible_DEBUG_search_result",
+        "individual_operator_reviewed_catalog_items"
+      ]
     },
     {
       "lane_id": "BI002_HUNGER",
@@ -208,7 +235,35 @@
     "no_autorun": true,
     "never_touch_speed": true,
     "never_sendinput_from_planner": true,
-    "all_item_prices": "UNKNOWN_UNTIL_OBSERVED"
+    "all_item_prices": "UNKNOWN_UNTIL_OBSERVED",
+    "p04_on_unrelated_parent": "DEFERRED_NOT_PARENT_DEPENDENCY"
   },
-  "no_actual_parallel_dispatch_claim": true
+  "no_actual_parallel_dispatch_claim": true,
+  "p04_required_ingest": {
+    "trigger": "ANY_BETTERINSTINCTS_P04_INVENTORY; EXECUTE_IF_HIDDEN_OBJECTS_IN_PARENT_SCOPE",
+    "mandatory_read": [
+      "AGENTS.md",
+      "docs/ONTOLOGY.md",
+      "docs/HIDDEN_OBJECT_DISCOVERY.md",
+      "plans/active/BI-HIDDEN-OBJECTS.P04.md",
+      "contracts/hidden-object-discovery.v1.json"
+    ],
+    "guide_command": "python -m scripts.hidden_object_discovery guide",
+    "guide_contract": "contracts/hidden-object-discovery.v1.json#operator_playbook",
+    "required_step_ids": [
+      "OPEN_CHEAT_CONSOLE",
+      "ENABLE_CHEATS",
+      "REVEAL_HIDDEN_OBJECTS",
+      "ENTER_BUILD_BUY",
+      "SELECT_DEBUG_RESULTS"
+    ],
+    "local_receipt": "dist/game-host/hidden-object-p04-receipt.json",
+    "audit_command": "python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json",
+    "validator_command": "python -m scripts.check_hidden_object_p04",
+    "unmet_steps": "P04_EVIDENCE_INCOMPLETE",
+    "structurally_complete": "P04_EVIDENCE_SHAPE_COMPLETE_PENDING_INDEPENDENT_REVIEW",
+    "irrelevant_scope": "DEFERRED_NOT_PARENT_DEPENDENCY",
+    "game_certification": "NEVER_FROM_AUDIT",
+    "owner": "LOCAL_AGENT_RUNTIME_WINDOWS_GAME_HOST_AFTER_INDEPENDENT_PER_STEP_PERMIT"
+  }
 }
