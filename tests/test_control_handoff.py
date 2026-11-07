@@ -155,5 +155,36 @@ class ControlHandoffTests(unittest.TestCase):
         click.assert_not_called()
 
 
+    def test_session_deactivation_before_click_cancels(self):
+        states = iter([{"state": "ACTIVE"}, {"state": "ACTIVE"}, {"state": "INACTIVE"}])
+        with patch.object(needs_force.sys, "platform", "win32"), \\
+             patch("betterinstincts.host_listener.status", side_effect=lambda _: next(states)), \\
+             patch("betterinstincts.player_presence.probe_windows", return_value=probe(10000)), \\
+             patch("scripts.game_host.focus"), \\
+             patch("scripts.needs_force._send_click") as click, \\
+             patch("scripts.needs_force.time.sleep"), \\
+             redirect_stdout(io.StringIO()) as output:
+            result = needs_force.main([
+                "run", "--execute", "--process-id", "42",
+                "--session-id", "unit-test", "--step-id", "pause_live",
+            ])
+        self.assertEqual(result, 2)
+        self.assertEqual(json.loads(output.getvalue())["reason"], "HOST_HANDOFF_SESSION_INACTIVE")
+        click.assert_not_called()
+
+    def test_bad_receipt_path_rejected_before_any_click(self):
+        with patch.object(needs_force.sys, "platform", "win32"), \\
+             patch("scripts.needs_force._send_click") as click, \\
+             redirect_stdout(io.StringIO()) as output:
+            result = needs_force.main([
+                "run", "--execute", "--process-id", "42",
+                "--session-id", "unit-test", "--step-id", "pause_live",
+                "--receipt", "../unowned.json",
+            ])
+        self.assertEqual(result, 2)
+        self.assertEqual(json.loads(output.getvalue())["reason"], "RECEIPT_OUTSIDE_DIST_GAME_HOST")
+        click.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
