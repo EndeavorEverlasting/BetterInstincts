@@ -108,48 +108,49 @@ def main(argv: list[str] | None = None) -> int:
             if not receipt_path.is_relative_to(OUTPUT.resolve()) or receipt_path.is_symlink():
                 raise GateError("RECEIPT_OUTSIDE_DIST_GAME_HOST")
         from betterinstincts.host_listener import status as listener_status
-        from betterinstincts.control_handoff import HandoffError, decide, confirm
+        from betterinstincts.control_handoff import HandoffError, decide, confirm, exclusive_screen_owner
         from betterinstincts.player_presence import probe_windows
-        if listener_status(args.session_id).get("state") != "ACTIVE":
-            raise GateError("HOST_HANDOFF_SESSION_INACTIVE")
-        try:
-            preflight = decide(probe_windows(args.process_id), session_active=True, idle_ms=args.idle_ms)
-            if not preflight["screen_control_allowed"]:
-                raise GateError("HOST_PAUSED:" + preflight["reason"])
-            # Focus itself can disrupt the user; it is protected by preflight.
-            from scripts.game_host import focus
-            focus(process_id=args.process_id)
-            handoff = confirm(
-                lambda: probe_windows(args.process_id),
-                session_active=listener_status(args.session_id).get("state") == "ACTIVE",
-                idle_ms=args.idle_ms,
-            )
-        except HandoffError as exc:
-            raise GateError(str(exc)) from exc
-        if not handoff["screen_control_allowed"]:
-            raise GateError("HOST_PAUSED:" + handoff["reason"])
-        if listener_status(args.session_id).get("state") != "ACTIVE":
-            raise GateError("HOST_HANDOFF_SESSION_INACTIVE")
-        step = selected[0]
-        x, y = step["click"]
-        _send_click(int(x), int(y))
-        time.sleep(max(0.3, min(5.0, float(args.settle_sec))))
-        dispatched = [{"id": step["id"], "click": [x, y], "state": "CLICK_DISPATCHED"}]
-        out = {
-            "state": "NEEDS_FORCE_DISPATCHED",
-            "route": plan["route"],
-            "steps": dispatched,
-            "run_id": args.run_id,
-            "handoff": handoff,
-            "session_id": args.session_id,
-            "single_step_only": True,
-            "proof_ceiling": "NEEDS_FORCE_CLICK_DISPATCH_NOT_LIVE_CERT",
-            "forbidden": plan["forbidden"],
-        }
-        if receipt_path is not None:
-            receipt_path.parent.mkdir(parents=True, exist_ok=True)
-            receipt_path.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-            out["receipt"] = str(receipt_path.relative_to(ROOT))
+        with exclusive_screen_owner(args.process_id):
+            if listener_status(args.session_id).get("state") != "ACTIVE":
+                raise GateError("HOST_HANDOFF_SESSION_INACTIVE")
+            try:
+                preflight = decide(probe_windows(args.process_id), session_active=True, idle_ms=args.idle_ms)
+                if not preflight["screen_control_allowed"]:
+                    raise GateError("HOST_PAUSED:" + preflight["reason"])
+                # Focus itself can disrupt the user; it is protected by preflight.
+                from scripts.game_host import focus
+                focus(process_id=args.process_id)
+                handoff = confirm(
+                    lambda: probe_windows(args.process_id),
+                    session_active=listener_status(args.session_id).get("state") == "ACTIVE",
+                    idle_ms=args.idle_ms,
+                )
+            except HandoffError as exc:
+                raise GateError(str(exc)) from exc
+            if not handoff["screen_control_allowed"]:
+                raise GateError("HOST_PAUSED:" + handoff["reason"])
+            if listener_status(args.session_id).get("state") != "ACTIVE":
+                raise GateError("HOST_HANDOFF_SESSION_INACTIVE")
+            step = selected[0]
+            x, y = step["click"]
+            _send_click(int(x), int(y))
+            time.sleep(max(0.3, min(5.0, float(args.settle_sec))))
+            dispatched = [{"id": step["id"], "click": [x, y], "state": "CLICK_DISPATCHED"}]
+            out = {
+                "state": "NEEDS_FORCE_DISPATCHED",
+                "route": plan["route"],
+                "steps": dispatched,
+                "run_id": args.run_id,
+                "handoff": handoff,
+                "session_id": args.session_id,
+                "single_step_only": True,
+                "proof_ceiling": "NEEDS_FORCE_CLICK_DISPATCH_NOT_LIVE_CERT",
+                "forbidden": plan["forbidden"],
+            }
+            if receipt_path is not None:
+                receipt_path.parent.mkdir(parents=True, exist_ok=True)
+                receipt_path.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+                out["receipt"] = str(receipt_path.relative_to(ROOT))
         print(json.dumps(out, sort_keys=True))
         return 0
     except (NeedsForceError, GateError, OSError, ValueError, TypeError) as exc:
