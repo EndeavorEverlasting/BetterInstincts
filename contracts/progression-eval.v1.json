@@ -93,6 +93,8 @@
     "docs/COMPATIBILITY.md",
     "docs/HOST_EVAL.md",
     "docs/PROGRESSION_EVAL.md",
+    "docs/HORIZON_CONTINUITY.md",
+    "contracts/horizon-continuity.v1.json",
     "plans/horizon.v1.json",
     "plans/active/BI-002.md",
     "plans/active/BI-002.execution.v1.json",
@@ -108,6 +110,7 @@
   ],
   "ci_required_substrings": [
     "scripts.check_horizon",
+    "scripts.check_horizon_continuity",
     "scripts.eval_horizon",
     "scripts.host_eval",
     "scripts.progression_eval",

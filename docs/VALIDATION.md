@@ -7,6 +7,7 @@ python -m unittest discover -s tests -v
 python scripts/validate_doctrine.py
 python scripts/check_tracked_assets.py
 python -m scripts.check_horizon
+python -m scripts.check_horizon_continuity
 python -m scripts.eval_horizon
 python -m scripts.horizon_status
 python -m scripts.host_eval --out dist/host-eval/local.json
