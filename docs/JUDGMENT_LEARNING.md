@@ -91,3 +91,21 @@ The record format is exact and inspectable in `tests/test_judgment_learning.py`;
 ## Proof ceiling and local P04 continuation
 
 **Implemented and CI-testable:** model, CLI, optional listener advisory and safety regressions. **Not observed:** fresh human-approved gameplay examples, Sims compatibility, real-world improvement, game interactions or autonomous mod behavior. **P08 local agent** must first qualify the session/patch/disposable save and observe one real BI-002 vanilla hunger trial; it can separately curate reviewed examples without treating them as a gameplay certificate. Use `docs/LIVE_CERT.md` and `plans/active/BI-002.execution.v1.json`. The next agent should measure a genuinely new *opportunity* in-game (e.g., indoor Sit and Chat Here versus unproductive outdoor walking) and replay this advisory against that evidence, not just report a green test.
+
+## Second-pass interface: one deliberate teaching action
+
+A local agent no longer needs to hand-author a whole JSON training array just to capture one useful operator judgment. The explicit `record` command validates one sanitized context, requires **both** `--operator-reviewed` and `--explicit-opt-in`, and appends it to a bounded list inside ignored `dist/judgment-learning/`. Duplicate observation refs are rejected. No automated screenshot or keyboard recorder is installed; the operator or agent must supply action, observed outcome and sanitized source reference.
+
+```sh
+python -m scripts.judgment_learning record \
+  --context dist/judgment-learning/context.json \
+  --game-version ACTUAL.FULL.GAME.VERSION --platform windows \
+  --action sit_and_chat_here --outcome helpful \
+  --observation-ref capture:actual_reviewed_001 \
+  --examples-out dist/judgment-learning/reviewed.json \
+  --operator-reviewed --explicit-opt-in
+```
+
+`context.json` is a compact object with exactly `scenario`, `need_state`, `scene`, `previous_action`, `style`; see `tests/test_judgment_learning.py` for accepted semantic labels. Do not claim `operator-reviewed` unless the person really reviewed both action and outcome. A learned action may be suggested repeatedly when supported, but cannot directly queue, cancel, or execute any interaction.
+
+**Measured comparator:** `prequential_evaluate` now reports both the contextual learner's issued-action coverage/precision and a chronological context-free global-most-frequent-helpful-action comparator. The comparator also predicts *before* consuming the current event. Compare both coverage and precision; a higher conditional precision with near-zero coverage is not automatically a better player experience. These numbers are diagnostic until real reviewed game observations exist.
