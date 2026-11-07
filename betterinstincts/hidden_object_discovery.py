@@ -12,8 +12,8 @@ from typing import Mapping
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "hidden-object-discovery.v1.json"
-_PATCH = re.compile(r"^[0-9]+(?:\\.[0-9]+){3}$")
-_QUERY = re.compile(r"^[\\w][\\w .'\\-]{0,63}$", re.UNICODE)
+_PATCH = re.compile(r"^[0-9]+(?:\.[0-9]+){3}$")
+_QUERY = re.compile(r"^[\w][\w .'\-]{0,63}$", re.UNICODE)
 _PROOF = "OFFLINE_ADVISORY_NOT_GAME_INPUT_NOT_ITEM_INVENTORY_NOT_BI002_CERT"
 
 
@@ -120,7 +120,7 @@ def plan_discovery(
     if include_live_edit:
         lines.append(cfg["optional_live_edit_line"])
     # Refuse accidentally combined or unexpected commands.
-    if any("/" in s or "\\n" in s or s.lower() == "buydebug" for s in lines):
+    if any("/" in s or "\n" in s or s.lower() == "buydebug" for s in lines):
         raise DiscoveryError("INVALID_CONSOLE_LINE")
     steps = [
         {
