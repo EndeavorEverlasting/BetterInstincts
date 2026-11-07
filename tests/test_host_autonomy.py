@@ -47,7 +47,7 @@ class HostAutonomyTests(unittest.TestCase):
 
     def test_presence_yields_when_on_canvas(self):
         presence = classify(
-            PresenceProbe(foreground_is_sims=True, cursor_in_client=True),
+            PresenceProbe(foreground_is_sims=True, cursor_in_client=True, last_input_age_ms=0),
             session_active=True,
         )
         self.assertEqual(presence["state"], "PLAYER_PLAYING")
@@ -55,7 +55,7 @@ class HostAutonomyTests(unittest.TestCase):
 
     def test_presence_allows_host_when_off_canvas(self):
         presence = classify(
-            PresenceProbe(foreground_is_sims=False, cursor_in_client=False),
+            PresenceProbe(foreground_is_sims=False, cursor_in_client=False, last_input_age_ms=9000),
             session_active=True,
         )
         self.assertEqual(presence["state"], "HOST_MAY_AUTOMATE")
