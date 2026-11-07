@@ -70,8 +70,12 @@ def evaluate_turn(
 
     # Priority: unreadable viewport > open decision modal > needs plan > save.
     next_gate = "EXECUTE_INSTINCTS_PLAN"
-    if viewport and viewport.get("state") == "VIEWPORT_ANOMALY":
-        next_gate = str(viewport.get("next_gate") or "RECOVER_OR_AUTHORIZED_RESTART")
+    if viewport is not None and viewport.get("state") != "VIEWPORT_OK":
+        next_gate = str(viewport.get("next_gate") or "VERIFY_VIEWPORT_BEFORE_ACTION")
+    elif player_directed or already_busy:
+        next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
+    elif sim_absent:
+        next_gate = "SIM_ABSENT_HOST_PREP_ONLY"
     elif decision is not None:
         next_gate = "RESOLVE_DECISION_PROMPT"
     elif risk.get("risk_level") in {"ELEVATED", "HIGH"} and risk.get("required_before_clicks"):

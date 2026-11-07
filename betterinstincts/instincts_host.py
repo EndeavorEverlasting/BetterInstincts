@@ -177,6 +177,9 @@ def plan(snap: NeedSnapshot, cfg: dict | None = None, *, green_floor: float = 0.
     steps = classify_levels(snap, cfg)
     green = all_green(snap, green_floor)
     save = recommend_lab_save(all_needs_green=green, alias=continuation_alias)
+    if green and (snap.sim_absent or snap.player_directed or snap.already_busy):
+        save = {**save, "state": "HOLD_SAVE", "alias": None, "intent": None,
+                "reason": "SIM_ABSENT_BUSY_OR_PLAYER_DIRECTED"}
 
     if snap.sim_absent:
         return InstinctsPlan(
