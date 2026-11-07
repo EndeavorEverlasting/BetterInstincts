@@ -100,6 +100,13 @@ def main(argv: list[str] | None = None) -> int:
         selected = [s for s in plan["steps"] if s["id"] == args.step_id and s["execution"] == "HOST_SENDINPUT"]
         if len(selected) != 1:
             raise GateError("STEP_NOT_IN_VERIFIED_PLAN")
+        # Validate receipt destination BEFORE any UI mutation.
+        receipt_path = None
+        if args.receipt is not None:
+            receipt_path = args.receipt if args.receipt.is_absolute() else ROOT / args.receipt
+            receipt_path = receipt_path.resolve()
+            if not receipt_path.is_relative_to(OUTPUT.resolve()) or receipt_path.is_symlink():
+                raise GateError("RECEIPT_OUTSIDE_DIST_GAME_HOST")
         from betterinstincts.host_listener import status as listener_status
         from betterinstincts.control_handoff import HandoffError, decide, confirm
         from betterinstincts.player_presence import probe_windows
@@ -121,6 +128,8 @@ def main(argv: list[str] | None = None) -> int:
             raise GateError(str(exc)) from exc
         if not handoff["screen_control_allowed"]:
             raise GateError("HOST_PAUSED:" + handoff["reason"])
+        if listener_status(args.session_id).get("state") != "ACTIVE":
+            raise GateError("HOST_HANDOFF_SESSION_INACTIVE")
         step = selected[0]
         x, y = step["click"]
         _send_click(int(x), int(y))
@@ -137,14 +146,10 @@ def main(argv: list[str] | None = None) -> int:
             "proof_ceiling": "NEEDS_FORCE_CLICK_DISPATCH_NOT_LIVE_CERT",
             "forbidden": plan["forbidden"],
         }
-        if args.receipt is not None:
-            path = args.receipt if args.receipt.is_absolute() else ROOT / args.receipt
-            path = path.resolve()
-            if not path.is_relative_to(OUTPUT.resolve()):
-                raise GateError("RECEIPT_OUTSIDE_DIST_GAME_HOST")
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-            out["receipt"] = str(path.relative_to(ROOT))
+        if receipt_path is not None:
+            receipt_path.parent.mkdir(parents=True, exist_ok=True)
+            receipt_path.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            out["receipt"] = str(receipt_path.relative_to(ROOT))
         print(json.dumps(out, sort_keys=True))
         return 0
     except (NeedsForceError, GateError, OSError, ValueError, TypeError) as exc:
