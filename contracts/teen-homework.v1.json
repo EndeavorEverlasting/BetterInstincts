@@ -1,0 +1,195 @@
+{
+  "schema": "betterinstincts.teen-homework/v1",
+  "version": 1,
+  "authority": "docs/TEEN_HOMEWORK.md",
+  "proof_ceiling": "HOST_TEEN_HOMEWORK_CATALOG_NOT_EA_API_NOT_BI006_CERT",
+  "design_brief": {
+    "subject": "Teen High School Student daily career-performance homework budget",
+    "audience": "local host agent + operator at home lot",
+    "job": "Budget daily High School Student homework task; recover when inventory omits homework book; survival and premises rules outrank school-work routing",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose before chrome"},
+      {"id": "UP-A85AD9DC3", "mechanism": "journey / call-stack storytelling"},
+      {"id": "UP-0F2FB5920", "mechanism": "iterate with measurement"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ],
+    "forbidden_chrome": "No teen homework dashboard; contracts + evaluators only; not adult get_career scenario"
+  },
+  "local_observed": {
+    "date": "2026-11-07",
+    "patch": "1.121.361.1020",
+    "household": "LabLab",
+    "scene": "teen_home_wednesday_night",
+    "observation": "Teen at home; career panel High School Student daily task homework; homework not in inventory but present on lot surface (dining table); operator scanned lot, put book in inventory; hunger critical; queue Use Toilet + Take a Shower; computer desk on lot",
+    "capture_ref": "operator:teen-homework-missing-20261107",
+    "operator_correction": "inventory_has_homework=false does not mean absent from lot — host must lot-scan surfaces then Put in Inventory before computer recovery"
+  },
+  "career_panel": {
+    "daily_task": "homework",
+    "life_stage": "teen",
+    "career_track": "high_school_student",
+    "note": "BI-006-adjacent career-performance budgeting — not scenario Get a career"
+  },
+  "lot_scan": {
+    "purpose": "When inventory omits homework, scan the current lot for the physical book before computer/phone recovery",
+    "surfaces": [
+      "dining_table",
+      "desk",
+      "counter",
+      "floor",
+      "bed",
+      "coffee_table",
+      "bookshelf"
+    ],
+    "object_tokens": [
+      "homework",
+      "school book",
+      "schoolwork",
+      "assignment"
+    ],
+    "put_in_inventory_labels": [
+      "put in inventory",
+      "put away",
+      "take"
+    ]
+  },
+  "recovery_ladder": {
+    "when": ["inventory_has_homework", false],
+    "order": [
+      {
+        "id": "LOT_SCAN_PUT_HOMEWORK_IN_INVENTORY",
+        "labels": ["homework", "put in inventory", "lot scan"],
+        "steps": [
+          "SCAN_LOT_SURFACES",
+          "CLICK_HOMEWORK_BOOK",
+          "PIE_PUT_IN_INVENTORY"
+        ],
+        "when_homework_on_lot": ["true", "unknown"],
+        "confidence": "HOST_HEURISTIC"
+      },
+      {
+        "id": "COMPUTER_SCHOOL_DO_HOMEWORK",
+        "labels": ["do homework", "school", "computer"],
+        "steps": [
+          "CLICK_COMPUTER",
+          "PIE_SCHOOL",
+          "PIE_DO_HOMEWORK"
+        ],
+        "confidence": "HOST_HEURISTIC"
+      },
+      {
+        "id": "COMPUTER_PURCHASE_SCHOOL_BOOKS",
+        "labels": ["purchase school books", "school", "computer"],
+        "steps": [
+          "CLICK_COMPUTER",
+          "PIE_SCHOOL",
+          "PIE_PURCHASE_SCHOOL_BOOKS"
+        ],
+        "confidence": "HOST_HEURISTIC"
+      },
+      {
+        "id": "PHONE_SCHOOL_ASK_HOMEWORK",
+        "labels": ["ask about homework", "school", "phone"],
+        "steps": [
+          "CLICK_PHONE",
+          "PIE_SCHOOL",
+          "PIE_ASK_ABOUT_HOMEWORK"
+        ],
+        "confidence": "HOST_HEURISTIC"
+      },
+      {
+        "id": "DESK_WORK_ON_HOMEWORK",
+        "labels": ["work on homework", "desk"],
+        "steps": [
+          "CLICK_HOMEWORK_DESK",
+          "PIE_WORK_ON_HOMEWORK"
+        ],
+        "requires_book_present": true,
+        "confidence": "HOST_HEURISTIC"
+      }
+    ]
+  },
+  "queue_homework": {
+    "inventory_present": [
+      {
+        "id": "DO_HOMEWORK",
+        "labels": ["do homework", "homework"],
+        "steps": ["CLICK_INVENTORY_HOMEWORK", "PIE_DO_HOMEWORK"],
+        "confidence": "HOST_HEURISTIC"
+      },
+      {
+        "id": "WORK_ON_HOMEWORK",
+        "labels": ["work on homework", "desk", "homework"],
+        "steps": ["CLICK_HOMEWORK_DESK", "PIE_WORK_ON_HOMEWORK"],
+        "confidence": "HOST_HEURISTIC"
+      }
+    ]
+  },
+  "call_stack": {
+    "order": [
+      "PLAYER_FIRST_OR_BUSY",
+      "SURVIVAL_BEFORE_HOMEWORK",
+      "HOMEWORK_PREMISES_BLOCKED",
+      "HOMEWORK_AFTER_NEEDS_QUEUE",
+      "HOMEWORK_INVENTORY_MISSING",
+      "QUEUE_TEEN_HOMEWORK",
+      "LEISURE_OR_IDLE"
+    ],
+    "gates": {
+      "PLAYER_FIRST_OR_BUSY": {
+        "when": ["player_directed", "already_busy"],
+        "action": "YIELD_OR_EMULATE_ONLY"
+      },
+      "SURVIVAL_BEFORE_HOMEWORK": {
+        "needs": ["hunger", "bladder", "energy"],
+        "threshold": 0.35,
+        "action": "RECOVER_SURVIVAL_BEFORE_HOMEWORK",
+        "outranks": ["QUEUE_TEEN_HOMEWORK", "HOMEWORK_INVENTORY_MISSING"]
+      },
+      "HOMEWORK_PREMISES_BLOCKED": {
+        "when": ["homework_pending", "school_day_active_or_school_lot"],
+        "action": "DEFER_HOMEWORK_UNTIL_HOME",
+        "forbidden": ["DO_HOMEWORK_ON_SCHOOL_PREMISES"]
+      },
+      "HOMEWORK_AFTER_NEEDS_QUEUE": {
+        "when": ["homework_pending", "location_home", "needs_queue_active", "survival_ok"],
+        "action": "FINISH_NEEDS_QUEUE_BEFORE_HOMEWORK"
+      },
+      "HOMEWORK_INVENTORY_MISSING": {
+        "when": ["homework_pending", "location_home", "inventory_has_homework_false", "survival_ok"],
+        "action": "RECOVER_HOMEWORK_VIA_LADDER",
+        "ladder": "recovery_ladder"
+      },
+      "QUEUE_TEEN_HOMEWORK": {
+        "when": ["homework_pending", "location_home", "inventory_has_homework_true", "survival_ok"],
+        "action": "QUEUE_TEEN_HOMEWORK_ACTIONS"
+      },
+      "LEISURE_OR_IDLE": {
+        "action": "ALLOW_HOME_LEISURE"
+      }
+    }
+  },
+  "call_stack_gates": [
+    "SURVIVAL_BEFORE_HOMEWORK",
+    "HOMEWORK_PREMISES_BLOCKED",
+    "HOMEWORK_INVENTORY_MISSING",
+    "QUEUE_TEEN_HOMEWORK",
+    "HOMEWORK_AFTER_NEEDS_QUEUE"
+  ],
+  "host_rules": [
+    "survival outranks homework",
+    "school premises blocked",
+    "missing inventory does not skip career daily task",
+    "inventory false still requires lot scan before assuming book absent",
+    "put found lot homework in inventory then queue do-homework",
+    "never invent inventory or lot contents",
+    "does not close BI-002 or BI-006"
+  ],
+  "forbidden": [
+    "motherlode",
+    "skip_survival_for_homework",
+    "claim_BI006_closure",
+    "vision_invent_inventory",
+    "skip_lot_scan_when_inventory_empty"
+  ]
+}

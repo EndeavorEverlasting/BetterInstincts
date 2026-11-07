@@ -26,6 +26,11 @@ from betterinstincts.moodlets import MoodletError, evaluate_moodlets
 from betterinstincts.scenario_goals import evaluate_scenario_turn
 from betterinstincts.school_day import SchoolDayError, evaluate_school_day_turn
 from betterinstincts.sim_profile import SkillInput, SimProfileError, evaluate_sim_profile
+from betterinstincts.teen_homework import (
+    TeenHomeworkError,
+    evaluate_teen_homework_turn,
+    should_attach_teen_homework,
+)
 from betterinstincts.viewport import ViewportError, predict_risk
 
 
@@ -56,6 +61,8 @@ def evaluate_turn(
     outdoor_social_prefix: bool = False,
     indoor_capacity_observed: bool = False,
     homework_pending: bool = False,
+    inventory_has_homework: Optional[bool] = None,
+    homework_on_lot: Optional[bool] = None,
     school_day_active: bool = False,
     school_goals_incomplete: Sequence[str] = (),
     school_phase: Optional[str] = None,
@@ -99,6 +106,9 @@ def evaluate_turn(
     Optional school_day_active / school_goals_incomplete attach High School Years
     top-left goal planning (docs/SCHOOL_DAY.md); homework on premises fails closed.
 
+    Optional homework_pending + teen life_stage / inventory_has_homework attach teen
+    career-panel homework budgeting (docs/TEEN_HOMEWORK.md); not BI-006 certification.
+
     Optional scenario_active / scenario_goals_incomplete attach scenario scoring HUD
     planning (docs/SCENARIO_GOALS.md); career stays horizon-deferred without proof.
 
@@ -127,6 +137,7 @@ def evaluate_turn(
         behavior = None
         event_balance = None
         school_day = None
+        teen_homework = None
         scenario = None
         moodlet_eval = evaluate_moodlets(
             emotion=emotion,
@@ -167,8 +178,31 @@ def evaluate_turn(
                 location_kind=location_kind,
                 capture_ref=capture_ref,
             )
+        if should_attach_teen_homework(
+            homework_pending=homework_pending,
+            inventory_has_homework=inventory_has_homework,
+            life_stage=life_stage,
+        ):
+            teen_homework = evaluate_teen_homework_turn(
+                needs,
+                location_kind=location_kind,
+                school_day_active=school_day_active,
+                homework_pending=homework_pending,
+                inventory_has_homework=inventory_has_homework,
+                homework_on_lot=homework_on_lot,
+                available_objects=tuple(available_objects or ()),
+                queue=tuple(queue or ()),
+                player_directed=player_directed,
+                already_busy=already_busy,
+                life_stage=life_stage or "teen",
+                capture_ref=capture_ref,
+            )
         if school_day_active or school_goals_incomplete or (
             homework_pending and location_kind == "school"
+        ) or (
+            homework_pending
+            and location_kind == "home"
+            and not (teen_homework and teen_homework.get("owns_home_homework"))
         ):
             school_day = evaluate_school_day_turn(
                 needs,
@@ -228,6 +262,7 @@ def evaluate_turn(
         MoodletError,
         SimProfileError,
         BuildOptimizeError,
+        TeenHomeworkError,
     ) as exc:
         raise HostStackError(str(exc)) from exc
 
@@ -345,6 +380,63 @@ def evaluate_turn(
             "contract": "contracts/school-day.v1.json",
             "forbidden": ["HOMEWORK_ON_SCHOOL_PREMISES", "RESUME"],
             "resume_when": ["after_school_at_home", "school_day_ended"],
+        }
+    elif teen_homework is not None and teen_homework["gate"] == "SURVIVAL_BEFORE_HOMEWORK":
+        next_gate = "SURVIVAL_BEFORE_HOMEWORK"
+        fallback = {
+            "mechanism": teen_homework["action"],
+            "owner": "betterinstincts/teen_homework.py",
+            "contract": "contracts/teen-homework.v1.json",
+            "survival_critical": teen_homework["survival_critical"],
+            "forbidden": [
+                "SKIP_SURVIVAL_FOR_HOMEWORK",
+                "QUEUE_HOMEWORK_WHILE_STARVING",
+                "RESUME",
+            ],
+        }
+    elif teen_homework is not None and teen_homework["gate"] == "HOMEWORK_PREMISES_BLOCKED":
+        next_gate = "HOMEWORK_PREMISES_BLOCKED"
+        fallback = {
+            "mechanism": teen_homework["action"],
+            "owner": "betterinstincts/teen_homework.py",
+            "contract": "contracts/teen-homework.v1.json",
+            "forbidden": ["HOMEWORK_ON_SCHOOL_PREMISES", "RESUME"],
+            "resume_when": ["after_school_at_home", "school_day_ended"],
+        }
+    elif teen_homework is not None and teen_homework["gate"] == "HOMEWORK_AFTER_NEEDS_QUEUE":
+        next_gate = "HOMEWORK_AFTER_NEEDS_QUEUE"
+        fallback = {
+            "mechanism": teen_homework["action"],
+            "owner": "betterinstincts/teen_homework.py",
+            "contract": "contracts/teen-homework.v1.json",
+            "forbidden": ["SKIP_NEEDS_QUEUE_FOR_HOMEWORK", "RESUME"],
+        }
+    elif teen_homework is not None and teen_homework["gate"] == "HOMEWORK_INVENTORY_MISSING":
+        next_gate = "HOMEWORK_INVENTORY_MISSING"
+        fallback = {
+            "mechanism": teen_homework["action"],
+            "owner": "betterinstincts/teen_homework.py",
+            "contract": "contracts/teen-homework.v1.json",
+            "next_actions": teen_homework.get("next_actions") or [],
+            "primary_route": teen_homework.get("primary_route"),
+            "preferred_routes": teen_homework.get("preferred_routes") or [],
+            "forbidden": [
+                "VISION_INVENT_INVENTORY",
+                "SKIP_TEEN_HOMEWORK_TASK",
+                "MOTHERLODE",
+                "RESUME",
+            ],
+        }
+    elif teen_homework is not None and teen_homework["gate"] == "QUEUE_TEEN_HOMEWORK":
+        next_gate = "QUEUE_TEEN_HOMEWORK"
+        fallback = {
+            "mechanism": teen_homework["action"],
+            "owner": "betterinstincts/teen_homework.py",
+            "contract": "contracts/teen-homework.v1.json",
+            "next_actions": teen_homework.get("next_actions") or [],
+            "primary_route": teen_homework.get("primary_route"),
+            "preferred_routes": teen_homework.get("preferred_routes") or [],
+            "forbidden": ["CLAIM_BI006_CLOSURE", "RESUME"],
         }
     elif scenario is not None and scenario["gate"] == "SCENARIO_GOAL_PROGRESS":
         next_gate = "SCENARIO_GOAL_PROGRESS"
@@ -479,6 +571,7 @@ def evaluate_turn(
         "moodlets": moodlet_eval,
         "sim_profile": sim_profile,
         "school_day": school_day,
+        "teen_homework": teen_homework,
         "scenario": scenario,
         "event_balance": event_balance,
         "build_optimize": build_optimize,
