@@ -91,6 +91,98 @@ def _interaction_matches(label: str, interaction: dict) -> bool:
     return False
 
 
+def _normalize_goal_ids(incomplete_goals, cfg):
+    findings = []
+    normalized = []
+    unknown = []
+    for raw in incomplete_goals:
+        gid = resolve_goal_id(raw, cfg)
+        if gid is None:
+            unknown.append(str(raw))
+            findings.append("UNKNOWN_GOAL_LABEL")
+            continue
+        if gid not in normalized:
+            normalized.append(gid)
+    return normalized, unknown, findings
+
+
+def _order_goals(normalized, priority, *, defer_career):
+    ordered = [g for g in priority if g in normalized]
+    ordered.extend(g for g in normalized if g not in ordered)
+    if defer_career and "get_career" in ordered:
+        ordered = [g for g in ordered if g != "get_career"] + ["get_career"]
+    return ordered
+
+
+def _match_queue(queue, ordered, cfg):
+    hits = {g: [] for g in ordered}
+    for item in queue:
+        label = str(item)
+        for gid in ordered:
+            for interaction in cfg["goals"][gid].get("satisfying_interactions", []):
+                if _interaction_matches(label, interaction):
+                    if label not in hits[gid]:
+                        hits[gid].append(label)
+                    break
+    return hits
+
+
+def _build_goal_plans(ordered, cfg, queue_hits, *, defer_career):
+    plans = []
+    for gid in ordered:
+        row = cfg["goals"][gid]
+        if gid == "get_career" and defer_career:
+            plans.append(
+                {
+                    "goal_id": gid,
+                    "display_hint": row.get("display_hint"),
+                    "horizon_deferred": True,
+                    "satisfying_interactions": [],
+                    "queue_matches": [],
+                    "in_progress": False,
+                    "deferred": True,
+                }
+            )
+            continue
+        interactions = [
+            {
+                "id": inter["id"],
+                "labels": list(inter.get("labels", [])),
+                "steps": list(inter.get("steps", [])),
+                "confidence": inter.get("confidence", "HOST_HEURISTIC"),
+            }
+            for inter in row.get("satisfying_interactions", [])
+        ]
+        plans.append(
+            {
+                "goal_id": gid,
+                "display_hint": row.get("display_hint"),
+                "target_kind": row.get("target_kind"),
+                "preferred_targets": list(row.get("preferred_targets", [])),
+                "satisfying_interactions": interactions,
+                "non_satisfying": list(row.get("non_satisfying", [])),
+                "host_note": row.get("host_note"),
+                "queue_matches": list(queue_hits.get(gid, [])),
+                "in_progress": bool(queue_hits.get(gid)),
+                "horizon_deferred": bool(row.get("horizon_deferred", False)),
+            }
+        )
+    return plans
+
+
+def _pick_next(plans):
+    for plan in plans:
+        if plan.get("deferred") or plan["in_progress"] or not plan["satisfying_interactions"]:
+            continue
+        return plan["goal_id"], list(plan["satisfying_interactions"])
+    for plan in plans:
+        if plan.get("deferred") or not plan["satisfying_interactions"]:
+            continue
+        return plan["goal_id"], list(plan["satisfying_interactions"])
+    return None, []
+
+
+
 def plan_scenario_goals(
     incomplete_goals: Sequence[str],
     *,
@@ -110,112 +202,24 @@ def plan_scenario_goals(
         needs_game_certified=needs_game_certified,
         income_game_observed=income_game_observed,
     )
-    findings: list[str] = []
-    normalized: list[str] = []
-    unknown: list[str] = []
-    for raw in incomplete_goals:
-        gid = resolve_goal_id(raw, cfg)
-        if gid is None:
-            unknown.append(str(raw))
-            findings.append("UNKNOWN_GOAL_LABEL")
-            continue
-        if gid not in normalized:
-            normalized.append(gid)
+    normalized, unknown, findings = _normalize_goal_ids(incomplete_goals, cfg)
 
     if defer_career and "get_career" in normalized:
         findings.append("CAREER_HORIZON_DEFERRED")
     if "motherlode_for_scenario" in (profile.get("forbidden") or []):
         findings.append("MOTHERLODE_FORBIDDEN_FOR_SCENARIO")
 
-    ordered = [g for g in priority if g in normalized]
-    ordered.extend(g for g in normalized if g not in ordered)
-    if defer_career:
-        ordered = [g for g in ordered if g != "get_career"] + (
-            ["get_career"] if "get_career" in normalized else []
-        )
-
-    queue_hits: dict[str, list[str]] = {g: [] for g in ordered}
-    for item in queue:
-        label = str(item)
-        for gid in ordered:
-            for interaction in cfg["goals"][gid].get("satisfying_interactions", []):
-                if _interaction_matches(label, interaction):
-                    if label not in queue_hits[gid]:
-                        queue_hits[gid].append(label)
-                    break
-
+    ordered = _order_goals(normalized, priority, defer_career=defer_career)
+    queue_hits = _match_queue(queue, ordered, cfg)
     covered = sorted(g for g, labels in queue_hits.items() if labels)
     uncovered = [g for g in ordered if g not in covered]
     if ordered and queue and not covered:
         findings.append("QUEUE_DOES_NOT_SATISFY_SCENARIO_GOALS")
 
-    plans = []
-    for gid in ordered:
-        row = cfg["goals"][gid]
-        if gid == "get_career" and defer_career:
-            plans.append(
-                {
-                    "goal_id": gid,
-                    "display_hint": row.get("display_hint"),
-                    "horizon_deferred": True,
-                    "satisfying_interactions": [],
-                    "queue_matches": [],
-                    "in_progress": False,
-                    "deferred": True,
-                }
-            )
-            continue
-        interactions = []
-        for inter in row.get("satisfying_interactions", []):
-            interactions.append(
-                {
-                    "id": inter["id"],
-                    "labels": list(inter.get("labels", [])),
-                    "steps": list(inter.get("steps", [])),
-                    "confidence": inter.get("confidence", "HOST_HEURISTIC"),
-                }
-            )
-        plans.append(
-            {
-                "goal_id": gid,
-                "display_hint": row.get("display_hint"),
-                "target_kind": row.get("target_kind"),
-                "preferred_targets": list(row.get("preferred_targets", [])),
-                "satisfying_interactions": interactions,
-                "non_satisfying": list(row.get("non_satisfying", [])),
-                "host_note": row.get("host_note"),
-                "queue_matches": list(queue_hits.get(gid, [])),
-                "in_progress": bool(queue_hits.get(gid)),
-                "horizon_deferred": bool(row.get("horizon_deferred", False)),
-            }
-        )
-
-    next_goal = None
-    next_actions: list[dict] = []
-    for plan in plans:
-        if plan.get("deferred"):
-            continue
-        if plan["in_progress"]:
-            continue
-        if not plan["satisfying_interactions"]:
-            continue
-        next_goal = plan["goal_id"]
-        next_actions = list(plan["satisfying_interactions"])
-        break
-    if next_goal is None and plans:
-        for plan in plans:
-            if plan.get("deferred") or not plan["satisfying_interactions"]:
-                continue
-            next_goal = plan["goal_id"]
-            next_actions = list(plan["satisfying_interactions"])
-            break
-
-    primary_route = None
-    preferred_routes: list[str] = []
-    if next_actions:
-        primary_route = str(next_actions[0]["id"])
-        preferred_routes = [str(a["id"]) for a in next_actions]
-
+    plans = _build_goal_plans(ordered, cfg, queue_hits, defer_career=defer_career)
+    next_goal, next_actions = _pick_next(plans)
+    primary_route = str(next_actions[0]["id"]) if next_actions else None
+    preferred_routes = [str(a["id"]) for a in next_actions]
     career_only = normalized == ["get_career"]
 
     return {
