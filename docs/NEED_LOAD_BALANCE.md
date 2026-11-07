@@ -1,9 +1,9 @@
 # Need-service load balance — P95 program design
 
-**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect  
-**Provenance:** `spec-architecture-prompts.v1.json` blob `5926a198a14567de55110ed19e922fc444b4dec7`  
-**Machine owner:** [`contracts/need-load-balance.v1.json`](../contracts/need-load-balance.v1.json)  
-**Evaluator:** `betterinstincts.need_load_balance` / composed by `need_services`  
+**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
+**Provenance:** `spec-architecture-prompts.v1.json` blob `5926a198a14567de55110ed19e922fc444b4dec7`
+**Machine owner:** [`contracts/need-load-balance.v1.json`](../contracts/need-load-balance.v1.json)
+**Evaluator:** `betterinstincts.need_load_balance` / composed by `need_services`
 **Parent tandem:** [`NEED_SERVICES.md`](NEED_SERVICES.md)
 
 ## Design brief
