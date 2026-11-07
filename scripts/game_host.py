@@ -168,7 +168,10 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
             raise GateError("SAVE_SELECTION_PROTECTED:" + str(exc)) from exc
     # Durable menu blockers (Memory Boost, etc.) before Load/New template clicks.
     # Prefer scripts.host_menu reboot journey for full Load→LabLab Play after reboot.
-    if cfg.get("dismiss_menu_blockers", True) is not False:
+    # Skip SendInput dismiss when a FakeGui is injected (CI) or when not on Windows —
+    # otherwise Linux FakeGui navigate raises MENU_BLOCKER_DISMISS_FAILED:LOCAL_WINDOWS.
+    if (cfg.get("dismiss_menu_blockers", True) is not False
+            and gui is None and sys.platform == "win32"):
         try:
             from scripts.menu_blockers import dismiss as dismiss_menu_blockers
             pid = None
