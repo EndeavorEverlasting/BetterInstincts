@@ -64,6 +64,10 @@ jobs:
         run: python -m unittest tests.test_navigating_needs -v
       - name: Moodlet strip host sensing
         run: python -m unittest tests.test_moodlets -v
+      - name: Semantic orchestration offline and consultation tests
+        run: python -m unittest tests.test_semantic_advisory tests.test_ontology_gate -v
+      - name: Local agent semantic preflight canary (no game access)
+        run: python -m scripts.semantic_preflight --consultation contracts/consultations/BI-SEMANTIC-ORCHESTRATION-20261107.v1.json --operation repo_mutation --file betterinstincts/semantic_advisory.py
       - name: Doctrine fails closed
         run: python scripts/validate_doctrine.py
       - name: Ontology schema and canonical owner integrity
