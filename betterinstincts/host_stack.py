@@ -49,6 +49,7 @@ def evaluate_turn(
     queue: Optional[Sequence[str]] = None,
     event_active: bool = False,
     event_goals_incomplete: Sequence[str] = (),
+    event_profile: str = "lounge_party",
     outdoor_social_prefix: bool = False,
     indoor_capacity_observed: bool = False,
     homework_pending: bool = False,
@@ -130,6 +131,8 @@ def evaluate_turn(
                 viewport_ok=bool(viewport_ok),
                 emotion=emotion,
                 moodlets=moodlets,
+                queue=tuple(queue or ()),
+                event_profile=event_profile,
                 capture_ref=capture_ref,
             )
     except (
@@ -247,11 +250,24 @@ def evaluate_turn(
         "EVENT_FUN_VIA_GOALS",
     }:
         next_gate = event_balance["gate"]
+        goal_plan = event_balance.get("goal_plan") or {}
         fallback = {
             "mechanism": event_balance["action"],
-            "owner": "betterinstincts/event_balance.py",
+            "owner": "betterinstincts/event_goals.py",
+            "contract": "contracts/event-goals.v1.json",
             "goals_incomplete": event_balance["goals_incomplete"],
-            "forbidden": ["LEAVE_EVENT_FOR_TV_OR_PHONE_FLUFF", "HOMEWORK_DURING_TIMER"],
+            "next_goal": goal_plan.get("next_goal"),
+            "next_actions": goal_plan.get("next_actions") or [],
+            "primary_route": goal_plan.get("primary_route") or event_balance.get("primary_route"),
+            "preferred_routes": event_balance.get("preferred_routes")
+            or goal_plan.get("preferred_routes")
+            or [],
+            "forbidden": [
+                "LEAVE_EVENT_FOR_TV_OR_PHONE_FLUFF",
+                "HOMEWORK_DURING_TIMER",
+                "SPAM_OUTDOOR_GREET_HOPING_GOALS_TICK",
+                "GENERIC_CHAT_WHEN_SPECIFIC_GOAL_REQUIRED",
+            ],
         }
     elif event_balance is not None and event_balance["gate"] == "HOMEWORK_HOLD_OR_SCHEDULE":
         next_gate = "HOMEWORK_HOLD_OR_SCHEDULE"

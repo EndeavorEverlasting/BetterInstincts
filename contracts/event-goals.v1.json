@@ -1,0 +1,205 @@
+{
+  "schema": "betterinstincts.event-goals/v1",
+  "version": 1,
+  "authority": "docs/EVENT_GOALS.md",
+  "proof_ceiling": "HOST_GOAL_ACTION_CATALOG_NOT_EA_TUNING_API",
+  "design_brief": {
+    "subject": "Social event HUD goals → concrete Sims interactions",
+    "audience": "local host agent + operator mid-event",
+    "job": "Remove operator guesswork about which pie-menu actions satisfy incomplete event goals; emit indoor-preferred host action plans",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose before chrome"},
+      {"id": "UP-A85AD9DC3", "mechanism": "journey / call-stack storytelling"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ],
+    "forbidden_chrome": "No event-goal dashboard UI; contracts + evaluators only"
+  },
+  "local_observed": {
+    "date": "2026-11-07",
+    "patch": "1.121.361.1020",
+    "household": "LabLab",
+    "scene": "hosted_lounge_party_rain",
+    "observation": "Operator found it difficult to discover which interactions actually progress lounge-party event goals while socials defaulted outdoors; incomplete goals lagged behind timer",
+    "capture_ref": "operator:event-outdoor-social-20261107"
+  },
+  "default_profile": "lounge_party",
+  "profiles": {
+    "lounge_party": {
+      "aliases": ["house_party", "hosted_party", "social_event", "lounge"],
+      "goal_priority": [
+        "drink",
+        "be_silly",
+        "tell_jokes",
+        "friendly_socialize",
+        "talk_about_food"
+      ],
+      "indoor_required": true,
+      "note": "Timer-bound social event; prefer venue objects + indoor Sim socials over outdoor greet spam"
+    }
+  },
+  "goals": {
+    "drink": {
+      "hud_aliases": ["drink", "get_a_drink", "have_a_drink", "grab_a_drink", "order_a_drink"],
+      "display_hint": "Get / Have a Drink",
+      "satisfies_needs": ["fun", "social"],
+      "target_kind": "venue_drink_object",
+      "preferred_targets": ["bar", "bar_counter", "cooler", "beverage_tray", "drink_tray"],
+      "satisfying_interactions": [
+        {
+          "id": "ORDER_DRINK_FROM_BAR",
+          "labels": ["order drink", "get drink", "have a drink", "grab a drink", "make a drink"],
+          "steps": ["CLICK_INDOOR_BAR_OR_COOLER", "PIE_GET_OR_ORDER_DRINK"],
+          "indoor": true,
+          "confidence": "HOST_HEURISTIC"
+        },
+        {
+          "id": "DRINK_FROM_SERVING",
+          "labels": ["take drink", "pick up drink", "serve yourself"],
+          "steps": ["CLICK_INDOOR_DRINK_OBJECT", "PIE_TAKE_DRINK"],
+          "indoor": true,
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["outdoor_greet", "go_here", "chat_without_drink", "sit_and_chat_alone"],
+      "host_note": "Bar/cooler first; do not spam Friendly greet hoping drink ticks"
+    },
+    "be_silly": {
+      "hud_aliases": ["be_silly", "be silly", "act_silly", "silly"],
+      "display_hint": "Be Silly",
+      "satisfies_needs": ["fun", "social"],
+      "target_kind": "sim",
+      "preferred_targets": ["indoor_guest", "seated_indoor_sim"],
+      "satisfying_interactions": [
+        {
+          "id": "BE_SILLY_SOCIAL",
+          "labels": ["be silly", "act silly", "goof around", "funny"],
+          "steps": ["ENSURE_INDOOR_OR_SIT_AND_CHAT", "PIE_FRIENDLY_OR_FUNNY_BE_SILLY"],
+          "indoor": true,
+          "confidence": "HOST_HEURISTIC"
+        },
+        {
+          "id": "SILLY_DANCE",
+          "labels": ["dance silly", "do a silly dance", "boogie"],
+          "steps": ["CLICK_INDOOR_FLOOR_OR_STEREO", "PIE_DANCE_SILLY_IF_SHOWN"],
+          "indoor": true,
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["outdoor_umbrella_chat", "generic_greet", "mean_interactions"],
+      "host_note": "Use Funny/Friendly Be Silly indoors after Sit and Chat grounding when outdoor prefix observed"
+    },
+    "tell_jokes": {
+      "hud_aliases": ["tell_jokes", "tell_a_joke", "tell jokes", "joke", "jokes"],
+      "display_hint": "Tell Jokes / Tell a Joke",
+      "satisfies_needs": ["fun", "social"],
+      "target_kind": "sim",
+      "preferred_targets": ["indoor_guest", "seated_indoor_sim"],
+      "satisfying_interactions": [
+        {
+          "id": "TELL_A_JOKE",
+          "labels": ["tell a joke", "tell joke", "joke around", "share a joke"],
+          "steps": ["ENSURE_INDOOR_OR_SIT_AND_CHAT", "PIE_FUNNY_TELL_JOKE"],
+          "indoor": true,
+          "confidence": "HOST_HEURISTIC"
+        },
+        {
+          "id": "SHARE_FUNNY_STORY",
+          "labels": ["share a funny story", "funny story", "tell funny story"],
+          "steps": ["ENSURE_INDOOR_OR_SIT_AND_CHAT", "PIE_FUNNY_STORY"],
+          "indoor": true,
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["outdoor_greet", "mean_insult", "generic_chat_without_joke"],
+      "host_note": "Funny category → Tell a Joke; generic Chat does not reliably tick this goal"
+    },
+    "friendly_socialize": {
+      "hud_aliases": [
+        "friendly_socialize",
+        "friendly_greet_or_socialize",
+        "friendly_greet",
+        "socialize",
+        "get_to_know",
+        "friendly_introduction"
+      ],
+      "display_hint": "Friendly Greet / Socialize / Get to Know",
+      "satisfies_needs": ["social"],
+      "target_kind": "sim",
+      "preferred_targets": ["indoor_guest", "seated_indoor_sim"],
+      "satisfying_interactions": [
+        {
+          "id": "SIT_AND_CHAT_FRIENDLY",
+          "labels": ["sit and chat here", "sit and chat", "chat with"],
+          "steps": ["CLICK_INDOOR_SEAT", "PIE_SIT_AND_CHAT_HERE"],
+          "indoor": true,
+          "confidence": "LOCAL_OBSERVED_AFFORDANCE"
+        },
+        {
+          "id": "GET_TO_KNOW",
+          "labels": ["get to know", "friendly introduction", "ask about day"],
+          "steps": ["ENSURE_INDOOR_OR_SIT_AND_CHAT", "PIE_FRIENDLY_GET_TO_KNOW"],
+          "indoor": true,
+          "confidence": "HOST_HEURISTIC"
+        },
+        {
+          "id": "FRIENDLY_GREET_INDOOR",
+          "labels": ["friendly greet", "greet", "say hello"],
+          "steps": ["CLICK_INDOOR_SIM_ALREADY_INDOORS", "PIE_FRIENDLY_GREET"],
+          "indoor": true,
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["outdoor_sidewalk_greet", "go_here_that_re_routes_outdoor"],
+      "host_note": "Prefer Sit and Chat Here grounding; outdoor Friendly greet is anti-pattern for event balance"
+    },
+    "talk_about_food": {
+      "hud_aliases": [
+        "talk_about_food",
+        "talk about food",
+        "discuss_food",
+        "chat_about_food",
+        "food_talk"
+      ],
+      "display_hint": "Talk about Food",
+      "satisfies_needs": ["social", "fun"],
+      "target_kind": "sim",
+      "preferred_targets": ["indoor_guest", "seated_indoor_sim"],
+      "satisfying_interactions": [
+        {
+          "id": "TALK_ABOUT_FOOD",
+          "labels": ["talk about food", "discuss food", "ask about cuisine", "chat about food"],
+          "steps": ["ENSURE_INDOOR_OR_SIT_AND_CHAT", "PIE_FRIENDLY_TALK_ABOUT_FOOD"],
+          "indoor": true,
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["eat_without_talk", "outdoor_greet", "order_drink_alone"],
+      "host_note": "Friendly/Food conversation topic after indoor ground; eating alone does not tick"
+    }
+  },
+  "queue_match": {
+    "normalize": "lowercase; replace _ with space; strip punctuation",
+    "substring_match": true,
+    "note": "Queue labels are operator- or sensor-supplied; matching is heuristic, not EA API proof"
+  },
+  "anti_patterns": [
+    "SPAM_OUTDOOR_GREET_HOPING_GOALS_TICK",
+    "GENERIC_CHAT_WHEN_SPECIFIC_GOAL_REQUIRED",
+    "LEAVE_EVENT_FOR_NON_GOAL_FLUFF",
+    "UNKNOWN_GOAL_LABEL_WITHOUT_FAIL_CLOSED_NOTE"
+  ],
+  "open_items": [
+    {
+      "id": "GOAL_TICK_LIVE_CONFIRMATION",
+      "status": "OPEN",
+      "summary": "Confirm each satisfying_interaction actually increments the HUD goal counter on patch 1.121.361.1020; catalog remains HOST_HEURISTIC until LOCAL_OBSERVED per interaction",
+      "blocks_bi002": false
+    },
+    {
+      "id": "ADDITIONAL_EVENT_PROFILES",
+      "status": "OPEN",
+      "summary": "Wedding, date, birthday, and career-event goal sets not yet catalogued",
+      "blocks_bi002": false
+    }
+  ]
+}
