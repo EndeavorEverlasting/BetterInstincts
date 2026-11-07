@@ -196,6 +196,20 @@ class GameHostTests(unittest.TestCase):
             with self.assertRaisesRegex(host.GateError, "INVALID_PROCESS_ID"):
                 host.focus(process_id=0, restore=fake_restore)
 
+    def test_manual_cas_complete_unlocks_confirm_without_template_clicks(self):
+        self.launch_fake("new")
+        with self.assertRaisesRegex(host.GateError, "DISPOSABLE"):
+            host.manual_cas_complete("bi002-game-host", False)
+        receipt = host.manual_cas_complete("bi002-game-host", True)
+        self.assertEqual(receipt["state"], "NEW_GAME_CAS_REQUESTED")
+        self.assertEqual(receipt["drive_method"], "printwindow_sendinput")
+        self.assertIn("MANUAL_CAS_DRIVE", receipt["proof_ceiling"])
+        host.confirm("bi002-game-host", "capture:live-manual-001", "1.121.361.1020", True)
+        self.assertEqual(host.status("bi002-game-host")["state"],
+                         "LIVE_REPORTED_UNREVIEWED")
+        with self.assertRaisesRegex(host.GateError, "LAUNCH_DISPATCH_REQUIRED"):
+            host.manual_cas_complete("bi002-game-host", True)
+
 
 if __name__ == "__main__":
     unittest.main()

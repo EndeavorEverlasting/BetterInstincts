@@ -206,6 +206,31 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
                         proof_ceiling="UI_CLICK_DISPATCH_ONLY")
 
 
+def manual_cas_complete(run_id: str, disposable_confirmed: bool,
+                        drive_method: str = "printwindow_sendinput") -> dict:
+    """Record New-Game CAS completion when template navigate was skipped.
+
+    Use after a disposable household reaches Live Mode via PrintWindow/SendInput
+    (or operator handoff) without replaying pyautogui New Game clicks. Does not
+    click the game, touch saves, or grant certification.
+    """
+    if not disposable_confirmed:
+        raise GateError("DISPOSABLE_SAVE_CONFIRMATION_REQUIRED")
+    if not re.fullmatch(r"^[A-Za-z0-9][A-Za-z0-9_-]{1,47}$", drive_method):
+        raise GateError("INVALID_DRIVE_METHOD")
+    root, meta, rows = load(run_id)
+    if meta["mode"] != "new":
+        raise GateError("MANUAL_CAS_COMPLETE_REQUIRES_NEW_SAVE_MODE")
+    if rows[-1]["state"] != "LAUNCH_DISPATCHED":
+        raise GateError("LAUNCH_DISPATCH_REQUIRED")
+    return append_event(
+        root, "NEW_GAME_CAS_REQUESTED",
+        ui_steps=["manual_cas_drive"],
+        drive_method=drive_method,
+        proof_ceiling="MANUAL_CAS_DRIVE_NOT_TEMPLATE_CLICK_OR_LIVE_PROOF",
+    )
+
+
 def confirm(run_id: str, capture_ref: str, game_version: str | None,
             disposable_confirmed: bool) -> dict:
     if not disposable_confirmed:
@@ -367,6 +392,11 @@ def main(argv=None) -> int:
         if name == "navigate":
             p.add_argument("--disposable-confirmed", action="store_true")
             p.add_argument("--timeout", type=int, default=45)
+    p = sub.add_parser("manual-cas-complete")
+    p.add_argument("--run-id", required=True)
+    p.add_argument("--disposable-confirmed", action="store_true")
+    p.add_argument("--drive-method", default="printwindow_sendinput",
+                   help="How CAS/lot/Live Mode was driven outside template navigate")
     p = sub.add_parser("confirm")
     p.add_argument("--run-id", required=True)
     p.add_argument("--capture-ref", required=True)
@@ -391,6 +421,9 @@ def main(argv=None) -> int:
             else:
                 result = navigate(args.run_id, cfg, digest, args.execute,
                                   args.disposable_confirmed, args.timeout)
+        elif args.command == "manual-cas-complete":
+            result = manual_cas_complete(args.run_id, args.disposable_confirmed,
+                                         args.drive_method)
         elif args.command == "confirm":
             result = confirm(args.run_id, args.capture_ref, args.game_version,
                              args.disposable_confirmed)

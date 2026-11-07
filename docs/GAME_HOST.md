@@ -54,6 +54,31 @@ python -m scripts.game_baseline --run-id bi002-first-boot
 python -m scripts.live_cert status --run-id bi002-first-boot
 ~~~
 
+When New Game / CAS / lot placement was driven with PrintWindow + SendInput (or operator handoff) instead of template `navigate`, do **not** replay `navigate` against Live Mode. Record the CAS completion gate, then confirm:
+
+~~~powershell
+python -m scripts.cas_place_live
+python -m scripts.game_host manual-cas-complete --run-id bi002-quiz-boot --disposable-confirmed
+python -m scripts.game_host confirm --run-id bi002-quiz-boot --disposable-confirmed --game-version 1.121.361.1020 --capture-ref capture:live-lablab-001
+python -m scripts.game_baseline --run-id bi002-quiz-boot
+~~~
+
+`manual-cas-complete` only advances `LAUNCH_DISPATCHED` → `NEW_GAME_CAS_REQUESTED` for `save_mode=new`. Proof ceiling remains manual-drive / not template click / not Live certification. Prefer the **Sim Story quiz** CAS path over manual skill/trait picking when the quiz dialog is available (more reliable disposable fill); arbitrary skills remain fine for host-mechanics boots. On **SELECT A PLACE TO LIVE**, prefer a vacant green-outline empty lot (`cas_place_live` `lot_empty_willow` / `LOT_BARGAIN_BEND`) before a furnished starter; Streamlet-style vacant houses are a fallback only.
+
+### Relocate / HUD click notes (1920×1080 borderless, LOCAL_OBSERVED)
+
+- Top-right HUD icons sit near **y≈22** (not y≈40). Options `…` ≈ `(1898, 22)`. Live HUD **Manage Worlds pin** ≈ `(1558, 22)` (Gallery is ~`(1608, 22)` — do not confuse).
+- Options → **Manage Worlds** menu row ≈ `y=713`. Welcome Wagon can grey this out until cleared. **Save and Go to Manage Worlds** blue text ≈ `y=556` (question body is ~`y=492` — miss that).
+- Modal buttons (Save and Go / Exit Create A Sim / overwrite / etc.): click the **blue text row**, not the tall white panel body.
+- Permanent empty home: Manage Worlds → select home lot → expand lot actions → **Move Household** truck ≈ `(1692, 1000)` → select empty lot (**Bargain Bend** tip hover ≈ `(1400, 840)`, 30×20 §2,000) → BR confirm truck ≈ `(1840, 1017)` → moving modal check ≈ `(1240, 740)`. Travel/visit alone is not permanent home.
+- Phone **Household** (blue house + gear) ≈ `(275, 840)`; clicks near y=760 often open Social Bunny instead.
+- Manage Worlds bottom-right person button opens **Create-a-Sim** for empty lots—do not treat it as Play LabLab.
+- Lab overwrite: Save list → select **LabLab / My Saved Game 3** row → row **Save** pill (~`y=500`, above Delete) → confirm overwrite checkmark. Never confirm Delete; never touch Richardson slots.
+- Live **Needs** panel icon ≈ `(1822, 1062)` (red/orange glow when critical). Do not click ~`(1779,1045)` (hits Simology) or higher y into the lot (pie menu). Pause before panel clicks when the sim is selected.
+- Build Mode enter via Live HUD hammer ≈ `(1505, 22)`. Exit Build → Live via top-right **people** icon ≈ `(1585, 35)` (do not use Esc — opens Options MENU). Kitchen → fridge illustration → **Crisponix Budget Dee-Lux (Used)** §215; place inland (~`(1100, 250)`), not on sidewalk boundary.
+- School Join/Send Alone dialog (High School Years): modal ≈ `(776–1143, 436–622)`; **Send Alone** ≈ `(960, 600)` (bottom pill). Prefer Send Alone when needs are critical so the home lot stays under host control.
+- Six-need host planner (offline): `python -m scripts.instincts_plan --needs-json PATH`. Uses `betterinstincts/instincts_host.py` + `horizon.choose`. Recommends **Save As** `BI_CONT_*` only when all six needs are green; never DELETE/OVERWRITE/RESUME or touch user-named saves. `BI_TMP_` / `BI_CONT_` are naming hints only — registry + operator attestation still required (see [SCENE_INTELLIGENCE.md](SCENE_INTELLIGENCE.md)).
+
 Preflight does not launch anything. Launch requires explicit execute and only permits TS4_x64.exe or TS4.exe on Windows. It creates a non-overwriting repo-local dist/game-host/<run-id> manifest and JSONL receipts. GUI navigation requires execute plus disposable confirmation; each successful click leaves an event checkpoint, so a partial flow cannot be blindly repeated. If interrupted, inspect actual game UI and recover safely in a fresh session. Screenshot template matching fails closed if ambiguous or missing; no guessed coordinates or global scanning.
 
 ## Bounded one-shot object snapshot seam
@@ -89,7 +114,7 @@ The ordered live-game launch, hunger A/B test, snapshot-producer and maintainer 
 
 Real `TS4_x64` reached Create-a-Sim for game version `1.121.361.1020`, run `bi002-first-boot`, in [merged PR #13](https://github.com/EndeavorEverlasting/BetterInstincts/pull/13). The current-host process/PID are historical receipts, not a promise it remains running. After any unattended pause, inspect the window before continuing; NEVER replay the New Game click against an unknown screen.
 
-**Minimal operator step:** bring The Sims 4 to the foreground, select **No thanks!** to skip the story quiz, create an expendable adult Sim, choose a disposable household/empty lot and enter **Live Mode**. Do not Resume or load personal saves. Share `READY_LIVE` with the **local game-capable agent**, not as machine proof by itself. No computer-control overlay should be used during focus-sensitive CAS clicks.
+**Minimal operator step:** bring The Sims 4 to the foreground; prefer **Sim Story** (quiz) over manual skill picking for the disposable Sim fill; create an expendable adult Sim; choose a disposable empty lot and enter **Live Mode**. Do not Resume or load personal saves. Share `READY_LIVE` with the **local game-capable agent**, not as machine proof by itself. No computer-control overlay should be used during focus-sensitive CAS clicks.
 
 **Local agent immediately after Live Mode:** verify the actual game screen and disposable household, capture a private reference, run the `game_host confirm` command above using the observed exact patch, then run `python -m scripts.game_baseline --run-id bi002-first-boot`. This starts a repo-local **zero-trial** `live_cert` recorder with Studio build `NOT_OBSERVED`. It never claims ingestion, an observed hunger delta, or gameplay certification. Retries preserve existing trial rows; a mismatched session version fails closed. The first real hunger baseline still requires a locally measured observation for every numeric field, capture reference, and `python -m scripts.live_cert record --stage baseline --trial 1 ...` with actual measurements only. Record five repeatable vanilla trials, then independently investigate tuning before authoring or attesting a modified package.
 
