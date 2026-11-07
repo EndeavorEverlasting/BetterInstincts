@@ -68,4 +68,3 @@ Presence per tick: `PLAYER_PLAYING` | `HOST_MAY_AUTOMATE` | `UNKNOWN_PRESENCE` (
 
 ## Proof ceiling
 Offline matrix/listener/presence classification is **not** GAME_CERTIFIED. Live SendInput remains LOCAL_OBSERVED click dispatch until BI-002 hunger gates complete.
-
