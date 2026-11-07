@@ -1,0 +1,157 @@
+{
+  "schema": "betterinstincts.hidden-object-discovery/v1",
+  "version": 1,
+  "owner": "docs/HIDDEN_OBJECT_DISCOVERY.md",
+  "reuses": "contracts/curious-catalog.v1.json",
+  "proof_ceiling": "OFFLINE_ADVISORY_NOT_GAME_INPUT_NOT_ITEM_INVENTORY_NOT_BI002_CERT",
+  "host_execution": "NEVER_FROM_THIS_MODULE",
+  "requirements": {
+    "explicit_opt_in": true,
+    "exact_full_game_version": true,
+    "operator_attested_disposable_lab_save": true,
+    "two_distinct_scene_cue_sources": [
+      "visual",
+      "operator"
+    ],
+    "capture_quality": "CONTENT_PRESENT",
+    "viewport": "NORMAL",
+    "player_idle": true,
+    "host_control_lease": "HOST_EXCLUSIVE",
+    "game_paused": true,
+    "unknowns": "ABSTAIN"
+  },
+  "platform_console_chords": {
+    "windows": [
+      "CTRL",
+      "SHIFT",
+      "C"
+    ],
+    "mac": [
+      "CTRL",
+      "SHIFT",
+      "C"
+    ],
+    "playstation": [
+      "L1",
+      "R1",
+      "L2",
+      "R2"
+    ],
+    "xbox": [
+      "LB",
+      "RB",
+      "LT",
+      "RT"
+    ]
+  },
+  "ordered_console_lines": [
+    "testingcheats true",
+    "bb.showhiddenobjects"
+  ],
+  "optional_live_edit_line": "bb.showliveeditobjects",
+  "search_contract": {
+    "primary": "debug",
+    "choice": "SELECT_VISIBLE_DEBUG_SUGGESTION",
+    "requires_visible_catalog_and_fresh_capture": true,
+    "search_limit": 64,
+    "classes": {
+      "clutter": {
+        "examples": [
+          "toothbrush",
+          "dirty dishes",
+          "cups",
+          "decorative clutter"
+        ],
+        "search_hints": [
+          "debug",
+          "toothbrush",
+          "dish"
+        ]
+      },
+      "collectibles": {
+        "examples": [
+          "crystals",
+          "fossils",
+          "harvestables"
+        ],
+        "search_hints": [
+          "debug",
+          "crystal",
+          "fossil"
+        ]
+      },
+      "world": {
+        "examples": [
+          "cars",
+          "trees",
+          "streetlights",
+          "rocks"
+        ],
+        "search_hints": [
+          "debug",
+          "car",
+          "tree",
+          "streetlight"
+        ],
+        "recommends_live_edit": true
+      },
+      "landscape": {
+        "examples": [
+          "ponds",
+          "plants",
+          "terrain props"
+        ],
+        "search_hints": [
+          "debug",
+          "pond",
+          "plant"
+        ]
+      },
+      "lighting": {
+        "examples": [
+          "invisible lighting objects"
+        ],
+        "search_hints": [
+          "debug",
+          "light"
+        ]
+      },
+      "all": {
+        "examples": [
+          "hidden items across installed packs"
+        ],
+        "search_hints": [
+          "debug"
+        ]
+      }
+    }
+  },
+  "forbidden": [
+    "startup_autorun",
+    "SendInput",
+    "UI_click_without_independent_gate",
+    "unknown_or_personal_save",
+    "force_F1_or_mode",
+    "change_game_speed",
+    "bulk_place",
+    "modify_household_funds",
+    "assume_zero_price",
+    "assume_installed_pack",
+    "declare_every_item_visible",
+    "type_slash_joined_commands",
+    "type_buydebug_alias"
+  ],
+  "live_consent": "PLAYER_CONFIRMS_EACH_GAME_CHANGING_STEP",
+  "catalog_entry_proof": {
+    "requires": [
+      "capture_ref",
+      "operator_reviewed",
+      "result_visible"
+    ],
+    "free_only_if_observed_price_zero": true,
+    "availability_scope": "CURRENT_EXACT_BUILD_AND_INSTALLED_PACKS_ONLY"
+  },
+  "source_refs": [
+    "https://www.ea.com/games/the-sims/the-sims-4/faq/cheats"
+  ]
+}
