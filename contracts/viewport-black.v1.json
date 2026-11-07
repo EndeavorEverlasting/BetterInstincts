@@ -13,17 +13,24 @@
     "captures": [
       "dist/game-host/bi002-quiz-boot/printwindow-after-black.png",
       "dist/game-host/bi002-quiz-boot/printwindow-after-pan.png",
-      "dist/game-host/bi002-quiz-boot/operator-sneak-right-monitor.png"
+      "dist/game-host/bi002-quiz-boot/operator-sneak-right-monitor.png",
+      "dist/game-host/bi002-quiz-boot/save-exit-dialog.webp",
+      "dist/game-host/bi002-quiz-boot/save-exit-receipt.json"
     ],
     "process_state": "non_iconic_client_1920x1080_printwindow_near_uniform_black",
     "operator_sneak_2026_11_07": {
       "display": "Sims on secondary monitor; Cursor IDE on primary",
       "visual": "Near-total void with a thin white/blue lot-platform wireframe; platform translates as the mouse moves",
-      "interpretation": "Engine still interactive (terrain/lot hover alive). World textures/lighting/HUD not rendering. Not a frozen process. Consistent with Live/Build on empty Bargain Bend in a broken camera/lighting state after MW/CAS churn."
+      "interpretation": "Engine still interactive (terrain/lot hover alive). Early read treated this as Live void; later operator correction (C9) established the durable stuck surface was Build/Buy purchase catalog on a dark Copperdale lot."
+    },
+    "operator_correction_buy_menu_2026_11_07": {
+      "visual": "Build/Buy catalog (High School Items) + SAVE GAME? Save and Exit; post-save Buy chrome with dark night grass at COPPERDALE HIGH SCHOOL",
+      "interpretation": "Recovered stuck state was Buy/Build menu, not Live Mode. Host must distinguish catalog chrome from Live void before needs clicks or restart claims.",
+      "exit": "Save and Exit completed; TS4_x64 process count 0 afterward"
     }
   },
   "root_cause_analysis": {
-    "summary": "Black / void viewport after Manage Worlds / accidental empty-lot CAS abort / night empty-lot reload is a host-path failure mode, not a needs-policy failure. PrintWindow may read FULL_CLIENT_BLACK while a secondary-monitor desktop sneak still shows a mouse-tracking lot platform wireframe.",
+    "summary": "Black / void PrintWindow after Manage Worlds / accidental empty-lot CAS abort / night reload is a host-path failure mode, not a needs-policy failure. Operator-corrected leading case: stuck Build/Buy purchase catalog on a dark lot can look like Live void; secondary-monitor wireframe sneak remains a related interactive-engine signal.",
     "causal_chain": [
       {
         "id": "C1",
@@ -59,33 +66,49 @@
       {
         "id": "C8",
         "fact": "Sims window was on the secondary display while agent computer-use only observes the primary — primary screenshots cannot diagnose this state; PrintWindow HWND capture is mandatory."
+      },
+      {
+        "id": "C9",
+        "fact": "Operator correction 2026-11-07 11:46 local: the recoverable stuck state was Build/Buy purchase catalog (Copperdale High School High School Items tray), not Live Mode void. Save Game? dialog and post-save Buy chrome confirmed catalog UI while world stayed dark; Save and Exit then cleanly ended TS4_x64 pid 45380.",
+        "captures": [
+          "dist/game-host/bi002-quiz-boot/save-exit-dialog.webp",
+          "dist/game-host/bi002-quiz-boot/save-exit-receipt.json"
+        ],
+        "classification_hint": "BUILD_BUY_CATALOG_STUCK_DARK_WORLD"
       }
     ],
     "leading_hypotheses": [
       {
-        "id": "H1",
+        "id": "H5",
         "rank": 1,
-        "claim": "CAS abort on empty lot + Manage Worlds churn leaves Live/Build camera+world lighting in a void where only the lot platform hover wireframe remains interactive until Build↔Live reset or process restart.",
+        "claim": "PrintWindow near-black / wireframe after MW/CAS churn can be Build/Buy catalog stuck on a dark night lot (Buy chrome + dark world), misread as Live void until catalog/HUD cues are recognized; exit Live needs path and do not treat Buy as Live Mode.",
+        "supports": ["C9", "C5", "C6"],
+        "falsifier": "Reproduce identical PrintWindow black while Live HUD (needs/queue/portrait) is independently present and Buy catalog is absent."
+      },
+      {
+        "id": "H1",
+        "rank": 2,
+        "claim": "CAS abort on empty lot + Manage Worlds churn can also leave Live/Build camera+world lighting in a void where only the lot platform hover wireframe remains interactive until Build↔Live reset or process restart.",
         "supports": ["C3", "C4", "C6", "C7"],
         "falsifier": "Reproduce CAS abort then PrintWindow/desktop stay CONTENT_PRESENT without recovery."
       },
       {
         "id": "H4",
-        "rank": 2,
-        "claim": "Mouse-tracking lot platform in a black void means the session is NOT hung; host should run the camera/Build↔Live ladder before reboot, then AUTHORIZED_GAME_RESTART if still anomalous.",
-        "supports": ["C7"],
+        "rank": 3,
+        "claim": "Mouse-tracking lot platform in a black void means the session is NOT hung; host should identify Build/Buy vs Live, run the camera/Build↔Live ladder before reboot, then AUTHORIZED_GAME_RESTART if still anomalous.",
+        "supports": ["C7", "C9"],
         "falsifier": "Mouse moves but no platform motion and no recovery path ever restores CONTENT_PRESENT without restart."
       },
       {
         "id": "H2",
-        "rank": 3,
+        "rank": 4,
         "claim": "Night empty lot without lights yields VIEWPORT_BLACK_HUD_ALIVE (world dark, HUD lit) and is avoidable with lights or Build-mode camera.",
         "supports": ["C5"],
         "falsifier": "Night empty lot PrintWindow shows CONTENT_PRESENT in world region without lights."
       },
       {
         "id": "H3",
-        "rank": 4,
+        "rank": 5,
         "claim": "Desktop/computer-use capture overlays aggravate focus/render instability and miss secondary-monitor Sims; PrintWindow-only observation is required for host decisions.",
         "supports": ["C6", "C8"],
         "falsifier": "Repeated computer-use captures never correlate with iconic/black transitions on this patch."
@@ -94,7 +117,8 @@
     "not_claimed": [
       "Exact EA engine bug ID",
       "That every black screen requires reboot",
-      "That offline heuristics certify Live Mode"
+      "That offline heuristics certify Live Mode",
+      "That Save and Exit greened six needs or closed BI-002"
     ]
   },
   "avoidance": [
@@ -127,6 +151,11 @@
       "id": "A6",
       "rule": "If Sims is on a secondary monitor, never diagnose from primary desktop/computer-use captures; use PrintWindow on the TS4 HWND (and optional operator sneak of the game display).",
       "owner": "scripts/game_capture.py + scripts/viewport_recover.py"
+    },
+    {
+      "id": "A7",
+      "rule": "Before treating a dark PrintWindow as Live void, check for Build/Buy catalog cues (search/filter tray, High School Items, Select All, Build tools). If Buy/Build stuck: leave catalog or Save and Exit; do not run Live needs clicks.",
+      "owner": "contracts/viewport-black.v1.json + docs/GAME_HOST.md + host live lane"
     }
   ],
   "recovery_ladder": [
