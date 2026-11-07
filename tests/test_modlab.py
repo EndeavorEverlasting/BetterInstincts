@@ -9,6 +9,7 @@ import tempfile
 import unittest
 import zipfile
 
+from betterinstincts.dbpf import build_synthetic_package
 from betterinstincts.modlab import ModLabError, inspect_mods_root
 from scripts.modlab import main
 
@@ -37,11 +38,21 @@ class ModLabTests(unittest.TestCase):
         self.assertNotIn(str(self.mods.resolve()), json.dumps(result))
 
     def test_package_signature_is_metadata_not_validation(self):
-        (self.mods / "ok.package").write_bytes(b"DBPFdummy")
+        (self.mods / "ok.package").write_bytes(build_synthetic_package([(0xA, 0xB, 0xC)]))
         (self.mods / "bad.package").write_bytes(b"BAD!")
         found = {i["path"]: i for i in inspect_mods_root(self.mods)["items"]}
         self.assertEqual(found["ok.package"]["issues"], [])
+        self.assertEqual(found["ok.package"]["package_index"]["index_count"], 1)
+        self.assertEqual(found["ok.package"]["package_index"]["resources"][0]["type"], "0000000A")
         self.assertEqual(found["bad.package"]["issues"], ["INVALID_PACKAGE_MAGIC"])
+        self.assertIsNone(found["bad.package"]["package_index"])
+
+    def test_package_index_does_not_claim_resource_conflicts(self):
+        (self.mods / "one.package").write_bytes(build_synthetic_package([(0x1, 0x0, 0x10)]))
+        (self.mods / "two.package").write_bytes(build_synthetic_package([(0x1, 0x0, 0x10)]))
+        result = inspect_mods_root(self.mods)
+        self.assertIn("NOT_RESOURCE_CONFLICT", result["proof_ceiling"])
+        self.assertNotIn("resource_overlap", result)
 
     def test_script_archive_module_names_only(self):
         self.script("Tools/foo.ts4script", ["my_mod/__init__.pyc", "my_mod/skills.pyc", "README.txt"])
