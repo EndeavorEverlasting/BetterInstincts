@@ -50,3 +50,14 @@ python -m scripts.progression_eval --repo-only
 The control policy is offline-testable and fails closed on active/unknown human input. One-shot local inspection is `python -m scripts.control_handoff --session-id ID --process-id PID --idle-ms 8000 --confirm`; the named listener session must be explicitly activated. The execution adapter `scripts.needs_force run --execute` requires the session ID, exact PID and **one** `--step-id` plus scene and queue verification by the local game agent. No unattended watcher, no implicit focus takeover, no multi-click lease.
 
 The full live P08 proof still requires game-host observations of **player input interrupting host control**, idle passage allowing one verified control step, zero player queue interruptions and scene-safe recovery; tests/mocks alone do not demonstrate that. Other direct UI executors must adopt the same gate before claiming general interoperability. BI-002 hunger certification remains independent.
+
+## Reviewed human judgment learner — P97/P95/Trifecta
+
+```sh
+python -m unittest tests.test_judgment_learning tests.test_listener_learning -v
+python -m unittest discover -s tests -v
+python -m scripts.check_horizon
+python -m scripts.progression_eval --repo-only
+```
+
+These establish deterministic **offline** train/predict/prequential, active-player and unknown-scene abstention, patch isolation, explicit consent, bounded input/paths, and advisory-only listener integration. `python -m scripts.judgment_learning --help` documents explicit local training/recommendation commands; raw reviewed examples and aggregate models stay in ignored repo `dist/judgment-learning`, never committed. CI green and high historical precision do **not** demonstrate real gameplay, causal improvement, valid real-world sensors, package compatibility or BI-002 certification. Real game proof and control collision checks belong to the local P08 + BI-002 path.

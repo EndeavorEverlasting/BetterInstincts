@@ -1,0 +1,71 @@
+{
+  "schema": "betterinstincts.judgment-learning/v1",
+  "version": 1,
+  "owner": "betterinstincts/judgment_learning.py",
+  "parent": "BI-002",
+  "horizon_order": [
+    "needs",
+    "income",
+    "skills",
+    "career"
+  ],
+  "mission": "Learn from explicit, operator-reviewed good and bad gameplay judgments without copying raw gameplay, then issue conservative context-specific action suggestions.",
+  "admission": {
+    "activation": "EXPLICIT_OPT_IN",
+    "training_sources": [
+      "human_reviewed_semantic_examples"
+    ],
+    "forbidden_sources": [
+      "silent_mouse_keyboard_logging",
+      "implicit_clicks",
+      "telemetry",
+      "unreviewed_agent_actions",
+      "private_saved_game"
+    ],
+    "max_examples_per_batch": 256,
+    "max_model_cells": 512,
+    "patch_profile": "EXACT_GAME_VERSION_AND_PLATFORM",
+    "raw_media": "NEVER_COMMITTED_OR_EMBEDDED"
+  },
+  "context": {
+    "fields": [
+      "scenario",
+      "need_state",
+      "scene",
+      "previous_action",
+      "style"
+    ],
+    "strategy": "contextually conditioned first-order Markov counts; previous_action explicitly models transition; style prevents one universal robotic policy",
+    "no_sim_identity": true
+  },
+  "thresholds": {
+    "min_support": 3,
+    "min_helpful": 3,
+    "min_helpful_rate": 0.75,
+    "ambiguous_best": "ABSTAIN"
+  },
+  "recommendation": {
+    "mode": "ADVISORY_ONLY",
+    "execute_clicks": false,
+    "requires": [
+      "exact_patch_platform",
+      "verified_scene",
+      "fresh_available_actions",
+      "no_player_override",
+      "no_active_human"
+    ],
+    "uncertainty": "ABSTAIN",
+    "live_permit": "NONE"
+  },
+  "evaluation": "chronological prequential: predict before training on current reviewed event; abstention coverage and issued-action precision separately; no CI-to-game promotion",
+  "storage": {
+    "root": "dist/judgment-learning",
+    "raw_observations": "EXPLICITLY_SUPPLIED_FILES_ONLY",
+    "model": "AGGREGATE_COUNTS_ONLY",
+    "network": false,
+    "auto_capture": false,
+    "auto_train": false
+  },
+  "proof_ceiling": "OFFLINE_REVIEWED_DEMONSTRATIONS_ONLY",
+  "next": "P08 local game certification, opt-in consent/sensor review, BI-002 5+5 hunger unchanged"
+}

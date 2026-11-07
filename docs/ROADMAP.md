@@ -25,3 +25,7 @@
 **Patch/version rule:** Exact version+platform+module, retain immutable certified profiles, no guessed fallback. New build -> new trial and profile, never silently replace old configuration. Parent rationale in [LEDGER.md](LEDGER.md).
 
 If game access is missing, preserve the blocked gate; continue safe conventional repo development and validators without reassigning local physical game proof to ChatGPT provider tools.
+
+## 2026-11-07 — Cross-Horizon learning without skipping needs
+
+Add an **opt-in, reviewed-demonstration learning spine** across the existing stages, not a new milestone that displaces BI-002. Train from explicitly assessed human judgments (good and bad) and context/previous-action sequences, preserve play-style diversity, abstain under low evidence, and never execute a recommendation directly. The implementation begins as a safe offline advisory complement to `host_listener`; live action remains under the independent player-presence and exact-scene/version gates. Review `docs/JUDGMENT_LEARNING.md` and the P04 successor handoff before local experiments. Product certification still requires hunger 5+5, reversible package, rollback and maintainer review.
