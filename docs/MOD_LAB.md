@@ -1,6 +1,6 @@
 # BetterInstincts Mod Lab — read-only bootstrap
 
-**Status:** Offline inventory and API reconnaissance. NOT a playable mod, installer, or game-certification tool.
+**Status:** Offline inventory and API reconnaissance. NOT a playable mod, installer, or game-certification tool. Sprint id **BI-MODLAB** (tooling); horizon **BI-004** remains recurring income.
 
 ## Start on Windows or Linux Mint
 

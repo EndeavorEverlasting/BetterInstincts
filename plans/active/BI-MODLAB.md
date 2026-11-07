@@ -1,6 +1,6 @@
-# BI-004 — custom Mod Lab bootstrap / API reconnaissance
+# BI-MODLAB — custom Mod Lab bootstrap / API reconnaissance
 
-**State:** Mod Lab inventory + P04 handoff merged; follow-on adds bounded DBPF TGI index reading on synthetic fixtures. **Purpose:** provide safe modlet, script, package-index and future skill-inspection capabilities while preserving the existing autonomy roadmap.
+**Identity:** tooling lane only. Horizon **BI-004** remains *recurring income* and must not be reused for Mod Lab. **State:** inventory + P04 handoff + bounded DBPF TGI index on main. **Purpose:** safe modlet, script, package-index and future skill-inspection without replacing the autonomy roadmap.
 
 ## Parent objective and continuity
 
@@ -14,14 +14,14 @@ BetterInstincts improves Sims 4 autonomy across all six adult needs, then sustai
 - HOST OPERATOR_OR_PHYSICAL_RUNTIME: player control, actual save/session decisions.
 - Owned: betterinstincts/modlab.py, betterinstincts/dbpf.py, scripts/modlab.py, tests/test_modlab.py, tests/test_dbpf.py, docs/MOD_LAB.md, this sprint and the final P04 handoff; additive README and ledger references.
 - Forbidden: modifying saves, scanning arbitrary user directories, EA assets, mod installation/toggling, binaries, script execution, background scans, changes to older certified profiles and third-party contents.
-- Repo preflight 2026-11-06: main 045e14011ebeefc75c399ab7aee01cb2df8e6e2f; zero open PRs. Refresh before new work.
+- Repo preflight: refresh `main` before new work; do not invent a second Mod Lab ID.
 
 ## Trifecta execution contract
 
-- P08 live runtime proof: game host and exact patch were not accessible in this chat; BLOCKED_LOCAL_GAME_ACCESS. Fixture CLI is not Sims gameplay.
+- P08 live runtime proof: game host and exact patch may be BLOCKED_LOCAL_GAME_ACCESS. Fixture CLI is not Sims gameplay.
 - P82 prototype/measure/refine: hypotheses — (1) central-directory inspection yields useful module leads without executing mods; (2) a bounded DBPF index reader yields TGI keys from synthetic packages without reading payloads. Falsifiers: absolute path leak, writes, archive/package payload execution/extraction, symlink traversal, budget bypass, treating overlaps or TGI lists as conflict/gameplay proof. Synthetic fixture checks measure these.
 - P07 integrate: source + tests + documentation; git branch/PR, regression CI, merge only proven safe slice.
-- P04 finalize after Trifecta: plans/active/BI-004.HANDOFF.md owns actual branch/PR/test status, runtime partition and one exact first local command.
+- P04 finalize after Trifecta: plans/active/BI-MODLAB.HANDOFF.md owns actual branch/PR/test status, runtime partition and one exact first local command.
 
 ## Acceptance
 
