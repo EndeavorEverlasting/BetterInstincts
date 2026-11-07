@@ -188,6 +188,9 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
         if found is None:
             raise GateError("UI_TARGET_TIMEOUT_" + step.upper())
         gui.click(gui.center(found))
+        # Durable per-click checkpoint: never replay a partly completed UI flow.
+        append_event(root, "UI_CLICK_DISPATCHED", ui_step=step,
+                     proof_ceiling="CLICK_DISPATCH_ONLY")
     state = ("NEW_GAME_CAS_REQUESTED" if cfg["save_mode"] == "new"
              else "CHOSEN_SAVE_PLAY_REQUESTED")
     return append_event(root, state, ui_steps=steps(cfg),
