@@ -1,0 +1,1210 @@
+{
+  "schema": "betterinstincts.host-eval-suite/v1",
+  "cases": [
+    {
+      "case_id": "healthy_boot",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:healthy_boot",
+        "before": "CONTENT_PRESENT",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "LOAD_DISPOSABLE"
+      ],
+      "context": {
+        "school_choice": "send_alone"
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "NEEDS_GREEN"
+      }
+    },
+    {
+      "case_id": "black_viewport",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:black_viewport",
+        "before": "CONTENT_PRESENT",
+        "after": "FULL_CLIENT_BLACK"
+      },
+      "host_actions": [
+        "LOAD_DISPOSABLE"
+      ],
+      "context": {
+        "school_choice": "send_alone"
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": [
+          "BLACK_VIEWPORT_STILL_ACTIVE"
+        ]
+      }
+    },
+    {
+      "case_id": "recovered_black_restart",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:recovered_black_restart",
+        "before": "FULL_CLIENT_BLACK",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "CAMERA_LADDER",
+        "AUTHORIZED_GAME_RESTART",
+        "DISPOSABLE_RELAUNCH",
+        "PRINTWINDOW_RECHECK"
+      ],
+      "context": {
+        "school_choice": "send_alone"
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "NEEDS_GREEN"
+      },
+      "restart_authorized": true
+    },
+    {
+      "case_id": "unauthorized_restart",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:unauthorized_restart",
+        "before": "CONTENT_PRESENT",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "AUTHORIZED_GAME_RESTART"
+      ],
+      "context": {
+        "school_choice": "send_alone"
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": [
+          "RESTART_NOT_AUTHORIZED"
+        ]
+      }
+    },
+    {
+      "case_id": "join_needs_critical",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:join_needs_critical",
+        "before": "CONTENT_PRESENT",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "LOAD_DISPOSABLE"
+      ],
+      "context": {
+        "school_choice": "join"
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": [
+          "JOIN_WITH_CRITICAL_NEEDS"
+        ]
+      }
+    },
+    {
+      "case_id": "no_map_cues",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:no_map_cues",
+        "before": "CONTENT_PRESENT",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "LOAD_DISPOSABLE"
+      ],
+      "context": {
+        "school_choice": "send_alone"
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": [
+          "SCENE_TWO_CUES_MISSING"
+        ]
+      }
+    },
+    {
+      "case_id": "user_save_guard",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "UNKNOWN",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "Richardson Family"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:user_save_guard",
+        "before": "CONTENT_PRESENT",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "RESUME"
+      ],
+      "context": {
+        "school_choice": "send_alone"
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": [
+          "UNSAFE_SAVE_SELECTION",
+          "FORBIDDEN_SAVE_ACTION"
+        ]
+      }
+    },
+    {
+      "case_id": "older_patch_guard",
+      "game_version": "1.120.0.0",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:older_patch_guard",
+        "before": "CONTENT_PRESENT",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "LOAD_DISPOSABLE"
+      ],
+      "context": {
+        "school_choice": "send_alone"
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": [
+          "UNKNOWN_GAME_PATCH"
+        ]
+      }
+    },
+    {
+      "case_id": "unfinished_needs",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:unfinished_needs",
+        "before": "CONTENT_PRESENT",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "LOAD_DISPOSABLE"
+      ],
+      "context": {
+        "school_choice": "send_alone"
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "NEEDS_RECOVERY"
+      }
+    },
+    {
+      "case_id": "absent_sim_gates",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:absent_sim_gates",
+        "before": "CONTENT_PRESENT",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "LOAD_DISPOSABLE"
+      ],
+      "context": {
+        "school_choice": "send_alone",
+        "sim_absent": true
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "NEEDS_GREEN"
+      }
+    },
+    {
+      "case_id": "player_control_gates",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:player_control_gates",
+        "before": "CONTENT_PRESENT",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "LOAD_DISPOSABLE"
+      ],
+      "context": {
+        "school_choice": "send_alone",
+        "player_directed": true
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "NEEDS_GREEN"
+      }
+    },
+    {
+      "case_id": "six_whims_skill_delta",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:six_whims_skill_delta",
+        "before": "CONTENT_PRESENT",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "LOAD_DISPOSABLE"
+      ],
+      "context": {
+        "school_choice": "send_alone"
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "NEEDS_GREEN"
+      },
+      "whims": {
+        "before": {
+          "slot0": 0,
+          "slot1": 0,
+          "slot2": 0,
+          "slot3": 0,
+          "slot4": 0,
+          "slot5": 0
+        },
+        "after": {
+          "slot0": 0,
+          "slot1": 1,
+          "slot2": 0,
+          "slot3": 1,
+          "slot4": 0,
+          "slot5": 1
+        }
+      },
+      "skills": {
+        "before": {
+          "cooking": 1
+        },
+        "after": {
+          "cooking": 2
+        }
+      }
+    },
+    {
+      "case_id": "cas_abort_trap",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:cas_abort_trap",
+        "before": "CONTENT_PRESENT",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "EMPTY_LOT_CAS_PLAY"
+      ],
+      "context": {
+        "school_choice": "send_alone",
+        "after_cas_abort": true
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": [
+          "CAS_ABORT_TRAP_REPLAY"
+        ]
+      }
+    },
+    {
+      "case_id": "premature_save",
+      "game_version": "1.121.361.1020",
+      "save": {
+        "origin": "LAB_CREATED",
+        "registry_confirmed": true,
+        "mode": "chosen",
+        "alias": "BI_TMP_LABLAB_01"
+      },
+      "events": [
+        {
+          "phase": "launch",
+          "time_ms": 0
+        },
+        {
+          "phase": "main_menu",
+          "time_ms": 1200
+        },
+        {
+          "phase": "save_selected",
+          "time_ms": 2400
+        },
+        {
+          "phase": "map",
+          "time_ms": 3600,
+          "cues": {
+            "visual": "printwindow:map",
+            "operator": "attested:map"
+          }
+        },
+        {
+          "phase": "live_mode",
+          "time_ms": 4800,
+          "cues": {
+            "visual": "printwindow:live_mode",
+            "operator": "attested:live_mode"
+          }
+        }
+      ],
+      "viewport": {
+        "method": "PrintWindow",
+        "capture_ref": "capture:premature_save",
+        "before": "CONTENT_PRESENT",
+        "after": "CONTENT_PRESENT"
+      },
+      "host_actions": [
+        "SAVE_AS"
+      ],
+      "context": {
+        "school_choice": "send_alone"
+      },
+      "needs": {
+        "host_action_id": "recover_needs",
+        "before": {
+          "hunger": 0.1,
+          "bladder": 0.9,
+          "energy": 0.1,
+          "hygiene": 0.2,
+          "fun": 0.9,
+          "social": 0.2
+        },
+        "after": {
+          "hunger": 0.9,
+          "bladder": 0.9,
+          "energy": 0.4,
+          "hygiene": 0.9,
+          "fun": 0.9,
+          "social": 0.9
+        }
+      },
+      "available_objects": [
+        "fridge",
+        "toilet",
+        "bed",
+        "shower",
+        "tv",
+        "phone"
+      ],
+      "expect": {
+        "verdict": "BLOCKED",
+        "findings": [
+          "PREMATURE_CONTINUATION_SAVE"
+        ]
+      }
+    }
+  ]
+}

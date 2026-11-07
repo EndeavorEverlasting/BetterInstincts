@@ -36,6 +36,10 @@ jobs:
           python -m scripts.check_horizon
           python -m scripts.eval_horizon
           python -m scripts.horizon_status
+      - name: Deterministic P95 P67 P62 host eval suite
+        run: |
+          python -m scripts.host_eval --out dist/host-eval/ci.json > /dev/null
+          python -m unittest tests.test_host_eval -v
       - name: Doctrine fails closed
         run: python scripts/validate_doctrine.py
       - name: Scene and save safety contract
