@@ -30,7 +30,7 @@
       ]
     },
     "EMULATE": {
-      "definition": "Reproduce the same intent class as the observed good queue (e.g. eat\u2192eat). Does not invent new goals. May still route better under OPTIMIZE_ROUTING.",
+      "definition": "Reproduce the same intent class as the observed good queue (e.g. eat→eat). Does not invent new goals. May still route better under OPTIMIZE_ROUTING.",
       "owners": [
         "contracts/behavior-matrix.v1.json"
       ]
@@ -110,7 +110,7 @@
       ]
     },
     "SIT_AND_CHAT_HERE_INDOOR": {
-      "definition": "Preferred EVENT_INDOOR_ROUTING host route: click indoor sofa/chair/bench \u2192 Sit and Chat Here (locale-equivalent).",
+      "definition": "Preferred EVENT_INDOOR_ROUTING host route: click indoor sofa/chair/bench → Sit and Chat Here (locale-equivalent).",
       "owners": [
         "contracts/event-balance.v1.json",
         "betterinstincts/host_stack.py"
@@ -139,15 +139,24 @@
     },
     "FUN_SERVICE": {
       "definition": "Independent Fun-need host evaluator with parallel activity lanes; peer to event/school services, not a monolith queue tail.",
-      "owners": ["contracts/fun-service.v1.json", "docs/FUN_SERVICE.md"]
+      "owners": [
+        "contracts/fun-service.v1.json",
+        "docs/FUN_SERVICE.md"
+      ]
     },
     "FUN_LANE": {
       "definition": "One Fun activity family (portable, electronics, creative, playful, child) planned as its own service so Sims avoid piling onto contended objects.",
-      "owners": ["betterinstincts/fun_service.py", "docs/FUN_SERVICE.md"]
+      "owners": [
+        "betterinstincts/fun_service.py",
+        "docs/FUN_SERVICE.md"
+      ]
     },
     "FUN_CONTENTION": {
       "definition": "Guests or sibling Sims occupy shared Fun objects; host prefers personal_portable and other free lanes.",
-      "owners": ["contracts/fun-service.v1.json", "betterinstincts/fun_service.py"]
+      "owners": [
+        "contracts/fun-service.v1.json",
+        "betterinstincts/fun_service.py"
+      ]
     },
     "NEED_SERVICES_TANDEM": {
       "definition": "Host gate that plans hunger/bladder/energy/hygiene/fun/social as independent services in parallel and picks the primary READY need by motive urgency.",
@@ -317,7 +326,7 @@
       ]
     },
     "FUNDS_INJECT": {
-      "definition": "Mode-agnostic cheat sequence: Ctrl+Shift+C \u2192 testingcheats enabled true \u2192 Money N (best-effort) \u2192 motherlode chunks. Never force F1; never claimed as BI-004 earned income.",
+      "definition": "Mode-agnostic cheat sequence: Ctrl+Shift+C → testingcheats enabled true → Money N (best-effort) → motherlode chunks. Never force F1; never claimed as BI-004 earned income.",
       "owners": [
         "contracts/host-funds.v1.json",
         "betterinstincts/funds_inject.py"
@@ -330,7 +339,7 @@
       ]
     },
     "CHEAT_CONSOLE_CHORD": {
-      "definition": "Ctrl+Shift+C opens the Sims cheat console on PC in Live, Build, or Buy. Host funds inject must press this chord before testingcheats/Money/motherlode \u2014 never skip, never force F1 to open it.",
+      "definition": "Ctrl+Shift+C opens the Sims cheat console on PC in Live, Build, or Buy. Host funds inject must press this chord before testingcheats/Money/motherlode — never skip, never force F1 to open it.",
       "owners": [
         "contracts/host-funds.v1.json",
         "scripts/funds_inject.py"
@@ -351,7 +360,7 @@
       ]
     },
     "HOST_CRISIS_ANTI_PATTERN": {
-      "definition": "School Join (or leaving home) while needs/funds are critical \u2014 stranded the lab off-lot; Send Alone is mandatory.",
+      "definition": "School Join (or leaving home) while needs/funds are critical — stranded the lab off-lot; Send Alone is mandatory.",
       "owners": [
         "contracts/decision-prompts.v1.json",
         "betterinstincts/decision_eval.py"
@@ -372,7 +381,7 @@
       ]
     },
     "ECO_FOOTPRINT_INDUSTRIAL": {
-      "definition": "Eco Lifestyle lot contribution toward smog / Gross Air; opt-in storytelling maximize only \u2014 excluded from green/balanced household defaults.",
+      "definition": "Eco Lifestyle lot contribution toward smog / Gross Air; opt-in storytelling maximize only — excluded from green/balanced household defaults.",
       "owners": [
         "contracts/build-optimize.v1.json",
         "docs/BUILD_OPTIMIZE.md"
@@ -520,6 +529,72 @@
       "owners": [
         "contracts/curious-catalog.v1.json",
         "docs/CURIOUS_CATALOG.md"
+      ]
+    },
+    "SITUATION": {
+      "definition": "Changing bounded game context; ontology concept, not a claim that a screenshot alone establishes state.",
+      "owners": [
+        "contracts/ontology.v1.json"
+      ]
+    },
+    "DOMAIN_CAPABILITY": {
+      "definition": "Open-domain semantic registration; adding a new future domain does not require a closed list change.",
+      "owners": [
+        "contracts/ontology.v1.json"
+      ]
+    },
+    "GOAL_THREAD": {
+      "definition": "Durable player-compatible intention that survives interruptions and requires fresh validation on resumption.",
+      "owners": [
+        "contracts/ontology.v1.json"
+      ]
+    },
+    "ACTIVITY": {
+      "definition": "Candidate or ongoing work serving a goal; evaluation and execution are distinct.",
+      "owners": [
+        "contracts/ontology.v1.json"
+      ]
+    },
+    "RESOURCE_CLAIM": {
+      "definition": "Scoped contention for objects, time, funds, attention or interaction capacity.",
+      "owners": [
+        "contracts/ontology.v1.json"
+      ]
+    },
+    "TIME_WINDOW": {
+      "definition": "Evidence-qualified temporal opportunity or deadline; unverified time bounds do not become facts.",
+      "owners": [
+        "contracts/ontology.v1.json"
+      ]
+    },
+    "CONTINGENCY": {
+      "definition": "Observed situation that can cause safe reprioritization without granting host control.",
+      "owners": [
+        "contracts/ontology.v1.json"
+      ]
+    },
+    "INTERRUPTION": {
+      "definition": "Recorded suspension of activity with its intent, reason and required recheck.",
+      "owners": [
+        "contracts/ontology.v1.json"
+      ]
+    },
+    "RESUME_CONDITION": {
+      "definition": "Condition for reconsidering an interrupted goal without blindly replaying an action.",
+      "owners": [
+        "contracts/ontology.v1.json"
+      ]
+    },
+    "MECHANIC_PATH": {
+      "definition": "Game-native action/tuning route or a separately justified extension, both still subject to admission.",
+      "owners": [
+        "contracts/ontology.v1.json"
+      ]
+    },
+    "COORDINATION_CYCLE": {
+      "definition": "Bounded join over existing domain poll receipts and shared constraints, returning suggestions only.",
+      "owners": [
+        "contracts/ontology.v1.json"
       ]
     }
   }
