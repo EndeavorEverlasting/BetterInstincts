@@ -23,7 +23,7 @@ For any BetterInstincts P04, inventory `plans/active/BI-HIDDEN-OBJECTS.P04.md` a
 ## Multiversion + real-game closure
 Read `docs/COMPATIBILITY.md`, `docs/LIVE_CERT.md`, `plans/active/BI-002.execution.v1.json`. Pin exact version/platform/module; UNKNOWN_VERSION fails closed. Never auto-select patch, alter older certified profiles, or claim synthetic game proof. CI protects prior certified bytes.
 
-The **local agent** owns hunger: inspect installed game/tuning, build reversible package, run 5 vanilla + 5 modified trials, verify rollback/queue and reviewed proof. Do not close BI-002 from offline handoffs/CI. Without host: BLOCKED_LOCAL_GAME_ACCESS, keep ACTIVE. `python -m scripts.live_cert status --run-id ID`.
+The **local agent** owns hunger: inspect installed game/tuning, build reversible package, run 5 vanilla + 5 modified trials, verify rollback/queue and reviewed proof. Offline handoffs/CI do not close BI-002. Without host: BLOCKED_LOCAL_GAME_ACCESS, keep ACTIVE. `python -m scripts.live_cert status --run-id ID`.
 
 ## Horizon continuity
 Read `docs/HORIZON.md`, `plans/horizon.v1.json`, `plans/active/BI-003.execution.v1.json`. Order: all six needs, balance, income, skills, careers; preserve prior systems/patches. Offline != game proof; BI-002 stays open. `python -m scripts.check_horizon`.
