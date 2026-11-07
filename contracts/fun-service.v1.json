@@ -1,0 +1,344 @@
+{
+  "schema": "betterinstincts.fun-service/v1",
+  "version": 1,
+  "authority": "docs/FUN_SERVICE.md",
+  "proof_ceiling": "HOST_FUN_LANE_CATALOG_NOT_EA_TUNING_API",
+  "design_brief": {
+    "subject": "Fun need recovery with parallel activity lanes under guest contention",
+    "audience": "local host agent mid-Live / mid-party",
+    "job": "Own Fun as an independent service (not a monolith queue tail): keep multiple free Fun options so Sims never pile onto one contended object while guests occupy lot activities",
+    "architecture": "Each Fun lane is its own service plan. Host_stack composes lane results in tandem with survival/event/school services — not one serialized mega-queue. No background daemon.",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose before chrome"},
+      {"id": "UP-A85AD9DC3", "mechanism": "call-stack / journey storytelling"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ],
+    "forbidden_chrome": "No Fun dashboard UI; contracts + evaluators only"
+  },
+  "local_observed": {
+    "date": "2026-11-07",
+    "observation": "Sims under-serve Fun on their own; with guests they queue behind each other and contend for the same activities",
+    "capture_ref": "operator:fun-contention-guests-20261107"
+  },
+  "thresholds_ref": "contracts/needs.v1.json",
+  "architecture_rules": [
+    "FUN_SERVICE is a peer host evaluator — never buried only inside a generic have_fun stub",
+    "Lanes plan independently; host picks free lanes without forcing all Sims onto one object",
+    "When guests_present or occupied_objects, prefer personal_portable and uncontended lanes",
+    "Playful-exclusive actions require PLAYFUL emotion or playful moodlet — fail closed otherwise",
+    "Survival bladder/hunger/energy outrank Fun lanes",
+    "During EVENT_FUN_VIA_GOALS, defer fluff leave-the-party Fun but keep portable options if fun critical",
+    "No background daemon / busy-wait; evaluate-only until separate --execute"
+  ],
+  "lane_priority_default": [
+    "personal_portable",
+    "playful_everyday",
+    "electronics_shared",
+    "creative_hobbies",
+    "social_physical",
+    "playful_exclusive",
+    "child_toddler"
+  ],
+  "lane_priority_when_guests": [
+    "personal_portable",
+    "playful_everyday",
+    "creative_hobbies",
+    "playful_exclusive",
+    "electronics_shared",
+    "social_physical",
+    "child_toddler"
+  ],
+  "lanes": {
+    "personal_portable": {
+      "service_id": "fun.personal_portable",
+      "contention_class": "personal",
+      "note": "Preferred when guests occupy shared lot objects — phone/tablet/earbuds do not require exclusive furniture",
+      "activities": [
+        {
+          "id": "PHONE_GAME",
+          "labels": ["play game on phone", "browse smartphone", "phone game"],
+          "objects": ["phone", "smartphone"],
+          "steps": ["SELECT_SIM", "PIE_PHONE_PLAY_GAME_OR_BROWSE"],
+          "fun_speed": "fast",
+          "playful": false
+        },
+        {
+          "id": "TABLET_GAME",
+          "labels": ["play on tablet", "tablet game"],
+          "objects": ["tablet"],
+          "steps": ["CLICK_TABLET_OR_INVENTORY", "PIE_PLAY_GAME"],
+          "fun_speed": "fast",
+          "playful": false
+        },
+        {
+          "id": "EARBUDS_MUSIC",
+          "labels": ["listen to music earbuds", "wear earbuds"],
+          "objects": ["earbuds", "headphones"],
+          "steps": ["SELECT_SIM", "PIE_LISTEN_TO_MUSIC"],
+          "fun_speed": "passive",
+          "playful": false
+        }
+      ]
+    },
+    "electronics_shared": {
+      "service_id": "fun.electronics_shared",
+      "contention_class": "shared",
+      "activities": [
+        {
+          "id": "VIDEO_GAME_COMPUTER",
+          "labels": ["play computer game", "play video game computer"],
+          "objects": ["computer"],
+          "steps": ["CLICK_FREE_COMPUTER", "PIE_PLAY_GAME"],
+          "fun_speed": "fast",
+          "playful": false
+        },
+        {
+          "id": "VIDEO_GAME_CONSOLE",
+          "labels": ["play console", "play video game", "motion gaming"],
+          "objects": ["console", "tv", "motion_gaming_rig"],
+          "steps": ["CLICK_FREE_CONSOLE_OR_TV", "PIE_PLAY_VIDEO_GAME"],
+          "fun_speed": "fast",
+          "playful": false
+        },
+        {
+          "id": "WATCH_TV",
+          "labels": ["watch tv", "watch television"],
+          "objects": ["tv"],
+          "steps": ["CLICK_FREE_TV", "PIE_WATCH"],
+          "fun_speed": "medium",
+          "playful": false
+        },
+        {
+          "id": "WATCH_COMEDY_CHANNEL",
+          "labels": ["watch comedy channel", "comedy channel"],
+          "objects": ["tv"],
+          "steps": ["CLICK_FREE_TV", "PIE_WATCH_COMEDY"],
+          "fun_speed": "medium",
+          "playful": "induces",
+          "moodlet_hint": "playful"
+        },
+        {
+          "id": "STEREO_MUSIC",
+          "labels": ["listen to stereo", "turn on stereo", "smart speaker"],
+          "objects": ["stereo", "smart_speaker"],
+          "steps": ["CLICK_FREE_STEREO", "PIE_LISTEN_TO_MUSIC"],
+          "fun_speed": "passive",
+          "playful": false
+        },
+        {
+          "id": "HILARIOUS_VIDEOS",
+          "labels": ["watch hilarious videos", "hilarious videos"],
+          "objects": ["computer"],
+          "steps": ["CLICK_FREE_COMPUTER", "PIE_WEB_HILARIOUS_VIDEOS"],
+          "fun_speed": "fast",
+          "playful": "induces"
+        }
+      ]
+    },
+    "creative_hobbies": {
+      "service_id": "fun.creative_hobbies",
+      "contention_class": "shared",
+      "activities": [
+        {
+          "id": "PLAY_INSTRUMENT",
+          "labels": ["play guitar", "play piano", "play violin", "play organ"],
+          "objects": ["guitar", "piano", "violin", "pipe_organ"],
+          "steps": ["CLICK_FREE_INSTRUMENT", "PIE_PRACTICE_OR_PLAY"],
+          "fun_speed": "medium",
+          "playful": false
+        },
+        {
+          "id": "PAINT_EASEL",
+          "labels": ["paint", "use easel"],
+          "objects": ["easel"],
+          "steps": ["CLICK_FREE_EASEL", "PIE_PAINT"],
+          "fun_speed": "slow",
+          "playful": false
+        },
+        {
+          "id": "READ_FICTION",
+          "labels": ["read fiction", "read comedy book", "read fantasy", "read book"],
+          "objects": ["book", "bookcase"],
+          "steps": ["CLICK_BOOK_OR_BOOKCASE", "PIE_READ_FUN_GENRE"],
+          "fun_speed": "medium",
+          "playful": false
+        },
+        {
+          "id": "READ_COMEDY_BOOK",
+          "labels": ["read comedy book", "comedy book"],
+          "objects": ["book", "bookcase"],
+          "steps": ["CLICK_BOOK_OR_BOOKCASE", "PIE_READ_COMEDY"],
+          "fun_speed": "medium",
+          "playful": "induces"
+        },
+        {
+          "id": "SCIENCE_HOBBY",
+          "labels": ["use microscope", "use observatory"],
+          "objects": ["microscope", "observatory"],
+          "steps": ["CLICK_FREE_SCIENCE_OBJECT", "PIE_USE"],
+          "fun_speed": "medium",
+          "playful": false
+        },
+        {
+          "id": "WOODWORKING",
+          "labels": ["woodwork", "use woodworking table"],
+          "objects": ["woodworking_table"],
+          "steps": ["CLICK_FREE_WOODWORKING", "PIE_MAKE_ITEM"],
+          "fun_speed": "slow",
+          "playful": false
+        }
+      ]
+    },
+    "social_physical": {
+      "service_id": "fun.social_physical",
+      "contention_class": "shared",
+      "activities": [
+        {
+          "id": "GROUP_GAME",
+          "labels": ["play chess", "play cards", "dont wake the llama", "horseshoes"],
+          "objects": ["chess", "card_table", "dont_wake_llama", "horseshoes"],
+          "steps": ["CLICK_FREE_GROUP_GAME", "PIE_PLAY_WITH"],
+          "fun_speed": "medium",
+          "playful": false
+        },
+        {
+          "id": "ACTIVE_RECREATION",
+          "labels": ["swim", "basketball", "soccer", "bike", "ice skate", "ski", "snowboard"],
+          "objects": ["pool", "basketball_hoop", "soccer_ball", "bicycle", "ice_rink", "ski_slope"],
+          "steps": ["CLICK_FREE_RECREATION", "PIE_PLAY"],
+          "fun_speed": "medium",
+          "playful": false
+        },
+        {
+          "id": "ROMANCE_FUN",
+          "labels": ["woohoo", "mess around"],
+          "objects": ["bed", "closet", "hot_tub", "shower"],
+          "steps": ["CLICK_PARTNER_OR_OBJECT", "PIE_ROMANTIC_FUN"],
+          "fun_speed": "fast",
+          "playful": false,
+          "requires_partner": true
+        },
+        {
+          "id": "MISCHIEF_FUN",
+          "labels": ["mischief", "prank"],
+          "objects": ["sim", "object"],
+          "steps": ["SELECT_SIM", "PIE_MISCHIEF_OR_PRANK"],
+          "fun_speed": "medium",
+          "playful": false,
+          "trait_boost": ["goofball", "mean"]
+        }
+      ]
+    },
+    "playful_everyday": {
+      "service_id": "fun.playful_everyday",
+      "contention_class": "mixed",
+      "note": "Builds Fun and often induces Playful",
+      "activities": [
+        {
+          "id": "BUBBLE_BATH",
+          "labels": ["take bubble bath", "bubble bath"],
+          "objects": ["bathtub"],
+          "steps": ["CLICK_FREE_TUB", "PIE_TAKE_BUBBLE_BATH"],
+          "fun_speed": "fast",
+          "playful": "induces"
+        },
+        {
+          "id": "WATER_SLIDE",
+          "labels": ["use waterslide", "water slide"],
+          "objects": ["waterslide"],
+          "steps": ["CLICK_FREE_WATERSLIDE", "PIE_USE"],
+          "fun_speed": "fast",
+          "playful": "induces",
+          "pack_hint": "backyard_stuff"
+        }
+      ]
+    },
+    "playful_exclusive": {
+      "service_id": "fun.playful_exclusive",
+      "contention_class": "mixed",
+      "requires_emotion": ["PLAYFUL", "VERY_PLAYFUL"],
+      "note": "Unlocked only when already Playful — fail closed if emotion not supplied/playful",
+      "activities": [
+        {
+          "id": "SCOUR_FOR_MEMES",
+          "labels": ["scour for memes"],
+          "objects": ["computer"],
+          "steps": ["CLICK_FREE_COMPUTER", "PIE_SCOUR_FOR_MEMES"],
+          "fun_speed": "fast",
+          "playful": "requires"
+        },
+        {
+          "id": "PLAY_IN_BATH",
+          "labels": ["play in bath", "play in the bath"],
+          "objects": ["bathtub"],
+          "steps": ["CLICK_FREE_TUB", "PIE_PLAY_IN_BATH"],
+          "fun_speed": "fast",
+          "playful": "requires"
+        },
+        {
+          "id": "PLAYFUL_INSTRUMENT",
+          "labels": ["tickle the ivories", "fiddle for fun", "strum for fun"],
+          "objects": ["piano", "violin", "guitar"],
+          "steps": ["CLICK_FREE_INSTRUMENT", "PIE_PLAYFUL_PRACTICE"],
+          "fun_speed": "medium",
+          "playful": "requires"
+        },
+        {
+          "id": "PAINT_PLAYFUL",
+          "labels": ["paint playful painting", "playful painting"],
+          "objects": ["easel"],
+          "steps": ["CLICK_FREE_EASEL", "PIE_PAINT_PLAYFUL"],
+          "fun_speed": "slow",
+          "playful": "requires"
+        }
+      ]
+    },
+    "child_toddler": {
+      "service_id": "fun.child_toddler",
+      "contention_class": "shared",
+      "life_stages": ["toddler", "child"],
+      "also_trait": ["childish"],
+      "activities": [
+        {
+          "id": "TOYS",
+          "labels": ["play with toys", "toy box", "dollhouse", "action figures"],
+          "objects": ["toy_box", "dollhouse", "toys"],
+          "steps": ["CLICK_FREE_TOY", "PIE_PLAY"],
+          "fun_speed": "fast",
+          "playful": "induces"
+        },
+        {
+          "id": "PLAYGROUND",
+          "labels": ["swing", "monkey bars", "jungle gym", "ball pit", "pirate ship"],
+          "objects": ["swing", "monkey_bars", "jungle_gym", "ball_pit", "pirate_ship"],
+          "steps": ["CLICK_FREE_PLAYGROUND", "PIE_PLAY"],
+          "fun_speed": "fast",
+          "playful": "induces"
+        },
+        {
+          "id": "MESSY_PLAY",
+          "labels": ["splash in puddle", "play in trash", "make a mess"],
+          "objects": ["puddle", "trash", "floor"],
+          "steps": ["CLICK_MESSY_TARGET", "PIE_PLAY"],
+          "fun_speed": "medium",
+          "playful": "induces"
+        }
+      ]
+    }
+  },
+  "anti_patterns": [
+    "MONOLITH_SINGLE_FUN_QUEUE_FOR_ALL_SIMS",
+    "PILE_ONTO_CONTENDED_TV_OR_COMPUTER",
+    "IGNORE_PORTABLE_FUN_WHEN_GUESTS_PRESENT",
+    "PLAYFUL_EXCLUSIVE_WITHOUT_PLAYFUL_EMOTION",
+    "LEAVE_EVENT_FOR_TV_FLUFF_WHEN_EVENT_GOALS_COVER_FUN"
+  ],
+  "open_items": [
+    {
+      "id": "FUN_LANE_LIVE_DISPATCH",
+      "status": "OPEN",
+      "summary": "Catalog + contention planner offline; live pie-menu dispatch and multi-Sim lane assignment not yet LOCAL_OBSERVED",
+      "blocks_bi002": false
+    }
+  ]
+}

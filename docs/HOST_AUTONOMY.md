@@ -15,7 +15,7 @@
 | --- | --- |
 | Governance | AGENTS.md, DOCTRINE (Player first, no background scanners) |
 | Harness | unittest, validate_doctrine, CI FakeGui |
-| Program | glossary, behavior matrix, host listener, player presence, needs-force, event goals, host_stack |
+| Program | glossary, behavior matrix, host listener, player presence, needs-force, event goals, fun service, host_stack |
 | Live adapters | scripts/* SendInput / PrintWindow — only after evaluate-only plan |
 
 ## Domain vocabulary (do not reinvent)

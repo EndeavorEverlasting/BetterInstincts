@@ -15,6 +15,11 @@ from betterinstincts.decision_eval import (
     recommendation_to_dict,
 )
 from betterinstincts.event_balance import EventBalanceError, evaluate_event_turn
+from betterinstincts.fun_service import (
+    FunServiceError,
+    evaluate_fun_service,
+    should_attach_fun_service,
+)
 from betterinstincts.instincts_host import (
     InstinctsHostError,
     NeedSnapshot,
@@ -108,6 +113,9 @@ def evaluate_turn(
     allow_career: bool = False,
     needs_game_certified: bool = False,
     income_game_observed: bool = False,
+    guests_present: bool = False,
+    occupied_objects: Sequence[str] = (),
+    sibling_fun_lane_claims: Sequence[str] = (),
 ) -> dict:
     """Compose viewport, moodlets, event-balance, instincts, and dialog gates.
 
@@ -120,6 +128,9 @@ def evaluate_turn(
 
     Optional Simology/skills/preferences/whims attach a read-only sim_profile
     (docs/SIM_PROFILE.md); never authorizes practice_skill or BI-005 closure.
+
+    Fun is owned by fun_service (docs/FUN_SERVICE.md): parallel activity lanes
+    with guest/object contention — not a monolith have_fun stub.
 
     Optional school_day_active / school_goals_incomplete attach High School Years
     top-left goal planning (docs/SCHOOL_DAY.md); homework on premises fails closed.
@@ -149,6 +160,7 @@ def evaluate_turn(
     school_day = None
     teen_homework = None
     scenario = None
+    fun_service = None
     try:
         snap = NeedSnapshot(
             needs=needs,
@@ -304,6 +316,27 @@ def evaluate_turn(
                 event_profile=event_profile,
                 capture_ref=capture_ref,
             )
+        if should_attach_fun_service(needs, guests_present=guests_present):
+            event_fun_via = bool(
+                event_balance is not None and event_balance.get("gate") == "EVENT_FUN_VIA_GOALS"
+            )
+            fun_service = evaluate_fun_service(
+                needs,
+                available_objects=tuple(available_objects or ()),
+                occupied_objects=tuple(occupied_objects or ()),
+                guests_present=guests_present,
+                emotion=emotion,
+                moodlets=moodlets,
+                life_stage=life_stage or "young_adult",
+                traits=traits,
+                queue=tuple(queue or ()),
+                player_directed=player_directed,
+                already_busy=already_busy,
+                event_active=event_active,
+                event_fun_via_goals=event_fun_via,
+                sibling_lane_claims=tuple(sibling_fun_lane_claims or ()),
+                capture_ref=capture_ref,
+            )
     except (
         InstinctsHostError,
         DecisionEvalError,
@@ -316,6 +349,7 @@ def evaluate_turn(
         TeenHomeworkError,
         SchoolDayError,
         SocialOpportunityError,
+        FunServiceError,
     ) as exc:
         raise HostStackError(str(exc)) from exc
 
@@ -638,6 +672,29 @@ def evaluate_turn(
             "owner": "betterinstincts/event_balance.py",
             "forbidden": ["OUTDOOR_SOCIAL_DEFAULT"],
         }
+    elif fun_service is not None and fun_service["gate"] in {
+        "FUN_SERVICE_PLAN",
+        "FUN_SERVICE_BLOCKED",
+    }:
+        next_gate = fun_service["gate"]
+        fallback = {
+            "mechanism": fun_service["action"],
+            "owner": "betterinstincts/fun_service.py",
+            "contract": "contracts/fun-service.v1.json",
+            "primary_route": fun_service.get("primary_route"),
+            "preferred_routes": fun_service.get("preferred_routes") or [],
+            "next_actions": fun_service.get("next_actions") or [],
+            "parallel_ready": fun_service.get("parallel_ready") or [],
+            "lanes": fun_service.get("lanes") or [],
+            "architecture": fun_service.get("architecture"),
+            "forbidden": [
+                "MONOLITH_SINGLE_FUN_QUEUE_FOR_ALL_SIMS",
+                "PILE_ONTO_CONTENDED_TV_OR_COMPUTER",
+                "IGNORE_PORTABLE_FUN_WHEN_GUESTS_PRESENT",
+                "PLAYFUL_EXCLUSIVE_WITHOUT_PLAYFUL_EMOTION",
+                "RESUME",
+            ],
+        }
     elif behavior is not None and behavior["clarity"]["disposition"] in {
         "OPTIMIZE", "EMULATE_THEN_OPTIMIZE"
     } and behavior["clarity"].get("preferred_route") in {
@@ -680,6 +737,7 @@ def evaluate_turn(
         "sim_premises": premises,
         "scenario": scenario,
         "event_balance": event_balance,
+        "fun_service": fun_service,
         "build_optimize": build_optimize,
         "instincts": instincts,
         "decision": decision,

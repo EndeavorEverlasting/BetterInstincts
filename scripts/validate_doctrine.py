@@ -83,6 +83,9 @@ REQUIRED = (
     "contracts/social-opportunity.v1.json", "docs/SOCIAL_OPPORTUNITY.md",
     "betterinstincts/social_opportunity.py", "scripts/social_opportunity.py",
     "tests/test_social_opportunity.py",
+    "contracts/fun-service.v1.json", "docs/FUN_SERVICE.md",
+    "betterinstincts/fun_service.py", "scripts/fun_service.py",
+    "tests/test_fun_service.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

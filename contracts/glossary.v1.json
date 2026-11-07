@@ -137,6 +137,18 @@
         "betterinstincts/host_stack.py"
       ]
     },
+    "FUN_SERVICE": {
+      "definition": "Independent Fun-need host evaluator with parallel activity lanes; peer to event/school services, not a monolith queue tail.",
+      "owners": ["contracts/fun-service.v1.json", "docs/FUN_SERVICE.md"]
+    },
+    "FUN_LANE": {
+      "definition": "One Fun activity family (portable, electronics, creative, playful, child) planned as its own service so Sims avoid piling onto contended objects.",
+      "owners": ["betterinstincts/fun_service.py", "docs/FUN_SERVICE.md"]
+    },
+    "FUN_CONTENTION": {
+      "definition": "Guests or sibling Sims occupy shared Fun objects; host prefers personal_portable and other free lanes.",
+      "owners": ["contracts/fun-service.v1.json", "betterinstincts/fun_service.py"]
+    },
     "MOODLET_STRIP": {
       "definition": "Bottom-left Sim emotion and moodlet icons. Host logic requires supplied labels; absence is SENSOR_NOT_SUPPLIED.",
       "owners": [

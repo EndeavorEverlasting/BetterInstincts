@@ -22,6 +22,7 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **SIT_AND_CHAT_HERE** / **SIT_AND_CHAT_HERE_INDOOR** | Seat-grounded indoor chat; primary fix for outdoor-social default. |
 | **EVENT_BALANCE_STACK** | Priority stack: player → viewport → survival needs → indoor routing → event goals → Fun-via-goals → homework hold → other needs. |
 | **EVENT_GOAL_ACTION** / **EVENT_GOAL_PLAN** | Catalogued pie-menu actions that satisfy HUD event goals; host plan over incomplete goals. |
+| **FUN_SERVICE** / **FUN_LANE** / **FUN_CONTENTION** | Parallel Fun activity services; free-lane pick when guests occupy shared objects. |
 | **MOODLET_STRIP** | Bottom-left emotion + moodlet icons; must be supplied to host evals (not inventable from screenshots). |
 | **MOODLET_AWARE_ROUTING** | Gate: tense moodlets + outdoor social + indoor capacity reinforce indoor retarget; uncomfortable aligns with survival relief. |
 | **SIM_PROFILE_INSPECT** | Read-only host gate: supplied skills/preferences/traits/whims + moodlets; never `practice_skill` / BI-005. |
