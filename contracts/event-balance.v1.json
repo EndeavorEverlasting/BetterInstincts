@@ -150,7 +150,8 @@
         "when": ["event_active", "event_goals_incomplete", "survival_ok"],
         "action": "QUEUE_INCOMPLETE_EVENT_GOALS_INDOOR",
         "goal_priority": ["drink", "be_silly", "tell_jokes", "friendly_greet_or_socialize", "talk_about_food"],
-        "note": "Timer-bound goals outrank homework and non-event fluff while event is active"
+        "goal_catalog": "contracts/event-goals.v1.json",
+        "note": "Timer-bound goals outrank homework and non-event fluff; use event-goals catalog for concrete pie-menu actions"
       },
       "EVENT_FUN_VIA_GOALS": {
         "when": ["event_active", "fun_urgent", "survival_ok"],
@@ -190,6 +191,12 @@
       "id": "SIT_AND_CHAT_HERE_LIVE_DISPATCH",
       "status": "OPEN",
       "summary": "LOCAL_OBSERVED pie-menu availability asserted by operator; host SendInput / pie-menu click for Sit and Chat Here not yet live-proved on an exact patch",
+      "blocks_bi002": false
+    },
+    {
+      "id": "EVENT_GOAL_ACTION_CATALOG",
+      "status": "PARTIAL",
+      "summary": "Lounge-party goal→action catalog owned by contracts/event-goals.v1.json; live HUD tick confirmation still OPEN",
       "blocks_bi002": false
     }
   ]
