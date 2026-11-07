@@ -121,6 +121,8 @@ class JudgmentLearningTests(unittest.TestCase):
         self.assertEqual(result["correct_helpful_actions"], 1)
         self.assertEqual(result["coverage"], 0.25)
         self.assertEqual(result["precision_when_issued"], 1.0)
+        self.assertEqual(result["baseline_suggestions_issued"], 3)
+        self.assertEqual(result["baseline_precision_when_issued"], 1.0)
 
     def test_cli_explicit_consent_and_dist_guard(self):
         with patch.object(learning_cli, "OUTPUT", Path(tempfile.gettempdir()) / "bi-test-private"):
@@ -161,6 +163,36 @@ class JudgmentLearningTests(unittest.TestCase):
                 self.assertEqual(recommend(model, query())["state"], "ADVISORY_ONLY")
                 self.assertNotIn("observation_ref", json.dumps(model))
                 self.assertNotIn("user_name", json.dumps(model))
+
+
+    def test_cli_record_explicit_review_then_train_and_no_duplicates(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder) / "dist" / "judgment-learning"
+            root.mkdir(parents=True)
+            context_path = root / "context.json"
+            examples = root / "reviewed.json"
+            context_path.write_text(json.dumps(CONTEXT), encoding="utf-8")
+            with patch.object(learning_cli, "ROOT", Path(folder)), patch.object(learning_cli, "OUTPUT", root):
+                command = [
+                    "record", "--context", str(context_path), "--game-version", PATCH,
+                    "--platform", "windows", "--action", "sit_and_chat_here",
+                    "--outcome", "helpful", "--observation-ref", "capture:review_01",
+                    "--examples-out", str(examples),
+                ]
+                with redirect_stdout(StringIO()) as result:
+                    code = learning_cli.main(command)
+                self.assertEqual(code, 2)
+                self.assertFalse(examples.exists())
+                with redirect_stdout(StringIO()) as result:
+                    code = learning_cli.main([*command, "--operator-reviewed", "--explicit-opt-in"])
+                self.assertEqual(code, 0, result.getvalue())
+                self.assertEqual(len(json.loads(examples.read_text())), 1)
+                with redirect_stdout(StringIO()) as result:
+                    code = learning_cli.main([*command, "--operator-reviewed", "--explicit-opt-in"])
+                self.assertEqual(code, 2)
+                self.assertIn("DUPLICATE_REVIEWED_EXAMPLE", result.getvalue())
+                self.assertEqual(len(json.loads(examples.read_text())), 1)
+
 
 
 if __name__ == "__main__":
