@@ -1,0 +1,168 @@
+{
+  "schema": "betterinstincts.scenario-goals/v1",
+  "version": 1,
+  "authority": "docs/SCENARIO_GOALS.md",
+  "proof_ceiling": "HOST_SCENARIO_GOAL_CATALOG_NOT_EA_API_NOT_INCOME_OR_CAREER_CERT",
+  "design_brief": {
+    "subject": "Scenario scoring goals → concrete Sims interactions",
+    "audience": "local host agent + operator during scenario scoring runs",
+    "job": "Map scenario HUD goals to income/craft actions; defer career until horizon income proof",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose before chrome"},
+      {"id": "UP-A85AD9DC3", "mechanism": "journey / call-stack storytelling"},
+      {"id": "UP-0F2FB5920", "mechanism": "iterate with measurement"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ],
+    "forbidden_chrome": "No scenario dashboard UI; contracts + evaluators only"
+  },
+  "local_observed": {
+    "date": "2026-11-07",
+    "patch": "1.121.361.1020",
+    "household": "LabLab",
+    "scene": "scenario_scoring_simoleons",
+    "observation": "Scenario HUD prioritized Earn §250 and Craft an Object before Get a career; motherlode is not a scoring strategy",
+    "capture_ref": "operator:scoring-simoleons-20261107"
+  },
+  "horizon_alignment": {
+    "note": "needs recovery → earn_simoleons → craft_object → get_career (career horizon-deferred until income proof)",
+    "order": ["survival_needs", "earn_simoleons", "craft_object", "get_career"]
+  },
+  "default_profile": "scoring_simoleons",
+  "profiles": {
+    "scoring_simoleons": {
+      "aliases": ["scoring", "scenario scoring", "simoleons scenario", "score_run"],
+      "goal_priority": ["earn_simoleons", "craft_object", "get_career"],
+      "forbidden": ["motherlode_for_scenario", "reorder_horizon_to_career_first"],
+      "note": "Scenario scoring profile; never cheat-fund or reorder horizon to career first"
+    }
+  },
+  "goals": {
+    "earn_simoleons": {
+      "hud_aliases": [
+        "earn_simoleons",
+        "earn simoleons",
+        "earn § 250",
+        "earn §250",
+        "earn 250",
+        "earn money",
+        "earn §"
+      ],
+      "display_hint": "Earn § 250",
+      "target_kind": "income_object_or_skill",
+      "preferred_targets": ["easle", "painting", "computer_freelance", "garden_sale"],
+      "satisfying_interactions": [
+        {
+          "id": "PAINT_AND_SELL",
+          "labels": ["paint", "sell painting", "sell to gallery", "sell from inventory"],
+          "steps": [
+            "CLICK_EASLE_OR_INVENTORY_PAINTING",
+            "PIE_PAINT_OR_SELL",
+            "CONFIRM_SALE"
+          ],
+          "confidence": "HOST_HEURISTIC"
+        },
+        {
+          "id": "FREELANCE_OR_WORK_GIG",
+          "labels": ["freelance", "take gig", "accept job", "work from home"],
+          "steps": ["CLICK_COMPUTER", "PIE_FREELANCE_OR_GIG"],
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["motherlode", "money cheat", "sell scenario lot"],
+      "host_note": "Legitimate income actions only — never motherlode for scenario scoring"
+    },
+    "craft_object": {
+      "hud_aliases": [
+        "craft_object",
+        "craft an object",
+        "craft object",
+        "craft",
+        "make an object"
+      ],
+      "display_hint": "Craft an Object",
+      "target_kind": "crafting_station",
+      "preferred_targets": ["fabricator", "woodworking_table", "pottery_wheel", "workbench"],
+      "satisfying_interactions": [
+        {
+          "id": "CRAFT_AT_STATION",
+          "labels": ["craft", "make", "fabricate", "woodworking", "pottery"],
+          "steps": ["CLICK_CRAFTING_STATION", "PIE_CRAFT_OBJECT", "SELECT_SCENARIO_CRAFT"],
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["buy from catalog without craft", "debug spawn object"],
+      "host_note": "Station craft that ticks scenario craft goal"
+    },
+    "get_career": {
+      "hud_aliases": [
+        "get_career",
+        "get a career",
+        "find a job",
+        "join career",
+        "career"
+      ],
+      "display_hint": "Get a career",
+      "horizon_deferred": true,
+      "target_kind": "career_entry",
+      "preferred_targets": ["computer_career", "phone_career", "job_board"],
+      "satisfying_interactions": [
+        {
+          "id": "FIND_JOB_PHONE_OR_PC",
+          "labels": ["find job", "join career", "apply for job", "get a career"],
+          "steps": ["CLICK_PHONE_OR_COMPUTER", "PIE_CAREER_FIND_JOB", "SELECT_ENTRY_LEVEL"],
+          "confidence": "HOST_HEURISTIC"
+        }
+      ],
+      "non_satisfying": ["motherlode", "promote cheat", "skip earn/craft goals"],
+      "host_note": "Deferred until allow_career + needs_game_certified + income_game_observed"
+    }
+  },
+  "call_stack": {
+    "order": [
+      "PLAYER_FIRST_OR_BUSY",
+      "SURVIVAL_NEEDS_CRITICAL",
+      "SCHOOL_DAY_OUTRANKS_SCENARIO",
+      "SCENARIO_GOAL_PROGRESS",
+      "SCENARIO_CAREER_DEFERRED",
+      "SCENARIO_INACTIVE",
+      "LEISURE_OR_IDLE"
+    ],
+    "gates": {
+      "PLAYER_FIRST_OR_BUSY": {
+        "when": ["player_directed", "already_busy"],
+        "action": "YIELD_OR_EMULATE_ONLY"
+      },
+      "SURVIVAL_NEEDS_CRITICAL": {
+        "needs": ["hunger", "bladder", "energy"],
+        "threshold": 0.35,
+        "action": "RECOVER_SURVIVAL_NEED_LOCAL_OR_MAP_TRAVEL",
+        "outranks": ["SCENARIO_GOAL_PROGRESS", "SCENARIO_CAREER_DEFERRED"]
+      },
+      "SCHOOL_DAY_OUTRANKS_SCENARIO": {
+        "when": ["school_day_active"],
+        "action": "DEFER_SCENARIO_TO_SCHOOL_DAY"
+      },
+      "SCENARIO_GOAL_PROGRESS": {
+        "when": ["scenario_active", "scenario_goals_incomplete", "survival_ok", "not_school_day_active"],
+        "action": "QUEUE_INCOMPLETE_SCENARIO_GOALS",
+        "goal_catalog": "contracts/scenario-goals.v1.json"
+      },
+      "SCENARIO_CAREER_DEFERRED": {
+        "when": ["scenario_active", "career_goal_only", "career_horizon_blocked"],
+        "action": "DEFER_CAREER_UNTIL_INCOME_PROOF",
+        "forbidden": ["FORCE_CAREER_BEFORE_EARN_CRAFT", "MOTHERLODE_FOR_SCENARIO"]
+      },
+      "SCENARIO_INACTIVE": {
+        "when": ["not_scenario_active"],
+        "action": "NO_SCENARIO_ROUTING"
+      },
+      "LEISURE_OR_IDLE": {
+        "action": "ALLOW_SCENARIO_LOT_LEISURE"
+      }
+    }
+  },
+  "call_stack_gates": [
+    "SCENARIO_GOAL_PROGRESS",
+    "SCENARIO_CAREER_DEFERRED"
+  ]
+}

@@ -191,3 +191,7 @@ Operator gap: gardening desire visible in moodlets without a durable way to chec
 ## 2026-11-07 — School-day goals (P95 + /design + trifecta)
 
 **Operator correction:** after multi-day needs recovery, LabLab school performance still suffers; homework is blocked on school **premises** during Morning Free Time; top-left school HUD (`Study for Exams`) is the actionable academic path; pinned Clumsy whim **Not Stumble for 4 Hours** favors sedentary study. **P95** adds `contracts/school-day.v1.json` + `betterinstincts/school_day.py` (goal→High School pie catalog, `HOMEWORK_PREMISES_BLOCKED`, pinned-whim sedentary preference). Wired through `host_stack` + opt-in `host_listener`. **P82** hypothesis: green needs + school-day goal queue beats vanilla / premises-blocked homework chasing. **P08** listener tick against live Copperdale observation is LOCAL_OBSERVED plan-only — HUD goal tick confirmation remains OPEN. Does not close BI-002 or certify careers.
+
+## 2026-11-07 — Scenario scoring goals (P95)
+
+**P95** adds `contracts/scenario-goals.v1.json` + `betterinstincts/scenario_goals.py`: Earn §250 / Craft an Object / Get a career HUD catalog with horizon-deferred career (`SCENARIO_CAREER_DEFERRED`), earn-before-career priority, and forbidden `motherlode_for_scenario`. Gates `SCENARIO_GOAL_PROGRESS` / `SCENARIO_CAREER_DEFERRED` on `host_stack` after school homework premises block; school day outranks scenario. Capture `operator:scoring-simoleons-20261107`. Not income/career GAME_CERTIFIED proof.

@@ -23,6 +23,7 @@ from betterinstincts.instincts_host import (
 )
 from betterinstincts.build_optimize import BuildOptimizeError, evaluate_build_optimize
 from betterinstincts.moodlets import MoodletError, evaluate_moodlets
+from betterinstincts.scenario_goals import evaluate_scenario_turn
 from betterinstincts.school_day import SchoolDayError, evaluate_school_day_turn
 from betterinstincts.sim_profile import SkillInput, SimProfileError, evaluate_sim_profile
 from betterinstincts.viewport import ViewportError, predict_risk
@@ -76,6 +77,12 @@ def evaluate_turn(
     build_budget: Optional[float] = None,
     build_panels: int = 1,
     build_or_buy_mode: bool = False,
+    scenario_active: bool = False,
+    scenario_goals_incomplete: Sequence[str] = (),
+    scenario_profile: str = "scoring_simoleons",
+    allow_career: bool = False,
+    needs_game_certified: bool = False,
+    income_game_observed: bool = False,
 ) -> dict:
     """Compose viewport, moodlets, event-balance, instincts, and dialog gates.
 
@@ -91,6 +98,9 @@ def evaluate_turn(
 
     Optional school_day_active / school_goals_incomplete attach High School Years
     top-left goal planning (docs/SCHOOL_DAY.md); homework on premises fails closed.
+
+    Optional scenario_active / scenario_goals_incomplete attach scenario scoring HUD
+    planning (docs/SCENARIO_GOALS.md); career stays horizon-deferred without proof.
 
     Optional build_objective runs evaluate-only Build/Buy catalog ranking
     (docs/BUILD_OPTIMIZE.md); never paints walls from this pure module.
@@ -117,6 +127,7 @@ def evaluate_turn(
         behavior = None
         event_balance = None
         school_day = None
+        scenario = None
         moodlet_eval = evaluate_moodlets(
             emotion=emotion,
             moodlets=moodlets,
@@ -171,6 +182,21 @@ def evaluate_turn(
                 player_directed=player_directed,
                 already_busy=already_busy,
                 school_profile=school_profile,
+                capture_ref=capture_ref,
+            )
+        if scenario_active or scenario_goals_incomplete:
+            scenario = evaluate_scenario_turn(
+                needs,
+                scenario_active=scenario_active or bool(scenario_goals_incomplete),
+                scenario_goals_incomplete=scenario_goals_incomplete,
+                scenario_profile=scenario_profile,
+                school_day_active=school_day_active or bool(school_goals_incomplete),
+                allow_career=allow_career,
+                needs_game_certified=needs_game_certified,
+                income_game_observed=income_game_observed,
+                queue=tuple(queue or ()),
+                player_directed=player_directed,
+                already_busy=already_busy,
                 capture_ref=capture_ref,
             )
         if event_active or outdoor_social_prefix or (
@@ -320,6 +346,44 @@ def evaluate_turn(
             "forbidden": ["HOMEWORK_ON_SCHOOL_PREMISES", "RESUME"],
             "resume_when": ["after_school_at_home", "school_day_ended"],
         }
+    elif scenario is not None and scenario["gate"] == "SCENARIO_GOAL_PROGRESS":
+        next_gate = "SCENARIO_GOAL_PROGRESS"
+        goal_plan = scenario.get("goal_plan") or {}
+        fallback = {
+            "mechanism": scenario["action"],
+            "owner": "betterinstincts/scenario_goals.py",
+            "contract": "contracts/scenario-goals.v1.json",
+            "goals_incomplete": scenario.get("goals_incomplete") or [],
+            "next_goal": goal_plan.get("next_goal"),
+            "next_actions": goal_plan.get("next_actions") or [],
+            "primary_route": scenario.get("primary_route") or goal_plan.get("primary_route"),
+            "preferred_routes": scenario.get("preferred_routes")
+            or goal_plan.get("preferred_routes")
+            or [],
+            "forbidden": [
+                "MOTHERLODE_FOR_SCENARIO",
+                "REORDER_HORIZON_TO_CAREER_FIRST",
+                "RESUME",
+            ],
+        }
+    elif scenario is not None and scenario["gate"] == "SCENARIO_CAREER_DEFERRED":
+        next_gate = "SCENARIO_CAREER_DEFERRED"
+        fallback = {
+            "mechanism": scenario["action"],
+            "owner": "betterinstincts/scenario_goals.py",
+            "contract": "contracts/scenario-goals.v1.json",
+            "career_horizon_blocked": (scenario.get("goal_plan") or {}).get("career_horizon_blocked"),
+            "forbidden": [
+                "MOTHERLODE_FOR_SCENARIO",
+                "FORCE_CAREER_BEFORE_EARN_CRAFT",
+                "RESUME",
+            ],
+            "resume_when": [
+                "allow_career",
+                "needs_game_certified",
+                "income_game_observed",
+            ],
+        }
     elif event_balance is not None and event_balance["gate"] == "SURVIVAL_NEEDS_CRITICAL":
         next_gate = "SURVIVAL_NEEDS_BEFORE_EVENT"
         fallback = {
@@ -415,6 +479,7 @@ def evaluate_turn(
         "moodlets": moodlet_eval,
         "sim_profile": sim_profile,
         "school_day": school_day,
+        "scenario": scenario,
         "event_balance": event_balance,
         "build_optimize": build_optimize,
         "instincts": instincts,
