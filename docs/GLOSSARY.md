@@ -4,7 +4,7 @@ Canonical vocabulary for host listeners, evaluators, and autonomy.
 **Machine authority:** [`contracts/glossary.v1.json`](../contracts/glossary.v1.json)
 **Program design (P95):** [HOST_AUTONOMY.md](HOST_AUTONOMY.md)
 
-Do not invent synonyms in contracts or agent chat. Add terms to the JSON contract first, then document here.
+Do not invent synonyms in contracts or agent chat. Add terms to the JSON contract first, then document here. The open-domain semantic terms (GOAL_THREAD, CONTINGENCY, RESUME_CONDITION, etc.) have single short definitions in `contracts/glossary.v1.json` and graph owners in `contracts/ontology.v1.json`; do not duplicate rules in this table.
 
 | Term | Meaning |
 | --- | --- |
