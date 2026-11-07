@@ -76,3 +76,7 @@ Run offline: python -m unittest discover -s tests -v, python -m scripts.check_ho
 Do not add an unattended scheduled job, cloud telemetry, save manipulation, automatic mod installer or release deployment until the local producer and game experiment are proven. The first useful follow-on is a patch-specific, opt-in in-game observer feeding this bounded snapshot format, alongside actual BI-002 hunger mod testing. Preserve old certified patch evidence and the BI-004 income horizon; BI-MODLAB remains a tooling lane.
 
 Links: docs/LIVE_CERT.md, docs/COMPATIBILITY.md, docs/VALIDATION.md, plans/active/BI-002.execution.v1.json, plans/active/BI-MODLAB.HANDOFF.md.
+
+## Canonical local-agent handoff
+
+The ordered live-game launch, hunger A/B test, snapshot-producer and maintainer lanes are owned by [the P04 game-host handoff](../plans/active/BI-GAME-HOST.HANDOFF.md) and its [typed dispatch contract](../plans/active/BI-GAME-HOST.dispatch.v1.json). No local Sims execution is implied by their existence.
