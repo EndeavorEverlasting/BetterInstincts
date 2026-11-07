@@ -270,6 +270,91 @@ def status(run_id: str) -> dict:
             "game_certification": "NOT_GRANTED_BY_HOST_ADAPTER"}
 
 
+def focus(*, process_id: int | None = None, restore=None) -> dict:
+    """Restore a minimized Sims window for operator handoff; never clicks or touches saves.
+
+    ShowWindow alone can leave the game stuck at the classic -32000 iconic placement under
+    focus-steal. WM_SYSCOMMAND/SC_RESTORE has been observed to restore the same process.
+    Reminimization under a computer-control overlay is still possible; CAS/Live Mode clicks
+    remain MANUAL_ONLY.
+    """
+    if sys.platform != "win32":
+        raise GateError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
+    if process_id is not None and not (1 <= int(process_id) <= 4_000_000_000):
+        raise GateError("INVALID_PROCESS_ID")
+    if restore is None:
+        restore = _restore_sims_window
+    report = restore(process_id)
+    if not isinstance(report, dict) or "hwnd" not in report:
+        raise GateError("SIMS_WINDOW_RESTORE_FAILED")
+    return {
+        "state": "FOCUS_RESTORE_ATTEMPTED",
+        "hwnd": int(report["hwnd"]),
+        "process_id": report.get("process_id"),
+        "iconic_before": bool(report.get("iconic_before")),
+        "iconic_after": bool(report.get("iconic_after")),
+        "rect_after": report.get("rect_after"),
+        "proof_ceiling": "WINDOW_FOCUS_ONLY_NOT_LIVE_MODE_OR_SCENE_PROOF",
+        "next": "Operator completes disposable CAS/lot without Resume; reply READY_LIVE",
+    }
+
+
+def _restore_sims_window(process_id: int | None) -> dict:
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.windll.user32
+    WM_SYSCOMMAND = 0x0112
+    SC_RESTORE = 0xF120
+    found: list[tuple[int, int, bool, tuple[int, int, int, int]]] = []
+
+    class RECT(ctypes.Structure):
+        _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
+                    ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
+
+    @ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+    def enum_cb(hwnd, _lparam):
+        if not user32.IsWindowVisible(hwnd):
+            return True
+        length = user32.GetWindowTextLengthW(hwnd)
+        buf = ctypes.create_unicode_buffer(length + 1)
+        user32.GetWindowTextW(hwnd, buf, length + 1)
+        title = buf.value
+        if "Sims" not in title:
+            return True
+        pid = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if process_id is not None and int(pid.value) != int(process_id):
+            return True
+        rect = RECT()
+        user32.GetWindowRect(hwnd, ctypes.byref(rect))
+        found.append((int(hwnd), int(pid.value), bool(user32.IsIconic(hwnd)),
+                      (rect.left, rect.top, rect.right, rect.bottom)))
+        return True
+
+    user32.EnumWindows(enum_cb, 0)
+    if not found:
+        raise GateError("SIMS_WINDOW_NOT_FOUND")
+    if len(found) > 1 and process_id is None:
+        raise GateError("AMBIGUOUS_SIMS_WINDOW_REQUIRE_PROCESS_ID")
+    hwnd, pid, iconic_before, _ = found[0]
+    user32.PostMessageW(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0)
+    time.sleep(0.4)
+    user32.ShowWindow(hwnd, 9)
+    user32.AllowSetForegroundWindow(-1)
+    user32.SetForegroundWindow(hwnd)
+    time.sleep(0.4)
+    rect = RECT()
+    user32.GetWindowRect(hwnd, ctypes.byref(rect))
+    return {
+        "hwnd": hwnd,
+        "process_id": pid,
+        "iconic_before": iconic_before,
+        "iconic_after": bool(user32.IsIconic(hwnd)),
+        "rect_after": [rect.left, rect.top, rect.right, rect.bottom],
+    }
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -291,6 +376,9 @@ def main(argv=None) -> int:
     p.add_argument("--run-id", required=True)
     p.add_argument("--sample-file", required=True, type=Path)
     sub.add_parser("status").add_argument("--run-id", required=True)
+    focus_p = sub.add_parser("focus")
+    focus_p.add_argument("--process-id", type=int, default=None,
+                         help="Optional TS4 process id when multiple Sims windows exist")
     args = parser.parse_args(argv)
     try:
         if args.command in ("plan", "launch", "navigate"):
@@ -308,6 +396,8 @@ def main(argv=None) -> int:
                              args.disposable_confirmed)
         elif args.command == "poll":
             result = poll(args.run_id, args.sample_file)
+        elif args.command == "focus":
+            result = focus(process_id=args.process_id)
         else:
             result = status(args.run_id)
     except (GateError, FileExistsError, FileNotFoundError, OSError,

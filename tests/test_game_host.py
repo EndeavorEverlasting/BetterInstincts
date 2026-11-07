@@ -177,6 +177,25 @@ class GameHostTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 host.launch("bi002-game-host", cfg, digest, True)
 
+    def test_focus_restore_is_not_live_mode_proof(self):
+        def fake_restore(process_id):
+            self.assertEqual(process_id, 15152)
+            return {"hwnd": 99, "process_id": 15152, "iconic_before": True,
+                    "iconic_after": False, "rect_after": [0, 0, 1920, 1080]}
+
+        with patch.object(host.sys, "platform", "win32"):
+            receipt = host.focus(process_id=15152, restore=fake_restore)
+        self.assertEqual(receipt["state"], "FOCUS_RESTORE_ATTEMPTED")
+        self.assertEqual(receipt["proof_ceiling"],
+                         "WINDOW_FOCUS_ONLY_NOT_LIVE_MODE_OR_SCENE_PROOF")
+        self.assertIn("READY_LIVE", receipt["next"])
+        with patch.object(host.sys, "platform", "linux"):
+            with self.assertRaisesRegex(host.GateError, "LOCAL_WINDOWS"):
+                host.focus(restore=fake_restore)
+        with patch.object(host.sys, "platform", "win32"):
+            with self.assertRaisesRegex(host.GateError, "INVALID_PROCESS_ID"):
+                host.focus(process_id=0, restore=fake_restore)
+
 
 if __name__ == "__main__":
     unittest.main()
