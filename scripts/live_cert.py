@@ -15,6 +15,7 @@ RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{1,49}$")
 SCHEMA = "betterinstincts.live-cert/v1"
 MAX_EVENTS = 150
 MAX_BYTES = 200000
+PENDING_STUDIO = "NOT_OBSERVED"  # Baseline only; never acceptable at package attestation.
 
 def run_root(run_id, output=OUTPUT):
     if not RUN_ID_RE.fullmatch(run_id):
@@ -76,9 +77,25 @@ def record(run_id, row, output=OUTPUT):
         sink.write(line)
     return status(run_id,output)
 
+def record_studio_build(run_id, studio_build, output=OUTPUT):
+    """Bind a locally observed Studio build after baseline start; never invent it."""
+    meta, _ = load(run_id, output)
+    if not isinstance(studio_build, str) or not 1 <= len(studio_build) <= 80 or studio_build == PENDING_STUDIO:
+        raise EvidenceError("ACTUAL_SIMS4STUDIO_BUILD_REQUIRED")
+    if meta["sims4studio_build"] != PENDING_STUDIO:
+        raise EvidenceError("STUDIO_BUILD_ALREADY_RECORDED")
+    meta["sims4studio_build"] = studio_build
+    target = run_root(run_id, output) / "run.json"
+    target.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    return {"state": "STUDIO_BUILD_RECORDED_UNREVIEWED", "game_version": meta["game_version"],
+            "sims4studio_build": studio_build, "proof_ceiling": "OPERATOR_REPORTED_NOT_INDEPENDENTLY_REVIEWED"}
+
+
 def attest(run_id, package_sha256, tuning_source_sha256, tuning_resource_id, capture_ref,
            save_confirmed=False, mods_root_confirmed=False, output=OUTPUT):
     meta,trials=load(run_id,output)
+    if meta.get("sims4studio_build") == PENDING_STUDIO:
+        raise EvidenceError("STUDIO_BUILD_UNOBSERVED_NO_PACKAGE_ATTESTATION")
     if not all(isinstance(x,str) and SHA_RE.fullmatch(x) for x in (package_sha256,tuning_source_sha256)):
         raise EvidenceError("INVALID_PROOF_HASH")
     if not 1<=len(tuning_resource_id)<=120 or not 3<=len(capture_ref)<=160:
@@ -141,6 +158,9 @@ def main(argv=None):
     attach.add_argument("--capture-ref",required=True)
     attach.add_argument("--disposable-save-confirmed",action="store_true")
     attach.add_argument("--user-selected-mods-root-confirmed",action="store_true")
+    studio=sub.add_parser("studio")
+    studio.add_argument("--run-id",required=True)
+    studio.add_argument("--build",required=True)
     for name in ("status","evaluate"):
         sub.add_parser(name).add_argument("--run-id",required=True)
     args=p.parse_args(argv)
@@ -157,6 +177,8 @@ def main(argv=None):
             result=attest(args.run_id,args.package_sha256,args.tuning_source_sha256,
                           args.tuning_resource_id,args.capture_ref,
                           args.disposable_save_confirmed,args.user_selected_mods_root_confirmed)
+        elif args.command=="studio":
+            result=record_studio_build(args.run_id,args.build)
         else:
             result=status(args.run_id,save_report=args.command=="evaluate")
     except (EvidenceError,FileExistsError,FileNotFoundError,ValueError,OSError) as exc:

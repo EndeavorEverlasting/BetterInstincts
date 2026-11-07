@@ -49,6 +49,9 @@ python -m scripts.game_host navigate --profile dist/game-host/local-profile.json
 python -m scripts.game_host status --run-id bi002-first-boot
 # Only after the actual intended disposable Sim is in Live Mode:
 python -m scripts.game_host confirm --run-id bi002-first-boot --disposable-confirmed --game-version ACTUAL.FULL.PATCH.VERSION --capture-ref capture:live-mode-001
+# New: initialize or safely reuse an empty baseline recorder, without Sims 4 Studio:
+python -m scripts.game_baseline --run-id bi002-first-boot
+python -m scripts.live_cert status --run-id bi002-first-boot
 ~~~
 
 Preflight does not launch anything. Launch requires explicit execute and only permits TS4_x64.exe or TS4.exe on Windows. It creates a non-overwriting repo-local dist/game-host/<run-id> manifest and JSONL receipts. GUI navigation requires execute plus disposable confirmation; each successful click leaves an event checkpoint, so a partial flow cannot be blindly repeated. If interrupted, inspect actual game UI and recover safely in a fresh session. Screenshot template matching fails closed if ambiguous or missing; no guessed coordinates or global scanning.
@@ -81,3 +84,15 @@ Links: docs/LIVE_CERT.md, docs/COMPATIBILITY.md, docs/VALIDATION.md, plans/activ
 ## Canonical local-agent handoff
 
 The ordered live-game launch, hunger A/B test, snapshot-producer and maintainer lanes are owned by [the P04 game-host handoff](../plans/active/BI-GAME-HOST.HANDOFF.md) and its [typed dispatch contract](../plans/active/BI-GAME-HOST.dispatch.v1.json). No local Sims execution is implied by their existence.
+
+## CAS → Live Mode: the measured next step (2026-11-06)
+
+Real `TS4_x64` reached Create-a-Sim for game version `1.121.361.1020`, run `bi002-first-boot`, in [merged PR #13](https://github.com/EndeavorEverlasting/BetterInstincts/pull/13). The current-host process/PID are historical receipts, not a promise it remains running. After any unattended pause, inspect the window before continuing; NEVER replay the New Game click against an unknown screen.
+
+**Minimal operator step:** bring The Sims 4 to the foreground, select **No thanks!** to skip the story quiz, create an expendable adult Sim, choose a disposable household/empty lot and enter **Live Mode**. Do not Resume or load personal saves. Share `READY_LIVE` with the **local game-capable agent**, not as machine proof by itself. No computer-control overlay should be used during focus-sensitive CAS clicks.
+
+**Local agent immediately after Live Mode:** verify the actual game screen and disposable household, capture a private reference, run the `game_host confirm` command above using the observed exact patch, then run `python -m scripts.game_baseline --run-id bi002-first-boot`. This starts a repo-local **zero-trial** `live_cert` recorder with Studio build `NOT_OBSERVED`. It never claims ingestion, an observed hunger delta, or gameplay certification. Retries preserve existing trial rows; a mismatched session version fails closed. The first real hunger baseline still requires a locally measured observation for every numeric field, capture reference, and `python -m scripts.live_cert record --stage baseline --trial 1 ...` with actual measurements only. Record five repeatable vanilla trials, then independently investigate tuning before authoring or attesting a modified package.
+
+**Sims 4 Studio is not a prerequisite for vanilla baseline recording.** Once its real build is observed, the game-host agent records `python -m scripts.live_cert studio --run-id bi002-first-boot --build ACTUAL_STUDIO_BUILD`. The unobserved placeholder is prohibited from package attestation; installing/claiming Studio is never inferred. Full certification still requires actual package hash, verified resource, five modified trials, rollback, player-command and performance checks, independent maintainer review.
+
+CI covers fake host receipts and recorder behavior; it cannot complete Create-a-Sim, operate Live Mode or manufacture measured gameplay observations.
