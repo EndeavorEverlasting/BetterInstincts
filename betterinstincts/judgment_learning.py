@@ -217,6 +217,8 @@ def prequential_evaluate(examples: Sequence[Mapping], *, game_version: str,
     model = {"schema": SCHEMA, "game_version": game_version, "platform": platform,
              "counts": []}
     predictions = correct = helpful = 0
+    baseline_predictions = baseline_correct = 0
+    global_helpful = defaultdict(int)
     for raw in examples:
         event = _example(raw)
         if (event["game_version"], event["platform"]) != (game_version, platform):
@@ -232,10 +234,24 @@ def prequential_evaluate(examples: Sequence[Mapping], *, game_version: str,
             if predicted["state"] == "ADVISORY_ONLY":
                 predictions += 1
                 correct += int(predicted["suggested_action"] == event["action"])
+            if global_helpful:
+                ranked = sorted(global_helpful.items(), key=lambda row: row[1], reverse=True)
+                if len(ranked) == 1 or ranked[0][1] > ranked[1][1]:
+                    baseline_predictions += 1
+                    baseline_correct += int(ranked[0][0] == event["action"])
+        if event["outcome"] == "helpful":
+            global_helpful[event["action"]] += 1
         model = learn([raw], game_version=game_version, platform=platform, prior=model)
     return {"schema": "betterinstincts.judgment-evaluation/v1",
             "reviewed_examples": len(examples), "helpful_examples": helpful,
             "suggestions_issued": predictions, "correct_helpful_actions": correct,
             "coverage": round(predictions / helpful, 4) if helpful else 0.0,
             "precision_when_issued": round(correct / predictions, 4) if predictions else None,
+            "baseline": "GLOBAL_MOST_FREQUENT_REVIEWED_HELPFUL_ACTION",
+            "baseline_suggestions_issued": baseline_predictions,
+            "baseline_correct_helpful_actions": baseline_correct,
+            "baseline_coverage": round(baseline_predictions / helpful, 4) if helpful else 0.0,
+            "baseline_precision_when_issued": (
+                round(baseline_correct / baseline_predictions, 4) if baseline_predictions else None
+            ),
             "model": model, "proof_ceiling": "OFFLINE_PREQUENTIAL_NOT_GAME_PROOF"}
