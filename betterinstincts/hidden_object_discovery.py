@@ -218,3 +218,149 @@ def review_catalog_entry(entry: Mapping[str, object]) -> dict:
         "capture_ref": entry["capture_ref"],
         "proof_ceiling": "OPERATOR_REVIEWED_CATALOG_ENTRY_NOT_PURCHASE_OR_PLACEMENT",
     }
+
+
+def p04_guide(*, cfg: dict | None = None) -> dict:
+    """Emit the complete five-step operator playbook, even without game access.
+
+    P04 can ingest this read-only output before obtaining a host observation.
+    It neither authorizes nor performs any UI action.
+    """
+    cfg = cfg or load_contract()
+    book = cfg.get("operator_playbook") or {}
+    steps = book.get("ordered_steps") or []
+    required = (
+        "OPEN_CHEAT_CONSOLE", "ENABLE_CHEATS", "REVEAL_HIDDEN_OBJECTS",
+        "ENTER_BUILD_BUY", "SELECT_DEBUG_RESULTS",
+    )
+    if [s.get("step_id") for s in steps] != list(required):
+        raise DiscoveryError("P04_PLAYBOOK_SEQUENCE_CHANGED")
+    if [s.get("number") for s in steps] != list(range(1, 6)):
+        raise DiscoveryError("P04_PLAYBOOK_NUMBERING_CHANGED")
+    if steps[1].get("console_line") != cfg["ordered_console_lines"][0]:
+        raise DiscoveryError("P04_TESTINGCHEATS_LINE_CHANGED")
+    if steps[2].get("console_line") != cfg["ordered_console_lines"][1]:
+        raise DiscoveryError("P04_HIDDEN_LINE_CHANGED")
+    if steps[2].get("optional_console_line") != cfg["optional_live_edit_line"]:
+        raise DiscoveryError("P04_LIVE_EDIT_LINE_CHANGED")
+    if steps[4].get("search_term") != cfg["search_contract"]["primary"]:
+        raise DiscoveryError("P04_DEBUG_SEARCH_CHANGED")
+    return {
+        "state": "P04_PLAYBOOK_RETRIEVED_NO_GAME_ACTION",
+        "prompt_id": "P04",
+        "operator_order_preserved": True,
+        "steps": steps,
+        "platform_console_chords": cfg["platform_console_chords"],
+        "console_commands": list(cfg["ordered_console_lines"]),
+        "optional_live_edit_command": cfg["optional_live_edit_line"],
+        "item_families": list(book.get("candidate_item_families") or []),
+        "cost_claim_rule": book["item_price_rule"],
+        "receipt_audit_command": book["completion_audit"],
+        "host_action_authorized": False,
+        "proof_ceiling": cfg["proof_ceiling"],
+    }
+
+
+def audit_p04_receipt(receipt: Mapping[str, object], *, cfg: dict | None = None) -> dict:
+    """Check a host-supplied receipt's *shape*, not the truth of its captures.
+
+    Never promote this check to proof that a screenshot was reviewed or that a
+    Sims process actually received the commands. Real-game certification is an
+    independent local-host responsibility.
+    """
+    cfg = cfg or load_contract()
+    guide = p04_guide(cfg=cfg)
+    problems: list[str] = []
+    if not isinstance(receipt, Mapping):
+        return {
+            "state": "P04_EVIDENCE_INCOMPLETE",
+            "problems": ["RECEIPT_NOT_OBJECT"],
+            "live_certified": False,
+            "host_action_authorized": False,
+        }
+    if receipt.get("schema") != "betterinstincts.hidden-object-discovery-receipt/v1":
+        problems.append("RECEIPT_SCHEMA_MISMATCH")
+    version = receipt.get("exact_game_build")
+    if not isinstance(version, str) or not _PATCH.fullmatch(version):
+        problems.append("EXACT_GAME_BUILD_MISSING")
+    platform = receipt.get("platform")
+    if platform not in guide["platform_console_chords"]:
+        problems.append("PLATFORM_UNKNOWN")
+    if receipt.get("save_attestation") != "OPERATOR_ATTESTED_DISPOSABLE_LAB":
+        problems.append("SAVE_NOT_ATTESTED_LAB")
+    if receipt.get("player_explicit_opt_in") is not True:
+        problems.append("PLAYER_OPT_IN_MISSING")
+    if receipt.get("game_speed_unchanged") is not True:
+        problems.append("SPEED_UNCHANGED_UNPROVEN")
+    if receipt.get("player_queue_unchanged") is not True:
+        problems.append("PLAYER_QUEUE_UNCHANGED_UNPROVEN")
+    if platform in ("playstation", "xbox") and receipt.get(
+        "acknowledge_testingcheats_trophy_risk"
+    ) is not True:
+        problems.append("CONSOLE_ACHIEVEMENT_ACK_MISSING")
+    cues = receipt.get("scene_cues")
+    if not isinstance(cues, Mapping) or not all(
+        isinstance(cues.get(name), str) and cues[name].strip()
+        for name in ("visual_ref", "operator_ref")
+    ):
+        problems.append("TWO_SOURCE_SCENE_CUES_MISSING")
+    elif cues["visual_ref"] == cues["operator_ref"]:
+        problems.append("SCENE_CUE_SOURCES_NOT_DISTINCT")
+    expected = [x["step_id"] for x in guide["steps"]]
+    evidence = receipt.get("steps")
+    seen: list[str] = []
+    if not isinstance(evidence, list) or len(evidence) != len(expected):
+        problems.append("FIVE_ORDERED_STEP_RECEIPTS_REQUIRED")
+    else:
+        for idx, item in enumerate(evidence):
+            if not isinstance(item, Mapping):
+                problems.append("STEP_RECEIPT_NOT_OBJECT:" + str(idx + 1))
+                continue
+            if item.get("step_id") != expected[idx]:
+                problems.append("STEP_SEQUENCE_INVALID:" + str(idx + 1))
+            ref = item.get("observation_ref")
+            permit = item.get("control_permit_ref")
+            if not isinstance(ref, str) or not ref.strip():
+                problems.append("STEP_OBSERVATION_MISSING:" + str(idx + 1))
+            else:
+                seen.append(ref)
+            if not isinstance(permit, str) or not permit.strip():
+                problems.append("STEP_PERMIT_MISSING:" + str(idx + 1))
+            if item.get("outcome") != "OBSERVED":
+                problems.append("STEP_OUTCOME_UNVERIFIED:" + str(idx + 1))
+        if len(seen) != len(set(seen)):
+            problems.append("STEP_CAPTURE_REFS_NOT_DISTINCT")
+    if receipt.get("live_edit_requested") is True:
+        optional = receipt.get("live_edit_observation")
+        if not isinstance(optional, Mapping) or optional.get("outcome") != "OBSERVED" or not isinstance(
+            optional.get("observation_ref"), str
+        ) or not optional["observation_ref"].strip():
+            problems.append("OPTIONAL_LIVE_EDIT_UNVERIFIED")
+    if receipt.get("all_items_free") is True or receipt.get("catalog_exhaustive") is True:
+        problems.append("UNSUPPORTED_GLOBAL_CATALOG_CLAIM")
+    entries = receipt.get("catalog_entries")
+    checked = []
+    if not isinstance(entries, list) or not (1 <= len(entries) <= cfg["search_contract"]["search_limit"]):
+        problems.append("REVIEWED_CATALOG_ENTRIES_REQUIRED")
+    else:
+        for idx, entry in enumerate(entries):
+            row = review_catalog_entry(entry)
+            if row["state"] == "ENTRY_NOT_VERIFIED":
+                problems.append("CATALOG_ENTRY_UNVERIFIED:" + str(idx + 1))
+            else:
+                checked.append(row)
+    return {
+        "state": (
+            "P04_EVIDENCE_INCOMPLETE" if problems else
+            "P04_EVIDENCE_SHAPE_COMPLETE_PENDING_INDEPENDENT_REVIEW"
+        ),
+        "problems": problems,
+        "steps_structurally_checked": len(seen),
+        "reviewed_catalog_entries": len(checked),
+        "observed_zero_price_claims_in_receipt": sum(1 for x in checked if x["free"] is True),
+        "price_unknown_entries_in_receipt": sum(1 for x in checked if x["free"] is None),
+        "live_certified": False,
+        "host_action_authorized": False,
+        "next_gate": "INDEPENDENT_LOCAL_HOST_VISUAL_AND_PLAYER_REVIEW",
+        "proof_ceiling": "STRUCTURAL_RECEIPT_CHECK_ONLY_NOT_GAMEPLAY_CERTIFICATION",
+    }
