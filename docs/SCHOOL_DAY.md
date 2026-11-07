@@ -16,6 +16,8 @@ Integrated by: `host_stack` when `SCHOOL_DAY_GOAL_PROGRESS` / `HOMEWORK_PREMISES
 
 LabLab High School Years morning free time: school goals in the top-left were difficult to advance while homework could not be done on school premises; Clumsy **Not Stumble** favored sedentary study. Capture: `operator:school-day-goals-20261107`.
 
+**Premises rule:** `location_kind` / `sim_at_school` is the **active Sim's premises**, not the camera lot. A home viewport while the portrait shows the school icon must not trigger home homework lot-scan. See `resolve_sim_premises` and journey spine `docs/TEEN_DAY_JOURNEY.md`.
+
 ## P82 hypothesis
 
 - **Hypothesis:** A versioned school-day goal catalog plus phase-aware homework blocking routes the host to sedentary `Study for Exams` steps before premises-blocked homework and before generic lot fluff, when survival needs are green.

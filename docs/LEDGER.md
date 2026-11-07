@@ -199,3 +199,11 @@ Operator gap: gardening desire visible in moodlets without a durable way to chec
 ## 2026-11-07 — Teen homework career-performance (P95 + P124)
 
 **Operator correction:** teen at home Wed night; career panel High School Student daily task = homework (not scenario Get a career); homework **not** in inventory but **on lot surface** (dining table); operator put book in inventory after lot scan; hunger critical; queue Use Toilet + Take a Shower; computer desk on lot. **P95** adds `contracts/teen-homework.v1.json` + `betterinstincts/teen_homework.py` (recovery ladder headed by `LOT_SCAN_PUT_HOMEWORK_IN_INVENTORY`, `SURVIVAL_BEFORE_HOMEWORK`, inventory-missing path). **P124** small helpers for survival/recovery/lot-scan/gate pick. Wired `host_stack` + `host_listener` (`inventory_has_homework`, `homework_on_lot`, `available_objects`, `life_stage`). Proof ceiling `HOST_TEEN_HOMEWORK_CATALOG_NOT_EA_API_NOT_BI006_CERT`. Capture `operator:teen-homework-missing-20261107`. BI-006-adjacent only — does not close BI-002/BI-006.
+
+## 2026-11-07 — Teen day journey + school presence + Morgan invite (P95 + Trifecta)
+
+**Journey continuity** (`docs/TEEN_DAY_JOURNEY.md`): school-day goals → scenario Scoring Simoleons → homework missing/lot-scan/put-in-inventory → survival-first → camera≠Sim premises while at school → after-school homework in inventory → classmate invite “Morgan” occult UNKNOWN.
+
+**School presence:** `resolve_sim_premises` / `sim_at_school` / `camera_lot_kind` — home camera must not fire lot-scan homework while Sim is at school.
+
+**Social opportunity:** `contracts/social-opportunity.v1.json` — unique Sims-library lookup before OK; ambiguous/missing/unknown/vampire → Cancel; unique HUMAN → OK allowed. App owns the decision. Capture `operator:invite-morgan-occult-unknown-20261107`. Live Cancel observed; live OK after library evidence remains open.

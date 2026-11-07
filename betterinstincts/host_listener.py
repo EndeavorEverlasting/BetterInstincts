@@ -146,6 +146,12 @@ def _load_observation(raw: Mapping) -> dict:
     on_lot_hw = raw.get("homework_on_lot")
     if on_lot_hw is not None and not isinstance(on_lot_hw, bool):
         raise HostListenerError("OBSERVATION_HOMEWORK_ON_LOT_INVALID")
+    sim_at_school = raw.get("sim_at_school")
+    if sim_at_school is not None and not isinstance(sim_at_school, bool):
+        raise HostListenerError("OBSERVATION_SIM_AT_SCHOOL_INVALID")
+    sim_library = raw.get("sim_library") or ()
+    if not isinstance(sim_library, (list, tuple)):
+        raise HostListenerError("OBSERVATION_SIM_LIBRARY_INVALID")
     life_stage = raw.get("life_stage")
     if life_stage is not None and not isinstance(life_stage, str):
         raise HostListenerError("OBSERVATION_LIFE_STAGE_INVALID")
@@ -172,6 +178,21 @@ def _load_observation(raw: Mapping) -> dict:
         "homework_pending": bool(raw.get("homework_pending", False)),
         "inventory_has_homework": inv if isinstance(inv, bool) else None,
         "homework_on_lot": on_lot_hw if isinstance(on_lot_hw, bool) else None,
+        "sim_at_school": sim_at_school if isinstance(sim_at_school, bool) else None,
+        "camera_lot_kind": (
+            str(raw["camera_lot_kind"]) if raw.get("camera_lot_kind") else None
+        ),
+        "social_prompt_active": bool(raw.get("social_prompt_active", False)),
+        "social_prompt_kind": str(raw.get("social_prompt_kind") or "invite_over"),
+        "social_prompt_text": str(raw.get("social_prompt_text") or ""),
+        "social_invitee_name": (
+            str(raw["social_invitee_name"]) if raw.get("social_invitee_name") else None
+        ),
+        "sim_library": tuple(sim_library),
+        "social_lookup_ran": bool(raw.get("social_lookup_ran", False)),
+        "invitee_occult_status": (
+            str(raw["invitee_occult_status"]) if raw.get("invitee_occult_status") else None
+        ),
         "life_stage": (str(life_stage) if life_stage else None),
         "emotion": (str(raw["emotion"]) if raw.get("emotion") else None),
         "moodlets": [str(x) for x in (raw.get("moodlets") or ())],
@@ -281,6 +302,15 @@ def tick(
             homework_pending=obs["homework_pending"],
             inventory_has_homework=obs["inventory_has_homework"],
             homework_on_lot=obs["homework_on_lot"],
+            sim_at_school=obs["sim_at_school"],
+            camera_lot_kind=obs["camera_lot_kind"],
+            social_prompt_active=obs["social_prompt_active"],
+            social_prompt_kind=obs["social_prompt_kind"],
+            social_prompt_text=obs["social_prompt_text"],
+            social_invitee_name=obs["social_invitee_name"],
+            sim_library=obs["sim_library"],
+            social_lookup_ran=obs["social_lookup_ran"],
+            invitee_occult_status=obs["invitee_occult_status"],
             life_stage=obs["life_stage"],
             scenario_active=obs["scenario_active"],
             scenario_goals_incomplete=obs["scenario_goals_incomplete"],
