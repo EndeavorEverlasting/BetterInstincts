@@ -42,3 +42,7 @@ python -m scripts.curious_catalog deactivate --session-id lab-curious
 
 `HOST_CURIOUS_CATALOG_OPT_IN_CHEAT_DISPATCH_NOT_MOD_UI_NOT_BI002_CERT`.
 Live placement remains operator Buy Mode; host must never advance sim speed.
+
+## General hidden objects (separate host service)
+
+The gardening/rare-seed Curious Catalog above is **not** a complete debug-object browser. The generic opt-in discovery service at [HIDDEN_OBJECT_DISCOVERY.md](HIDDEN_OBJECT_DISCOVERY.md) handles toothbrushes, dishes, crystals, ponds, invisible lights, world cars, streetlights and trees. Its contract is `contracts/hidden-object-discovery.v1.json`, planner is `betterinstincts/hidden_object_discovery.py`, and CLI is `python -m scripts.hidden_object_discovery`. It uses the player's requested `testingcheats true` → `bb.showhiddenobjects` sequence, with optional `bb.showliveeditobjects`, and inspects actual item prices rather than assuming all are free. It neither autoruns nor replaces this money-garden path. Existing `curious_catalog` code/receipts remain authoritative for the gardening shelf.
