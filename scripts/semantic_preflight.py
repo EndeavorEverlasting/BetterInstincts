@@ -47,6 +47,11 @@ def preflight(
     validate_ontology(ontology, root)
     record = read_json(path)
     validate_consultation(record, ontology, targets, root)
+    # The consultation validator only rejects non-admitted decisions when a
+    # mutation file is supplied. Read-only sampling and game experiments have
+    # no file path, but a BLOCK_UNSAFE/DEFER decision must still fail closed.
+    if record.get("decision") != "ADMIT_FOR_OFFLINE_PROTOTYPE":
+        raise SemanticPreflightError("CONSULTATION_NOT_ADMITTED")
     if operation in {"game_sampling", "game_experiment"}:
         if not exact_game_build or record.get("game_build_scope") != "EXACT_GAME_BUILD:" + exact_game_build:
             raise SemanticPreflightError("GAME_SCOPE_NOT_CONSULTED")

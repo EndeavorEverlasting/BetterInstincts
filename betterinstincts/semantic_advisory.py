@@ -43,7 +43,7 @@ def _goal(row: Mapping) -> dict:
     }
 
 
-def _observed_event(row: Mapping, known: set[str]) -> dict | None:
+def _observed_event(row: Mapping, known: set[str], capture: str) -> dict | None:
     """Unverified, expired or unmapped contingencies never force preemption."""
     if not isinstance(row, Mapping):
         return None
@@ -53,6 +53,10 @@ def _observed_event(row: Mapping, known: set[str]) -> dict | None:
     }:
         return None
     if not isinstance(row.get("observation_ref"), str) or not row["observation_ref"].strip():
+        return None
+    # A time-sensitive signal belongs to the current bounded observation.
+    # A prior tick's urgency cannot remain an evergreen emergency.
+    if row.get("capture_ref") != capture:
         return None
     deadline = row.get("deadline_ticks")
     if deadline is not None and (
@@ -107,10 +111,19 @@ def compose_semantic_turn(
     previous = previous or {}
     prior_id = previous.get("selected_goal_id")
     suspended = [
-        {"goal_id": entry["goal_id"], "reason": entry.get("reason", "RECHECK_STATE"),
-         "revalidation_required": True}
+        {
+            "goal_id": entry["goal_id"],
+            "reason": entry.get("reason", "RECHECK_STATE"),
+            "resume_condition": entry.get(
+                "resume_condition", "FRESH_REVALIDATION_AFTER_INTERRUPTION"
+            ),
+            "observation_ref": entry.get("observation_ref"),
+            "revalidation_required": True,
+        }
         for entry in (previous.get("suspended") or [])
-        if isinstance(entry, Mapping) and isinstance(entry.get("goal_id"), str)
+        if isinstance(entry, Mapping)
+        and isinstance(entry.get("goal_id"), str)
+        and entry["goal_id"].strip()
     ]
     if player_directed or cascade.get("state") == "DOMAIN_CASCADE_YIELDED" or cascade.get("gate") == "PLAYER_FIRST_OR_BUSY":
         _retain_intent(suspended, prior_id, "PLAYER_ACTIVITY_YIELD", capture)
@@ -120,12 +133,29 @@ def compose_semantic_turn(
             "selected_goal_id": None, "suspended": suspended,
             "evaluated_domains": sorted({g["domain"] for g in normalized}),
             "resource_conflicts": [], "resume_candidates": [],
+            "revalidation_pending": sorted({item["goal_id"] for item in suspended}),
+            "resumed_goals": [],
             "control_permit": None, "proof_ceiling": "OFFLINE_ADVISORY_ONLY",
         }
-    active = [g for g in normalized if g["status"] == "READY"]
+    # A suspended goal is NOT eligible merely because a new caller marks it
+    # READY. Require a fresh, same-capture revalidation record. It remains a
+    # goal thread while deferred, and this module never issues a game permit.
+    suspended_ids = {item["goal_id"] for item in suspended}
+    revalidated_ids = {
+        normalized_goal["id"]
+        for normalized_goal, raw in zip(normalized, goals)
+        if normalized_goal["id"] in suspended_ids
+        and raw.get("revalidated_capture_ref") == capture
+        and raw.get("revalidation_outcome") == "SAFE_TO_RECONSIDER"
+    }
+    active = [
+        g for g in normalized
+        if g["status"] == "READY"
+        and (g["id"] not in suspended_ids or g["id"] in revalidated_ids)
+    ]
     events = [
         event for row in contingencies
-        if (event := _observed_event(row, set(by_id))) is not None
+        if (event := _observed_event(row, set(by_id), capture)) is not None
     ]
     event_by_goal = {}
     for event in events:
@@ -148,11 +178,17 @@ def compose_semantic_turn(
         _retain_intent(suspended, prior_id, "OBSERVED_CONTINGENCY_PREEMPTION", capture)
     if current_id is None:
         _retain_intent(suspended, prior_id, "NO_READY_GOALS", capture)
+    resumed_goals = [current_id] if current_id in revalidated_ids else []
+    if resumed_goals:
+        suspended = [item for item in suspended if item["goal_id"] != current_id]
     resume_candidates = [
         item["goal_id"] for item in suspended
         if item["goal_id"] in by_id and by_id[item["goal_id"]]["status"] == "READY"
         and item["goal_id"] != current_id
     ]
+    revalidation_pending = sorted({
+        goal_id for goal_id in resume_candidates if goal_id not in revalidated_ids
+    })
     selected_resources = set(chosen["resource_claims"]) if chosen else set()
     resource_conflicts = [
         g["id"] for g in ranked[1:]
@@ -168,9 +204,9 @@ def compose_semantic_turn(
         "contingency_preemption": preempted,
         "suspended": suspended,
         "resume_candidates": sorted(set(resume_candidates)),
-        "resume_selected_requires_revalidation": any(
-            row["goal_id"] == current_id for row in suspended
-        ),
+        "revalidation_pending": revalidation_pending,
+        "resumed_goals": resumed_goals,
+        "resume_selected_requires_revalidation": False,
         "evaluated_domains": sorted({g["domain"] for g in normalized}),
         "resource_conflicts": resource_conflicts,
         "control_permit": None,
