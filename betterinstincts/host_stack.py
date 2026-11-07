@@ -23,6 +23,7 @@ from betterinstincts.instincts_host import (
 )
 from betterinstincts.build_optimize import BuildOptimizeError, evaluate_build_optimize
 from betterinstincts.moodlets import MoodletError, evaluate_moodlets
+from betterinstincts.sim_profile import SkillInput, SimProfileError, evaluate_sim_profile
 from betterinstincts.viewport import ViewportError, predict_risk
 
 
@@ -55,6 +56,15 @@ def evaluate_turn(
     homework_pending: bool = False,
     emotion: Optional[str] = None,
     moodlets: Sequence[str] = (),
+    sim_name: Optional[str] = None,
+    life_stage: Optional[str] = None,
+    traits: Sequence[str] = (),
+    aspiration: Optional[str] = None,
+    aspiration_track: Optional[str] = None,
+    skills: Sequence[SkillInput] = (),
+    likes: Sequence[str] = (),
+    dislikes: Sequence[str] = (),
+    whims: Sequence[str] = (),
     build_objective: Optional[str] = None,
     build_owned_packs: Optional[Sequence[str]] = None,
     build_budget: Optional[float] = None,
@@ -69,6 +79,9 @@ def evaluate_turn(
     When critical needs are off-lot, next_gate becomes MAP_TRAVEL_HOME_FIRST —
     never IN_FRAME_WALK_THRASH (glossary). Moodlets are supplied observations
     (portrait strip); absence is SENSOR_NOT_SUPPLIED — never vision-invented.
+
+    Optional Simology/skills/preferences/whims attach a read-only sim_profile
+    (docs/SIM_PROFILE.md); never authorizes practice_skill or BI-005 closure.
 
     Optional build_objective runs evaluate-only Build/Buy catalog ranking
     (docs/BUILD_OPTIMIZE.md); never paints walls from this pure module.
@@ -101,6 +114,21 @@ def evaluate_turn(
             outdoor_social_prefix=outdoor_social_prefix,
             indoor_capacity_observed=indoor_capacity_observed,
             event_active=event_active,
+            capture_ref=capture_ref,
+        )
+        sim_profile = evaluate_sim_profile(
+            sim_name=sim_name,
+            life_stage=life_stage,
+            traits=traits,
+            aspiration=aspiration,
+            aspiration_track=aspiration_track,
+            skills=skills,
+            likes=likes,
+            dislikes=dislikes,
+            whims=whims,
+            emotion=emotion,
+            moodlets=moodlets,
+            needs=needs,
             capture_ref=capture_ref,
         )
         if queue is not None:
@@ -142,6 +170,7 @@ def evaluate_turn(
         BehaviorEvalError,
         EventBalanceError,
         MoodletError,
+        SimProfileError,
         BuildOptimizeError,
     ) as exc:
         raise HostStackError(str(exc)) from exc
@@ -311,6 +340,7 @@ def evaluate_turn(
         "fallback": fallback,
         "behavior": behavior,
         "moodlets": moodlet_eval,
+        "sim_profile": sim_profile,
         "event_balance": event_balance,
         "build_optimize": build_optimize,
         "instincts": instincts,

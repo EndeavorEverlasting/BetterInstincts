@@ -1,0 +1,139 @@
+{
+  "schema": "betterinstincts.sim-profile/v1",
+  "version": 1,
+  "authority": "docs/SIM_PROFILE.md",
+  "proof_ceiling": "SUPPLIED_SIM_PROFILE_OBSERVATIONS_NOT_VISION_API_NOT_BI005",
+  "design_brief": {
+    "subject": "Active Sim character profile inspection (skills, preferences, traits, whims, moodlets)",
+    "audience": "player/operator discovering why a Sim wants something, plus local host agent",
+    "job": "Make the active Sim's skills, likes/dislikes, traits, aspiration, and desire cues inspectable via durable host logic — without inventing a second UI or claiming skill-growth certification",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose clarity for Simology discovery job"},
+      {"id": "UP-A85AD9DC3", "mechanism": "call-stack / panel storytelling"},
+      {"id": "UP-0F2FB5920", "mechanism": "information architecture for where to look"},
+      {"id": "UP-1B0AFA8BE", "mechanism": "state-aware panel/component critique"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ]
+  },
+  "naming_disambiguation": {
+    "sim_profile_inspector": "This contract — Live Simology / skills / preferences / whims sensing",
+    "select_sim_to_play": "host-menu household picker scene (not this feature)",
+    "compatibility_profile": "game-patch certified profile under compatibility/ (not this feature)"
+  },
+  "local_observed": {
+    "date": "2026-11-07",
+    "patch": "1.121.361.1020",
+    "gap": "Operator saw gardening desire/need via moodlets without knowing which HUD panels expose skills, preferences, and tendencies",
+    "capture_ref": "operator:sim-profile-garden-desire-20261107",
+    "note": "Moodlet strip alone is insufficient; host needs a composed Sim profile surface"
+  },
+  "player_discovery_map": [
+    {
+      "surface_id": "moodlet_strip",
+      "hud_location": "Bottom-left portrait emotion + moodlet icons",
+      "shows": ["emotion", "temporary_buffs", "some_desire_cues"],
+      "host_owner": "contracts/moodlets.v1.json",
+      "player_action": "Hover moodlet icons; note labels that name activities (e.g. gardening)"
+    },
+    {
+      "surface_id": "whims_desires",
+      "hud_location": "Desire / whim cards near the needs panel (pack-dependent layout)",
+      "shows": ["short_term_wants", "activity_desires"],
+      "host_owner": "contracts/sim-profile.v1.json",
+      "player_action": "Read active whim text; cancel or pin only deliberately"
+    },
+    {
+      "surface_id": "simology_panel",
+      "hud_location": "Sim Info / Simology (open from active Sim portrait or Simology tab)",
+      "shows": ["traits", "aspiration", "life_stage", "relationship_summary"],
+      "host_owner": "contracts/sim-profile.v1.json",
+      "player_action": "Open Simology; read traits and aspiration before assuming host should queue hobbies"
+    },
+    {
+      "surface_id": "skills_panel",
+      "hud_location": "Skills tab on Sim Info",
+      "shows": ["skill_names", "skill_levels"],
+      "host_owner": "contracts/sim-profile.v1.json",
+      "player_action": "Check current skill levels; reading is not BI-005 skill-growth proof"
+    },
+    {
+      "surface_id": "preferences_panel",
+      "hud_location": "Likes & Dislikes / Preferences (Simology-adjacent; pack-dependent)",
+      "shows": ["likes", "dislikes", "activity_preferences"],
+      "host_owner": "contracts/sim-profile.v1.json",
+      "player_action": "Confirm whether gardening (or other hobbies) is a Like before treating a whim as personality"
+    },
+    {
+      "surface_id": "needs_panel",
+      "hud_location": "Bottom-right motives meters",
+      "shows": ["six_adult_needs"],
+      "host_owner": "contracts/needs.v1.json",
+      "player_action": "Survival meters still outrank hobby desires"
+    }
+  ],
+  "surfaces": {
+    "identity": {"required": false, "fields": ["sim_name", "life_stage"]},
+    "traits": {"required": false, "max_items": 12},
+    "aspiration": {"required": false, "fields": ["name", "track"]},
+    "skills": {"required": false, "max_items": 32, "proof": "READ_LEVELS_ONLY"},
+    "likes": {"required": false, "max_items": 24},
+    "dislikes": {"required": false, "max_items": 24},
+    "whims": {"required": false, "max_items": 8},
+    "moodlets": {"required": false, "composed_from": "contracts/moodlets.v1.json"}
+  },
+  "desire_catalog": {
+    "gardening": {
+      "aliases": ["garden", "gardening", "tend_garden", "harvest", "plant", "green_thumb_urge"],
+      "related_skills": ["gardening"],
+      "related_preferences": ["gardening", "nature", "outdoors"],
+      "explain_via": ["whims", "likes", "skills", "moodlets", "traits"],
+      "host_note": "Desire to garden is preference/whim/skill context — not automatic practice_skill authorization"
+    },
+    "cooking": {
+      "aliases": ["cook", "cooking", "bake", "kitchen"],
+      "related_skills": ["cooking", "gourmet_cooking"],
+      "related_preferences": ["cooking", "food"],
+      "explain_via": ["whims", "likes", "skills", "moodlets"],
+      "host_note": "Align with hunger relief when meters critical; hobby cooking is separate"
+    },
+    "fitness": {
+      "aliases": ["workout", "exercise", "fitness", "jog"],
+      "related_skills": ["fitness"],
+      "related_preferences": ["fitness", "athletic"],
+      "explain_via": ["whims", "likes", "skills", "moodlets"],
+      "host_note": "Never thrash in-frame for gym when MAP_TRAVEL applies"
+    },
+    "painting": {
+      "aliases": ["paint", "painting", "art"],
+      "related_skills": ["painting"],
+      "related_preferences": ["painting", "creativity"],
+      "explain_via": ["whims", "likes", "skills"],
+      "host_note": "Creative whim; Fun may benefit but survival still wins"
+    },
+    "music": {
+      "aliases": ["music", "piano", "guitar", "violin", "sing"],
+      "related_skills": ["piano", "guitar", "violin", "singing"],
+      "related_preferences": ["music", "instrument"],
+      "explain_via": ["whims", "likes", "skills"],
+      "host_note": "Read-only profile context only"
+    }
+  },
+  "call_stack_gate": "SIM_PROFILE_INSPECT",
+  "host_rules": [
+    "All profile fields are operator- or sensor-supplied labels — never inferred from a screenshot classifier claim",
+    "Compose moodlets via moodlets.evaluate_moodlets; do not duplicate emotion catalogs here",
+    "Reading skill levels is NOT BI-005 skill growth, NOT practice_skill authorization, and NOT income/career proof",
+    "Do not queue hobby/skill actions solely because a whim or Like is present while survival needs are critical",
+    "Absence of all profile observations is SENSOR_NOT_SUPPLIED — do not invent traits, likes, or skills",
+    "Distinguish this inspector from host-menu select_sim_to_play and compatibility patch profiles",
+    "Player discovery map is the durable answer to 'how do I check this as a user'"
+  ],
+  "forbidden_actions": [
+    "practice_skill",
+    "claim_BI005_closure",
+    "vision_invent_profile",
+    "edit_traits_or_likes",
+    "touch_user_saves",
+    "background_hud_scraper"
+  ]
+}

@@ -92,6 +92,18 @@
       "definition": "Call-stack gate that folds tense/uncomfortable moodlets into indoor retarget and survival-aligned relief.",
       "owners": ["betterinstincts/moodlets.py", "betterinstincts/host_stack.py"]
     },
+    "SIM_PROFILE_INSPECT": {
+      "definition": "Read-only gate that normalizes supplied Simology/skills/preferences/whims with moodlets. Never practice_skill or BI-005.",
+      "owners": ["contracts/sim-profile.v1.json", "docs/SIM_PROFILE.md", "betterinstincts/sim_profile.py"]
+    },
+    "SIMOLOGY_PANEL": {
+      "definition": "Live Sim Info Simology surface for traits and aspiration. Distinct from host-menu select_sim_to_play and compatibility patch profiles.",
+      "owners": ["contracts/sim-profile.v1.json", "docs/SIM_PROFILE.md"]
+    },
+    "PLAYER_DISCOVERY_MAP": {
+      "definition": "Documented HUD locations where a player can inspect moodlets, whims, Simology, skills, and likes/dislikes for the active Sim.",
+      "owners": ["contracts/sim-profile.v1.json", "docs/SIM_PROFILE.md"]
+    },
     "PROOF_CEILING": {
       "definition": "Explicit maximum claim allowed for an artifact (e.g. OFFLINE, LOCAL_OBSERVED, NOT_LIVE_CERT).",
       "owners": ["docs/VALIDATION.md", "docs/LIVE_CERT.md"]

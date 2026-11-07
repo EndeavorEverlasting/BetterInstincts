@@ -31,6 +31,7 @@ See glossary: `PLAYER_FIRST`, `PLAYER_PLAYING`, `PLAYER_PRESENT_ON_CANVAS`, `HOS
 | `host_stack` | Compose viewport/behavior/event-balance/instincts gates | none |
 | `event_balance` | Outdoor-social RCA + event/needs/homework call stack | none |
 | `moodlets` | Supplied emotion/moodlet strip → need pressure + routing bias | none |
+| `sim_profile` | Supplied Simology/skills/preferences/whims + moodlets → read-only inspect | none |
 | `build_optimize` | Deterministic Build/Buy catalog rank (Env Gain / Eco Footprint) | none |
 | `host_listener` | Opt-in session + tick receipts | writes `dist/host-listener/` |
 | `host_automate` | Presence-gated plan; optional execute | optional SendInput via script |
@@ -60,7 +61,8 @@ operator activates listener/automate session
   -> if PLAYER_PLAYING: YIELD_TO_PLAYER (stop)
   -> behavior_eval.evaluate_queue
   -> moodlets.evaluate_moodlets (supplied HUD strip; else SENSOR_NOT_SUPPLIED)
-  -> host_stack.evaluate_turn (event_balance + moodlet-aware indoor routing)
+  -> sim_profile.evaluate_sim_profile (Simology/skills/likes/whims; else SENSOR_NOT_SUPPLIED)
+  -> host_stack.evaluate_turn (event_balance + moodlet-aware indoor routing; sim_profile attachment)
   -> needs_force.plan_force when OPTIMIZE / off-lot critical
   -> receipt under dist/ (ignored)
 ```
