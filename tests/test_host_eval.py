@@ -40,6 +40,7 @@ class HostEvalTests(unittest.TestCase):
                 result = evaluate_turn(SIX, **{flag: True})
                 self.assertNotIn(result["next_gate"], ("LAB_SAVE_AS_BI_CONT_WHEN_AUTHORIZED", "EXECUTE_INSTINCTS_PLAN"))
                 self.assertIsNone(result["instincts"]["next_action"])
+                self.assertEqual(result["instincts"]["save_recommendation"]["state"], "HOLD_SAVE")
 
     def test_unknown_viewport_abstains(self):
         result = evaluate_turn(SIX, viewport={"state": "UNKNOWN"})
