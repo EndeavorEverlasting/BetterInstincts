@@ -1,0 +1,186 @@
+{
+  "schema": "betterinstincts.curious-catalog/v1",
+  "version": 3,
+  "authority": "docs/CURIOUS_CATALOG.md",
+  "proof_ceiling": "HOST_CURIOUS_CATALOG_OPT_IN_CHEAT_DISPATCH_NOT_MOD_UI_NOT_BI002_CERT",
+  "design_brief": {
+    "subject": "Curious Catalog — rare/money gardening shelves on whim",
+    "audience": "players chasing alien fruit, rare seeds, hydroponics without autorun or speed thrash",
+    "job": "One-command-per-line reveal + ranked money-plant shopping list; never slash-join; never touch game speed",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "on-whim purpose"},
+      {"id": "UP-A85AD9DC3", "mechanism": "ritual call-stack"},
+      {"id": "UP-0F2FB5920", "mechanism": "discovery map"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ]
+  },
+  "local_observed": {
+    "date": "2026-11-07",
+    "patch": "1.121.361.1020",
+    "lot": "Bargain Bend",
+    "failure_mode": "Slash-joined 'bb.showhiddenobjects / buydebug' → Command failed; SendInput speed thrash during burglary forbidden thereafter",
+    "capture_ref": "operator:curious-catalog-gardening-secrets-20261107",
+    "packs_owned_hint": ["Get to Work", "Eco Lifestyle", "Seasons", "Cottage Living"]
+  },
+  "activation": {
+    "require_explicit_activate": true,
+    "never_on_startup": true,
+    "never_auto_from_gardening_whim": true,
+    "never_touch_game_speed": true,
+    "session_root": "dist/curious-catalog/",
+    "cli": {
+      "activate": "python -m scripts.curious_catalog activate --session-id ID",
+      "shop-list": "python -m scripts.curious_catalog shop-list",
+      "reveal": "python -m scripts.curious_catalog reveal --session-id ID",
+      "deactivate": "python -m scripts.curious_catalog deactivate --session-id ID"
+    }
+  },
+  "notice": {
+    "prompt_id": "host.curious_catalog.shelf_peek",
+    "title": "CURIOUS CATALOG",
+    "body": "Your Sim keeps noticing shelves that aren't quite there — rare seeds, alien fruit, and auto-water planters tucked behind ordinary Buy Mode. Peek behind the shelves? (One console line at a time. Never type buydebug. Do not change game speed.)",
+    "option_yes": {"option_id": "peek_behind_shelves", "label": "Peek Behind the Shelves"},
+    "option_no": {"option_id": "not_today", "label": "Not Today"},
+    "default_option_id": "not_today",
+    "style": "sims_chance_card"
+  },
+  "reveal_sequence": {
+    "allowed_modes": ["buy", "build", "live", "unknown"],
+    "prefer_mode": "buy",
+    "never_force_mode_switch": true,
+    "never_touch_game_speed": true,
+    "forbidden_keys": ["`", "1", "2", "3", "pace", "speed"],
+    "open_console_chord": ["CTRL", "SHIFT", "C"],
+    "open_console_chord_label": "Ctrl+Shift+C",
+    "activate_testing_cheats": "testingcheats enabled true",
+    "show_hidden_objects": "bb.showhiddenobjects",
+    "optional_live_edit": "bb.showliveeditobjects",
+    "optional_live_edit_default": false,
+    "one_command_per_line": true,
+    "buy_search_terms": ["debug", "seed", "Hydroponic", "Quill", "Growfruit", "Dragon", "Orchid"],
+    "forbidden_typable_forms": [
+      "bb.showhiddenobjects / buydebug",
+      "bb.showhiddenobjects/buydebug",
+      "buydebug"
+    ],
+    "player_lines": [
+      "testingcheats enabled true",
+      "bb.showhiddenobjects"
+    ],
+    "forbidden": [
+      "autorun_on_host_boot",
+      "slash_join_commands",
+      "type_buydebug_nickname",
+      "touch_game_speed",
+      "force_F1_while_building"
+    ]
+  },
+  "money_garden_shop_list": [
+    {
+      "id": "rare_seed_packet",
+      "display_name": "Rare Plants seed packet",
+      "why": "Best bulk rare seeds (Magic Beans, Cowplant Berry, Dragon Fruit, Death Flower, Orchid, Growfruit, Pomegranate)",
+      "search": ["Rare Plants", "seed", "debug"],
+      "pack": "base",
+      "money_tier": "S",
+      "notes": "Also buyable at Gardening 10 via computer without debug"
+    },
+    {
+      "id": "quill_fruit",
+      "display_name": "Quill Fruit (Sixam alien)",
+      "why": "Alien harvestable — high value; Get to Work",
+      "search": ["Quill", "Sixam", "debug"],
+      "pack": "Get to Work",
+      "money_tier": "S"
+    },
+    {
+      "id": "plasma_fruit",
+      "display_name": "Plasma Fruit",
+      "why": "Rare valuable harvestable",
+      "search": ["Plasma", "debug"],
+      "pack": "Vampires or seed catalog",
+      "money_tier": "A"
+    },
+    {
+      "id": "fang_flower",
+      "display_name": "Fang Flower",
+      "why": "Sixam alien plant — collect/sell/graft feedstock",
+      "search": ["Fang", "Sixam", "debug"],
+      "pack": "Get to Work",
+      "money_tier": "A"
+    },
+    {
+      "id": "glow_orb",
+      "display_name": "Orb Plant / Glow Orb stalk",
+      "why": "Sixam alien plant",
+      "search": ["Orb", "Glow", "Sixam", "debug"],
+      "pack": "Get to Work",
+      "money_tier": "A"
+    },
+    {
+      "id": "dragon_fruit",
+      "display_name": "Dragon Fruit",
+      "why": "Top sell price among common rares; graft path Strawberry+Snapdragon",
+      "search": ["Dragon", "seed", "debug"],
+      "pack": "base",
+      "money_tier": "S"
+    },
+    {
+      "id": "growfruit",
+      "display_name": "Growfruit",
+      "why": "Versatile valuable crop",
+      "search": ["Growfruit", "debug"],
+      "pack": "base",
+      "money_tier": "A"
+    },
+    {
+      "id": "orchid",
+      "display_name": "Orchid",
+      "why": "High-value flower; Death Flower graft feedstock",
+      "search": ["Orchid", "debug"],
+      "pack": "base",
+      "money_tier": "A"
+    },
+    {
+      "id": "cowplant_berry",
+      "display_name": "Cowplant Berry",
+      "why": "Cowplant → cake money / chaos; rare",
+      "search": ["Cowplant", "Berry", "debug"],
+      "pack": "base",
+      "money_tier": "A"
+    },
+    {
+      "id": "money_tree",
+      "display_name": "Money Tree",
+      "why": "Direct Simoleon harvest (Seasons aspiration / special)",
+      "search": ["Money Tree", "debug"],
+      "pack": "Seasons",
+      "money_tier": "S"
+    },
+    {
+      "id": "hydroponic_planter",
+      "display_name": "Hydroponic Planter",
+      "why": "Futuristic auto-water host for money crops",
+      "search": ["Hydroponic", "debug"],
+      "pack": "Eco Lifestyle",
+      "money_tier": "tool"
+    },
+    {
+      "id": "vertical_garden",
+      "display_name": "A-OK-Bloomer Vertical Garden",
+      "why": "Dense outdoor grow host; ordinary Buy if Eco Lifestyle owned",
+      "search": ["Vertical", "Bloomer"],
+      "pack": "Eco Lifestyle",
+      "money_tier": "tool",
+      "requires_curious_catalog": false
+    }
+  ],
+  "invariants": [
+    "NEVER_ON_STARTUP",
+    "REQUIRE_EXPLICIT_ACTIVATE",
+    "ONE_COMMAND_PER_LINE",
+    "NEVER_TYPE_BUYDEBUG_NICKNAME",
+    "NEVER_TOUCH_GAME_SPEED",
+    "DEFAULT_NOTICE_OPTION_IS_NOT_TODAY"
+  ]
+}

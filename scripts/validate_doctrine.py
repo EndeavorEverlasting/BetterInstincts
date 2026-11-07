@@ -98,6 +98,9 @@ REQUIRED = (
     "contracts/domain-cascade.v1.json", "docs/DOMAIN_CASCADE.md",
     "betterinstincts/domain_cascade.py", "scripts/domain_cascade.py",
     "tests/test_domain_cascade.py",
+    "contracts/curious-catalog.v1.json", "docs/CURIOUS_CATALOG.md",
+    "betterinstincts/curious_catalog.py", "scripts/curious_catalog.py",
+    "tests/test_curious_catalog.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

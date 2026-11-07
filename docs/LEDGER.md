@@ -208,6 +208,10 @@ Operator gap: gardening desire visible in moodlets without a durable way to chec
 
 **Social opportunity:** `contracts/social-opportunity.v1.json` — unique Sims-library lookup before OK; ambiguous/missing/unknown/vampire → Cancel; unique HUMAN → OK allowed. App owns the decision. Capture `operator:invite-morgan-occult-unknown-20261107`. Live Cancel observed; live OK after library evidence remains open.
 
+## 2026-11-07 — Curious Catalog gardening secrets (P95 + trifecta)
+
+**Operator:** rare/alien/hydroponic grow gear trapped behind chat shorthand `bb.showhiddenobjects / buydebug` (slash-join fails); host must never advance sim speed. **P95/P82/P07** add `contracts/curious-catalog.v1.json` v3 + `docs/CURIOUS_CATALOG.md` + `betterinstincts/curious_catalog.py` + `scripts/curious_catalog.py`: opt-in session, immersive CURIOUS CATALOG notice (default Not Today), one-command-per-line reveal, ranked `money_garden_shop_list` (Quill/Dragon/Money Tree/Rare seeds/Hydroponic). Capture `operator:curious-catalog-gardening-secrets-20261107`. Does not close BI-002.
+
 ## 2026-11-07 — Fun service tandem lanes (P95 + trifecta)
 
 **Operator:** Sims under-serve Fun; guests make them queue behind each other on the same activities. **P95** adds `contracts/fun-service.v1.json` + `betterinstincts/fun_service.py`: independent Fun service with parallel lanes (portable, electronics, creative, social/physical, playful everyday/exclusive, child/toddler). Guest/occupied contention prefers phone/tablet/earbuds; sibling lane claims prevent monolith pile-up; playful-exclusive fail-closed without PLAYFUL. Wired `host_stack` gate `FUN_SERVICE_PLAN`. Architecture: tandem lane services, not one mega-queue daemon. Live dispatch OPEN (`FUN_LANE_LIVE_DISPATCH`). Does not close BI-002.
