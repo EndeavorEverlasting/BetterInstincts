@@ -69,7 +69,13 @@ Once the agent independently observes the intended disposable Live Mode state, r
 
    python -m scripts.viewport_recover --capture --process-id CURRENT_CONFIRMED_PID --execute --authorize-restart --run-id <run> --max-steps 8 --out dist/game-host/<run>/viewport-restart.png --receipt dist/game-host/<run>/viewport-restart-receipt.json
 
-   Verify WM_CLOSE then actual process exit; WM_CLOSE_POSTED is not exit proof. Never TerminateProcess, Resume, or blind receipt replay.
+   Verify WM_CLOSE then actual process exit; WM_CLOSE_POSTED is not exit proof. Never TerminateProcess, main-menu Resume, or blind receipt replay.
+
+2b. After a clean exit/relaunch, do **not** invent menu clicks. Run the codified reboot journey:
+
+   python -m scripts.host_menu run --journey reboot --process-id NEW_PID --execute --run-id <run>
+
+   This dismisses MEMORY BOOST, opens Load Game, Plays LabLab only. Map tip **RESUME PLAYING: LabLab** (lot entry) is a later host-menu step — distinct from forbidden main-menu Resume.
 3. Relaunch and select ONLY the registered LAB_CREATED LabLab disposable save through the existing game_host + save_guard path. Use a fresh run ID if the previous receipt namespace cannot safely be reused. Never Resume. Verify PrintWindow CONTENT_PRESENT *and* independent map/Live scene cues before performing need clicks. PrintWindow can miss DX wireframe, so treat a conflicting secondary-display observation as an anomaly requiring investigation.
 4. Prefer Send Alone to Join while needs are critical; maintain control of the home lot. Inspect six need levels and real object availability; obtain/place safe lab objects for food, bathroom, energy, hygiene, fun and social. Respect player direction and busy/absent state; do not execute a needs click until the host gate is safe. Record before/after needs and host action IDs.
 5. Run the deterministic evaluator on real **operator/sensor-attested** observations, not the committed synthetic fixtures:

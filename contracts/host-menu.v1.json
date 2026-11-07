@@ -1,0 +1,88 @@
+{
+  "schema": "betterinstincts.host-menu/v1",
+  "version": 1,
+  "game_version": "1.121.361.1020",
+  "client": "borderless_1920x1080",
+  "proof_ceiling": "LOCAL_OBSERVED_COORDINATE_JOURNEY_NOT_LIVE_CERT",
+  "forbidden_always": [
+    "RESUME",
+    "READ_FAQ",
+    "DELETE_SAVE",
+    "TOUCH_RICHARDSON",
+    "STORE_TAB",
+    "PLAY_SCENARIO"
+  ],
+  "observed": {
+    "run_id": "bi002-lablab-reboot",
+    "date": "2026-11-07",
+    "captures": [
+      "dist/game-host/bi002-lablab-reboot/memory-boost-modal-before.png",
+      "dist/game-host/bi002-lablab-reboot/main-menu-after-memory-boost.png",
+      "dist/game-host/bi002-lablab-reboot/load-picker-now.png"
+    ]
+  },
+  "transitions": [
+    {
+      "id": "boot_to_main_menu",
+      "from": "splash_or_loading",
+      "to": "main_menu",
+      "gate": "WAIT_PRINTWINDOW_CONTENT",
+      "execution": "HOST_WAIT_ONLY",
+      "note": "Do not click Resume while waiting."
+    },
+    {
+      "id": "dismiss_memory_boost",
+      "from": "memory_boost_modal",
+      "to": "main_menu",
+      "gate": "DISMISS_MEMORY_BOOST",
+      "execution": "HOST_SENDINPUT",
+      "click": [1427, 188],
+      "scene_id": "memory_boost_modal",
+      "forbidden": ["RESUME", "READ_FAQ"],
+      "note": "LOCAL_OBSERVED: EA MEMORY BOOST IS NOW ON covers Load Game after reboot. Modal X only."
+    },
+    {
+      "id": "open_load_game",
+      "from": "main_menu",
+      "to": "load_game_picker",
+      "gate": "OPEN_LOAD_GAME",
+      "execution": "HOST_SENDINPUT",
+      "click": [202, 575],
+      "forbidden": ["RESUME"],
+      "note": "Click LOAD GAME text — never the Resume plumbob row above it."
+    },
+    {
+      "id": "play_lablab_slot",
+      "from": "load_game_picker",
+      "to": "manage_worlds_or_map",
+      "gate": "PLAY_LAB_DISPOSABLE",
+      "execution": "HOST_SENDINPUT",
+      "click": [1295, 340],
+      "save_alias": "BI_TMP_LABLAB_01",
+      "forbidden": ["DELETE", "TOUCH_RICHARDSON"],
+      "note": "Play on selected My Saved Game 3 / LabLab row only. Richardson slots are USER_PROTECTED. Main-menu Resume remains globally forbidden."
+    },
+    {
+      "id": "enter_live_from_map_lablab",
+      "from": "manage_worlds_or_map",
+      "to": "live_mode",
+      "gate": "ENTER_LIVE_LABLAB_LOT",
+      "execution": "HOST_SENDINPUT",
+      "click": [1409, 871],
+      "save_alias": "BI_TMP_LABLAB_01",
+      "forbidden": ["DELETE", "TOUCH_RICHARDSON", "EMPTY_LOT_CAS_PERSON"],
+      "note": "LOCAL_OBSERVED Willow Creek map tip RESUME PLAYING: LabLab — lot entry, NOT main-menu Resume. Click LabLab plumbob/tip centroid."
+    }
+  ],
+  "reboot_journey": [
+    "boot_to_main_menu",
+    "dismiss_memory_boost",
+    "open_load_game",
+    "play_lablab_slot",
+    "enter_live_from_map_lablab"
+  ],
+  "host_commands": {
+    "plan": "python -m scripts.host_menu plan --journey reboot",
+    "execute": "python -m scripts.host_menu run --journey reboot --process-id PID --execute --run-id RUN"
+  }
+}

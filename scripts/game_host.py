@@ -166,6 +166,23 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
             selected_save_guard(cfg, run_id)
         except SavePolicyError as exc:
             raise GateError("SAVE_SELECTION_PROTECTED:" + str(exc)) from exc
+    # Durable menu blockers (Memory Boost, etc.) before Load/New template clicks.
+    # Prefer scripts.host_menu reboot journey for full Load→LabLab Play after reboot.
+    if cfg.get("dismiss_menu_blockers", True) is not False:
+        try:
+            from scripts.menu_blockers import dismiss as dismiss_menu_blockers
+            pid = None
+            for row in reversed(rows):
+                if row.get("state") == "LAUNCH_DISPATCHED" and row.get("process_id"):
+                    pid = int(row["process_id"])
+                    break
+            blocker_receipt = dismiss_menu_blockers(
+                process_id=pid, execute=True, blocker_ids=None, receipt=None)
+            append_event(root, "MENU_BLOCKERS_DISMISS_DISPATCHED",
+                         blockers=blocker_receipt.get("steps"),
+                         proof_ceiling="MENU_BLOCKER_CLICK_DISPATCH_NOT_LIVE_PROOF")
+        except Exception as exc:
+            raise GateError("MENU_BLOCKER_DISMISS_FAILED:" + str(exc)) from exc
     if gui is None:
         if sys.platform != "win32":
             raise GateError("LOCAL_WINDOWS_GUI_REQUIRED")
@@ -412,8 +429,9 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command in ("plan", "launch", "navigate"):
-            cfg, digest = profile(args.profile)
-            cfg["_profile_path"] = str(args.profile)
+            profile_path = args.profile.expanduser().resolve()
+            cfg, digest = profile(profile_path)
+            cfg["_profile_path"] = str(profile_path)
             if args.command == "plan":
                 result = plan(cfg, digest)
             elif args.command == "launch":

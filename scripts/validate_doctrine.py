@@ -35,6 +35,9 @@ REQUIRED = (
     "betterinstincts/host_stack.py", "scripts/decision_eval.py", "tests/test_decision_eval.py",
     "contracts/viewport-black.v1.json", "betterinstincts/viewport.py",
     "scripts/viewport_recover.py", "tests/test_viewport.py",
+    "contracts/host-menu.v1.json", "betterinstincts/host_menu.py",
+    "betterinstincts/menu_blockers.py", "scripts/host_menu.py",
+    "scripts/menu_blockers.py", "tests/test_host_menu.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
