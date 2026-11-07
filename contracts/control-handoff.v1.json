@@ -5,6 +5,7 @@
   "product_contract": "Player screen activity immediately pauses host actions; a bounded, opt-in host session may resume after trustworthy desktop inactivity. This pauses host control, never the Sims simulation.",
   "states": [
     "PAUSED_FOR_PLAYER",
+    "PAUSED_FOR_AGENT",
     "HOST_READY"
   ],
   "default_idle_ms": 8000,
@@ -32,5 +33,13 @@
     "RELEASE_CLAIM_FROM_OFFLINE_CI"
   ],
   "proof_ceiling": "OFFLINE_HOST_ARBITRATION_NOT_LIVE_GAME_CERT",
-  "next_parent_gate": "BI-002_HUNGER_LIVE_CERTIFICATION"
+  "next_parent_gate": "BI-002_HUNGER_LIVE_CERTIFICATION",
+  "single_writer": {
+    "lock_owner": "betterinstincts.control_handoff.exclusive_screen_owner",
+    "scope": "per actual game process ID under ignored dist/host-listener/",
+    "acquire": "before focus and until one action receipt finishes",
+    "contention": "SCREEN_OWNER_BUSY fails closed",
+    "stale": "no automatic age-based takeover; deliberate cleanup only after checking no active owner",
+    "coverage": "needs_force action boundary now; other direct UI adapters not yet migrated"
+  }
 }
