@@ -1,0 +1,125 @@
+{
+  "schema": "betterinstincts.progression-eval/v1",
+  "version": 1,
+  "authority": "docs/PROGRESSION_EVAL.md",
+  "invocations": ["P67", "P62", "P95", "P08", "P82", "P07"],
+  "purpose": "Executable eval pyramid for CI/CD honesty and product progression rate toward the BetterInstincts parent objective. Never promote offline green to playable-mod proof.",
+  "proof_ceilings": {
+    "OFFLINE_CI": "Unit/contract/CI validators only",
+    "LOCAL_OBSERVED": "Real game host observation with receipt; not certification",
+    "GAME_CERTIFIED": "Maintainer-accepted exact-patch profile after live gates"
+  },
+  "primary_trajectory_stages": [
+    "BI-002",
+    "BI-003A",
+    "BI-003B",
+    "BI-003C",
+    "BI-003D",
+    "BI-003E",
+    "BI-003F",
+    "BI-004",
+    "BI-005",
+    "BI-006"
+  ],
+  "hunger_trial_targets": {
+    "baseline": 5,
+    "modified": 5,
+    "rollback": 1
+  },
+  "vision_dimensions": [
+    {
+      "id": "north_star",
+      "claim": "Free community-native Sims 4 autonomy mod; offline prototypes are not playable mods",
+      "markers": ["community-native", "playable mod", "offline policy prototype"]
+    },
+    {
+      "id": "owner_objective",
+      "claim": "Needs, income, careers, fulfilling lives; small win with multi-month vision",
+      "markers": ["needs", "income", "career", "fulfilling"]
+    },
+    {
+      "id": "product_contract",
+      "claim": "Competent believable autonomy; player direction outranks; leisure allowed",
+      "markers": ["competent and believable", "Explicit player direction", "hobby"]
+    },
+    {
+      "id": "nn_player_agency",
+      "claim": "Player agency outranks autonomy suggestions",
+      "markers": ["Player agency", "Player first"]
+    },
+    {
+      "id": "nn_needs_over_money",
+      "claim": "Needs and safety outrank money/career efficiency",
+      "markers": ["Needs and safety outrank", "leisure"]
+    },
+    {
+      "id": "nn_no_robotic_loop",
+      "claim": "Sims must not converge on one robotic optimization loop",
+      "markers": ["robotic"]
+    },
+    {
+      "id": "nn_reversible_config",
+      "claim": "Configurable, defeatable, reversible, performant",
+      "markers": ["reversible", "performant"]
+    },
+    {
+      "id": "nn_save_safe",
+      "claim": "No save alteration, arbitrary dirs, telemetry, hidden background tasks",
+      "markers": ["Save-safe", "telemetry"]
+    },
+    {
+      "id": "horizon_order",
+      "claim": "needs -> income -> skills -> career",
+      "markers": ["needs -> income -> skills -> career", "BI-004", "BI-005", "BI-006"]
+    },
+    {
+      "id": "first_win_hunger",
+      "claim": "BI-002 hunger live cert is the first game gate; CI cannot close it",
+      "markers": ["BI-002", "hunger", "do not close BI-002"]
+    },
+    {
+      "id": "proof_ceiling_honesty",
+      "claim": "A plan is not implementation; green CI is not playable-mod proof",
+      "markers": ["green CI check is not playable-mod proof", "CHANGED | PROVED | NEXT"]
+    }
+  ],
+  "scaffolding_paths": [
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "docs/HORIZON.md",
+    "docs/VALIDATION.md",
+    "docs/LIVE_CERT.md",
+    "docs/COMPATIBILITY.md",
+    "docs/HOST_EVAL.md",
+    "docs/PROGRESSION_EVAL.md",
+    "plans/horizon.v1.json",
+    "plans/active/BI-002.md",
+    "plans/active/BI-002.execution.v1.json",
+    "betterinstincts/horizon.py",
+    "betterinstincts/host_eval.py",
+    "betterinstincts/progression_eval.py",
+    "betterinstincts/live_eval.py",
+    "scripts/eval_horizon.py",
+    "scripts/host_eval.py",
+    "scripts/progression_eval.py",
+    "scripts/live_cert.py",
+    ".github/workflows/ci.yml"
+  ],
+  "ci_required_substrings": [
+    "scripts.check_horizon",
+    "scripts.eval_horizon",
+    "scripts.host_eval",
+    "scripts.progression_eval",
+    "validate_doctrine.py",
+    "check_backward_compat"
+  ],
+  "forbidden_promotions": [
+    "CLAIM_PLAYABLE_WITHOUT_CERTIFIED_PROFILE",
+    "PROMOTE_OFFLINE_CI_AS_GAME_CERTIFIED",
+    "CLOSE_BI002_WITHOUT_TRIALS",
+    "INCOME_BEFORE_NEEDS_BALANCE",
+    "SKILLS_BEFORE_INCOME",
+    "CAREER_BEFORE_SKILLS"
+  ]
+}

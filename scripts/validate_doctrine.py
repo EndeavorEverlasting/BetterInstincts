@@ -49,6 +49,9 @@ REQUIRED = (
     "tests/test_host_autonomy.py",
     "contracts/host-funds.v1.json", "betterinstincts/funds_inject.py",
     "scripts/funds_inject.py", "tests/test_funds_inject.py",
+    "contracts/progression-eval.v1.json", "docs/PROGRESSION_EVAL.md",
+    "betterinstincts/progression_eval.py", "scripts/progression_eval.py",
+    "tests/test_progression_eval.py", "tests/fixtures/progression-eval.v1.json",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

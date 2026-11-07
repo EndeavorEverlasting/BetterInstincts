@@ -16,6 +16,7 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **HOST_LISTENER** | Opt-in bounded session that ticks observations into evaluators (not a daemon). |
 | **HOST_AUTOMATE** | Presence-gated orchestrator over behavior + needs-force plans. |
 | **HOST_EVALUATOR** | Read-only scorer (`host_eval`, `behavior_eval`, etc.). |
+| **PROGRESSION_EVALUATOR** | P67/P62 CI honesty + product-rate scorer (`progression_eval`). Separates scaffolding from GAME_CERTIFIED trajectory progress. |
 | **GOOD_BEHAVIOR** / **BAD_BEHAVIOR** | Matrix verdicts over queue × critical needs. |
 | **EMULATE** | Keep the same intent class as a good queue. |
 | **OPTIMIZE** | Replace bad/suboptimal queue; never override player direction. |
