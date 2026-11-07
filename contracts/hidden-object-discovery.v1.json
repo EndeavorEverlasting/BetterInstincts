@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.hidden-object-discovery/v1",
-  "version": 1,
+  "version": 2,
   "owner": "docs/HIDDEN_OBJECT_DISCOVERY.md",
   "reuses": "contracts/curious-catalog.v1.json",
   "proof_ceiling": "OFFLINE_ADVISORY_NOT_GAME_INPUT_NOT_ITEM_INVENTORY_NOT_BI002_CERT",
@@ -153,5 +153,112 @@
   },
   "source_refs": [
     "https://www.ea.com/games/the-sims/the-sims-4/faq/cheats"
-  ]
+  ],
+  "operator_playbook": {
+    "schema": "betterinstincts.hidden-object-playbook/v1",
+    "invocation_trigger": "P04_WITH_HIDDEN_OBJECT_DISCOVERY_SCOPE",
+    "must_read_from_cli": "python -m scripts.hidden_object_discovery guide",
+    "completion_audit": "python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json",
+    "user_requested_order": true,
+    "execution_boundary": "READ_ONLY_GUIDE_AND_STRUCTURAL_AUDIT_NOT_GAME_CONTROL",
+    "accepted_platforms": [
+      "windows",
+      "mac",
+      "playstation",
+      "xbox"
+    ],
+    "ordered_steps": [
+      {
+        "step_id": "OPEN_CHEAT_CONSOLE",
+        "number": 1,
+        "title": "Activate cheat console on the loaded Sim's lot",
+        "action": "Use platform-appropriate simultaneous key/trigger chord and observe console open before typing.",
+        "platform_chords_ref": "platform_console_chords",
+        "expected_ui_cues": [
+          "thin white text entry box at upper-left (candidate cue; visually confirm)"
+        ],
+        "proof_gate": "OBSERVE_CONSOLE_VISIBLE",
+        "requires_independent_host_permit": true
+      },
+      {
+        "step_id": "ENABLE_CHEATS",
+        "number": 2,
+        "title": "Enable cheats",
+        "console_line": "testingcheats true",
+        "submit": "ENTER",
+        "expected_ui_cues": [
+          "Cheats are enabled message if shown (absence not evidence of failure or success)"
+        ],
+        "proof_gate": "REVIEW_TESTINGCHEATS_RESPONSE",
+        "requires_independent_host_permit": true
+      },
+      {
+        "step_id": "REVEAL_HIDDEN_OBJECTS",
+        "number": 3,
+        "title": "Reveal hidden and optional world-edit objects",
+        "console_line": "bb.showhiddenobjects",
+        "submit": "ENTER",
+        "optional_console_line": "bb.showliveeditobjects",
+        "optional_requires_explicit_opt_in": true,
+        "close_console_with_same_platform_chord": true,
+        "expected_ui_cues": [
+          "console remains responsive",
+          "closed console before Build/Buy transition"
+        ],
+        "proof_gate": "REVIEW_HIDDEN_AND_OPTIONAL_LIVE_EDIT_RESPONSE",
+        "requires_independent_host_permit": true
+      },
+      {
+        "step_id": "ENTER_BUILD_BUY",
+        "number": 4,
+        "title": "Enter Build/Buy mode",
+        "keyboard_shortcut_hint": "F2 (keyboard; verify current patch)",
+        "visible_control_hint": "hammer-and-wrench icon near top-right (patch and layout dependent)",
+        "expected_ui_cues": [
+          "Build/Buy mode chrome",
+          "catalog and search available"
+        ],
+        "proof_gate": "OBSERVE_BUILD_BUY_MODE",
+        "requires_independent_host_permit": true
+      },
+      {
+        "step_id": "SELECT_DEBUG_RESULTS",
+        "number": 5,
+        "title": "Find items through Build/Buy search",
+        "search_term": "debug",
+        "search_location_hint": "bottom-left search bar above house illustration (verify actual UI layout)",
+        "select_result_hint": "select a visible DEBUG suggestion, not a guessed coordinate",
+        "expected_ui_cues": [
+          "at least one visible DEBUG suggestion or explicit not-found evidence",
+          "debug catalog and its actual contents"
+        ],
+        "proof_gate": "OBSERVE_DEBUG_SUGGESTIONS_AND_CATALOG",
+        "requires_independent_host_permit": true
+      }
+    ],
+    "candidate_item_families": [
+      "toothbrushes",
+      "dirty dishes",
+      "collectible crystals",
+      "ponds",
+      "invisible light sources",
+      "cars",
+      "large trees",
+      "streetlights"
+    ],
+    "item_price_rule": "Price 0 only if an individual catalog listing is actually observed and operator-reviewed; never infer that all/most are free.",
+    "success_rule": "STRUCTURAL_AUDIT_ONLY_NEVER_AUTOCERTIFY_LIVE",
+    "required_receipt_fields": [
+      "exact_game_build",
+      "platform",
+      "save_attestation",
+      "player_explicit_opt_in",
+      "scene_cues",
+      "steps",
+      "catalog_entries",
+      "game_speed_unchanged",
+      "player_queue_unchanged"
+    ],
+    "local_handoff": "plans/active/BI-HIDDEN-OBJECTS.P04.md"
+  }
 }
