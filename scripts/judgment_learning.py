@@ -20,11 +20,16 @@ from betterinstincts.judgment_learning import (
 )
 
 
+def _canonical(path: Path) -> Path:
+    """Resolve to a comparable absolute path (Windows 8.3 vs long path safe)."""
+    return Path(os.path.realpath(path))
+
+
 def _path(value: Path) -> Path:
     if OUTPUT.is_symlink() or value.is_symlink():
         raise JudgmentLearningError("UNSAFE_LEARNING_PATH")
-    root = OUTPUT.resolve()
-    candidate = (value if value.is_absolute() else ROOT / value).resolve()
+    root = _canonical(OUTPUT)
+    candidate = _canonical(value if value.is_absolute() else ROOT / value)
     if not candidate.is_relative_to(root):
         raise JudgmentLearningError("LEARNING_PATH_OUTSIDE_DIST")
     return candidate
@@ -54,7 +59,8 @@ def _write(value: Path, payload: dict) -> str:
     finally:
         if temp.exists():
             temp.unlink()
-    return str(path.relative_to(ROOT))
+    # Compare canonical forms so Windows short (8.3) temp roots do not ValueError.
+    return str(_canonical(path).relative_to(_canonical(ROOT)))
 
 
 def main(argv: list[str] | None = None) -> int:

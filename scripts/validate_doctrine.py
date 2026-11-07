@@ -67,6 +67,9 @@ REQUIRED = (
     "contracts/build-optimize.v1.json", "docs/BUILD_OPTIMIZE.md",
     "betterinstincts/build_optimize.py", "scripts/build_optimize.py",
     "tests/test_build_optimize.py",
+    "contracts/sim-profile.v1.json", "docs/SIM_PROFILE.md",
+    "betterinstincts/sim_profile.py", "scripts/sim_profile.py",
+    "tests/test_sim_profile.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

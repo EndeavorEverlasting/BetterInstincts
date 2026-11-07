@@ -24,6 +24,9 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **EVENT_GOAL_ACTION** / **EVENT_GOAL_PLAN** | Catalogued pie-menu actions that satisfy HUD event goals; host plan over incomplete goals. |
 | **MOODLET_STRIP** | Bottom-left emotion + moodlet icons; must be supplied to host evals (not inventable from screenshots). |
 | **MOODLET_AWARE_ROUTING** | Gate: tense moodlets + outdoor social + indoor capacity reinforce indoor retarget; uncomfortable aligns with survival relief. |
+| **SIM_PROFILE_INSPECT** | Read-only host gate: supplied skills/preferences/traits/whims + moodlets; never `practice_skill` / BI-005. |
+| **SIMOLOGY_PANEL** | Live Sim Info traits/aspiration surface (not Load Game picker; not patch compatibility profiles). |
+| **PLAYER_DISCOVERY_MAP** | Where players look: moodlets, whims, Simology, Skills, Likes & Dislikes, needs. |
 | **GOOD_BEHAVIOR** / **BAD_BEHAVIOR** | Matrix verdicts over queue × critical needs. |
 | **EMULATE** | Keep the same intent class as a good queue. |
 | **OPTIMIZE** | Replace bad/suboptimal queue; never override player direction. |
