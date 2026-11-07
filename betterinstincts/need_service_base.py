@@ -136,14 +136,15 @@ def plan_lanes(
             continue
 
         ready_actions = []
-        blocked: list[str] = []
+        occupied_block: list[str] = []
+        missing: list[str] = []
         for act in lane.get("activities", []):
             objs = list(act.get("objects", []))
-            if not objects_free(objs, available, occupied):
-                blocked.extend(norm_token(o) for o in objs)
-                continue
             if any(norm_token(o) in occupied for o in objs):
-                blocked.extend(norm_token(o) for o in objs)
+                occupied_block.extend(norm_token(o) for o in objs)
+                continue
+            if not objects_free(objs, available, occupied):
+                missing.extend(norm_token(o) for o in objs)
                 continue
             ready_actions.append(
                 {
@@ -165,11 +166,14 @@ def plan_lanes(
                 if act["id"] not in preferred_routes:
                     preferred_routes.append(act["id"])
                 next_actions.append(act)
-        elif blocked:
+            blocked = []
+        elif occupied_block:
             status = "CONTENDED"
             findings.append("NEED_OBJECT_CONTENTION")
+            blocked = occupied_block
         else:
             status = "NO_MATCHING_OBJECTS"
+            blocked = missing
 
         lane_results.append(
             {

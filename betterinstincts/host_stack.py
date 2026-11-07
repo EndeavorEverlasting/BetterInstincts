@@ -126,6 +126,7 @@ def evaluate_turn(
     guests_present: bool = False,
     occupied_objects: Sequence[str] = (),
     sibling_fun_lane_claims: Sequence[str] = (),
+    need_failure_signals: Optional[Mapping[str, Sequence[str]]] = None,
     navigating_needs_active: bool = False,
     navigating_needs_incomplete: Sequence[str] = (),
     navigating_needs_profile: str = "navigating_needs",
@@ -368,6 +369,7 @@ def evaluate_turn(
                 event_active=event_active,
                 event_fun_via_goals=event_fun_via,
                 sibling_lane_claims={"fun": tuple(sibling_fun_lane_claims or ())},
+                failure_signals=need_failure_signals,
                 capture_ref=capture_ref,
             )
             fun_service = (need_services.get("services") or {}).get("fun")
@@ -776,23 +778,33 @@ def evaluate_turn(
             "behavior_row": behavior["clarity"]["matched_row_id"],
         }
         next_gate = "MAP_TRAVEL_HOME_FIRST"
-    elif need_services is not None and need_services["gate"] == "NEED_SERVICES_TANDEM":
-        next_gate = "NEED_SERVICES_TANDEM"
+    elif need_services is not None and need_services["gate"] in {
+        "NEED_SERVICES_TANDEM",
+        "NEED_SERVICES_LOAD_BALANCE",
+    }:
+        next_gate = need_services["gate"]
         primary = need_services.get("primary_need")
         fallback = {
             "mechanism": need_services["action"],
             "owner": "betterinstincts/need_services.py",
             "contract": "contracts/need-services.v1.json",
+            "lb_contract": "contracts/need-load-balance.v1.json",
             "primary_need": primary,
             "primary_route": need_services.get("primary_route"),
             "preferred_routes": need_services.get("preferred_routes") or [],
             "next_actions": need_services.get("next_actions") or [],
             "parallel_ready_needs": need_services.get("parallel_ready_needs") or [],
+            "detached_needs": need_services.get("detached_needs") or [],
+            "assumption_windows": need_services.get("assumption_windows") or [],
+            "health": need_services.get("health") or {},
             "architecture": need_services.get("architecture"),
+            "p95_ground": (need_services.get("load_balance") or {}).get("p95_ground"),
             "forbidden": [
                 "REINVENT_NEED_PARSER_PER_AGENT",
                 "MONOLITH_SINGLE_QUEUE_FOR_ALL_NEEDS",
                 "BACKGROUND_NEED_DAEMON",
+                "STICK_TO_DEAD_CALL_STACK",
+                "SELECT_UNHEALTHY_AS_PRIMARY",
                 "RESUME",
             ],
         }

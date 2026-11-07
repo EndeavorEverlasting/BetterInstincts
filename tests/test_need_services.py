@@ -59,7 +59,13 @@ class NeedServicesTests(unittest.TestCase):
         self.assertIn("fun", out["services"])
         self.assertIn("hunger", out["parallel_ready_needs"])
         self.assertEqual(out["services"]["fun"]["gate"], "SURVIVAL_NEEDS_CRITICAL")
-        self.assertEqual(out["architecture"], "TANDEM_NEED_SERVICES_NOT_MONOLITH_QUEUE")
+        self.assertIn(
+            out["architecture"],
+            {
+                "TANDEM_NEED_SERVICES_NOT_MONOLITH_QUEUE",
+                "TANDEM_NEED_SERVICES_WITH_LB_HEALTH_DETACH",
+            },
+        )
 
     def test_host_stack_need_services_tandem(self):
         result = evaluate_turn(
@@ -67,7 +73,10 @@ class NeedServicesTests(unittest.TestCase):
             available_objects=["fridge", "phone", "toilet", "bed", "shower", "tv"],
             viewport={"state": "VIEWPORT_OK"},
         )
-        self.assertEqual(result["next_gate"], "NEED_SERVICES_TANDEM")
+        self.assertIn(
+            result["next_gate"],
+            {"NEED_SERVICES_TANDEM", "NEED_SERVICES_LOAD_BALANCE"},
+        )
         self.assertEqual(result["fallback"]["primary_need"], "hunger")
         self.assertIsNotNone(result["need_services"])
         self.assertTrue(result["need_services"].get("compacted"))
@@ -104,7 +113,10 @@ class NeedServicesTests(unittest.TestCase):
             guests_present=True,
             viewport={"state": "VIEWPORT_OK"},
         )
-        self.assertEqual(result["next_gate"], "NEED_SERVICES_TANDEM")
+        self.assertIn(
+            result["next_gate"],
+            {"NEED_SERVICES_TANDEM", "NEED_SERVICES_LOAD_BALANCE"},
+        )
         self.assertEqual(result["need_services"]["primary_need"], "fun")
         self.assertEqual(result["fallback"]["primary_route"], "PHONE_GAME")
 

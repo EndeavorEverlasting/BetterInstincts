@@ -93,6 +93,8 @@ REQUIRED = (
     "docs/NEED_SERVICES.md",
     "betterinstincts/need_service_base.py", "betterinstincts/need_services.py",
     "scripts/need_services.py", "tests/test_need_services.py",
+    "contracts/need-load-balance.v1.json", "docs/NEED_LOAD_BALANCE.md",
+    "betterinstincts/need_load_balance.py", "tests/test_need_load_balance.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

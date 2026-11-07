@@ -1,0 +1,84 @@
+{
+  "schema": "betterinstincts.need-load-balance/v1",
+  "version": 1,
+  "authority": "docs/NEED_LOAD_BALANCE.md",
+  "proof_ceiling": "HOST_NEED_LB_HEALTH_ASSUMPTION_WINDOW_NOT_DAEMON_NOT_EA_API",
+  "design_brief": {
+    "subject": "Load-balancer style health checks and assumption windows across tandem need microsystems",
+    "audience": "local host agents composing six need services",
+    "job": "Probe each need service; detach unhealthy call stacks; open a fresh assumption window with reweighted options; pick primary among healthy READY siblings",
+    "architecture": "P95 seam over need_services; evaluate-only; no background daemon; no network LB",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose before chrome"},
+      {"id": "UP-A85AD9DC3", "mechanism": "call-stack storytelling"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ]
+  },
+  "health_statuses": ["HEALTHY", "DEGRADED", "UNHEALTHY", "YIELDED"],
+  "health_rules": {
+    "YIELDED": {
+      "gates": ["PLAYER_FIRST_OR_BUSY"],
+      "detach": false,
+      "eligible_for_primary": false
+    },
+    "UNHEALTHY": {
+      "gates": [
+        "NEED_SERVICE_BLOCKED",
+        "FUN_SERVICE_BLOCKED",
+        "NEED_SERVICES_IDLE"
+      ],
+      "findings_any": ["NO_FREE_NEED_LANE", "NO_FREE_FUN_LANE"],
+      "failure_signal": true,
+      "detach": true,
+      "eligible_for_primary": false,
+      "open_assumption_window": true
+    },
+    "DEGRADED": {
+      "gates": ["NEED_SERVICE_DEFERRED", "FUN_SERVICE_DEFERRED", "SURVIVAL_NEEDS_CRITICAL"],
+      "findings_any": ["NEED_OBJECT_CONTENTION", "SHARED_FUN_OBJECT_CONTENTION", "MONOLITH_SINGLE_NEED_QUEUE_FOR_ALL_SIMS"],
+      "detach": false,
+      "eligible_for_primary": true,
+      "weight_multiplier": 0.55
+    },
+    "HEALTHY": {
+      "gates": ["NEED_SERVICE_PLAN", "FUN_SERVICE_PLAN", "NEED_WATCH_OPTIONAL", "ALLOW_LEISURE_NEED_LANES"],
+      "requires_primary_route": false,
+      "detach": false,
+      "eligible_for_primary": true,
+      "weight_multiplier": 1.0
+    }
+  },
+  "assumption_window": {
+    "clears": [
+      "preferred_route_sticky",
+      "object_inventory_guess",
+      "lane_order_bias",
+      "failed_call_stack"
+    ],
+    "scene_reset": true,
+    "weight_policy": "BOOST_ALTERNATES_PENALIZE_FAILED",
+    "failed_route_penalty": 0.15,
+    "alternate_boost": 1.35,
+    "survival_travel_boost": 1.6,
+    "p95_ground": "NEED_LOAD_BALANCE_ASSUMPTION_WINDOW"
+  },
+  "load_balance": {
+    "pool_order": ["HEALTHY", "DEGRADED"],
+    "urgency_weight": 1.0,
+    "health_weight_key": "weight_multiplier",
+    "never_select": ["UNHEALTHY", "YIELDED"],
+    "gates": {
+      "with_detach_or_window": "NEED_SERVICES_LOAD_BALANCE",
+      "clean_tandem": "NEED_SERVICES_TANDEM",
+      "idle": "NEED_SERVICES_IDLE",
+      "player": "PLAYER_FIRST_OR_BUSY"
+    }
+  },
+  "anti_patterns": [
+    "STICK_TO_DEAD_CALL_STACK",
+    "SELECT_UNHEALTHY_AS_PRIMARY",
+    "DETACH_HEALTHY_URGENT_SURVIVAL",
+    "BACKGROUND_NEED_HEALTH_DAEMON",
+    "ASSUMPTION_WINDOW_WITHOUT_CLEAR"
+  ]
+}
