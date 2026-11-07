@@ -91,3 +91,20 @@ def confirm(
             "proof_ceiling": "PROBE_ONLY_NOT_GAME_CONTROL_OR_CERTIFICATION",
         }
     return {**second, "samples_checked": 2}
+
+
+def as_presence(handoff: dict) -> dict:
+    """Project one canonical arbiter result into existing listener vocabulary."""
+    ready = handoff["screen_control_allowed"]
+    reason = handoff["reason"]
+    return {
+        "state": (
+            "HOST_MAY_AUTOMATE" if ready else
+            "PLAYER_PLAYING" if reason in {"PLAYER_OVERRIDE", "RECENT_HUMAN_INPUT"}
+            else "UNKNOWN_PRESENCE"
+        ),
+        "host": "EVALUATE_AND_OPTIONAL_EXECUTE" if ready else "YIELD_TO_PLAYER",
+        "reason": reason,
+        "idle_ms": handoff["idle_ms"],
+        "proof_ceiling": handoff["proof_ceiling"],
+    }
