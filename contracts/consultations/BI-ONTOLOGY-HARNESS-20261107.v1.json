@@ -1,0 +1,60 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-ONTOLOGY-HARNESS-20261107",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "38cd9290c1eb488ead61a880333c10eb4b69b3b4",
+  "proposed_capability": "Repository-local pre-prototype ontology consultation validator and offline PR gate",
+  "affected_concepts": [
+    "CLAIM",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT",
+    "GAME_BUILD"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/VALIDATION.md",
+    "contracts/ontology.v1.json",
+    "docs/ONTOLOGY.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SCHEMA_AND_OFFLINE_TESTS_ONLY",
+  "player_save_control_impact": "NONE; tooling only; no game files accessed",
+  "expected_outcome": "Fail closed on unmapped behavior mutations; preserve domain owners and require early consultation",
+  "negative_tests": [
+    "missing concept",
+    "unknown invariant",
+    "missing owner",
+    "manifest created too late",
+    "unknown changed behavior file",
+    "offline proof promoted to game certification"
+  ],
+  "rollback_path": "Revert the ontology harness commits on this candidate branch; no game or user saves touched",
+  "unresolved_unknowns": [
+    "GitHub required-status-check/branch-protection activation requires separate provider verification and authorization"
+  ],
+  "files_expected": [
+    "scripts/check_ontology.py",
+    "tests/test_ontology_gate.py",
+    "AGENTS.md",
+    ".github/workflows/ci.yml"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "ONTOLOGY_CONSULTED_BEFORE_HARNESS_CODE",
+  "source_main_sha": "502f66efc0eedd4136d6a8cd0879f566c3f3612f"
+}
