@@ -1,0 +1,80 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-P83-PREFLIGHT-INTENT-20261107",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "eda1b4664714ca21a3caa659e40cbd6061ac36c8",
+  "proposed_capability": "P83 independently verified gap closure: fail closed on rejected game sample/experiment consultation and prevent stale suspended goal or stale contingency from influencing advisory selection without current observation revalidation",
+  "affected_concepts": [
+    "GOAL_THREAD",
+    "RESUME_CONDITION",
+    "CONTINGENCY",
+    "INTERRUPTION",
+    "CLAIM",
+    "OBSERVATION",
+    "PROOF_RECEIPT",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "GAME_BUILD",
+    "PLAYER_INTENT",
+    "SAVE_SLOT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/ONTOLOGY.md",
+    "docs/LIVE_CERT.md",
+    "contracts/ontology.v1.json",
+    "contracts/domain-cascade.v1.json",
+    "contracts/player-presence.v1.json",
+    "betterinstincts/semantic_advisory.py",
+    "scripts/semantic_preflight.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_PREVENTION_TESTS_NO_LOCAL_GAME_CERTIFICATION",
+  "player_save_control_impact": "NONE: pure advisory and preflight checks only; no input, save, install, or capture",
+  "expected_outcome": "Rejected and deferred consultations cannot pass local preflight; a suspended goal cannot be selected without explicit current-capture revalidation, and stale contingency evidence cannot preempt a current goal. Preserve player-yield and existing domain-cascade ownership.",
+  "negative_tests": [
+    "BLOCK_UNSAFE with no file paths rejected even for game_sampling",
+    "DEFER_FOR_GAME_EVIDENCE rejected",
+    "SUSPENDED previous goal with READY status and no current revalidation cannot become selected",
+    "stale revalidation capture ref rejected",
+    "matching current capture revalidates and can resume as advisory, never host permit",
+    "stale event capture ref cannot force preemption",
+    "unknown or player-directed context still yields",
+    "unregistered future domains remain advisory"
+  ],
+  "rollback_path": "Revert bounded branch if tests fail; no operator data touched and historical ontology blobs unchanged",
+  "unresolved_unknowns": [
+    "The current chat cannot verify installed game scene/build and cannot certify BI-002; local game session remains a separate gate",
+    "Preflight PASS remains semantic-readiness only and never approves actual UI input"
+  ],
+  "files_expected": [
+    "scripts/semantic_preflight.py",
+    "betterinstincts/semantic_advisory.py",
+    "tests/test_ontology_gate.py",
+    "tests/test_semantic_advisory.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "ONTOLOGY_CONSULTED_BEFORE_P83_BEHAVIOR_CHANGE",
+  "source_main_sha": "8f199efb075e6bbf200075f3c3e4070de782d09a"
+}
