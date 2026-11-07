@@ -149,7 +149,8 @@ def launch(run_id: str, cfg: dict, digest: str, execute: bool) -> dict:
 
 
 def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
-             disposable_confirmed: bool, timeout: int = 45, gui=None) -> dict:
+             disposable_confirmed: bool, timeout: int = 45, gui=None,
+             session_id: str | None = None, idle_ms: int = 8000) -> dict:
     if not execute or not disposable_confirmed:
         raise GateError("NAVIGATION_REQUIRES_EXECUTE_AND_DISPOSABLE_SAVE_CONFIRMATION")
     if not 1 <= timeout <= 90:
@@ -180,10 +181,17 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
                     pid = int(row["process_id"])
                     break
             blocker_receipt = dismiss_menu_blockers(
-                process_id=pid, execute=True, blocker_ids=None, receipt=None)
+                process_id=pid,
+                execute=True,
+                blocker_ids=None,
+                receipt=None,
+                session_id=session_id,
+                idle_ms=idle_ms,
+            )
             append_event(root, "MENU_BLOCKERS_DISMISS_DISPATCHED",
                          blockers=blocker_receipt.get("steps"),
-                         proof_ceiling="MENU_BLOCKER_CLICK_DISPATCH_NOT_LIVE_PROOF")
+                         proof_ceiling="MENU_BLOCKER_CLICK_DISPATCH_NOT_LIVE_PROOF",
+                         session_id=session_id)
         except Exception as exc:
             raise GateError("MENU_BLOCKER_DISMISS_FAILED:" + str(exc)) from exc
     if gui is None:
@@ -412,6 +420,9 @@ def main(argv=None) -> int:
         if name == "navigate":
             p.add_argument("--disposable-confirmed", action="store_true")
             p.add_argument("--timeout", type=int, default=45)
+            p.add_argument("--session-id", default=None,
+                           help="ACTIVE host_listener session for menu-blocker --execute")
+            p.add_argument("--idle-ms", type=int, default=8000)
     p = sub.add_parser("manual-cas-complete")
     p.add_argument("--run-id", required=True)
     p.add_argument("--disposable-confirmed", action="store_true")
@@ -440,8 +451,11 @@ def main(argv=None) -> int:
             elif args.command == "launch":
                 result = launch(args.run_id, cfg, digest, args.execute)
             else:
-                result = navigate(args.run_id, cfg, digest, args.execute,
-                                  args.disposable_confirmed, args.timeout)
+                result = navigate(
+                    args.run_id, cfg, digest, args.execute,
+                    args.disposable_confirmed, args.timeout,
+                    session_id=args.session_id, idle_ms=int(args.idle_ms),
+                )
         elif args.command == "manual-cas-complete":
             result = manual_cas_complete(args.run_id, args.disposable_confirmed,
                                          args.drive_method)

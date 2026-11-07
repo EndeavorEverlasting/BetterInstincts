@@ -8,8 +8,8 @@ touch user-named saves). RCA/avoidance/ladder: contracts/viewport-black.v1.json
 Examples:
   python -m scripts.viewport_recover --image dist/game-host/.../printwindow-after-black.png
   python -m scripts.viewport_recover --capture --process-id 45380
-  python -m scripts.viewport_recover --capture --process-id 45380 --execute --max-steps 5
-  python -m scripts.viewport_recover --capture --process-id 45380 --execute --authorize-restart \\
+  python -m scripts.viewport_recover --capture --process-id 45380 --session-id SESSION --execute --max-steps 5
+  python -m scripts.viewport_recover --capture --process-id 45380 --session-id SESSION --execute --authorize-restart \\
       --run-id bi002-quiz-boot
 """
 from __future__ import annotations
@@ -200,6 +200,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--process-id", type=int, default=None)
     p.add_argument("--out", type=Path, default=OUTPUT / "viewport-check.png")
     p.add_argument("--execute", action="store_true")
+    p.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
+    p.add_argument("--idle-ms", type=int, default=8000)
     p.add_argument("--authorize-restart", action="store_true",
                    help="Permit WM_CLOSE restart gate after camera ladder fails")
     p.add_argument("--run-id", default=None, help="Host run id for restart relaunch notes")
@@ -243,89 +245,107 @@ def main(argv: list[str] | None = None) -> int:
 
         steps_run = []
         if args.execute and report.state == "VIEWPORT_ANOMALY":
+            from betterinstincts.control_handoff import HandoffError
+            from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
+            try:
+                require_execute_session(args.session_id, args.process_id)
+            except HandoffError as exc:
+                raise GateError(str(exc)) from exc
             max_steps = max(1, min(8, int(args.max_steps)))
-            for step in report.recovery_ladder[:max_steps]:
-                if step == "RECHECK_PRINTWINDOW_ANALYZE":
-                    recheck_path = Path(args.out) if args.out else OUTPUT / "viewport-recheck.png"
-                    if not recheck_path.is_absolute():
-                        recheck_path = ROOT / recheck_path
-                    capture_meta = capture_sims(process_id=args.process_id, out=recheck_path)
-                    image_path = ROOT / capture_meta["path"] if not Path(capture_meta["path"]).is_absolute() else Path(capture_meta["path"])
-                    report = analyze_image(image_path, contract=cfg)
-                    steps_run.append({
-                        "step": step,
-                        "state": "RECHECKED",
-                        "capture": capture_meta,
-                        "analyze": report_to_dict(report),
-                    })
-                    if report.state == "VIEWPORT_OK":
-                        out["state"] = "RECOVERY_VIEWPORT_OK"
-                        break
-                    if _build_buy_recovered(report):
+            with admitted_screen_lease(
+                int(args.process_id),
+                str(args.session_id),
+                idle_ms=int(args.idle_ms),
+                focus_fn=lambda: _focus(args.process_id),
+            ) as ensure_ready:
+                for step in report.recovery_ladder[:max_steps]:
+                    try:
+                        ensure_ready()
+                    except HandoffError as exc:
+                        raise GateError(str(exc)) from exc
+                    if step == "RECHECK_PRINTWINDOW_ANALYZE":
+                        recheck_path = Path(args.out) if args.out else OUTPUT / "viewport-recheck.png"
+                        if not recheck_path.is_absolute():
+                            recheck_path = ROOT / recheck_path
+                        capture_meta = capture_sims(process_id=args.process_id, out=recheck_path)
+                        image_path = ROOT / capture_meta["path"] if not Path(capture_meta["path"]).is_absolute() else Path(capture_meta["path"])
+                        report = analyze_image(image_path, contract=cfg)
+                        steps_run.append({
+                            "step": step,
+                            "state": "RECHECKED",
+                            "capture": capture_meta,
+                            "analyze": report_to_dict(report),
+                        })
+                        if report.state == "VIEWPORT_OK":
+                            out["state"] = "RECOVERY_VIEWPORT_OK"
+                            break
+                        if _build_buy_recovered(report):
+                            out["state"] = "RECOVERY_BUILD_BUY_UNSTUCK"
+                            out["next_gate"] = cfg["host_next_gates"]["BUILD_BUY_CATALOG_RECOVERY"]
+                            break
+                        continue
+                    # After Buy unstick, skip legacy combined toggle and Live exit unless
+                    # the caller raised max-steps past ENTER and still wants Live.
+                    if (
+                        step in {"TOGGLE_BUILD_THEN_LIVE_CAMERA_RESET", "EXIT_BUILD_BUY_TO_LIVE"}
+                        and _build_buy_recovered(report)
+                    ):
+                        steps_run.append({
+                            "step": step,
+                            "state": "SKIPPED_BUILD_BUY_ALREADY_RECOVERED",
+                            "note": "Black glitch already unstuck into Buy; withhold auto Live",
+                        })
                         out["state"] = "RECOVERY_BUILD_BUY_UNSTUCK"
                         out["next_gate"] = cfg["host_next_gates"]["BUILD_BUY_CATALOG_RECOVERY"]
                         break
-                    continue
-                # After Buy unstick, skip legacy combined toggle and Live exit unless
-                # the caller raised max-steps past ENTER and still wants Live.
-                if (
-                    step in {"TOGGLE_BUILD_THEN_LIVE_CAMERA_RESET", "EXIT_BUILD_BUY_TO_LIVE"}
-                    and _build_buy_recovered(report)
-                ):
-                    steps_run.append({
-                        "step": step,
-                        "state": "SKIPPED_BUILD_BUY_ALREADY_RECOVERED",
-                        "note": "Black glitch already unstuck into Buy; withhold auto Live",
-                    })
-                    out["state"] = "RECOVERY_BUILD_BUY_UNSTUCK"
-                    out["next_gate"] = cfg["host_next_gates"]["BUILD_BUY_CATALOG_RECOVERY"]
-                    break
-                step_result = run_recovery_step(
-                    step,
-                    process_id=args.process_id,
-                    authorize_restart=bool(args.authorize_restart),
-                    run_id=args.run_id,
-                )
-                steps_run.append(step_result)
-                if step_result.get("state") == "BLOCKED_RESTART_AUTHORIZATION_REQUIRED":
-                    out["state"] = "BLOCKED_RESTART_AUTHORIZATION_REQUIRED"
-                    break
-                if step == "AUTHORIZED_GAME_RESTART":
-                    out["state"] = step_result.get("state", "RESTART_CLOSE_POSTED")
-                    break
-                # Recapture after camera mutations when capture mode available.
-                if args.capture or args.out:
-                    recheck_path = OUTPUT / "viewport-recheck.png"
-                    capture_meta = capture_sims(process_id=args.process_id, out=recheck_path)
-                    image_path = ROOT / capture_meta["path"] if not Path(capture_meta["path"]).is_absolute() else Path(capture_meta["path"])
-                    report = analyze_image(image_path, contract=cfg)
-                    steps_run[-1]["recheck"] = report_to_dict(report)
-                    if report.state == "VIEWPORT_OK":
-                        out["state"] = "RECOVERY_VIEWPORT_OK"
+                    step_result = run_recovery_step(
+                        step,
+                        process_id=args.process_id,
+                        authorize_restart=bool(args.authorize_restart),
+                        run_id=args.run_id,
+                    )
+                    steps_run.append(step_result)
+                    if step_result.get("state") == "BLOCKED_RESTART_AUTHORIZATION_REQUIRED":
+                        out["state"] = "BLOCKED_RESTART_AUTHORIZATION_REQUIRED"
                         break
-                    if _build_buy_recovered(report):
-                        out["state"] = "RECOVERY_BUILD_BUY_UNSTUCK"
-                        out["next_gate"] = cfg["host_next_gates"]["BUILD_BUY_CATALOG_RECOVERY"]
-                        # Stop before chaining Live; Buy recovery is the black unstick.
+                    if step == "AUTHORIZED_GAME_RESTART":
+                        out["state"] = step_result.get("state", "RESTART_CLOSE_POSTED")
                         break
-            else:
-                if out.get("state") is None:
-                    if _build_buy_recovered(report):
-                        out["state"] = "RECOVERY_BUILD_BUY_UNSTUCK"
-                        out["next_gate"] = cfg["host_next_gates"]["BUILD_BUY_CATALOG_RECOVERY"]
-                    elif report.state == "VIEWPORT_ANOMALY":
-                        out["state"] = "RECOVERY_ATTEMPTED_STILL_ANOMALY"
-                        out["next_gate"] = cfg["host_next_gates"]["STILL_BLACK_AFTER_LADDER"]
-                    else:
-                        out["state"] = "RECOVERY_VIEWPORT_OK"
+                    # Recapture after camera mutations when capture mode available.
+                    if args.capture or args.out:
+                        recheck_path = OUTPUT / "viewport-recheck.png"
+                        capture_meta = capture_sims(process_id=args.process_id, out=recheck_path)
+                        image_path = ROOT / capture_meta["path"] if not Path(capture_meta["path"]).is_absolute() else Path(capture_meta["path"])
+                        report = analyze_image(image_path, contract=cfg)
+                        steps_run[-1]["recheck"] = report_to_dict(report)
+                        if report.state == "VIEWPORT_OK":
+                            out["state"] = "RECOVERY_VIEWPORT_OK"
+                            break
+                        if _build_buy_recovered(report):
+                            out["state"] = "RECOVERY_BUILD_BUY_UNSTUCK"
+                            out["next_gate"] = cfg["host_next_gates"]["BUILD_BUY_CATALOG_RECOVERY"]
+                            # Stop before chaining Live; Buy recovery is the black unstick.
+                            break
+                else:
+                    if out.get("state") is None:
+                        if _build_buy_recovered(report):
+                            out["state"] = "RECOVERY_BUILD_BUY_UNSTUCK"
+                            out["next_gate"] = cfg["host_next_gates"]["BUILD_BUY_CATALOG_RECOVERY"]
+                        elif report.state == "VIEWPORT_ANOMALY":
+                            out["state"] = "RECOVERY_ATTEMPTED_STILL_ANOMALY"
+                            out["next_gate"] = cfg["host_next_gates"]["STILL_BLACK_AFTER_LADDER"]
+                        else:
+                            out["state"] = "RECOVERY_VIEWPORT_OK"
             out["steps"] = steps_run
+            out["session_id"] = args.session_id
             out["analyze_after"] = report_to_dict(report)
         else:
             out["state"] = report.state
             if report.state == "VIEWPORT_ANOMALY" and not args.execute:
                 out["dry_run_next"] = (
                     "python -m scripts.viewport_recover --capture --process-id PID "
-                    "--execute --max-steps 5 --out dist/game-host/<run>/viewport-recover.png"
+                    "--session-id SESSION --execute --max-steps 5 "
+                    "--out dist/game-host/<run>/viewport-recover.png"
                 )
                 out["unstick_step"] = "ENTER_BUILD_BUY_UNSTICK"
                 out["restart_gate"] = (

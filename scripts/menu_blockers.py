@@ -6,8 +6,8 @@ template navigation. Never Resume. Never READ FAQ.
 
 Examples:
   python -m scripts.menu_blockers plan
-  python -m scripts.menu_blockers dismiss --process-id PID --execute
-  python -m scripts.menu_blockers dismiss --blocker memory_boost_on --process-id PID --execute
+  python -m scripts.menu_blockers dismiss --process-id PID --session-id SESSION --execute
+  python -m scripts.menu_blockers dismiss --blocker memory_boost_on --process-id PID --session-id SESSION --execute
 """
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ def _send_click(x: int, y: int) -> None:
 
 
 def dismiss(*, process_id: int | None, execute: bool, blocker_ids: list[str] | None,
-            receipt: Path | None) -> dict:
+            receipt: Path | None, session_id: str | None = None, idle_ms: int = 8000) -> dict:
     plan = plan_dismiss(blocker_ids)
     out: dict = {
         "plan": plan,
@@ -56,26 +56,45 @@ def dismiss(*, process_id: int | None, execute: bool, blocker_ids: list[str] | N
     if not execute:
         out["state"] = "DRY_RUN"
         out["next"] = (
-            "python -m scripts.menu_blockers dismiss --process-id PID --execute"
+            "python -m scripts.menu_blockers dismiss --process-id PID "
+            "--session-id SESSION --execute"
         )
         return out
     if sys.platform != "win32":
         raise GateError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
-    _focus(process_id)
+    from betterinstincts.control_handoff import HandoffError
+    from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
+    try:
+        require_execute_session(session_id, process_id)
+    except HandoffError as exc:
+        raise GateError(str(exc)) from exc
     steps = []
-    for step in plan["steps"]:
-        assert_safe_action(step["step"])
-        x, y = step["click"]
-        _send_click(int(x), int(y))
-        time.sleep(0.8)
-        steps.append({
-            "step": step["step"],
-            "blocker_id": step["blocker_id"],
-            "click": [x, y],
-            "state": "DISMISS_CLICK_DISPATCHED",
-            "forbidden": step["forbidden"],
-        })
+    last_handoff = None
+    with admitted_screen_lease(
+        int(process_id),
+        str(session_id),
+        idle_ms=idle_ms,
+        focus_fn=lambda: _focus(process_id),
+    ) as ensure_ready:
+        for step in plan["steps"]:
+            assert_safe_action(step["step"])
+            try:
+                last_handoff = ensure_ready()
+            except HandoffError as exc:
+                raise GateError(str(exc)) from exc
+            x, y = step["click"]
+            _send_click(int(x), int(y))
+            time.sleep(0.8)
+            steps.append({
+                "step": step["step"],
+                "blocker_id": step["blocker_id"],
+                "click": [x, y],
+                "state": "DISMISS_CLICK_DISPATCHED",
+                "forbidden": step["forbidden"],
+            })
     out["steps"] = steps
+    out["session_id"] = session_id
+    out["handoff"] = last_handoff
     out["state"] = "MENU_BLOCKERS_DISMISS_DISPATCHED"
     out["next"] = (
         "PrintWindow-confirm main_menu clear of Memory Boost; then "
@@ -98,6 +117,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("plan")
     d = sub.add_parser("dismiss")
     d.add_argument("--process-id", type=int, default=None)
+    d.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
+    d.add_argument("--idle-ms", type=int, default=8000)
     d.add_argument("--execute", action="store_true")
     d.add_argument("--blocker", action="append", default=None,
                    help="Optional blocker id; repeatable. Default: all known blockers.")
@@ -112,6 +133,8 @@ def main(argv: list[str] | None = None) -> int:
                 execute=bool(args.execute),
                 blocker_ids=args.blocker,
                 receipt=args.receipt,
+                session_id=args.session_id,
+                idle_ms=int(args.idle_ms),
             )
         print(json.dumps(result, sort_keys=True))
         return 0

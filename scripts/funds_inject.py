@@ -158,6 +158,8 @@ def _execute_plan(
     *,
     process_id: int | None,
     close_console: bool = False,
+    session_id: str | None = None,
+    idle_ms: int = 8000,
 ) -> dict:
     """Mode-agnostic inject: no F1, no Esc spam — tandem with Build/Live/Buy."""
     if sys.platform != "win32":
@@ -168,28 +170,44 @@ def _execute_plan(
     # Never force Live Mode — operator may be mid-build with new funds.
     if any(s.get("step") == "ENSURE_LIVE_MODE" and s.get("required") for s in (plan.get("steps") or [])):
         raise GateError("ENSURE_LIVE_MODE_FORBIDDEN_IN_MODE_AGNOSTIC_STACK")
-    focus_report = _focus(process_id)
-    time.sleep(0.2)
-    # Durable console open in whatever mode the operator is in: Ctrl+Shift+C
-    _send_vk(0x11)  # CTRL
-    _send_vk(0x10)  # SHIFT
-    _tap(0x43)      # C
-    _send_vk(0x10, up=True)
-    _send_vk(0x11, up=True)
-    time.sleep(0.55)
-    _click(250, 16)
-    time.sleep(0.2)
-    dispatched = []
-    run_cmds = list(commands)
-    if run_cmds and run_cmds[0] == "testingcheats enabled true":
-        run_cmds.insert(1, "testingcheats true")
-    for cmd in run_cmds:
-        _type_text(cmd)
-        _tap(0x0D)
-        time.sleep(0.35 if cmd == "motherlode" else 0.45)
-        dispatched.append(cmd)
-    if close_console:
-        _tap(0x1B)
+    from betterinstincts.control_handoff import HandoffError
+    from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
+    try:
+        require_execute_session(session_id, process_id)
+    except HandoffError as exc:
+        raise GateError(str(exc)) from exc
+    with admitted_screen_lease(
+        int(process_id),
+        str(session_id),
+        idle_ms=idle_ms,
+        focus_fn=lambda: _focus(process_id),
+    ) as ensure_ready:
+        try:
+            handoff = ensure_ready()
+        except HandoffError as exc:
+            raise GateError(str(exc)) from exc
+        focus_report = {"state": "FOCUS_VIA_SCREEN_ADMIT"}
+        time.sleep(0.2)
+        # Durable console open in whatever mode the operator is in: Ctrl+Shift+C
+        _send_vk(0x11)  # CTRL
+        _send_vk(0x10)  # SHIFT
+        _tap(0x43)      # C
+        _send_vk(0x10, up=True)
+        _send_vk(0x11, up=True)
+        time.sleep(0.55)
+        _click(250, 16)
+        time.sleep(0.2)
+        dispatched = []
+        run_cmds = list(commands)
+        if run_cmds and run_cmds[0] == "testingcheats enabled true":
+            run_cmds.insert(1, "testingcheats true")
+        for cmd in run_cmds:
+            _type_text(cmd)
+            _tap(0x0D)
+            time.sleep(0.35 if cmd == "motherlode" else 0.45)
+            dispatched.append(cmd)
+        if close_console:
+            _tap(0x1B)
     return {
         "state": "FUNDS_INJECT_DISPATCHED",
         "commands": dispatched,
@@ -198,6 +216,8 @@ def _execute_plan(
         "forced_live_mode": False,
         "game_mode": plan.get("game_mode", "unknown"),
         "focus": focus_report,
+        "handoff": handoff,
+        "session_id": session_id,
         "amount": plan.get("amount"),
         "proof_ceiling": plan.get("proof_ceiling"),
         "next": "PrintWindow-confirm household funds; LOCAL_OBSERVED only",
@@ -289,6 +309,8 @@ def main(argv: list[str] | None = None) -> int:
     gate.add_argument("--execute", action="store_true")
     gate.add_argument("--close-console", action="store_true", help="Optional Esc after inject (off by default)")
     gate.add_argument("--process-id", type=int, default=None)
+    gate.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
+    gate.add_argument("--idle-ms", type=int, default=8000)
     gate.add_argument("--receipt", type=Path, default=None)
 
     inj = sub.add_parser("inject")
@@ -298,6 +320,8 @@ def main(argv: list[str] | None = None) -> int:
     inj.add_argument("--execute", action="store_true")
     inj.add_argument("--close-console", action="store_true")
     inj.add_argument("--process-id", type=int, default=None)
+    inj.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
+    inj.add_argument("--idle-ms", type=int, default=8000)
     inj.add_argument("--receipt", type=Path, default=None)
 
     args = p.parse_args(argv)
@@ -328,6 +352,8 @@ def main(argv: list[str] | None = None) -> int:
                     result["inject"],
                     process_id=args.process_id,
                     close_console=bool(args.close_console),
+                    session_id=args.session_id,
+                    idle_ms=int(args.idle_ms),
                 )
                 result = {**result, "live": live, "execute": True}
             else:
@@ -344,6 +370,8 @@ def main(argv: list[str] | None = None) -> int:
                     plan,
                     process_id=args.process_id,
                     close_console=bool(args.close_console),
+                    session_id=args.session_id,
+                    idle_ms=int(args.idle_ms),
                 )
 
         receipt = getattr(args, "receipt", None)

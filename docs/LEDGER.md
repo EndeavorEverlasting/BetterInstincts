@@ -232,3 +232,6 @@ Operator gap: gardening desire visible in moodlets without a durable way to chec
 
 **P03:** Merged PR #53 (LB glossary). Deleted remotes fully contained in `main` plus superseded need-service/LB/adapter-docs forks. Left diverged historical remotes untouched pending salvage. **P141:** selected land domain-cascade then issue #35 `screen_admit` adapters; BI-002 remains parent. See [STRATEGY.md](STRATEGY.md#2026-11-07--p141-scout-post-need-services-mainline--branch-hygiene-p03). **P124:** domain_cascade reuses `need_service_base.normalize_needs` instead of a forked six-need parser.
 
+## 2026-11-07 — Issue #35 screen_admit adapters (P141 C + trifecta)
+
+**Offline:** `betterinstincts/screen_admit.py` + `--session-id` gates on `funds_inject`, `menu_blockers`, `viewport_recover`, and `game_host navigate` menu-blocker dismiss. Tests: `tests/test_screen_admit.py`. Proof ceiling `HOST_SCREEN_ADMIT_ADAPTER_BARRIER_NOT_LIVE_CERT`. P08 live handoff interruption/resume remains OPEN / operator-gated on a disposable lab save. `host_menu` / CAS helpers still uncovered. Does not close BI-002.
