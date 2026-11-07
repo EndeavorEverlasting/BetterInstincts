@@ -251,9 +251,13 @@ def poll(run_id: str, sample_file: Path) -> dict:
 
 def status(run_id: str) -> dict:
     _, meta, rows = load(run_id)
+    observed_version = next(
+        (row["game_version"] for row in reversed(rows)
+         if row["state"] == "LIVE_REPORTED_UNREVIEWED"), None)
     return {"run_id": run_id, "mode": meta["mode"],
             "save_alias": meta["save_alias"], "state": rows[-1]["state"],
-            "events": len(rows), "game_version": meta["game_version"] or "UNKNOWN_VERSION",
+            "events": len(rows),
+            "game_version": observed_version or meta["game_version"] or "UNKNOWN_VERSION",
             "game_certification": "NOT_GRANTED_BY_HOST_ADAPTER"}
 
 
