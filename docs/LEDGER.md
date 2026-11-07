@@ -113,3 +113,6 @@ Operator correction on `bi002-quiz-boot` (pid 45380, patch `1.121.361.1020`): th
 
 ## 2026-11-07 — Codified black→Buy host fallback (ENTER_BUILD_BUY_UNSTICK)
 Durable host logic so future agents do not rediscover the unstick: `contracts/viewport-black.v1.json` `fallback_mechanisms.FB_BUILD_BUY_UNSTICK`, ladder step `ENTER_BUILD_BUY_UNSTICK` (Build hammer only), classifier `BUILD_BUY_CATALOG_RECOVERY`, recoverer stop-state `RECOVERY_BUILD_BUY_UNSTUCK`, and `host_stack.evaluate_turn` `fallback` routing for black viewports. Live exit is a separate step. Patch-like host behavior; not GAME_CERTIFIED.
+
+## 2026-11-07 — Host-menu reboot journey (Memory Boost → Load → LabLab Play)
+LOCAL_OBSERVED after true TS4 relaunch (`bi002-lablab-reboot`, pid 66096, patch `1.121.361.1020`): main menu blocked by **MEMORY BOOST IS NOW ON**. Codified durable transitions in `contracts/host-menu.v1.json` + `betterinstincts/host_menu.py` + `scripts/host_menu.py` (+ `menu_blockers`, scene `memory_boost_modal`). Journey forbids Resume/Delete/Richardson. Agents must run `host_menu` rather than rediscovering clicks. Live Mode / six-needs still open after Play dispatch.

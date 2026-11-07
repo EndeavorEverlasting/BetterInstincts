@@ -180,6 +180,42 @@
           "target": "exit_confirm",
           "gate": "REVIEW_AND_SAVE_POLICY",
           "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "memory_boost_modal",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "memory_boost_modal",
+      "family": "modal",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "modal:memory_boost_on"
+        },
+        {
+          "source": "operator",
+          "token": "memory_boost_controls_visible"
+        }
+      ],
+      "ux_regions": [
+        "modal",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "LOCAL_OBSERVED 2026-11-07 bi002-lablab-reboot: EA MEMORY BOOST IS NOW ON blocks Load Game after reboot",
+        "Host must dismiss via modal X only — never Resume, never READ FAQ",
+        "Durable journey: contracts/host-menu.v1.json + scripts/host_menu.py"
+      ],
+      "evidence_state": "LOCAL_OBSERVED",
+      "transitions": [
+        {
+          "target": "main_menu",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
         }
       ]
     },
