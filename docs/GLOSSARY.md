@@ -1,7 +1,7 @@
 # BetterInstincts glossary
 
-Canonical vocabulary for host listeners, evaluators, and autonomy.  
-**Machine authority:** [`contracts/glossary.v1.json`](../contracts/glossary.v1.json)  
+Canonical vocabulary for host listeners, evaluators, and autonomy.
+**Machine authority:** [`contracts/glossary.v1.json`](../contracts/glossary.v1.json)
 **Program design (P95):** [HOST_AUTONOMY.md](HOST_AUTONOMY.md)
 
 Do not invent synonyms in contracts or agent chat. Add terms to the JSON contract first, then document here.

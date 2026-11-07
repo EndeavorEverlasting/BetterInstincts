@@ -1,7 +1,7 @@
 # Host autonomy program design (P95)
 
-**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect  
-**Provenance:** `spec-architecture-prompts.v1.json` blob `5926a198a14567de55110ed19e922fc444b4dec7`  
+**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
+**Provenance:** `spec-architecture-prompts.v1.json` blob `5926a198a14567de55110ed19e922fc444b4dec7`
 **Vocabulary owner:** [GLOSSARY.md](GLOSSARY.md) / `contracts/glossary.v1.json`
 
 ## User outcomes
@@ -63,7 +63,7 @@ operator activates listener/automate session
 | Player-directed queue | `EMULATE` only | never optimize away |
 
 ## State model
-`INACTIVE` → (activate) → `ACTIVE` → tick loop → (deactivate) → `INACTIVE`  
+`INACTIVE` → (activate) → `ACTIVE` → tick loop → (deactivate) → `INACTIVE`
 Presence per tick: `PLAYER_PLAYING` | `HOST_MAY_AUTOMATE` | `UNKNOWN_PRESENCE` (fail closed: yield).
 
 ## Proof ceiling
