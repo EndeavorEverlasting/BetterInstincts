@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 from scripts.check_ontology import (
-    CONSULTATIONS, ONTOLOGY, ROOT, is_behavior_mutation,
+    CONSULTATIONS, ONTOLOGY, ROOT,
     read_json, validate_consultation, validate_ontology,
 )
 
@@ -50,9 +50,6 @@ def preflight(
     if operation in {"game_sampling", "game_experiment"}:
         if not exact_game_build or record.get("game_build_scope") != "EXACT_GAME_BUILD:" + exact_game_build:
             raise SemanticPreflightError("GAME_SCOPE_NOT_CONSULTED")
-    if operation == "repo_mutation" and any(not is_behavior_mutation(p) for p in targets):
-        # Docs can also be consulted; do not treat documentation as a host action.
-        pass
     return {
         "status": "ONTOLOGY_PREFLIGHT_PASS_NOT_GAME_AUTHORITY",
         "operation": operation,
