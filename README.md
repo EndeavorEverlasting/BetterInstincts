@@ -51,3 +51,5 @@ Original code is MIT licensed. Please open an issue for compatibility observatio
 - [Scene catalog, safe transition architecture and save naming](docs/SCENE_INTELLIGENCE.md) — 35 version-bound candidate scenes and protected-save doctrine.
 - [Machine-readable scenes](contracts/game-scenes.v1.json), [save policy](contracts/save-policy.v1.json), [scene sprint](plans/active/BI-SCENE-MAP.md).
 - `python -m scripts.check_scene_contract` validates the state graph, chosen-save gate and protected-default policy; no screenshots or game launch performed.
+
+- [P04 Scene Intelligence canonical handoff](plans/active/BI-SCENE-MAP.HANDOFF.md) and [typed dispatch](plans/active/BI-SCENE-MAP.dispatch.v1.json) — current offline evidence, protected-save policy and live Windows host execution order.

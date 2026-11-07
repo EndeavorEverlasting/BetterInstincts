@@ -22,3 +22,6 @@ Source baseline: main `3505dc9e007609d1bfda77e30a6490d8346ea168`, merged PR #14,
 
 ## Proof ceilings and first continuation
 Catalog hypotheses and operator-submitted cue pairs are not computer vision; fake GUI CI is not Sims runtime. Unknown state gives no action; save ID binding gives operator-attested selection only. The real CAS-to-disposable-Live-Mode gate remains next: inspect the actual game screen, use the active first-boot session when safe, and only after Live Mode confirm and open the empty baseline recorder. Future scene catalog versions must be additive, patch-specific and regression validated.
+
+## Provider result and downstream owner
+P00/P01/P95 plus P08/P82/P07 implementation: merged PR #15 at `709646ce11cc1ee1fb80848f66c9130230b3721f`; post-merge CI #42373287837 SUCCESS. P04 canonical continuation is `plans/active/BI-SCENE-MAP.HANDOFF.md`; it does not certify local Sims gameplay. Follow `docs/SCENE_INTELLIGENCE.md` for the actual 35-scene catalog, schema, save classes and manual-only transition gates. This sprint remains **ACTIVE LIVE CERT** until local Windows host calibration; source code integration is complete.
