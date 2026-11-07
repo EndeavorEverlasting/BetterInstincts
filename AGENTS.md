@@ -1,14 +1,9 @@
 # BetterInstincts — canonical agent entrypoint
 
-Read **docs/DOCTRINE.md**, **docs/LEDGER.md**, **docs/ONTOLOGY.md**, and **docs/PROMPT_INVOCATIONS.md** before designing or editing. Their tracked paths are authority for this project. **plans/active/BI-001.md** records the merged bootstrap; **plans/active/BI-002.md** owns the next game-lab gate.
+Before prototyping, consult `docs/ONTOLOGY.md` + its concept owners; commit `contracts/consultations/` preflight first. Read **docs/DOCTRINE.md**, **docs/LEDGER.md**, **docs/PROMPT_INVOCATIONS.md**. **plans/active/BI-001.md** merged; **plans/active/BI-002.md** owns game-lab gate.
 
 ## Parent objective
 Create a free, community-native Sims 4 autonomy mod that helps Sims meet needs, earn income, progress in careers, and enjoy their lives without overriding manual player control or personality. Do not confuse an offline policy prototype with a playable mod.
-
-## Ontology-first pre-prototype admission
-Before any behavior-changing prototype (host clicks, policies, training, scripts, tests, tuning or execution contracts), read `contracts/ontology.v1.json` and `docs/ONTOLOGY.md`; resolve affected concept IDs and original canonical owners. Commit a specific `contracts/consultations/*.json` record **before the first behavior mutation commit**, then run `python -m scripts.check_ontology --consultation contracts/consultations/RECORD.json`. If concepts or invariant coverage are missing, amend/review ontology before prototyping. Unknown patch, scene, player status or save origin still means abstain from gameplay execution.
-
-On PRs, `python -m scripts.check_ontology --base-ref BASE_SHA` checks semantic integrity, changed-file scope and Git history ordering. CI cannot certify gameplay or prove mental consultation, and a CI check is not required branch protection until independently configured and verified.
 
 ## Mandatory preflight
 Refresh repo HEAD/branch, PRs, status and game/version. Declare HOST, providers, scopes, collisions, tests, proof and parent gate. Resolve P-numbers using Moonwake's exact catalog.
