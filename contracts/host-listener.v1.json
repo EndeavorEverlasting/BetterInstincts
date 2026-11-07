@@ -45,11 +45,22 @@
       "inventory_has_homework",
       "homework_on_lot",
       "available_objects",
+      "sim_at_school",
+      "camera_lot_kind",
       "life_stage",
       "emotion",
       "moodlets",
       "traits",
       "whims"
+    ],
+    "optional_social_opportunity_fields": [
+      "social_prompt_active",
+      "social_prompt_kind",
+      "social_prompt_text",
+      "social_invitee_name",
+      "sim_library",
+      "social_lookup_ran",
+      "invitee_occult_status"
     ],
     "optional_scenario_fields": [
       "scenario_active",

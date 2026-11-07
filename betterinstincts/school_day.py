@@ -102,14 +102,57 @@ def match_pinned_whim(
     return None
 
 
+def resolve_sim_premises(
+    *,
+    location_kind: str = "unknown",
+    camera_lot_kind: Optional[str] = None,
+    sim_at_school: Optional[bool] = None,
+    school_day_active: bool = False,
+) -> dict:
+    """Active Sim premises outrank camera/viewport lot. Never invent school presence."""
+    findings: list[str] = []
+    camera = camera_lot_kind or None
+    if sim_at_school is True:
+        effective = "school"
+        findings.append("SIM_AT_SCHOOL_SUPPLIED")
+    elif location_kind == "school":
+        effective = "school"
+    elif school_day_active and location_kind in {"unknown", "home"} and sim_at_school is not False:
+        # Schedule active + unresolved/home camera does not prove home premises.
+        effective = "school"
+        findings.append("SCHOOL_DAY_ACTIVE_PREMISES_ASSUMED_SCHOOL")
+    else:
+        effective = location_kind
+    if camera and camera != effective:
+        findings.append("CAMERA_LOT_IS_NOT_SIM_PREMISES")
+    return {
+        "effective_location_kind": effective,
+        "reported_location_kind": location_kind,
+        "camera_lot_kind": camera,
+        "sim_at_school": sim_at_school,
+        "school_day_active": school_day_active,
+        "findings": findings,
+    }
+
+
 def homework_blocked_on_premises(
     *,
     location_kind: str,
     school_phase: Optional[str] = None,
     cfg: Optional[dict] = None,
+    sim_at_school: Optional[bool] = None,
+    school_day_active: bool = False,
+    camera_lot_kind: Optional[str] = None,
 ) -> bool:
     """True when homework must not run on the current school premises."""
-    if location_kind != "school":
+    premises = resolve_sim_premises(
+        location_kind=location_kind,
+        camera_lot_kind=camera_lot_kind,
+        sim_at_school=sim_at_school,
+        school_day_active=school_day_active,
+    )
+    effective = premises["effective_location_kind"]
+    if effective != "school":
         return False
     cfg = cfg or load_contract()
     panel = (cfg.get("career_panel") or {}).get("homework") or {}
@@ -292,6 +335,8 @@ def evaluate_school_day_turn(
     school_phase: str = "morning_free_time",
     school_profile: str = "high_school_years",
     location_kind: str = "unknown",
+    camera_lot_kind: Optional[str] = None,
+    sim_at_school: Optional[bool] = None,
     homework_pending: bool = False,
     player_directed: bool = False,
     already_busy: bool = False,
@@ -305,10 +350,20 @@ def evaluate_school_day_turn(
     thr = SURVIVAL_THRESHOLD
     survival_critical = sorted(n for n in SURVIVAL if snap[n] < thr)
     goals = [str(g) for g in school_goals_incomplete if isinstance(g, str) and g]
+    premises = resolve_sim_premises(
+        location_kind=location_kind,
+        camera_lot_kind=camera_lot_kind,
+        sim_at_school=sim_at_school,
+        school_day_active=school_day_active,
+    )
+    effective_location = premises["effective_location_kind"]
     premises_blocked = homework_blocked_on_premises(
         location_kind=location_kind,
         school_phase=school_phase,
         cfg=cfg,
+        sim_at_school=sim_at_school,
+        school_day_active=school_day_active,
+        camera_lot_kind=camera_lot_kind,
     )
     goal_plan = None
     if school_day_active and goals:
@@ -321,7 +376,7 @@ def evaluate_school_day_turn(
             capture_ref=capture_ref,
         )
 
-    findings: list[str] = []
+    findings: list[str] = list(premises.get("findings") or [])
     if goal_plan:
         findings.extend(goal_plan.get("findings", []))
     if homework_pending and premises_blocked:
@@ -349,7 +404,7 @@ def evaluate_school_day_turn(
         gate = "HOMEWORK_PREMISES_BLOCKED"
         action = "DEFER_HOMEWORK_UNTIL_HOME"
         disposition = "EMULATE"
-    elif homework_pending and location_kind == "home" and not survival_critical:
+    elif homework_pending and effective_location == "home" and not survival_critical:
         gate = "HOMEWORK_AT_HOME"
         action = "QUEUE_HOMEWORK_AT_HOME"
         disposition = "EMULATE_THEN_OPTIMIZE"
@@ -373,6 +428,9 @@ def evaluate_school_day_turn(
         "goals_incomplete": goals,
         "school_phase": school_phase,
         "location_kind": location_kind,
+        "effective_location_kind": effective_location,
+        "camera_lot_kind": camera_lot_kind,
+        "sim_at_school": sim_at_school,
         "homework_pending": homework_pending,
         "homework_blocked_on_premises": premises_blocked,
         "goal_plan": goal_plan,

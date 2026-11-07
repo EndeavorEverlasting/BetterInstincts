@@ -72,7 +72,10 @@ def premises_block_homework(
     *,
     location_kind: str,
     school_day_active: bool,
+    sim_at_school: Optional[bool] = None,
 ) -> bool:
+    if sim_at_school is True:
+        return True
     return school_day_active or location_kind == "school"
 
 
@@ -246,6 +249,7 @@ def evaluate_teen_homework_turn(
     inventory_has_homework: Optional[bool] = None,
     homework_on_lot: Optional[bool] = None,
     available_objects: Sequence[str] = (),
+    sim_at_school: Optional[bool] = None,
     queue: Sequence[str] = (),
     player_directed: bool = False,
     already_busy: bool = False,
@@ -259,6 +263,7 @@ def evaluate_teen_homework_turn(
     premises_blocked = premises_block_homework(
         location_kind=location_kind,
         school_day_active=school_day_active,
+        sim_at_school=sim_at_school,
     )
     resolved_on_lot, lot_hits = resolve_homework_on_lot(
         homework_on_lot=homework_on_lot,
@@ -297,6 +302,7 @@ def evaluate_teen_homework_turn(
         "life_stage": life_stage,
         "location_kind": location_kind,
         "school_day_active": school_day_active,
+        "sim_at_school": sim_at_school,
         "homework_blocked_on_premises": premises_blocked,
         "owns_home_homework": owns_home and location_kind == "home",
         "call_stack_order": list(cfg["call_stack"]["order"]),

@@ -352,6 +352,29 @@
         "betterinstincts/teen_homework.py"
       ]
     },
+    "SOCIAL_LOOKUP_REQUIRED": {
+      "definition": "Invite-over dialog active; host must uniquely look up invitee in Sims library before OK.",
+      "owners": [
+        "contracts/social-opportunity.v1.json",
+        "docs/SOCIAL_OPPORTUNITY.md",
+        "docs/TEEN_DAY_JOURNEY.md"
+      ]
+    },
+    "SOCIAL_OPPORTUNITY_OK_ALLOWED": {
+      "definition": "Unique Sims-library match with allowlisted occult status; app may press OK.",
+      "owners": [
+        "contracts/social-opportunity.v1.json",
+        "docs/SOCIAL_OPPORTUNITY.md"
+      ]
+    },
+    "CAMERA_LOT_IS_NOT_SIM_PREMISES": {
+      "definition": "Viewport/camera lot differs from active Sim premises; sim_at_school/effective_location_kind drive homework gates.",
+      "owners": [
+        "betterinstincts/school_day.py",
+        "docs/SCHOOL_DAY.md",
+        "docs/TEEN_DAY_JOURNEY.md"
+      ]
+    },
     "QUEUE_TEEN_HOMEWORK": {
       "definition": "Queue DO_HOMEWORK / WORK_ON_HOMEWORK when teen inventory_has_homework=true at home.",
       "owners": [

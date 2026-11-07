@@ -1,0 +1,155 @@
+{
+  "schema": "betterinstincts.social-opportunity/v1",
+  "version": 1,
+  "authority": "docs/SOCIAL_OPPORTUNITY.md",
+  "proof_ceiling": "HOST_SOCIAL_OPPORTUNITY_SAFETY_NOT_EA_OCCULT_API",
+  "design_brief": {
+    "subject": "Live social opportunity dialogs (invite classmate / bring Sim home)",
+    "audience": "local host agent + operator at invite OK/Cancel prompts",
+    "job": "Resolve invitee via unique Sims-library lookup; app decides OK vs Cancel from evidenced occult status — never press OK while unknown or ambiguous",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose before chrome"},
+      {"id": "UP-A85AD9DC3", "mechanism": "journey / call-stack storytelling"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ],
+    "forbidden_chrome": "No social dashboard; contracts + evaluators only"
+  },
+  "local_observed": {
+    "date": "2026-11-07",
+    "patch": "1.121.361.1020",
+    "household": "LabLab",
+    "scene": "invite_classmate_morgan_ok_cancel",
+    "observation": "Dialog: Should Charlee invite over classmate Morgan? OK/Cancel. Morgan vampire/occult status UNKNOWN until Sims-library lookup. Operator: app must look up Morgan in the library of Sims; decision must not be ambiguous; app decides safely.",
+    "capture_ref": "operator:invite-morgan-occult-unknown-20261107",
+    "operator_correction": "BetterInstincts owns unique Sims-library lookup before OK; unknown/ambiguous occult fails closed to Cancel"
+  },
+  "journey": "docs/TEEN_DAY_JOURNEY.md",
+  "prompt_kinds": {
+    "invite_over": {
+      "aliases": [
+        "invite over",
+        "invite classmate",
+        "invite home",
+        "should invite over",
+        "bring over"
+      ],
+      "home_ingress": true,
+      "requires_occult_gate": true,
+      "requires_sim_library_lookup": true
+    }
+  },
+  "sim_library": {
+    "purpose": "Authoritative known-Sims directory for invitee identity + occult status",
+    "surfaces": [
+      "relationship_panel",
+      "known_sims_list",
+      "host_sim_library_observation"
+    ],
+    "lookup_steps": [
+      "OPEN_RELATIONSHIP_OR_SIM_LIBRARY",
+      "MATCH_INVITEE_NAME_EXACT",
+      "READ_OCCULT_BADGE_OR_FORM",
+      "RETURN_UNIQUE_RECORD"
+    ],
+    "match_rule": "exact_normalized_name_unique",
+    "fail_closed_on": [
+      "NOT_FOUND",
+      "AMBIGUOUS_NAME",
+      "LOOKUP_NOT_RUN",
+      "OCCULT_MISSING_ON_RECORD"
+    ]
+  },
+  "occult_status": {
+    "values": [
+      "UNKNOWN",
+      "HUMAN",
+      "VAMPIRE",
+      "OTHER_OCCULT",
+      "KNOWN_SAFE_NON_VAMPIRE"
+    ],
+    "fail_closed_on": ["UNKNOWN"],
+    "block_home_invite_on": ["UNKNOWN", "VAMPIRE", "OTHER_OCCULT"],
+    "allow_home_invite_on": ["HUMAN", "KNOWN_SAFE_NON_VAMPIRE"],
+    "note": "UNKNOWN means library lookup not unique or occult not evidenced. Do not invent from name, appearance, or vibe."
+  },
+  "evidence_sources": [
+    "sim_library_unique_match",
+    "relationship_panel_occult_badge",
+    "simology_occult_form",
+    "operator_attested_occult_status",
+    "prior_confirmed_household_record"
+  ],
+  "call_stack": {
+    "order": [
+      "PLAYER_FIRST_OR_BUSY",
+      "SOCIAL_LOOKUP_REQUIRED",
+      "SOCIAL_LOOKUP_AMBIGUOUS_OR_MISSING",
+      "SOCIAL_OCCULT_UNKNOWN",
+      "SOCIAL_OCCULT_UNSAFE_HOME_INVITE",
+      "SOCIAL_OPPORTUNITY_OK_ALLOWED",
+      "NO_SOCIAL_PROMPT"
+    ],
+    "gates": {
+      "PLAYER_FIRST_OR_BUSY": {
+        "when": ["player_directed", "already_busy"],
+        "action": "YIELD_OR_EMULATE_ONLY"
+      },
+      "SOCIAL_LOOKUP_REQUIRED": {
+        "when": ["social_prompt_active", "invite_over", "lookup_not_run"],
+        "action": "LOOKUP_INVITEE_IN_SIM_LIBRARY",
+        "forbidden": ["PRESS_OK", "AUTO_ACCEPT_INVITE"]
+      },
+      "SOCIAL_LOOKUP_AMBIGUOUS_OR_MISSING": {
+        "when": ["social_prompt_active", "invite_over", "lookup_not_unique"],
+        "action": "CANCEL_OR_ABSTAIN",
+        "forbidden": ["PRESS_OK", "GUESS_AMONG_HOMONYMS"]
+      },
+      "SOCIAL_OCCULT_UNKNOWN": {
+        "when": ["social_prompt_active", "invite_over", "unique_match", "occult_status_UNKNOWN"],
+        "action": "CANCEL_OR_ABSTAIN",
+        "forbidden": ["PRESS_OK", "AUTO_ACCEPT_INVITE"]
+      },
+      "SOCIAL_OCCULT_UNSAFE_HOME_INVITE": {
+        "when": ["social_prompt_active", "invite_over", "occult_blocks_home"],
+        "action": "CANCEL_OR_ABSTAIN",
+        "forbidden": ["PRESS_OK", "AUTO_ACCEPT_INVITE"]
+      },
+      "SOCIAL_OPPORTUNITY_OK_ALLOWED": {
+        "when": [
+          "social_prompt_active",
+          "invite_over",
+          "unique_sim_library_match",
+          "occult_status_known_safe"
+        ],
+        "action": "PRESS_OK_ALLOWED",
+        "note": "App may safely decide OK only after unique library match + allowlisted occult"
+      },
+      "NO_SOCIAL_PROMPT": {
+        "action": "NO_SOCIAL_ROUTING"
+      }
+    }
+  },
+  "call_stack_gates": [
+    "SOCIAL_LOOKUP_REQUIRED",
+    "SOCIAL_LOOKUP_AMBIGUOUS_OR_MISSING",
+    "SOCIAL_OCCULT_UNKNOWN",
+    "SOCIAL_OCCULT_UNSAFE_HOME_INVITE",
+    "SOCIAL_OPPORTUNITY_OK_ALLOWED"
+  ],
+  "host_rules": [
+    "unique Sims-library lookup before any invite OK",
+    "app decides OK vs Cancel from lookup evidence — not operator vibe",
+    "ambiguous or missing library match never presses OK",
+    "unknown occult status never presses OK on home invite",
+    "do not invent vampire/human from name or looks",
+    "Cancel/Abstain is the safe default",
+    "two independent cues still required for scene claims"
+  ],
+  "forbidden": [
+    "PRESS_OK_WHEN_OCCULT_UNKNOWN",
+    "PRESS_OK_BEFORE_SIM_LIBRARY_LOOKUP",
+    "PRESS_OK_WHEN_NAME_AMBIGUOUS",
+    "VISION_INVENT_OCCULT_STATUS",
+    "AUTO_ACCEPT_CLASSMATE_INVITE"
+  ]
+}

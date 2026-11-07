@@ -24,8 +24,17 @@ from betterinstincts.instincts_host import (
 from betterinstincts.build_optimize import BuildOptimizeError, evaluate_build_optimize
 from betterinstincts.moodlets import MoodletError, evaluate_moodlets
 from betterinstincts.scenario_goals import evaluate_scenario_turn
-from betterinstincts.school_day import SchoolDayError, evaluate_school_day_turn
+from betterinstincts.school_day import (
+    SchoolDayError,
+    evaluate_school_day_turn,
+    resolve_sim_premises,
+)
 from betterinstincts.sim_profile import SkillInput, SimProfileError, evaluate_sim_profile
+from betterinstincts.social_opportunity import (
+    SocialOpportunityError,
+    evaluate_social_opportunity,
+    should_attach_social_opportunity,
+)
 from betterinstincts.teen_homework import (
     TeenHomeworkError,
     evaluate_teen_homework_turn,
@@ -67,6 +76,15 @@ def evaluate_turn(
     school_goals_incomplete: Sequence[str] = (),
     school_phase: Optional[str] = None,
     school_profile: str = "high_school_years",
+    sim_at_school: Optional[bool] = None,
+    camera_lot_kind: Optional[str] = None,
+    social_prompt_active: bool = False,
+    social_prompt_kind: str = "invite_over",
+    social_prompt_text: str = "",
+    social_invitee_name: Optional[str] = None,
+    sim_library: Sequence[Mapping[str, object]] = (),
+    social_lookup_ran: bool = False,
+    invitee_occult_status: Optional[str] = None,
     pinned_whims: Sequence[str] = (),
     emotion: Optional[str] = None,
     moodlets: Sequence[str] = (),
@@ -114,7 +132,23 @@ def evaluate_turn(
 
     Optional build_objective runs evaluate-only Build/Buy catalog ranking
     (docs/BUILD_OPTIMIZE.md); never paints walls from this pure module.
+
+    Optional social_prompt_active runs Sims-library occult lookup before invite OK
+    (docs/SOCIAL_OPPORTUNITY.md / docs/TEEN_DAY_JOURNEY.md).
+
+    Optional sim_at_school / camera_lot_kind resolve Sim premises vs camera lot.
     """
+    premises = resolve_sim_premises(
+        location_kind=location_kind,
+        camera_lot_kind=camera_lot_kind,
+        sim_at_school=sim_at_school,
+        school_day_active=school_day_active,
+    )
+    effective_location = premises["effective_location_kind"]
+    social_opportunity = None
+    school_day = None
+    teen_homework = None
+    scenario = None
     try:
         snap = NeedSnapshot(
             needs=needs,
@@ -136,9 +170,6 @@ def evaluate_turn(
         risk = predict_risk(viewport_context or {})
         behavior = None
         event_balance = None
-        school_day = None
-        teen_homework = None
-        scenario = None
         moodlet_eval = evaluate_moodlets(
             emotion=emotion,
             moodlets=moodlets,
@@ -178,6 +209,22 @@ def evaluate_turn(
                 location_kind=location_kind,
                 capture_ref=capture_ref,
             )
+        if should_attach_social_opportunity(
+            social_prompt_active=social_prompt_active,
+            prompt_kind=social_prompt_kind,
+        ):
+            social_opportunity = evaluate_social_opportunity(
+                social_prompt_active=social_prompt_active,
+                prompt_kind=social_prompt_kind,
+                prompt_text=social_prompt_text,
+                invitee_name=social_invitee_name,
+                sim_library=sim_library,
+                lookup_ran=social_lookup_ran,
+                occult_status=invitee_occult_status,
+                player_directed=player_directed,
+                already_busy=already_busy,
+                capture_ref=capture_ref,
+            )
         if should_attach_teen_homework(
             homework_pending=homework_pending,
             inventory_has_homework=inventory_has_homework,
@@ -185,12 +232,13 @@ def evaluate_turn(
         ):
             teen_homework = evaluate_teen_homework_turn(
                 needs,
-                location_kind=location_kind,
+                location_kind=effective_location,
                 school_day_active=school_day_active,
                 homework_pending=homework_pending,
                 inventory_has_homework=inventory_has_homework,
                 homework_on_lot=homework_on_lot,
                 available_objects=tuple(available_objects or ()),
+                sim_at_school=sim_at_school,
                 queue=tuple(queue or ()),
                 player_directed=player_directed,
                 already_busy=already_busy,
@@ -198,18 +246,20 @@ def evaluate_turn(
                 capture_ref=capture_ref,
             )
         if school_day_active or school_goals_incomplete or (
-            homework_pending and location_kind == "school"
+            homework_pending and effective_location == "school"
         ) or (
             homework_pending
-            and location_kind == "home"
+            and effective_location == "home"
             and not (teen_homework and teen_homework.get("owns_home_homework"))
-        ):
+        ) or sim_at_school is True:
             school_day = evaluate_school_day_turn(
                 needs,
                 school_day_active=school_day_active or bool(school_goals_incomplete),
                 school_goals_incomplete=school_goals_incomplete,
                 school_phase=school_phase or "morning_free_time",
                 location_kind=location_kind,
+                camera_lot_kind=camera_lot_kind,
+                sim_at_school=sim_at_school,
                 homework_pending=homework_pending,
                 pinned_whims=pinned_whims or whim_labels,
                 queue=tuple(queue or ()),
@@ -234,7 +284,8 @@ def evaluate_turn(
                 capture_ref=capture_ref,
             )
         if event_active or outdoor_social_prefix or (
-            homework_pending and not (school_day_active or location_kind == "school")
+            homework_pending
+            and not (school_day_active or effective_location == "school" or sim_at_school is True)
         ):
             viewport_ok = viewport is None or viewport.get("state") == "VIEWPORT_OK"
             event_balance = evaluate_event_turn(
@@ -263,6 +314,8 @@ def evaluate_turn(
         SimProfileError,
         BuildOptimizeError,
         TeenHomeworkError,
+        SchoolDayError,
+        SocialOpportunityError,
     ) as exc:
         raise HostStackError(str(exc)) from exc
 
@@ -315,6 +368,57 @@ def evaluate_turn(
             next_gate = "EXIT_BUY_TO_LIVE_OR_OPERATOR_SAVE_EXIT"
     elif player_directed or already_busy:
         next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
+    elif social_opportunity is not None and social_opportunity["gate"] == "SOCIAL_LOOKUP_REQUIRED":
+        next_gate = "SOCIAL_LOOKUP_REQUIRED"
+        fallback = {
+            "mechanism": social_opportunity["action"],
+            "owner": "betterinstincts/social_opportunity.py",
+            "contract": "contracts/social-opportunity.v1.json",
+            "invitee_name": social_opportunity.get("invitee_name"),
+            "dialog_choice": social_opportunity.get("dialog_choice"),
+            "press_ok_allowed": False,
+            "next_actions": social_opportunity.get("next_actions") or [],
+            "forbidden": [
+                "PRESS_OK_BEFORE_SIM_LIBRARY_LOOKUP",
+                "VISION_INVENT_OCCULT_STATUS",
+                "RESUME",
+            ],
+        }
+    elif social_opportunity is not None and social_opportunity["gate"] in {
+        "SOCIAL_LOOKUP_AMBIGUOUS_OR_MISSING",
+        "SOCIAL_OCCULT_UNKNOWN",
+        "SOCIAL_OCCULT_UNSAFE_HOME_INVITE",
+    }:
+        next_gate = social_opportunity["gate"]
+        fallback = {
+            "mechanism": social_opportunity["action"],
+            "owner": "betterinstincts/social_opportunity.py",
+            "contract": "contracts/social-opportunity.v1.json",
+            "invitee_name": social_opportunity.get("invitee_name"),
+            "occult_status": social_opportunity.get("occult_status"),
+            "lookup": social_opportunity.get("lookup"),
+            "dialog_choice": "CANCEL",
+            "press_ok_allowed": False,
+            "forbidden": [
+                "PRESS_OK_WHEN_OCCULT_UNKNOWN",
+                "PRESS_OK_WHEN_NAME_AMBIGUOUS",
+                "AUTO_ACCEPT_CLASSMATE_INVITE",
+                "RESUME",
+            ],
+        }
+    elif social_opportunity is not None and social_opportunity["gate"] == "SOCIAL_OPPORTUNITY_OK_ALLOWED":
+        next_gate = "SOCIAL_OPPORTUNITY_OK_ALLOWED"
+        fallback = {
+            "mechanism": social_opportunity["action"],
+            "owner": "betterinstincts/social_opportunity.py",
+            "contract": "contracts/social-opportunity.v1.json",
+            "invitee_name": social_opportunity.get("invitee_name"),
+            "occult_status": social_opportunity.get("occult_status"),
+            "lookup": social_opportunity.get("lookup"),
+            "dialog_choice": "OK",
+            "press_ok_allowed": True,
+            "forbidden": ["VISION_INVENT_OCCULT_STATUS", "RESUME"],
+        }
     elif (
         build_optimize is not None
         and build_optimize.get("state") == "BUILD_OPTIMIZE_PLAN_READY"
@@ -572,6 +676,8 @@ def evaluate_turn(
         "sim_profile": sim_profile,
         "school_day": school_day,
         "teen_homework": teen_homework,
+        "social_opportunity": social_opportunity,
+        "sim_premises": premises,
         "scenario": scenario,
         "event_balance": event_balance,
         "build_optimize": build_optimize,
