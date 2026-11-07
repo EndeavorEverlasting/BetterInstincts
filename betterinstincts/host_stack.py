@@ -14,6 +14,7 @@ from betterinstincts.decision_eval import (
     recommend,
     recommendation_to_dict,
 )
+from betterinstincts.event_balance import EventBalanceError, evaluate_event_turn
 from betterinstincts.instincts_host import (
     InstinctsHostError,
     NeedSnapshot,
@@ -44,6 +45,11 @@ def evaluate_turn(
     location_kind: str = "unknown",
     objects_on_current_lot: Optional[bool] = None,
     queue: Optional[Sequence[str]] = None,
+    event_active: bool = False,
+    event_goals_incomplete: Sequence[str] = (),
+    outdoor_social_prefix: bool = False,
+    indoor_capacity_observed: bool = False,
+    homework_pending: bool = False,
 ) -> dict:
     """Compose viewport safety + instincts + optional dialog for one host turn.
 
@@ -73,6 +79,7 @@ def evaluate_turn(
             influence = measure_need_deltas(prior_needs, needs, host_action=host_action)
         risk = predict_risk(viewport_context or {})
         behavior = None
+        event_balance = None
         if queue is not None:
             on_lot = (
                 bool(objects_on_current_lot)
@@ -87,10 +94,30 @@ def evaluate_turn(
                 location_kind=location_kind,
                 capture_ref=capture_ref,
             )
-    except (InstinctsHostError, DecisionEvalError, ViewportError, BehaviorEvalError) as exc:
+        if event_active or outdoor_social_prefix or homework_pending:
+            viewport_ok = viewport is None or viewport.get("state") == "VIEWPORT_OK"
+            event_balance = evaluate_event_turn(
+                needs,
+                event_active=event_active,
+                event_goals_incomplete=event_goals_incomplete,
+                outdoor_social_prefix=outdoor_social_prefix,
+                indoor_capacity_observed=indoor_capacity_observed,
+                homework_pending=homework_pending,
+                player_directed=player_directed,
+                already_busy=already_busy,
+                viewport_ok=bool(viewport_ok),
+                capture_ref=capture_ref,
+            )
+    except (
+        InstinctsHostError,
+        DecisionEvalError,
+        ViewportError,
+        BehaviorEvalError,
+        EventBalanceError,
+    ) as exc:
         raise HostStackError(str(exc)) from exc
 
-    # Priority: viewport/fallback > player > behavior optimize (map travel) > decision > needs.
+    # Priority: viewport/fallback > player > survival/event stack > behavior map travel > decision > needs.
     next_gate = "EXECUTE_INSTINCTS_PLAN"
     fallback = None
     if viewport is not None and viewport.get("state") != "VIEWPORT_OK":
@@ -126,6 +153,44 @@ def evaluate_turn(
         next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
     elif sim_absent:
         next_gate = "SIM_ABSENT_HOST_PREP_ONLY"
+    elif event_balance is not None and event_balance["gate"] == "SURVIVAL_NEEDS_CRITICAL":
+        next_gate = "SURVIVAL_NEEDS_BEFORE_EVENT"
+        fallback = {
+            "mechanism": "SURVIVAL_NEEDS_CRITICAL",
+            "owner": "betterinstincts/event_balance.py",
+            "contract": "contracts/event-balance.v1.json",
+            "action": event_balance["action"],
+            "survival_critical": event_balance["survival_critical"],
+            "forbidden": ["EVENT_GOAL_SPAM", "OUTDOOR_SOCIAL_DEFAULT", "RESUME"],
+        }
+    elif event_balance is not None and event_balance["gate"] == "EVENT_INDOOR_ROUTING":
+        next_gate = "EVENT_INDOOR_ROUTING"
+        fallback = {
+            "mechanism": "CANCEL_OUTDOOR_WALK_RETARGET_INDOOR",
+            "owner": "betterinstincts/event_balance.py",
+            "contract": "contracts/event-balance.v1.json",
+            "preferred_routes": event_balance["preferred_routes"],
+            "rca_leading": event_balance["rca_leading"],
+            "forbidden": ["IN_FRAME_WALK_THRASH_ACROSS_LOT", "REPEATED_OUTDOOR_GREET", "RESUME"],
+        }
+    elif event_balance is not None and event_balance["gate"] in {
+        "EVENT_GOAL_PROGRESS",
+        "EVENT_FUN_VIA_GOALS",
+    }:
+        next_gate = event_balance["gate"]
+        fallback = {
+            "mechanism": event_balance["action"],
+            "owner": "betterinstincts/event_balance.py",
+            "goals_incomplete": event_balance["goals_incomplete"],
+            "forbidden": ["LEAVE_EVENT_FOR_TV_OR_PHONE_FLUFF", "HOMEWORK_DURING_TIMER"],
+        }
+    elif event_balance is not None and event_balance["gate"] == "HOMEWORK_HOLD_OR_SCHEDULE":
+        next_gate = "HOMEWORK_HOLD_OR_SCHEDULE"
+        fallback = {
+            "mechanism": event_balance["action"],
+            "owner": "betterinstincts/event_balance.py",
+            "forbidden": ["OUTDOOR_SOCIAL_DEFAULT"],
+        }
     elif behavior is not None and behavior["clarity"]["disposition"] in {
         "OPTIMIZE", "EMULATE_THEN_OPTIMIZE"
     } and behavior["clarity"].get("preferred_route") in {
@@ -160,6 +225,7 @@ def evaluate_turn(
         "next_gate": next_gate,
         "fallback": fallback,
         "behavior": behavior,
+        "event_balance": event_balance,
         "instincts": instincts,
         "decision": decision,
         "influence": influence,

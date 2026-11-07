@@ -48,6 +48,8 @@ jobs:
           python -m scripts.progression_eval --out dist/progression-eval/ci.json > /dev/null
           python -m scripts.progression_eval --repo-only
           python -m unittest tests.test_progression_eval -v
+      - name: Event balance outdoor-social call stack
+        run: python -m unittest tests.test_event_balance -v
       - name: Doctrine fails closed
         run: python scripts/validate_doctrine.py
       - name: Scene and save safety contract

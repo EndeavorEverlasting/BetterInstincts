@@ -28,7 +28,8 @@ See glossary: `PLAYER_FIRST`, `PLAYER_PLAYING`, `PLAYER_PRESENT_ON_CANVAS`, `HOS
 | `behavior_eval` | Queue×needs → verdict/disposition | none |
 | `player_presence` | Focus+cursor → presence state | none (probe injectable) |
 | `needs_force` | MAP_TRAVEL-first recovery plan | none in library |
-| `host_stack` | Compose viewport/behavior/instincts gates | none |
+| `host_stack` | Compose viewport/behavior/event-balance/instincts gates | none |
+| `event_balance` | Outdoor-social RCA + event/needs/homework call stack | none |
 | `host_listener` | Opt-in session + tick receipts | writes `dist/host-listener/` |
 | `host_automate` | Presence-gated plan; optional execute | optional SendInput via script |
 | `funds_inject` | Subsidy prompt (funds under 100) + mode-agnostic Money/motherlode inject | optional SendInput via `scripts/funds_inject` |
