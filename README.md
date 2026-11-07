@@ -44,3 +44,5 @@ Original code is MIT licensed. Please open an issue for compatibility observatio
 ## Read-only Mod Lab bootstrap
 - [Mod Lab and API reconnaissance](docs/MOD_LAB.md) — explicit Mods root, .package header and .ts4script module-name inventory; no writes.
 - [BI-004 sprint](plans/active/BI-004.md) — first custom manager seam; preserves BI-002 gameplay and the needs/income/skills horizon.
+
+- [P04 Mod Lab canonical handoff](plans/active/BI-004.HANDOFF.md) — local-agent launch order, verified PR/CI receipts, exact game-only gates and machine dispatch.

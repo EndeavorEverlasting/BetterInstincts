@@ -1,0 +1,42 @@
+{
+  "schema_version": "betterinstincts.p04.dispatch.v1",
+  "sprint": "BI-004",
+  "repository": "EndeavorEverlasting/BetterInstincts",
+  "source": "plans/active/BI-004.HANDOFF.md",
+  "modlab_state": "OFFLINE_IMPLEMENTED_MERGED",
+  "game_lab_state": "BLOCKED_LOCAL_GAME_ACCESS",
+  "active_game_gate": "BI-002",
+  "requires_operator_selected_mods_root": true,
+  "local_entry_command": "python -m scripts.modlab --mods-root <EXPLICIT_MODS_PATH>",
+  "validation_commands": [
+    "python -m unittest discover -s tests -v",
+    "python -m scripts.check_horizon",
+    "python scripts/validate_doctrine.py",
+    "python scripts/check_tracked_assets.py",
+    "python -m scripts.horizon_status"
+  ],
+  "provenance": {
+    "source_commit": "45c30ccae7c3672b602f6f1e6764232fdb2c70f8",
+    "source_pr": "https://github.com/EndeavorEverlasting/BetterInstincts/pull/7",
+    "merged_commit": "1686eac7be92c42ccbbabc16144d67248f630da3",
+    "pull_request_ci": "https://github.com/EndeavorEverlasting/BetterInstincts/actions/runs/42322823454",
+    "post_merge_ci": "https://github.com/EndeavorEverlasting/BetterInstincts/actions/runs/42322858979",
+    "local_synthetic_test_count": 12
+  },
+  "game_observations": {
+    "game_patch": null,
+    "certified_profiles": 0,
+    "vanilla_trials": 0,
+    "modified_trials": 0,
+    "rollback_observed": false,
+    "playable_package_hash": null
+  },
+  "forbidden": [
+    "modify_personal_saves",
+    "auto_discover_game_install",
+    "run_scripts_from_mod_archives",
+    "silently_modify_other_creators_mods",
+    "auto_change_game_patch_or_older_certified_profiles",
+    "treat_offline_metadata_as_gameplay_proof"
+  ]
+}
