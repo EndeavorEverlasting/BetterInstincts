@@ -8,10 +8,10 @@ import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
-from betterinstincts.control_handoff import HandoffError, as_presence, confirm, decide, exclusive_screen_owner
+from betterinstincts.control_handoff import HandoffError, as_presence, confirm, decide, exclusive_screen_owner, screen_owner_busy
 from betterinstincts.host_automate import plan_automation
 from betterinstincts.player_presence import PresenceProbe
-from scripts import needs_force
+from scripts import needs_force, control_handoff as handoff_cli
 
 NEEDS = {
     "hunger": 0.05, "bladder": 0.7, "energy": 0.9,
@@ -115,12 +115,28 @@ class ControlHandoffTests(unittest.TestCase):
     def test_same_game_process_has_only_one_agent_screen_owner(self):
         process_id = 624286
         with exclusive_screen_owner(process_id):
+            self.assertTrue(screen_owner_busy(process_id))
             with self.assertRaisesRegex(HandoffError, "SCREEN_OWNER_BUSY"):
                 with exclusive_screen_owner(process_id):
                     pass
+        self.assertFalse(screen_owner_busy(process_id))
         # Normal exit releases ownership, and another explicit action can start.
         with exclusive_screen_owner(process_id):
             pass
+
+    def test_cli_reports_other_agent_as_distinct_owner(self):
+        with (
+            patch.object(handoff_cli.sys, "platform", "win32"),
+            patch("scripts.control_handoff.status", return_value={"state": "ACTIVE"}),
+            patch("scripts.control_handoff.probe_windows", return_value=probe(10000)),
+            patch("scripts.control_handoff.screen_owner_busy", return_value=True),
+            redirect_stdout(io.StringIO()) as output,
+        ):
+            exit_code = handoff_cli.main([
+                "--session-id", "unit-test", "--process-id", "42",
+            ])
+        self.assertEqual(exit_code, 3)
+        self.assertEqual(json.loads(output.getvalue())["state"], "PAUSED_FOR_AGENT")
 
     def test_live_click_executor_demands_exact_session_and_one_step(self):
         with patch.object(needs_force.sys, "platform", "win32"):
