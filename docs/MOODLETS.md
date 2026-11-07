@@ -1,7 +1,7 @@
 # Moodlets & emotion strip — P95 host sensing
 
-Machine owner: [`contracts/moodlets.v1.json`](../contracts/moodlets.v1.json).  
-Evaluator: `python -m scripts.moodlets` / `betterinstincts.moodlets`.  
+Machine owner: [`contracts/moodlets.v1.json`](../contracts/moodlets.v1.json).
+Evaluator: `python -m scripts.moodlets` / `betterinstincts.moodlets`.
 Integrated by: `host_stack.evaluate_turn(..., emotion=, moodlets=)` and `event_balance`.
 
 ## Design brief

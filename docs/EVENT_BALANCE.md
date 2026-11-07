@@ -1,6 +1,6 @@
 # Event balance call stack — outdoor-social RCA
 
-Machine owner: [`contracts/event-balance.v1.json`](../contracts/event-balance.v1.json).  
+Machine owner: [`contracts/event-balance.v1.json`](../contracts/event-balance.v1.json).
 Evaluator: `python -m scripts.event_balance` / `betterinstincts.event_balance`.
 
 ## Design brief
@@ -21,15 +21,15 @@ LabLab hosted lounge party in rain: social interactions repeatedly walked Sims o
 
 ## Call stack (high → low)
 
-1. Player first / busy  
-2. Viewport OK  
-3. Survival needs critical (bladder / hunger / energy)  
-4. **Event indoor routing** — cancel outdoor social prefix when indoor capacity exists  
-5. Event goal progress (indoor)  
-6. Fun via event goals (do not leave party for fluff)  
-7. Homework hold until event ends (unless survival forces home)  
-8. Noncritical needs  
-9. Leisure / imperfect social OK  
+1. Player first / busy
+2. Viewport OK
+3. Survival needs critical (bladder / hunger / energy)
+4. **Event indoor routing** — cancel outdoor social prefix when indoor capacity exists
+5. Event goal progress (indoor)
+6. Fun via event goals (do not leave party for fluff)
+7. Homework hold until event ends (unless survival forces home)
+8. Noncritical needs
+9. Leisure / imperfect social OK
 
 ## Host action for outdoor default
 
