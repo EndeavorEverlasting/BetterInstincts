@@ -5,7 +5,10 @@ Windows adapters provide independent, fresh probes at the action boundary.
 """
 from __future__ import annotations
 
-from typing import Callable
+from typing import Callable, Iterator
+from contextlib import contextmanager
+from pathlib import Path
+import os
 import time
 
 from betterinstincts.player_presence import PresenceProbe
@@ -108,3 +111,39 @@ def as_presence(handoff: dict) -> dict:
         "idle_ms": handoff["idle_ms"],
         "proof_ceiling": handoff["proof_ceiling"],
     }
+
+
+ROOT = Path(__file__).resolve().parents[1]
+LOCK_ROOT = ROOT / "dist" / "host-listener"
+
+
+@contextmanager
+def exclusive_screen_owner(process_id: int) -> Iterator[None]:
+    """Cross-process exclusive admission for one selected Sims process.
+
+    Only host-side UI scripts that use this interface participate. A stale
+    lock after process death fails closed; it must not be auto-stolen by age.
+    No process monitoring, daemon, global input hook or user-dir write.
+    """
+    if isinstance(process_id, bool) or not isinstance(process_id, int) or process_id <= 0:
+        raise HandoffError("EXACT_GAME_PROCESS_ID_REQUIRED")
+    if LOCK_ROOT.is_symlink():
+        raise HandoffError("SCREEN_LOCK_ROOT_UNSAFE")
+    LOCK_ROOT.mkdir(parents=True, exist_ok=True)
+    lock = LOCK_ROOT / ("screen-" + str(process_id) + ".lock")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        fd = os.open(lock, flags, 0o600)
+    except FileExistsError as exc:
+        raise HandoffError("SCREEN_OWNER_BUSY") from exc
+    try:
+        owner_inode = os.fstat(fd).st_ino
+        yield
+    finally:
+        try:
+            if lock.is_file() and not lock.is_symlink() and lock.stat().st_ino == owner_inode:
+                lock.unlink()
+        finally:
+            os.close(fd)
