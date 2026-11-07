@@ -85,3 +85,58 @@ Presence per tick: `PLAYER_PLAYING` | `HOST_MAY_AUTOMATE` | `UNKNOWN_PRESENCE` (
 
 ## Proof ceiling
 Offline matrix/listener/presence classification is **not** GAME_CERTIFIED. Live SendInput remains LOCAL_OBSERVED click dispatch until BI-002 hunger gates complete.
+
+## 2026-11-07 — P95 human ↔ agent ↔ host control handoff (Trifecta)
+
+**Terminal user value:** the operator can take the mouse/keyboard and **play immediately** without a host click fighting for the screen; when input has been idle long enough, an explicitly activated host session can *request* screen control again. "Pause" here means **pause BetterInstincts screen actions**, not pause The Sims simulation or cancel the player's queued interactions.
+
+**Selected seam:** `betterinstincts/control_handoff.py` owns the single arbitration policy; `player_presence.classify` is its backwards-compatible projection, not a second source of truth. Existing `host_listener` and `host_automate` use it. `scripts/control_handoff.py` is a one-shot local-agent query, and `scripts/needs_force.py` enforces the gate at a real SendInput boundary. All receipts remain under the existing ignored `dist/` roots. Machine contract: `contracts/control-handoff.v1.json`.
+
+### Competing options and choice
+
+| Model | Why considered | Verdict |
+| --- | --- | --- |
+| Cursor-on-canvas or foreground-only ownership | Cheapest existing heuristic | **Reject as exclusive gate:** a parked cursor blocks host forever; moving it off-canvas does not establish human inactivity. |
+| Global low-level mouse/keyboard hook or background watcher | Can distinguish more events | **Reject now:** violates the no hidden collection/daemon default, expands privacy and concurrency complexity; no gameplay need proven. |
+| **Opt-in, global OS input-idle threshold + double fresh probe per one UI action** | Reuses existing Win32 snapshot; bounded and reversible; user always wins on fresh input | **Select:** 8-second default, individually configurable between 1 and 120 seconds, and repeatable by a local explicit-session agent without a background daemon. |
+
+### Control state and call stacks
+
+```text
+HUMAN TYPES / MOVES / EXPLICIT PLAYER-DIRECTED QUEUE
+  -> fresh desktop input-age / intent probe
+  -> control_handoff.decide
+  -> PAUSED_FOR_PLAYER (no new host screen action; Sims continues normally)
+
+Explicit ACTIVE host_listener session + trusted desktop idle >= idle_ms
+  -> control_handoff.decide (HOST_READY)
+  -> local agent observes disposable save + scene + queue
+  -> scripts.needs_force run --execute --session-id ID --step-id ONE_STEP --process-id PID
+  -> recheck session + pre-focus probe
+  -> guarded focus
+  -> control_handoff.confirm (two fresh probes 0.2s apart)
+  -> dispatch <= one specified host UI step
+  -> stop, read new scene / player input before any further step
+```
+
+A RESTING cursor within the Sims window is not a permanent player lock when global inactivity is **verified**. Conversely, a player typing in another app is still active: the host must not steal focus. Missing age, ambiguous sensor, inactive session, operator playing, player-directed queue, or new input on the second probe all pause control. No screen-control admission can be carried forward to a batch of clicks; a self-generated host SendInput may reset the desktop idle clock, requiring fresh eligibility before the next step.
+
+**Machine query:**
+```sh
+python -m scripts.host_listener activate --session-id bi002-control
+python -m scripts.control_handoff --session-id bi002-control --process-id ACTUAL_PID --idle-ms 8000 --confirm
+python -m scripts.host_listener tick --session-id bi002-control --process-id ACTUAL_PID --observation dist/game-host/OBSERVED.json
+# Only after separate live scene, save and player-queue checks:
+python -m scripts.needs_force run --location-kind home --process-id ACTUAL_PID --session-id bi002-control --step-id pause_live --idle-ms 8000 --execute
+python -m scripts.host_listener deactivate --session-id bi002-control
+```
+
+Use a **real observed** disposable session, exact PID, and a valid bounded `host_listener` observation. Example `OBSERVED.json` is a locator placeholder, not a file created by this change. An agent may change idle time per use case but never below the contract minimum. `needs_force` sends **one** selected step per call, not a full scripted sequence; re-observe the scene before the next call. No click, save or package was performed by this GitHub-only change.
+
+**P95 success prototype:** fake Win32 snapshots transition player input → PAUSED, settled idle → HOST_READY; host `--execute` path must have an ACTIVE session + exact PID + one step and reconfirm immediately before dispatch. **Failure prototype:** missing age, inactive session, player-directed queue, second-sample input or failed probe must yield without any click. No fake sensor can certify Live Mode.
+
+**Boundary and next engineering integration:** This prototype gates `needs_force` SendInput and the listener/planner. Other older direct Win32 click adapters (`game_host`, `host_menu`, `funds_inject`, `viewport_recover`) are **not yet universally covered**; do not claim global friction-free live control until those entrypoints are migrated to the same barrier, independently safety-reviewed and tested on the game host. Moving the game window/focus can itself disrupt an active user, hence pre-focus eligibility. Current screen arbitration proof is offline; BI-002 5+5 hunger A/B + rollback + player-queue review remain open.
+
+**Trifecta interpretation:** P08 live proof cannot run here without an authorized local game window; P82 uses paired synthetic inputs and interruption falsifiers; P07 implements reusable code, tests and repository integration. A full live pass must additionally prove *both* user interruption and subsequent idle resumption on a real disposable Sims game session, with zero host-input collision and an unchanged player queue.
+
+**Agent ↔ host serialization refinement:** a single exclusive file lock per verified Sims PID under the ignored repo `dist/host-listener/` root prevents two cooperating executors from controlling the same game window concurrently. The action script holds it from before focus through the single click and receipt, and releases it normally. A competing `needs_force` execution fails `SCREEN_OWNER_BUSY`; the one-shot status CLI reports `PAUSED_FOR_AGENT` rather than claiming the host is ready. A stale lock **never expires automatically**: agents must establish the old owner is gone before a deliberate local recovery. This is an opt-in single-writer seam, not a system-wide OS mutex for unrelated desktop applications or unmodified legacy UI executors.

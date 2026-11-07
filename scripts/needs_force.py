@@ -67,6 +67,9 @@ def main(argv: list[str] | None = None) -> int:
     run_p.add_argument("--objects-on-lot", action="store_true")
     run_p.add_argument("--disposition", default="OPTIMIZE")
     run_p.add_argument("--process-id", type=int, default=None)
+    run_p.add_argument("--session-id", default=None, help="Explicitly activated host-listener session")
+    run_p.add_argument("--step-id", default=None, help="One verified, scene-appropriate UI step per invocation")
+    run_p.add_argument("--idle-ms", type=int, default=8000)
     run_p.add_argument("--execute", action="store_true")
     run_p.add_argument("--settle-sec", type=float, default=1.5)
     run_p.add_argument("--run-id", default=None)
@@ -88,32 +91,66 @@ def main(argv: list[str] | None = None) -> int:
             # Structural guard — plan route must not be walk thrash.
             if plan.get("route") == "IN_FRAME_WALK_THRASH":
                 raise GateError("FORBIDDEN_ROUTE_IN_FRAME_WALK_THRASH")
-        from scripts.game_host import focus
-        focus(process_id=args.process_id)
-        dispatched = []
-        for step in plan["steps"]:
-            if step.get("execution") != "HOST_SENDINPUT":
-                continue
+        # Shared screen control is NOT implicit in --execute: the operator must
+        # activate a bounded session. One click is the maximum control lease.
+        if not args.session_id or not args.step_id:
+            raise GateError("HANDOFF_SESSION_AND_SINGLE_STEP_REQUIRED")
+        if args.process_id is None or args.process_id <= 0:
+            raise GateError("EXACT_GAME_PROCESS_ID_REQUIRED")
+        selected = [s for s in plan["steps"] if s["id"] == args.step_id and s["execution"] == "HOST_SENDINPUT"]
+        if len(selected) != 1:
+            raise GateError("STEP_NOT_IN_VERIFIED_PLAN")
+        # Validate receipt destination BEFORE any UI mutation.
+        receipt_path = None
+        if args.receipt is not None:
+            receipt_path = args.receipt if args.receipt.is_absolute() else ROOT / args.receipt
+            receipt_path = receipt_path.resolve()
+            if not receipt_path.is_relative_to(OUTPUT.resolve()) or receipt_path.is_symlink():
+                raise GateError("RECEIPT_OUTSIDE_DIST_GAME_HOST")
+        from betterinstincts.host_listener import status as listener_status
+        from betterinstincts.control_handoff import HandoffError, decide, confirm, exclusive_screen_owner
+        from betterinstincts.player_presence import probe_windows
+        with exclusive_screen_owner(args.process_id):
+            if listener_status(args.session_id).get("state") != "ACTIVE":
+                raise GateError("HOST_HANDOFF_SESSION_INACTIVE")
+            try:
+                preflight = decide(probe_windows(args.process_id), session_active=True, idle_ms=args.idle_ms)
+                if not preflight["screen_control_allowed"]:
+                    raise GateError("HOST_PAUSED:" + preflight["reason"])
+                # Focus itself can disrupt the user; it is protected by preflight.
+                from scripts.game_host import focus
+                focus(process_id=args.process_id)
+                handoff = confirm(
+                    lambda: probe_windows(args.process_id),
+                    session_active=listener_status(args.session_id).get("state") == "ACTIVE",
+                    idle_ms=args.idle_ms,
+                )
+            except HandoffError as exc:
+                raise GateError(str(exc)) from exc
+            if not handoff["screen_control_allowed"]:
+                raise GateError("HOST_PAUSED:" + handoff["reason"])
+            if listener_status(args.session_id).get("state") != "ACTIVE":
+                raise GateError("HOST_HANDOFF_SESSION_INACTIVE")
+            step = selected[0]
             x, y = step["click"]
             _send_click(int(x), int(y))
             time.sleep(max(0.3, min(5.0, float(args.settle_sec))))
-            dispatched.append({"id": step["id"], "click": [x, y], "state": "CLICK_DISPATCHED"})
-        out = {
-            "state": "NEEDS_FORCE_DISPATCHED",
-            "route": plan["route"],
-            "steps": dispatched,
-            "run_id": args.run_id,
-            "proof_ceiling": "NEEDS_FORCE_CLICK_DISPATCH_NOT_LIVE_CERT",
-            "forbidden": plan["forbidden"],
-        }
-        if args.receipt is not None:
-            path = args.receipt if args.receipt.is_absolute() else ROOT / args.receipt
-            path = path.resolve()
-            if not path.is_relative_to(OUTPUT.resolve()):
-                raise GateError("RECEIPT_OUTSIDE_DIST_GAME_HOST")
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-            out["receipt"] = str(path.relative_to(ROOT))
+            dispatched = [{"id": step["id"], "click": [x, y], "state": "CLICK_DISPATCHED"}]
+            out = {
+                "state": "NEEDS_FORCE_DISPATCHED",
+                "route": plan["route"],
+                "steps": dispatched,
+                "run_id": args.run_id,
+                "handoff": handoff,
+                "session_id": args.session_id,
+                "single_step_only": True,
+                "proof_ceiling": "NEEDS_FORCE_CLICK_DISPATCH_NOT_LIVE_CERT",
+                "forbidden": plan["forbidden"],
+            }
+            if receipt_path is not None:
+                receipt_path.parent.mkdir(parents=True, exist_ok=True)
+                receipt_path.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+                out["receipt"] = str(receipt_path.relative_to(ROOT))
         print(json.dumps(out, sort_keys=True))
         return 0
     except (NeedsForceError, GateError, OSError, ValueError, TypeError) as exc:

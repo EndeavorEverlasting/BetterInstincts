@@ -7,16 +7,14 @@ Live SendInput stays in scripts/ and only when HOST_MAY_AUTOMATE + --execute.
 from __future__ import annotations
 
 from typing import Mapping, Optional, Sequence
+from dataclasses import replace
 
 from betterinstincts.behavior_eval import BehaviorEvalError, evaluate_queue
 from betterinstincts.host_listener import HostListenerError, status as listener_status
 from betterinstincts.host_stack import HostStackError, evaluate_turn
 from betterinstincts.needs_force import NeedsForceError, plan_force
-from betterinstincts.player_presence import (
-    PlayerPresenceError,
-    PresenceProbe,
-    classify,
-)
+from betterinstincts.player_presence import PresenceProbe
+from betterinstincts.control_handoff import DEFAULT_IDLE_MS, HandoffError, as_presence, decide
 
 
 class HostAutomateError(ValueError):
@@ -29,6 +27,7 @@ def plan_automation(
     *,
     session_id: Optional[str] = None,
     session_active: Optional[bool] = None,
+    idle_ms: int = DEFAULT_IDLE_MS,
 ) -> dict:
     """One evaluate-only automation plan gated by player presence."""
     active = session_active
@@ -39,21 +38,25 @@ def plan_automation(
             raise HostAutomateError(str(exc)) from exc
     active = bool(active)
 
+    if observation.get("player_directed") and not probe.player_directed_queue:
+        probe = replace(probe, player_directed_queue=True)
     try:
-        presence = classify(probe, session_active=active)
-    except PlayerPresenceError as exc:
+        handoff = decide(probe, session_active=active, idle_ms=idle_ms)
+    except HandoffError as exc:
         raise HostAutomateError(str(exc)) from exc
+    presence = as_presence(handoff)
 
-    if presence["host"] == "YIELD_TO_PLAYER":
+    if not handoff["screen_control_allowed"]:
         return {
             "state": "YIELD_TO_PLAYER",
             "presence": presence,
+            "handoff": handoff,
             "execute_clicks": False,
             "behavior": None,
             "host_stack": None,
             "needs_force_plan": None,
             "proof_ceiling": presence.get("proof_ceiling"),
-            "next": "Operator is playing or presence unknown — host stands down.",
+            "next": "Host control paused. Resume planning after verified desktop inactivity or explicit operator release.",
         }
 
     needs = observation.get("needs")
@@ -94,6 +97,7 @@ def plan_automation(
     return {
         "state": "HOST_AUTOMATION_PLANNED",
         "presence": presence,
+        "handoff": handoff,
         "behavior": behavior,
         "host_stack": stack,
         "needs_force_plan": force,
@@ -101,6 +105,6 @@ def plan_automation(
         "proof_ceiling": "HOST_AUTOMATE_PLAN_NOT_LIVE_CERT",
         "next": (
             "Separate --execute on scripts.needs_force only while HOST_MAY_AUTOMATE "
-            "remains true; re-probe presence before every click batch."
+            "remains true; one screen step per fresh two-probe handoff gate."
         ),
     }

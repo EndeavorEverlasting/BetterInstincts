@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from betterinstincts.player_presence import PresenceProbe, probe_windows
 from betterinstincts.host_listener import (
     HostListenerError,
     activate,
@@ -35,6 +36,9 @@ def main(argv: list[str] | None = None) -> int:
     de.add_argument("--session-id", required=True)
     tk = sub.add_parser("tick")
     tk.add_argument("--session-id", required=True)
+    tk.add_argument("--process-id", type=int, default=None, help="Win32 presence probe, no input hooks")
+    tk.add_argument("--idle-ms", type=int, default=8000)
+    tk.add_argument("--declared-playing", action="store_true")
     tk.add_argument("--observation", type=Path, required=True,
                     help="JSON observation (needs, queue, location_kind, capture_ref)")
     args = p.parse_args(argv)
@@ -50,7 +54,14 @@ def main(argv: list[str] | None = None) -> int:
             if not path.is_file() or path.stat().st_size > 32_000:
                 raise HostListenerError("OBSERVATION_FILE_UNSAFE")
             obs = json.loads(path.read_text(encoding="utf-8"))
-            result = tick(args.session_id, obs)
+            probe = probe_windows(args.process_id) if args.process_id is not None else None
+            if args.declared_playing:
+                if probe is None:
+                    probe = PresenceProbe(False, False, operator_declared_playing=True, probe_ok=False)
+                else:
+                    from dataclasses import replace
+                    probe = replace(probe, operator_declared_playing=True)
+            result = tick(args.session_id, obs, presence_probe=probe, idle_ms=args.idle_ms)
         print(json.dumps(result, sort_keys=True))
         return 0
     except (HostListenerError, OSError, ValueError, TypeError) as exc:
