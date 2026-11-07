@@ -46,3 +46,8 @@ Original code is MIT licensed. Please open an issue for compatibility observatio
 - [BI-MODLAB sprint](plans/active/BI-MODLAB.md) — tooling Mod Lab lane (not horizon income BI-004); preserves BI-002 gameplay and the needs/income/skills horizon.
 - [P04 Mod Lab machine dispatch](plans/active/BI-MODLAB.dispatch.v1.json) — typed runtime partition, validation commands and game-observation ceiling.
 - [P04 Mod Lab canonical handoff](plans/active/BI-MODLAB.HANDOFF.md) — local-agent launch order, verified PR/CI receipts, exact game-only gates and machine dispatch.
+
+## Scene Intelligence & Save Safety (BI-SCENE-MAP)
+- [Scene catalog, safe transition architecture and save naming](docs/SCENE_INTELLIGENCE.md) — 35 version-bound candidate scenes and protected-save doctrine.
+- [Machine-readable scenes](contracts/game-scenes.v1.json), [save policy](contracts/save-policy.v1.json), [scene sprint](plans/active/BI-SCENE-MAP.md).
+- `python -m scripts.check_scene_contract` validates the state graph, chosen-save gate and protected-default policy; no screenshots or game launch performed.

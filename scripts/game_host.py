@@ -14,6 +14,8 @@ import subprocess
 import sys
 import time
 
+from betterinstincts.save_policy import SavePolicyError, selected_save_guard
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "dist" / "game-host"
 RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{1,49}$")
@@ -157,6 +159,13 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
         raise GateError("PROFILE_CHANGED_SINCE_LAUNCH")
     if rows[-1]["state"] != "LAUNCH_DISPATCHED":
         raise GateError("LAUNCH_DISPATCH_REQUIRED")
+    # Before even opening Load Game, require exact binding to an operator-attested
+    # lab-origin slot. A lab-style name, title screenshot or boolean alone is not proof.
+    if cfg["save_mode"] == "chosen":
+        try:
+            selected_save_guard(cfg, run_id)
+        except SavePolicyError as exc:
+            raise GateError("SAVE_SELECTION_PROTECTED:" + str(exc)) from exc
     if gui is None:
         if sys.platform != "win32":
             raise GateError("LOCAL_WINDOWS_GUI_REQUIRED")
