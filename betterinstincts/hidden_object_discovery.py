@@ -290,6 +290,18 @@ def audit_p04_receipt(receipt: Mapping[str, object], *, cfg: dict | None = None)
         problems.append("SAVE_NOT_ATTESTED_LAB")
     if receipt.get("player_explicit_opt_in") is not True:
         problems.append("PLAYER_OPT_IN_MISSING")
+    if receipt.get("player_idle") is not True:
+        problems.append("PLAYER_NOT_CONFIRMED_IDLE")
+    if receipt.get("host_control_lease") != "HOST_EXCLUSIVE":
+        problems.append("EXCLUSIVE_HOST_LEASE_MISSING")
+    if receipt.get("game_paused") is not True:
+        problems.append("GAME_PAUSED_STATE_UNVERIFIED")
+    if receipt.get("capture_quality") != "CONTENT_PRESENT" or receipt.get("viewport") != "NORMAL":
+        problems.append("CAPTURE_OR_VIEWPORT_UNVERIFIED")
+    if receipt.get("final_scene_id") != "build_buy":
+        problems.append("BUILD_BUY_FINAL_SCENE_UNVERIFIED")
+    if type(receipt.get("live_edit_requested")) is not bool:
+        problems.append("OPTIONAL_LIVE_EDIT_DECISION_MISSING")
     if receipt.get("game_speed_unchanged") is not True:
         problems.append("SPEED_UNCHANGED_UNPROVEN")
     if receipt.get("player_queue_unchanged") is not True:
@@ -328,6 +340,8 @@ def audit_p04_receipt(receipt: Mapping[str, object], *, cfg: dict | None = None)
                 problems.append("STEP_PERMIT_MISSING:" + str(idx + 1))
             if item.get("outcome") != "OBSERVED":
                 problems.append("STEP_OUTCOME_UNVERIFIED:" + str(idx + 1))
+            if item.get("observed_gate") != guide["steps"][idx]["proof_gate"]:
+                problems.append("STEP_EXPECTED_UI_GATE_MISSING:" + str(idx + 1))
         if len(seen) != len(set(seen)):
             problems.append("STEP_CAPTURE_REFS_NOT_DISTINCT")
     if receipt.get("live_edit_requested") is True:
