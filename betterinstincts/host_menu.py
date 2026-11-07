@@ -36,6 +36,7 @@ def load_contract(path: Path = CONTRACT) -> dict:
         "open_load_game",
         "play_lablab_slot",
         "enter_live_from_map_lablab",
+        "confirm_play_lablab_lot",
     ]:
         raise HostMenuError("REBOOT_JOURNEY_DRIFT")
     return cfg

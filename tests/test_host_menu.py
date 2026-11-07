@@ -15,11 +15,12 @@ class HostMenuTests(unittest.TestCase):
         self.assertEqual(plan["steps"][1]["click"], [1427, 188])
         self.assertEqual(plan["steps"][2]["gate"], "OPEN_LOAD_GAME")
         self.assertEqual(plan["steps"][3]["gate"], "PLAY_LAB_DISPOSABLE")
-        self.assertEqual(plan["steps"][4]["gate"], "ENTER_LIVE_LABLAB_LOT")
+        self.assertEqual(plan["steps"][4]["gate"], "SELECT_LABLAB_LOT")
+        self.assertEqual(plan["steps"][5]["gate"], "CONFIRM_PLAY_LABLAB_LOT")
 
     def test_from_step_skips_prefix(self):
-        plan = plan_journey("reboot", from_step="enter_live_from_map_lablab")
-        self.assertEqual([s["id"] for s in plan["steps"]], ["enter_live_from_map_lablab"])
+        plan = plan_journey("reboot", from_step="confirm_play_lablab_lot")
+        self.assertEqual([s["id"] for s in plan["steps"]], ["confirm_play_lablab_lot"])
 
     def test_memory_boost_blocker_catalog(self):
         rows = blockers()

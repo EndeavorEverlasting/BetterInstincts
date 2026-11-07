@@ -65,13 +65,24 @@
     {
       "id": "enter_live_from_map_lablab",
       "from": "manage_worlds_or_map",
-      "to": "live_mode",
-      "gate": "ENTER_LIVE_LABLAB_LOT",
+      "to": "lablab_lot_selected",
+      "gate": "SELECT_LABLAB_LOT",
       "execution": "HOST_SENDINPUT",
       "click": [1409, 871],
       "save_alias": "BI_TMP_LABLAB_01",
       "forbidden": ["DELETE", "TOUCH_RICHARDSON", "EMPTY_LOT_CAS_PERSON"],
-      "note": "LOCAL_OBSERVED Willow Creek map tip RESUME PLAYING: LabLab — lot entry, NOT main-menu Resume. Click LabLab plumbob/tip centroid."
+      "note": "LOCAL_OBSERVED Willow Creek map tip RESUME PLAYING: LabLab — lot select, NOT main-menu Resume. Click LabLab plumbob/tip centroid."
+    },
+    {
+      "id": "confirm_play_lablab_lot",
+      "from": "lablab_lot_selected",
+      "to": "live_mode",
+      "gate": "CONFIRM_PLAY_LABLAB_LOT",
+      "execution": "HOST_SENDINPUT",
+      "click": [1840, 1005],
+      "save_alias": "BI_TMP_LABLAB_01",
+      "forbidden": ["DELETE", "TOUCH_RICHARDSON", "EMPTY_LOT_CAS_PERSON", "BUILD_MODE_WRENCH"],
+      "note": "LOCAL_OBSERVED: after LabLab lot panel (30x20), click bottom-right circular Play triangle into Live — never empty-lot CAS person."
     }
   ],
   "reboot_journey": [
@@ -79,7 +90,8 @@
     "dismiss_memory_boost",
     "open_load_game",
     "play_lablab_slot",
-    "enter_live_from_map_lablab"
+    "enter_live_from_map_lablab",
+    "confirm_play_lablab_lot"
   ],
   "host_commands": {
     "plan": "python -m scripts.host_menu plan --journey reboot",
