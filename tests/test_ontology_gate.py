@@ -64,11 +64,29 @@ class OntologyContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "CONSULTATION_NOT_ADMITTED"):
             validate_consultation(bad, self.ontology, ["scripts/check_ontology.py"])
 
+    def test_consultation_pinned_to_exact_ontology_revision(self):
+        bad = copy.deepcopy(self.manifest)
+        bad["ontology_blob_sha"] = "0" * 40
+        with self.assertRaisesRegex(ValueError, "CONSULTATION_ONTOLOGY_VERSION_MISMATCH"):
+            validate_consultation(bad, self.ontology, [])
+
+    def test_universal_invariants_and_offline_proof_are_required(self):
+        bad = copy.deepcopy(self.manifest)
+        bad["invariants_checked"] = ["BI-ONT-011"]
+        with self.assertRaisesRegex(ValueError, "CONSULTATION_UNIVERSAL_INVARIANTS_MISSING"):
+            validate_consultation(bad, self.ontology, [])
+        bad = copy.deepcopy(self.manifest)
+        bad["evidence_ceiling"] = "GAME_CERTIFIED"
+        with self.assertRaisesRegex(ValueError, "CONSULTATION_OFFLINE_PROOF_INFLATED"):
+            validate_consultation(bad, self.ontology, [])
+
     def test_protected_code_paths_and_docs_exemption(self):
         self.assertTrue(is_behavior_mutation("betterinstincts/host_stack.py"))
         self.assertTrue(is_behavior_mutation("scripts/game_host.py"))
         self.assertTrue(is_behavior_mutation("contracts/viewport-black.v1.json"))
         self.assertTrue(is_behavior_mutation(".cursor/rules/betterinstincts-compatibility.mdc"))
+        self.assertTrue(is_behavior_mutation(".github/workflows/other.yml"))
+        self.assertTrue(is_behavior_mutation("compatibility/catalog.v1.json"))
         self.assertFalse(is_behavior_mutation("docs/SCENE_INTELLIGENCE.md"))
         self.assertFalse(is_behavior_mutation("contracts/ontology.v1.json"))
         self.assertFalse(is_behavior_mutation("contracts/consultations/example.json"))
@@ -106,6 +124,30 @@ class ConsultationChronologyTests(unittest.TestCase):
             self.assertTrue(manifest_precedes("contracts/consultations/early.json", first, root))
             self.assertEqual(changed_in_branch(base, root), ["betterinstincts/new_mutation.py"])
             self.assertFalse(manifest_precedes("betterinstincts/new_mutation.py", first, root))
+
+
+    def test_late_consultation_does_not_precede_code(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.git(root, "init", "-b", "main")
+            self.git(root, "config", "user.name", "Ontology Test")
+            self.git(root, "config", "user.email", "ontology@example.invalid")
+            (root / "README.md").write_text("base\n")
+            self.git(root, "add", ".")
+            self.git(root, "commit", "-m", "base")
+            base = self.git(root, "rev-parse", "HEAD")
+            code = root / "betterinstincts/mutation.py"
+            code.parent.mkdir(parents=True)
+            code.write_text("pass\n")
+            self.git(root, "add", ".")
+            self.git(root, "commit", "-m", "mutation before review")
+            manifest = root / "contracts/consultations/late.json"
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text("{}\n")
+            self.git(root, "add", ".")
+            self.git(root, "commit", "-m", "late consultation")
+            first = first_mutation_commit(base, root)
+            self.assertFalse(manifest_precedes("contracts/consultations/late.json", first, root))
 
 
 if __name__ == "__main__":
