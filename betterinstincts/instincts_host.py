@@ -26,7 +26,22 @@ NEED_OBJECTS = {
     "bladder": ("toilet", "privy_bush"),
     "energy": ("bed", "cot", "tent"),
     "hygiene": ("shower", "bathtub", "sink"),
-    "fun": ("tv", "computer", "book", "stereo", "chess", "workout"),
+    "fun": (
+        "tv",
+        "computer",
+        "book",
+        "stereo",
+        "chess",
+        "workout",
+        "phone",
+        "tablet",
+        "earbuds",
+        "console",
+        "guitar",
+        "piano",
+        "easel",
+        "bathtub",
+    ),
     "social": ("phone", "computer", "neighbor", "visitor"),
 }
 

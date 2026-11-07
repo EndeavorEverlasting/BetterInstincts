@@ -52,6 +52,8 @@ jobs:
         run: python -m unittest tests.test_event_balance -v
       - name: Event goal action catalog
         run: python -m unittest tests.test_event_goals -v
+      - name: Fun service tandem lanes
+        run: python -m unittest tests.test_fun_service -v
       - name: Moodlet strip host sensing
         run: python -m unittest tests.test_moodlets -v
       - name: Doctrine fails closed
