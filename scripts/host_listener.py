@@ -39,6 +39,8 @@ def main(argv: list[str] | None = None) -> int:
     tk.add_argument("--process-id", type=int, default=None, help="Win32 presence probe, no input hooks")
     tk.add_argument("--idle-ms", type=int, default=8000)
     tk.add_argument("--declared-playing", action="store_true")
+    tk.add_argument("--learning-model", type=Path, help="Explicit aggregate model under dist/judgment-learning")
+    tk.add_argument("--learning-query", type=Path, help="Explicit sanitized query under dist/judgment-learning")
     tk.add_argument("--observation", type=Path, required=True,
                     help="JSON observation (needs, queue, location_kind, capture_ref)")
     args = p.parse_args(argv)
@@ -61,7 +63,15 @@ def main(argv: list[str] | None = None) -> int:
                 else:
                     from dataclasses import replace
                     probe = replace(probe, operator_declared_playing=True)
-            result = tick(args.session_id, obs, presence_probe=probe, idle_ms=args.idle_ms)
+            learning_model = learning_query = None
+            if args.learning_model is not None or args.learning_query is not None:
+                if args.learning_model is None or args.learning_query is None:
+                    raise HostListenerError("LEARNING_MODEL_AND_QUERY_REQUIRED_TOGETHER")
+                from scripts.judgment_learning import _load
+                learning_model = _load(args.learning_model)
+                learning_query = _load(args.learning_query)
+            result = tick(args.session_id, obs, presence_probe=probe, idle_ms=args.idle_ms,
+                          learning_model=learning_model, learning_query=learning_query)
         print(json.dumps(result, sort_keys=True))
         return 0
     except (HostListenerError, OSError, ValueError, TypeError) as exc:
