@@ -19,6 +19,7 @@ def status(root=ROOT):
             "next_work":"Finish actual BI-002 hunger game A/B and rollback",
             "after_hunger":["BI-003A","BI-003B","BI-003C","BI-003D","BI-003E"],
             "balance_gate":"BI-003F","income_gate":"BI-004","skills_gate":"BI-005",
+            "tooling_lane":"BI-MODLAB",
             "certified_module_patch_combinations":len(certified),
             "closure":"UNPROVEN_GAME_HOST" if not certified else "REVIEW_GAME_EVIDENCE",
             "proof_ceiling":"REPO_CONTRACTS_ONLY"}

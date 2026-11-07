@@ -9,7 +9,7 @@ class HorizonStatusTests(unittest.TestCase):
         self.assertEqual(r["certified_module_patch_combinations"],0)
         self.assertEqual(r["closure"],"UNPROVEN_GAME_HOST")
         self.assertEqual(len(r["after_hunger"]),5)
-        self.assertEqual((r["balance_gate"],r["income_gate"],r["skills_gate"]),
-                         ("BI-003F","BI-004","BI-005"))
+        self.assertEqual((r["balance_gate"],r["income_gate"],r["skills_gate"],r["tooling_lane"]),
+                         ("BI-003F","BI-004","BI-005","BI-MODLAB"))
 if __name__=="__main__":
     unittest.main()

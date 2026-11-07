@@ -40,12 +40,20 @@ def _hex64(value: int) -> str:
     return f"{value:016X}"
 
 
-def read_package_index(path: str | Path, *, max_reported: int = MAX_REPORTED_RESOURCES) -> dict:
-    """Return bounded TGI metadata from one package file.
+def _empty_index_report(major: int, minor: int) -> dict:
+    return {
+        "status": "INDEX_EMPTY",
+        "format": f"{major}.{minor}",
+        "index_count": 0,
+        "reported": 0,
+        "truncated": False,
+        "resources": [],
+        "issues": [],
+        "proof_ceiling": "INDEX_KEYS_ONLY_NOT_TUNING_OR_GAMEPLAY_PROOF",
+    }
 
-    Proof ceiling: INDEX_KEYS_ONLY. Does not prove tuning semantics, skill hooks,
-    resource collisions across packages, or gameplay compatibility.
-    """
+
+def _validate_package_path(path: str | Path, *, max_reported: int) -> Path:
     if not isinstance(max_reported, int) or isinstance(max_reported, bool):
         raise DbpfError("INVALID_MAX_REPORTED")
     if max_reported < 1 or max_reported > MAX_REPORTED_RESOURCES:
@@ -53,6 +61,11 @@ def read_package_index(path: str | Path, *, max_reported: int = MAX_REPORTED_RES
     package = Path(path)
     if package.is_symlink() or not package.is_file():
         raise DbpfError("PACKAGE_MUST_BE_A_REAL_FILE")
+    return package
+
+
+def _read_header_and_index_blob(package: Path) -> tuple[int, int, int, int, bytes]:
+    """Return (major, minor, index_count, package_size, index_blob)."""
     size = package.stat().st_size
     if size < HEADER_SIZE:
         raise DbpfError("PACKAGE_TOO_SMALL")
@@ -72,16 +85,7 @@ def read_package_index(path: str | Path, *, max_reported: int = MAX_REPORTED_RES
         index_offset_long = _u64(header, 0x40)
         index_offset = index_offset_long if index_offset_short == 0 else index_offset_short
         if index_count == 0:
-            return {
-                "status": "INDEX_EMPTY",
-                "format": f"{major}.{minor}",
-                "index_count": 0,
-                "reported": 0,
-                "truncated": False,
-                "resources": [],
-                "issues": [],
-                "proof_ceiling": "INDEX_KEYS_ONLY_NOT_TUNING_OR_GAMEPLAY_PROOF",
-            }
+            return major, minor, 0, size, b""
         if index_count > MAX_INDEX_ENTRIES:
             raise DbpfError("INDEX_ENTRY_BUDGET_EXCEEDED")
         if index_offset < HEADER_SIZE or index_offset >= size:
@@ -92,10 +96,106 @@ def read_package_index(path: str | Path, *, max_reported: int = MAX_REPORTED_RES
         index_blob = stream.read(index_size)
         if len(index_blob) != index_size:
             raise DbpfError("INDEX_UNREADABLE")
+    return major, minor, index_count, size, index_blob
+
+
+def _read_constant_fields(index_blob: bytes, flags: int) -> tuple[int | None, int | None, int | None, int]:
+    cursor = 4
+    constant_type = constant_group = constant_instance_hi = None
+    if flags & FLAG_CONSTANT_TYPE:
+        if cursor + 4 > len(index_blob):
+            raise DbpfError("TRUNCATED_INDEX_HEADER")
+        constant_type = _u32(index_blob, cursor)
+        cursor += 4
+    if flags & FLAG_CONSTANT_GROUP:
+        if cursor + 4 > len(index_blob):
+            raise DbpfError("TRUNCATED_INDEX_HEADER")
+        constant_group = _u32(index_blob, cursor)
+        cursor += 4
+    if flags & FLAG_CONSTANT_INSTANCE_HI:
+        if cursor + 4 > len(index_blob):
+            raise DbpfError("TRUNCATED_INDEX_HEADER")
+        constant_instance_hi = _u32(index_blob, cursor)
+        cursor += 4
+    return constant_type, constant_group, constant_instance_hi, cursor
+
+
+def _parse_one_entry(
+    index_blob: bytes,
+    cursor: int,
+    *,
+    constant_type: int | None,
+    constant_group: int | None,
+    constant_instance_hi: int | None,
+    package_size: int,
+) -> tuple[dict, list[str], int]:
+    def need(nbytes: int) -> None:
+        if cursor + nbytes > len(index_blob):
+            raise DbpfError("TRUNCATED_INDEX_ENTRIES")
+
+    type_id = constant_type
+    group_id = constant_group
+    instance_hi = constant_instance_hi
+    if type_id is None:
+        need(4)
+        type_id = _u32(index_blob, cursor)
+        cursor += 4
+    if group_id is None:
+        need(4)
+        group_id = _u32(index_blob, cursor)
+        cursor += 4
+    if instance_hi is None:
+        need(4)
+        instance_hi = _u32(index_blob, cursor)
+        cursor += 4
+    need(16)
+    instance_lo = _u32(index_blob, cursor)
+    cursor += 4
+    resource_offset = _u32(index_blob, cursor)
+    cursor += 4
+    compressed_field = _u32(index_blob, cursor)
+    cursor += 4
+    uncompressed_size = _u32(index_blob, cursor)
+    cursor += 4
+    extended = bool(compressed_field & EXTENDED_ENTRY_BIT)
+    compressed_size = compressed_field & ~EXTENDED_ENTRY_BIT
+    compression = None
+    if extended:
+        need(4)
+        compression = struct.unpack_from("<HH", index_blob, cursor)
+        cursor += 4
+    issues: list[str] = []
+    if resource_offset >= package_size:
+        issues.append("RESOURCE_OFFSET_OUT_OF_RANGE")
+    if compressed_size > package_size:
+        issues.append("COMPRESSED_SIZE_OUT_OF_RANGE")
+    instance = (instance_hi << 32) | instance_lo
+    resource = {
+        "type": _hex32(type_id),
+        "group": _hex32(group_id),
+        "instance": _hex64(instance),
+        "offset": resource_offset,
+        "compressed_bytes": compressed_size,
+        "uncompressed_bytes": uncompressed_size,
+        "compression": None if compression is None else f"{compression[0]:04X}",
+    }
+    return resource, issues, cursor
+
+
+def read_package_index(path: str | Path, *, max_reported: int = MAX_REPORTED_RESOURCES) -> dict:
+    """Return bounded TGI metadata from one package file.
+
+    Proof ceiling: INDEX_KEYS_ONLY. Does not prove tuning semantics, skill hooks,
+    resource collisions across packages, or gameplay compatibility.
+    """
+    package = _validate_package_path(path, max_reported=max_reported)
+    major, minor, index_count, package_size, index_blob = _read_header_and_index_blob(package)
+    if index_count == 0:
+        return _empty_index_report(major, minor)
     return _parse_index(
         index_blob,
         index_count=index_count,
-        package_size=size,
+        package_size=package_size,
         major=major,
         minor=minor,
         max_reported=max_reported,
@@ -114,81 +214,22 @@ def _parse_index(
     flags = _u32(index_blob, 0)
     if flags & ~0x7:
         raise DbpfError("UNSUPPORTED_INDEX_FLAGS")
-    cursor = 4
-    constant_type = constant_group = constant_instance_hi = None
-    if flags & FLAG_CONSTANT_TYPE:
-        if cursor + 4 > len(index_blob):
-            raise DbpfError("TRUNCATED_INDEX_HEADER")
-        constant_type = _u32(index_blob, cursor)
-        cursor += 4
-    if flags & FLAG_CONSTANT_GROUP:
-        if cursor + 4 > len(index_blob):
-            raise DbpfError("TRUNCATED_INDEX_HEADER")
-        constant_group = _u32(index_blob, cursor)
-        cursor += 4
-    if flags & FLAG_CONSTANT_INSTANCE_HI:
-        if cursor + 4 > len(index_blob):
-            raise DbpfError("TRUNCATED_INDEX_HEADER")
-        constant_instance_hi = _u32(index_blob, cursor)
-        cursor += 4
-
+    constant_type, constant_group, constant_instance_hi, cursor = _read_constant_fields(index_blob, flags)
     resources: list[dict] = []
     issues: list[str] = []
     truncated = False
-
-    def need(nbytes: int) -> None:
-        if cursor + nbytes > len(index_blob):
-            raise DbpfError("TRUNCATED_INDEX_ENTRIES")
-
     for _ in range(index_count):
-        type_id = constant_type
-        group_id = constant_group
-        instance_hi = constant_instance_hi
-        if type_id is None:
-            need(4)
-            type_id = _u32(index_blob, cursor)
-            cursor += 4
-        if group_id is None:
-            need(4)
-            group_id = _u32(index_blob, cursor)
-            cursor += 4
-        if instance_hi is None:
-            need(4)
-            instance_hi = _u32(index_blob, cursor)
-            cursor += 4
-        need(16)
-        instance_lo = _u32(index_blob, cursor)
-        cursor += 4
-        resource_offset = _u32(index_blob, cursor)
-        cursor += 4
-        compressed_field = _u32(index_blob, cursor)
-        cursor += 4
-        uncompressed_size = _u32(index_blob, cursor)
-        cursor += 4
-        extended = bool(compressed_field & EXTENDED_ENTRY_BIT)
-        compressed_size = compressed_field & ~EXTENDED_ENTRY_BIT
-        compression = None
-        if extended:
-            need(4)
-            compression = struct.unpack_from("<HH", index_blob, cursor)
-            cursor += 4
-        if resource_offset >= package_size:
-            issues.append("RESOURCE_OFFSET_OUT_OF_RANGE")
-        if compressed_size > package_size:
-            issues.append("COMPRESSED_SIZE_OUT_OF_RANGE")
+        resource, entry_issues, cursor = _parse_one_entry(
+            index_blob,
+            cursor,
+            constant_type=constant_type,
+            constant_group=constant_group,
+            constant_instance_hi=constant_instance_hi,
+            package_size=package_size,
+        )
+        issues.extend(entry_issues)
         if len(resources) < max_reported:
-            instance = (instance_hi << 32) | instance_lo
-            resources.append(
-                {
-                    "type": _hex32(type_id),
-                    "group": _hex32(group_id),
-                    "instance": _hex64(instance),
-                    "offset": resource_offset,
-                    "compressed_bytes": compressed_size,
-                    "uncompressed_bytes": uncompressed_size,
-                    "compression": None if compression is None else f"{compression[0]:04X}",
-                }
-            )
+            resources.append(resource)
         else:
             truncated = True
     return {
