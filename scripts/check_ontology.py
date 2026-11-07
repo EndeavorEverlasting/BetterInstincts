@@ -99,7 +99,7 @@ def ontology_for_consultation(data: dict, current: dict, root: Path = ROOT) -> d
     if not isinstance(sha, str) or len(sha) != 40 or any(c not in "0123456789abcdef" for c in sha):
         raise ValueError("CONSULTATION_ONTOLOGY_VERSION_MISMATCH")
     raw = (root / ONTOLOGY).read_bytes()
-    current_sha = hashlib.sha1(f"blob {len(raw)}\\0".encode() + raw).hexdigest()
+    current_sha = hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + bytes([0]) + raw).hexdigest()
     if sha == current_sha:
         return current
     result = subprocess.run(
@@ -109,7 +109,7 @@ def ontology_for_consultation(data: dict, current: dict, root: Path = ROOT) -> d
     if result.returncode:
         raise ValueError("CONSULTATION_ONTOLOGY_VERSION_MISMATCH")
     blob = result.stdout
-    if hashlib.sha1(f"blob {len(blob)}\\0".encode() + blob).hexdigest() != sha:
+    if hashlib.sha1(b"blob " + str(len(blob)).encode("ascii") + bytes([0]) + blob).hexdigest() != sha:
         raise ValueError("CONSULTATION_ONTOLOGY_VERSION_MISMATCH")
     try:
         prior = json.loads(blob.decode("utf-8"))
