@@ -1,0 +1,175 @@
+{
+  "schema": "betterinstincts.viewport-black/v1",
+  "version": 1,
+  "scene_id": "live_viewport_black",
+  "proof_ceiling": "LOCAL_OBSERVED_RCA_AND_HOST_LADDER_NOT_ENGINE_PROOF",
+  "observed": {
+    "date": "2026-11-07",
+    "run_id": "bi002-quiz-boot",
+    "game_version": "1.121.361.1020",
+    "platform": "windows",
+    "client": "borderless_1920x1080",
+    "process": "TS4_x64",
+    "captures": [
+      "dist/game-host/bi002-quiz-boot/printwindow-after-black.png",
+      "dist/game-host/bi002-quiz-boot/printwindow-after-pan.png",
+      "dist/game-host/bi002-quiz-boot/operator-sneak-right-monitor.png"
+    ],
+    "process_state": "non_iconic_client_1920x1080_printwindow_near_uniform_black",
+    "operator_sneak_2026_11_07": {
+      "display": "Sims on secondary monitor; Cursor IDE on primary",
+      "visual": "Near-total void with a thin white/blue lot-platform wireframe; platform translates as the mouse moves",
+      "interpretation": "Engine still interactive (terrain/lot hover alive). World textures/lighting/HUD not rendering. Not a frozen process. Consistent with Live/Build on empty Bargain Bend in a broken camera/lighting state after MW/CAS churn."
+    }
+  },
+  "root_cause_analysis": {
+    "summary": "Black / void viewport after Manage Worlds / accidental empty-lot CAS abort / night empty-lot reload is a host-path failure mode, not a needs-policy failure. PrintWindow may read FULL_CLIENT_BLACK while a secondary-monitor desktop sneak still shows a mouse-tracking lot platform wireframe.",
+    "causal_chain": [
+      {
+        "id": "C1",
+        "fact": "Charlee was on Copperdale High School with critical Hunger/Energy/Social after Join instead of Send Alone."
+      },
+      {
+        "id": "C2",
+        "fact": "Manage Worlds used Just Go (no save checkpoint) then Bargain Bend Play path."
+      },
+      {
+        "id": "C3",
+        "fact": "Empty-lot bottom-right person control opened Create-a-Sim; Exit Create A Sim returned through Residential Worlds churn.",
+        "known_trap": "GAME_HOST.md: Manage Worlds person button on empty lots opens CAS — not Play LabLab."
+      },
+      {
+        "id": "C4",
+        "fact": "Household reload selected LabLab while Sim status still listed Copperdale High School; later Live showed home marker with unreadable world."
+      },
+      {
+        "id": "C5",
+        "fact": "Empty Bargain Bend at night has no placed lights; world can be near-black even when HUD is alive (VIEWPORT_BLACK_HUD_ALIVE)."
+      },
+      {
+        "id": "C6",
+        "fact": "PrintWindow later returned FULL_CLIENT_BLACK while TS4 stayed restored — stronger than dark-lot alone; consistent with camera/render loss after CAS-abort + MW churn and/or focus-steal from desktop capture overlays.",
+        "related": "scripts/game_capture.py documents computer-use/desktop screenshots conflict with Sims focus."
+      },
+      {
+        "id": "C7",
+        "fact": "Operator secondary-monitor sneak showed a void with a thin lot-platform wireframe that moves with the mouse — engine interactive, world/HUD not drawn.",
+        "classification_hint": "VOID_LOT_PLATFORM_WIREFRAME"
+      },
+      {
+        "id": "C8",
+        "fact": "Sims window was on the secondary display while agent computer-use only observes the primary — primary screenshots cannot diagnose this state; PrintWindow HWND capture is mandatory."
+      }
+    ],
+    "leading_hypotheses": [
+      {
+        "id": "H1",
+        "rank": 1,
+        "claim": "CAS abort on empty lot + Manage Worlds churn leaves Live/Build camera+world lighting in a void where only the lot platform hover wireframe remains interactive until Build↔Live reset or process restart.",
+        "supports": ["C3", "C4", "C6", "C7"],
+        "falsifier": "Reproduce CAS abort then PrintWindow/desktop stay CONTENT_PRESENT without recovery."
+      },
+      {
+        "id": "H4",
+        "rank": 2,
+        "claim": "Mouse-tracking lot platform in a black void means the session is NOT hung; host should run the camera/Build↔Live ladder before reboot, then AUTHORIZED_GAME_RESTART if still anomalous.",
+        "supports": ["C7"],
+        "falsifier": "Mouse moves but no platform motion and no recovery path ever restores CONTENT_PRESENT without restart."
+      },
+      {
+        "id": "H2",
+        "rank": 3,
+        "claim": "Night empty lot without lights yields VIEWPORT_BLACK_HUD_ALIVE (world dark, HUD lit) and is avoidable with lights or Build-mode camera.",
+        "supports": ["C5"],
+        "falsifier": "Night empty lot PrintWindow shows CONTENT_PRESENT in world region without lights."
+      },
+      {
+        "id": "H3",
+        "rank": 4,
+        "claim": "Desktop/computer-use capture overlays aggravate focus/render instability and miss secondary-monitor Sims; PrintWindow-only observation is required for host decisions.",
+        "supports": ["C6", "C8"],
+        "falsifier": "Repeated computer-use captures never correlate with iconic/black transitions on this patch."
+      }
+    ],
+    "not_claimed": [
+      "Exact EA engine bug ID",
+      "That every black screen requires reboot",
+      "That offline heuristics certify Live Mode"
+    ]
+  },
+  "avoidance": [
+    {
+      "id": "A1",
+      "rule": "When needs are critical, prefer Send Alone / keep_home_lot decisions so host retains Bargain Bend control.",
+      "owner": "betterinstincts.decision_eval + host_stack"
+    },
+    {
+      "id": "A2",
+      "rule": "Never click empty-lot person/CAS control when intending Play LabLab; require household Play triangle after LabLab tip is visible.",
+      "owner": "docs/GAME_HOST.md + scripts/cas_place_live.py notes"
+    },
+    {
+      "id": "A3",
+      "rule": "After Manage Worlds, CAS exit, travel, or lot Play: PrintWindow capture + viewport analyze BEFORE needs/object clicks.",
+      "owner": "scripts/game_capture.py --analyze + scripts/viewport_recover.py"
+    },
+    {
+      "id": "A4",
+      "rule": "Do not use desktop/computer-use screenshots as Sims proof; they conflict with focus. Prefer PrintWindow.",
+      "owner": "scripts/game_capture.py"
+    },
+    {
+      "id": "A5",
+      "rule": "Empty-lot night sessions: place a light or enter Build briefly before trusting Live world clicks.",
+      "owner": "host live lane"
+    },
+    {
+      "id": "A6",
+      "rule": "If Sims is on a secondary monitor, never diagnose from primary desktop/computer-use captures; use PrintWindow on the TS4 HWND (and optional operator sneak of the game display).",
+      "owner": "scripts/game_capture.py + scripts/viewport_recover.py"
+    }
+  ],
+  "recovery_ladder": [
+    {
+      "step": "FOCUS_RESTORE",
+      "auto": true,
+      "command": "python -m scripts.game_host focus --process-id PID"
+    },
+    {
+      "step": "CAMERA_ZOOM_OUT_AND_PAN",
+      "auto": true,
+      "requires_execute": true
+    },
+    {
+      "step": "CLICK_ACTIVE_SIM_PORTRAIT_FOLLOW",
+      "auto": true,
+      "requires_execute": true
+    },
+    {
+      "step": "TOGGLE_BUILD_THEN_LIVE_CAMERA_RESET",
+      "auto": true,
+      "requires_execute": true,
+      "note": "Avoid Esc (Options MENU)."
+    },
+    {
+      "step": "RECHECK_PRINTWINDOW_ANALYZE",
+      "auto": true,
+      "command": "python -m scripts.game_capture --process-id PID --analyze --out PATH"
+    },
+    {
+      "step": "AUTHORIZED_GAME_RESTART",
+      "auto": false,
+      "requires_flags": ["--execute", "--authorize-restart"],
+      "behavior": "Graceful TS4 close then disposable game_host launch; never Resume; never touch user-named saves; lab slot load only with existing save_guard.",
+      "when": "Still FULL_CLIENT_BLACK or VIEWPORT_NEAR_BLACK after camera ladder"
+    }
+  ],
+  "host_next_gates": {
+    "VIEWPORT_OK": "CONTINUE_HOST_LANE",
+    "VIEWPORT_BLACK_HUD_ALIVE": "CAMERA_RECOVER_THEN_RECAPTURE",
+    "VIEWPORT_NEAR_BLACK": "RECAPTURE_THEN_CAMERA_RECOVER",
+    "VOID_LOT_PLATFORM_WIREFRAME": "CAMERA_THEN_BUILD_LIVE_OR_RESTART",
+    "FULL_CLIENT_BLACK": "RECOVER_OR_AUTHORIZED_RESTART",
+    "STILL_BLACK_AFTER_LADDER": "AUTHORIZED_GAME_RESTART_OR_OPERATOR"
+  }
+}

@@ -1,7 +1,7 @@
-"""Thin host call stack: needs plan + optional chance-card decision eval.
+"""Thin host call stack: viewport gate + needs plan + chance-card decision eval.
 
-P95 seam: observation → instincts plan → decision recommendation → (live click /
-Save As gates remain outside this pure module). Never executes Sims UI.
+P95 seam: PrintWindow viewport → decision prompt → instincts plan → (live click /
+Save As / restart gates remain outside this pure module). Never executes Sims UI.
 """
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ from betterinstincts.instincts_host import (
     plan,
     plan_to_dict,
 )
+from betterinstincts.viewport import ViewportError, predict_risk
 
 
 class HostStackError(ValueError):
@@ -37,8 +38,14 @@ def evaluate_turn(
     capture_ref: str = "capture:host-turn",
     prior_needs: Optional[Mapping[str, float]] = None,
     host_action: Optional[str] = None,
+    viewport: Optional[Mapping[str, object]] = None,
+    viewport_context: Optional[Mapping[str, object]] = None,
 ) -> dict:
-    """Compose instincts recovery + optional dialog recommendation for one host turn."""
+    """Compose viewport safety + instincts + optional dialog for one host turn.
+
+    Viewport anomalies outrank needs actions: do not click world objects while
+    PrintWindow is black. See contracts/viewport-black.v1.json.
+    """
     try:
         snap = NeedSnapshot(
             needs=needs,
@@ -57,13 +64,18 @@ def evaluate_turn(
         influence = None
         if prior_needs is not None:
             influence = measure_need_deltas(prior_needs, needs, host_action=host_action)
-    except (InstinctsHostError, DecisionEvalError) as exc:
+        risk = predict_risk(viewport_context or {})
+    except (InstinctsHostError, DecisionEvalError, ViewportError) as exc:
         raise HostStackError(str(exc)) from exc
 
-    # Decision prompts outrank routine autonomy when a live modal is open.
+    # Priority: unreadable viewport > open decision modal > needs plan > save.
     next_gate = "EXECUTE_INSTINCTS_PLAN"
-    if decision is not None:
+    if viewport and viewport.get("state") == "VIEWPORT_ANOMALY":
+        next_gate = str(viewport.get("next_gate") or "RECOVER_OR_AUTHORIZED_RESTART")
+    elif decision is not None:
         next_gate = "RESOLVE_DECISION_PROMPT"
+    elif risk.get("risk_level") in {"ELEVATED", "HIGH"} and risk.get("required_before_clicks"):
+        next_gate = "PRINTWINDOW_ANALYZE_BEFORE_CLICKS"
     elif instincts.get("all_needs_green"):
         next_gate = "LAB_SAVE_AS_BI_CONT_WHEN_AUTHORIZED"
     elif instincts.get("state") == "BLOCKED_MISSING_OBJECTS":
@@ -76,5 +88,8 @@ def evaluate_turn(
         "instincts": instincts,
         "decision": decision,
         "influence": influence,
+        "viewport": dict(viewport) if viewport else None,
+        "viewport_risk": risk,
         "proof_ceiling": "HOST_STACK_OFFLINE_COMPOSITION_NOT_LIVE_PROOF",
     }
+

@@ -128,9 +128,23 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--process-id", type=int, default=None)
     parser.add_argument("--out", type=Path, default=OUTPUT / "printwindow-latest.png")
+    parser.add_argument("--analyze", action="store_true",
+                        help="Classify PrintWindow luma for live_viewport_black")
     args = parser.parse_args(argv)
     try:
         result = capture_sims(process_id=args.process_id, out=args.out)
+        if args.analyze:
+            from betterinstincts.viewport import analyze_image, report_to_dict
+            path = Path(result["path"])
+            if not path.is_absolute():
+                path = ROOT / path
+            result["viewport"] = report_to_dict(analyze_image(path))
+            if result["viewport"]["state"] == "VIEWPORT_ANOMALY":
+                result["next"] = (
+                    "python -m scripts.viewport_recover --image "
+                    + result["path"]
+                    + "  # dry-run; add --execute only after review"
+                )
     except (GateError, OSError, ValueError, TypeError) as exc:
         print(json.dumps({"state": "BLOCKED", "reason": str(exc)}, sort_keys=True))
         return 2

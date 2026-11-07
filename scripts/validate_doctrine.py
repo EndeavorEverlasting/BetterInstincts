@@ -33,6 +33,8 @@ REQUIRED = (
     "tests/test_scene_map.py", "tests/test_save_policy.py", "tests/test_game_host_save_guard.py",
     "contracts/decision-prompts.v1.json", "betterinstincts/decision_eval.py",
     "betterinstincts/host_stack.py", "scripts/decision_eval.py", "tests/test_decision_eval.py",
+    "contracts/viewport-black.v1.json", "betterinstincts/viewport.py",
+    "scripts/viewport_recover.py", "tests/test_viewport.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

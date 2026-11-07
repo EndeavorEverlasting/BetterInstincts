@@ -4,7 +4,7 @@
 
 ## Authority, provenance and proof
 
-Source and machine authority: `contracts/game-scenes.v1.json` (35 candidate scene IDs), `contracts/save-policy.v1.json`, `betterinstincts/scenes.py`, `betterinstincts/save_policy.py`. Entry points: `scripts/scene_map.py`, `scripts/save_guard.py`; existing `scripts/game_host.py` uses `selected_save_guard` **before** any Load Game selection click. `scripts/check_scene_contract.py` and CI prevent removing the safety boundary. Root AGENTS.md and doctrine remain higher authority. No parallel policy owners.
+Source and machine authority: `contracts/game-scenes.v1.json` (36 candidate scene IDs, including LOCAL_OBSERVED `live_viewport_black`), `contracts/save-policy.v1.json`, `contracts/viewport-black.v1.json` (RCA + avoidance + recovery/restart ladder), `betterinstincts/scenes.py`, `betterinstincts/save_policy.py`, `betterinstincts/viewport.py`. Entry points: `scripts/scene_map.py`, `scripts/save_guard.py`, `scripts/game_capture.py --analyze`, `scripts/viewport_recover.py`; existing `scripts/game_host.py` uses `selected_save_guard` **before** any Load Game selection click. `scripts/check_scene_contract.py` and CI prevent removing the safety boundary. Root AGENTS.md and doctrine remain higher authority. No parallel policy owners.
 
 **Evidence ceiling:** First live game startup and CAS were observed on patch `1.121.361.1020` (PR #13); subsequent Live Mode and hunger trials have not been observed. The catalog's visual cues are semantic placeholders, **not screenshot templates or a trained vision model**. Merely supplying expected cues does not independently verify a screen. `CANDIDATE_UNVERIFIED` is never a game observation or permission to click. Unknown patch, ambiguous scene or missing independent evidence returns abstention. New game patches must add new exact-build evidence/catalog revisions without silently rewriting older certified profiles.
 
@@ -13,7 +13,7 @@ Source and machine authority: `contracts/game-scenes.v1.json` (35 candidate scen
 - **Launch and loading:** launcher tile, splash, startup loading, main menu, new-game entry, save picker/detail, world loading, lot loading, travel loading, errors.
 - **CAS and household:** story quiz, editor, household placement, household management/detail.
 - **Maps:** world selection, neighborhood map, lot details, Manage Worlds confirmation.
-- **Live and Build:** Live Mode, Build/Buy, paused view, travel selection.
+- **Live and Build:** Live Mode, Live viewport black anomaly (PrintWindow near-uniform black after MW/CAS churn), Build/Buy, paused view, travel selection.
 - **Libraries and overlays:** Gallery browse/details, My Library browse/details, options/settings, save/save-as/exit dialogs, Marketplace, unknown overlay.
 
 Every scene record supplies `id`, `family`, two source-distinct required cues, `ux_regions`, explicit `assumptions`, `evidence_state`, and typed outgoing `transitions` with `gate` and `execution: MANUAL_ONLY`. A transition is a candidate decision tree, not a fully validated in-game route. Overlay returns may depend on source context; absent that context, ask for operator verification instead of defaulting to a potentially wrong screen. Unknown state is terminal in the decision model.
