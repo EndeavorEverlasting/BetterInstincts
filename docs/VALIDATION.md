@@ -37,3 +37,16 @@ Minimum manual acceptance for BI-002:
 
 ## Publication gate
 Release only if a playable build actually passed the gameplay gate on a named patch, has install/uninstall instructions, known limitations, license/dependency disclosures, changelog and rollback instructions. Label untested patches **unknown**. New EA patches require rerunning compatibility proof. Report built != locally tested != merged != live-proven.
+
+## Opt-in human ↔ host screen handoff (P95 → Trifecta)
+
+```sh
+python -m unittest tests.test_control_handoff tests.test_host_autonomy -v
+python -m unittest discover -s tests -v
+python -m scripts.check_horizon
+python -m scripts.progression_eval --repo-only
+```
+
+The control policy is offline-testable and fails closed on active/unknown human input. One-shot local inspection is `python -m scripts.control_handoff --session-id ID --process-id PID --idle-ms 8000 --confirm`; the named listener session must be explicitly activated. The execution adapter `scripts.needs_force run --execute` requires the session ID, exact PID and **one** `--step-id` plus scene and queue verification by the local game agent. No unattended watcher, no implicit focus takeover, no multi-click lease.
+
+The full live P08 proof still requires game-host observations of **player input interrupting host control**, idle passage allowing one verified control step, zero player queue interruptions and scene-safe recovery; tests/mocks alone do not demonstrate that. Other direct UI executors must adopt the same gate before claiming general interoperability. BI-002 hunger certification remains independent.
