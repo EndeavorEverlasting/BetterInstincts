@@ -66,6 +66,13 @@ jobs:
         run: python -m unittest tests.test_moodlets -v
       - name: Doctrine fails closed
         run: python scripts/validate_doctrine.py
+      - name: Ontology schema and canonical owner integrity
+        run: python -m scripts.check_ontology
+      - name: Ontology consultation predates prototype mutation (PR)
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python -m scripts.check_ontology --base-ref "$PR_BASE_SHA"
       - name: Scene and save safety contract
         run: python -m scripts.check_scene_contract
       - name: Repo asset leakage prevention
