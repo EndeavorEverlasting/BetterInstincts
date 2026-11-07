@@ -69,6 +69,12 @@
       "allow_career",
       "needs_game_certified",
       "income_game_observed"
+    ],
+    "optional_navigating_needs_fields": [
+      "navigating_needs_active",
+      "navigating_needs_incomplete",
+      "navigating_needs_profile",
+      "build_or_buy_mode"
     ]
   },
   "pipeline": [
@@ -80,6 +86,7 @@
     "instincts_plan",
     "host_stack_evaluate_turn",
     "school_day_goal_plan_if_active",
+    "navigating_needs_tandem_if_active",
     "scenario_goal_plan_if_active",
     "needs_force_route_if_optimize",
     "emit_receipt"

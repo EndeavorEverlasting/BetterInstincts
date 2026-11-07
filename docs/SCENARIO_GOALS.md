@@ -38,6 +38,10 @@ supplied scenario goals + school_day flag + cert flags
 
 School day active yields `SCHOOL_DAY_OUTRANKS_SCENARIO` in the scenario evaluator; `host_stack` still ranks school gates first.
 
+## Sibling Discovery Quest
+
+**Navigating Needs** (motive tips) is a separate host owner: [`docs/NAVIGATING_NEEDS.md`](NAVIGATING_NEEDS.md). Do not merge income/craft/career scoring with needs-tandem catalogs. When both would compete, Navigating Needs tandem outranks scenario scoring in `host_stack`.
+
 ## Proof ceiling
 
 `HOST_SCENARIO_GOAL_CATALOG_NOT_EA_API_NOT_INCOME_OR_CAREER_CERT`. Live HUD goal ticks remain OPEN until operator confirmation.

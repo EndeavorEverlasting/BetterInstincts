@@ -28,6 +28,10 @@ from betterinstincts.instincts_host import (
 )
 from betterinstincts.build_optimize import BuildOptimizeError, evaluate_build_optimize
 from betterinstincts.moodlets import MoodletError, evaluate_moodlets
+from betterinstincts.navigating_needs import (
+    NavigatingNeedsError,
+    evaluate_navigating_needs_turn,
+)
 from betterinstincts.scenario_goals import evaluate_scenario_turn
 from betterinstincts.school_day import (
     SchoolDayError,
@@ -116,6 +120,9 @@ def evaluate_turn(
     guests_present: bool = False,
     occupied_objects: Sequence[str] = (),
     sibling_fun_lane_claims: Sequence[str] = (),
+    navigating_needs_active: bool = False,
+    navigating_needs_incomplete: Sequence[str] = (),
+    navigating_needs_profile: str = "navigating_needs",
 ) -> dict:
     """Compose viewport, moodlets, event-balance, instincts, and dialog gates.
 
@@ -141,6 +148,10 @@ def evaluate_turn(
     Optional scenario_active / scenario_goals_incomplete attach scenario scoring HUD
     planning (docs/SCENARIO_GOALS.md); career stays horizon-deferred without proof.
 
+    Optional navigating_needs_active / navigating_needs_incomplete attach Discovery
+    Quest Navigating Needs tandem (docs/NAVIGATING_NEEDS.md); panel-aligned need
+    remedies outrank scenario scoring; uncovered urgent motives fall through to instincts.
+
     Optional build_objective runs evaluate-only Build/Buy catalog ranking
     (docs/BUILD_OPTIMIZE.md); never paints walls from this pure module.
 
@@ -158,6 +169,7 @@ def evaluate_turn(
     effective_location = premises["effective_location_kind"]
     social_opportunity = None
     school_day = None
+    navigating_needs = None
     teen_homework = None
     scenario = None
     fun_service = None
@@ -295,6 +307,20 @@ def evaluate_turn(
                 already_busy=already_busy,
                 capture_ref=capture_ref,
             )
+        if navigating_needs_active or navigating_needs_incomplete:
+            navigating_needs = evaluate_navigating_needs_turn(
+                needs,
+                navigating_needs_active=navigating_needs_active
+                or bool(navigating_needs_incomplete),
+                navigating_needs_incomplete=navigating_needs_incomplete,
+                quest_profile=navigating_needs_profile,
+                school_day_active=school_day_active or bool(school_goals_incomplete),
+                build_or_buy_mode=build_or_buy_mode,
+                queue=tuple(queue or ()),
+                player_directed=player_directed,
+                already_busy=already_busy,
+                capture_ref=capture_ref,
+            )
         if event_active or outdoor_social_prefix or (
             homework_pending
             and not (school_day_active or effective_location == "school" or sim_at_school is True)
@@ -350,6 +376,7 @@ def evaluate_turn(
         SchoolDayError,
         SocialOpportunityError,
         FunServiceError,
+        NavigatingNeedsError,
     ) as exc:
         raise HostStackError(str(exc)) from exc
 
@@ -576,6 +603,36 @@ def evaluate_turn(
             "preferred_routes": teen_homework.get("preferred_routes") or [],
             "forbidden": ["CLAIM_BI006_CLOSURE", "RESUME"],
         }
+    elif navigating_needs is not None and navigating_needs["gate"] == "BUILD_OR_BUY_YIELD":
+        next_gate = "BUILD_OR_BUY_YIELD"
+        fallback = {
+            "mechanism": navigating_needs["action"],
+            "owner": "betterinstincts/navigating_needs.py",
+            "contract": "contracts/navigating-needs.v1.json",
+            "forbidden": ["FORCE_F1", "NEEDS_OBJECT_CLICK", "RESUME"],
+        }
+    elif navigating_needs is not None and navigating_needs["gate"] == "NAVIGATING_NEEDS_TANDEM":
+        next_gate = "NAVIGATING_NEEDS_TANDEM"
+        goal_plan = navigating_needs.get("goal_plan") or {}
+        fallback = {
+            "mechanism": navigating_needs["action"],
+            "owner": "betterinstincts/navigating_needs.py",
+            "contract": "contracts/navigating-needs.v1.json",
+            "goals_incomplete": navigating_needs.get("goals_incomplete") or [],
+            "next_goal": goal_plan.get("next_goal"),
+            "next_need": goal_plan.get("next_need"),
+            "next_actions": goal_plan.get("next_actions") or [],
+            "primary_route": navigating_needs.get("primary_route")
+            or goal_plan.get("primary_route"),
+            "preferred_routes": navigating_needs.get("preferred_routes")
+            or goal_plan.get("preferred_routes")
+            or [],
+            "forbidden": [
+                "INVENT_PANEL_GOALS",
+                "IGNORE_PANEL_FOR_UNRELATED_FLUFF",
+                "RESUME",
+            ],
+        }
     elif scenario is not None and scenario["gate"] == "SCENARIO_GOAL_PROGRESS":
         next_gate = "SCENARIO_GOAL_PROGRESS"
         goal_plan = scenario.get("goal_plan") or {}
@@ -736,6 +793,7 @@ def evaluate_turn(
         "social_opportunity": social_opportunity,
         "sim_premises": premises,
         "scenario": scenario,
+        "navigating_needs": navigating_needs,
         "event_balance": event_balance,
         "fun_service": fun_service,
         "build_optimize": build_optimize,

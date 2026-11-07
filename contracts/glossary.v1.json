@@ -422,6 +422,28 @@
         "contracts/scenario-goals.v1.json",
         "docs/SCENARIO_GOALS.md"
       ]
+    },
+    "NAVIGATING_NEEDS_TANDEM": {
+      "definition": "Host gate that queues Discovery Quest Navigating Needs panel goals aligned to linked motives by urgency, instead of inventing parallel need fluff.",
+      "owners": [
+        "contracts/navigating-needs.v1.json",
+        "docs/NAVIGATING_NEEDS.md",
+        "betterinstincts/navigating_needs.py"
+      ]
+    },
+    "URGENT_NEED_WITHOUT_PANEL_GOAL": {
+      "definition": "An urgent motive is not covered by currently incomplete Navigating Needs panel goals; fall through to instincts rather than waiting on a non-visible discovery goal.",
+      "owners": [
+        "contracts/navigating-needs.v1.json",
+        "docs/NAVIGATING_NEEDS.md"
+      ]
+    },
+    "BUILD_OR_BUY_YIELD": {
+      "definition": "Host abstains from Navigating Needs / needs-object clicks while Build or Buy mode is active; never force Live (F1) on the operator.",
+      "owners": [
+        "contracts/navigating-needs.v1.json",
+        "docs/NAVIGATING_NEEDS.md"
+      ]
     }
   }
 }

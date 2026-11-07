@@ -134,6 +134,9 @@ def _load_observation(raw: Mapping) -> dict:
     scenario_goals = raw.get("scenario_goals_incomplete") or ()
     if not isinstance(scenario_goals, (list, tuple)):
         raise HostListenerError("OBSERVATION_SCENARIO_GOALS_INVALID")
+    navigating_goals = raw.get("navigating_needs_incomplete") or ()
+    if not isinstance(navigating_goals, (list, tuple)):
+        raise HostListenerError("OBSERVATION_NAVIGATING_NEEDS_INVALID")
     pinned = raw.get("pinned_whims") or ()
     if not isinstance(pinned, (list, tuple)):
         raise HostListenerError("OBSERVATION_PINNED_WHIMS_INVALID")
@@ -173,6 +176,12 @@ def _load_observation(raw: Mapping) -> dict:
         "allow_career": bool(raw.get("allow_career", False)),
         "needs_game_certified": bool(raw.get("needs_game_certified", False)),
         "income_game_observed": bool(raw.get("income_game_observed", False)),
+        "navigating_needs_active": bool(raw.get("navigating_needs_active", False)),
+        "navigating_needs_incomplete": [str(x) for x in navigating_goals],
+        "navigating_needs_profile": str(
+            raw.get("navigating_needs_profile") or "navigating_needs"
+        ),
+        "build_or_buy_mode": bool(raw.get("build_or_buy_mode", False)),
         "school_phase": (str(raw["school_phase"]) if raw.get("school_phase") else None),
         "pinned_whims": [str(x) for x in pinned],
         "homework_pending": bool(raw.get("homework_pending", False)),
@@ -318,6 +327,10 @@ def tick(
             allow_career=obs["allow_career"],
             needs_game_certified=obs["needs_game_certified"],
             income_game_observed=obs["income_game_observed"],
+            navigating_needs_active=obs["navigating_needs_active"],
+            navigating_needs_incomplete=obs["navigating_needs_incomplete"],
+            navigating_needs_profile=obs["navigating_needs_profile"],
+            build_or_buy_mode=obs["build_or_buy_mode"],
             emotion=obs["emotion"],
             moodlets=obs["moodlets"],
             traits=obs["traits"],
