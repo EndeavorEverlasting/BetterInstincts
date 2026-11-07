@@ -62,7 +62,7 @@ Once the agent independently observes the intended disposable Live Mode state, r
 **First executable Windows host gate**:
 1. Inspect current checkout status and pull the merged main safely (no destructive reset). Identify current TS4_x64 process/window using the existing local-game capability; independently verify current PID, executable and intended disposable session before any WM_CLOSE. If no matching process remains, do not attempt to close historical PID 45380.
 2. If matching session is still anomalous, use the existing gated recovery command with CURRENT_CONFIRMED_PID (not historical PID):
-   
+
    python -m scripts.viewport_recover --capture --process-id CURRENT_CONFIRMED_PID --execute --authorize-restart --run-id bi002-quiz-boot --out dist/game-host/bi002-quiz-boot/viewport-restart.png --receipt dist/game-host/bi002-quiz-boot/viewport-restart-receipt.json
 
    The authorization is limited to the previously described disposable lab restart. Verify WM_CLOSE dispatch, then actual process exit; WM_CLOSE_POSTED is not exit proof. Do not use TerminateProcess, and do not blindly replay a receipt.
