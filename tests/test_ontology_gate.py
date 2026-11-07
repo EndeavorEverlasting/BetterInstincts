@@ -11,8 +11,9 @@ from pathlib import Path
 from scripts.check_ontology import (
     ROOT, ONTOLOGY, check_branch, changed_in_branch, first_mutation_commit,
     is_behavior_mutation, manifest_precedes, read_json, validate_consultation,
-    validate_ontology,
+    validate_ontology, ontology_for_consultation,
 )
+from scripts.semantic_preflight import SemanticPreflightError, preflight
 
 
 class OntologyContractTests(unittest.TestCase):
@@ -43,6 +44,39 @@ class OntologyContractTests(unittest.TestCase):
         bad["concepts"]["SIM"]["canonical_owner"] = "never/a/real/file.json"
         with self.assertRaisesRegex(ValueError, "CONCEPT_OWNER_MISSING"):
             validate_ontology(bad)
+
+    def test_semantic_open_world_guardrails(self):
+        self.assertIn("DOMAIN_CAPABILITY", self.ontology["concepts"])
+        self.assertIn("GOAL_THREAD", self.ontology["concepts"])
+        self.assertIn("OPEN", self.ontology["product_identity"]["capability_ceiling"])
+        bad = copy.deepcopy(self.ontology)
+        del bad["concepts"]["GOAL_THREAD"]
+        with self.assertRaisesRegex(ValueError, "ONTOLOGY_SEMANTIC_CONCEPTS_MISSING"):
+            validate_ontology(bad)
+        bad = copy.deepcopy(self.ontology)
+        bad["product_identity"]["capability_ceiling"] = "closed"
+        with self.assertRaisesRegex(ValueError, "ONTOLOGY_OPEN_CAPABILITY_FREEDOM_MISSING"):
+            validate_ontology(bad)
+
+    def test_historical_receipt_keeps_original_ontology_provenance(self):
+        historical = ontology_for_consultation(self.manifest, self.ontology)
+        self.assertEqual(historical["revision"], 1)
+        self.assertEqual(self.ontology["revision"], 2)
+        validate_consultation(self.manifest, self.ontology, ["scripts/check_ontology.py"])
+
+    def test_semantic_consultation_and_local_preflight(self):
+        path = "contracts/consultations/BI-SEMANTIC-ORCHESTRATION-20261107.v1.json"
+        record = read_json(ROOT / path)
+        validate_consultation(record, self.ontology, ["betterinstincts/semantic_advisory.py"])
+        admitted = preflight(path, operation="repo_mutation", files=("betterinstincts/semantic_advisory.py",))
+        self.assertEqual(admitted["status"], "ONTOLOGY_PREFLIGHT_PASS_NOT_GAME_AUTHORITY")
+        self.assertIsNone(admitted["control_permit"])
+        with self.assertRaisesRegex(SemanticPreflightError, "GAME_SCOPE_NOT_CONSULTED"):
+            preflight(path, operation="game_sampling", exact_game_build="1.121.361.1020")
+        with self.assertRaisesRegex(ValueError, "CONSULTATION_UNMAPPED_MUTATIONS"):
+            preflight(path, operation="repo_mutation", files=("betterinstincts/unmapped.py",))
+        with self.assertRaisesRegex(SemanticPreflightError, "MUTATION_PATH_INVALID"):
+            preflight(path, operation="repo_mutation", files=("../untrusted.py",))
 
     def test_preprototype_receipt_is_valid(self):
         validate_consultation(
