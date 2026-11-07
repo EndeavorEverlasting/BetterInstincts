@@ -49,56 +49,25 @@ def classify(
     session_active: bool = False,
     grace_ms: Optional[int] = None,
 ) -> dict:
-    cfg = load_contract()
-    grace = int(grace_ms if grace_ms is not None else cfg.get("grace_ms_default", 2500))
-    if not probe.probe_ok:
-        return {
-            "state": "UNKNOWN_PRESENCE",
-            "host": "YIELD_TO_PLAYER",
-            "reason": "PROBE_FAILED",
-            "session_active": bool(session_active),
-            "proof_ceiling": cfg.get("proof_ceiling"),
-        }
+    """Compatibility projection of the canonical idle-based handoff gate.
 
-    on_canvas = bool(probe.foreground_is_sims and probe.cursor_in_client)
-    recent_input = (
-        probe.last_input_age_ms is not None
-        and probe.foreground_is_sims
-        and 0 <= int(probe.last_input_age_ms) <= grace
-    )
-    playing = bool(
-        on_canvas
-        or recent_input
-        or probe.operator_declared_playing
-        or probe.player_directed_queue
-    )
-    if playing:
-        return {
-            "state": "PLAYER_PLAYING",
-            "host": "YIELD_TO_PLAYER",
-            "reason": "PLAYER_ACTIVE",
-            "on_canvas": on_canvas,
-            "recent_input": recent_input,
-            "session_active": bool(session_active),
-            "proof_ceiling": cfg.get("proof_ceiling"),
-        }
-    if not session_active:
-        return {
-            "state": "UNKNOWN_PRESENCE",
-            "host": "YIELD_TO_PLAYER",
-            "reason": "SESSION_INACTIVE",
-            "on_canvas": on_canvas,
-            "session_active": False,
-            "proof_ceiling": cfg.get("proof_ceiling"),
-        }
-    return {
-        "state": "HOST_MAY_AUTOMATE",
-        "host": "EVALUATE_AND_OPTIONAL_EXECUTE",
-        "reason": "PLAYER_NOT_PLAYING_SESSION_ACTIVE",
-        "on_canvas": False,
-        "session_active": True,
+    Presence alone cannot acquire the screen. Unknown desktop input age
+    yields; an idle resting cursor does not keep the player marked active
+    indefinitely. Keep the established host/state vocabulary for callers.
+    """
+    cfg = load_contract()
+    from betterinstincts.control_handoff import as_presence, decide
+
+    idle_ms = int(grace_ms if grace_ms is not None else cfg.get("grace_ms_default", 8000))
+    handoff = decide(probe, session_active=session_active, idle_ms=idle_ms)
+    presence = as_presence(handoff)
+    presence.update({
+        "on_canvas": bool(probe.foreground_is_sims and probe.cursor_in_client),
+        "session_active": bool(session_active),
+        "recent_input": handoff["reason"] == "RECENT_HUMAN_INPUT",
         "proof_ceiling": cfg.get("proof_ceiling"),
-    }
+    })
+    return presence
 
 
 def probe_windows(process_id: Optional[int] = None) -> PresenceProbe:
