@@ -148,33 +148,9 @@ def _type_text(text: str) -> None:
 
 
 def _click(x: int, y: int) -> None:
-    import ctypes
-    from ctypes import wintypes
+    from scripts.win32_input import send_click
 
-    user32 = ctypes.windll.user32
-    user32.SetCursorPos(x, y)
-    time.sleep(0.05)
-
-    class MOUSEINPUT(ctypes.Structure):
-        _fields_ = [
-            ("dx", ctypes.c_long), ("dy", ctypes.c_long),
-            ("mouseData", wintypes.DWORD), ("dwFlags", wintypes.DWORD),
-            ("time", wintypes.DWORD),
-            ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
-        ]
-
-    class INPUT(ctypes.Structure):
-        class _I(ctypes.Union):
-            _fields_ = [("mi", MOUSEINPUT)]
-
-        _anonymous_ = ("i",)
-        _fields_ = [("type", wintypes.DWORD), ("i", _I)]
-
-    for flag in (2, 4):
-        inp = INPUT(type=0)
-        inp.mi = MOUSEINPUT(0, 0, 0, flag, 0, None)
-        user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
-        time.sleep(0.04)
+    send_click(x, y, between_sec=0.04)
 
 
 def _execute_plan(

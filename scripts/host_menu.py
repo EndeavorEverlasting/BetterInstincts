@@ -31,6 +31,7 @@ if str(ROOT) not in sys.path:
 
 from betterinstincts.host_menu import HostMenuError, plan_from_scene, plan_journey
 from betterinstincts.menu_blockers import assert_safe_action
+from scripts.win32_input import send_click as _send_click
 
 OUTPUT = ROOT / "dist" / "game-host"
 
@@ -43,37 +44,6 @@ def _focus(process_id: int | None) -> None:
     from scripts.game_host import focus
 
     focus(process_id=process_id)
-
-
-def _send_click(x: int, y: int) -> None:
-    import ctypes
-    from ctypes import wintypes
-
-    user32 = ctypes.windll.user32
-    LD, LU = 2, 4
-
-    class MOUSEINPUT(ctypes.Structure):
-        _fields_ = [
-            ("dx", ctypes.c_long), ("dy", ctypes.c_long),
-            ("mouseData", wintypes.DWORD), ("dwFlags", wintypes.DWORD),
-            ("time", wintypes.DWORD),
-            ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
-        ]
-
-    class INPUT(ctypes.Structure):
-        class _I(ctypes.Union):
-            _fields_ = [("mi", MOUSEINPUT)]
-
-        _anonymous_ = ("i",)
-        _fields_ = [("type", wintypes.DWORD), ("i", _I)]
-
-    user32.SetCursorPos(x, y)
-    time.sleep(0.05)
-    for flag in (LD, LU):
-        inp = INPUT(type=0)
-        inp.mi = MOUSEINPUT(0, 0, 0, flag, 0, None)
-        user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
-        time.sleep(0.05)
 
 
 def run_journey(
