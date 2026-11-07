@@ -171,6 +171,37 @@
         "betterinstincts/need_services.py"
       ]
     },
+    "NEED_SERVICE_HEALTH": {
+      "definition": "Per-microsystem probe result HEALTHY, DEGRADED, UNHEALTHY, or YIELDED used by need load balance.",
+      "owners": [
+        "contracts/need-load-balance.v1.json",
+        "betterinstincts/need_load_balance.py",
+        "docs/NEED_LOAD_BALANCE.md"
+      ]
+    },
+    "NEED_SERVICE_DETACH": {
+      "definition": "Remove an unhealthy need microsystem from the primary selection pool and abandon its sticky call stack.",
+      "owners": [
+        "betterinstincts/need_load_balance.py",
+        "docs/NEED_LOAD_BALANCE.md"
+      ]
+    },
+    "ASSUMPTION_WINDOW": {
+      "definition": "Fresh exploration frame after detach: scene reset, cleared sticky assumptions, and reweighted alternate options for that need avenue.",
+      "owners": [
+        "contracts/need-load-balance.v1.json",
+        "betterinstincts/need_load_balance.py",
+        "docs/NEED_LOAD_BALANCE.md"
+      ]
+    },
+    "NEED_LOAD_BALANCE": {
+      "definition": "Host orchestration that health-checks tandem need services, detaches unhealthy stacks, opens assumption windows, and picks primary among healthy READY siblings.",
+      "owners": [
+        "contracts/need-load-balance.v1.json",
+        "docs/NEED_LOAD_BALANCE.md",
+        "betterinstincts/need_load_balance.py"
+      ]
+    },
     "MOODLET_STRIP": {
       "definition": "Bottom-left Sim emotion and moodlet icons. Host logic requires supplied labels; absence is SENSOR_NOT_SUPPLIED.",
       "owners": [

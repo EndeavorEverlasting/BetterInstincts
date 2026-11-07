@@ -49,12 +49,16 @@
   "composition": {
     "orchestrator": "betterinstincts/need_services.py#evaluate_need_services",
     "base": "betterinstincts/need_service_base.py",
-    "host_gate": "NEED_SERVICES_TANDEM",
-    "rule": "Plan all attached need services independently; pick primary by motive urgency among READY plans; never serialize every Sim onto one contended object"
+    "load_balance": "betterinstincts/need_load_balance.py#balance_need_services",
+    "lb_contract": "contracts/need-load-balance.v1.json",
+    "host_gate": "NEED_SERVICES_TANDEM | NEED_SERVICES_LOAD_BALANCE",
+    "rule": "Plan all attached need services independently; health-check each microsystem; detach unhealthy call stacks and open assumption windows; load-balance primary among healthy READY plans; never serialize every Sim onto one contended object"
   },
   "anti_patterns": [
     "REINVENT_NEED_PARSER_PER_AGENT",
     "MONOLITH_SINGLE_QUEUE_FOR_ALL_NEEDS",
-    "BACKGROUND_NEED_DAEMON"
+    "BACKGROUND_NEED_DAEMON",
+    "STICK_TO_DEAD_CALL_STACK",
+    "SELECT_UNHEALTHY_AS_PRIMARY"
   ]
 }

@@ -22,10 +22,10 @@ need_service_base
   └─ need_services orchestrator → host_stack NEED_SERVICES_TANDEM
 ```
 
-Each service returns its own `parallel_ready` lanes. The orchestrator picks `primary_need` by motive urgency among READY plans. Sibling lane claims and `occupied_objects` prevent pile-up.
+Each service returns its own `parallel_ready` lanes. After planning, **P95 load balance** ([`NEED_LOAD_BALANCE.md`](NEED_LOAD_BALANCE.md)) health-checks each microsystem, detaches unhealthy call stacks, opens assumption windows with reweighted options, and picks `primary_need` among healthy READY plans. Sibling lane claims and `occupied_objects` prevent pile-up.
 
 Navigating Needs panel tandem (`docs/NAVIGATING_NEEDS.md`) remains a separate Discovery Quest surface that outranks scenario scoring when active.
 
 ## Proof ceiling
 
-`HOST_NEED_SERVICES_REGISTRY_NOT_DAEMON_NOT_EA_API`. Live multi-Sim dispatch OPEN. Does not close BI-002.
+`HOST_NEED_SERVICES_REGISTRY_NOT_DAEMON_NOT_EA_API` (+ LB ceiling in NEED_LOAD_BALANCE). Live multi-Sim dispatch OPEN. Does not close BI-002.
