@@ -1,8 +1,8 @@
 # Hidden Catalog Scout — sustained four-hour local-agent mission
 
-**Canonical contract:** `contracts/hidden-object-scout-goal.v1.json`  
-**Implementation:** `betterinstincts/hidden_object_scout.py`  
-**CLI:** `python -m scripts.hidden_object_scout`  
+**Canonical contract:** `contracts/hidden-object-scout-goal.v1.json`
+**Implementation:** `betterinstincts/hidden_object_scout.py`
+**CLI:** `python -m scripts.hidden_object_scout`
 **Transport:** `plans/active/BI-HIDDEN-OBJECTS.P04.md` and its typed dispatch.
 
 ## Mission
