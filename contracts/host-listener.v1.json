@@ -20,6 +20,20 @@
     "max_tick_interval_sec": 120.0,
     "receipt_root": "dist/host-listener"
   },
+  "async_session": {
+    "owner": "betterinstincts/host_tandem.py",
+    "activation": "Explicit call with an already ACTIVE listener session; no autorun or background thread",
+    "one_session_writer_per_actor": true,
+    "max_events_in_memory": 64,
+    "observation_timeout_default_seconds": 15,
+    "observation_timeout_max_seconds": 30,
+    "action_timeout_default_seconds": 120,
+    "action_timeout_max_seconds": 600,
+    "ports": ["observe", "execute_until_observed_outcome", "interrupt_only_verified_host_action", "presence_probe"],
+    "preemption": "Fresh actor and host_activity_ref/owner binding plus independent screen admission; never cancel player-owned or unknown activity",
+    "callback_cancellation": "Stop callback control/observation, never send Sim cancellation input; adapters must cooperate with coroutine cancellation",
+    "completion": "Observed action outcome is distinct from ACK; session exhaustion is not mission completion"
+  },
   "inputs": {
     "observation_schema": "betterinstincts.host-listener.observation/v1",
     "required_fields": [
@@ -75,7 +89,9 @@
       "navigating_needs_incomplete",
       "navigating_needs_profile",
       "build_or_buy_mode"
-    ]
+    ],
+    "optional_gardening_fields": ["gardening"],
+    "optional_tandem_binding_fields": ["actor_ref", "host_activity_ref", "host_activity_owner"]
   },
   "pipeline": [
     "load_session",

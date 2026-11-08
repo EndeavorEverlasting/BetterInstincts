@@ -42,3 +42,13 @@ If game access is missing, preserve the blocked gate; continue safe conventional
 ## 2026-11-07 — Cross-Horizon learning without skipping needs
 
 Add an **opt-in, reviewed-demonstration learning spine** across the existing stages, not a new milestone that displaces BI-002. Train from explicitly assessed human judgments (good and bad) and context/previous-action sequences, preserve play-style diversity, abstain under low evidence, and never execute a recommendation directly. The implementation begins as a safe offline advisory complement to `host_listener`; live action remains under the independent player-presence and exact-scene/version gates. Review `docs/JUDGMENT_LEARNING.md` and the P04 successor handoff before local experiments. Product certification still requires hunger 5+5, reversible package, rollback and maintainer review.
+
+## Async needs / gardening host seam (2026-11-08)
+
+Implemented the bounded callback session in `betterinstincts/host_tandem.py` over
+canonical listener/needs/gardening owners. It observes needs during pending
+owned gardening, supports sleep preemption and fresh resumption, and suppresses
+blind repetition after ineffective rest. Current stage: repository-native async
+API with offline regression proof. Next: bind genuine observation/execution ports
+and prove need recovery plus gardening continuation in the disposable session.
+No live background manager or gardening completion is claimed; BI-002 ACTIVE.

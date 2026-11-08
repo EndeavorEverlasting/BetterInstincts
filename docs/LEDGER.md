@@ -317,3 +317,17 @@ Operator gap: gardening desire visible in moodlets without a durable way to chec
 ## 2026-11-07 — Sustained Hidden Catalog Scout goal (post-P04 extension)
 
 **Operator objective:** give Windows BetterInstincts agents meaningful catalog-discovery work they can repeat for hours, with resumability and actual findings. The scoped branch `feat/bi-hidden-object-scout-sustained-goal-20261107` adds `contracts/hidden-object-scout-goal.v1.json`, bounded `betterinstincts/hidden_object_scout.py`, `scripts/hidden_object_scout.py`, tests, [docs/HIDDEN_OBJECT_SCOUT.md](HIDDEN_OBJECT_SCOUT.md), and P04 handoff/dispatch entries. Default 240-minute mission, 40 unique candidate target, five rotating categories, 96-batch cap, reviewed-price separation, 15-second minimum per recorded batch, atomic ignored-dist checkpoint, idempotent retries and pause/resume/stop. Requires existing exact P04 unlock receipt, a fresh game Build/Buy observation, save identity, patch and player control before each batch; planner itself has zero UI input or autorun authority. **Proof ceiling:** repository/CI only until a local Windows agent supplies real observed item receipts. BI-002 hunger remains separate and active; this goal is no substitute for hunger certification.
+
+## 2026-11-08 — Async needs and gardening continuation
+
+The operator requested independent needs management while gardening continues,
+including sleep rather than endless gardening. `host_tandem.run_tandem_session`
+now observes through the existing listener while one interaction awaits its
+outcome. Fresh ownership-bound gardening can suspend for an observed need
+remedy; a fresh recovered snapshot can resume gardening. Player input yields
+without queue cancellation. See [HOST_TANDEM.md](HOST_TANDEM.md).
+
+Offline coroutine tests prove this sequencing, not live dispatch. The earlier
+Natural Living Sleep Here interaction visibly started, but the later paused
+scene showed Charlee awake with low Energy; recovery remains unproved. That
+pause was preserved. No bed was bought or placed. BI-002 remains ACTIVE.
