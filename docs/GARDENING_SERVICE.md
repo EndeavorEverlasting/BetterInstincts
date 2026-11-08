@@ -45,6 +45,13 @@ capture, player state and current homework/school flags. In `gardening`, provide
   A need remedy uses the existing need-service action ID (for example `TAKE_NAP`)
   only when that actual interaction was observed on its target.
 
+The Energy lane also supports the locally observed Natural Living `Sleep Here`
+interaction as `SLEEP_ON_GROUND`. Supply `observed_sleepable_ground` as an
+available capability only after seeing the **enabled** current menu option, then
+include that same current action observation. Earlier disabled observations do
+not establish eligibility. Pack/skill requirements and recovery outcomes are not
+inferred from the presence of outdoor ground.
+
 Use the established command, not a second runner:
 
 ```sh

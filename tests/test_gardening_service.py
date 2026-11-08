@@ -62,6 +62,17 @@ class GardeningServiceTests(unittest.TestCase):
         self.assertEqual(out["gate"], "GARDEN_RECOVER_NEEDS")
         self.assertEqual(out["next_actions"][0]["action_id"], "SLEEP_IN_BED")
 
+    def test_ground_sleep_uses_existing_need_service_and_actual_enabled_menu(self):
+        needs = {**GREEN, "energy": .05}
+        report = evaluate_need_services(needs, available_objects=["observed_sleepable_ground"],
+                                        capture_ref=CAPTURE)
+        self.assertEqual(report["primary_route"], "SLEEP_ON_GROUND")
+        for enabled in (True, False):
+            out = evaluate_gardening_turn(needs, report, context(observed_actions=[
+                action("SLEEP_ON_GROUND", label="Sleep Here", available=enabled)
+            ]), capture_ref=CAPTURE)
+            self.assertEqual(out["gate"], "GARDEN_RECOVER_NEEDS" if enabled else "GARDEN_INSPECT_NEED_ACTIONS")
+
     def test_player_busy_school_and_absence(self):
         for flag in ("player_directed", "already_busy", "school_day_active", "sim_absent", "build_or_buy_mode"):
             with self.subTest(flag=flag):

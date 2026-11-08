@@ -79,7 +79,7 @@
     },
     "energy": {
       "service_id": "need.energy",
-      "lane_priority": ["sleep", "nap", "power_nap_seat"],
+      "lane_priority": ["sleep", "nap", "power_nap_seat", "observed_ground_sleep"],
       "lanes": {
         "sleep": {
           "service_id": "need.energy.sleep",
@@ -102,6 +102,19 @@
               "labels": ["take a nap", "nap", "rest"],
               "objects": ["bed", "sofa", "couch"],
               "steps": ["CLICK_BED_OR_SOFA", "PIE_TAKE_NAP"]
+            }
+          ]
+        },
+        "observed_ground_sleep": {
+          "service_id": "need.energy.observed_ground_sleep",
+          "contention_class": "shared",
+          "note": "Optional Natural Living Sleep Here, only when actually enabled in the current ground menu. Do not infer eligibility, pack support or skill level from the ground itself.",
+          "activities": [
+            {
+              "id": "SLEEP_ON_GROUND",
+              "labels": ["sleep here", "sleep on the ground"],
+              "objects": ["observed_sleepable_ground"],
+              "steps": ["INSPECT_GROUND_MENU", "SELECT_ENABLED_SLEEP_HERE"]
             }
           ]
         },
