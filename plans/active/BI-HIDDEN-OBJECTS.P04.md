@@ -1,5 +1,9 @@
 # P04 — Hidden object discovery, BetterInstincts
 
+## Local Windows preflight correction — 2026-11-07
+
+The first local verification at `c75f28c` found native-path serialization breaking ontology consultation checks on Windows. The bounded repair uses canonical forward-slash repository paths and retains consultation denials, source provenance and chronology enforcement. Consultation: `contracts/consultations/BI-P04-WINDOWS-PREFLIGHT-20261107.v1.json`. This is a prerequisite repair, not completion of the five live steps. Exact-build sampling consultation: `contracts/consultations/BI-P04-LOCAL-DISCOVERY-20261107.v1.json`; it still grants no screen permit. Local private captures and per-action admissions belong under ignored `dist/`; no synthetic completion receipt is acceptable.
+
 ## LAUNCH ORDER
 
 1. **GATE-0 — CI_OR_REMOTE_RUNNER.** Refresh `main`, branch, open PRs, checks, and repo status. Verify the pre-implementation consultation `contracts/consultations/BI-HIDDEN-OBJECTS-20261107.v1.json`. Run `python -m scripts.check_ontology --base-ref origin/main`, `python -m unittest tests.test_hidden_object_discovery -v`, full `unittest discover`, and doctrine/scene/horizon validators. Repair any failures in the scoped feature branch; do not overwrite unrelated work.

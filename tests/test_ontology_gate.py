@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from scripts.check_ontology import (
     ROOT, ONTOLOGY, check_branch, changed_in_branch, first_mutation_commit,
@@ -118,6 +118,16 @@ class OntologyContractTests(unittest.TestCase):
             self.manifest, self.ontology,
             ["scripts/check_ontology.py", "tests/test_ontology_gate.py", "AGENTS.md", ".github/workflows/ci.yml"]
         )
+
+    def test_windows_path_flavor_keeps_canonical_consultation_identity(self):
+        # Exercise Windows serialization on Linux CI as well as the game host.
+        with patch("scripts.check_ontology.ONTOLOGY", PureWindowsPath("contracts/ontology.v1.json")), patch(
+            "scripts.check_ontology.CONSULTATIONS", PureWindowsPath("contracts/consultations")
+        ):
+            validate_consultation(self.manifest, self.ontology, [])
+            self.assertFalse(is_behavior_mutation("contracts/ontology.v1.json"))
+            self.assertFalse(is_behavior_mutation("contracts/consultations/receipt.json"))
+            self.assertTrue(is_behavior_mutation("contracts/game-scenes.v1.json"))
 
     def test_missing_concept_and_unmapped_code_fails(self):
         bad = copy.deepcopy(self.manifest)
