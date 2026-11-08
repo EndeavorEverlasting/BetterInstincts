@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Shared Win32 mouse SendInput primitives for host UI scripts.
 
-One ownership surface for left-click / wheel / right-drag. Callers still own
-session gates, scene checks, and --execute policy. Does not probe player
-presence, take focus, or touch saves. Windows-only at call time.
+One ownership surface for left-click / wheel / right-drag / cursor park.
+Callers still own session gates, scene checks, and --execute policy. Does not
+probe player presence, take focus, or touch saves. Windows-only at call time.
 """
 from __future__ import annotations
 
@@ -42,6 +42,19 @@ def _mouse_input_types():
         _fields_ = [("type", wintypes.DWORD), ("i", _I)]
 
     return ctypes, MOUSEINPUT, INPUT
+
+
+def move_cursor(x: int, y: int, *, settle_sec: float = 0.05) -> None:
+    """Park the cursor at absolute screen coordinates without clicking.
+
+    Used by camera-safe traverse to leave SAFE_CURSOR_REST outside the edge
+    pan band so the Sims camera stops drifting after a host step.
+    """
+    _require_win32()
+    import ctypes
+
+    ctypes.windll.user32.SetCursorPos(int(x), int(y))
+    time.sleep(settle_sec)
 
 
 def send_click(

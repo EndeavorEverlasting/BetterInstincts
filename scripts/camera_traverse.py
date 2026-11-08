@@ -1,0 +1,235 @@
+#!/usr/bin/env python3
+"""Camera-safe traverse CLI: plan offline; optional admitted execute + SAFE_REST.
+
+Examples:
+  python -m scripts.camera_traverse classify --x 5 --y 540
+  python -m scripts.camera_traverse plan --dir E --dir N
+  python -m scripts.camera_traverse plan --capture-only
+  python -m scripts.camera_traverse rest --execute --session-id SID --process-id PID
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from betterinstincts.camera_traverse import (
+    CameraTraverseError,
+    classify_cursor,
+    evaluate_cursor_risk,
+    load_contract,
+    plan_traverse,
+    safe_rest_point,
+)
+
+
+def _park_cursor(x: int, y: int) -> None:
+    from scripts.win32_input import move_cursor
+
+    move_cursor(x, y)
+
+
+def _execute_plan(plan: dict, *, process_id: int, session_id: str, idle_ms: int) -> dict:
+    from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
+    from scripts.win32_input import right_drag, send_wheel
+
+    require_execute_session(session_id, process_id)
+    results = []
+    with admitted_screen_lease(
+        int(process_id),
+        str(session_id),
+        idle_ms=idle_ms,
+    ) as ensure_ready:
+        for step in plan["steps"]:
+            ensure_ready()
+            kind = step["kind"]
+            if kind == "CAPTURE_OBSERVE":
+                results.append({"step": kind, "state": "DEFER_TO_GAME_CAPTURE"})
+                continue
+            if kind == "RIGHT_DRAG_PAN":
+                rest = plan["safe_rest"]["screen"]
+                # Drag from the safe interior rest, not from an edge.
+                right_drag(step["delta"][0], step["delta"][1], x0=rest[0], y0=rest[1])
+                results.append({"step": kind, "state": "STEP_DISPATCHED", "delta": step["delta"]})
+                continue
+            if kind == "WHEEL_ZOOM":
+                rest = plan["safe_rest"]["screen"]
+                send_wheel(step["notches"], x=rest[0], y=rest[1])
+                results.append({"step": kind, "state": "STEP_DISPATCHED", "notches": step["notches"]})
+                continue
+            if kind == "SAFE_REST":
+                sx, sy = step["screen"]
+                _park_cursor(sx, sy)
+                time.sleep(0.05)
+                results.append({"step": kind, "state": "CURSOR_PARKED", "screen": [sx, sy]})
+                continue
+            raise CameraTraverseError("UNKNOWN_STEP_KIND:" + str(kind))
+    return {
+        "state": "CAMERA_TRAVERSE_EXECUTED",
+        "results": results,
+        "proof_ceiling": "LOCAL_OBSERVED_CLICK_DISPATCH_NOT_LIVE_CERT",
+        "forbidden": list(plan.get("forbidden") or []),
+    }
+
+
+def main(argv=None) -> int:
+    p = argparse.ArgumentParser(description=__doc__)
+    sub = p.add_subparsers(dest="command", required=True)
+
+    show = sub.add_parser("show-contract", help="Print machine contract")
+    show.set_defaults(handler="show")
+
+    cls = sub.add_parser("classify", help="Classify client cursor vs edge band")
+    cls.add_argument("--x", type=int, required=True)
+    cls.add_argument("--y", type=int, required=True)
+    cls.add_argument("--width", type=int, default=None)
+    cls.add_argument("--height", type=int, default=None)
+    cls.add_argument("--edge-band", type=int, default=None)
+    cls.set_defaults(handler="classify")
+
+    plan_p = sub.add_parser("plan", help="Build camera-safe traverse plan")
+    plan_p.add_argument("--dir", action="append", default=[], dest="dirs")
+    plan_p.add_argument("--capture-only", action="store_true")
+    plan_p.add_argument("--width", type=int, default=None)
+    plan_p.add_argument("--height", type=int, default=None)
+    plan_p.add_argument("--edge-band", type=int, default=None)
+    plan_p.add_argument("--origin-x", type=int, default=0)
+    plan_p.add_argument("--origin-y", type=int, default=0)
+    plan_p.add_argument("--pan-pixels", type=int, default=None)
+    plan_p.add_argument("--zoom", type=int, default=0)
+    plan_p.add_argument("--no-capture-first", action="store_true")
+    plan_p.add_argument("--execute", action="store_true")
+    plan_p.add_argument("--session-id", default="")
+    plan_p.add_argument("--process-id", type=int, default=None)
+    plan_p.add_argument("--idle-ms", type=int, default=8000)
+    plan_p.set_defaults(handler="plan")
+
+    rest = sub.add_parser("rest", help="Park cursor at SAFE_CURSOR_REST")
+    rest.add_argument("--width", type=int, default=None)
+    rest.add_argument("--height", type=int, default=None)
+    rest.add_argument("--edge-band", type=int, default=None)
+    rest.add_argument("--origin-x", type=int, default=0)
+    rest.add_argument("--origin-y", type=int, default=0)
+    rest.add_argument("--execute", action="store_true")
+    rest.add_argument("--session-id", default="")
+    rest.add_argument("--process-id", type=int, default=None)
+    rest.add_argument("--idle-ms", type=int, default=8000)
+    rest.set_defaults(handler="rest")
+
+    risk = sub.add_parser("evaluate", help="Evaluate cursor risk / optional scan plan")
+    risk.add_argument("--x", type=int, default=None)
+    risk.add_argument("--y", type=int, default=None)
+    risk.add_argument("--width", type=int, default=None)
+    risk.add_argument("--height", type=int, default=None)
+    risk.add_argument("--edge-band", type=int, default=None)
+    risk.add_argument("--scan-needed", action="store_true")
+    risk.add_argument("--dir", action="append", default=[], dest="dirs")
+    risk.set_defaults(handler="evaluate")
+
+    args = p.parse_args(argv)
+    try:
+        if args.handler == "show":
+            print(json.dumps(load_contract(), indent=2))
+            return 0
+        if args.handler == "classify":
+            print(
+                json.dumps(
+                    classify_cursor(
+                        args.x,
+                        args.y,
+                        client_width=args.width,
+                        client_height=args.height,
+                        edge_band_px=args.edge_band,
+                    ),
+                    indent=2,
+                )
+            )
+            return 0
+        if args.handler == "evaluate":
+            print(
+                json.dumps(
+                    evaluate_cursor_risk(
+                        cursor_client_x=args.x,
+                        cursor_client_y=args.y,
+                        client_width=args.width,
+                        client_height=args.height,
+                        edge_band_px=args.edge_band,
+                        camera_scan_needed=args.scan_needed,
+                        directions=args.dirs,
+                    ),
+                    indent=2,
+                )
+            )
+            return 0
+        if args.handler == "rest":
+            point = safe_rest_point(
+                client_width=args.width,
+                client_height=args.height,
+                edge_band_px=args.edge_band,
+                origin_x=args.origin_x,
+                origin_y=args.origin_y,
+            )
+            out = {
+                "state": "CAMERA_SAFE_REST_PLAN",
+                "gate": "CAMERA_SAFE_REST",
+                "safe_rest": point,
+                "execute_allowed": False,
+                "proof_ceiling": "OFFLINE_CAMERA_SAFE_TRAVERSE_NOT_LIVE_CAMERA_PROOF",
+            }
+            if args.execute:
+                if not args.session_id or args.process_id is None:
+                    raise CameraTraverseError("SESSION_AND_PROCESS_REQUIRED_FOR_EXECUTE")
+                from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
+
+                require_execute_session(args.session_id, args.process_id)
+                with admitted_screen_lease(
+                    int(args.process_id),
+                    str(args.session_id),
+                    idle_ms=int(args.idle_ms),
+                ) as ensure_ready:
+                    ensure_ready()
+                    _park_cursor(*point["screen"])
+                out["state"] = "CAMERA_SAFE_REST_EXECUTED"
+                out["execute_allowed"] = True
+                out["proof_ceiling"] = "LOCAL_OBSERVED_CLICK_DISPATCH_NOT_LIVE_CERT"
+            print(json.dumps(out, indent=2))
+            return 0
+        if args.handler == "plan":
+            dirs = [] if args.capture_only else list(args.dirs)
+            plan = plan_traverse(
+                dirs,
+                client_width=args.width,
+                client_height=args.height,
+                edge_band_px=args.edge_band,
+                origin_x=args.origin_x,
+                origin_y=args.origin_y,
+                prefer_capture_first=not args.no_capture_first,
+                pan_pixels=args.pan_pixels,
+                zoom_notches=args.zoom,
+            )
+            if args.execute:
+                if not args.session_id or args.process_id is None:
+                    raise CameraTraverseError("SESSION_AND_PROCESS_REQUIRED_FOR_EXECUTE")
+                executed = _execute_plan(
+                    plan,
+                    process_id=int(args.process_id),
+                    session_id=args.session_id,
+                    idle_ms=int(args.idle_ms),
+                )
+                plan = {**plan, **executed, "execute_allowed": True}
+            print(json.dumps(plan, indent=2))
+            return 0
+        raise CameraTraverseError("UNKNOWN_COMMAND")
+    except (CameraTraverseError, TypeError, ValueError) as exc:
+        print(json.dumps({"error": str(exc)}), file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

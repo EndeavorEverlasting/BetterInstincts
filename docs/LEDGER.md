@@ -330,6 +330,10 @@ Operator gap: gardening desire visible in moodlets without a durable way to chec
 
 **Operator:** finish the builder; classify **inside vs outside** and **FLOOR_1 vs FLOOR_2**; host must use those differences. **P95** adds [`docs/BUILD_SPATIAL.md`](BUILD_SPATIAL.md) / `contracts/build-spatial.v1.json` / `betterinstincts/build_spatial.py` (`ENCLOSURE_AND_STORY_AXES`). Inventory buckets + build order (F1 structure → F1 indoor → F2 structure → F2 indoor → outdoor floaters). `house_state.plan_next` / `admit_mutation` and `host_stack` Build/Buy turns consume the axes; F2-before-F1 and outside-as-inside fail closed. Proof ceiling `OFFLINE_BUILD_SPATIAL_AXES_NOT_LIVE_LOT_RESTORE`. Does not close BI-002.
 
+## 2026-11-08 — Camera-safe host traversal (P95 + P97 + trifecta)
+
+**Operator:** agents edge-scroll the map/lot for data, then leave the mouse on the screen edge while developing so the camera keeps panning. Want host-owned traversal logic and optional emulation of sibling-app vision features. **P97** inspects Automation visual-intelligence observe≠act and TokenCorridor deterministic-before-VLM; **rejects** cloning OmniParser/Paddle/Qwen into BI; **adopts** existing PrintWindow capture. **P95** selects `CAMERA_SAFE_TRAVERSE` in [`docs/CAMERA_TRAVERSE.md`](CAMERA_TRAVERSE.md) / `contracts/camera-traverse.v1.json` / `betterinstincts/camera_traverse.py` / `python -m scripts.camera_traverse`. Plans are capture-first, use bounded right-drag, and **must** terminate at `SAFE_CURSOR_REST`. `host_stack` gates `CAMERA_SAFE_REST` ahead of needs when the cursor is in the edge band. Proof ceiling `OFFLINE_CAMERA_SAFE_TRAVERSE_NOT_LIVE_CAMERA_PROOF`. P08 live park proof remains OPEN on a disposable lab window. Does not close BI-002.
+
 ## 2026-11-08 — Async needs and gardening continuation
 
 The operator requested independent needs management while gardening continues,

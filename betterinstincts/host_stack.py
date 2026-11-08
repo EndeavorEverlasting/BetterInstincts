@@ -58,6 +58,7 @@ from betterinstincts.teen_homework import (
     evaluate_teen_homework_turn,
     should_attach_teen_homework,
 )
+from betterinstincts.camera_traverse import CameraTraverseError, evaluate_cursor_risk
 from betterinstincts.viewport import ViewportError, predict_risk
 
 
@@ -135,6 +136,13 @@ def evaluate_turn(
     navigating_needs_incomplete: Sequence[str] = (),
     navigating_needs_profile: str = "navigating_needs",
     gardening: Optional[Mapping[str, object]] = None,
+    cursor_client_x: Optional[int] = None,
+    cursor_client_y: Optional[int] = None,
+    client_width: Optional[int] = None,
+    client_height: Optional[int] = None,
+    edge_band_px: Optional[int] = None,
+    camera_scan_needed: bool = False,
+    camera_pan_directions: Sequence[str] = (),
 ) -> dict:
     """Compose viewport, moodlets, event-balance, instincts, and dialog gates.
 
@@ -175,6 +183,10 @@ def evaluate_turn(
     (docs/SOCIAL_OPPORTUNITY.md / docs/TEEN_DAY_JOURNEY.md).
 
     Optional sim_at_school / camera_lot_kind resolve Sim premises vs camera lot.
+
+    Optional cursor_client_* / camera_scan_needed attach camera-safe traverse
+    (docs/CAMERA_TRAVERSE.md): edge-park outranks needs clicks; capture-first
+    plans replace continuous edge scrolling.
     """
     premises = resolve_sim_premises(
         location_kind=location_kind,
@@ -456,7 +468,21 @@ def evaluate_turn(
         except (BuildIntegrityError, BuildSpatialError) as exc:
             raise HostStackError(str(exc)) from exc
 
-    # Priority: viewport/fallback > player > survival/event stack > behavior map travel > decision > needs.
+    camera_traverse = None
+    try:
+        camera_traverse = evaluate_cursor_risk(
+            cursor_client_x=cursor_client_x,
+            cursor_client_y=cursor_client_y,
+            client_width=client_width,
+            client_height=client_height,
+            edge_band_px=edge_band_px,
+            camera_scan_needed=camera_scan_needed,
+            directions=camera_pan_directions,
+        )
+    except CameraTraverseError as exc:
+        raise HostStackError(str(exc)) from exc
+
+    # Priority: viewport > camera edge-park > player > survival/event > map travel > decision > needs.
     next_gate = "EXECUTE_INSTINCTS_PLAN"
     fallback = None
     if viewport is not None and viewport.get("state") != "VIEWPORT_OK":
@@ -488,6 +514,39 @@ def evaluate_turn(
                 "forbidden": ["NEEDS_OBJECT_CLICK", "RESUME"],
             }
             next_gate = "EXIT_BUY_TO_LIVE_OR_OPERATOR_SAVE_EXIT"
+    elif camera_traverse is not None and camera_traverse.get("gate") == "CAMERA_SAFE_REST":
+        next_gate = "CAMERA_SAFE_REST"
+        fallback = {
+            "mechanism": "SAFE_CURSOR_REST",
+            "owner": "scripts/camera_traverse.py",
+            "contract": "contracts/camera-traverse.v1.json",
+            "command": "python -m scripts.camera_traverse rest --session-id SID --process-id PID --execute",
+            "safe_rest": camera_traverse.get("safe_rest"),
+            "cursor": camera_traverse.get("cursor"),
+            "forbidden": [
+                "LEAVE_CURSOR_IN_EDGE_BAND",
+                "CONTINUOUS_EDGE_HOLD",
+                "EDGE_MOUSE_PARK",
+                "NEEDS_OBJECT_CLICK",
+                "RESUME",
+            ],
+        }
+    elif camera_traverse is not None and camera_traverse.get("gate") in {
+        "CAMERA_SAFE_TRAVERSE",
+        "CAPTURE_BEFORE_EDGE_SCAN",
+    }:
+        next_gate = str(camera_traverse["gate"])
+        traverse_plan = camera_traverse.get("plan") or {}
+        fallback = {
+            "mechanism": "CAMERA_SAFE_TRAVERSE",
+            "owner": "scripts/camera_traverse.py",
+            "contract": "contracts/camera-traverse.v1.json",
+            "command": traverse_plan.get("command")
+            or "python -m scripts.camera_traverse plan --capture-only",
+            "steps": traverse_plan.get("steps") or [],
+            "forbidden": list(traverse_plan.get("forbidden") or [])
+            + ["EDGE_MOUSE_PARK", "CONTINUOUS_EDGE_HOLD", "RESUME"],
+        }
     elif player_directed or already_busy:
         next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
     elif social_opportunity is not None and social_opportunity["gate"] == "SOCIAL_LOOKUP_REQUIRED":
@@ -951,6 +1010,7 @@ def evaluate_turn(
         "gardening": gardening_report,
         "build_integrity": build_integrity,
         "build_spatial": build_spatial,
+        "camera_traverse": camera_traverse,
         "instincts": instincts,
         "decision": decision,
         "influence": influence,

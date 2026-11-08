@@ -43,6 +43,7 @@ See glossary: `PLAYER_FIRST`, `PLAYER_PLAYING`, `PLAYER_PRESENT_ON_CANVAS`, `HOS
 | `house_state` | Recursive lot environment model + mutation lease; forbids blank-slate reassess | writes `dist/house-state/` receipts |
 | `build_integrity` | Structure-first spatial admission (indoor≠outdoor, floor before furniture, no nesting, protect kitchen/bed/dining) | none |
 | `build_spatial` | Enclosure (INSIDE/OUTSIDE) + story (FLOOR_1/FLOOR_2) classification and build order | none |
+| `camera_traverse` | Capture-first camera plans; forbids EDGE_MOUSE_PARK; mandatory SAFE_CURSOR_REST | optional SendInput via script |
 | `host_listener` | Opt-in session + tick receipts | writes `dist/host-listener/` |
 | `host_automate` | Presence-gated plan; optional execute | optional SendInput via script |
 | `funds_inject` | Subsidy prompt (funds under 100) + mode-agnostic Money/motherlode inject | optional SendInput via `scripts/funds_inject` |
@@ -93,6 +94,8 @@ operator activates listener/automate session
 | Cursor on Sims canvas / FG Sims with recent input | `PLAYER_PLAYING` | `YIELD_TO_PLAYER` — no SendInput |
 | Cursor on other app, FG not Sims | `HOST_MAY_AUTOMATE` | evaluate; execute only if flagged |
 | Viewport black | existing viewport fallback | withhold needs/map clicks |
+| Cursor parked in edge pan band | `CAMERA_SAFE_REST` | park interior; withhold needs clicks |
+| Lot scan without host camera plan | `CAMERA_SAFE_TRAVERSE` / `CAPTURE_BEFORE_EDGE_SCAN` | capture-first; never CONTINUOUS_EDGE_HOLD |
 | Critical + fluff queue off-lot | `OPTIMIZE` + `MAP_TRAVEL` | never in-frame walk thrash |
 | Player-directed queue | `EMULATE` only | never optimize away |
 
@@ -169,6 +172,14 @@ Use a **real observed** disposable session, exact PID, and a valid bounded `host
 **Selected seam:** `betterinstincts/build_optimize.py` + `contracts/build-optimize.v1.json`; optional `host_stack` gate `BUILD_OPTIMIZE_EVALUATE_ONLY` when `build_objective` + `build_or_buy_mode` are supplied. CLI: `python -m scripts.build_optimize --objective MAXIMIZE_ENV --owned-packs base,GP02,EP20`. Full design: [BUILD_OPTIMIZE.md](BUILD_OPTIMIZE.md).
 
 **Invariants:** player-directed yields; Green vs Industrial mutually exclusive; stacking per wall panel; `execute_allowed=false` until P08 disposable Build Mode apply proof; catalog rows require evidence_state (LOCAL_OBSERVED Brick & Plaster tooltip on Bargain Bend). Does **not** close BI-002 hunger.
+
+## 2026-11-08 — Camera-safe traverse (P95 + P97 + trifecta)
+
+**Terminal user value:** agents gather lot data without parking the mouse in the Sims edge-pan band so the camera does not keep scrolling while they develop.
+
+**Selected seam:** `betterinstincts/camera_traverse.py` + `contracts/camera-traverse.v1.json`; `host_stack` gates `CAMERA_SAFE_REST` / `CAMERA_SAFE_TRAVERSE` / `CAPTURE_BEFORE_EDGE_SCAN`. CLI: `python -m scripts.camera_traverse`. Full design: [CAMERA_TRAVERSE.md](CAMERA_TRAVERSE.md). P97 adapts Automation/TokenCorridor observe≠act and adopts local PrintWindow rather than cloning CV donors.
+
+**Invariants:** every plan ends at SAFE_CURSOR_REST; EDGE_MOUSE_PARK and CONTINUOUS_EDGE_HOLD are BAD_BEHAVIOR; execute uses existing screen_admit; no background camera daemon. Proof ceiling offline until disposable P08 park proof. Does **not** close BI-002.
 
 ## 2026-11-08 — Async needs and gardening session
 

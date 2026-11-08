@@ -58,6 +58,11 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **OUTDOOR_AS_INDOOR** / **PLACE_WITHOUT_FLOOR** | Forbidden: grass-as-interior; indoor place with no attested floor. |
 | **BUILD_SPATIAL** / **ENCLOSURE_AND_STORY_AXES** | Inside vs outside + FLOOR_1 vs FLOOR_2 builder axes; see `docs/BUILD_SPATIAL.md`. |
 | **FLOOR_1** / **FLOOR_2** | First vs second story; F2 indoor work requires F1 indoor floor first. |
+| **CAMERA_SAFE_TRAVERSE** | Host-owned bounded camera plan; never park the mouse in the edge pan band. |
+| **SAFE_CURSOR_REST** | Mandatory interior cursor park after any camera step so the viewport stops drifting. |
+| **EDGE_MOUSE_PARK** / **CONTINUOUS_EDGE_HOLD** | Forbidden: leave/hold cursor on screen edge while scanning or coding. |
+| **CAPTURE_BEFORE_EDGE_SCAN** | Prefer PrintWindow + lot-model observe before any pan. |
+| **CAMERA_SAFE_REST** | Host gate that parks to SAFE_CURSOR_REST when edge-park is detected. |
 | **CURIOUS_CATALOG** | Opt-in hidden Buy shelves for rare/money gardening; never on startup; never touch game speed. |
 | **SHOW_HIDDEN_OBJECTS** | Console line `bb.showhiddenobjects` only — never type `buydebug` or slash-join. |
 

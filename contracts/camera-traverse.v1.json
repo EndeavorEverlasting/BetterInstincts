@@ -1,0 +1,112 @@
+{
+  "schema": "betterinstincts.camera-traverse/v1",
+  "title": "Camera-safe host traversal",
+  "architecture": {
+    "selected": "CAMERA_SAFE_TRAVERSE",
+    "rejected": [
+      "EDGE_MOUSE_PARK_WHILE_DEVELOPING",
+      "CONTINUOUS_EDGE_HOLD_FOR_SCAN",
+      "CLONE_EXTERNAL_VLM_INTO_REPO",
+      "DESKTOP_SCREENSHOT_INSTEAD_OF_PRINTWINDOW"
+    ],
+    "rationale": "Agents must not gather lot data by holding the mouse in the screen-edge pan band and then leave it there while coding. Host owns bounded camera steps that always end at SAFE_CURSOR_REST; PrintWindow capture + lot-model observe are preferred over edge scrolling."
+  },
+  "defaults": {
+    "edge_band_px": 12,
+    "max_pan_steps": 8,
+    "prefer_capture_first": true,
+    "client_width": 1920,
+    "client_height": 1080,
+    "pan_pixels": 240,
+    "safe_rest_inset_ratio": 0.5
+  },
+  "practices": {
+    "CAPTURE_ONLY": {
+      "verdict": "GOOD_BEHAVIOR",
+      "disposition": "EMULATE",
+      "note": "PrintWindow observe without moving camera or parking edge."
+    },
+    "RIGHT_DRAG_BOUNDED": {
+      "verdict": "GOOD_BEHAVIOR",
+      "disposition": "EMULATE",
+      "note": "Bounded right-drag pan from interior point; must end with SAFE_REST."
+    },
+    "WHEEL_ZOOM_BOUNDED": {
+      "verdict": "GOOD_BEHAVIOR",
+      "disposition": "EMULATE",
+      "note": "Wheel zoom at interior point; must end with SAFE_REST."
+    },
+    "SAFE_CURSOR_REST": {
+      "verdict": "GOOD_BEHAVIOR",
+      "disposition": "EMULATE",
+      "note": "Mandatory terminal park outside the edge band after any camera step."
+    },
+    "EDGE_MOUSE_PARK": {
+      "verdict": "BAD_BEHAVIOR",
+      "disposition": "OPTIMIZE",
+      "note": "Leaving the cursor in the edge pan band; camera keeps drifting."
+    },
+    "CONTINUOUS_EDGE_HOLD": {
+      "verdict": "BAD_BEHAVIOR",
+      "disposition": "OPTIMIZE",
+      "note": "Holding edge scroll to scan while planning/coding."
+    },
+    "IN_FRAME_WALK_THRASH": {
+      "verdict": "BAD_BEHAVIOR",
+      "disposition": "OPTIMIZE",
+      "note": "Do not substitute Sim walking for camera/lot travel."
+    }
+  },
+  "step_kinds": [
+    "CAPTURE_OBSERVE",
+    "RIGHT_DRAG_PAN",
+    "WHEEL_ZOOM",
+    "SAFE_REST"
+  ],
+  "directions": {
+    "N": [0, -1],
+    "S": [0, 1],
+    "E": [1, 0],
+    "W": [-1, 0],
+    "NE": [1, -1],
+    "NW": [-1, -1],
+    "SE": [1, 1],
+    "SW": [-1, 1]
+  },
+  "gates": [
+    "CAMERA_SAFE_REST",
+    "CAMERA_SAFE_TRAVERSE",
+    "CAPTURE_BEFORE_EDGE_SCAN"
+  ],
+  "forbidden": [
+    "EDGE_MOUSE_PARK",
+    "CONTINUOUS_EDGE_HOLD",
+    "LEAVE_CURSOR_IN_EDGE_BAND",
+    "PLAN_WITHOUT_TERMINAL_SAFE_REST",
+    "VISION_INVENT_SCENE_FROM_PLANNER",
+    "RESUME",
+    "DELETE_SAVE",
+    "TOUCH_USER_SAVE",
+    "BACKGROUND_CAMERA_DAEMON"
+  ],
+  "house_state_actions": [
+    "CAMERA_PAN_ZOOM",
+    "CAPTURE_ONLY",
+    "OBSERVE_ONLY"
+  ],
+  "proof_ceiling": "OFFLINE_CAMERA_SAFE_TRAVERSE_NOT_LIVE_CAMERA_PROOF",
+  "owners": {
+    "contract": "contracts/camera-traverse.v1.json",
+    "library": "betterinstincts/camera_traverse.py",
+    "cli": "scripts/camera_traverse.py",
+    "docs": "docs/CAMERA_TRAVERSE.md",
+    "mouse_primitives": "scripts/win32_input.py",
+    "capture": "scripts/game_capture.py",
+    "admission": "betterinstincts/screen_admit.py"
+  },
+  "prior_art": {
+    "automation_visual_intelligence": "ADAPT observe≠act seam; do not clone donor CV stacks into BetterInstincts",
+    "tokencorridor_visual_incubation": "ADAPT deterministic PrintWindow/luma before optional CV escalation",
+    "local_printwindow": "ADOPT existing scripts/game_capture.py as primary see-without-edge-pan sensor"
+  }
+}
