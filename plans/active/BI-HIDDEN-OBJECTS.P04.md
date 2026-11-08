@@ -2,6 +2,8 @@
 
 ## Local Windows preflight correction — 2026-11-07
 
+**Local continuation observed:** Windows build `1.121.361.1020`, disposable session confirmed by the user, exclusive per-PID admission, real console response, DEBUG suggestions/catalog and one white angular cup/bowl listing at §0 captured. Already-active Build/Buy was retained, not newly entered. Selection cancelled without placement; funds stayed §945,478. Private receipt in the original checkout: `dist/game-host/hidden-object-p04-receipt.json`. Audit remains **P04_EVIDENCE_INCOMPLETE** because player queue preservation was not directly observed and per-item operator review is pending. Next owner must inspect current state again, retain genuine captures, obtain listing review, and independently resolve the queue evidence gap before claiming completion. No further cheat input is needed merely to repeat this captured discovery. See the dated ledger entry for integration and proof. BI-002 remains separate and ACTIVE.
+
 The first local verification at `c75f28c` found native-path serialization breaking ontology consultation checks on Windows. The bounded repair uses canonical forward-slash repository paths and retains consultation denials, source provenance and chronology enforcement. Consultation: `contracts/consultations/BI-P04-WINDOWS-PREFLIGHT-20261107.v1.json`. This is a prerequisite repair, not completion of the five live steps. Exact-build sampling consultation: `contracts/consultations/BI-P04-LOCAL-DISCOVERY-20261107.v1.json`; it still grants no screen permit. Local private captures and per-action admissions belong under ignored `dist/`; no synthetic completion receipt is acceptable.
 
 ## LAUNCH ORDER
