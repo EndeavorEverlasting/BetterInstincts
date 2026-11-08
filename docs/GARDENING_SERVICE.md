@@ -1,5 +1,9 @@
 # Gardening behavior service
 
+For observation that continues while an interaction awaits its outcome, use the
+bounded [async tandem session](HOST_TANDEM.md). It reuses this peer and the same
+needs evaluator; urgent needs can suspend verified host-owned gardening.
+
 Owner: `betterinstincts/gardening_service.py`; policy: `contracts/gardening-service.v1.json`.
 Callers: `host_stack.evaluate_turn(..., gardening=...)` and the existing opt-in
 `scripts.host_listener tick` observation path. This orchestrates behavior on
