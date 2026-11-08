@@ -1,0 +1,128 @@
+{
+  "schema": "betterinstincts.build-integrity/v1",
+  "version": 1,
+  "owner": "betterinstincts/build_integrity.py",
+  "product_contract": "Build/Buy mutations are structure-first and spatially typed. Indoor objects require an attested indoor floor zone; outdoor grass/lot-grid is never treated as interior. Nesting/stacking objects inside one another is denied. Deleting or sledgehammering floors, walls, kitchens, beds, or dining sets requires an explicit structural restore goal plus lab Save As attestation. Aesthetic zones (kitchen, bedroom, dining) are protected until the operator marks a restore plan.",
+  "prompt": {
+    "id": "P95",
+    "name": "Program Design & Call-Stack Prototype Architect",
+    "provenance": "docs/PROMPT_INVOCATIONS.md TokenCorridor spec-architecture-prompts.v1.json"
+  },
+  "motivating_corrections": [
+    "2026-11-07/08 Bargain Bend: agent Hand+Backspace thrash deleted floor, walls, dining table, futuristic sleep pod; treated outdoor grass as indoor; nested objects inside each other; destroyed kitchen aesthetic."
+  ],
+  "architecture": {
+    "selected": "STRUCTURE_FIRST_SPATIAL_ADMISSION",
+    "rejected": [
+      {
+        "id": "COORDINATE_CLICK_THRASH",
+        "why": "Blind grid clicks invent placements without room/floor membership."
+      },
+      {
+        "id": "LOT_GRID_EQUALS_INDOOR",
+        "why": "White lot boundary / green grid is not a floor; outdoor-as-indoor wrecked the house."
+      },
+      {
+        "id": "INVENTORY_SWEEP_AS_CLEANUP",
+        "why": "Bulk Backspace removed structure and furniture without entity-typed targets."
+      },
+      {
+        "id": "AESTHETIC_OPTIONAL",
+        "why": "Kitchen/bedroom/dining look is operator product surface for BI testing; not disposable clutter."
+      }
+    ]
+  },
+  "domains": [
+    "INDOOR_FLOOR",
+    "OUTDOOR_LOT",
+    "WALL",
+    "ROOF",
+    "UNKNOWN_DOMAIN"
+  ],
+  "object_classes": {
+    "INDOOR_FLOOR_REQUIRED": [
+      "DINING_TABLE",
+      "DINING_CHAIR",
+      "BED",
+      "SLEEP_POD",
+      "APPLIANCE",
+      "COUNTER",
+      "CABINET",
+      "SOFA",
+      "DESK"
+    ],
+    "STRUCTURE": [
+      "FLOOR_TILE",
+      "WALL_SEGMENT",
+      "DOOR",
+      "WINDOW",
+      "ROOF_PIECE"
+    ],
+    "OUTDOOR_OK": [
+      "FLOATER",
+      "DECOR",
+      "PLANTER",
+      "UNKNOWN_OBJECT"
+    ]
+  },
+  "protected_zones": [
+    "KITCHEN",
+    "BEDROOM",
+    "DINING",
+    "BATH"
+  ],
+  "violations": {
+    "OUTDOOR_AS_INDOOR": "Placing or treating an indoor-class object on OUTDOOR_LOT / grass / lot-grid without indoor floor",
+    "PLACE_WITHOUT_FLOOR": "Place/move onto a region with no attested INDOOR_FLOOR entity",
+    "NESTED_OBJECTS": "Target placement intersects or nests inside another non-surface entity",
+    "STRUCTURE_DELETE_UNGUARDED": "Sledge/delete/inventory of FLOOR_TILE, WALL_SEGMENT, or protected-zone furniture without restore goal + Save As",
+    "AESTHETIC_ZONE_DESTRUCT": "Mutation that empties or strips a protected_zone without RESTORE_* goal",
+    "MISSING_SPATIAL_CLAIM": "Mutation lease without domain + zone claims on the model"
+  },
+  "required_goals_for_structure_mutate": [
+    "RESTORE_FLOOR",
+    "RESTORE_WALLS",
+    "RESTORE_KITCHEN",
+    "RESTORE_DINING",
+    "RESTORE_BED_OR_SLEEP_POD",
+    "RESTORE_STRUCTURE"
+  ],
+  "call_stack": {
+    "success": [
+      "load lot_environment_model (RECURSIVE_LOT_MODEL)",
+      "observe domains/zones/entities (indoor floor before furniture)",
+      "build_integrity.evaluate_placement_or_mutate",
+      "house_state.admit_mutation only if integrity ADMIT",
+      "execute optional live adapter",
+      "observe outcome into same model"
+    ]
+  },
+  "states": [
+    "INTEGRITY_ADMIT",
+    "INTEGRITY_DENY",
+    "STRUCTURE_RESTORE_REQUIRED",
+    "SPATIAL_CLAIMS_REQUIRED"
+  ],
+  "gates": [
+    "BUILD_INTEGRITY_ADMIT",
+    "RESTORE_FLOOR_BEFORE_FURNITURE",
+    "INDOOR_DOMAIN_REQUIRED",
+    "NO_NESTING",
+    "PROTECT_AESTHETIC_ZONES"
+  ],
+  "forbidden": [
+    "TREAT_OUTDOOR_AS_INDOOR",
+    "PLACE_INDOOR_ON_GRASS",
+    "NEST_OBJECTS",
+    "DELETE_FLOOR_WITHOUT_RESTORE_GOAL",
+    "DELETE_WALL_WITHOUT_RESTORE_GOAL",
+    "STRIP_KITCHEN_AESTHETIC",
+    "BULK_SWEEP_STRUCTURE",
+    "CLAIM_FIXED_WITHOUT_INTEGRITY_PASS"
+  ],
+  "proof_ceiling": "OFFLINE_BUILD_INTEGRITY_ADMISSION_NOT_LIVE_LOT_RESTORE",
+  "next_parent_gate": "BI-002_HUNGER_LIVE_CERTIFICATION",
+  "depends_on": [
+    "contracts/house-state.v1.json"
+  ]
+}

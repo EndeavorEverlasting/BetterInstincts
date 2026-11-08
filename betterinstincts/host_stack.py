@@ -33,7 +33,9 @@ from betterinstincts.instincts_host import (
     plan,
     plan_to_dict,
 )
+from betterinstincts.build_integrity import BuildIntegrityError, structure_restore_plan
 from betterinstincts.build_optimize import BuildOptimizeError, evaluate_build_optimize
+from betterinstincts.build_spatial import BuildSpatialError, build_order_plan, inventory_spatial
 from betterinstincts.moodlets import MoodletError, evaluate_moodlets
 from betterinstincts.navigating_needs import (
     NavigatingNeedsError,
@@ -118,6 +120,7 @@ def evaluate_turn(
     build_budget: Optional[float] = None,
     build_panels: int = 1,
     build_or_buy_mode: bool = False,
+    lot_model: Optional[Mapping[str, object]] = None,
     scenario_active: bool = False,
     scenario_goals_incomplete: Sequence[str] = (),
     scenario_profile: str = "scoring_simoleons",
@@ -163,6 +166,10 @@ def evaluate_turn(
 
     Optional build_objective runs evaluate-only Build/Buy catalog ranking
     (docs/BUILD_OPTIMIZE.md); never paints walls from this pure module.
+
+    Optional lot_model (RECURSIVE_LOT_MODEL) in Build/Buy attaches build_spatial
+    enclosure/story classification (inside/outside, FLOOR_1/FLOOR_2) plus
+    structure-first build_integrity (docs/BUILD_SPATIAL.md, docs/BUILD_INTEGRITY.md).
 
     Optional social_prompt_active runs Sims-library occult lookup before invite OK
     (docs/SOCIAL_OPPORTUNITY.md / docs/TEEN_DAY_JOURNEY.md).
@@ -437,6 +444,18 @@ def evaluate_turn(
         except BuildOptimizeError as exc:
             raise HostStackError(str(exc)) from exc
 
+    build_integrity = None
+    build_spatial = None
+    if build_or_buy_mode and lot_model is not None:
+        try:
+            build_spatial = {
+                "inventory": inventory_spatial(lot_model),
+                "order": build_order_plan(lot_model),
+            }
+            build_integrity = structure_restore_plan(lot_model)
+        except (BuildIntegrityError, BuildSpatialError) as exc:
+            raise HostStackError(str(exc)) from exc
+
     # Priority: viewport/fallback > player > survival/event stack > behavior map travel > decision > needs.
     next_gate = "EXECUTE_INSTINCTS_PLAN"
     fallback = None
@@ -523,6 +542,56 @@ def evaluate_turn(
             "forbidden": ["VISION_INVENT_OCCULT_STATUS", "RESUME"],
         }
     elif (
+        build_spatial is not None
+        and (build_spatial.get("order") or {}).get("steps")
+        and build_or_buy_mode
+        and not player_directed
+    ):
+        order = build_spatial["order"]
+        primary = order.get("primary") or {}
+        next_gate = str(order.get("gate") or "BUILD_ORDER_FLOOR1_BEFORE_FLOOR2")
+        fallback = {
+            "mechanism": "BUILD_SPATIAL_ORDER",
+            "owner": "betterinstincts/build_spatial.py",
+            "contract": "contracts/build-spatial.v1.json",
+            "primary": primary,
+            "steps": order.get("steps") or [],
+            "inventory": build_spatial.get("inventory"),
+            "execute_allowed": False,
+            "forbidden": [
+                "TREAT_OUTSIDE_AS_INSIDE",
+                "BUILD_F2_BEFORE_F1",
+                "PLACE_WITH_UNKNOWN_AXES",
+                "NEST_OBJECTS",
+                "STRIP_KITCHEN_AESTHETIC",
+                "RESUME",
+            ],
+        }
+    elif (
+        build_integrity is not None
+        and build_integrity.get("state") == "STRUCTURE_RESTORE_REQUIRED"
+        and build_or_buy_mode
+        and not player_directed
+    ):
+        primary = build_integrity.get("primary") or {}
+        next_gate = str(build_integrity.get("gate") or "RESTORE_FLOOR_BEFORE_FURNITURE")
+        fallback = {
+            "mechanism": "BUILD_INTEGRITY_STRUCTURE_RESTORE",
+            "owner": "betterinstincts/build_integrity.py",
+            "contract": "contracts/build-integrity.v1.json",
+            "primary": primary,
+            "steps": build_integrity.get("steps") or [],
+            "execute_allowed": False,
+            "forbidden": [
+                "TREAT_OUTDOOR_AS_INDOOR",
+                "PLACE_INDOOR_ON_GRASS",
+                "NEST_OBJECTS",
+                "STRIP_KITCHEN_AESTHETIC",
+                "BULK_SWEEP_STRUCTURE",
+                "RESUME",
+            ],
+        }
+    elif (
         build_optimize is not None
         and build_optimize.get("state") == "BUILD_OPTIMIZE_PLAN_READY"
         and build_or_buy_mode
@@ -541,6 +610,8 @@ def evaluate_turn(
                 "TOUCH_USER_SAVES",
                 "RESUME",
                 "FORCE_MODE_WHILE_PLAYER_PLAYING",
+                "TREAT_OUTDOOR_AS_INDOOR",
+                "NEST_OBJECTS",
             ],
         }
     elif sim_absent:
@@ -878,6 +949,8 @@ def evaluate_turn(
         ),
         "build_optimize": build_optimize,
         "gardening": gardening_report,
+        "build_integrity": build_integrity,
+        "build_spatial": build_spatial,
         "instincts": instincts,
         "decision": decision,
         "influence": influence,

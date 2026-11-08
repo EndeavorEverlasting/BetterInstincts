@@ -40,6 +40,9 @@ See glossary: `PLAYER_FIRST`, `PLAYER_PLAYING`, `PLAYER_PRESENT_ON_CANVAS`, `HOS
 | `moodlets` | Supplied emotion/moodlet strip → need pressure + routing bias | none |
 | `sim_profile` | Supplied Simology/skills/preferences/whims + moodlets → read-only inspect | none |
 | `build_optimize` | Deterministic Build/Buy catalog rank (Env Gain / Eco Footprint) | none |
+| `house_state` | Recursive lot environment model + mutation lease; forbids blank-slate reassess | writes `dist/house-state/` receipts |
+| `build_integrity` | Structure-first spatial admission (indoor≠outdoor, floor before furniture, no nesting, protect kitchen/bed/dining) | none |
+| `build_spatial` | Enclosure (INSIDE/OUTSIDE) + story (FLOOR_1/FLOOR_2) classification and build order | none |
 | `host_listener` | Opt-in session + tick receipts | writes `dist/host-listener/` |
 | `host_automate` | Presence-gated plan; optional execute | optional SendInput via script |
 | `funds_inject` | Subsidy prompt (funds under 100) + mode-agnostic Money/motherlode inject | optional SendInput via `scripts/funds_inject` |
