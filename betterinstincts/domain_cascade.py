@@ -256,7 +256,7 @@ def poll_cascade(
                 snap,
                 location_kind=location_kind,
                 school_day_active=school_day_active,
-                homework_pending=homework_pending or True,
+                homework_pending=homework_pending,
                 inventory_has_homework=inventory_has_homework,
                 homework_on_lot=homework_on_lot,
                 available_objects=tuple(available_objects or ()),

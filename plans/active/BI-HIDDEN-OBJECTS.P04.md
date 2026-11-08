@@ -1,5 +1,11 @@
 # P04 — Hidden object discovery, BetterInstincts
 
+## Needs-first gardening / scout local continuation — 2026-11-07
+
+The operator also requests actual planting/gardening without sacrificing needs or responsibilities. Current Windows observation: Charlee is at school until 15:00, homework Complete; do not pull the Sim away for gardening. Actual six-need readings and an eligible gardening interaction remain missing; reuse existing needs services/cascade and acquire per-action screen admission when the player yields. The initial inspection was denied for recent human input and issued no host game input.
+
+Scout checkpoint `catalog-lab-01` exists in the isolated current-main worktree (`dist/worktrees/hidden-object-p04/dist/hidden-object-scout/catalog-lab-01/state.json` relative to the original checkout), target 40, zero candidates, timer paused with 14358 seconds. Resume only after genuine P04 review plus fresh exact-build/save-bound Build/Buy/idle/lease evidence. The previous unreviewed §0 cup/bowl is not a verified scout discovery. Preserve original private captures and the user's explicit statement that queue before/after was not observed. Do not repeat potentially toggling cheats just to produce another plan. BI-002 remains ACTIVE.
+
 ## Local Windows preflight correction — 2026-11-07
 
 **Local continuation observed:** Windows build `1.121.361.1020`, disposable session confirmed by the user, exclusive per-PID admission, real console response, DEBUG suggestions/catalog and one white angular cup/bowl listing at §0 captured. Already-active Build/Buy was retained, not newly entered. Selection cancelled without placement; funds stayed §945,478. Private receipt in the original checkout: `dist/game-host/hidden-object-p04-receipt.json`. Audit remains **P04_EVIDENCE_INCOMPLETE** because player queue preservation was not directly observed and per-item operator review is pending. Next owner must inspect current state again, retain genuine captures, obtain listing review, and independently resolve the queue evidence gap before claiming completion. No further cheat input is needed merely to repeat this captured discovery. See the dated ledger entry for integration and proof. BI-002 remains separate and ACTIVE.
