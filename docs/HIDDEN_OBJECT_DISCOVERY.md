@@ -18,6 +18,10 @@ After genuine host observations, the P04 lane must use `python -m scripts.hidden
 
 The repository CI checks `python -m scripts.check_hidden_object_p04` so removing this recipe, the P04 entrypoint or the machine dispatch breaks tests. The local host must not use the recipe to auto-enable cheats, touch speed, purchase, place or mutate protected saves. This lane is relevant when the user's parent objective involves hidden item discovery; otherwise it is inventoried and deferred, **not** an unrelated blocker.
 
+## Sustained discovery — reusable four-hour agent goal
+
+[Hidden Catalog Scout](HIDDEN_OBJECT_SCOUT.md) is the bounded local-agent work loop built *on top of this exact P04 setup*. It runs as explicit `start → next → record → status` checkpointed batches under `dist/`, not as a daemon or OpenAI scheduled task. Default timebox: 240 minutes; target: 40 **candidate** objects, reviewed §0 prices counted separately. After initial guide and receipt, each iteration requires fresh game/build/save/lease evidence, then rotates through five object classes. It never repeatedly types the initial cheat sequence or autonomously purchases/places objects. `python -m scripts.hidden_object_scout goal` exposes the typed mission.
+
 ## Deterministic path
 
 The operator supplied this **requested workflow order** for the manual host:

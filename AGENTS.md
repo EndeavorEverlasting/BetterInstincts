@@ -11,6 +11,8 @@ Refresh HEAD/branch, PRs, status, game/version; declare host, scopes, collisions
 ## P04 hidden-object discovery
 For any BetterInstincts P04, inventory `plans/active/BI-HIDDEN-OBJECTS.P04.md` and run `python -m scripts.hidden_object_discovery guide`. On hidden-item scope, follow its dispatch/scene/save/consent gates; otherwise defer without blocking the parent. Audit real local evidence using `python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json`. This cannot certify gameplay.
 
+For sustained local discovery, run `python -m scripts.hidden_object_scout goal`; owner: `docs/HIDDEN_OBJECT_SCOUT.md`. No autorun.
+
 ## Invariants
 - **Player first:** no interruption of explicit player commands; no uncontrolled repeated autonomy loops.
 - **Save-safe:** never edit, delete, migrate or overwrite user saves/game files. Unknown/user saves protected; names never prove disposability.

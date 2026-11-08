@@ -77,6 +77,8 @@ jobs:
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: python -m scripts.check_ontology --base-ref "$PR_BASE_SHA"
+      - name: Repeated hidden catalog scout goal and checkpoint proof
+        run: python -m unittest tests.test_hidden_object_scout -v
       - name: P04 hidden-object five-step guide and mandatory handoff routing
         run: python -m scripts.check_hidden_object_p04
       - name: Scene and save safety contract
