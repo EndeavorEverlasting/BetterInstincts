@@ -1,5 +1,23 @@
 # Canonical project ledger
 
+## 2026-11-08 — Operator correction: resume behavior orchestration
+
+The operator explicitly rejected the furnishing detour and the subsequent failure
+to resume repository work. **The prior bed proposal is REJECTED, not pending; no
+placement response is required and no furniture/building prerequisite exists.**
+Historical entries below describe the earlier mistake and do not authorize or
+govern current continuation. The private continuation receipt was corrected too.
+
+The missing program seam is now `gardening_service` → existing `host_stack` and
+`host_listener`. It reuses the same six-need service result, preserves the gardening
+goal through needs recovery, respects school/homework/player/viewport gates, and
+selects at most one current observed Plant/Water/Weed/Harvest interaction. Failed
+predictions lead to inspection of existing need interactions, never construction.
+P124 keeps existing normalization, needs policy, responsibility and tick-persistence
+owners; no second scorer, scheduler or daemon was introduced. Consultation
+`BI-GARDENING-BEHAVIOR-20261108.v1.json` predates source changes. Tests, integration
+and any actual game observations must be reported separately. BI-002 remains ACTIVE.
+
 ## 2026-11-07 — Needs-first gardening and resumable scout continuation
 
 **Integration and later local findings:** PR [#65](https://github.com/EndeavorEverlasting/BetterInstincts/pull/65) merged as `e7f7977a01f13b9667622dd9b9b8535d04118d58`; PR-head CI `42435179252` and post-merge CI `42435280481` succeeded. After the player became idle, separately admitted UI inspection read the need bars. Values passed to existing `evaluate_need_services` are explicitly **visual HUD fill estimates, not internal game values**. Energy was selected ahead of gardening. The inspected throne offered only Sit / Make Heirloom, falsifying the predicted REST_ON_CHAIR route; the existing load balancer detached that route and opened an assumption window. Ground Sleep Here was disabled and not selected. Current action Wash Hands was inspected without clicking/cancelling its queue icon. No gardening command, placement or purchase issued.

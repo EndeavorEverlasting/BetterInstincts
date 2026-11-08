@@ -2,7 +2,16 @@
 
 ## Needs-first gardening / scout local continuation — 2026-11-07
 
-**Later checkpoint:** current scene Build/Buy, no item held/placed, screen lease released. Existing needs service selected Energy from explicitly labelled HUD estimates; ordinary throne had no Relax/Nap option, so existing load balance detached REST_ON_CHAIR rather than retrying it. A basic Hasty Replacement Palette Bed (§210 / Energy 3) is inspected, awaiting operator placement approval. Ground Sleep Here disabled. School-trouble toast at dismissal has unknown cause; independently recheck the new after-school daily task before gardening. Private `dist/game-host/garden-scout-20261107/continuation.json` in the original checkout records exact pending action. Do not claim planting or needs recovery yet. PR #65 merged the completed-homework propagation correction as `e7f7977a01f13b9667622dd9b9b8535d04118d58`, post-merge CI successful.
+**2026-11-08 SUPERSEDING OPERATOR CORRECTION:** furnishing was the wrong scope.
+The bed proposal is rejected and no placement approval is pending or needed.
+Resume behavior orchestration via `docs/GARDENING_SERVICE.md`: current listener
+observation → same existing need-services report → current responsibilities → one
+observed plant interaction, with existing-interaction inspection when remedies
+are unavailable. The optional scout's P04 review gate does not block gardening.
+Historical bed-checkpoint paragraphs below are evidence of the superseded detour,
+not executable next steps. No bed was placed.
+
+**Historical checkpoint, corrected 2026-11-08:** the earlier Build/Buy bed inspection was a rejected detour. No item was placed. Resume Live behavior orchestration using current needs and existing interactions; no furnishing approval gate remains. The observed throne lacked Relax/Nap and Ground Sleep Here was disabled, so retain those local failure observations rather than retrying them. School-trouble toast at dismissal has unknown cause; independently recheck the new after-school daily task before gardening. The corrected private continuation is `dist/game-host/garden-scout-20261107/continuation.json` in the original checkout. Do not claim planting or needs recovery yet. PR #65 merged the completed-homework propagation correction as `e7f7977a01f13b9667622dd9b9b8535d04118d58`, post-merge CI successful.
 
 The operator also requests actual planting/gardening without sacrificing needs or responsibilities. Current Windows observation: Charlee is at school until 15:00, homework Complete; do not pull the Sim away for gardening. Actual six-need readings and an eligible gardening interaction remain missing; reuse existing needs services/cascade and acquire per-action screen admission when the player yields. The initial inspection was denied for recent human input and issued no host game input.
 

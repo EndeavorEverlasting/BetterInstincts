@@ -1,5 +1,12 @@
 # BetterInstincts roadmap — no trajectory rediscovery
 
+**2026-11-08 operator correction:** the requested work is Sim behavior orchestration.
+The bed-placement proposal and its approval gate are rejected and are not a
+dependency. Gardening now has a peer host-stack/listener service using the existing
+six-need report, observed plant interactions and current responsibilities. Failed
+need remedies trigger existing-interaction inspection and preserve the gardening
+goal. See `docs/GARDENING_SERVICE.md`; offline selection is not gameplay proof.
+
 **2026-11-07 needs-first gardening continuation:** preserve observed school attendance and completed homework while investigating gardening through existing needs services. Domain-cascade correction preserves explicit homework completion instead of inventing a pending task from book metadata. Actual gardening/needs outcomes remain unproved; optional scout checkpoint has zero candidates and is paused pending its initial P04 review and safe Build/Buy admission. These activities do not reorder or close Horizon gates.
 
 **2026-11-07 local P04 prerequisite:** Windows ontology consultation checks now serialize repository identities with forward slashes, matching the canonical JSON records and Git paths. This restores local admission validation; it grants no game-input authority and does not advance BI-002 certification.
