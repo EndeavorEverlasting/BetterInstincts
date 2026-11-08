@@ -219,6 +219,32 @@
         "betterinstincts/domain_cascade.py"
       ]
     },
+    "CAREER_SERVICES_TANDEM": {
+      "definition": "Peer microsystem that tracks career-panel obligations (teen High School Student homework) beside need_services so agents do not drop schoolwork while needs dominate.",
+      "owners": [
+        "contracts/career-service.v1.json",
+        "docs/CAREER_SERVICE.md",
+        "betterinstincts/career_service.py"
+      ]
+    },
+    "CAREER_OBLIGATION_HELD": {
+      "definition": "Sticky career daily-task continuity flag: homework remains owed across survival suspensions until explicit homework_pending=false clears it.",
+      "owners": [
+        "contracts/career-service.v1.json",
+        "docs/CAREER_SERVICE.md",
+        "betterinstincts/career_service.py",
+        "betterinstincts/host_tandem.py"
+      ]
+    },
+    "CAREER_READY_AFTER_NEEDS": {
+      "definition": "Host gate after survival recovers: resume teen homework policy from the sticky career obligation instead of forgetting the career panel task.",
+      "owners": [
+        "contracts/career-service.v1.json",
+        "docs/CAREER_SERVICE.md",
+        "betterinstincts/career_service.py",
+        "betterinstincts/host_tandem.py"
+      ]
+    },
     "MOODLET_STRIP": {
       "definition": "Bottom-left Sim emotion and moodlet icons. Host logic requires supplied labels; absence is SENSOR_NOT_SUPPLIED.",
       "owners": [
@@ -480,6 +506,29 @@
       "owners": [
         "contracts/build-spatial.v1.json",
         "betterinstincts/build_spatial.py"
+      ]
+    },
+    "BUILD_LIBRARY_CHECKPOINT": {
+      "definition": "Host gate requiring an attested Sims My Library building save before room or structure mutation; preserves operator revert judgment.",
+      "owners": [
+        "contracts/build-library-checkpoint.v1.json",
+        "docs/BUILD_LIBRARY_CHECKPOINT.md",
+        "betterinstincts/build_library_checkpoint.py"
+      ]
+    },
+    "LIBRARY_SAVE_BEFORE_ROOM_MUTATE": {
+      "definition": "Selected P95 architecture: SAVE_TO_LIBRARY / library_checkpoint must precede sledge, wall tools, move-house, and structure-target mutations; game Save As is not a substitute.",
+      "owners": [
+        "contracts/build-library-checkpoint.v1.json",
+        "docs/BUILD_LIBRARY_CHECKPOINT.md"
+      ]
+    },
+    "SAVE_TO_LIBRARY": {
+      "definition": "Build Mode action that saves the current building/room into Sims My Library; the only mutation that creates library_checkpoint without requiring a prior one.",
+      "owners": [
+        "contracts/build-library-checkpoint.v1.json",
+        "contracts/house-state.v1.json",
+        "betterinstincts/house_state.py"
       ]
     },
     "SCHOOL_DAY_GOAL_PROGRESS": {
