@@ -41,8 +41,14 @@
       "last_action",
       "captures",
       "save_as_attestation",
+      "library_checkpoint",
       "unknowns"
     ],
+    "library_checkpoint": {
+      "module": "betterinstincts/build_library_checkpoint.py",
+      "contract": "contracts/build-library-checkpoint.v1.json",
+      "rule": "admit_mutation must LIBRARY_ADMIT before room/structure leases; Save As is not a substitute"
+    },
     "entity_kinds": [
       "DINING_TABLE",
       "DINING_CHAIR",
@@ -84,8 +90,10 @@
     "success": [
       "load_or_create_lot_model(run_id, lot_id)",
       "observe(claims) -> merge into same model; bump revision",
+      "if room/structure work pending without fresh library_checkpoint -> SAVE_TO_LIBRARY",
+      "attest_library_save after observed My Library confirmation",
       "plan_next(model) -> one action grounded in entities/goals",
-      "admit_mutation(model.revision, action) -> lease OR DENIED",
+      "admit_mutation(model.revision, action) -> library then integrity/spatial lease OR DENIED",
       "execute (separate live adapter; optional)",
       "observe(outcome_delta) -> recursive update; do not recreate model",
       "persist_checkpoint(model) -> continuity receipt + optional Save As"
@@ -108,7 +116,8 @@
     "SLEDGE",
     "MOVE_HOUSE_OR_ROOM",
     "MULTI_OBJECT_REARRANGE",
-    "WALL_ROOM_TOOL"
+    "WALL_ROOM_TOOL",
+    "SAVE_TO_LIBRARY"
   ],
   "non_mutating_allowed_without_lease": [
     "CAMERA_PAN_ZOOM",
@@ -138,6 +147,7 @@
     "ACCUMULATE_LOT_MODEL",
     "PLAN_FROM_MODEL",
     "HOUSE_STATE_MUTATION_LEASE",
+    "LIBRARY_CHECKPOINT_REQUIRED",
     "PERSIST_MODEL_CHECKPOINT",
     "LOAD_LAST_KNOWN_GOOD_SAVE",
     "DO_NOT_OVERWRITE_GOOD_SAVE_WITH_WRECKAGE"
@@ -160,7 +170,10 @@
     "NEST_OBJECTS",
     "DELETE_FLOOR_WITHOUT_RESTORE_GOAL",
     "STRIP_KITCHEN_AESTHETIC",
-    "MUTATE_WITHOUT_BUILD_INTEGRITY"
+    "MUTATE_WITHOUT_BUILD_INTEGRITY",
+    "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
+    "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
+    "SLEDGE_WALLS_WITHOUT_LIBRARY_SAVE"
   ],
   "storage": {
     "root": "dist/house-state/",
