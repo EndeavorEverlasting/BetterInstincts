@@ -12,9 +12,10 @@ from betterinstincts.player_presence import PresenceProbe
 GREEN = dict(hunger=.9, bladder=.9, energy=.9, hygiene=.9, fun=.9, social=.9)
 
 
-def snapshot(number, *, energy=.9, action_ref=None, owner="HOST", homework=False):
+def snapshot(number, *, energy=.9, action_ref=None, owner="HOST", homework=False,
+             inventory_has_homework=None):
     cap = f"capture:tandem-{number}"
-    return dict(
+    row = dict(
         schema="betterinstincts.host-listener.observation/v1", actor_ref="sim:charlee",
         needs={**GREEN, "energy": energy}, queue=[], available_objects=["bed", "phone"],
         location_kind="home", capture_ref=cap, viewport={"state": "VIEWPORT_OK"},
@@ -29,6 +30,9 @@ def snapshot(number, *, energy=.9, action_ref=None, owner="HOST", homework=False
                                ("WATER", "Water", "plant:one"),
                                ("SLEEP_IN_BED", "Sleep", "bed:existing"))]),
     )
+    if inventory_has_homework is not None:
+        row["inventory_has_homework"] = inventory_has_homework
+    return row
 
 
 def idle(_):
@@ -170,6 +174,27 @@ class HostTandemTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(out["state"], "RESPONSIBILITY_HANDOFF_REQUIRED")
         self.assertEqual(len(executed), 1)
         self.assertEqual(len(interrupted), 1)
+        self.assertIn("CAREER_OBLIGATION_HELD", [row["event"] for row in out["events"]])
+        self.assertTrue((out.get("career_obligation") or {}).get("obligation_held"))
+
+    async def test_career_ready_handoff_after_needs_recovery_with_homework(self):
+        turns, executed = 0, []
+        async def observe():
+            nonlocal turns
+            turns += 1
+            if turns == 1:
+                return snapshot(turns, energy=.1)
+            return snapshot(turns, energy=.9, homework=True, inventory_has_homework=True)
+        async def execute(command, _):
+            executed.append(command)
+            return observed(command)
+        async def interrupt(*_):
+            self.fail("No interruption expected")
+        out = await run_tandem_session("tandem-test", "sim:charlee", observe=observe,
+                                      execute=execute, interrupt_owned=interrupt, probe=idle, max_turns=4)
+        self.assertEqual(out["state"], "CAREER_READY_HANDOFF_REQUIRED")
+        self.assertIn("CAREER_READY_AFTER_NEEDS", [row["event"] for row in out["events"]])
+        self.assertTrue((out.get("career_obligation") or {}).get("obligation_held"))
 
     async def test_ineffective_completed_rest_is_not_repeated_blindly(self):
         turns, executed = 0, []

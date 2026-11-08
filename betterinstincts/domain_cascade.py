@@ -21,15 +21,18 @@ from betterinstincts.need_services import (
     evaluate_need_services,
     should_attach_need_services,
 )
-from betterinstincts.scenario_goals import ScenarioGoalsError, evaluate_scenario_turn
-from betterinstincts.school_day import SchoolDayError, evaluate_school_day_turn
 from betterinstincts.sim_profile import SimProfileError, SkillInput, evaluate_sim_profile
 from betterinstincts.social_opportunity import (
     SocialOpportunityError,
     evaluate_social_opportunity,
     should_attach_social_opportunity,
 )
-from betterinstincts.teen_homework import TeenHomeworkError, evaluate_teen_homework_turn
+from betterinstincts.career_service import (
+    CareerServiceError,
+    compact_career_service,
+    evaluate_career_service,
+    should_attach_career_service,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "domain-cascade.v1.json"
@@ -116,6 +119,7 @@ def poll_cascade(
     invitee_occult_status: Optional[str] = None,
     failure_signals: Optional[Mapping[str, Sequence[str]]] = None,
     queue: Sequence[str] = (),
+    prior_career_state: Optional[Mapping[str, object]] = None,
     capture_ref: str = "capture:domain-cascade",
 ) -> dict:
     """Poll domains in cascade order; each receipt may cite prior receipts."""
@@ -232,64 +236,62 @@ def poll_cascade(
             _receipt("budget", gate="BUDGET_NOT_SUPPLIED", action="SKIP_BUDGET")
         )
 
-    # --- career / school / scenario ---
+    # --- career / school / scenario (via career microsystem) ---
     career_payload: dict = {}
     try:
-        if school_day_active or school_goals_incomplete:
-            school = evaluate_school_day_turn(
-                snap,
-                school_day_active=school_day_active or bool(school_goals_incomplete),
-                school_goals_incomplete=school_goals_incomplete,
-                school_phase=school_phase or "morning_free_time",
-                location_kind=location_kind,
-                homework_pending=homework_pending,
-                pinned_whims=pinned_whims or whims,
-                queue=queue,
-                capture_ref=capture_ref,
-            )
-            career_payload["school_day"] = {
-                "gate": school.get("gate"),
-                "action": school.get("action"),
-            }
-        if homework_pending or inventory_has_homework is not None or homework_on_lot is not None:
-            homework = evaluate_teen_homework_turn(
+        if should_attach_career_service(
+            homework_pending=homework_pending,
+            inventory_has_homework=inventory_has_homework,
+            homework_on_lot=homework_on_lot,
+            school_day_active=school_day_active,
+            school_goals_incomplete=school_goals_incomplete,
+            scenario_active=scenario_active,
+            scenario_goals_incomplete=scenario_goals_incomplete,
+            life_stage=life_stage,
+            prior_state=prior_career_state,
+        ) or school_day_active or school_goals_incomplete or homework_pending or (
+            inventory_has_homework is not None or homework_on_lot is not None
+        ) or scenario_active or scenario_goals_incomplete:
+            career = evaluate_career_service(
                 snap,
                 location_kind=location_kind,
                 school_day_active=school_day_active,
+                school_goals_incomplete=school_goals_incomplete,
+                school_phase=school_phase,
                 homework_pending=homework_pending,
                 inventory_has_homework=inventory_has_homework,
                 homework_on_lot=homework_on_lot,
                 available_objects=tuple(available_objects or ()),
                 queue=tuple(queue or ()),
+                player_directed=player_directed,
+                already_busy=already_busy,
                 life_stage=life_stage or "teen",
-                capture_ref=capture_ref,
-            )
-            career_payload["teen_homework"] = {
-                "gate": homework.get("gate"),
-                "action": homework.get("action"),
-            }
-        if scenario_active or scenario_goals_incomplete:
-            scenario = evaluate_scenario_turn(
-                snap,
-                scenario_active=scenario_active or bool(scenario_goals_incomplete),
+                scenario_active=scenario_active,
                 scenario_goals_incomplete=scenario_goals_incomplete,
-                school_day_active=school_day_active,
-                queue=queue,
+                pinned_whims=pinned_whims or whims,
+                whims=whims,
+                prior_state=prior_career_state,
                 capture_ref=capture_ref,
             )
-            career_payload["scenario"] = {
-                "gate": scenario.get("gate"),
-                "action": scenario.get("action"),
-                "next_goal": (scenario.get("goal_plan") or {}).get("next_goal"),
-            }
-        gate = "CAREER_IDLE"
-        action = "NO_CAREER_DOMAIN_SIGNAL"
-        for key in ("school_day", "teen_homework", "scenario"):
-            row = career_payload.get(key)
-            if row and row.get("gate") not in {None, "SCENARIO_INACTIVE", "LEISURE_OR_IDLE"}:
-                gate = str(row["gate"])
-                action = str(row.get("action") or "CAREER_PLAN")
-                break
+            career_payload["career_service"] = compact_career_service(career)
+            for key, row in (career.get("lanes") or {}).items():
+                if isinstance(row, dict):
+                    career_payload[key] = {
+                        "gate": row.get("gate"),
+                        "action": row.get("action"),
+                    }
+            hw = career_payload.get("teen_homework") or {}
+            if hw.get("gate") not in {None, "LEISURE_OR_IDLE"}:
+                gate = str(hw["gate"])
+                action = str(hw.get("action") or "CAREER_PLAN")
+            else:
+                gate = str(career.get("gate") or "CAREER_IDLE")
+                action = str(career.get("action") or "NO_CAREER_DOMAIN_SIGNAL")
+            if career.get("obligation_held"):
+                findings.append("CAREER_OBLIGATION_HELD")
+        else:
+            gate = "CAREER_IDLE"
+            action = "NO_CAREER_DOMAIN_SIGNAL"
         if any(r["domain"] == "needs" and "DETACH" in "".join(r.get("findings") or []) for r in receipts):
             findings.append("CAREER_SEES_NEED_LB_DETACH")
         receipts.append(
@@ -301,10 +303,10 @@ def poll_cascade(
                     **career_payload,
                     "prior_gates": [r["gate"] for r in receipts],
                 },
-                findings=findings[-1:],
+                findings=[f for f in findings if f.startswith("CAREER_")],
             )
         )
-    except (SchoolDayError, TeenHomeworkError, ScenarioGoalsError) as exc:
+    except CareerServiceError as exc:
         raise DomainCascadeError(str(exc)) from exc
 
     # --- skills / whims ---

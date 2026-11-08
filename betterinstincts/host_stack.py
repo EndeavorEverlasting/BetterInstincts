@@ -57,6 +57,12 @@ from betterinstincts.social_opportunity import (
     evaluate_social_opportunity,
     should_attach_social_opportunity,
 )
+from betterinstincts.career_service import (
+    CareerServiceError,
+    compact_career_service,
+    evaluate_career_service,
+    should_attach_career_service,
+)
 from betterinstincts.teen_homework import (
     TeenHomeworkError,
     evaluate_teen_homework_turn,
@@ -147,6 +153,7 @@ def evaluate_turn(
     edge_band_px: Optional[int] = None,
     camera_scan_needed: bool = False,
     camera_pan_directions: Sequence[str] = (),
+    prior_career_state: Optional[Mapping[str, object]] = None,
 ) -> dict:
     """Compose viewport, moodlets, event-balance, instincts, and dialog gates.
 
@@ -204,6 +211,7 @@ def evaluate_turn(
     school_day = None
     navigating_needs = None
     teen_homework = None
+    career_service = None
     scenario = None
     fun_service = None
     need_services = None
@@ -282,6 +290,39 @@ def evaluate_turn(
                 occult_status=invitee_occult_status,
                 player_directed=player_directed,
                 already_busy=already_busy,
+                capture_ref=capture_ref,
+            )
+        if should_attach_career_service(
+            homework_pending=homework_pending,
+            inventory_has_homework=inventory_has_homework,
+            homework_on_lot=homework_on_lot,
+            school_day_active=school_day_active,
+            school_goals_incomplete=school_goals_incomplete,
+            scenario_active=scenario_active,
+            scenario_goals_incomplete=scenario_goals_incomplete,
+            life_stage=life_stage,
+            prior_state=prior_career_state,
+        ):
+            career_service = evaluate_career_service(
+                needs,
+                location_kind=effective_location,
+                school_day_active=school_day_active,
+                school_goals_incomplete=school_goals_incomplete,
+                school_phase=school_phase,
+                homework_pending=homework_pending,
+                inventory_has_homework=inventory_has_homework,
+                homework_on_lot=homework_on_lot,
+                available_objects=tuple(available_objects or ()),
+                sim_at_school=sim_at_school,
+                queue=tuple(queue or ()),
+                player_directed=player_directed,
+                already_busy=already_busy,
+                life_stage=life_stage or "teen",
+                scenario_active=scenario_active,
+                scenario_goals_incomplete=scenario_goals_incomplete,
+                pinned_whims=pinned_whims,
+                whims=whims,
+                prior_state=prior_career_state,
                 capture_ref=capture_ref,
             )
         if should_attach_teen_homework(
@@ -437,6 +478,7 @@ def evaluate_turn(
         SimProfileError,
         BuildOptimizeError,
         TeenHomeworkError,
+        CareerServiceError,
         SchoolDayError,
         SocialOpportunityError,
         FunServiceError,
@@ -1026,6 +1068,9 @@ def evaluate_turn(
         "sim_profile": sim_profile,
         "school_day": school_day,
         "teen_homework": teen_homework,
+        "career_service": (
+            compact_career_service(career_service) if career_service is not None else None
+        ),
         "social_opportunity": social_opportunity,
         "sim_premises": premises,
         "scenario": scenario,

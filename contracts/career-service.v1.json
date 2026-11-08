@@ -1,0 +1,101 @@
+{
+  "schema": "betterinstincts.career-service/v1",
+  "version": 1,
+  "authority": "docs/CAREER_SERVICE.md",
+  "proof_ceiling": "HOST_CAREER_MICROSYSTEM_TANDEM_NOT_DAEMON_NOT_BI006_CERT",
+  "design_brief": {
+    "subject": "Async career microsystem that tracks teen High School Student daily homework alongside need services",
+    "audience": "local host agents that otherwise forget career panel duties while needs dominate",
+    "job": "Hold a sticky CAREER_OBLIGATION across survival suspensions; evaluate in tandem with need_services; resume only after fresh survival-green revalidation",
+    "architecture": "Thin peer microsystem over teen_homework / school_day / scenario_goals. Not a daemon. Not adult promotion certification.",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose before chrome"},
+      {"id": "UP-A85AD9DC3", "mechanism": "call-stack storytelling"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ]
+  },
+  "career_tracks": {
+    "high_school_student": {
+      "life_stage": "teen",
+      "daily_task": "homework",
+      "panel": "career",
+      "policy_owners": [
+        "betterinstincts/teen_homework.py",
+        "betterinstincts/school_day.py"
+      ],
+      "not": ["scenario Get a career", "adult employment promotion"]
+    }
+  },
+  "microsystem_states": [
+    "IDLE",
+    "TRACKING",
+    "SUSPENDED_FOR_SURVIVAL",
+    "PREMISES_BLOCKED",
+    "READY",
+    "YIELDED",
+    "COMPLETE"
+  ],
+  "call_stack": {
+    "order": [
+      "PLAYER_FIRST_OR_BUSY",
+      "CAREER_OBLIGATION_HELD",
+      "SUSPENDED_FOR_SURVIVAL",
+      "PREMISES_BLOCKED",
+      "CAREER_READY_AFTER_NEEDS",
+      "CAREER_SERVICES_TANDEM",
+      "CAREER_IDLE"
+    ],
+    "gates": {
+      "PLAYER_FIRST_OR_BUSY": {
+        "action": "YIELD_OR_EMULATE_ONLY",
+        "obligation_held": "PRESERVE_IF_ALREADY_TRACKING"
+      },
+      "SUSPENDED_FOR_SURVIVAL": {
+        "action": "HOLD_CAREER_OBLIGATION_WHILE_SURVIVAL",
+        "obligation_held": true
+      },
+      "PREMISES_BLOCKED": {
+        "action": "HOLD_CAREER_UNTIL_OFF_PREMISES",
+        "obligation_held": true
+      },
+      "CAREER_READY_AFTER_NEEDS": {
+        "action": "RESUME_TEEN_HOMEWORK_POLICY",
+        "obligation_held": true
+      },
+      "CAREER_SERVICES_TANDEM": {
+        "action": "TRACK_CAREER_BESIDE_NEED_SERVICES",
+        "obligation_held": true
+      },
+      "CAREER_COMPLETE": {
+        "action": "CLEAR_CAREER_OBLIGATION",
+        "obligation_held": false
+      },
+      "CAREER_IDLE": {
+        "action": "NO_CAREER_OBLIGATION",
+        "obligation_held": false
+      }
+    }
+  },
+  "continuity": {
+    "rule": "A pending homework obligation outlives needs-focused turns; never reopen from book metadata alone when homework_pending=false",
+    "resume_condition": "FRESH_SURVIVAL_GREEN_HOME_REVALIDATION",
+    "anti_patterns": [
+      "DROP_HOMEWORK_WHILE_NEEDS_DOMINATE",
+      "BACKGROUND_CAREER_DAEMON",
+      "INVENT_HOMEWORK_INVENTORY",
+      "CAREER_ACTION_WHILE_SURVIVAL_CRITICAL",
+      "CLAIM_BI006_FROM_OFFLINE_MICROSYSTEM"
+    ]
+  },
+  "composition": {
+    "orchestrator": "betterinstincts/career_service.py#evaluate_career_service",
+    "policy_lanes": {
+      "homework": "betterinstincts/teen_homework.py#evaluate_teen_homework_turn",
+      "school_day": "betterinstincts/school_day.py#evaluate_school_day_turn",
+      "scenario": "betterinstincts/scenario_goals.py#evaluate_scenario_turn"
+    },
+    "host_gate": "CAREER_SERVICES_TANDEM | CAREER_OBLIGATION_HELD | CAREER_READY_AFTER_NEEDS",
+    "tandem_peers": ["need_services", "host_tandem"],
+    "domain_cascade": "career"
+  }
+}

@@ -1,5 +1,19 @@
 # Canonical project ledger
 
+## 2026-11-08 — Career microsystem (P95 + trifecta)
+
+**Operator:** Agents keep getting stuck in needs and forget teen High School Student
+career-panel homework. **P95** adds peer microsystem `career_service`
+(`contracts/career-service.v1.json`, `docs/CAREER_SERVICE.md`) with sticky
+`CAREER_OBLIGATION_HELD` that evaluates in tandem with need_services, suspends for
+survival without dropping the duty, and resumes via `CAREER_READY_AFTER_NEEDS`.
+Wired through `host_stack`, `domain_cascade`, `host_listener`, and `host_tandem`
+async observe events / `CAREER_READY_HANDOFF_REQUIRED`. Policy lanes still own
+`teen_homework` / `school_day`. Consultation
+`BI-CAREER-MICROSYSTEM-20261108.v1.json`. Proof ceiling
+`HOST_CAREER_MICROSYSTEM_TANDEM_NOT_DAEMON_NOT_BI006_CERT`. Live homework P08 OPEN.
+Does not close BI-002 or BI-006.
+
 ## 2026-11-08 — Operator correction: resume behavior orchestration
 
 The operator explicitly rejected the furnishing detour and the subsequent failure

@@ -92,6 +92,8 @@ async def run_tandem_session(
     turns = 0
     reason = "TURN_BUDGET_REACHED"
     last_need_completed: dict | None = None
+    career_obligation: dict | None = None
+    just_finished_needs = False
 
     def event(kind: str, **fields) -> None:
         events.append({"event": kind, "turn": turns, **fields})
@@ -130,6 +132,7 @@ async def run_tandem_session(
                       phase=active["phase"], observation_ref=outcome["observation_ref"])
                 if active["phase"] == "NEEDS":
                     last_need_completed = dict(active)
+                    just_finished_needs = True
                 active, task = None, None
             owned = bool(
                 active and obs.get("host_activity_ref") == active["action_ref"]
@@ -139,6 +142,8 @@ async def run_tandem_session(
             # needs evaluator. Unknown/player activities retain the normal gate.
             if owned:
                 obs["already_busy"] = False
+            if career_obligation is not None:
+                obs["prior_career_state"] = career_obligation
             receipt = tick(session_id, obs, presence_probe=probe(raw))
             if receipt["listener_action"] == "YIELD_TO_PLAYER":
                 event("YIELD_TO_PLAYER_NO_QUEUE_CANCELLATION")
@@ -147,12 +152,39 @@ async def run_tandem_session(
             stack = receipt["host_stack"]
             gate = stack["next_gate"]
             garden = stack.get("gardening") or {}
+            career = stack.get("career_service") or {}
+            if career.get("obligation_held"):
+                career_obligation = dict(career)
+                event(
+                    "CAREER_OBLIGATION_HELD",
+                    microsystem_state=career.get("microsystem_state"),
+                    career_gate=career.get("gate"),
+                    pending_phase=(active or {}).get("phase"),
+                )
+            elif career.get("microsystem_state") in {"COMPLETE", "IDLE"}:
+                career_obligation = None
             capture = obs.get("capture_ref")
             if not _ref(capture) or capture == seen_capture:
                 event("WAIT_FOR_FRESH_CAPTURE")
                 continue
             seen_capture = capture
             event("NEEDS_AND_GARDENING_OBSERVED", gate=gate)
+            # After survival recovery, held career duty outranks gardening resume.
+            if (
+                just_finished_needs
+                and active is None
+                and career.get("obligation_held")
+                and career.get("microsystem_state") in {"READY", "TRACKING"}
+            ):
+                event(
+                    "CAREER_READY_AFTER_NEEDS",
+                    career_gate=career.get("gate"),
+                    microsystem_state=career.get("microsystem_state"),
+                    primary_route=career.get("primary_route"),
+                )
+                reason = "CAREER_READY_HANDOFF_REQUIRED"
+                break
+            just_finished_needs = False
             duty = garden.get("gate") == "GARDEN_RESPONSIBILITY_FIRST"
             if gate not in {"GARDEN_RECOVER_NEEDS", "GARDEN_ACTION_READY"} and not duty:
                 continue
@@ -218,6 +250,7 @@ async def run_tandem_session(
         "state": reason, "actor_ref": actor_ref, "turns": turns,
         "events": list(events), "pending_action": active,
         "gardening_goal": "PRESERVED_REQUIRES_FRESH_REVALIDATION",
+        "career_obligation": career_obligation,
         "dispatch_authorized": False,
         "proof_ceiling": "BOUNDED_CALLBACK_SESSION_NOT_GAMEPLAY_CERTIFICATION",
     }

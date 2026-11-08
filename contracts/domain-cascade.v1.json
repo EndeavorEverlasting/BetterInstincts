@@ -22,11 +22,14 @@
     },
     {
       "id": "career",
+      "owner": "betterinstincts/career_service.py",
       "owners": [
+        "betterinstincts/career_service.py",
         "betterinstincts/school_day.py",
         "betterinstincts/teen_homework.py",
         "betterinstincts/scenario_goals.py"
-      ]
+      ],
+      "microsystem": "CAREER_SERVICES_TANDEM"
     },
     {
       "id": "skills_whims",
