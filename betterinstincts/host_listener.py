@@ -204,6 +204,11 @@ def _load_observation(raw: Mapping) -> dict:
         "homework_pending": bool(raw.get("homework_pending", False)),
         "inventory_has_homework": inv if isinstance(inv, bool) else None,
         "homework_on_lot": on_lot_hw if isinstance(on_lot_hw, bool) else None,
+        "prior_career_state": (
+            raw.get("prior_career_state")
+            if isinstance(raw.get("prior_career_state"), Mapping)
+            else None
+        ),
         "sim_at_school": sim_at_school if isinstance(sim_at_school, bool) else None,
         "camera_lot_kind": (
             str(raw["camera_lot_kind"]) if raw.get("camera_lot_kind") else None
@@ -371,6 +376,7 @@ def tick(
             traits=obs["traits"],
             whims=obs["whims"] or obs["pinned_whims"],
             gardening=obs["gardening"],
+            prior_career_state=obs.get("prior_career_state"),
         )
         force = plan_force(
             location_kind=obs["location_kind"],

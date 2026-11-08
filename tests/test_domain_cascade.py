@@ -55,7 +55,9 @@ class DomainCascadeTests(unittest.TestCase):
                 )
                 career = next(row for row in out["receipts"] if row["domain"] == "career")
                 self.assertEqual(career["gate"], "CAREER_IDLE")
-                self.assertEqual(career["payload"]["teen_homework"]["gate"], "LEISURE_OR_IDLE")
+                service = career["payload"].get("career_service") or {}
+                self.assertFalse(service.get("obligation_held"))
+                self.assertNotIn("teen_homework", career["payload"])
 
     def test_pending_homework_and_survival_priority_remain(self):
         for hunger, expected in ((0.9, "QUEUE_TEEN_HOMEWORK"), (0.1, "SURVIVAL_BEFORE_HOMEWORK")):

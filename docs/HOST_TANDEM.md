@@ -33,6 +33,10 @@ port must independently verify ownership, obtain screen admission, and return
 any remedy starts. Unknown ownership or an incomplete interruption receipt
 cannot authorize another action. New homework similarly suspends owned
 gardening and returns a responsibility handoff rather than competing for control.
+While needs or gardening run, the career microsystem keeps emitting
+`CAREER_OBLIGATION_HELD` so the teen High School Student daily task is not
+forgotten; after observed needs recovery with homework still due, the session
+prefers `CAREER_READY_HANDOFF_REQUIRED` before gardening resume.
 
 Pending needs actions cannot be interrupted by gardening. After an observed
 outcome, a fresh snapshot must revalidate the next action. A completed remedy

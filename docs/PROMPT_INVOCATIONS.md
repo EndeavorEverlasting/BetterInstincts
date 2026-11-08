@@ -11,7 +11,7 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P97 | Open-Source Prior-Art & Gap Analyst | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | docs/PRIOR_ART.md: reference implementation, gap map and adoption decisions |
 | P141 | Repository Strategic Opportunity Scout | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | docs/STRATEGY.md: compare/falsify competing theses, select next investigation |
 | P04 | [PARALLEL] Repo-Aware Sprint + Harness Factoring Distributor | `src/tokencorridor/interface/promptkit/registry/base/prompts.json` | `848728632c1243ebba023fa0012292a2ad33cada` | plans/active/BI-001.md: runtime partition, safe owner lanes, proof/gates |
-| P95 | Program Design & Call-Stack Prototype Architect | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 camera-safe traverse (`docs/CAMERA_TRAVERSE.md`) + library-save-before-room-mutate (`docs/BUILD_LIBRARY_CHECKPOINT.md`) + build spatial/integrity/house-state + prior need services |
+| P95 | Program Design & Call-Stack Prototype Architect | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 career microsystem (`docs/CAREER_SERVICE.md`) + camera-safe traverse (`docs/CAMERA_TRAVERSE.md`) + library-save-before-room-mutate (`docs/BUILD_LIBRARY_CHECKPOINT.md`) + build spatial/integrity/house-state + prior need services |
 | P83 | Agent Work Verifier & Iterative Advancer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 verify Bargain Bend destruction claims then harden Build mechanisms |
 | P78 | Repository Glossary & Documentation Diet | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-07 preserve existing `contracts/glossary.v1.json` as vocabulary owner and `contracts/ontology.v1.json` as graph owner |
 
@@ -20,6 +20,15 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-07 `need_service_base` + domain_cascade poll bus + need-services registry; Navigating Needs peer owner; prior: moodlets/event_balance |
 
 **Resolution is not execution.** Artifacts prove these workflows were applied to this initial sprint; no TokenCorridor CLI execution, full compliant remote parallel-worker receipt, or installed `/trifecta` skill is claimed. In BI-001 the branch-writer is one GitHub provider lane. Do not copy proprietary/private Prompt Kit contents into this public repository; this file contains only invocation identities and evidence pointers. Refresh exact provenance from TokenCorridor on subsequent work instead of trusting this snapshot indefinitely.
+
+## 2026-11-08 career microsystem trifecta
+
+**P95** designed sticky `CAREER_SERVICES_TANDEM` beside need_services for teen homework
+continuity. **P82** measured suspend/resume/complete falsifiers in
+`tests/test_career_service.py`. **P08** live homework completion remains OPEN on the
+local game host (offline proof only). **P07** owns implementation/integration of
+`career_service` + host wiring. Consultation predates mutation:
+`contracts/consultations/BI-CAREER-MICROSYSTEM-20261108.v1.json`.
 
 ## 2026-11-07 exact invoked order
 
