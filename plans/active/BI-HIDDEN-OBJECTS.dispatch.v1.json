@@ -29,7 +29,9 @@
     "current_target": "main (feature previously merged in PR #59; refresh before use)",
     "enforcement_branch": "feat/bi-p04-debug-playbook-enforcement-20261107",
     "guide": "python -m scripts.hidden_object_discovery guide",
-    "audit": "python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json"
+    "audit": "python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json",
+    "recurring_goal": "contracts/hidden-object-scout-goal.v1.json",
+    "scout_cli": "python -m scripts.hidden_object_scout"
   },
   "proof_ceiling": "OFFLINE_P04_GUIDE_AND_RECEIPT_SHAPE_CHECKS_PLUS_CI; REAL_GAME_BEHAVIOR_UNPROVEN",
   "parallel_execution": {
@@ -117,7 +119,7 @@
       "launch_action": "Open feature PR; inspect actual workflow checks",
       "status": "NOT_YET_OBSERVED",
       "return_contract": "Actual action run URL, conclusion, tests and commit",
-      "validation": "python -m scripts.check_hidden_object_p04; python -m unittest tests.test_hidden_object_discovery -v; full CI and ontology chronology",
+      "validation": "python -m scripts.check_hidden_object_p04; python -m unittest tests.test_hidden_object_discovery -v; full CI and ontology chronology; python -m unittest tests.test_hidden_object_scout -v",
       "convergence_owner": "repository maintainer"
     },
     {
@@ -226,6 +228,45 @@
       "return_contract": "5 vanilla + 5 modified real observed trials, rollback and review",
       "validation": "docs/LIVE_CERT.md",
       "convergence_owner": "BI-002 maintainer"
+    },
+    {
+      "lane_id": "WINDOWS_SCOUT",
+      "mission": "Long-running safe repeated exploratory catalog browsing with resume/checkpoints and item-by-item proof",
+      "dependencies": [
+        "WINDOWS_CATALOG",
+        "CI_PROOF"
+      ],
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [],
+      "required_capabilities": [
+        "actual local Sims game",
+        "current Build/Buy viewport",
+        "exclusive screen_admit and player consent",
+        "ignored local dist checkpoint store"
+      ],
+      "owned_mutation_surfaces": [
+        "dist/hidden-object-scout/",
+        "dist/game-host/"
+      ],
+      "forbidden_surfaces": [
+        "user saves",
+        "other agent's live UI lease",
+        "game speed",
+        "funds/purchases",
+        "blind repeated cheat commands",
+        "OpenAI scheduled tasks",
+        "unreviewed price promotion",
+        "CI pretending live evidence"
+      ],
+      "adapter": "existing Windows game host agent that re-invokes bounded CLI calls",
+      "launch_action": "python -m scripts.hidden_object_scout start --session-id RUN --minutes 240 --target 40",
+      "iteration_next": "python -m scripts.hidden_object_scout next --session-id RUN --observation dist/game-host/current-build-buy.json --p04-receipt dist/game-host/hidden-object-p04-receipt.json",
+      "iteration_record": "python -m scripts.hidden_object_scout record --session-id RUN --observation dist/game-host/current-build-buy.json --p04-receipt dist/game-host/hidden-object-p04-receipt.json --report dist/game-host/catalog-batch.json",
+      "verification": "python -m scripts.hidden_object_scout status --session-id RUN",
+      "status": "REPO_SCOUT_GOAL_DEFINED_LOCAL_RUN_NOT_OBSERVED",
+      "return_contract": "Up to 4-hour actual local session with per-batch observed capture refs, unique candidates, independently reviewed §0 findings, reason for stop",
+      "proof_ceiling": "REPO_CHECKPOINT_TESTS_ONLY_PENDING_REAL_GAME",
+      "convergence_owner": "local host agent; P04 repo owner reviews durable non-private summary"
     }
   ],
   "safety": {
@@ -264,6 +305,52 @@
     "structurally_complete": "P04_EVIDENCE_SHAPE_COMPLETE_PENDING_INDEPENDENT_REVIEW",
     "irrelevant_scope": "DEFERRED_NOT_PARENT_DEPENDENCY",
     "game_certification": "NEVER_FROM_AUDIT",
-    "owner": "LOCAL_AGENT_RUNTIME_WINDOWS_GAME_HOST_AFTER_INDEPENDENT_PER_STEP_PERMIT"
+    "owner": "LOCAL_AGENT_RUNTIME_WINDOWS_GAME_HOST_AFTER_INDEPENDENT_PER_STEP_PERMIT",
+    "recurring_goal": "BI-HIDDEN-CATALOG-SCOUT"
+  },
+  "recurring_goal": {
+    "id": "BI-HIDDEN-CATALOG-SCOUT",
+    "objective": "Repeat safely observed Build/Buy debug searches across five categories for up to four hours, checkpoint unique candidates and verified prices.",
+    "contract": "contracts/hidden-object-scout-goal.v1.json",
+    "owner_doc": "docs/HIDDEN_OBJECT_SCOUT.md",
+    "host": "LOCAL_AGENT_RUNTIME",
+    "provider": "GitHub code + local ignored dist receipts",
+    "timebox_minutes": 240,
+    "unique_candidate_target": 40,
+    "max_batches": 96,
+    "no_autorun": true,
+    "recurring_adapter": "existing local Windows game-host agent; one explicitly admitted batch at a time, not an OpenAI scheduled task",
+    "admission": [
+      "existing audited P04 setup receipt with save_ref",
+      "fresh exact-build Build/Buy screenshot+separate operator cue",
+      "disposable lab-save attestation",
+      "player idle, paused, exclusive host lease",
+      "screen_admit before each UI step"
+    ],
+    "commands": {
+      "inspect": "python -m scripts.hidden_object_scout goal",
+      "start": "python -m scripts.hidden_object_scout start --session-id RUN --minutes 240 --target 40",
+      "next": "python -m scripts.hidden_object_scout next --session-id RUN --observation dist/game-host/current-build-buy.json --p04-receipt dist/game-host/hidden-object-p04-receipt.json",
+      "record": "python -m scripts.hidden_object_scout record --session-id RUN --observation dist/game-host/current-build-buy.json --p04-receipt dist/game-host/hidden-object-p04-receipt.json --report dist/game-host/catalog-batch.json",
+      "status": "python -m scripts.hidden_object_scout status --session-id RUN",
+      "pause": "python -m scripts.hidden_object_scout pause --session-id RUN",
+      "resume": "python -m scripts.hidden_object_scout resume --session-id RUN",
+      "stop": "python -m scripts.hidden_object_scout stop --session-id RUN"
+    },
+    "metrics": [
+      "unique_candidates",
+      "reviewed_unique",
+      "reviewed_free",
+      "reviewed_priced",
+      "reviewed_price_unknown",
+      "pending_review",
+      "completed_batches",
+      "zero_new_streak"
+    ],
+    "runtime_proof": "UNPROVEN_UNTIL_LOCAL_WINDOWS_GAME_HOST_PROVIDES_REAL_RECEIPTS",
+    "collisions": [
+      "No same-game-process concurrent BI-002 hunger UI actions",
+      "No UI input performed by this pure Python module"
+    ]
   }
 }
