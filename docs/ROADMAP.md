@@ -1,5 +1,7 @@
 # BetterInstincts roadmap — no trajectory rediscovery
 
+**2026-11-07 needs-first gardening continuation:** preserve observed school attendance and completed homework while investigating gardening through existing needs services. Domain-cascade correction preserves explicit homework completion instead of inventing a pending task from book metadata. Actual gardening/needs outcomes remain unproved; optional scout checkpoint has zero candidates and is paused pending its initial P04 review and safe Build/Buy admission. These activities do not reorder or close Horizon gates.
+
 **2026-11-07 local P04 prerequisite:** Windows ontology consultation checks now serialize repository identities with forward slashes, matching the canonical JSON records and Git paths. This restores local admission validation; it grants no game-input authority and does not advance BI-002 certification.
 
 **Local discovery proof ceiling:** actual Windows console/DEBUG catalog and one §0 listing were captured on `1.121.361.1020`; operator price review and direct queue-preservation evidence remain open. Hidden catalog access does not advance any hunger, income, skill or career certification gate.

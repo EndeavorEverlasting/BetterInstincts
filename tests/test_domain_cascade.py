@@ -45,6 +45,31 @@ class DomainCascadeTests(unittest.TestCase):
         self.assertEqual(out["action"], "HALT_CASCADE")
         self.assertEqual(len(out["receipts"]), 1)
 
+    def test_completed_homework_is_not_reopened_by_book_observations(self):
+        for book_present in (True, False):
+            with self.subTest(book_present=book_present):
+                out = poll_cascade(
+                    {need: 0.9 for need in SIX}, homework_pending=False,
+                    inventory_has_homework=book_present, homework_on_lot=not book_present,
+                    location_kind="home", life_stage="teen",
+                )
+                career = next(row for row in out["receipts"] if row["domain"] == "career")
+                self.assertEqual(career["gate"], "CAREER_IDLE")
+                self.assertEqual(career["payload"]["teen_homework"]["gate"], "LEISURE_OR_IDLE")
+
+    def test_pending_homework_and_survival_priority_remain(self):
+        for hunger, expected in ((0.9, "QUEUE_TEEN_HOMEWORK"), (0.1, "SURVIVAL_BEFORE_HOMEWORK")):
+            with self.subTest(hunger=hunger):
+                needs = {need: 0.9 for need in SIX}
+                needs["hunger"] = hunger
+                out = poll_cascade(
+                    needs, homework_pending=True, inventory_has_homework=True,
+                    location_kind="home", life_stage="teen",
+                    available_objects=["fridge", "toilet", "bed", "shower", "phone"],
+                )
+                career = next(row for row in out["receipts"] if row["domain"] == "career")
+                self.assertEqual(career["gate"], expected)
+
     def test_navigating_needs_advisory_on_needs_receipt(self):
         out = poll_cascade(
             {
