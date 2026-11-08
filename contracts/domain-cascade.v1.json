@@ -4,7 +4,7 @@
   "authority": "docs/DOMAIN_CASCADE.md",
   "proof_ceiling": "HOST_DOMAIN_CASCADE_POLL_RECEIPTS_NOT_DAEMON_NOT_LIVE_CERT",
   "design_brief": {
-    "subject": "Polling cascade of domain receipts across needs, budget, career, skills, relationships, whims",
+    "subject": "Polling cascade of domain receipts across needs, budget, career, aspirations, skills, relationships, whims",
     "job": "Let parallel host microsystems speak via ordered receipts on every recurring observation — regardless of human, agent, or script player",
     "architecture": "Thin poll bus over existing evaluators; respects need_load_balance; never a background daemon"
   },
@@ -32,6 +32,12 @@
       "microsystem": "CAREER_SERVICES_TANDEM"
     },
     {
+      "id": "aspirations",
+      "owner": "betterinstincts/aspiration_service.py",
+      "microsystem": "ASPIRATION_SERVICES_TANDEM",
+      "related": ["decision-prompts", "judgment-learning"]
+    },
+    {
       "id": "skills_whims",
       "owner": "betterinstincts/sim_profile.py"
     },
@@ -44,6 +50,7 @@
     "needs",
     "budget",
     "career",
+    "aspirations",
     "skills_whims",
     "relationships"
   ],

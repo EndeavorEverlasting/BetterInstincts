@@ -209,6 +209,25 @@ def _load_observation(raw: Mapping) -> dict:
             if isinstance(raw.get("prior_career_state"), Mapping)
             else None
         ),
+        "aspiration_prompt_active": bool(raw.get("aspiration_prompt_active", False)),
+        "aspiration_prompt_id": (
+            str(raw["aspiration_prompt_id"]) if raw.get("aspiration_prompt_id") else None
+        ),
+        "aspiration_prompt_text": str(raw.get("aspiration_prompt_text") or ""),
+        "aspiration_completion_enabled": bool(
+            raw.get("aspiration_completion_enabled", False)
+        ),
+        "occult_needs_engine_ready": bool(raw.get("occult_needs_engine_ready", False)),
+        "operator_prefers_aspiration_ok": (
+            bool(raw["operator_prefers_aspiration_ok"])
+            if isinstance(raw.get("operator_prefers_aspiration_ok"), bool)
+            else None
+        ),
+        "prior_aspiration_state": (
+            raw.get("prior_aspiration_state")
+            if isinstance(raw.get("prior_aspiration_state"), Mapping)
+            else None
+        ),
         "sim_at_school": sim_at_school if isinstance(sim_at_school, bool) else None,
         "camera_lot_kind": (
             str(raw["camera_lot_kind"]) if raw.get("camera_lot_kind") else None
@@ -377,6 +396,15 @@ def tick(
             whims=obs["whims"] or obs["pinned_whims"],
             gardening=obs["gardening"],
             prior_career_state=obs.get("prior_career_state"),
+            aspiration_prompt_active=obs.get("aspiration_prompt_active", False),
+            aspiration_prompt_id=obs.get("aspiration_prompt_id"),
+            aspiration_prompt_text=obs.get("aspiration_prompt_text") or "",
+            aspiration_completion_enabled=obs.get(
+                "aspiration_completion_enabled", False
+            ),
+            occult_needs_engine_ready=obs.get("occult_needs_engine_ready", False),
+            operator_prefers_aspiration_ok=obs.get("operator_prefers_aspiration_ok"),
+            prior_aspiration_state=obs.get("prior_aspiration_state"),
         )
         force = plan_force(
             location_kind=obs["location_kind"],

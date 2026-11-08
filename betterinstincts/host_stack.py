@@ -63,6 +63,12 @@ from betterinstincts.career_service import (
     evaluate_career_service,
     should_attach_career_service,
 )
+from betterinstincts.aspiration_service import (
+    AspirationServiceError,
+    compact_aspiration_service,
+    evaluate_aspiration_service,
+    should_attach_aspiration_service,
+)
 from betterinstincts.teen_homework import (
     TeenHomeworkError,
     evaluate_teen_homework_turn,
@@ -154,6 +160,13 @@ def evaluate_turn(
     camera_scan_needed: bool = False,
     camera_pan_directions: Sequence[str] = (),
     prior_career_state: Optional[Mapping[str, object]] = None,
+    aspiration_prompt_active: bool = False,
+    aspiration_prompt_id: Optional[str] = None,
+    aspiration_prompt_text: str = "",
+    aspiration_completion_enabled: bool = False,
+    occult_needs_engine_ready: bool = False,
+    operator_prefers_aspiration_ok: Optional[bool] = None,
+    prior_aspiration_state: Optional[Mapping[str, object]] = None,
 ) -> dict:
     """Compose viewport, moodlets, event-balance, instincts, and dialog gates.
 
@@ -212,6 +225,7 @@ def evaluate_turn(
     navigating_needs = None
     teen_homework = None
     career_service = None
+    aspiration_service = None
     scenario = None
     fun_service = None
     need_services = None
@@ -323,6 +337,24 @@ def evaluate_turn(
                 pinned_whims=pinned_whims,
                 whims=whims,
                 prior_state=prior_career_state,
+                capture_ref=capture_ref,
+            )
+        if should_attach_aspiration_service(
+            aspiration_prompt_active=aspiration_prompt_active,
+            prompt_id=aspiration_prompt_id,
+            prompt_text=aspiration_prompt_text,
+            prior_state=prior_aspiration_state,
+        ):
+            aspiration_service = evaluate_aspiration_service(
+                aspiration_prompt_active=aspiration_prompt_active,
+                prompt_id=aspiration_prompt_id,
+                prompt_text=aspiration_prompt_text,
+                aspiration_completion_enabled=aspiration_completion_enabled,
+                occult_needs_engine_ready=occult_needs_engine_ready,
+                player_directed=player_directed,
+                already_busy=already_busy,
+                operator_prefers_ok=operator_prefers_aspiration_ok,
+                prior_state=prior_aspiration_state,
                 capture_ref=capture_ref,
             )
         if should_attach_teen_homework(
@@ -479,6 +511,7 @@ def evaluate_turn(
         BuildOptimizeError,
         TeenHomeworkError,
         CareerServiceError,
+        AspirationServiceError,
         SchoolDayError,
         SocialOpportunityError,
         FunServiceError,
@@ -648,6 +681,31 @@ def evaluate_turn(
             "dialog_choice": "OK",
             "press_ok_allowed": True,
             "forbidden": ["VISION_INVENT_OCCULT_STATUS", "RESUME"],
+        }
+    elif aspiration_service is not None and aspiration_service["gate"] in {
+        "ASPIRATION_COMPLETION_DISABLED",
+        "OCCULT_NEEDS_NOT_READY",
+        "ASPIRATION_JUDGE_CANCEL",
+        "ASPIRATION_JUDGE_OK",
+    }:
+        next_gate = str(aspiration_service["gate"])
+        fallback = {
+            "mechanism": aspiration_service["action"],
+            "owner": "betterinstincts/aspiration_service.py",
+            "contract": "contracts/aspiration-service.v1.json",
+            "prompt": aspiration_service.get("prompt"),
+            "dialog_choice": aspiration_service.get("dialog_choice"),
+            "press_ok_allowed": bool(aspiration_service.get("press_ok_allowed")),
+            "aspiration_completion_enabled": aspiration_service.get(
+                "aspiration_completion_enabled"
+            ),
+            "next_actions": aspiration_service.get("next_actions") or [],
+            "forbidden": [
+                "AUTO_OK_LIFE_STATE_MUTATION",
+                "IGNORE_ASPIRATION_COMPLETION_TOGGLE",
+                "REWRITE_NEEDS_VIA_OCCULT_WHILE_BASE_UNREADY",
+                "RESUME",
+            ],
         }
     elif (
         build_library is not None
@@ -1070,6 +1128,11 @@ def evaluate_turn(
         "teen_homework": teen_homework,
         "career_service": (
             compact_career_service(career_service) if career_service is not None else None
+        ),
+        "aspiration_service": (
+            compact_aspiration_service(aspiration_service)
+            if aspiration_service is not None
+            else None
         ),
         "social_opportunity": social_opportunity,
         "sim_premises": premises,

@@ -1,0 +1,146 @@
+{
+  "schema": "betterinstincts.aspiration-service/v1",
+  "version": 1,
+  "authority": "docs/ASPIRATION_SERVICE.md",
+  "proof_ceiling": "HOST_ASPIRATION_MICROSYSTEM_TANDEM_NOT_DAEMON_NOT_LIFE_STATE_MUTATION",
+  "design_brief": {
+    "subject": "Async aspirations microsystem that judges aspiration and life-state dialogs beside need and career services",
+    "audience": "local host agents that otherwise auto-advance occult transformations while the base six-need engine is unfinished",
+    "job": "Hold a sticky ASPIRATION_PROMPT across survival and needs turns; evaluate OK/Cancel with an explicit aspiration_completion_enabled toggle; refuse life-state mutations when disabled or when occult need trees are not ready",
+    "architecture": "Thin peer microsystem over decision-prompts / judgment gates. Not a daemon. Not fairy/occult needs certification.",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose before chrome"},
+      {"id": "UP-A85AD9DC3", "mechanism": "call-stack storytelling"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ]
+  },
+  "defaults": {
+    "product_aspiration_completion_enabled": true,
+    "lab_host_aspiration_completion_enabled": false,
+    "rationale": "End users typically want aspiration progress; lab/dev fails closed until base Sims needs are ready so occult life-state changes cannot rewrite the needs engine mid-build."
+  },
+  "prompt_classes": {
+    "aspiration_milestone": {
+      "description": "Ordinary aspiration milestone / whim completion that does not rewrite occult needs",
+      "requires_completion_enabled": true,
+      "life_state_mutation": false
+    },
+    "life_state_mutation": {
+      "description": "Permanent occult / life-state change (fairy, vampire, werewolf, etc.) that extends or replaces need trees",
+      "requires_completion_enabled": true,
+      "life_state_mutation": true,
+      "extra_gate": "OCCULT_NEEDS_ENGINE_READY"
+    },
+    "timed_charm_initiation": {
+      "description": "Timed moodlet / charm that is the final gate before a life_state_mutation",
+      "requires_completion_enabled": true,
+      "life_state_mutation": true,
+      "extra_gate": "OCCULT_NEEDS_ENGINE_READY"
+    }
+  },
+  "catalogued_prompts": {
+    "occult.fairy.mother_nature_summon": {
+      "title": "Summon Mother Nature",
+      "prompt_class": "timed_charm_initiation",
+      "narrative_tokens": [
+        "summon Mother Nature",
+        "temporary charm",
+        "Fairy transformation",
+        "complete her Fairy transformation",
+        "bestow a temporary charm"
+      ],
+      "options": [
+        {"option_id": "ok", "label": "OK", "tags": ["life_state_mutation", "occult_fairy", "timed_charm", "needs_rewrite"]},
+        {"option_id": "cancel", "label": "Cancel", "tags": ["safe", "preserve_base_needs", "player_choice"]}
+      ],
+      "default_when_disabled": "cancel",
+      "default_when_unknown": "cancel",
+      "notes": "LOCAL_OBSERVED dialog 2026-11-08 Charlee LabLab: Mother Nature charm initiates Fairy life-state; refuse while base needs unfinished."
+    }
+  },
+  "microsystem_states": [
+    "IDLE",
+    "TRACKING",
+    "DISABLED_REFUSE",
+    "JUDGING",
+    "READY_CANCEL",
+    "READY_OK",
+    "YIELDED",
+    "COMPLETE"
+  ],
+  "call_stack": {
+    "order": [
+      "PLAYER_FIRST_OR_BUSY",
+      "ASPIRATION_PROMPT_HELD",
+      "ASPIRATION_COMPLETION_DISABLED",
+      "OCCULT_NEEDS_NOT_READY",
+      "ASPIRATION_JUDGE_CANCEL",
+      "ASPIRATION_JUDGE_OK",
+      "ASPIRATION_SERVICES_TANDEM",
+      "ASPIRATION_IDLE"
+    ],
+    "gates": {
+      "PLAYER_FIRST_OR_BUSY": {
+        "action": "YIELD_OR_EMULATE_ONLY",
+        "dialog_choice": null,
+        "prompt_held": "PRESERVE_IF_ALREADY_TRACKING"
+      },
+      "ASPIRATION_COMPLETION_DISABLED": {
+        "action": "PRESS_CANCEL_ASPIRATION_DISABLED",
+        "dialog_choice": "CANCEL",
+        "prompt_held": true
+      },
+      "OCCULT_NEEDS_NOT_READY": {
+        "action": "PRESS_CANCEL_OCCULT_NEEDS_UNREADY",
+        "dialog_choice": "CANCEL",
+        "prompt_held": true
+      },
+      "ASPIRATION_JUDGE_CANCEL": {
+        "action": "PRESS_CANCEL_ASPIRATION_JUDGMENT",
+        "dialog_choice": "CANCEL",
+        "prompt_held": true
+      },
+      "ASPIRATION_JUDGE_OK": {
+        "action": "PRESS_OK_ASPIRATION_JUDGMENT",
+        "dialog_choice": "OK",
+        "prompt_held": true
+      },
+      "ASPIRATION_SERVICES_TANDEM": {
+        "action": "TRACK_ASPIRATION_BESIDE_NEED_SERVICES",
+        "dialog_choice": null,
+        "prompt_held": true
+      },
+      "ASPIRATION_COMPLETE": {
+        "action": "CLEAR_ASPIRATION_PROMPT",
+        "dialog_choice": null,
+        "prompt_held": false
+      },
+      "ASPIRATION_IDLE": {
+        "action": "NO_ASPIRATION_PROMPT",
+        "dialog_choice": null,
+        "prompt_held": false
+      }
+    }
+  },
+  "continuity": {
+    "rule": "A visible aspiration / life-state dialog outlives needs-focused turns; never auto-OK occult transformations; disabled mode always Cancel",
+    "resume_condition": "FRESH_DIALOG_REVALIDATION_AFTER_NEEDS",
+    "anti_patterns": [
+      "AUTO_OK_LIFE_STATE_MUTATION",
+      "BACKGROUND_ASPIRATION_DAEMON",
+      "REWRITE_NEEDS_VIA_OCCULT_WHILE_BASE_UNREADY",
+      "CLAIM_FAIRY_TRANSFORMATION_FROM_OFFLINE_MICROSYSTEM",
+      "IGNORE_ASPIRATION_COMPLETION_TOGGLE"
+    ]
+  },
+  "composition": {
+    "orchestrator": "betterinstincts/aspiration_service.py#evaluate_aspiration_service",
+    "policy_lanes": {
+      "decision_prompts": "contracts/decision-prompts.v1.json",
+      "judgment": "docs/JUDGMENT_LEARNING.md"
+    },
+    "host_gate": "ASPIRATION_COMPLETION_DISABLED | ASPIRATION_JUDGE_CANCEL | ASPIRATION_JUDGE_OK | ASPIRATION_PROMPT_HELD",
+    "tandem_peers": ["need_services", "career_service", "host_tandem"],
+    "domain_cascade": "aspirations"
+  }
+}

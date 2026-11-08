@@ -1,5 +1,19 @@
 # Canonical project ledger
 
+## 2026-11-08 — Aspiration microsystem (P95 + trifecta)
+
+**Operator:** Mother Nature / Fairy summon dialog on Charlee would permanently
+rewrite life state and needs while the base six-need engine is unfinished.
+**P95** adds peer microsystem `aspiration_service`
+(`contracts/aspiration-service.v1.json`, `docs/ASPIRATION_SERVICE.md`) with sticky
+`ASPIRATION_PROMPT_HELD`, explicit `aspiration_completion_enabled` toggle (lab host
+default **false** → Cancel; product default true), and occult-needs readiness gate
+before any life-state OK. Wired through `host_stack`, `domain_cascade`, and
+`host_tandem` (`ASPIRATION_DIALOG_HANDOFF_REQUIRED`). Consultation
+`BI-ASPIRATION-MICROSYSTEM-20261108.v1.json`. Proof ceiling
+`HOST_ASPIRATION_MICROSYSTEM_TANDEM_NOT_DAEMON_NOT_LIFE_STATE_MUTATION`. Live Cancel
+P08 OPEN. Does not close BI-002; does not authorize fairy need-tree work.
+
 ## 2026-11-08 — Career microsystem (P95 + trifecta)
 
 **Operator:** Agents keep getting stuck in needs and forget teen High School Student

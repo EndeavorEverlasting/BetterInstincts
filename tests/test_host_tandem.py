@@ -196,6 +196,47 @@ class HostTandemTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("CAREER_READY_AFTER_NEEDS", [row["event"] for row in out["events"]])
         self.assertTrue((out.get("career_obligation") or {}).get("obligation_held"))
 
+    async def test_aspiration_dialog_cancels_while_disabled_and_hands_off(self):
+        turns, executed = 0, []
+        mother = (
+            "Charlee is about to summon Mother Nature. She will bestow a temporary "
+            "charm that allows Charlee to complete her Fairy transformation."
+        )
+
+        async def observe():
+            nonlocal turns
+            turns += 1
+            row = snapshot(turns, energy=.9)
+            row["aspiration_prompt_active"] = True
+            row["aspiration_prompt_text"] = mother
+            row["aspiration_completion_enabled"] = False
+            return row
+
+        async def execute(command, _):
+            executed.append(command)
+            return observed(command)
+
+        async def interrupt(*_):
+            self.fail("No interruption expected")
+
+        out = await run_tandem_session(
+            "tandem-test",
+            "sim:charlee",
+            observe=observe,
+            execute=execute,
+            interrupt_owned=interrupt,
+            probe=idle,
+            max_turns=3,
+        )
+        self.assertEqual(out["state"], "ASPIRATION_DIALOG_HANDOFF_REQUIRED")
+        self.assertIn("ASPIRATION_PROMPT_HELD", [row["event"] for row in out["events"]])
+        self.assertIn("ASPIRATION_DIALOG_READY", [row["event"] for row in out["events"]])
+        held = out.get("aspiration_prompt") or {}
+        self.assertTrue(held.get("prompt_held"))
+        self.assertEqual(held.get("dialog_choice"), "CANCEL")
+        self.assertFalse(held.get("press_ok_allowed"))
+        self.assertEqual(executed, [])
+
     async def test_ineffective_completed_rest_is_not_repeated_blindly(self):
         turns, executed = 0, []
         async def observe():

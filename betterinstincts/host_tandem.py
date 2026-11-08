@@ -93,6 +93,7 @@ async def run_tandem_session(
     reason = "TURN_BUDGET_REACHED"
     last_need_completed: dict | None = None
     career_obligation: dict | None = None
+    aspiration_prompt: dict | None = None
     just_finished_needs = False
 
     def event(kind: str, **fields) -> None:
@@ -144,6 +145,8 @@ async def run_tandem_session(
                 obs["already_busy"] = False
             if career_obligation is not None:
                 obs["prior_career_state"] = career_obligation
+            if aspiration_prompt is not None:
+                obs["prior_aspiration_state"] = aspiration_prompt
             receipt = tick(session_id, obs, presence_probe=probe(raw))
             if receipt["listener_action"] == "YIELD_TO_PLAYER":
                 event("YIELD_TO_PLAYER_NO_QUEUE_CANCELLATION")
@@ -153,6 +156,7 @@ async def run_tandem_session(
             gate = stack["next_gate"]
             garden = stack.get("gardening") or {}
             career = stack.get("career_service") or {}
+            aspiration = stack.get("aspiration_service") or {}
             if career.get("obligation_held"):
                 career_obligation = dict(career)
                 event(
@@ -163,12 +167,36 @@ async def run_tandem_session(
                 )
             elif career.get("microsystem_state") in {"COMPLETE", "IDLE"}:
                 career_obligation = None
+            if aspiration.get("prompt_held"):
+                aspiration_prompt = dict(aspiration)
+                event(
+                    "ASPIRATION_PROMPT_HELD",
+                    microsystem_state=aspiration.get("microsystem_state"),
+                    aspiration_gate=aspiration.get("gate"),
+                    dialog_choice=aspiration.get("dialog_choice"),
+                    pending_phase=(active or {}).get("phase"),
+                )
+            elif aspiration.get("microsystem_state") in {"COMPLETE", "IDLE"}:
+                aspiration_prompt = None
             capture = obs.get("capture_ref")
             if not _ref(capture) or capture == seen_capture:
                 event("WAIT_FOR_FRESH_CAPTURE")
                 continue
             seen_capture = capture
             event("NEEDS_AND_GARDENING_OBSERVED", gate=gate)
+            # Aspiration / life-state dialogs outrank gardening while held.
+            if aspiration.get("prompt_held") and aspiration.get("dialog_choice") in {
+                "CANCEL",
+                "OK",
+            }:
+                event(
+                    "ASPIRATION_DIALOG_READY",
+                    aspiration_gate=aspiration.get("gate"),
+                    dialog_choice=aspiration.get("dialog_choice"),
+                    press_ok_allowed=aspiration.get("press_ok_allowed"),
+                )
+                reason = "ASPIRATION_DIALOG_HANDOFF_REQUIRED"
+                break
             # After survival recovery, held career duty outranks gardening resume.
             if (
                 just_finished_needs
@@ -251,6 +279,7 @@ async def run_tandem_session(
         "events": list(events), "pending_action": active,
         "gardening_goal": "PRESERVED_REQUIRES_FRESH_REVALIDATION",
         "career_obligation": career_obligation,
+        "aspiration_prompt": aspiration_prompt,
         "dispatch_authorized": False,
         "proof_ceiling": "BOUNDED_CALLBACK_SESSION_NOT_GAMEPLAY_CERTIFICATION",
     }
