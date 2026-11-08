@@ -134,7 +134,7 @@ class HouseStateTests(unittest.TestCase):
         admitted = hs.admit_mutation(model, "BACKSPACE_TO_INVENTORY", targets=["floater.lamp"])
         self.assertEqual(admitted["state"], "MUTATION_ADMITTED")
 
-    def test_destructive_requires_save_as_attestation(self):
+    def test_destructive_requires_library_then_save_as(self):
         model = hs.observe(
             hs.create_model("bi-house-1", "Bargain Bend"),
             entities={
@@ -149,15 +149,32 @@ class HouseStateTests(unittest.TestCase):
             },
             open_goals=["RESTORE_STRUCTURE"],
         )
-        denied = hs.admit_mutation(model, "MULTI_OBJECT_REARRANGE", targets=["room.1"])
-        self.assertEqual(denied["reason"], "DESTRUCTIVE_REQUIRES_SAVE_AS_ATTESTATION")
-        attested = hs.attest_save_as(
+        denied_lib = hs.admit_mutation(model, "MULTI_OBJECT_REARRANGE", targets=["room.1"])
+        self.assertEqual(denied_lib["reason"], "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE")
+        with_lib = hs.attest_library_save(
             model,
+            building_id="Bargain Bend",
+            library_item_name="BI Bargain Bend PreRearrange",
+            capture_ref="capture:library-pre-rearrange",
+            operator_confirmed=True,
+        )
+        denied_save = hs.admit_mutation(with_lib, "MULTI_OBJECT_REARRANGE", targets=["room.1"])
+        self.assertEqual(denied_save["reason"], "DESTRUCTIVE_REQUIRES_SAVE_AS_ATTESTATION")
+        # Save As bumps revision → re-attest library at the new tip.
+        attested = hs.attest_save_as(
+            with_lib,
             alias="BI_TMP_BARGAIN_BEND_PRE",
             capture_ref="capture:pre-mutate",
             operator_confirmed=True,
         )
-        admitted = hs.admit_mutation(attested, "MULTI_OBJECT_REARRANGE", targets=["room.1"])
+        fresh = hs.attest_library_save(
+            attested,
+            building_id="Bargain Bend",
+            library_item_name="BI Bargain Bend PreRearrange",
+            capture_ref="capture:library-pre-rearrange-2",
+            operator_confirmed=True,
+        )
+        admitted = hs.admit_mutation(fresh, "MULTI_OBJECT_REARRANGE", targets=["room.1"])
         self.assertEqual(admitted["state"], "MUTATION_ADMITTED")
 
     def test_mutation_outcome_updates_same_model_not_new_identity(self):

@@ -34,6 +34,10 @@ from betterinstincts.instincts_host import (
     plan_to_dict,
 )
 from betterinstincts.build_integrity import BuildIntegrityError, structure_restore_plan
+from betterinstincts.build_library_checkpoint import (
+    BuildLibraryCheckpointError,
+    plan_library_save_if_required,
+)
 from betterinstincts.build_optimize import BuildOptimizeError, evaluate_build_optimize
 from betterinstincts.build_spatial import BuildSpatialError, build_order_plan, inventory_spatial
 from betterinstincts.moodlets import MoodletError, evaluate_moodlets
@@ -167,9 +171,10 @@ def evaluate_turn(
     Optional build_objective runs evaluate-only Build/Buy catalog ranking
     (docs/BUILD_OPTIMIZE.md); never paints walls from this pure module.
 
-    Optional lot_model (RECURSIVE_LOT_MODEL) in Build/Buy attaches build_spatial
-    enclosure/story classification (inside/outside, FLOOR_1/FLOOR_2) plus
-    structure-first build_integrity (docs/BUILD_SPATIAL.md, docs/BUILD_INTEGRITY.md).
+    Optional lot_model (RECURSIVE_LOT_MODEL) in Build/Buy attaches library-save-before-
+    room-mutate, build_spatial enclosure/story classification (inside/outside,
+    FLOOR_1/FLOOR_2), and structure-first build_integrity
+    (docs/BUILD_LIBRARY_CHECKPOINT.md, docs/BUILD_SPATIAL.md, docs/BUILD_INTEGRITY.md).
 
     Optional social_prompt_active runs Sims-library occult lookup before invite OK
     (docs/SOCIAL_OPPORTUNITY.md / docs/TEEN_DAY_JOURNEY.md).
@@ -446,14 +451,16 @@ def evaluate_turn(
 
     build_integrity = None
     build_spatial = None
+    build_library = None
     if build_or_buy_mode and lot_model is not None:
         try:
+            build_library = plan_library_save_if_required(lot_model)
             build_spatial = {
                 "inventory": inventory_spatial(lot_model),
                 "order": build_order_plan(lot_model),
             }
             build_integrity = structure_restore_plan(lot_model)
-        except (BuildIntegrityError, BuildSpatialError) as exc:
+        except (BuildIntegrityError, BuildSpatialError, BuildLibraryCheckpointError) as exc:
             raise HostStackError(str(exc)) from exc
 
     # Priority: viewport/fallback > player > survival/event stack > behavior map travel > decision > needs.
@@ -540,6 +547,28 @@ def evaluate_turn(
             "dialog_choice": "OK",
             "press_ok_allowed": True,
             "forbidden": ["VISION_INVENT_OCCULT_STATUS", "RESUME"],
+        }
+    elif (
+        build_library is not None
+        and build_or_buy_mode
+        and not player_directed
+    ):
+        next_gate = str(build_library.get("gate") or "LIBRARY_CHECKPOINT_REQUIRED")
+        fallback = {
+            "mechanism": "BUILD_LIBRARY_CHECKPOINT",
+            "owner": "betterinstincts/build_library_checkpoint.py",
+            "contract": "contracts/build-library-checkpoint.v1.json",
+            "action": "SAVE_TO_LIBRARY",
+            "building_id": build_library.get("building_id"),
+            "targets": build_library.get("targets") or [],
+            "execute_allowed": False,
+            "forbidden": [
+                "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
+                "SLEDGE_WALLS_WITHOUT_LIBRARY_SAVE",
+                "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
+                "RESUME",
+            ],
+            "detail": build_library.get("reason"),
         }
     elif (
         build_spatial is not None
@@ -951,6 +980,7 @@ def evaluate_turn(
         "gardening": gardening_report,
         "build_integrity": build_integrity,
         "build_spatial": build_spatial,
+        "build_library": build_library,
         "instincts": instincts,
         "decision": decision,
         "influence": influence,

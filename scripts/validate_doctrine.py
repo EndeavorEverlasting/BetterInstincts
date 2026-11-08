@@ -86,6 +86,9 @@ REQUIRED = (
     "docs/CAREER_PERFORMANCE.md", "docs/TEEN_DAY_JOURNEY.md",
     "betterinstincts/teen_homework.py", "scripts/teen_homework.py",
     "tests/test_teen_homework.py",
+    "contracts/career-service.v1.json", "docs/CAREER_SERVICE.md",
+    "betterinstincts/career_service.py", "scripts/career_service.py",
+    "tests/test_career_service.py",
     "contracts/social-opportunity.v1.json", "docs/SOCIAL_OPPORTUNITY.md",
     "betterinstincts/social_opportunity.py", "scripts/social_opportunity.py",
     "tests/test_social_opportunity.py",
@@ -113,6 +116,9 @@ REQUIRED = (
     "contracts/build-spatial.v1.json", "docs/BUILD_SPATIAL.md",
     "betterinstincts/build_spatial.py", "scripts/build_spatial.py",
     "tests/test_build_spatial.py",
+    "contracts/build-library-checkpoint.v1.json", "docs/BUILD_LIBRARY_CHECKPOINT.md",
+    "betterinstincts/build_library_checkpoint.py", "scripts/build_library_checkpoint.py",
+    "tests/test_build_library_checkpoint.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

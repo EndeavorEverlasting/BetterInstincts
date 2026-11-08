@@ -44,6 +44,7 @@ def load_contract(path: Path = CONTRACT) -> dict:
         "BULK_SWEEP_WITHOUT_ENTITY_TARGETS",
         "TREAT_OUTDOOR_AS_INDOOR",
         "MUTATE_WITHOUT_BUILD_INTEGRITY",
+        "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
     }.issubset(forbidden):
         raise HouseStateError("ANTI_BLANK_SLATE_GUARDS_MISSING")
     if not data.get("mutating_actions"):
@@ -90,6 +91,7 @@ def create_model(run_id: str, lot_id: str, *, seed_captures: Sequence[str] | Non
         "last_action": None,
         "captures": captures,
         "save_as_attestation": None,
+        "library_checkpoint": None,
         "unknowns": [],
         "history": [],
     }
@@ -287,6 +289,48 @@ def attest_save_as(
     return out
 
 
+def attest_library_save(
+    model: Mapping[str, Any],
+    *,
+    building_id: str,
+    library_item_name: str,
+    capture_ref: str,
+    operator_confirmed: bool,
+) -> dict:
+    """Record Build Mode Save-to-My-Library attestation (not game Save As).
+
+    Bumps model revision and binds the checkpoint to that revision so room
+    mutations can proceed only while the model has not advanced further.
+    """
+    from betterinstincts.build_library_checkpoint import (
+        BuildLibraryCheckpointError,
+        validate_attestation_payload,
+    )
+
+    if not operator_confirmed:
+        raise HouseStateError("LIBRARY_SAVE_REQUIRES_OPERATOR_CONFIRMATION")
+    try:
+        validate_attestation_payload(
+            building_id=building_id,
+            library_item_name=library_item_name,
+            capture_ref=capture_ref,
+        )
+    except BuildLibraryCheckpointError as exc:
+        raise HouseStateError(str(exc)) from exc
+    out = observe(model, note="library_checkpoint_attestation")
+    out["library_checkpoint"] = {
+        "building_id": building_id,
+        "library_item_name": library_item_name,
+        "capture_ref": capture_ref,
+        "library_saved": True,
+        "operator_confirmed": True,
+        "source": "SIMS_MY_LIBRARY",
+        "model_revision": out["revision"],
+        "observed_at": "operator_attested",
+    }
+    return out
+
+
 def plan_next(model: Mapping[str, Any]) -> dict:
     """Pick one next action from accumulated model — never from a blank slate."""
     load_contract()
@@ -304,10 +348,31 @@ def plan_next(model: Mapping[str, Any]) -> dict:
             "forbidden": ["BLANK_SLATE_REASSESS", "MUTATE_WITHOUT_MODEL_REVISION"],
             "model_revision": revision,
         }
-    # Enclosure + story axes first (inside/outside, F1/F2), then integrity restore.
+    # Library building save before any room/structure work (human-judgment revert).
+    from betterinstincts.build_library_checkpoint import plan_library_save_if_required
     from betterinstincts.build_spatial import build_order_plan
     from betterinstincts.build_integrity import structure_restore_plan
 
+    library_plan = plan_library_save_if_required(model)
+    if library_plan is not None:
+        return {
+            "state": "MODEL_ACTIVE",
+            "gate": library_plan.get("gate") or "LIBRARY_CHECKPOINT_REQUIRED",
+            "action": "SAVE_TO_LIBRARY",
+            "reason": library_plan.get("reason") or "SAVE_BUILDING_TO_LIBRARY_BEFORE_ROOM_MUTATE",
+            "model_revision": revision,
+            "targets": list(library_plan.get("targets") or []),
+            "building_id": library_plan.get("building_id"),
+            "library_checkpoint": library_plan,
+            "open_goals": goals,
+            "forbidden": [
+                "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
+                "SLEDGE_WALLS_WITHOUT_LIBRARY_SAVE",
+                "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
+            ],
+        }
+
+    # Enclosure + story axes first (inside/outside, F1/F2), then integrity restore.
     spatial = build_order_plan(model)
     if spatial.get("steps"):
         primary = spatial.get("primary") or {}
@@ -422,10 +487,12 @@ def admit_mutation(
     place_story: str | None = None,
     nest_risk: bool = False,
     strips_zone: str | None = None,
+    building_id: str | None = None,
 ) -> dict:
     """Admit one mutation only against the current accumulated model revision.
 
-    Always runs build_integrity before issuing a lease (structure-first spatial gate).
+    Order: model revision → library checkpoint (room/structure) → Save As
+    (destructive) → spatial axes → build integrity → lease.
     """
     cfg = load_contract()
     mutating = set(cfg["mutating_actions"])
@@ -496,7 +563,7 @@ def admit_mutation(
             "hint": "Use BACKSPACE_TO_INVENTORY with explicit floater entity ids from the model",
         }
     for tid in target_list:
-        if tid not in entities:
+        if tid not in entities and action != "SAVE_TO_LIBRARY":
             return {
                 "state": "MUTATION_DENIED",
                 "gate": "PLAN_FROM_MODEL",
@@ -506,6 +573,61 @@ def admit_mutation(
                 "model_revision": revision,
                 "execute_allowed": False,
             }
+
+    from betterinstincts.build_library_checkpoint import evaluate_library_checkpoint
+
+    library = evaluate_library_checkpoint(
+        model,
+        action,
+        targets=target_list,
+        place_kind=place_kind,
+        building_id=building_id or str(model.get("lot_id") or ""),
+    )
+    if action == "SAVE_TO_LIBRARY":
+        return {
+            "state": "MUTATION_ADMITTED",
+            "gate": "LIBRARY_CHECKPOINT_REQUIRED",
+            "lease": {
+                "schema": LEASE_SCHEMA,
+                "run_id": model["run_id"],
+                "lot_id": model["lot_id"],
+                "model_revision": revision,
+                "action": action,
+                "targets": target_list,
+                "building_id": building_id or model.get("lot_id"),
+                "execute_allowed": False,
+                "proof_ceiling": "OFFLINE_LIBRARY_SAVE_ADMISSION_NOT_LIVE_GALLERY_WRITE",
+            },
+            "action": action,
+            "reason": "LIBRARY_SAVE_ACTION_BEFORE_ROOM_MUTATE",
+            "library": library,
+            "model_revision": revision,
+            "execute_allowed": False,
+            "next": "ATTEST_LIBRARY_SAVE_AFTER_OBSERVED_MY_LIBRARY_CONFIRMATION",
+            "forbidden": [
+                "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
+                "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
+            ],
+        }
+    if library.get("state") == "LIBRARY_DENY":
+        return {
+            "state": "MUTATION_DENIED",
+            "gate": library.get("gate") or "LIBRARY_CHECKPOINT_REQUIRED",
+            "reason": "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
+            "violation": library.get("violation"),
+            "detail": library.get("detail"),
+            "library": library,
+            "action": action,
+            "model_revision": revision,
+            "execute_allowed": False,
+            "forbidden": [
+                "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
+                "SLEDGE_WALLS_WITHOUT_LIBRARY_SAVE",
+                "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
+            ],
+            "hint": library.get("hint"),
+        }
+
     if action in destructive and not (model.get("save_as_attestation") or {}).get("operator_confirmed"):
         return {
             "state": "MUTATION_DENIED",
@@ -513,6 +635,7 @@ def admit_mutation(
             "reason": "DESTRUCTIVE_REQUIRES_SAVE_AS_ATTESTATION",
             "action": action,
             "model_revision": revision,
+            "library": library,
             "execute_allowed": False,
         }
 
@@ -598,6 +721,7 @@ def admit_mutation(
         "place_kind": place_kind,
         "place_enclosure": place_enclosure,
         "place_story": place_story,
+        "library_gate": library.get("gate"),
         "integrity_gate": integrity.get("gate"),
         "spatial_gate": (spatial or {}).get("gate"),
         "execute_allowed": False,
@@ -608,8 +732,9 @@ def admit_mutation(
         "gate": "HOUSE_STATE_MUTATION_LEASE",
         "lease": lease,
         "action": action,
-        "reason": "MODEL_SPATIAL_AND_INTEGRITY_BACKED_MUTATION",
+        "reason": "MODEL_LIBRARY_SPATIAL_AND_INTEGRITY_BACKED_MUTATION",
         "model_revision": revision,
+        "library": library,
         "integrity": integrity,
         "spatial": spatial,
         "execute_allowed": False,
@@ -620,6 +745,7 @@ def admit_mutation(
             "DISCARD_MODEL_AFTER_ACTION",
             "TREAT_OUTDOOR_AS_INDOOR",
             "NEST_OBJECTS",
+            "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
         ],
     }
 

@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
 from betterinstincts.house_state import (
     HouseStateError,
     admit_mutation,
+    attest_library_save,
     attest_save_as,
     load_contract,
     load_or_create,
@@ -73,6 +74,17 @@ def main(argv=None) -> int:
     save_as.add_argument("--alias", required=True)
     save_as.add_argument("--capture-ref", required=True)
     save_as.add_argument("--operator-confirmed", action="store_true")
+
+    lib = sub.add_parser(
+        "attest-library-save",
+        help="Record Build Mode Save-to-My-Library attestation (required before room mutate)",
+    )
+    lib.add_argument("--run-id", required=True)
+    lib.add_argument("--lot-id", required=True)
+    lib.add_argument("--building-id", required=True)
+    lib.add_argument("--library-item-name", required=True)
+    lib.add_argument("--capture-ref", required=True)
+    lib.add_argument("--operator-confirmed", action="store_true")
 
     ckpt = sub.add_parser("checkpoint", help="Persist current model revision (continuity)")
     ckpt.add_argument("--run-id", required=True)
@@ -155,6 +167,22 @@ def main(argv=None) -> int:
             )
             save_model(model)
             print(json.dumps({"state": "MODEL_ACTIVE", "save_as_attestation": model["save_as_attestation"]}, indent=2))
+            return 0
+        if args.cmd == "attest-library-save":
+            if not args.operator_confirmed:
+                raise HouseStateError("LIBRARY_SAVE_REQUIRES_OPERATOR_CONFIRMATION")
+            model = attest_library_save(
+                model,
+                building_id=args.building_id,
+                library_item_name=args.library_item_name,
+                capture_ref=args.capture_ref,
+                operator_confirmed=True,
+            )
+            save_model(model)
+            print(json.dumps(
+                {"state": "MODEL_ACTIVE", "library_checkpoint": model["library_checkpoint"]},
+                indent=2,
+            ))
             return 0
         if args.cmd == "checkpoint":
             print(json.dumps(persist_checkpoint(model, label=args.label), indent=2))

@@ -1,0 +1,117 @@
+{
+  "schema": "betterinstincts.build-library-checkpoint/v1",
+  "version": 1,
+  "owner": "betterinstincts/build_library_checkpoint.py",
+  "product_contract": "Before any Build/Buy mutation that changes a room or building structure, the host must have an attested Sims My Library save of that building. The library item is the operator's human-judgment revert point. Game Save As (BI_TMP_/BI_CONT_) remains a separate recovery path and does not satisfy this gate. Applies to every host/agent caller — not an optional courtesy.",
+  "prompt": {
+    "id": "P95",
+    "name": "Program Design & Call-Stack Prototype Architect",
+    "provenance": "docs/PROMPT_INVOCATIONS.md TokenCorridor spec-architecture-prompts.v1.json"
+  },
+  "motivating_corrections": [
+    "2026-11-08 operator: agent deleted house walls without first saving the building to the library so the change could be reverted; human judgment must be preserved by host logic before room mutation."
+  ],
+  "architecture": {
+    "selected": "LIBRARY_SAVE_BEFORE_ROOM_MUTATE",
+    "rejected": [
+      {
+        "id": "SAVE_AS_ONLY",
+        "why": "Game Save As recovers the whole session; it is not the Build Mode building/room library revert the operator required, and prior thrash still skipped both."
+      },
+      {
+        "id": "AGENT_COURTESY_PROMPT",
+        "why": "Chat reminders do not bind host_stack or admit_mutation; another agent can still sledge walls."
+      },
+      {
+        "id": "POST_MUTATION_LIBRARY_SAVE",
+        "why": "Saving wreckage after deleting walls does not preserve the pre-mutation judgment."
+      },
+      {
+        "id": "OPTIONAL_FOR_SMALL_EDITS",
+        "why": "Room/structure tools and wall/floor targets are never optional; soft exceptions invite the same failure."
+      }
+    ]
+  },
+  "library_vs_save_as": {
+    "library_checkpoint": "Build Mode Save to My Library for the building/room blueprint — revert by placing from Library",
+    "game_save_as": "Session Save As under BI_TMP_/BI_CONT_ — still required for some destructive leases, never a substitute for library checkpoint"
+  },
+  "room_mutating_actions": [
+    "SLEDGE",
+    "WALL_ROOM_TOOL",
+    "MOVE_HOUSE_OR_ROOM",
+    "MULTI_OBJECT_REARRANGE"
+  ],
+  "room_mutating_target_kinds": [
+    "FLOOR_TILE",
+    "WALL_SEGMENT",
+    "DOOR",
+    "WINDOW",
+    "ROOF_PIECE",
+    "ROOM_ZONE"
+  ],
+  "exempt_actions": [
+    "SAVE_TO_LIBRARY",
+    "CAMERA_PAN_ZOOM",
+    "WALLS_DOWN",
+    "HAND_SELECT_NO_MOVE",
+    "CATALOG_BROWSE",
+    "CAPTURE_ONLY",
+    "CANCEL_UI",
+    "OBSERVE_ONLY",
+    "BACKSPACE_TO_INVENTORY"
+  ],
+  "attestation_fields": [
+    "building_id",
+    "library_item_name",
+    "capture_ref",
+    "model_revision",
+    "library_saved",
+    "observed_at"
+  ],
+  "freshness_rule": "library_checkpoint.model_revision MUST equal the current lot model revision at admit time; any later observe without a new library save invalidates the gate",
+  "call_stack": {
+    "success": [
+      "load lot_environment_model",
+      "if room mutation planned and no fresh library_checkpoint -> plan/admit SAVE_TO_LIBRARY only",
+      "attest_library_save(building_id, library_item_name, capture_ref) on model",
+      "build_library_checkpoint.evaluate -> LIBRARY_ADMIT",
+      "then spatial + integrity + optional Save As gates",
+      "admit_mutation lease",
+      "optional live adapter",
+      "observe outcome into same model (invalidates prior library checkpoint until re-saved)"
+    ]
+  },
+  "states": [
+    "LIBRARY_ADMIT",
+    "LIBRARY_DENY",
+    "LIBRARY_SAVE_REQUIRED",
+    "LIBRARY_SAVE_ACTION",
+    "NOT_ROOM_MUTATION"
+  ],
+  "gates": [
+    "LIBRARY_CHECKPOINT_REQUIRED",
+    "SAVE_BUILDING_TO_LIBRARY_BEFORE_ROOM_MUTATE",
+    "FRESH_LIBRARY_CHECKPOINT"
+  ],
+  "violations": {
+    "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE": "Room/structure mutation with no library_checkpoint.library_saved",
+    "STALE_LIBRARY_CHECKPOINT": "library_checkpoint.model_revision != current model revision",
+    "BUILDING_SCOPE_MISMATCH": "Attestation building_id does not match mutation building_id",
+    "LIBRARY_NAME_MISSING": "SAVE_TO_LIBRARY / attestation without library_item_name",
+    "LIBRARY_CAPTURE_MISSING": "Attestation without capture_ref proving the library save UI outcome"
+  },
+  "forbidden": [
+    "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
+    "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
+    "POST_HOC_LIBRARY_SAVE_AS_PERMISSION",
+    "CLAIM_REVERTIBLE_WITHOUT_LIBRARY_ITEM",
+    "SLEDGE_WALLS_WITHOUT_LIBRARY_SAVE"
+  ],
+  "proof_ceiling": "OFFLINE_LIBRARY_SAVE_ADMISSION_NOT_LIVE_GALLERY_WRITE",
+  "next_parent_gate": "BI-002_HUNGER_LIVE_CERTIFICATION",
+  "depends_on": [
+    "contracts/house-state.v1.json",
+    "contracts/build-integrity.v1.json"
+  ]
+}

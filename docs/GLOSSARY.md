@@ -57,6 +57,7 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **BUILD_INTEGRITY** / **STRUCTURE_FIRST_SPATIAL_ADMISSION** | Floor before furniture; indoor≠outdoor; no nesting; protect kitchen/bed/dining — see `docs/BUILD_INTEGRITY.md`. |
 | **OUTDOOR_AS_INDOOR** / **PLACE_WITHOUT_FLOOR** | Forbidden: grass-as-interior; indoor place with no attested floor. |
 | **BUILD_SPATIAL** / **ENCLOSURE_AND_STORY_AXES** | Inside vs outside + FLOOR_1 vs FLOOR_2 builder axes; see `docs/BUILD_SPATIAL.md`. |
+| **BUILD_LIBRARY_CHECKPOINT** / **LIBRARY_SAVE_BEFORE_ROOM_MUTATE** | Sims My Library building save required before room/structure mutation; Save As is not a substitute; see `docs/BUILD_LIBRARY_CHECKPOINT.md`. |
 | **FLOOR_1** / **FLOOR_2** | First vs second story; F2 indoor work requires F1 indoor floor first. |
 | **CURIOUS_CATALOG** | Opt-in hidden Buy shelves for rare/money gardening; never on startup; never touch game speed. |
 | **SHOW_HIDDEN_OBJECTS** | Console line `bb.showhiddenobjects` only — never type `buydebug` or slash-join. |

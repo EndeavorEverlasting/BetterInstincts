@@ -225,7 +225,7 @@ class BuildIntegrityTests(unittest.TestCase):
             place_story="FLOOR_1",
         )
         self.assertEqual(ok["state"], "MUTATION_ADMITTED")
-        self.assertEqual(ok["reason"], "MODEL_SPATIAL_AND_INTEGRITY_BACKED_MUTATION")
+        self.assertEqual(ok["reason"], "MODEL_LIBRARY_SPATIAL_AND_INTEGRITY_BACKED_MUTATION")
 
 
 if __name__ == "__main__":

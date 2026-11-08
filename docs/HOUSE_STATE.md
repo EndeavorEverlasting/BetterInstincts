@@ -39,6 +39,7 @@ Forbidden loop: `act → discard_model → capture_from_scratch → reassess_as_
 - Non-mutating camera/UI/catalog browse: allowed without a lease.
 - Mutating actions need a model revision > 0 with entities and explicit targets where applicable.
 - **`build_spatial` classifies INSIDE/OUTSIDE and FLOOR_1/FLOOR_2** — see [`BUILD_SPATIAL.md`](BUILD_SPATIAL.md). Host plans F1 before F2.
+- **`build_library_checkpoint` must `LIBRARY_ADMIT` before room/structure leases** — see [`BUILD_LIBRARY_CHECKPOINT.md`](BUILD_LIBRARY_CHECKPOINT.md). Save the building to My Library before sledge/walls/room tools; game Save As is not a substitute.
 - **`build_integrity` must `INTEGRITY_ADMIT` before any lease** — see [`BUILD_INTEGRITY.md`](BUILD_INTEGRITY.md). Outdoor grass is never indoor floor; nesting denied; floor/walls/kitchen protected.
 - `BULK_INVENTORY_SWEEP` is always denied — clear floaters only as named `FLOATER` entities via `BACKSPACE_TO_INVENTORY`.
 - Destructive bulk rearrange / sledge / move-house require operator-attested lab `Save As` (`BI_TMP_` / `BI_CONT_`) on the model.

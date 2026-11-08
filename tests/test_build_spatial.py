@@ -125,6 +125,23 @@ class BuildSpatialTests(unittest.TestCase):
                     "status": "MISSING",
                 },
             },
+            open_goals=["RESTORE_FLOOR"],
+        )
+        # Library checkpoint outranks spatial order until the building is saved.
+        blocked = evaluate_turn(
+            {"hunger": 0.8, "energy": 0.8, "bladder": 0.8, "hygiene": 0.8, "fun": 0.8, "social": 0.8},
+            build_or_buy_mode=True,
+            lot_model=model,
+            available_objects=["fridge"],
+            viewport={"state": "VIEWPORT_OK"},
+        )
+        self.assertEqual(blocked["fallback"]["mechanism"], "BUILD_LIBRARY_CHECKPOINT")
+        model = hs.attest_library_save(
+            model,
+            building_id="Bargain Bend",
+            library_item_name="BI Bargain Bend Spatial",
+            capture_ref="capture:library-spatial",
+            operator_confirmed=True,
         )
         turn = evaluate_turn(
             {"hunger": 0.8, "energy": 0.8, "bladder": 0.8, "hygiene": 0.8, "fun": 0.8, "social": 0.8},
