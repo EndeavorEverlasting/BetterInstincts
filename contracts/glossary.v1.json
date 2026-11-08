@@ -394,6 +394,94 @@
         "docs/BUILD_OPTIMIZE.md"
       ]
     },
+    "LOT_ENVIRONMENT_MODEL": {
+      "definition": "Durable, revisioned structured understanding of a lab lot (entities, relations, goals, captures) that accumulates across observations and mutation outcomes.",
+      "owners": [
+        "contracts/house-state.v1.json",
+        "docs/HOUSE_STATE.md",
+        "betterinstincts/house_state.py"
+      ]
+    },
+    "RECURSIVE_LOT_MODEL": {
+      "definition": "Selected P95 architecture: plan and mutate from the accumulating lot model; checkpoints persist the same revisioned understanding rather than wiping it.",
+      "owners": [
+        "contracts/house-state.v1.json",
+        "docs/HOUSE_STATE.md"
+      ]
+    },
+    "BLANK_SLATE_REASSESS": {
+      "definition": "Forbidden loop: act, discard prior lot understanding, capture/checkpoint from scratch, and reassess as if the lot were unknown.",
+      "owners": [
+        "contracts/house-state.v1.json",
+        "docs/HOUSE_STATE.md",
+        "betterinstincts/house_state.py"
+      ]
+    },
+    "HOUSE_STATE_MUTATION_LEASE": {
+      "definition": "Admission gate for one Build/Buy mutation bound to the current lot-model revision and explicit entity targets; outcome must merge back into the same model.",
+      "owners": [
+        "contracts/house-state.v1.json",
+        "betterinstincts/house_state.py"
+      ]
+    },
+    "BUILD_INTEGRITY": {
+      "definition": "Structure-first Build/Buy spatial gate: indoor vs outdoor domains, floor-before-furniture, no nesting, protected aesthetic zones.",
+      "owners": [
+        "contracts/build-integrity.v1.json",
+        "docs/BUILD_INTEGRITY.md",
+        "betterinstincts/build_integrity.py"
+      ]
+    },
+    "STRUCTURE_FIRST_SPATIAL_ADMISSION": {
+      "definition": "Selected P95 Build architecture: admit mutations only after domain/zone/floor claims satisfy integrity; restore floor and walls before furniture.",
+      "owners": [
+        "contracts/build-integrity.v1.json",
+        "docs/BUILD_INTEGRITY.md"
+      ]
+    },
+    "OUTDOOR_AS_INDOOR": {
+      "definition": "Forbidden integrity violation: treating lot grass/outdoor grid as an interior floor for indoor-class objects.",
+      "owners": [
+        "contracts/build-integrity.v1.json",
+        "betterinstincts/build_integrity.py"
+      ]
+    },
+    "PLACE_WITHOUT_FLOOR": {
+      "definition": "Forbidden: placing indoor furniture when the lot model has no attested present INDOOR_FLOOR tile.",
+      "owners": [
+        "contracts/build-integrity.v1.json",
+        "betterinstincts/build_integrity.py"
+      ]
+    },
+    "BUILD_SPATIAL": {
+      "definition": "Host Build/Buy classification of enclosure (INSIDE/OUTSIDE) and story (FLOOR_1/FLOOR_2) used to order intelligent construction.",
+      "owners": [
+        "contracts/build-spatial.v1.json",
+        "docs/BUILD_SPATIAL.md",
+        "betterinstincts/build_spatial.py"
+      ]
+    },
+    "ENCLOSURE_AND_STORY_AXES": {
+      "definition": "Selected P95 builder architecture: every entity/placement is typed as inside vs outside and first vs second floor before mutation admission.",
+      "owners": [
+        "contracts/build-spatial.v1.json",
+        "docs/BUILD_SPATIAL.md"
+      ]
+    },
+    "FLOOR_1": {
+      "definition": "Ground / first story of an indoor structure; must exist before FLOOR_2 indoor work.",
+      "owners": [
+        "contracts/build-spatial.v1.json",
+        "betterinstincts/build_spatial.py"
+      ]
+    },
+    "FLOOR_2": {
+      "definition": "Upper / second story; indoor work is denied until FLOOR_1 indoor floor is present in the lot model.",
+      "owners": [
+        "contracts/build-spatial.v1.json",
+        "betterinstincts/build_spatial.py"
+      ]
+    },
     "SCHOOL_DAY_GOAL_PROGRESS": {
       "definition": "Host gate that queues incomplete High School Years top-left school-day HUD goals when needs are not survival-critical.",
       "owners": [

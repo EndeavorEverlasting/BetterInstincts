@@ -1,0 +1,182 @@
+{
+  "schema": "betterinstincts.house-state/v1",
+  "version": 2,
+  "owner": "betterinstincts/house_state.py",
+  "product_contract": "Build/Buy work maintains one durable, revisioned lot environment model that accumulates observations and mutation outcomes recursively. Agents plan the next move from that model; they never wipe understanding and reassess from a blank slate after each action. Checkpoints persist the current model revision (and optional Save As) for recovery — they are continuity of understanding, not extract-from-scratch rituals.",
+  "prompt": {
+    "id": "P95",
+    "name": "Program Design & Call-Stack Prototype Architect",
+    "provenance": "docs/PROMPT_INVOCATIONS.md TokenCorridor spec-architecture-prompts.v1.json"
+  },
+  "motivating_corrections": [
+    "2026-11-07 Bargain Bend: Hand+Backspace sweeps rearranged the lot without durable understanding or recoverable state, destroying usable layout for BI-002 testing.",
+    "2026-11-07 operator: do not build → act → extract checkpoint from scratch → reassess; accumulate environment understanding recursively as you move."
+  ],
+  "architecture": {
+    "selected": "RECURSIVE_LOT_MODEL",
+    "rejected": [
+      {
+        "id": "BLANK_SLATE_CHECKPOINT_LOOP",
+        "why": "Each turn discards prior layout knowledge, re-captures from zero, and re-plans as if the lot were unknown — wastes proof and causes destructive thrash."
+      },
+      {
+        "id": "CHECKPOINT_ONLY_NO_MODEL",
+        "why": "A photo/receipt without a structured accumulating model still forces reassessment; recovery exists but agency does not compound."
+      },
+      {
+        "id": "PIXEL_INVENTED_OBJECT_GRAPH",
+        "why": "Inventing exact object IDs/poses from screenshots alone is false precision; model stores attested/observed claims with confidence ceilings."
+      }
+    ]
+  },
+  "model": {
+    "schema": "betterinstincts.lot-environment-model/v1",
+    "fields": [
+      "run_id",
+      "lot_id",
+      "revision",
+      "entities",
+      "relations",
+      "open_goals",
+      "last_action",
+      "captures",
+      "save_as_attestation",
+      "unknowns"
+    ],
+    "entity_kinds": [
+      "DINING_TABLE",
+      "DINING_CHAIR",
+      "FLOATER",
+      "APPLIANCE",
+      "DECOR",
+      "ROOM_ZONE",
+      "SIM",
+      "UNKNOWN_OBJECT",
+      "FLOOR_TILE",
+      "WALL_SEGMENT",
+      "DOOR",
+      "WINDOW",
+      "ROOF_PIECE",
+      "BED",
+      "SLEEP_POD",
+      "COUNTER",
+      "CABINET",
+      "SOFA",
+      "DESK",
+      "PLANTER"
+    ],
+    "spatial_fields": [
+      "domain",
+      "zone",
+      "enclosure",
+      "story",
+      "floor_level"
+    ],
+    "integrity": {
+      "module": "betterinstincts/build_integrity.py",
+      "contract": "contracts/build-integrity.v1.json",
+      "rule": "admit_mutation must INTEGRITY_ADMIT before lease"
+    },
+    "merge_policy": "UPSERT_BY_ENTITY_ID_APPEND_EVIDENCE_NEVER_WIPE_ON_OBSERVE",
+    "revision_policy": "MONOTONIC_INT_ON_EVERY_OBSERVE_OR_MUTATION_OUTCOME"
+  },
+  "call_stack": {
+    "success": [
+      "load_or_create_lot_model(run_id, lot_id)",
+      "observe(claims) -> merge into same model; bump revision",
+      "plan_next(model) -> one action grounded in entities/goals",
+      "admit_mutation(model.revision, action) -> lease OR DENIED",
+      "execute (separate live adapter; optional)",
+      "observe(outcome_delta) -> recursive update; do not recreate model",
+      "persist_checkpoint(model) -> continuity receipt + optional Save As"
+    ],
+    "forbidden_loop": [
+      "act",
+      "discard_model",
+      "capture_from_scratch",
+      "reassess_as_if_unknown",
+      "repeat"
+    ]
+  },
+  "mutating_actions": [
+    "HAND_MOVE",
+    "PLACE_FROM_CATALOG",
+    "PLACE_FROM_INVENTORY",
+    "EYEDROPPER_PLACE",
+    "BACKSPACE_TO_INVENTORY",
+    "BULK_INVENTORY_SWEEP",
+    "SLEDGE",
+    "MOVE_HOUSE_OR_ROOM",
+    "MULTI_OBJECT_REARRANGE",
+    "WALL_ROOM_TOOL"
+  ],
+  "non_mutating_allowed_without_lease": [
+    "CAMERA_PAN_ZOOM",
+    "WALLS_DOWN",
+    "HAND_SELECT_NO_MOVE",
+    "CATALOG_BROWSE",
+    "CAPTURE_ONLY",
+    "CANCEL_UI",
+    "OBSERVE_ONLY"
+  ],
+  "destructive_actions_require_save_as": [
+    "BULK_INVENTORY_SWEEP",
+    "SLEDGE",
+    "MOVE_HOUSE_OR_ROOM",
+    "MULTI_OBJECT_REARRANGE"
+  ],
+  "states": [
+    "MODEL_EMPTY",
+    "MODEL_ACTIVE",
+    "MUTATION_ADMITTED",
+    "MUTATION_DENIED",
+    "CHECKPOINT_PERSISTED",
+    "RECOVERY_ADVICE",
+    "BLANK_SLATE_REJECTED"
+  ],
+  "gates": [
+    "ACCUMULATE_LOT_MODEL",
+    "PLAN_FROM_MODEL",
+    "HOUSE_STATE_MUTATION_LEASE",
+    "PERSIST_MODEL_CHECKPOINT",
+    "LOAD_LAST_KNOWN_GOOD_SAVE",
+    "DO_NOT_OVERWRITE_GOOD_SAVE_WITH_WRECKAGE"
+  ],
+  "forbidden": [
+    "BLANK_SLATE_REASSESS",
+    "DISCARD_MODEL_AFTER_ACTION",
+    "MUTATE_WITHOUT_MODEL_REVISION",
+    "MUTATE_WITHOUT_LEASE",
+    "SILENT_OVERWRITE_PLAY_SAVE",
+    "DELETE_SAVE",
+    "TOUCH_USER_PROTECTED_SAVE",
+    "INVENT_OBJECT_GRAPH_FROM_PIXELS",
+    "BACKGROUND_DAEMON",
+    "AUTO_DISCOVER_SAVES_FOLDER",
+    "CLAIM_LOT_RESTORED_WITHOUT_LOAD_PROOF",
+    "BULK_SWEEP_WITHOUT_ENTITY_TARGETS",
+    "TREAT_OUTDOOR_AS_INDOOR",
+    "PLACE_INDOOR_ON_GRASS",
+    "NEST_OBJECTS",
+    "DELETE_FLOOR_WITHOUT_RESTORE_GOAL",
+    "STRIP_KITCHEN_AESTHETIC",
+    "MUTATE_WITHOUT_BUILD_INTEGRITY"
+  ],
+  "storage": {
+    "root": "dist/house-state/",
+    "model_schema": "betterinstincts.lot-environment-model/v1",
+    "checkpoint_schema": "betterinstincts.house-state-checkpoint/v1",
+    "lease_schema": "betterinstincts.house-state-lease/v1",
+    "max_model_bytes": 262144,
+    "max_receipt_bytes": 65536,
+    "gitignored": true
+  },
+  "recovery_policy": {
+    "if_lot_destroyed_and_good_save_exists": "LOAD_LAST_KNOWN_GOOD_SAVE; do not Save over it with wreckage",
+    "if_only_wreckage_loaded": "Save As wreckage under a distinct BI_TMP_ label only if operator wants a forensic copy, then load prior good save or restart lab lot",
+    "never": "Overwrite a known-good play save with a rearranged wreckage session",
+    "model_after_load": "Seed a new model revision from the loaded save; do not pretend prior wreckage model is still authoritative"
+  },
+  "proof_ceiling": "OFFLINE_RECURSIVE_LOT_MODEL_NOT_EA_SAVE_API_NOT_LOT_RESTORE_PROOF",
+  "next_parent_gate": "BI-002_HUNGER_LIVE_CERTIFICATION"
+}

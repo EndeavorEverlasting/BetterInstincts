@@ -104,6 +104,15 @@ REQUIRED = (
     "contracts/curious-catalog.v1.json", "docs/CURIOUS_CATALOG.md",
     "betterinstincts/curious_catalog.py", "scripts/curious_catalog.py",
     "tests/test_curious_catalog.py",
+    "contracts/house-state.v1.json", "docs/HOUSE_STATE.md",
+    "betterinstincts/house_state.py", "scripts/house_state.py",
+    "tests/test_house_state.py",
+    "contracts/build-integrity.v1.json", "docs/BUILD_INTEGRITY.md",
+    "betterinstincts/build_integrity.py", "scripts/build_integrity.py",
+    "tests/test_build_integrity.py",
+    "contracts/build-spatial.v1.json", "docs/BUILD_SPATIAL.md",
+    "betterinstincts/build_spatial.py", "scripts/build_spatial.py",
+    "tests/test_build_spatial.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

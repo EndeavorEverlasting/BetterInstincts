@@ -318,6 +318,18 @@ Operator gap: gardening desire visible in moodlets without a durable way to chec
 
 **Operator objective:** give Windows BetterInstincts agents meaningful catalog-discovery work they can repeat for hours, with resumability and actual findings. The scoped branch `feat/bi-hidden-object-scout-sustained-goal-20261107` adds `contracts/hidden-object-scout-goal.v1.json`, bounded `betterinstincts/hidden_object_scout.py`, `scripts/hidden_object_scout.py`, tests, [docs/HIDDEN_OBJECT_SCOUT.md](HIDDEN_OBJECT_SCOUT.md), and P04 handoff/dispatch entries. Default 240-minute mission, 40 unique candidate target, five rotating categories, 96-batch cap, reviewed-price separation, 15-second minimum per recorded batch, atomic ignored-dist checkpoint, idempotent retries and pause/resume/stop. Requires existing exact P04 unlock receipt, a fresh game Build/Buy observation, save identity, patch and player control before each batch; planner itself has zero UI input or autorun authority. **Proof ceiling:** repository/CI only until a local Windows agent supplies real observed item receipts. BI-002 hunger remains separate and active; this goal is no substitute for hunger certification.
 
+## 2026-11-07 — Recursive house/lot environment model (P95)
+
+**Operator corrections:** (1) floater/chair Build/Buy work rearranged Bargain Bend without recoverable pre-state; (2) do not act → extract checkpoint from scratch → reassess — accumulate environment understanding recursively while moving. **P95** selects `RECURSIVE_LOT_MODEL` in [`docs/HOUSE_STATE.md`](HOUSE_STATE.md) / `contracts/house-state.v1.json` / `betterinstincts/house_state.py` / `python -m scripts.house_state`. Model merges observations and mutation outcomes on one revisioned artifact; leases bind actions to entity targets; blank-slate reassess and blind bulk inventory sweeps fail closed; destructive actions require lab Save As attestation. Recovery advice: load known-good save — never overwrite it with wreckage. Proof ceiling `OFFLINE_RECURSIVE_LOT_MODEL_NOT_EA_SAVE_API_NOT_LOT_RESTORE_PROOF`. Does not restore the lot by itself; does not close BI-002.
+
+## 2026-11-08 — Build integrity structure-first (P95 + P83 verify)
+
+**Operator:** prior Build/Buy thrash deleted floor/walls/kitchen aesthetic/dining/futuristic sleep pod; treated outdoor as indoor; nested objects. **P83** verified damage claims against live capture. **P95** adds [`docs/BUILD_INTEGRITY.md`](BUILD_INTEGRITY.md) / `contracts/build-integrity.v1.json` / `betterinstincts/build_integrity.py`: `STRUCTURE_FIRST_SPATIAL_ADMISSION`. `house_state.admit_mutation` now requires `INTEGRITY_ADMIT` (indoor≠outdoor, floor-before-furniture, no nesting, protected zones, restore order). Proof ceiling `OFFLINE_BUILD_INTEGRITY_ADMISSION_NOT_LIVE_LOT_RESTORE`. Lot rebuild remains operator Load known-good or structure-first live restore — mechanisms no longer authorize the failure mode. Does not close BI-002.
+
+## 2026-11-08 — Build spatial enclosure + story axes (P95 + trifecta)
+
+**Operator:** finish the builder; classify **inside vs outside** and **FLOOR_1 vs FLOOR_2**; host must use those differences. **P95** adds [`docs/BUILD_SPATIAL.md`](BUILD_SPATIAL.md) / `contracts/build-spatial.v1.json` / `betterinstincts/build_spatial.py` (`ENCLOSURE_AND_STORY_AXES`). Inventory buckets + build order (F1 structure → F1 indoor → F2 structure → F2 indoor → outdoor floaters). `house_state.plan_next` / `admit_mutation` and `host_stack` Build/Buy turns consume the axes; F2-before-F1 and outside-as-inside fail closed. Proof ceiling `OFFLINE_BUILD_SPATIAL_AXES_NOT_LIVE_LOT_RESTORE`. Does not close BI-002.
+
 ## 2026-11-08 — Async needs and gardening continuation
 
 The operator requested independent needs management while gardening continues,

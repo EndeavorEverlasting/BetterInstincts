@@ -1,0 +1,88 @@
+{
+  "schema": "betterinstincts.build-spatial/v1",
+  "version": 1,
+  "owner": "betterinstincts/build_spatial.py",
+  "product_contract": "Finish the Build/Buy spatial builder: every entity and placement is classified as INSIDE vs OUTSIDE and FLOOR_1 vs FLOOR_2 (or UNKNOWN). Host logic plans and admits mutations using those axes — never treat lot grass as interior, never place F2 furniture before F1 structure exists, never confuse outdoor patio with indoor kitchen.",
+  "prompt": {
+    "id": "P95",
+    "name": "Program Design & Call-Stack Prototype Architect",
+    "provenance": "docs/PROMPT_INVOCATIONS.md TokenCorridor spec-architecture-prompts.v1.json"
+  },
+  "motivating_corrections": [
+    "2026-11-08 operator: finish the builder; classify inside/outside and first/second floor; host must use those differences to build more intelligently than greenfield thrash."
+  ],
+  "architecture": {
+    "selected": "ENCLOSURE_AND_STORY_AXES",
+    "rejected": [
+      {
+        "id": "SINGLE_FLAT_LOT_GRID",
+        "why": "One undifferentiated grid caused outdoor-as-indoor and level-blind placement."
+      },
+      {
+        "id": "PIXEL_ONLY_HEIGHT_HEURISTIC",
+        "why": "Screen Y alone is not story proof; story must be attested/observed on the lot model."
+      }
+    ]
+  },
+  "enclosure": ["INSIDE", "OUTSIDE", "UNKNOWN_ENCLOSURE"],
+  "story": ["FLOOR_1", "FLOOR_2", "UNKNOWN_STORY"],
+  "domain_to_enclosure": {
+    "INDOOR_FLOOR": "INSIDE",
+    "WALL": "INSIDE",
+    "ROOF": "INSIDE",
+    "OUTDOOR_LOT": "OUTSIDE",
+    "UNKNOWN_DOMAIN": "UNKNOWN_ENCLOSURE"
+  },
+  "story_aliases": {
+    "1": "FLOOR_1",
+    "F1": "FLOOR_1",
+    "FIRST": "FLOOR_1",
+    "GROUND": "FLOOR_1",
+    "2": "FLOOR_2",
+    "F2": "FLOOR_2",
+    "SECOND": "FLOOR_2",
+    "UPPER": "FLOOR_2"
+  },
+  "build_order": [
+    "OUTSIDE_SHELL_OPTIONAL",
+    "FLOOR_1_STRUCTURE",
+    "FLOOR_1_INDOOR_FURNITURE",
+    "FLOOR_2_STRUCTURE",
+    "FLOOR_2_INDOOR_FURNITURE",
+    "OUTDOOR_LOT_OBJECTS"
+  ],
+  "rules": [
+    "OUTSIDE objects never satisfy INSIDE floor requirements",
+    "FLOOR_2 indoor furniture requires FLOOR_1 indoor floor present AND FLOOR_2 floor tile present",
+    "FLOOR_1 indoor furniture requires FLOOR_1 indoor floor present",
+    "UNKNOWN_ENCLOSURE or UNKNOWN_STORY fails closed for indoor-class placement",
+    "Outdoor floaters clear only when enclosure=OUTSIDE"
+  ],
+  "violations": {
+    "OUTSIDE_AS_INSIDE": "Claimed or placed as INSIDE while enclosure is OUTSIDE",
+    "WRONG_STORY": "Target story does not match entity/placement story",
+    "FLOOR2_BEFORE_FLOOR1": "FLOOR_2 indoor work while FLOOR_1 indoor floor missing",
+    "UNKNOWN_SPATIAL_AXES": "Indoor placement without resolved enclosure+story"
+  },
+  "states": [
+    "SPATIAL_CLASSIFIED",
+    "SPATIAL_DENY",
+    "BUILD_ORDER_PLAN"
+  ],
+  "gates": [
+    "CLASSIFY_ENCLOSURE_AND_STORY",
+    "BUILD_ORDER_FLOOR1_BEFORE_FLOOR2",
+    "OUTSIDE_NOT_INSIDE"
+  ],
+  "forbidden": [
+    "TREAT_OUTSIDE_AS_INSIDE",
+    "IGNORE_STORY_LEVEL",
+    "BUILD_F2_BEFORE_F1",
+    "PLACE_WITH_UNKNOWN_AXES"
+  ],
+  "proof_ceiling": "OFFLINE_BUILD_SPATIAL_AXES_NOT_LIVE_LOT_RESTORE",
+  "depends_on": [
+    "contracts/house-state.v1.json",
+    "contracts/build-integrity.v1.json"
+  ]
+}
