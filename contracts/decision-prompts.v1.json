@@ -85,6 +85,33 @@
       ],
       "default_when_unknown_needs": "accept_subsidy",
       "notes": "Host overlay when household funds < 100. Yes → scripts.funds_inject (testingcheats enabled true then Money N). Not BI-004 earned income."
+    },
+    {
+      "prompt_id": "occult.fairy.mother_nature_summon",
+      "title": "Summon Mother Nature",
+      "repeatable": false,
+      "scene_tags": ["occult", "fairy", "life_state", "aspiration", "timed_charm"],
+      "narrative_tokens": [
+        "summon Mother Nature",
+        "temporary charm",
+        "Fairy transformation",
+        "complete her Fairy transformation",
+        "bestow a temporary charm"
+      ],
+      "options": [
+        {
+          "option_id": "ok",
+          "label": "OK",
+          "tags": ["life_state_mutation", "occult_fairy", "timed_charm", "needs_rewrite", "risk_mood"]
+        },
+        {
+          "option_id": "cancel",
+          "label": "Cancel",
+          "tags": ["safe", "preserve_performance", "stable_mood", "player_choice", "host_prep"]
+        }
+      ],
+      "default_when_unknown_needs": "cancel",
+      "notes": "LOCAL_OBSERVED 2026-11-08 Charlee LabLab: Mother Nature charm starts Fairy life-state; aspiration_service owns OK/Cancel with aspiration_completion_enabled. Prefer Cancel while base needs unfinished."
     }
   ]
 }

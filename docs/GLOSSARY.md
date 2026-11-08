@@ -27,6 +27,7 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **NEED_SERVICE_HEALTH** / **NEED_SERVICE_DETACH** / **ASSUMPTION_WINDOW** / **NEED_LOAD_BALANCE** | LB health probe, detach dead stacks, reweighted exploration windows; see `docs/NEED_LOAD_BALANCE.md`. |
 | **DOMAIN_CASCADE** | Ordered poll receipts across needs→budget→career→skills/whims→relationships; respects LB detach; see `docs/DOMAIN_CASCADE.md`. |
 | **CAREER_SERVICES_TANDEM** / **CAREER_OBLIGATION_HELD** / **CAREER_READY_AFTER_NEEDS** | Async career microsystem beside needs; sticky teen homework obligation; resume after survival; see `docs/CAREER_SERVICE.md`. |
+| **ASPIRATION_SERVICES_TANDEM** / **ASPIRATION_PROMPT_HELD** / **ASPIRATION_COMPLETION_ENABLED** / **ASPIRATION_COMPLETION_DISABLED** | Async aspirations microsystem beside needs/career; sticky OK/Cancel dialog judgment; lab fails closed on occult life-state; see `docs/ASPIRATION_SERVICE.md`. |
 | **NAVIGATING_NEEDS_TANDEM** | Discovery Quest panel goals in tandem with host; uncovered urgent falls to need_services. |
 | **MOODLET_STRIP** | Bottom-left emotion + moodlet icons; must be supplied to host evals (not inventable from screenshots). |
 | **MOODLET_AWARE_ROUTING** | Gate: tense moodlets + outdoor social + indoor capacity reinforce indoor retarget; uncomfortable aligns with survival relief. |

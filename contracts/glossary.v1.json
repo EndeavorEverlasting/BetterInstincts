@@ -245,6 +245,40 @@
         "betterinstincts/host_tandem.py"
       ]
     },
+    "ASPIRATION_SERVICES_TANDEM": {
+      "definition": "Peer microsystem that judges aspiration and life-state dialogs beside need_services and career_service so occult transformations cannot silently rewrite the needs engine.",
+      "owners": [
+        "contracts/aspiration-service.v1.json",
+        "docs/ASPIRATION_SERVICE.md",
+        "betterinstincts/aspiration_service.py"
+      ]
+    },
+    "ASPIRATION_PROMPT_HELD": {
+      "definition": "Sticky aspiration/life-state dialog continuity flag: the OK/Cancel prompt remains tracked across needs-focused tandem turns until cleared or judged.",
+      "owners": [
+        "contracts/aspiration-service.v1.json",
+        "docs/ASPIRATION_SERVICE.md",
+        "betterinstincts/aspiration_service.py",
+        "betterinstincts/host_tandem.py"
+      ]
+    },
+    "ASPIRATION_COMPLETION_ENABLED": {
+      "definition": "Operator toggle: when true, aspiration milestones may advance; life-state mutations still require occult-needs readiness. Product default true; lab host default false.",
+      "owners": [
+        "contracts/aspiration-service.v1.json",
+        "docs/ASPIRATION_SERVICE.md",
+        "betterinstincts/aspiration_service.py"
+      ]
+    },
+    "ASPIRATION_COMPLETION_DISABLED": {
+      "definition": "Host gate when aspiration completion is off: Cancel life-state and aspiration-completion dialogs (e.g. Mother Nature fairy summon) so base needs work is not derailed.",
+      "owners": [
+        "contracts/aspiration-service.v1.json",
+        "docs/ASPIRATION_SERVICE.md",
+        "betterinstincts/aspiration_service.py",
+        "betterinstincts/host_stack.py"
+      ]
+    },
     "MOODLET_STRIP": {
       "definition": "Bottom-left Sim emotion and moodlet icons. Host logic requires supplied labels; absence is SENSOR_NOT_SUPPLIED.",
       "owners": [

@@ -36,7 +36,10 @@ gardening and returns a responsibility handoff rather than competing for control
 While needs or gardening run, the career microsystem keeps emitting
 `CAREER_OBLIGATION_HELD` so the teen High School Student daily task is not
 forgotten; after observed needs recovery with homework still due, the session
-prefers `CAREER_READY_HANDOFF_REQUIRED` before gardening resume.
+prefers `CAREER_READY_HANDOFF_REQUIRED` before gardening resume. Aspiration /
+life-state dialogs emit `ASPIRATION_PROMPT_HELD` and, when Cancel/OK is judged,
+`ASPIRATION_DIALOG_HANDOFF_REQUIRED` so occult initiation (Mother Nature / fairy)
+cannot be ignored or auto-advanced while needs dominate.
 
 Pending needs actions cannot be interrupted by gardening. After an observed
 outcome, a fresh snapshot must revalidate the next action. A completed remedy
