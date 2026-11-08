@@ -31,6 +31,7 @@ See glossary: `PLAYER_FIRST`, `PLAYER_PLAYING`, `PLAYER_PRESENT_ON_CANVAS`, `HOS
 | `host_stack` | Compose viewport/behavior/event-balance/need-services/instincts gates | none |
 | `need_service_base` | P124 shared need/object/lane helpers | none |
 | `need_services` | Six-need tandem orchestrator (Fun nested) | none |
+| `gardening_service` | Observed plant interactions composed with the same needs report and current responsibilities; no construction recovery | none |
 | `need_load_balance` | Health checks, detach, assumption windows, LB pick | none |
 | `domain_cascade` | Ordered domain poll receipts (needs/LB → budget → career → skills → relationships) | none |
 | `fun_service` | Rich Fun lanes under guest contention | none |

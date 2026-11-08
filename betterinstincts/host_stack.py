@@ -20,6 +20,7 @@ from betterinstincts.fun_service import (
     evaluate_fun_service,
     should_attach_fun_service,
 )
+from betterinstincts.gardening_service import GardeningServiceError, evaluate_gardening_turn
 from betterinstincts.need_services import (
     NeedServicesError,
     compact_need_services,
@@ -130,6 +131,7 @@ def evaluate_turn(
     navigating_needs_active: bool = False,
     navigating_needs_incomplete: Sequence[str] = (),
     navigating_needs_profile: str = "navigating_needs",
+    gardening: Optional[Mapping[str, object]] = None,
 ) -> dict:
     """Compose viewport, moodlets, event-balance, instincts, and dialog gates.
 
@@ -181,6 +183,7 @@ def evaluate_turn(
     scenario = None
     fun_service = None
     need_services = None
+    gardening_report = None
     try:
         snap = NeedSnapshot(
             needs=needs,
@@ -353,7 +356,7 @@ def evaluate_turn(
         event_fun_via = bool(
             event_balance is not None and event_balance.get("gate") == "EVENT_FUN_VIA_GOALS"
         )
-        if should_attach_need_services(needs, guests_present=guests_present):
+        if gardening is not None or should_attach_need_services(needs, guests_present=guests_present):
             need_services = evaluate_need_services(
                 needs,
                 available_objects=tuple(available_objects or ()),
@@ -391,6 +394,15 @@ def evaluate_turn(
                 sibling_lane_claims=tuple(sibling_fun_lane_claims or ()),
                 capture_ref=capture_ref,
             )
+        if gardening is not None:
+            gardening_report = evaluate_gardening_turn(
+                needs, need_services, gardening, capture_ref=capture_ref,
+                player_directed=player_directed, already_busy=already_busy,
+                sim_absent=sim_absent or sim_at_school is True,
+                build_or_buy_mode=build_or_buy_mode,
+                school_day_active=school_day_active,
+                homework_pending=homework_pending,
+            )
     except (
         InstinctsHostError,
         DecisionEvalError,
@@ -406,6 +418,7 @@ def evaluate_turn(
         FunServiceError,
         NeedServicesError,
         NavigatingNeedsError,
+        GardeningServiceError,
     ) as exc:
         raise HostStackError(str(exc)) from exc
 
@@ -781,7 +794,7 @@ def evaluate_turn(
     elif decision is not None:
         # Active chance-card / decision prompt outranks local need-service plans.
         next_gate = "RESOLVE_DECISION_PROMPT"
-    elif need_services is not None and need_services["gate"] in {
+    elif gardening_report is None and need_services is not None and need_services["gate"] in {
         "NEED_SERVICES_TANDEM",
         "NEED_SERVICES_LOAD_BALANCE",
     }:
@@ -811,7 +824,7 @@ def evaluate_turn(
                 "RESUME",
             ],
         }
-    elif fun_service is not None and fun_service["gate"] in {
+    elif gardening_report is None and fun_service is not None and fun_service["gate"] in {
         "FUN_SERVICE_PLAN",
         "FUN_SERVICE_BLOCKED",
     }:
@@ -836,6 +849,9 @@ def evaluate_turn(
         }
     elif risk.get("risk_level") in {"ELEVATED", "HIGH"} and risk.get("required_before_clicks"):
         next_gate = "PRINTWINDOW_ANALYZE_BEFORE_CLICKS"
+    elif gardening_report is not None:
+        next_gate = gardening_report["gate"]
+        fallback = {"owner": "betterinstincts/gardening_service.py", **gardening_report}
     elif instincts.get("all_needs_green"):
         next_gate = "LAB_SAVE_AS_BI_CONT_WHEN_AUTHORIZED"
     elif instincts.get("state") == "BLOCKED_MISSING_OBJECTS":
@@ -861,6 +877,7 @@ def evaluate_turn(
             compact_need_services(need_services) if need_services is not None else None
         ),
         "build_optimize": build_optimize,
+        "gardening": gardening_report,
         "instincts": instincts,
         "decision": decision,
         "influence": influence,

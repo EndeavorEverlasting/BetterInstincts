@@ -158,8 +158,12 @@ def _load_observation(raw: Mapping) -> dict:
     life_stage = raw.get("life_stage")
     if life_stage is not None and not isinstance(life_stage, str):
         raise HostListenerError("OBSERVATION_LIFE_STAGE_INVALID")
+    gardening = raw.get("gardening")
+    if gardening is not None and not isinstance(gardening, Mapping):
+        raise HostListenerError("OBSERVATION_GARDENING_INVALID")
     return {
         "needs": {k: float(needs[k]) for k in SIX},
+        "gardening": dict(gardening) if gardening is not None else None,
         "queue": [str(x) for x in queue],
         "location_kind": location,
         "objects_on_current_lot": bool(raw.get("objects_on_current_lot", location == "home")),
@@ -335,6 +339,7 @@ def tick(
             moodlets=obs["moodlets"],
             traits=obs["traits"],
             whims=obs["whims"] or obs["pinned_whims"],
+            gardening=obs["gardening"],
         )
         force = plan_force(
             location_kind=obs["location_kind"],

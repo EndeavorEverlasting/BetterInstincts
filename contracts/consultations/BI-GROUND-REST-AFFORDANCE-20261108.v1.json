@@ -1,0 +1,82 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-GROUND-REST-AFFORDANCE-20261108",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "eda1b4664714ca21a3caa659e40cbd6061ac36c8",
+  "proposed_capability": "Add the locally observed Natural Living Sleep Here ground interaction as an optional Energy lane, usable by gardening recovery only with current observed availability.",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "VIEWPORT_STATE",
+    "SAVE_SLOT",
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "LOCATION",
+    "GAME_OBJECT",
+    "AFFORDANCE",
+    "OBSERVATION",
+    "CLAIM",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "HOST_ACTION",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "MECHANIC_PATH"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/CURIOUS_CATALOG.md",
+    "docs/SCENE_INTELLIGENCE.md",
+    "contracts/curious-catalog.v1.json",
+    "contracts/game-scenes.v1.json",
+    "contracts/save-policy.v1.json",
+    "contracts/ontology.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_HOST_COMPOSITION_NOT_LIVE_GARDENING",
+  "player_save_control_impact": "No saves, game files, UI dispatch, purchases, placements, speed changes or automatic game hooks. The user explicitly rejected the furnishing detour and requested behavior orchestration. Existing screen admission remains execution authority.",
+  "expected_outcome": "Existing need-services can choose SLEEP_ON_GROUND when its explicit observed-affordance token and enabled current menu observation are supplied; no universal ground/sleep availability or base-game claim.",
+  "negative_tests": [
+    "Observed enabled ground sleep selected before gardening on low Energy",
+    "Disabled or stale Sleep Here never selected",
+    "Existing Energy routes remain",
+    "No construction or UI dispatch authority"
+  ],
+  "rollback_path": "Revert isolated source commits; no game files, placements or saves touched.",
+  "unresolved_unknowns": [
+    "Current exact build 1.121.361.1020: tooltip observed; action result still to be observed",
+    "Pack/skill eligibility must come from actual enabled menu, not assumptions"
+  ],
+  "files_expected": [
+    "contracts/need-lanes.v1.json",
+    "tests/test_gardening_service.py",
+    "docs/GARDENING_SERVICE.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
+  "source_main_sha": "3e93eca1d007a4adc28aafd9cb1e37d0c2fd25e7"
+}
