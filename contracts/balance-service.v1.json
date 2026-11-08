@@ -1,0 +1,160 @@
+{
+  "schema": "betterinstincts.balance-service/v1",
+  "version": 1,
+  "authority": "docs/BALANCE_SERVICE.md",
+  "proof_ceiling": "HOST_BALANCE_MICROSYSTEM_TANDEM_NOT_DAEMON_NOT_PACK_CERT",
+  "design_brief": {
+    "subject": "Async Balance/Imbalance microsystem that tracks Enchanted by Nature wellness meter and physical ailments alongside need services",
+    "audience": "local host agents that otherwise ignore prolonged negative-mood imbalance while needs/career dominate",
+    "job": "Hold a sticky BALANCE_CONDITION across survival suspensions; evaluate in tandem with need_services and gardening; prefer nature + positive moods for Imbalanced; escalate Very Imbalanced + ailment to Naturopath / Holistic Cure after survival is green",
+    "architecture": "Thin peer microsystem over supplied balance meter + moodlets + gardening nature routes. Not a daemon. Not EA buff rewrite. Not pack certification.",
+    "upstreams": [
+      {"id": "impeccable", "mechanism": "purpose before chrome"},
+      {"id": "UP-A85AD9DC3", "mechanism": "call-stack storytelling"},
+      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+    ]
+  },
+  "balance_levels": {
+    "balanced": {
+      "aliases": ["balance", "balanced", "in_balance"],
+      "effects": [],
+      "recovery": []
+    },
+    "imbalanced": {
+      "aliases": ["imbalance", "imbalanced"],
+      "effects": ["needs_drain_25_percent_faster", "skills_build_15_percent_slower"],
+      "recovery": ["engage_nature", "maintain_positive_moods"]
+    },
+    "very_imbalanced": {
+      "aliases": ["very_imbalanced", "very imbalanced", "severely_imbalanced"],
+      "effects": ["physical_ailment_always", "needs_drain_25_percent_faster", "skills_build_15_percent_slower"],
+      "recovery": ["holistic_cure", "visit_naturopath", "engage_nature", "maintain_positive_moods"]
+    }
+  },
+  "ailments": {
+    "burning_passion": {
+      "aliases": ["burning passion", "burning_passion"],
+      "requires_level": "very_imbalanced",
+      "cured_by": ["holistic_cure", "visit_naturopath"]
+    }
+  },
+  "recovery_routes": {
+    "CONSUME_HOLISTIC_CURE": {
+      "requires": ["inventory_has_holistic_cure"],
+      "note": "Apothecary Elixir instantly heals ailment and restores balance"
+    },
+    "VISIT_NATUROPATH": {
+      "requires": [],
+      "note": "Phone Home tab -> Visit a Naturopath"
+    },
+    "PURCHASE_HOLISTIC_CURE": {
+      "requires": ["apothecary_stall_available"],
+      "note": "Sprucederry Grove Apothecary stall"
+    },
+    "CRAFT_HOLISTIC_CURE": {
+      "requires": ["apothecary_skill_at_least_10"],
+      "note": "Craft Holistic Cure with Apothecary skill 10"
+    },
+    "WATER_OR_MAINTAIN_HOUSEPLANTS": {
+      "requires": [],
+      "note": "Steady nature engagement; reuses gardening plant care when observed"
+    },
+    "MEDITATE_IN_NATURE": {
+      "requires": ["natural_living_meditate_available"],
+      "note": "Natural Living skill unlock; supplied observation only"
+    },
+    "SEEK_POSITIVE_MOOD": {
+      "requires": [],
+      "note": "Positive moods push meter toward Balance; fold moodlets emotion family"
+    }
+  },
+  "microsystem_states": [
+    "IDLE",
+    "TRACKING",
+    "RECOVERING_NATURE",
+    "AILMENT_ACTIVE",
+    "READY_HOLISTIC_CURE",
+    "READY_NATUROPATH",
+    "SUSPENDED_FOR_SURVIVAL",
+    "YIELDED",
+    "RESTORED",
+    "COMPLETE"
+  ],
+  "call_stack": {
+    "order": [
+      "PLAYER_FIRST_OR_BUSY",
+      "BALANCE_CONDITION_HELD",
+      "SUSPENDED_FOR_SURVIVAL",
+      "READY_HOLISTIC_CURE",
+      "READY_NATUROPATH",
+      "RECOVERING_NATURE",
+      "BALANCE_SERVICES_TANDEM",
+      "BALANCE_RESTORED",
+      "BALANCE_IDLE"
+    ],
+    "gates": {
+      "PLAYER_FIRST_OR_BUSY": {
+        "action": "YIELD_OR_EMULATE_ONLY",
+        "condition_held": "PRESERVE_IF_ALREADY_TRACKING"
+      },
+      "SUSPENDED_FOR_SURVIVAL": {
+        "action": "HOLD_BALANCE_CONDITION_WHILE_SURVIVAL",
+        "condition_held": true
+      },
+      "READY_HOLISTIC_CURE": {
+        "action": "CONSUME_OR_OBTAIN_HOLISTIC_CURE",
+        "condition_held": true
+      },
+      "READY_NATUROPATH": {
+        "action": "OPEN_PHONE_VISIT_NATUROPATH",
+        "condition_held": true
+      },
+      "RECOVERING_NATURE": {
+        "action": "ENGAGE_NATURE_AND_POSITIVE_MOOD",
+        "condition_held": true
+      },
+      "BALANCE_SERVICES_TANDEM": {
+        "action": "TRACK_BALANCE_BESIDE_NEED_SERVICES",
+        "condition_held": true
+      },
+      "BALANCE_RESTORED": {
+        "action": "CLEAR_BALANCE_CONDITION",
+        "condition_held": false
+      },
+      "BALANCE_IDLE": {
+        "action": "NO_BALANCE_CONDITION",
+        "condition_held": false
+      }
+    }
+  },
+  "continuity": {
+    "rule": "An Imbalanced or Very Imbalanced condition outlives needs-focused turns; never invent meter stage or ailment from moodlets alone; Balanced + no ailment clears sticky tracking",
+    "resume_condition": "FRESH_SURVIVAL_GREEN_REVALIDATION",
+    "anti_patterns": [
+      "DROP_IMBALANCE_WHILE_NEEDS_DOMINATE",
+      "BACKGROUND_BALANCE_DAEMON",
+      "INVENT_BALANCE_METER_OR_AILMENT",
+      "BALANCE_ACTION_WHILE_SURVIVAL_CRITICAL",
+      "NATUROPATH_BEFORE_NATURE_WHEN_ONLY_IMBALANCED",
+      "CLAIM_PACK_CERT_FROM_OFFLINE_MICROSYSTEM"
+    ]
+  },
+  "composition": {
+    "orchestrator": "betterinstincts/balance_service.py#evaluate_balance_service",
+    "peer_owners": {
+      "moodlets": "betterinstincts/moodlets.py#evaluate_moodlets",
+      "gardening": "betterinstincts/gardening_service.py",
+      "survival": "betterinstincts/teen_homework.py#survival_critical"
+    },
+    "host_gate": "BALANCE_SERVICES_TANDEM | BALANCE_CONDITION_HELD | READY_HOLISTIC_CURE | READY_NATUROPATH | RECOVERING_NATURE",
+    "tandem_peers": ["need_services", "gardening_service", "career_service", "aspiration_service", "host_tandem"],
+    "domain_cascade": "balance"
+  },
+  "effects_reference": {
+    "imbalanced": {
+      "needs_drain_multiplier": 1.25,
+      "skill_gain_multiplier": 0.85
+    },
+    "note": "Documented game effects for agent awareness only — not applied to offline need numbers"
+  }
+}

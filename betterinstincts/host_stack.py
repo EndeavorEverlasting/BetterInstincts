@@ -69,6 +69,12 @@ from betterinstincts.aspiration_service import (
     evaluate_aspiration_service,
     should_attach_aspiration_service,
 )
+from betterinstincts.balance_service import (
+    BalanceServiceError,
+    compact_balance_service,
+    evaluate_balance_service,
+    should_attach_balance_service,
+)
 from betterinstincts.teen_homework import (
     TeenHomeworkError,
     evaluate_teen_homework_turn,
@@ -167,6 +173,14 @@ def evaluate_turn(
     occult_needs_engine_ready: bool = False,
     operator_prefers_aspiration_ok: Optional[bool] = None,
     prior_aspiration_state: Optional[Mapping[str, object]] = None,
+    balance_level: Optional[str] = None,
+    ailment: Optional[str] = None,
+    inventory_has_holistic_cure: Optional[bool] = None,
+    apothecary_stall_available: bool = False,
+    apothecary_skill_level: Optional[int] = None,
+    natural_living_meditate_available: bool = False,
+    houseplants_available: bool = False,
+    prior_balance_state: Optional[Mapping[str, object]] = None,
 ) -> dict:
     """Compose viewport, moodlets, event-balance, instincts, and dialog gates.
 
@@ -226,6 +240,7 @@ def evaluate_turn(
     teen_homework = None
     career_service = None
     aspiration_service = None
+    balance_service = None
     scenario = None
     fun_service = None
     need_services = None
@@ -355,6 +370,28 @@ def evaluate_turn(
                 already_busy=already_busy,
                 operator_prefers_ok=operator_prefers_aspiration_ok,
                 prior_state=prior_aspiration_state,
+                capture_ref=capture_ref,
+            )
+        if should_attach_balance_service(
+            balance_level=balance_level,
+            ailment=ailment,
+            prior_state=prior_balance_state,
+        ):
+            balance_service = evaluate_balance_service(
+                needs,
+                balance_level=balance_level,
+                ailment=ailment,
+                emotion=emotion,
+                moodlets=moodlets,
+                inventory_has_holistic_cure=inventory_has_holistic_cure,
+                apothecary_stall_available=apothecary_stall_available,
+                apothecary_skill_level=apothecary_skill_level,
+                natural_living_meditate_available=natural_living_meditate_available,
+                houseplants_available=houseplants_available,
+                available_objects=tuple(available_objects or ()),
+                player_directed=player_directed,
+                already_busy=already_busy,
+                prior_state=prior_balance_state,
                 capture_ref=capture_ref,
             )
         if should_attach_teen_homework(
@@ -512,6 +549,7 @@ def evaluate_turn(
         TeenHomeworkError,
         CareerServiceError,
         AspirationServiceError,
+        BalanceServiceError,
         SchoolDayError,
         SocialOpportunityError,
         FunServiceError,
@@ -1108,6 +1146,30 @@ def evaluate_turn(
         }
     elif risk.get("risk_level") in {"ELEVATED", "HIGH"} and risk.get("required_before_clicks"):
         next_gate = "PRINTWINDOW_ANALYZE_BEFORE_CLICKS"
+    elif balance_service is not None and balance_service["gate"] in {
+        "READY_HOLISTIC_CURE",
+        "READY_NATUROPATH",
+        "RECOVERING_NATURE",
+    }:
+        # After survival/homework/need gates; outranks optional gardening.
+        next_gate = str(balance_service["gate"])
+        fallback = {
+            "mechanism": balance_service["action"],
+            "owner": "betterinstincts/balance_service.py",
+            "contract": "contracts/balance-service.v1.json",
+            "balance_level": balance_service.get("balance_level"),
+            "ailment": balance_service.get("ailment"),
+            "primary_route": balance_service.get("primary_route"),
+            "preferred_routes": balance_service.get("preferred_routes") or [],
+            "next_actions": balance_service.get("next_actions") or [],
+            "condition": balance_service.get("condition"),
+            "forbidden": [
+                "INVENT_BALANCE_METER_OR_AILMENT",
+                "BALANCE_ACTION_WHILE_SURVIVAL_CRITICAL",
+                "CLAIM_PACK_CERT_FROM_OFFLINE_MICROSYSTEM",
+                "RESUME",
+            ],
+        }
     elif gardening_report is not None:
         next_gate = gardening_report["gate"]
         fallback = {"owner": "betterinstincts/gardening_service.py", **gardening_report}
@@ -1133,6 +1195,9 @@ def evaluate_turn(
             compact_aspiration_service(aspiration_service)
             if aspiration_service is not None
             else None
+        ),
+        "balance_service": (
+            compact_balance_service(balance_service) if balance_service is not None else None
         ),
         "social_opportunity": social_opportunity,
         "sim_premises": premises,

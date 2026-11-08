@@ -270,6 +270,32 @@
         "betterinstincts/aspiration_service.py"
       ]
     },
+    "BALANCE_SERVICES_TANDEM": {
+      "definition": "Peer microsystem that tracks Enchanted by Nature Balance/Imbalance meter and physical ailments beside need_services so agents do not drop Naturopath/Holistic Cure/nature recovery while needs dominate.",
+      "owners": [
+        "contracts/balance-service.v1.json",
+        "docs/BALANCE_SERVICE.md",
+        "betterinstincts/balance_service.py"
+      ]
+    },
+    "BALANCE_CONDITION_HELD": {
+      "definition": "Sticky imbalance/ailment continuity flag: Imbalanced or Very Imbalanced (with optional physical ailment) remains tracked across survival suspensions until Balanced clears it.",
+      "owners": [
+        "contracts/balance-service.v1.json",
+        "docs/BALANCE_SERVICE.md",
+        "betterinstincts/balance_service.py",
+        "betterinstincts/host_tandem.py"
+      ]
+    },
+    "BALANCE_READY_AFTER_NEEDS": {
+      "definition": "Host gate after survival recovers: resume Naturopath/Holistic Cure or nature-balance recovery from the sticky balance condition instead of forgetting the wellness meter.",
+      "owners": [
+        "contracts/balance-service.v1.json",
+        "docs/BALANCE_SERVICE.md",
+        "betterinstincts/balance_service.py",
+        "betterinstincts/host_tandem.py"
+      ]
+    },
     "ASPIRATION_COMPLETION_DISABLED": {
       "definition": "Host gate when aspiration completion is off: Cancel life-state and aspiration-completion dialogs (e.g. Mother Nature fairy summon) so base needs work is not derailed.",
       "owners": [

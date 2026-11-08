@@ -4,7 +4,7 @@
   "authority": "docs/DOMAIN_CASCADE.md",
   "proof_ceiling": "HOST_DOMAIN_CASCADE_POLL_RECEIPTS_NOT_DAEMON_NOT_LIVE_CERT",
   "design_brief": {
-    "subject": "Polling cascade of domain receipts across needs, budget, career, aspirations, skills, relationships, whims",
+    "subject": "Polling cascade of domain receipts across needs, balance/imbalance, budget, career, aspirations, skills, relationships, whims",
     "job": "Let parallel host microsystems speak via ordered receipts on every recurring observation — regardless of human, agent, or script player",
     "architecture": "Thin poll bus over existing evaluators; respects need_load_balance; never a background daemon"
   },
@@ -14,6 +14,12 @@
       "owner": "betterinstincts/need_services.py",
       "lb": "betterinstincts/need_load_balance.py",
       "related": ["navigating_needs"]
+    },
+    {
+      "id": "balance",
+      "owner": "betterinstincts/balance_service.py",
+      "microsystem": "BALANCE_SERVICES_TANDEM",
+      "related": ["moodlets", "gardening_service"]
     },
     {
       "id": "budget",
@@ -48,6 +54,7 @@
   ],
   "cascade_order": [
     "needs",
+    "balance",
     "budget",
     "career",
     "aspirations",

@@ -17,7 +17,15 @@ class DomainCascadeTests(unittest.TestCase):
         cfg = load_contract()
         self.assertEqual(
             cfg["cascade_order"],
-            ["needs", "budget", "career", "aspirations", "skills_whims", "relationships"],
+            [
+                "needs",
+                "balance",
+                "budget",
+                "career",
+                "aspirations",
+                "skills_whims",
+                "relationships",
+            ],
         )
 
     def test_cascade_includes_lb_detach_and_budget(self):
@@ -30,14 +38,38 @@ class DomainCascadeTests(unittest.TestCase):
         domains = [r["domain"] for r in out["receipts"]]
         self.assertEqual(
             domains,
-            ["needs", "budget", "career", "aspirations", "skills_whims", "relationships"],
+            [
+                "needs",
+                "balance",
+                "budget",
+                "career",
+                "aspirations",
+                "skills_whims",
+                "relationships",
+            ],
         )
         needs = out["receipts"][0]
         self.assertEqual(needs["gate"], "NEED_SERVICES_LOAD_BALANCE")
         self.assertIn("NEED_LB_DETACH", needs["findings"])
         self.assertIn("hunger", needs["payload"]["need_services"]["detached_needs"])
-        budget = out["receipts"][1]
-        self.assertEqual(budget["payload"]["prior_needs_gate"], needs["gate"])
+        balance = out["receipts"][1]
+        self.assertEqual(balance["gate"], "BALANCE_IDLE")
+        budget = out["receipts"][2]
+        self.assertEqual(budget["payload"]["prior_needs_gate"], balance["gate"])
+
+    def test_balance_ailment_receipt_beside_needs(self):
+        out = poll_cascade(
+            {need: 0.9 for need in SIX},
+            balance_level="very_imbalanced",
+            ailment="Burning Passion",
+            funds=800,
+        )
+        balance = next(row for row in out["receipts"] if row["domain"] == "balance")
+        self.assertEqual(balance["gate"], "READY_NATUROPATH")
+        self.assertIn("BALANCE_CONDITION_HELD", balance["findings"])
+        service = balance["payload"].get("balance_service") or {}
+        self.assertTrue(service.get("condition_held"))
+        self.assertEqual(service.get("ailment"), "burning_passion")
 
     def test_player_first_halts(self):
         out = poll_cascade(SIX, player_directed=True, funds=1000)

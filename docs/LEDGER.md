@@ -1,5 +1,22 @@
 # Canonical project ledger
 
+## 2026-11-08 — Balance/Imbalance microsystem (P95 + P124 + trifecta)
+
+**Operator:** Enchanted by Nature Balance meter — prolonged negative mood →
+Imbalance (needs drain 25% faster, skills 15% slower) → Very Imbalanced always
+contracts a physical ailment (example: Burning Passion). Cure via Naturopath,
+Holistic Cure, nature engagement, and positive moods. **P95** adds peer
+microsystem `balance_service` (`contracts/balance-service.v1.json`,
+`docs/BALANCE_SERVICE.md`) with sticky `BALANCE_CONDITION_HELD`, nature-first
+recovery for Imbalanced, Naturopath/Holistic Cure escalation for Very Imbalanced
++ supplied ailment. **P124** reuses `survival_critical`, moodlets emotion family,
+and gardening plant-care peers — no second scorer or daemon. Wired through
+`host_stack`, `domain_cascade` (order: needs → **balance** → budget → …), and
+`host_tandem` (`BALANCE_READY_HANDOFF_REQUIRED`). Consultation
+`BI-BALANCE-MICROSYSTEM-20261108.v1.json`. Proof ceiling
+`HOST_BALANCE_MICROSYSTEM_TANDEM_NOT_DAEMON_NOT_PACK_CERT`. Live Naturopath/cure
+P08 OPEN. Does not close BI-002; does not invent meter readings.
+
 ## 2026-11-08 — Aspiration microsystem (P95 + trifecta)
 
 **Operator:** Mother Nature / Fairy summon dialog on Charlee would permanently

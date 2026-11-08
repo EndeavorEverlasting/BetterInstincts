@@ -39,7 +39,10 @@ forgotten; after observed needs recovery with homework still due, the session
 prefers `CAREER_READY_HANDOFF_REQUIRED` before gardening resume. Aspiration /
 life-state dialogs emit `ASPIRATION_PROMPT_HELD` and, when Cancel/OK is judged,
 `ASPIRATION_DIALOG_HANDOFF_REQUIRED` so occult initiation (Mother Nature / fairy)
-cannot be ignored or auto-advanced while needs dominate.
+cannot be ignored or auto-advanced while needs dominate. Balance/Imbalance emits
+`BALANCE_CONDITION_HELD`; after survival recovers with Very Imbalanced + ailment
+(or Holistic Cure ready), the session prefers `BALANCE_READY_HANDOFF_REQUIRED`
+before gardening resume so Naturopath / cure / nature recovery is not dropped.
 
 Pending needs actions cannot be interrupted by gardening. After an observed
 outcome, a fresh snapshot must revalidate the next action. A completed remedy

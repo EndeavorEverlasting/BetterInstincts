@@ -237,6 +237,44 @@ class HostTandemTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(held.get("press_ok_allowed"))
         self.assertEqual(executed, [])
 
+    async def test_balance_ready_handoff_after_needs_with_burning_passion(self):
+        turns, executed = 0, []
+
+        async def observe():
+            nonlocal turns
+            turns += 1
+            if turns == 1:
+                row = snapshot(turns, energy=.1)
+            else:
+                row = snapshot(turns, energy=.9)
+            row["balance_level"] = "very_imbalanced"
+            row["ailment"] = "Burning Passion"
+            return row
+
+        async def execute(command, _):
+            executed.append(command)
+            return observed(command)
+
+        async def interrupt(*_):
+            self.fail("No interruption expected")
+
+        out = await run_tandem_session(
+            "tandem-test",
+            "sim:charlee",
+            observe=observe,
+            execute=execute,
+            interrupt_owned=interrupt,
+            probe=idle,
+            max_turns=4,
+        )
+        self.assertEqual(out["state"], "BALANCE_READY_HANDOFF_REQUIRED")
+        self.assertIn("BALANCE_CONDITION_HELD", [row["event"] for row in out["events"]])
+        self.assertIn("BALANCE_READY_AFTER_NEEDS", [row["event"] for row in out["events"]])
+        held = out.get("balance_condition") or {}
+        self.assertTrue(held.get("condition_held"))
+        self.assertEqual(held.get("ailment"), "burning_passion")
+        self.assertEqual(held.get("gate"), "READY_NATUROPATH")
+
     async def test_ineffective_completed_rest_is_not_repeated_blindly(self):
         turns, executed = 0, []
         async def observe():
