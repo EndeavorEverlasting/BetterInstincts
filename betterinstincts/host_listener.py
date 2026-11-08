@@ -161,6 +161,19 @@ def _load_observation(raw: Mapping) -> dict:
     gardening = raw.get("gardening")
     if gardening is not None and not isinstance(gardening, Mapping):
         raise HostListenerError("OBSERVATION_GARDENING_INVALID")
+    cursor_x = raw.get("cursor_client_x")
+    cursor_y = raw.get("cursor_client_y")
+    for label, val in (("cursor_client_x", cursor_x), ("cursor_client_y", cursor_y)):
+        if val is not None and (isinstance(val, bool) or not isinstance(val, int)):
+            raise HostListenerError("OBSERVATION_CURSOR_INVALID:" + label)
+    client_w = raw.get("client_width")
+    client_h = raw.get("client_height")
+    for label, val in (("client_width", client_w), ("client_height", client_h)):
+        if val is not None and (isinstance(val, bool) or not isinstance(val, int)):
+            raise HostListenerError("OBSERVATION_CLIENT_SIZE_INVALID:" + label)
+    pan_dirs = raw.get("camera_pan_directions") or ()
+    if not isinstance(pan_dirs, (list, tuple)):
+        raise HostListenerError("OBSERVATION_CAMERA_PAN_DIRS_INVALID")
     return {
         "needs": {k: float(needs[k]) for k in SIX},
         "gardening": dict(gardening) if gardening is not None else None,
@@ -211,6 +224,17 @@ def _load_observation(raw: Mapping) -> dict:
         "moodlets": [str(x) for x in (raw.get("moodlets") or ())],
         "traits": [str(x) for x in traits],
         "whims": [str(x) for x in (raw.get("whims") or ())],
+        "cursor_client_x": cursor_x if isinstance(cursor_x, int) else None,
+        "cursor_client_y": cursor_y if isinstance(cursor_y, int) else None,
+        "client_width": client_w if isinstance(client_w, int) else None,
+        "client_height": client_h if isinstance(client_h, int) else None,
+        "edge_band_px": (
+            int(raw["edge_band_px"])
+            if isinstance(raw.get("edge_band_px"), int) and not isinstance(raw.get("edge_band_px"), bool)
+            else None
+        ),
+        "camera_scan_needed": bool(raw.get("camera_scan_needed", False)),
+        "camera_pan_directions": [str(x) for x in pan_dirs],
     }
 
 
@@ -335,6 +359,13 @@ def tick(
             navigating_needs_incomplete=obs["navigating_needs_incomplete"],
             navigating_needs_profile=obs["navigating_needs_profile"],
             build_or_buy_mode=obs["build_or_buy_mode"],
+            cursor_client_x=obs["cursor_client_x"],
+            cursor_client_y=obs["cursor_client_y"],
+            client_width=obs["client_width"],
+            client_height=obs["client_height"],
+            edge_band_px=obs["edge_band_px"],
+            camera_scan_needed=obs["camera_scan_needed"],
+            camera_pan_directions=obs["camera_pan_directions"],
             emotion=obs["emotion"],
             moodlets=obs["moodlets"],
             traits=obs["traits"],

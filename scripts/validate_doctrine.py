@@ -116,6 +116,9 @@ REQUIRED = (
     "contracts/build-library-checkpoint.v1.json", "docs/BUILD_LIBRARY_CHECKPOINT.md",
     "betterinstincts/build_library_checkpoint.py", "scripts/build_library_checkpoint.py",
     "tests/test_build_library_checkpoint.py",
+    "contracts/camera-traverse.v1.json", "docs/CAMERA_TRAVERSE.md",
+    "betterinstincts/camera_traverse.py", "scripts/camera_traverse.py",
+    "tests/test_camera_traverse.py",
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",

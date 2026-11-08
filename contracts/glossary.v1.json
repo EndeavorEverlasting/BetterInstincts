@@ -594,6 +594,52 @@
         "docs/TEEN_DAY_JOURNEY.md"
       ]
     },
+    "CAMERA_SAFE_TRAVERSE": {
+      "definition": "Host-owned bounded camera plan that gathers lot data without parking the mouse in the screen-edge pan band; every plan ends at SAFE_CURSOR_REST.",
+      "owners": [
+        "contracts/camera-traverse.v1.json",
+        "docs/CAMERA_TRAVERSE.md",
+        "betterinstincts/camera_traverse.py"
+      ]
+    },
+    "SAFE_CURSOR_REST": {
+      "definition": "Mandatory interior cursor park outside the Sims edge-pan band after any camera step so the viewport stops drifting while agents develop.",
+      "owners": [
+        "contracts/camera-traverse.v1.json",
+        "scripts/win32_input.py",
+        "docs/CAMERA_TRAVERSE.md"
+      ]
+    },
+    "EDGE_MOUSE_PARK": {
+      "definition": "Bad practice: leaving the cursor in the screen-edge pan band so the camera keeps scrolling after the agent stops navigating.",
+      "owners": [
+        "contracts/camera-traverse.v1.json",
+        "docs/CAMERA_TRAVERSE.md"
+      ]
+    },
+    "CONTINUOUS_EDGE_HOLD": {
+      "definition": "Bad practice: holding edge-scroll to scan the lot while planning or coding instead of host-owned capture/pan steps.",
+      "owners": [
+        "contracts/camera-traverse.v1.json",
+        "docs/CAMERA_TRAVERSE.md"
+      ]
+    },
+    "CAPTURE_BEFORE_EDGE_SCAN": {
+      "definition": "Prefer PrintWindow capture + lot-model observe before any camera pan; edge scrolling is not the default sensor.",
+      "owners": [
+        "contracts/camera-traverse.v1.json",
+        "scripts/game_capture.py",
+        "docs/CAMERA_TRAVERSE.md"
+      ]
+    },
+    "CAMERA_SAFE_REST": {
+      "definition": "Host gate that parks the cursor at SAFE_CURSOR_REST when an edge-band park is detected; outranks needs clicks.",
+      "owners": [
+        "contracts/camera-traverse.v1.json",
+        "betterinstincts/host_stack.py",
+        "docs/CAMERA_TRAVERSE.md"
+      ]
+    },
     "QUEUE_TEEN_HOMEWORK": {
       "definition": "Queue DO_HOMEWORK / WORK_ON_HOMEWORK when teen inventory_has_homework=true at home.",
       "owners": [
