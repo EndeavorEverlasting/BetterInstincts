@@ -480,6 +480,29 @@
         "docs/BUILD_OPTIMIZE.md"
       ]
     },
+    "BUILD_YIELD_MICROSYSTEM": {
+      "definition": "Evaluate-only Build/Buy owner that maintains per-category best-value pools for environment, neighborhood eco footprint, and bill axes; yield over aesthetics.",
+      "owners": [
+        "betterinstincts/build_optimize.py",
+        "docs/BUILD_OPTIMIZE.md",
+        "contracts/build-optimize.v1.json"
+      ]
+    },
+    "CATEGORY_BEST_POOL": {
+      "definition": "Top attested items in one Build/Buy category for a value axis (Env, Green, bills); host chooses from the pool rather than inventing aesthetics rankings.",
+      "owners": [
+        "betterinstincts/build_optimize.py",
+        "contracts/build-optimize.v1.json"
+      ]
+    },
+    "BILL_POWER": {
+      "definition": "Catalog power-draw axis; lower is better for household utility bills. Null means axis not declared for that item.",
+      "owners": ["contracts/build-optimize.v1.json", "docs/BUILD_OPTIMIZE.md"]
+    },
+    "BILL_WATER": {
+      "definition": "Catalog water-use axis; lower is better for household utility bills. Null means axis not declared for that item.",
+      "owners": ["contracts/build-optimize.v1.json", "docs/BUILD_OPTIMIZE.md"]
+    },
     "LOT_ENVIRONMENT_MODEL": {
       "definition": "Durable, revisioned structured understanding of a lab lot (entities, relations, goals, captures) that accumulates across observations and mutation outcomes.",
       "owners": [

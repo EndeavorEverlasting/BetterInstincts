@@ -569,6 +569,7 @@ def evaluate_turn(
                 panels=build_panels,
                 player_directed=player_directed,
                 build_or_buy_mode=build_or_buy_mode,
+                include_pools=True,
                 capture_ref=capture_ref,
             )
         except BuildOptimizeError as exc:

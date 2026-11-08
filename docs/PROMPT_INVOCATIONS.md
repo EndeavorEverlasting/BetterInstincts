@@ -11,13 +11,23 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P97 | Open-Source Prior-Art & Gap Analyst | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | docs/PRIOR_ART.md: reference implementation, gap map and adoption decisions |
 | P141 | Repository Strategic Opportunity Scout | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | docs/STRATEGY.md: compare/falsify competing theses, select next investigation |
 | P04 | [PARALLEL] Repo-Aware Sprint + Harness Factoring Distributor | `src/tokencorridor/interface/promptkit/registry/base/prompts.json` | `848728632c1243ebba023fa0012292a2ad33cada` | plans/active/BI-001.md: runtime partition, safe owner lanes, proof/gates |
-| P95 | Program Design & Call-Stack Prototype Architect | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 balance/imbalance microsystem (`docs/BALANCE_SERVICE.md`) + aspiration microsystem (`docs/ASPIRATION_SERVICE.md`) + career microsystem (`docs/CAREER_SERVICE.md`) + camera-safe traverse (`docs/CAMERA_TRAVERSE.md`) + library-save-before-room-mutate (`docs/BUILD_LIBRARY_CHECKPOINT.md`) + build spatial/integrity/house-state + prior need services |
+| P95 | Program Design & Call-Stack Prototype Architect | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build-yield category pools (`docs/BUILD_OPTIMIZE.md`) + balance/imbalance microsystem (`docs/BALANCE_SERVICE.md`) + aspiration + career + camera-safe traverse + library-save-before-room-mutate + build spatial/integrity/house-state |
 | P83 | Agent Work Verifier & Iterative Advancer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 verify Bargain Bend destruction claims then harden Build mechanisms |
 | P78 | Repository Glossary & Documentation Diet | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-07 preserve existing `contracts/glossary.v1.json` as vocabulary owner and `contracts/ontology.v1.json` as graph owner |
 
 | P67 | Repository Eval Framework Builder | `src/tokencorridor/interface/promptkit/registry/prompts/ai-engineering-level-up-prompts.v1.json` | `5350ce61085e748ab219fa482e25d70517b10e0f` | 2026-11-07 progression/CI honesty eval pyramid — see docs/PROGRESSION_EVAL.md |
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
-| P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 balance_service reuses survival_critical + moodlets + gardening peers; 2026-11-07 `need_service_base` + domain_cascade poll bus + need-services registry; Navigating Needs peer owner; prior: moodlets/event_balance |
+| P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
+
+## 2026-11-08 build-yield category pools trifecta
+
+**P95** designed per-category best-value pools across environment, neighborhood, and
+bill axes inside the existing Build/Buy yield owner. **P124** expanded
+`build_optimize` in place rather than spawning a parallel catalog service.
+**P82** measured dual 2/2 wall heads, efficient appliance/light bill heads, and
+null-axis skip falsifiers in `tests/test_build_optimize.py`. **P08** live paint /
+bill meters remain OPEN. Consultation:
+`contracts/consultations/BI-BUILD-YIELD-MICROSYSTEM-20261108.v1.json`.
 
 **Resolution is not execution.** Artifacts prove these workflows were applied to this initial sprint; no TokenCorridor CLI execution, full compliant remote parallel-worker receipt, or installed `/trifecta` skill is claimed. In BI-001 the branch-writer is one GitHub provider lane. Do not copy proprietary/private Prompt Kit contents into this public repository; this file contains only invocation identities and evidence pointers. Refresh exact provenance from TokenCorridor on subsequent work instead of trusting this snapshot indefinitely.
 

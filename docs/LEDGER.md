@@ -1,5 +1,8 @@
 # Canonical project ledger
 
+## 2026-11-08 — Build yield microsystem: per-category best pools (P95 + P124 + trifecta)
+Operator ask: complete the microsystem that maximizes best values in **each Build/Buy category** so the host has a pool for environment, neighborhood, bills, etc. Ontology consultation `BI-BUILD-YIELD-MICROSYSTEM-20261108` precedes mutation. **P95** expands `build-optimize` v2 with value axes + category trays; **P124** keeps a single evaluate-only owner (`best_pools` / `evaluate_category_pools`) instead of a second daemon. Dual Env+Green 2/2 walls remain yield floor; bill pools skip null axes. CLI: `python -m scripts.build_optimize --pools`. Live paint/meters OPEN; BI-002 ACTIVE.
+
 ## 2026-11-08 — Balance/Imbalance microsystem (P95 + P124 + trifecta)
 
 **Operator:** Enchanted by Nature Balance meter — prolonged negative mood →

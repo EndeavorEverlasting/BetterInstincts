@@ -5,7 +5,9 @@ from pathlib import Path
 
 from betterinstincts.build_optimize import (
     BuildOptimizeError,
+    best_pools,
     evaluate_build_optimize,
+    evaluate_category_pools,
     load_contract,
     project_stack,
     rank_items,
@@ -200,6 +202,56 @@ class BuildOptimizeTests(unittest.TestCase):
         self.assertEqual(out["build_optimize"]["best"]["lot_environment_gain"], 2)
         self.assertEqual(out["build_optimize"]["best"]["eco_footprint_green"], 2)
         self.assertFalse(out["fallback"]["execute_allowed"])
+        self.assertIsNotNone(out["build_optimize"].get("pools"))
+        self.assertIn("wall_covering", out["build_optimize"]["pools"]["categories"])
+
+    def test_best_pools_cover_categories_and_axes(self):
+        pools = best_pools(owned_packs=["base", "EP09", "GP02", "EP19", "EP20"], pool_size=2)
+        cats = pools["categories"]
+        self.assertIn("wall_covering", cats)
+        self.assertIn("appliance", cats)
+        self.assertIn("lighting", cats)
+        wall_env = cats["wall_covering"]["lot_environment_gain"][0]
+        self.assertEqual(wall_env["lot_environment_gain"], 2)
+        self.assertEqual(wall_env["eco_footprint_green"], 2)
+        wall_yield = cats["wall_covering"]["combined_env_green"][0]
+        self.assertIn(
+            wall_yield["id"],
+            {"wall.veins_of_gold_marble", "wall.working_bricks"},
+        )
+        fridge = cats["appliance"]["bill_power"][0]
+        self.assertEqual(fridge["id"], "appliance.efficient_fridge")
+        light = cats["lighting"]["bill_power"][0]
+        self.assertEqual(light["id"], "light.efficient_env1")
+
+    def test_null_bill_axis_does_not_win_via_zero(self):
+        pools = best_pools(owned_packs=["base"], pool_size=5)
+        # Walls declare bill_power=null — wall_covering must omit bill_power pool.
+        self.assertNotIn("bill_power", pools["categories"].get("wall_covering", {}))
+
+    def test_bill_savings_prefers_efficient_appliance(self):
+        ranked = rank_items(
+            "MAXIMIZE_BILL_SAVINGS",
+            category="appliance",
+            owned_packs=["base"],
+            limit=3,
+        )
+        self.assertEqual(ranked[0]["id"], "appliance.efficient_fridge")
+        self.assertLess(ranked[0]["bill_burden"], ranked[1]["bill_burden"])
+
+    def test_evaluate_category_pools_ready(self):
+        result = evaluate_category_pools(owned_packs=["base", "EP09"])
+        self.assertEqual(result["state"], "BUILD_YIELD_POOLS_READY")
+        self.assertFalse(result["plan"]["execute_allowed"])
+        self.assertTrue(result["category_summary"])
+        self.assertEqual(result["microsystem"], "BUILD_YIELD")
+
+    def test_contract_has_value_axes_and_categories(self):
+        cfg = load_contract()
+        self.assertEqual(cfg["version"], 2)
+        self.assertIn("bill_power", cfg["value_axes"])
+        self.assertIn("plumbing", cfg["categories"])
+        self.assertEqual(cfg["microsystem"], "BUILD_YIELD")
 
 
 if __name__ == "__main__":
