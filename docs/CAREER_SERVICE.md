@@ -1,9 +1,9 @@
 # Career service — async microsystem (P95)
 
-**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect  
-**Provenance:** `spec-architecture-prompts.v1.json` blob `5926a198a14567de55110ed19e922fc444b4dec7`  
-**Machine owner:** [`contracts/career-service.v1.json`](../contracts/career-service.v1.json)  
-**Evaluator:** `betterinstincts.career_service` / `python -m scripts.career_service`  
+**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
+**Provenance:** `spec-architecture-prompts.v1.json` blob `5926a198a14567de55110ed19e922fc444b4dec7`
+**Machine owner:** [`contracts/career-service.v1.json`](../contracts/career-service.v1.json)
+**Evaluator:** `betterinstincts.career_service` / `python -m scripts.career_service`
 **Lane note:** [`CAREER_PERFORMANCE.md`](CAREER_PERFORMANCE.md) (BI-006-adjacent scaffolding, not certification)
 
 ## Design brief
