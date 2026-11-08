@@ -169,3 +169,11 @@ Use a **real observed** disposable session, exact PID, and a valid bounded `host
 **Selected seam:** `betterinstincts/build_optimize.py` + `contracts/build-optimize.v1.json`; optional `host_stack` gate `BUILD_OPTIMIZE_EVALUATE_ONLY` when `build_objective` + `build_or_buy_mode` are supplied. CLI: `python -m scripts.build_optimize --objective MAXIMIZE_ENV --owned-packs base,GP02,EP20`. Full design: [BUILD_OPTIMIZE.md](BUILD_OPTIMIZE.md).
 
 **Invariants:** player-directed yields; Green vs Industrial mutually exclusive; stacking per wall panel; `execute_allowed=false` until P08 disposable Build Mode apply proof; catalog rows require evidence_state (LOCAL_OBSERVED Brick & Plaster tooltip on Bargain Bend). Does **not** close BI-002 hunger.
+
+## 2026-11-08 — Async needs and gardening session
+
+`betterinstincts/host_tandem.py` owns only the in-flight action lifecycle over
+`host_listener.tick`; the listener retains session/tick persistence, the existing
+needs modules retain scoring, and the gardening peer retains action selection.
+See [HOST_TANDEM.md](HOST_TANDEM.md) for ports, bounded coroutine overlap, exact
+host ownership, safe preemption, outcome requirements and current proof ceiling.

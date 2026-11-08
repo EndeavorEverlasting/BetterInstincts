@@ -330,3 +330,16 @@ Operator gap: gardening desire visible in moodlets without a durable way to chec
 
 **Operator:** finish the builder; classify **inside vs outside** and **FLOOR_1 vs FLOOR_2**; host must use those differences. **P95** adds [`docs/BUILD_SPATIAL.md`](BUILD_SPATIAL.md) / `contracts/build-spatial.v1.json` / `betterinstincts/build_spatial.py` (`ENCLOSURE_AND_STORY_AXES`). Inventory buckets + build order (F1 structure → F1 indoor → F2 structure → F2 indoor → outdoor floaters). `house_state.plan_next` / `admit_mutation` and `host_stack` Build/Buy turns consume the axes; F2-before-F1 and outside-as-inside fail closed. Proof ceiling `OFFLINE_BUILD_SPATIAL_AXES_NOT_LIVE_LOT_RESTORE`. Does not close BI-002.
 
+## 2026-11-08 — Async needs and gardening continuation
+
+The operator requested independent needs management while gardening continues,
+including sleep rather than endless gardening. `host_tandem.run_tandem_session`
+now observes through the existing listener while one interaction awaits its
+outcome. Fresh ownership-bound gardening can suspend for an observed need
+remedy; a fresh recovered snapshot can resume gardening. Player input yields
+without queue cancellation. See [HOST_TANDEM.md](HOST_TANDEM.md).
+
+Offline coroutine tests prove this sequencing, not live dispatch. The earlier
+Natural Living Sleep Here interaction visibly started, but the later paused
+scene showed Charlee awake with low Energy; recovery remains unproved. That
+pause was preserved. No bed was bought or placed. BI-002 remains ACTIVE.
