@@ -1,0 +1,90 @@
+{
+  "schema": "betterinstincts.hidden-object-scout-goal/v1",
+  "mission_id": "BI-HIDDEN-CATALOG-SCOUT",
+  "version": 1,
+  "title": "Hidden Catalog Scout — 4-hour repeatable discovery mission",
+  "owner": "docs/HIDDEN_OBJECT_SCOUT.md",
+  "origin": "plans/active/BI-HIDDEN-OBJECTS.P04.md",
+  "agent_runtime": "LOCAL_AGENT_RUNTIME",
+  "engine": "SCOPED_READ_ONLY_CHECKPOINTS_NO_GAME_INPUT",
+  "synopsis": "Systematically enumerate interesting hidden Build/Buy objects in bounded rounds; record capture-backed candidates and independently reviewed zero-price discoveries; resume without retracing completed findings.",
+  "objectives": {
+    "default_duration_minutes": 240,
+    "min_duration_minutes": 30,
+    "max_duration_minutes": 480,
+    "target_unique_candidates": 40,
+    "max_batches": 96,
+    "max_items_per_batch": 12,
+    "max_consecutive_zero_new_batches": 12,
+    "minimum_seconds_between_batches": 15,
+    "observation_max_age_seconds": 180,
+    "category_rotation": [
+      "clutter",
+      "collectibles",
+      "landscape",
+      "lighting",
+      "world"
+    ],
+    "completion": "TIMEBOX_OR_BATCH_CAP_OR_DISCOVERY_PLATEAU; target is a progress metric not a guarantee"
+  },
+  "checkpoint": {
+    "directory": "dist/hidden-object-scout/",
+    "per_session_file": "state.json",
+    "max_file_bytes": 512000,
+    "session_id_pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+    "dedupe": "casefolded item label plus pack across one exact game build; unknown pack is explicitly UNKNOWN",
+    "idempotence": "same batch_id + identical report digest is no-op; conflicting retry refused",
+    "no_unbounded_logs": true
+  },
+  "required_setup": {
+    "p04_guide": "python -m scripts.hidden_object_discovery guide",
+    "p04_receipt": "dist/game-host/hidden-object-p04-receipt.json",
+    "p04_receipt_audit": "python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json",
+    "current_scene": "build_buy",
+    "exact_game_build": true,
+    "two_independent_scene_cues": true,
+    "disposable_lab_save_attestation": true,
+    "player_idle_and_host_exclusive_lease": true,
+    "fresh_capture_per_batch": true,
+    "operator_consent_for_cheats_and_each_game_changing_action": true,
+    "optional_live_edit": "only after separate operator consent and observed command receipt"
+  },
+  "progress_dimensions": [
+    "candidate_unique",
+    "reviewed_unique",
+    "reviewed_free",
+    "reviewed_priced",
+    "reviewed_price_unknown",
+    "unique_by_category",
+    "completed_batches",
+    "zero_new_streak",
+    "remaining_time_seconds"
+  ],
+  "loop_ownership": "Existing local Windows agent performs observed UI actions under independent screen_admit; this repository planner only suggests next search and stores bounded evidence summaries.",
+  "stop_conditions": [
+    "operator_stop",
+    "operator_pause",
+    "player_active",
+    "lease_lost",
+    "unknown_or_black_scene",
+    "game_build_changed",
+    "save_provenance_changed",
+    "expired_timebox",
+    "max_batches",
+    "discovery_plateau",
+    "failed_P04_receipt"
+  ],
+  "provenance": "Assistant-authored design target; no Sims catalog observations or multi-hour run asserted.",
+  "regression_safety": [
+    "no_startup_autorun",
+    "no_daemon",
+    "no_scheduled_task",
+    "no_SendInput",
+    "never_touch_game_speed",
+    "no_save_mutation",
+    "no_funds_mutation",
+    "no_unreviewed_price_promotion",
+    "no_automatic_scene_transition",
+    "BI_002_independent"
+  ]
+}
