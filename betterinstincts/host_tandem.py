@@ -94,6 +94,7 @@ async def run_tandem_session(
     last_need_completed: dict | None = None
     career_obligation: dict | None = None
     aspiration_prompt: dict | None = None
+    balance_condition: dict | None = None
     just_finished_needs = False
 
     def event(kind: str, **fields) -> None:
@@ -147,6 +148,8 @@ async def run_tandem_session(
                 obs["prior_career_state"] = career_obligation
             if aspiration_prompt is not None:
                 obs["prior_aspiration_state"] = aspiration_prompt
+            if balance_condition is not None:
+                obs["prior_balance_state"] = balance_condition
             receipt = tick(session_id, obs, presence_probe=probe(raw))
             if receipt["listener_action"] == "YIELD_TO_PLAYER":
                 event("YIELD_TO_PLAYER_NO_QUEUE_CANCELLATION")
@@ -157,6 +160,7 @@ async def run_tandem_session(
             garden = stack.get("gardening") or {}
             career = stack.get("career_service") or {}
             aspiration = stack.get("aspiration_service") or {}
+            balance = stack.get("balance_service") or {}
             if career.get("obligation_held"):
                 career_obligation = dict(career)
                 event(
@@ -178,6 +182,18 @@ async def run_tandem_session(
                 )
             elif aspiration.get("microsystem_state") in {"COMPLETE", "IDLE"}:
                 aspiration_prompt = None
+            if balance.get("condition_held"):
+                balance_condition = dict(balance)
+                event(
+                    "BALANCE_CONDITION_HELD",
+                    microsystem_state=balance.get("microsystem_state"),
+                    balance_gate=balance.get("gate"),
+                    balance_level=balance.get("balance_level"),
+                    ailment=balance.get("ailment"),
+                    pending_phase=(active or {}).get("phase"),
+                )
+            elif balance.get("microsystem_state") in {"COMPLETE", "IDLE", "RESTORED"}:
+                balance_condition = None
             capture = obs.get("capture_ref")
             if not _ref(capture) or capture == seen_capture:
                 event("WAIT_FOR_FRESH_CAPTURE")
@@ -211,6 +227,22 @@ async def run_tandem_session(
                     primary_route=career.get("primary_route"),
                 )
                 reason = "CAREER_READY_HANDOFF_REQUIRED"
+                break
+            # After survival recovery, Very Imbalanced / ailment outranks gardening.
+            if (
+                just_finished_needs
+                and active is None
+                and balance.get("condition_held")
+                and balance.get("gate") in {"READY_HOLISTIC_CURE", "READY_NATUROPATH"}
+            ):
+                event(
+                    "BALANCE_READY_AFTER_NEEDS",
+                    balance_gate=balance.get("gate"),
+                    microsystem_state=balance.get("microsystem_state"),
+                    primary_route=balance.get("primary_route"),
+                    ailment=balance.get("ailment"),
+                )
+                reason = "BALANCE_READY_HANDOFF_REQUIRED"
                 break
             just_finished_needs = False
             duty = garden.get("gate") == "GARDEN_RESPONSIBILITY_FIRST"
@@ -280,6 +312,7 @@ async def run_tandem_session(
         "gardening_goal": "PRESERVED_REQUIRES_FRESH_REVALIDATION",
         "career_obligation": career_obligation,
         "aspiration_prompt": aspiration_prompt,
+        "balance_condition": balance_condition,
         "dispatch_authorized": False,
         "proof_ceiling": "BOUNDED_CALLBACK_SESSION_NOT_GAMEPLAY_CERTIFICATION",
     }

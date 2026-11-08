@@ -228,6 +228,30 @@ def _load_observation(raw: Mapping) -> dict:
             if isinstance(raw.get("prior_aspiration_state"), Mapping)
             else None
         ),
+        "balance_level": (
+            str(raw["balance_level"]) if raw.get("balance_level") else None
+        ),
+        "ailment": str(raw["ailment"]) if raw.get("ailment") else None,
+        "inventory_has_holistic_cure": (
+            bool(raw["inventory_has_holistic_cure"])
+            if isinstance(raw.get("inventory_has_holistic_cure"), bool)
+            else None
+        ),
+        "apothecary_stall_available": bool(raw.get("apothecary_stall_available", False)),
+        "apothecary_skill_level": (
+            int(raw["apothecary_skill_level"])
+            if isinstance(raw.get("apothecary_skill_level"), int)
+            else None
+        ),
+        "natural_living_meditate_available": bool(
+            raw.get("natural_living_meditate_available", False)
+        ),
+        "houseplants_available": bool(raw.get("houseplants_available", False)),
+        "prior_balance_state": (
+            raw.get("prior_balance_state")
+            if isinstance(raw.get("prior_balance_state"), Mapping)
+            else None
+        ),
         "sim_at_school": sim_at_school if isinstance(sim_at_school, bool) else None,
         "camera_lot_kind": (
             str(raw["camera_lot_kind"]) if raw.get("camera_lot_kind") else None
@@ -405,6 +429,16 @@ def tick(
             occult_needs_engine_ready=obs.get("occult_needs_engine_ready", False),
             operator_prefers_aspiration_ok=obs.get("operator_prefers_aspiration_ok"),
             prior_aspiration_state=obs.get("prior_aspiration_state"),
+            balance_level=obs.get("balance_level"),
+            ailment=obs.get("ailment"),
+            inventory_has_holistic_cure=obs.get("inventory_has_holistic_cure"),
+            apothecary_stall_available=obs.get("apothecary_stall_available", False),
+            apothecary_skill_level=obs.get("apothecary_skill_level"),
+            natural_living_meditate_available=obs.get(
+                "natural_living_meditate_available", False
+            ),
+            houseplants_available=obs.get("houseplants_available", False),
+            prior_balance_state=obs.get("prior_balance_state"),
         )
         force = plan_force(
             location_kind=obs["location_kind"],

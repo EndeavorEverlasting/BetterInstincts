@@ -39,6 +39,12 @@ from betterinstincts.aspiration_service import (
     evaluate_aspiration_service,
     should_attach_aspiration_service,
 )
+from betterinstincts.balance_service import (
+    BalanceServiceError,
+    compact_balance_service,
+    evaluate_balance_service,
+    should_attach_balance_service,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "domain-cascade.v1.json"
@@ -58,6 +64,7 @@ def load_contract(path: Path = CONTRACT) -> dict:
         raise DomainCascadeError("INVALID_DOMAIN_CASCADE_SCHEMA")
     if list(data.get("cascade_order") or []) != [
         "needs",
+        "balance",
         "budget",
         "career",
         "aspirations",
@@ -134,6 +141,14 @@ def poll_cascade(
     occult_needs_engine_ready: bool = False,
     operator_prefers_aspiration_ok: Optional[bool] = None,
     prior_aspiration_state: Optional[Mapping[str, object]] = None,
+    balance_level: Optional[str] = None,
+    ailment: Optional[str] = None,
+    inventory_has_holistic_cure: Optional[bool] = None,
+    apothecary_stall_available: bool = False,
+    apothecary_skill_level: Optional[int] = None,
+    natural_living_meditate_available: bool = False,
+    houseplants_available: bool = False,
+    prior_balance_state: Optional[Mapping[str, object]] = None,
     capture_ref: str = "capture:domain-cascade",
 ) -> dict:
     """Poll domains in cascade order; each receipt may cite prior receipts."""
@@ -212,6 +227,69 @@ def poll_cascade(
             if need_report.get("detached_needs"):
                 findings.append("NEED_LB_DETACH_PROPAGATES")
     except (NeedServicesError, NavigatingNeedsError) as exc:
+        raise DomainCascadeError(str(exc)) from exc
+
+    # --- balance / imbalance (Enchanted by Nature wellness) ---
+    try:
+        if should_attach_balance_service(
+            balance_level=balance_level,
+            ailment=ailment,
+            prior_state=prior_balance_state,
+        ):
+            balance = evaluate_balance_service(
+                snap,
+                balance_level=balance_level,
+                ailment=ailment,
+                emotion=emotion,
+                moodlets=moodlets,
+                inventory_has_holistic_cure=inventory_has_holistic_cure,
+                apothecary_stall_available=apothecary_stall_available,
+                apothecary_skill_level=apothecary_skill_level,
+                natural_living_meditate_available=natural_living_meditate_available,
+                houseplants_available=houseplants_available,
+                available_objects=tuple(available_objects or ()),
+                player_directed=player_directed,
+                already_busy=already_busy,
+                prior_state=prior_balance_state,
+                capture_ref=capture_ref,
+            )
+            bal_findings = [
+                f
+                for f in (balance.get("findings") or [])
+                if f.startswith("BALANCE_")
+                or f.startswith("AILMENT_")
+                or f.startswith("HOLISTIC_")
+                or f.startswith("NATURE_")
+                or f.startswith("NEGATIVE_")
+                or f.startswith("POSITIVE_")
+                or f.startswith("SURVIVAL_")
+                or f.startswith("VERY_")
+                or f.startswith("MOODLETS_")
+            ]
+            if balance.get("condition_held"):
+                bal_findings.append("BALANCE_CONDITION_HELD")
+            receipts.append(
+                _receipt(
+                    "balance",
+                    gate=str(balance.get("gate") or "BALANCE_IDLE"),
+                    action=str(balance.get("action") or "NO_BALANCE_CONDITION"),
+                    payload={
+                        "balance_service": compact_balance_service(balance),
+                        "prior_gates": [r["gate"] for r in receipts],
+                    },
+                    findings=bal_findings,
+                )
+            )
+        else:
+            receipts.append(
+                _receipt(
+                    "balance",
+                    gate="BALANCE_IDLE",
+                    action="NO_BALANCE_CONDITION",
+                    payload={"prior_gates": [r["gate"] for r in receipts]},
+                )
+            )
+    except BalanceServiceError as exc:
         raise DomainCascadeError(str(exc)) from exc
 
     # --- budget ---

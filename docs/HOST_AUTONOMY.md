@@ -36,6 +36,7 @@ See glossary: `PLAYER_FIRST`, `PLAYER_PLAYING`, `PLAYER_PRESENT_ON_CANVAS`, `HOS
 | `domain_cascade` | Ordered domain poll receipts (needs/LB → budget → career microsystem → skills → relationships) | none |
 | `career_service` | Sticky teen homework / career-panel obligation tandem beside need_services | none |
 | `aspiration_service` | Sticky aspiration / life-state dialog OK/Cancel tandem; lab defaults completion off | none |
+| `balance_service` | Sticky Balance/Imbalance + ailment tandem; Naturopath/Holistic Cure/nature recovery | none |
 | `fun_service` | Rich Fun lanes under guest contention | none |
 | `navigating_needs` | Discovery Quest panel tandem | none |
 | `event_balance` | Outdoor-social RCA + event/needs/homework call stack | none |
