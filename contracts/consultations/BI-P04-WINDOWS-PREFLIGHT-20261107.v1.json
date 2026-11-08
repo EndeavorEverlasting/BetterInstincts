@@ -1,0 +1,82 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-P04-WINDOWS-PREFLIGHT-20261107",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "eda1b4664714ca21a3caa659e40cbd6061ac36c8",
+  "proposed_capability": "Repair Windows ontology preflight path serialization before hidden-object local execution.",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "VIEWPORT_STATE",
+    "SAVE_SLOT",
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "LOCATION",
+    "GAME_OBJECT",
+    "AFFORDANCE",
+    "OBSERVATION",
+    "CLAIM",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "HOST_ACTION",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "MECHANIC_PATH"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/CURIOUS_CATALOG.md",
+    "docs/SCENE_INTELLIGENCE.md",
+    "contracts/curious-catalog.v1.json",
+    "contracts/game-scenes.v1.json",
+    "contracts/save-policy.v1.json",
+    "contracts/ontology.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_WINDOWS_PREFLIGHT_NOT_GAME_AUTHORITY",
+  "player_save_control_impact": "No game input or save mutation; preserve all admission denials.",
+  "expected_outcome": "Canonical forward-slash paths on Windows and POSIX; original consultation denial and chronology controls remain enforced.",
+  "negative_tests": [
+    "Windows-flavored path objects preserve canonical record identity and exemptions",
+    "Blocked consultation still denied without file paths",
+    "Historical ontology blob validation retained",
+    "Full Windows suite and chronology check"
+  ],
+  "rollback_path": "Revert isolated repair commits; no game state changed.",
+  "unresolved_unknowns": [
+    "Current operator consent and scene pending; no live input authorized by this receipt."
+  ],
+  "files_expected": [
+    "scripts/check_ontology.py",
+    "tests/test_ontology_gate.py",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "plans/active/BI-HIDDEN-OBJECTS.P04.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
+  "source_main_sha": "c75f28c55e11d375ac81a699b05518c1a65f7dc7"
+}

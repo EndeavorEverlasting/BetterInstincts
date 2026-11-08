@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-07 — Local P04 Windows preflight repair
+
+Fresh remote floor `c75f28c55e11d375ac81a699b05518c1a65f7dc7` includes merged PR #61. An isolated worktree preserves unrelated dirty house-state work. On Windows, the full suite exposed ontology consultation identity mismatches: native `str(Path)` produced backslashes while tracked records and Git use forward slashes. `scripts/check_ontology.py` now uses `as_posix()` for identity, consultation exemptions and Git consultation lookup. The original fail-closed decisions and historical ontology validation remain intact. A Windows-path-flavor regression runs on every host. Local suite: **453 tests run, 3 skipped**, all remaining tests passed; focused ontology suite: 18 passed. Provider integration and live discovery outcome must be verified separately. BI-002 stays ACTIVE and game-unproven.
+
 **Repository:** EndeavorEverlasting/BetterInstincts
 **Owner objective (2026-10-20):** A creative, freely distributed contribution to The Sims 4 modding community that makes Sims autonomously meet needs responsibly, generate income, improve career outcomes, and pursue more fulfilling lives. Start with an observable small win while retaining the entire multi-month vision here. Prefer community-standard languages/tooling and patterns; avoid inventing new systems unnecessarily.
 

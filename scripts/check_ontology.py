@@ -85,7 +85,7 @@ def is_behavior_mutation(path: str) -> bool:
     if path.startswith((".github/workflows/", ".cursor/rules/", "betterinstincts/", "scripts/", "tests/", "compatibility/")):
         return True
     if path.startswith("contracts/") and path.endswith(".json"):
-        return not (path == str(ONTOLOGY) or path.startswith(str(CONSULTATIONS) + "/"))
+        return not (path == ONTOLOGY.as_posix() or path.startswith(CONSULTATIONS.as_posix() + "/"))
     return False
 
 
@@ -126,7 +126,7 @@ def validate_consultation(data: dict, ontology: dict, changed: list[str], root: 
         value = data.get(field)
         if value is None or value == "" or value == []:
             raise ValueError(f"CONSULTATION_FIELD_MISSING:{field}")
-    if data.get("ontology") != str(ONTOLOGY):
+    if data.get("ontology") != ONTOLOGY.as_posix():
         raise ValueError("CONSULTATION_WRONG_ONTOLOGY")
     reference = ontology_for_consultation(data, ontology, root)
     if data.get("game_build_scope") != "REPOSITORY_OFFLINE_ONLY" and not data.get("game_build_scope", "").startswith("EXACT_GAME_BUILD:"):
@@ -204,7 +204,7 @@ def check_branch(base: str, root: Path = ROOT) -> tuple[int, int]:
             continue
         parent = commit + "^"
         manifests = [
-            p for p in git("ls-tree", "-r", "--name-only", parent, "--", str(CONSULTATIONS), root=root).splitlines()
+            p for p in git("ls-tree", "-r", "--name-only", parent, "--", CONSULTATIONS.as_posix(), root=root).splitlines()
             if p.endswith(".json")
         ]
         for path in paths:

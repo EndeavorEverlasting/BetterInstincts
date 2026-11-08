@@ -1,5 +1,7 @@
 # BetterInstincts roadmap — no trajectory rediscovery
 
+**2026-11-07 local P04 prerequisite:** Windows ontology consultation checks now serialize repository identities with forward slashes, matching the canonical JSON records and Git paths. This restores local admission validation; it grants no game-input authority and does not advance BI-002 certification.
+
 **Sequence accepted 2026-10-20:** six adult needs -> balance -> steady income with needs maintained -> skills with income and needs maintained -> career advancement. Throughout, preserve player choice, fun, and older certified game versions. Canonical execution graph: [plans/horizon.v1.json](../plans/horizon.v1.json). Human/readable owner: [HORIZON.md](HORIZON.md).
 
 | Stage | Required result | Local game proof |
