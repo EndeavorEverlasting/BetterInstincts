@@ -2,10 +2,10 @@
 
 **Terminal user value:** agents can gather lot/map data for the next move without parking the mouse on the screen edge and leaving the Sims camera scrolling while they develop.
 
-**Machine authority:** [`contracts/camera-traverse.v1.json`](../contracts/camera-traverse.v1.json)  
-**Library:** `betterinstincts/camera_traverse.py`  
-**CLI:** `python -m scripts.camera_traverse`  
-**Vocabulary:** [GLOSSARY.md](GLOSSARY.md)  
+**Machine authority:** [`contracts/camera-traverse.v1.json`](../contracts/camera-traverse.v1.json)
+**Library:** `betterinstincts/camera_traverse.py`
+**CLI:** `python -m scripts.camera_traverse`
+**Vocabulary:** [GLOSSARY.md](GLOSSARY.md)
 **Program home:** [HOST_AUTONOMY.md](HOST_AUTONOMY.md)
 
 ## Problem
