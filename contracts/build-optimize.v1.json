@@ -1,17 +1,19 @@
 {
   "schema": "betterinstincts.build-optimize/v1",
-  "version": 1,
+  "version": 2,
   "authority": "docs/BUILD_OPTIMIZE.md",
-  "proof_ceiling": "OFFLINE_CATALOG_RANKING_NOT_LIVE_BUILD_DISPATCH",
+  "proof_ceiling": "OFFLINE_BUILD_YIELD_POOLS_NOT_LIVE_PAINT_NOT_BILL_METER_CERT",
+  "microsystem": "BUILD_YIELD",
   "design_brief": {
-    "subject": "Sims 4 Build/Buy catalog ranking for Lot Environment Gain and Eco Footprint",
+    "subject": "Build/Buy yield microsystem — per-category best-value pools for environment, neighborhood, and bills",
     "audience": "local host agent and disposable-lab builder automation",
-    "job": "Deterministically pick the best wall coverings and Buy items per objective without inventing tooltip OCR as truth",
+    "job": "Maintain a deterministic pool of best attested items in each Build/Buy category so host plans maximize moodlet/return yield (not aesthetics)",
+    "architecture": "Single evaluate-only owner (build_optimize). P124: expand axes/pools in place — no second catalog daemon.",
     "upstreams": [
       {"id": "impeccable", "mechanism": "purpose clarity before catalog UI"},
       {"id": "UP-A85AD9DC3", "mechanism": "call-stack storytelling for optimize journeys"},
       {"id": "UP-REDERIVE-2026-1103-01", "mechanism": "ordered constraints: player-first, save-safe, fail-closed unknown"},
-      {"id": "mattpocock-wayfinder", "mechanism": "decision map for Green vs Industrial objectives"},
+      {"id": "mattpocock-wayfinder", "mechanism": "decision map for Green vs Industrial vs bill axes"},
       {"id": "UP-40FE662CF", "mechanism": "validate ranking before any host click path"}
     ]
   },
@@ -38,48 +40,96 @@
         "capture_ref": "operator:wall-covering-tooltip-20261107"
       }
     ],
-    "note": "Operator-attested dual max 2/2 is the current yield floor for Env+Green; aesthetics are not a ranking factor. Stats stack per wall panel; Shift+click applies whole room/exterior."
+    "note": "Operator-attested dual max 2/2 is the current Env+Green yield floor; aesthetics are not a ranking factor. Bill axes expand with attested appliance/plumbing rows."
+  },
+  "value_axes": {
+    "lot_environment_gain": {
+      "domain": "environment",
+      "direction": "higher",
+      "benefit": "Room Environment Score → Decorated / Beautifully Decorated Happy moodlets"
+    },
+    "eco_footprint_green": {
+      "domain": "neighborhood",
+      "direction": "higher",
+      "benefit": "Neighborhood Clean Air / green utopia (Eco Lifestyle)"
+    },
+    "eco_footprint_industrial": {
+      "domain": "neighborhood_industrial",
+      "direction": "higher",
+      "benefit": "Opt-in Gross Air / smog storytelling only"
+    },
+    "combined_env_green": {
+      "domain": "yield",
+      "direction": "higher",
+      "derived": true,
+      "benefit": "Dual Env+Green yield for moodlets + Clean Air"
+    },
+    "bill_power": {
+      "domain": "bills",
+      "direction": "lower",
+      "benefit": "Lower power draw → lower household utility bills"
+    },
+    "bill_water": {
+      "domain": "bills",
+      "direction": "lower",
+      "benefit": "Lower water use → lower household utility bills"
+    }
   },
   "objectives": {
     "MAXIMIZE_ENV": {
       "primary": "lot_environment_gain",
       "secondary": ["eco_footprint_green", "cost_asc", "name_asc"],
       "exclude_eco": null,
-      "benefit": "Raises room Environment Score toward Decorated / Beautifully Decorated Happy moodlets; ties break toward Green yield"
+      "benefit": "Raises room Environment Score; ties break toward Green yield"
     },
     "MAXIMIZE_GREEN": {
       "primary": "eco_footprint_green",
       "secondary": ["lot_environment_gain", "cost_asc", "name_asc"],
       "exclude_eco": "industrial",
-      "benefit": "Neighborhood Clean Air / green utopia effects (Eco Lifestyle); ties break toward Environment Gain"
+      "benefit": "Neighborhood Clean Air; ties break toward Environment Gain"
     },
     "MAXIMIZE_INDUSTRIAL": {
       "primary": "eco_footprint_industrial",
       "secondary": ["cost_asc", "name_asc"],
       "exclude_eco": "green",
-      "benefit": "Opt-in polluted / dystopian footprint; Gross Air Uncomfortable — storytelling only"
+      "benefit": "Opt-in polluted footprint — storytelling only"
     },
     "BALANCED_ENV_GREEN": {
       "primary": "combined_env_green",
       "secondary": ["lot_environment_gain", "eco_footprint_green", "cost_asc", "name_asc"],
       "exclude_eco": "industrial",
-      "benefit": "Household yield default: maximize Env+Green contribution for Decorated + Clean Air moodlets (not aesthetics)"
+      "benefit": "Env+Green contribution without industrial"
     },
     "MAXIMIZE_YIELD": {
       "primary": "combined_env_green",
-      "secondary": ["lot_environment_gain", "eco_footprint_green", "cost_asc", "name_asc"],
+      "secondary": ["lot_environment_gain", "eco_footprint_green", "bill_power_asc", "bill_water_asc", "cost_asc", "name_asc"],
       "exclude_eco": "industrial",
-      "benefit": "Alias of BALANCED_ENV_GREEN for host automation: moodlet/return yield over visual taste"
+      "benefit": "Household default: moodlet/return yield over aesthetics; prefer lower bills on ties"
+    },
+    "MAXIMIZE_BILL_SAVINGS": {
+      "primary": "combined_bill_burden",
+      "secondary": ["bill_power_asc", "bill_water_asc", "cost_asc", "name_asc"],
+      "exclude_eco": null,
+      "benefit": "Prefer lower power+water burden among items that declare bill axes"
     }
   },
   "policies": {
     "stacking": "PER_WALL_PANEL",
     "unknown_stat": "FAIL_CLOSED_ZERO",
     "unknown_catalog_id": "REJECT",
+    "null_axis_skips_pool": true,
     "default_household_objective": "MAXIMIZE_YIELD",
     "ranking_priority": "YIELD_OVER_AESTHETICS",
     "observed_max_env": 2,
     "observed_max_green": 2,
+    "pool_size_default": 3,
+    "pool_axes_default": [
+      "lot_environment_gain",
+      "eco_footprint_green",
+      "combined_env_green",
+      "bill_power",
+      "bill_water"
+    ],
     "player_first": true,
     "never_mutate_saves": true,
     "never_auto_discover_install": true,
@@ -91,11 +141,53 @@
   "categories": {
     "wall_covering": {
       "stack_unit": "wall_panel",
-      "build_mode_tray": "Wall Coverings"
+      "build_mode_tray": "Wall Coverings",
+      "primary_axes": ["lot_environment_gain", "eco_footprint_green", "combined_env_green"]
+    },
+    "floor_covering": {
+      "stack_unit": "floor_tile",
+      "build_mode_tray": "Floor Coverings",
+      "primary_axes": ["lot_environment_gain", "eco_footprint_green", "combined_env_green"]
+    },
+    "window": {
+      "stack_unit": "placed_instance",
+      "build_mode_tray": "Windows",
+      "primary_axes": ["lot_environment_gain", "eco_footprint_green"]
+    },
+    "door": {
+      "stack_unit": "placed_instance",
+      "build_mode_tray": "Doors",
+      "primary_axes": ["lot_environment_gain"]
+    },
+    "lighting": {
+      "stack_unit": "placed_instance",
+      "build_mode_tray": "Lighting",
+      "primary_axes": ["lot_environment_gain", "bill_power"]
+    },
+    "plumbing": {
+      "stack_unit": "placed_instance",
+      "build_mode_tray": "Plumbing",
+      "primary_axes": ["bill_water", "bill_power", "lot_environment_gain"]
+    },
+    "appliance": {
+      "stack_unit": "placed_instance",
+      "build_mode_tray": "Appliances",
+      "primary_axes": ["bill_power", "bill_water", "lot_environment_gain"]
+    },
+    "furniture_decor": {
+      "stack_unit": "placed_instance",
+      "build_mode_tray": "Decor / Comfort",
+      "primary_axes": ["lot_environment_gain", "eco_footprint_green"]
+    },
+    "outdoor": {
+      "stack_unit": "placed_instance",
+      "build_mode_tray": "Outdoor",
+      "primary_axes": ["eco_footprint_green", "lot_environment_gain"]
     },
     "buy_object": {
       "stack_unit": "placed_instance",
-      "build_mode_tray": "Buy"
+      "build_mode_tray": "Buy (legacy seed)",
+      "primary_axes": ["lot_environment_gain"]
     }
   },
   "packs": {
@@ -116,6 +208,8 @@
       "lot_environment_gain": 2,
       "eco_footprint_green": 2,
       "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
       "evidence_state": "LOCAL_OBSERVED",
       "capture_ref": "operator:veins-gold-marble-20261107",
       "aliases": [
@@ -123,7 +217,7 @@
         "veins of gold marble",
         "veins of gold"
       ],
-      "note": "Operator yield pick: dual max Env+Green on interior and exterior; pack ID TBD"
+      "note": "Operator yield pick: dual max Env+Green; pack ID TBD"
     },
     {
       "id": "wall.working_bricks",
@@ -134,10 +228,12 @@
       "lot_environment_gain": 2,
       "eco_footprint_green": 2,
       "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
       "evidence_state": "LOCAL_OBSERVED",
       "capture_ref": "operator:working-bricks-20261107",
       "aliases": ["working bricks"],
-      "note": "Operator yield pick on exterior despite aesthetics; dual max Env+Green; pack ID TBD"
+      "note": "Operator yield pick on exterior despite aesthetics; dual max Env+Green"
     },
     {
       "id": "wall.brick_and_plaster",
@@ -148,6 +244,8 @@
       "lot_environment_gain": 1,
       "eco_footprint_green": 0,
       "eco_footprint_industrial": 1,
+      "bill_power": null,
+      "bill_water": null,
       "evidence_state": "LOCAL_OBSERVED",
       "capture_ref": "operator:wall-covering-tooltip-20261107",
       "aliases": ["brick & plaster", "brick and plaster"]
@@ -161,6 +259,8 @@
       "lot_environment_gain": 2,
       "eco_footprint_green": 0,
       "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
       "evidence_state": "OPERATOR_ATTESTED",
       "capture_ref": "operator:spa-day-env2-20261107",
       "aliases": ["matchstick magic"]
@@ -174,6 +274,8 @@
       "lot_environment_gain": 2,
       "eco_footprint_green": 0,
       "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
       "evidence_state": "OPERATOR_ATTESTED",
       "capture_ref": "operator:enchanted-env2-20261107",
       "aliases": ["wildwood whimsy"]
@@ -187,6 +289,8 @@
       "lot_environment_gain": 0,
       "eco_footprint_green": 2,
       "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
       "evidence_state": "OPERATOR_ATTESTED",
       "capture_ref": "operator:horse-ranch-green2-20261107",
       "aliases": ["log siding"]
@@ -200,10 +304,11 @@
       "lot_environment_gain": 1,
       "eco_footprint_green": 0,
       "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
       "evidence_state": "SYNTHETIC_FLOOR",
       "capture_ref": "synthetic:env1-floor",
-      "aliases": ["generic env1"],
-      "note": "Placeholder for any covering with Environment Gain 1 and no eco modifier"
+      "aliases": ["generic env1"]
     },
     {
       "id": "wall.generic_green1",
@@ -214,9 +319,194 @@
       "lot_environment_gain": 0,
       "eco_footprint_green": 1,
       "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
       "evidence_state": "SYNTHETIC_FLOOR",
       "capture_ref": "synthetic:green1-floor",
       "aliases": ["generic green1"]
+    },
+    {
+      "id": "floor.generic_env2",
+      "name": "Generic Floor Environment +2",
+      "category": "floor_covering",
+      "pack": "base",
+      "cost": null,
+      "lot_environment_gain": 2,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:floor-env2",
+      "aliases": ["generic floor env2"],
+      "note": "Seed until operator tooltip capture; replace with LOCAL_OBSERVED row"
+    },
+    {
+      "id": "floor.generic_green1",
+      "name": "Generic Floor Green +1",
+      "category": "floor_covering",
+      "pack": "EP09",
+      "cost": null,
+      "lot_environment_gain": 0,
+      "eco_footprint_green": 1,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:floor-green1",
+      "aliases": ["generic floor green1"]
+    },
+    {
+      "id": "window.generic_env1",
+      "name": "Generic Window Environment +1",
+      "category": "window",
+      "pack": "base",
+      "cost": 100,
+      "lot_environment_gain": 1,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:window-env1",
+      "aliases": ["generic window env1"]
+    },
+    {
+      "id": "door.generic_env1",
+      "name": "Generic Door Environment +1",
+      "category": "door",
+      "pack": "base",
+      "cost": 50,
+      "lot_environment_gain": 1,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:door-env1",
+      "aliases": ["generic door env1"]
+    },
+    {
+      "id": "light.efficient_env1",
+      "name": "Efficient Light (Env +1, Low Power)",
+      "category": "lighting",
+      "pack": "base",
+      "cost": 80,
+      "lot_environment_gain": 1,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": 1,
+      "bill_water": null,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:light-efficient",
+      "aliases": ["efficient light"]
+    },
+    {
+      "id": "light.wasteful_env2",
+      "name": "Wasteful Chandelier (Env +2, High Power)",
+      "category": "lighting",
+      "pack": "base",
+      "cost": 400,
+      "lot_environment_gain": 2,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": 5,
+      "bill_water": null,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:light-wasteful",
+      "aliases": ["wasteful chandelier"],
+      "note": "Env-high but bill-poor; yield pools should prefer efficient light for bill axis"
+    },
+    {
+      "id": "plumbing.efficient_toilet",
+      "name": "Efficient Toilet (Low Water)",
+      "category": "plumbing",
+      "pack": "base",
+      "cost": 250,
+      "lot_environment_gain": 0,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": 0,
+      "bill_water": 1,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:toilet-efficient",
+      "aliases": ["efficient toilet"]
+    },
+    {
+      "id": "plumbing.wasteful_shower",
+      "name": "Wasteful Shower (High Water/Power)",
+      "category": "plumbing",
+      "pack": "base",
+      "cost": 500,
+      "lot_environment_gain": 1,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": 3,
+      "bill_water": 4,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:shower-wasteful",
+      "aliases": ["wasteful shower"]
+    },
+    {
+      "id": "appliance.efficient_fridge",
+      "name": "Efficient Fridge (Low Power)",
+      "category": "appliance",
+      "pack": "base",
+      "cost": 400,
+      "lot_environment_gain": 0,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": 2,
+      "bill_water": 0,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:fridge-efficient",
+      "aliases": ["efficient fridge"],
+      "note": "Seed comparator for lab Crisponix-class fridges until tooltip capture"
+    },
+    {
+      "id": "appliance.wasteful_fridge",
+      "name": "Wasteful Fridge (High Power)",
+      "category": "appliance",
+      "pack": "base",
+      "cost": 900,
+      "lot_environment_gain": 1,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": 6,
+      "bill_water": 0,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:fridge-wasteful",
+      "aliases": ["wasteful fridge"]
+    },
+    {
+      "id": "decor.generic_env2",
+      "name": "Generic Decor Environment +2",
+      "category": "furniture_decor",
+      "pack": "base",
+      "cost": 120,
+      "lot_environment_gain": 2,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:decor-env2",
+      "aliases": ["generic decor env2"]
+    },
+    {
+      "id": "outdoor.generic_green2",
+      "name": "Generic Outdoor Green +2",
+      "category": "outdoor",
+      "pack": "EP09",
+      "cost": 75,
+      "lot_environment_gain": 0,
+      "eco_footprint_green": 2,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:outdoor-green2",
+      "aliases": ["generic outdoor green2"]
     },
     {
       "id": "buy.placeholder_decor_env1",
@@ -227,10 +517,11 @@
       "lot_environment_gain": 1,
       "eco_footprint_green": 0,
       "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
       "evidence_state": "SYNTHETIC_FLOOR",
       "capture_ref": "synthetic:buy-env1",
-      "aliases": ["placeholder decor"],
-      "note": "Seed Buy-mode object row until live tooltip capture expands the catalog"
+      "aliases": ["placeholder decor"]
     }
   ],
   "call_stack": {
@@ -238,6 +529,7 @@
       "OPERATOR_OR_HOST_QUERY",
       "LOAD_BUILD_OPTIMIZE_CONTRACT",
       "FILTER_OWNED_PACKS_AND_BUDGET",
+      "BUILD_CATEGORY_BEST_POOLS",
       "RANK_BY_OBJECTIVE",
       "EMIT_PLAN_RECEIPT"
     ],
@@ -245,7 +537,7 @@
       "HOST_MAY_AUTOMATE",
       "DISPOSABLE_LAB_CONFIRMED",
       "BUILD_OR_BUY_MODE_ACTIVE",
-      "SELECT_CATALOG_THUMB",
+      "SELECT_FROM_CATEGORY_POOL",
       "APPLY_WITH_SHIFT_WHOLE_ROOM",
       "CAPTURE_PROOF"
     ],
@@ -253,7 +545,9 @@
       "PLAYER_PLAYING": "YIELD_TO_PLAYER",
       "CATALOG_EMPTY_AFTER_FILTER": "ABSTAIN_NO_ELIGIBLE_ITEMS",
       "UNKNOWN_OBJECTIVE": "FAIL_CLOSED",
-      "INDUSTRIAL_IN_GREEN_OBJECTIVE": "EXCLUDE"
+      "UNKNOWN_AXIS": "FAIL_CLOSED",
+      "INDUSTRIAL_IN_GREEN_OBJECTIVE": "EXCLUDE",
+      "NULL_AXIS_SKIPS_POOL": "SKIP_ITEM_FOR_AXIS"
     }
   }
 }

@@ -42,7 +42,7 @@ See glossary: `PLAYER_FIRST`, `PLAYER_PLAYING`, `PLAYER_PRESENT_ON_CANVAS`, `HOS
 | `event_balance` | Outdoor-social RCA + event/needs/homework call stack | none |
 | `moodlets` | Supplied emotion/moodlet strip → need pressure + routing bias | none |
 | `sim_profile` | Supplied Simology/skills/preferences/whims + moodlets → read-only inspect | none |
-| `build_optimize` | Deterministic Build/Buy catalog rank (Env Gain / Eco Footprint) | none |
+| `build_optimize` | Build yield microsystem: catalog rank + per-category best pools (Env / neighborhood / bills) | none |
 | `house_state` | Recursive lot environment model + mutation lease; forbids blank-slate reassess | writes `dist/house-state/` receipts |
 | `build_integrity` | Structure-first spatial admission (indoor≠outdoor, floor before furniture, no nesting, protect kitchen/bed/dining) | none |
 | `build_library_checkpoint` | My Library building save required before room/structure mutate | none |
