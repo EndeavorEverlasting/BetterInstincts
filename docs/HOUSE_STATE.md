@@ -1,8 +1,8 @@
 # House / lot environment model — P95 program design
 
-**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect  
-**Provenance:** `spec-architecture-prompts.v1.json` (see `docs/PROMPT_INVOCATIONS.md`)  
-**Machine owner:** [`contracts/house-state.v1.json`](../contracts/house-state.v1.json)  
+**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
+**Provenance:** `spec-architecture-prompts.v1.json` (see `docs/PROMPT_INVOCATIONS.md`)
+**Machine owner:** [`contracts/house-state.v1.json`](../contracts/house-state.v1.json)
 **Library / CLI:** `betterinstincts.house_state` / `python -m scripts.house_state`
 
 ## Design brief

@@ -1,9 +1,9 @@
 # Build/Buy integrity — P95 program design
 
-**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect  
-**Provenance:** `spec-architecture-prompts.v1.json` (see `docs/PROMPT_INVOCATIONS.md`)  
-**Machine owner:** [`contracts/build-integrity.v1.json`](../contracts/build-integrity.v1.json)  
-**Library:** `betterinstincts.build_integrity`  
+**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
+**Provenance:** `spec-architecture-prompts.v1.json` (see `docs/PROMPT_INVOCATIONS.md`)
+**Machine owner:** [`contracts/build-integrity.v1.json`](../contracts/build-integrity.v1.json)
+**Library:** `betterinstincts.build_integrity`
 **Upstream model:** [`HOUSE_STATE.md`](HOUSE_STATE.md) (`RECURSIVE_LOT_MODEL`)
 
 ## Motivating failure

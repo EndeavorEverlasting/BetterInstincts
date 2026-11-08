@@ -1,8 +1,8 @@
 # Build spatial axes — P95 program design
 
-**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect  
-**Machine owner:** [`contracts/build-spatial.v1.json`](../contracts/build-spatial.v1.json)  
-**Library / CLI:** `betterinstincts.build_spatial` / `python -m scripts.build_spatial`  
+**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
+**Machine owner:** [`contracts/build-spatial.v1.json`](../contracts/build-spatial.v1.json)
+**Library / CLI:** `betterinstincts.build_spatial` / `python -m scripts.build_spatial`
 **Depends on:** [`HOUSE_STATE.md`](HOUSE_STATE.md), [`BUILD_INTEGRITY.md`](BUILD_INTEGRITY.md)
 
 ## Axes
