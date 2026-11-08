@@ -33,6 +33,12 @@ from betterinstincts.career_service import (
     evaluate_career_service,
     should_attach_career_service,
 )
+from betterinstincts.aspiration_service import (
+    AspirationServiceError,
+    compact_aspiration_service,
+    evaluate_aspiration_service,
+    should_attach_aspiration_service,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "domain-cascade.v1.json"
@@ -54,6 +60,7 @@ def load_contract(path: Path = CONTRACT) -> dict:
         "needs",
         "budget",
         "career",
+        "aspirations",
         "skills_whims",
         "relationships",
     ]:
@@ -120,6 +127,13 @@ def poll_cascade(
     failure_signals: Optional[Mapping[str, Sequence[str]]] = None,
     queue: Sequence[str] = (),
     prior_career_state: Optional[Mapping[str, object]] = None,
+    aspiration_prompt_active: bool = False,
+    aspiration_prompt_id: Optional[str] = None,
+    aspiration_prompt_text: str = "",
+    aspiration_completion_enabled: bool = False,
+    occult_needs_engine_ready: bool = False,
+    operator_prefers_aspiration_ok: Optional[bool] = None,
+    prior_aspiration_state: Optional[Mapping[str, object]] = None,
     capture_ref: str = "capture:domain-cascade",
 ) -> dict:
     """Poll domains in cascade order; each receipt may cite prior receipts."""
@@ -307,6 +321,54 @@ def poll_cascade(
             )
         )
     except CareerServiceError as exc:
+        raise DomainCascadeError(str(exc)) from exc
+
+    # --- aspirations / life-state dialogs ---
+    try:
+        if should_attach_aspiration_service(
+            aspiration_prompt_active=aspiration_prompt_active,
+            prompt_id=aspiration_prompt_id,
+            prompt_text=aspiration_prompt_text,
+            prior_state=prior_aspiration_state,
+        ):
+            aspiration = evaluate_aspiration_service(
+                aspiration_prompt_active=aspiration_prompt_active,
+                prompt_id=aspiration_prompt_id,
+                prompt_text=aspiration_prompt_text,
+                aspiration_completion_enabled=aspiration_completion_enabled,
+                occult_needs_engine_ready=occult_needs_engine_ready,
+                player_directed=player_directed,
+                already_busy=already_busy,
+                operator_prefers_ok=operator_prefers_aspiration_ok,
+                prior_state=prior_aspiration_state,
+                capture_ref=capture_ref,
+            )
+            asp_findings = [f for f in (aspiration.get("findings") or []) if f.startswith("ASPIRATION_") or f.startswith("OCCULT_")]
+            if aspiration.get("prompt_held"):
+                asp_findings.append("ASPIRATION_PROMPT_HELD")
+            receipts.append(
+                _receipt(
+                    "aspirations",
+                    gate=str(aspiration.get("gate") or "ASPIRATION_IDLE"),
+                    action=str(aspiration.get("action") or "NO_ASPIRATION_PROMPT"),
+                    payload={
+                        "aspiration_service": compact_aspiration_service(aspiration),
+                        "dialog_choice": aspiration.get("dialog_choice"),
+                        "prior_gates": [r["gate"] for r in receipts],
+                    },
+                    findings=asp_findings,
+                )
+            )
+        else:
+            receipts.append(
+                _receipt(
+                    "aspirations",
+                    gate="ASPIRATION_IDLE",
+                    action="NO_ASPIRATION_PROMPT",
+                    payload={"prior_gates": [r["gate"] for r in receipts]},
+                )
+            )
+    except AspirationServiceError as exc:
         raise DomainCascadeError(str(exc)) from exc
 
     # --- skills / whims ---

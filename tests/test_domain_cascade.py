@@ -17,7 +17,7 @@ class DomainCascadeTests(unittest.TestCase):
         cfg = load_contract()
         self.assertEqual(
             cfg["cascade_order"],
-            ["needs", "budget", "career", "skills_whims", "relationships"],
+            ["needs", "budget", "career", "aspirations", "skills_whims", "relationships"],
         )
 
     def test_cascade_includes_lb_detach_and_budget(self):
@@ -30,7 +30,7 @@ class DomainCascadeTests(unittest.TestCase):
         domains = [r["domain"] for r in out["receipts"]]
         self.assertEqual(
             domains,
-            ["needs", "budget", "career", "skills_whims", "relationships"],
+            ["needs", "budget", "career", "aspirations", "skills_whims", "relationships"],
         )
         needs = out["receipts"][0]
         self.assertEqual(needs["gate"], "NEED_SERVICES_LOAD_BALANCE")
