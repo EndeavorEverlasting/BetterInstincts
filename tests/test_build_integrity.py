@@ -213,6 +213,7 @@ class BuildIntegrityTests(unittest.TestCase):
         self.assertIn(denied["reason"], {
             "MUTATE_WITHOUT_BUILD_INTEGRITY",
             "MUTATE_WITHOUT_SPATIAL_AXES",
+            "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP",
         })
 
         ok = hs.admit_mutation(
@@ -224,8 +225,9 @@ class BuildIntegrityTests(unittest.TestCase):
             place_enclosure="INSIDE",
             place_story="FLOOR_1",
         )
-        self.assertEqual(ok["state"], "MUTATION_ADMITTED")
-        self.assertEqual(ok["reason"], "MODEL_LIBRARY_SPATIAL_AND_INTEGRITY_BACKED_MUTATION")
+        self.assertEqual(ok["state"], "MUTATION_DENIED")
+        self.assertEqual(ok["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
+        # Structural/spatial admissibility is not a substitute for a recoverable lot backup.
 
 
 if __name__ == "__main__":
