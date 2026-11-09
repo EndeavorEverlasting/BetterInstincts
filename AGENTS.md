@@ -11,7 +11,7 @@ Refresh HEAD/branch, PRs, status, game/version; declare host, scopes, collisions
 ## P04 hidden-object discovery
 Inventory `plans/active/BI-HIDDEN-OBJECTS.P04.md`; `python -m scripts.hidden_object_discovery guide`. Hidden-item scope: follow dispatch/scene/save/consent; else defer. Audit: `python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json`. Scout: `python -m scripts.hidden_object_scout goal` (`docs/HIDDEN_OBJECT_SCOUT.md`). No autorun.
 
-Useful-item force: `python -m scripts.household_object_force` (`bb.showhiddenobjects` elementary; no `gsi_create_obj`). Robot Salvage spam-buy: `python -m scripts.upgrade_parts_force how-to-buy|plan`.
+Useful-item force: `python -m scripts.household_object_force` (`bb.showhiddenobjects` elementary; no `gsi_create_obj`). DIY parts budget (N Sims pocket kit): `python -m scripts.upgrade_parts_force household|budget|certify`.
 
 ## Invariants
 - **Player first:** no interruption of explicit player commands; no uncontrolled repeated autonomy loops.
