@@ -89,7 +89,10 @@ def follow_active_sim_in_game(
     if CommonSimUtils.get_sim_instance(info) is None:
         raise SimCameraError("SIM_NOT_INSTANCED_IN_LOADED_ZONE")
 
-    admit()  # Must be the real game-side player/scene/save consent/idle gate.
+    if admit() is not True:  # Real game-side player/scene/save consent/idle gate.
+        raise SimCameraError("IN_GAME_ADMISSION_NOT_GRANTED")
+    if CommonSimUtils.get_active_sim_info() is not info or CommonSimUtils.get_sim_instance(info) is None:
+        raise SimCameraError("GAME_ACTIVE_SIM_CHANGED_AFTER_ADMISSION")
     latest = plan_sim_camera(FOLLOW_SIM, capture_ref=initial["capture_ref"], observation=observe())
     if (
         latest["state"] != "SIM_CAMERA_READY_FOR_ADMISSION"
