@@ -247,7 +247,15 @@ def _pick_gate(
         if study_space["state"] != "STUDY_LOCATION_CANDIDATE":
             row = gates["HOMEWORK_STUDY_SCAN_REQUIRED"]
             findings.append("NO_ATTESTED_SEATED_STUDY_OPPORTUNITY")
-            return "HOMEWORK_STUDY_SCAN_REQUIRED", row["action"], [], findings
+            next_actions = [{
+                "id": "SCAN_LOT_FOR_STUDY_STATION",
+                "steps": ["READ_REVISIONED_LOT_MODEL",
+                          "LOCATE_ATTESTED_INDOOR_DESK_OR_TABLE",
+                          "LOCATE_ASSOCIATED_SEAT",
+                          "REOBSERVE_STUDY_CANDIDATE"],
+                "confidence": "READ_ONLY_ADVISORY_NO_CONTROL_PERMIT",
+            }]
+            return "HOMEWORK_STUDY_SCAN_REQUIRED", row["action"], next_actions, findings
         if not queue_budget["enqueue_allowed"]:
             row = gates["HOMEWORK_QUEUE_CAPACITY_HOLD"]
             findings.append("QUEUE_HAS_NO_VERIFIED_BUDGET")
