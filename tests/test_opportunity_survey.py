@@ -45,13 +45,15 @@ def lot(*, unverified=False):
 
 def survey(**kwargs):
     m = kwargs.pop("lot_model", lot())
-    return evaluate_opportunity_survey(
-        NEEDS, queue=[], multitasking=False, lot_model=m,
+    options = dict(
+        queue=[], multitasking=False, lot_model=m,
         active_lot_id=m["lot_id"], game_version=PATCH,
         capture_ref="capture:survey-now", verified_live_mode=True,
         host_may_control=True, camera_follow_attested=True,
-        actor_ref="sim:teen", **kwargs,
+        actor_ref="sim:teen",
     )
+    options.update(kwargs)
+    return evaluate_opportunity_survey(NEEDS, **options)
 
 
 def observation(m, number):
