@@ -384,14 +384,20 @@ def resolve_skills(
             _add(str(sid))
     # Operator miss set: re-queue residuals at end of full_unlock so mid-batch
     # truncation cannot leave Cooking/Fitness/Natural Living behind — but never
-    # re-queue a residual the completion ledger already marked done.
+    # re-queue a residual the completion ledger already marked done, and do not
+    # double-type when the remaining set is residuals-only (already-maxed skip).
     if bundle == "full_unlock" or (bundle is None and not skill_ids):
+        residual_ids = {
+            str(s).strip().lower() for s in required_residual_skills(cfg)
+        }
+        non_residual_remaining = [s for s in ordered if s not in residual_ids]
         for sid in required_residual_skills(cfg):
             key = str(sid).strip().lower()
             if key in omit:
                 continue
             if key in index and key in seen:
-                _add(key, allow_duplicate_residual=True)
+                if non_residual_remaining:
+                    _add(key, allow_duplicate_residual=True)
             else:
                 _add(key)
     return [index[sid] for sid in ordered]
