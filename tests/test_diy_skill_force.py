@@ -245,7 +245,7 @@ class DiySkillForceTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(raw["version"], 9)
+        self.assertEqual(raw["version"], 10)
         self.assertEqual(
             raw["completion_ledger"]["schema"],
             "betterinstincts.diy-skill-force.completion/v1",
