@@ -1,5 +1,10 @@
 # Canonical project ledger
 
+## 2026-11-09 — Camera lock for agents (P00/P01/P95/P141/P124 + Trifecta)
+
+**Operator correction:** Agents have repeatedly left the camera on a top-down street. Agent-controlled camera now defaults to active Sim. A named current target/goal may allow <=30-second map traverse with admission and restoration, not unbounded camera discretion. Code: `active_sim_camera_lock.py`, `host_stack.py`, `scripts/camera_traverse.py`; contract: `camera-traverse.v1.json`; consultation: `BI-ACTIVE-SIM-LOCK-20261109.v1.json`; regression: `test_active_sim_camera_lock.py`. Human ownership first; no save modifications; injected-port tests do not establish live-game camera restoration.
+
+
 ## 2026-11-09 — Household DIY parts budget + live cert schema (P95 + P124 + Trifecta)
 
 **Operator:** Budgeting system so every household Sim (N) always has DIY build parts in **pocket** inventory (electronics/common/plumbing/kitchen/robot salvage/chips/mechanisms) — survives member-at-work or removal. Prefer scalable spawn bulk, then phone/computer Order; not Buy Mode primary. **P95** selects `HOUSEHOLD_DIY_PARTS_BUDGET` evolving `upgrade_parts_force` v2. **P124** expands one owner; reuses Space-traverse. Machine-readable cert `betterinstincts.diy-parts-budget.cert/v1`. Consultation `BI-DIY-PARTS-HOUSEHOLD-BUDGET-20261109.v1.json`. CLI: `household --members N`, `budget`, `record`, `status`, `certify`. Does not close BI-002.
