@@ -13,7 +13,7 @@ import time
 
 from betterinstincts.player_presence import PresenceProbe
 
-DEFAULT_IDLE_MS = 8000
+DEFAULT_IDLE_MS = 15000
 MIN_IDLE_MS = 1000
 MAX_IDLE_MS = 120000
 CONFIRM_INTERVAL_SEC = 0.20
