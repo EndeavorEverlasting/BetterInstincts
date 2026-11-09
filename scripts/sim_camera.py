@@ -56,6 +56,72 @@ def center_on_admitted_host(
     }
 
 
+
+def follow_active_portrait_on_admitted_host(
+    *, session_id: str, process_id: int,
+    observe: Callable[[], Mapping[str, Any]],
+) -> dict:
+    """Right-click ONE attested active-Sim portrait on the admitted game PID.
+
+    Uses the existing Windows input owner. This is the preferred desktop path
+    over one-shot Enter; successful input alone is not follow proof.
+    """
+    from betterinstincts.portrait_follow import plan_portrait_follow
+    from betterinstincts.screen_atlas import _native_owner
+    from betterinstincts.screen_admit import admitted_screen_lease
+    from scripts.win32_input import send_right_click, park_safe_cursor_rest
+
+    if not callable(observe):
+        raise SimCameraError("PORTRAIT_HOST_SENSOR_REQUIRED")
+    with admitted_screen_lease(process_id, session_id) as ensure_ready:
+        ensure_ready()
+        before = observe()
+        if not _native_owner(before, process_id, session_id):
+            raise SimCameraError("PORTRAIT_HOST_PID_SESSION_NOT_ATTESTED")
+        capture = before.get("capture_ref")
+        initial = plan_portrait_follow(capture_ref=capture, observation=before)
+        if initial["state"] != "PORTRAIT_FOLLOW_READY_FOR_ADMISSION":
+            raise SimCameraError("ACTIVE_SIM_PORTRAIT_UNVERIFIED:" + initial["state"])
+        ensure_ready()
+        latest_obs = observe()
+        if not _native_owner(latest_obs, process_id, session_id):
+            raise SimCameraError("PORTRAIT_OWNER_CHANGED")
+        latest = plan_portrait_follow(capture_ref=capture, observation=latest_obs)
+        keys = (
+            "sim_id", "capture_ref", "camera_revision", "portrait_revision",
+            "ui_layout_revision", "selected_sim_revision", "hitbox",
+        )
+        if (latest["state"] != initial["state"]
+                or any(latest.get(k) != initial.get(k) for k in keys)
+                or (latest_obs["client_origin_x"], latest_obs["client_origin_y"]) != (
+                    before["client_origin_x"], before["client_origin_y"])):
+            raise SimCameraError("PORTRAIT_CHANGED_BEFORE_RIGHT_CLICK")
+        origin = (latest_obs["client_origin_x"], latest_obs["client_origin_y"])
+        x, y = initial["effect"]["client"]
+        send_right_click(origin[0]+x, origin[1]+y, safe_rest_after=False)
+        # Avoid stealing the mouse back from a player who interrupted.
+        ensure_ready()
+        park_safe_cursor_rest(
+            origin_x=origin[0], origin_y=origin[1],
+            client_width=initial["client_width"], client_height=initial["client_height"],
+        )
+        post = observe()
+    observed = (
+        isinstance(post, Mapping)
+        and post.get("source") == "HOST_CAPTURE"
+        and post.get("camera_follow_sim_id") == initial["sim_id"]
+        and post.get("active_sim_id") == initial["sim_id"]
+    )
+    return {
+        "state": "FOLLOW_OBSERVED" if observed else "PORTRAIT_RIGHT_CLICK_DISPATCHED_UNVERIFIED",
+        "target_sim_id": initial["sim_id"],
+        "camera_follow_observed": observed,
+        "cursor_parked_after": True,
+        "game_input": "RIGHT_CLICK_ACTIVE_SIM_PORTRAIT",
+        "keyboard_center_used": False,
+    }
+
+
 def follow_active_sim_in_game(
     expected_sim_id: int, *,
     admit: Callable[[], object],

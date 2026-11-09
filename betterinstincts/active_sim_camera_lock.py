@@ -11,8 +11,9 @@ from typing import Any
 
 from betterinstincts.camera_traverse import CameraTraverseError, plan_traverse
 from betterinstincts.sim_camera import (
-    CENTER_SIM, PROOF, plan_sim_camera,
+    CENTER_SIM, plan_sim_camera,
 )
+from betterinstincts.portrait_follow import plan_portrait_follow
 
 MAX_MAP_LEASE_MS = 30_000
 MAX_MAP_DIRECTIONS = 8
@@ -54,13 +55,11 @@ def evaluate_active_sim_camera_lock(
     if type(sim_id) is not int or sim_id <= 0:
         return hold("CAMERA_LOCK_REOBSERVE_OR_YIELD", "ACTIVE_SIM_ID_REQUIRED")
 
-    anchored = (
-        observation.get("camera_follow_sim_id") == sim_id
-        or (
-            observation.get("camera_centered_sim_id") == sim_id
-            and observation.get("camera_displaced") is False
-        )
-    )
+    following = observation.get("camera_follow_sim_id") == sim_id
+    centered_once = (observation.get("camera_centered_sim_id") == sim_id
+                     and observation.get("camera_displaced") is False)
+    anchored = following or centered_once
+    portrait = plan_portrait_follow(capture_ref=capture_ref, observation=observation)
     movement_requested = bool(map_requested or directions or zoom_notches)
 
     if movement_requested:
@@ -109,18 +108,36 @@ def evaluate_active_sim_camera_lock(
                 "command": CENTER_SIM,
                 "chord": ["ENTER"],
                 "required_in_finally": True,
+                "preferred_control": "RIGHT_CLICK_ACTIVE_SIM_PORTRAIT",
+                "fallback_once_if_no_verified_portrait": "ENTER_CENTER_ONLY",
+                "must_reobserve_follow_not_just_center": True,
                 "reobserve_active_sim": True,
                 "on_human_interruption": "YIELD_AND_MARK_RESTORE_PENDING",
                 "forbidden": ["SHIFT_ENTER", "BLIND_PAN", "PARK_ON_STREET"],
             },
         }
 
-    if anchored:
+    if following:
         return {**base, "state": "CAMERA_ACTIVE_SIM_LOCKED",
                 "gate": "CAMERA_ACTIVE_SIM_LOCKED", "sim_id": sim_id,
-                "center": None, "map_plan": None, "restore": None}
-
+                "center": None, "portrait_follow": None,
+                "map_plan": None, "restore": None}
+    if portrait["state"] == "PORTRAIT_FOLLOW_READY_FOR_ADMISSION":
+        return {**base, "state": "CAMERA_PORTRAIT_FOLLOW_FIRST",
+                "gate": "CAMERA_PORTRAIT_FOLLOW_REQUIRED",
+                "sim_id": sim_id, "center": None,
+                "portrait_follow": portrait, "map_plan": None, "restore": None}
+    if centered_once:
+        # A single Enter is not a following camera. Never silently consider
+        # a centered-but-static view to be the default follow lock.
+        return {**base, "state": "CAMERA_PORTRAIT_ATTESTATION_REQUIRED",
+                "gate": "CAMERA_PORTRAIT_ATTESTATION_REQUIRED",
+                "sim_id": sim_id, "center": None,
+                "portrait_follow": portrait, "map_plan": None, "restore": None}
     return {**base, "state": "CAMERA_LOCK_RECENTER_FIRST",
             "gate": "CAMERA_ACTIVE_SIM_CENTER_REQUIRED",
-            "reason": "ACTIVE_SIM_NOT_IN_CAMERA_FRAME", "sim_id": sim_id,
-            "center": center, "map_plan": None, "restore": None}
+            "reason": "ACTIVE_SIM_NOT_IN_CAMERA_FRAME",
+            "preferred_control": "RIGHT_CLICK_ACTIVE_SIM_PORTRAIT",
+            "temporary_center_only": True,
+            "sim_id": sim_id, "center": center,
+            "portrait_follow": portrait, "map_plan": None, "restore": None}

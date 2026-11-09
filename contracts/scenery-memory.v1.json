@@ -1,0 +1,46 @@
+{
+  "schema": "betterinstincts.scenery-memory/v1",
+  "owner": "betterinstincts/scenery_memory.py",
+  "registry": "contracts/scenery-discoveries.v1.json",
+  "distinguish": "GAME_SCENE=LIVE_MODE_VS_VIEW_SCENE=POSITION_OR_VIEW_OF_WORLD",
+  "proposed_view_kinds": [
+    "TOP_DOWN_STREET",
+    "ACTIVE_SIM_FOLLOW",
+    "ROOM_INTERIOR",
+    "FLOOR_UPSTAIRS",
+    "GARDEN",
+    "LOT_EXTERIOR",
+    "OBJECT_CLOSEUP",
+    "NEIGHBORHOOD"
+  ],
+  "identity": [
+    "game_version",
+    "world_ref",
+    "lot_ref",
+    "view_kind",
+    "view_sector",
+    "landmark_tokens"
+  ],
+  "required_observation": {
+    "source": "HOST_CAPTURE",
+    "cues": [
+      "visual",
+      "operator"
+    ],
+    "metadata_only": true
+  },
+  "status_flow": [
+    "CANDIDATE",
+    "OPERATOR_REVIEWED"
+  ],
+  "storage": {
+    "max_records": 96,
+    "max_sightings": 9999,
+    "raw_images": false,
+    "game_saves": false,
+    "auto_background_writes": false
+  },
+  "wrong_view_policy": "CLASSIFY_INDEPENDENT_VIEW_SCENE_AND_PRESERVE_EVIDENCE_WITHOUT_AUTOMATIC_REROUTE",
+  "revisit_policy": "OPERATOR_REVIEWED_SCENE_HINT_ONLY;FRESH_HOST_TASK_GOAL_AND_CAMERA_MAP_LEASE_REQUIRED",
+  "proof_ceiling": "SCENERY_MEMORY_OFFLINE_CANDIDATE_NOT_GAME_NAVIGATION_AUTHORITY"
+}

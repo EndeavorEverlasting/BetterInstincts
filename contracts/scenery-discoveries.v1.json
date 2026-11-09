@@ -1,0 +1,7 @@
+{
+  "schema": "betterinstincts.scenery-discoveries/v1",
+  "version": 1,
+  "description": "Repository-owned viewpoint memory. Empty until actual fresh host-observed scene receipts; no fabricated street/lot identity from operator narrative.",
+  "records": [],
+  "proof_ceiling": "NO_DISCOVERIES_YET_NO_LIVE_GAME_CAPTURE"
+}

@@ -90,6 +90,8 @@ from betterinstincts.camera_traverse import (
 from betterinstincts.viewport import ViewportError, predict_risk
 from betterinstincts.sim_camera import SimCameraError, plan_sim_camera
 from betterinstincts.active_sim_camera_lock import evaluate_active_sim_camera_lock
+from betterinstincts.scene_ui_semantics import assess_live_hud, SceneUISemanticsError
+from betterinstincts.scenery_memory import record_scenery, SceneryMemoryError
 
 
 class HostStackError(ValueError):
@@ -182,6 +184,11 @@ def evaluate_turn(
     sim_camera_observation: Optional[Mapping[str, object]] = None,
     camera_map_goal: Optional[Mapping[str, object]] = None,
     camera_clock_ms: Optional[int] = None,
+    live_hud_observation: Optional[Mapping[str, object]] = None,
+    requested_hud_panel: Optional[str] = None,
+    requested_hud_target: Optional[str] = None,
+    scenery_observation: Optional[Mapping[str, object]] = None,
+    scenery_registry: Optional[Mapping[str, object]] = None,
     prior_career_state: Optional[Mapping[str, object]] = None,
     aspiration_prompt_active: bool = False,
     aspiration_prompt_id: Optional[str] = None,
@@ -719,6 +726,35 @@ def evaluate_turn(
         except (CameraTraverseError, TypeError) as exc:
             raise HostStackError(str(exc)) from exc
 
+    # The overlay/panel microsystem shares capture and selected-Sim revisions.
+    # A resolved event is not a permit to resume an unverified queued action.
+    live_hud = None
+    if live_hud_observation is not None:
+        try:
+            live_hud = assess_live_hud(
+                capture_ref=capture_ref, observation=live_hud_observation,
+                requested_panel=requested_hud_panel,
+                requested_target=requested_hud_target,
+                needs=needs,
+                chance_event_observation=live_hud_observation.get("chance_event_observation"),
+                chance_event_memo=live_hud_observation.get("chance_event_memo"),
+            )
+        except (SceneUISemanticsError, TypeError) as exc:
+            raise HostStackError(str(exc)) from exc
+
+    scenery_receipt = None
+    if scenery_observation is not None:
+        try:
+            scenery_receipt = record_scenery(
+                scenery_registry or {
+                    "schema": "betterinstincts.scenery-discoveries/v1",
+                    "records": [],
+                },
+                capture_ref=capture_ref, observation=scenery_observation,
+            )
+        except (SceneryMemoryError, TypeError) as exc:
+            raise HostStackError(str(exc)) from exc
+
     # Bind all agent camera movements to active-Sim ownership. A generic
     # camera scan is NOT an exception without a named, fresh goal lease.
     camera_lock = None
@@ -804,6 +840,35 @@ def evaluate_turn(
                 "NEEDS_OBJECT_CLICK",
                 "RESUME",
             ],
+        }
+    elif player_directed or already_busy:
+        next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
+        if drift_recovery is not None:
+            fallback = {
+                "mechanism": "CAMERA_DRIFT_RECOVERY",
+                "owner": "betterinstincts/camera_traverse.py",
+                "recovery": drift_recovery,
+                "execute_allowed": False,
+            }
+    elif live_hud is not None and live_hud["gate"] != "HUD_CONTEXT_READY":
+        next_gate = live_hud["gate"]
+        fallback = {
+            "mechanism": "LIVE_HUD_OVERLAY_AND_PANEL",
+            "owner": "betterinstincts/scene_ui_semantics.py",
+            "hud": live_hud,
+            "execute_allowed": False,
+            "forbidden": ["BLIND_EVENT_CLOSE", "CANCEL_PLAYER_ACTION_QUEUE",
+                          "REUSE_PRE_OVERLAY_PANEL_HITBOX"],
+        }
+    elif (scenery_receipt is not None
+          and scenery_receipt["record"]["reason"] == "OFF_TARGET"):
+        next_gate = "OFF_TARGET_SCENERY_REANCHOR_REQUIRED"
+        fallback = {
+            "mechanism": "SCENERY_DISCOVERY_AND_REANCHOR",
+            "owner": "betterinstincts/scenery_memory.py",
+            "scene": scenery_receipt,
+            "execute_allowed": False,
+            "next": "REOBSERVE_SELECTED_SIM_PORTRAIT_THEN_REVALIDATE_TARGET",
         }
     elif drift_recovery is not None:
         # Recovery outranks generic scan/target clicks. Physical actions still
@@ -1441,6 +1506,8 @@ def evaluate_turn(
         "build_spatial": build_spatial,
         "build_library": build_library,
         "camera_traverse": camera_traverse,
+        "live_hud_semantics": live_hud,
+        "scenery_discovery": scenery_receipt,
         "active_sim_camera_lock": camera_lock,
         "camera_recovery": drift_recovery,
         "world_target_framing": target_framing,

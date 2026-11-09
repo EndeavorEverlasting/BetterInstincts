@@ -287,6 +287,25 @@ def move_cursor(
     time.sleep(settle_sec)
 
 
+def _send_mouse_button_click(
+    x: int, y: int, *, down_flag: int, up_flag: int,
+    settle_sec: float, between_sec: float, safe_rest_after: bool,
+) -> None:
+    """One canonical Windows mouse click owner; no caller-owned Win32 types."""
+    _require_win32()
+    ctypes, MOUSEINPUT, INPUT = _mouse_input_types()
+    user32 = ctypes.windll.user32
+    user32.SetCursorPos(int(x), int(y))
+    time.sleep(settle_sec)
+    for flag in (down_flag, up_flag):
+        inp = INPUT(type=0)
+        inp.mi = MOUSEINPUT(0, 0, 0, flag, 0, None)
+        user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+        time.sleep(between_sec)
+    if safe_rest_after:
+        park_safe_cursor_rest(settle_sec=settle_sec)
+
+
 def send_click(
     x: int,
     y: int,
@@ -295,24 +314,26 @@ def send_click(
     between_sec: float = 0.05,
     safe_rest_after: bool = True,
 ) -> None:
-    """Left click at absolute screen coordinates via SetCursorPos + SendInput.
+    """Left click and park interior; caller must own host admission."""
+    _send_mouse_button_click(
+        x, y, down_flag=2, up_flag=4, settle_sec=settle_sec,
+        between_sec=between_sec, safe_rest_after=safe_rest_after,
+    )
 
-    By default parks SAFE_CURSOR_REST afterward so HUD/console strip clicks
-    cannot leave the cursor in the viewport edge pan band.
-    """
-    _require_win32()
-    ctypes, MOUSEINPUT, INPUT = _mouse_input_types()
-    user32 = ctypes.windll.user32
-    ld, lu = 2, 4
-    user32.SetCursorPos(int(x), int(y))
-    time.sleep(settle_sec)
-    for flag in (ld, lu):
-        inp = INPUT(type=0)
-        inp.mi = MOUSEINPUT(0, 0, 0, flag, 0, None)
-        user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
-        time.sleep(between_sec)
-    if safe_rest_after:
-        park_safe_cursor_rest(settle_sec=settle_sec)
+
+def send_right_click(
+    x: int,
+    y: int,
+    *,
+    settle_sec: float = 0.05,
+    between_sec: float = 0.05,
+    safe_rest_after: bool = True,
+) -> None:
+    """Right click exact target; use only through admitted portrait-follow port."""
+    _send_mouse_button_click(
+        x, y, down_flag=8, up_flag=16, settle_sec=settle_sec,
+        between_sec=between_sec, safe_rest_after=safe_rest_after,
+    )
 
 
 def send_wheel(

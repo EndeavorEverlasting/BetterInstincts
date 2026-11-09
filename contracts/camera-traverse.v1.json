@@ -139,7 +139,8 @@
     "capture": "scripts/game_capture.py",
     "admission": "betterinstincts/screen_admit.py",
     "world_framing_host": "betterinstincts/host_stack.py",
-    "active_sim_lock": "betterinstincts/active_sim_camera_lock.py"
+    "active_sim_lock": "betterinstincts/active_sim_camera_lock.py",
+    "portrait_follow": "betterinstincts/portrait_follow.py"
   },
   "prior_art": {
     "automation_visual_intelligence": "ADAPT observe≠act seam; do not clone donor CV stacks into BetterInstincts",
@@ -234,7 +235,7 @@
   },
   "active_sim_camera_lock": {
     "owner": "betterinstincts/active_sim_camera_lock.py",
-    "default": "CENTER_ACTIVE_SIM",
+    "default": "FOLLOW_ACTIVE_SIM",
     "center_chord": [
       "ENTER"
     ],
@@ -250,6 +251,12 @@
     "human_interrupt": "YIELD_AND_RESTORE_PENDING",
     "executor": "scripts/camera_traverse.py::_execute_plan",
     "unscoped_cli_execute": "REFUSE_CAMERA_PAN_ZOOM",
-    "proof": "OFFLINE_POLICY_AND_INJECTED_PORT_NOT_LIVE_GAMEPLAY"
+    "proof": "OFFLINE_POLICY_AND_INJECTED_PORT_NOT_LIVE_GAMEPLAY",
+    "preferred_control": "RIGHT_CLICK_ACTIVE_SIM_PORTRAIT",
+    "primary_gate": "FRESH_SELECTED_PORTRAIT_TWO_CUES_AND_EXACT_HITBOX",
+    "keyboard_fallback": "ENTER_ONE_SHOT_CENTER_ONLY_NOT_FOLLOW",
+    "lot_center_hotkey": "SHIFT_ENTER_NOT_ACTIVE_SIM",
+    "already_centered_once": "NOT_FOLLOW_LOCK;PORTRAIT_ATTESTATION_REQUIRED",
+    "after_map_restore": "ADMITTED_PORTRAIT_RIGHT_CLICK_PREFERRED;ENTER_ONE_SHOT_IF_PORT_UNAVAILABLE;REOBSERVE_FOLLOW"
   }
 }

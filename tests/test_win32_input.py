@@ -72,6 +72,35 @@ class Win32InputOwnershipTests(unittest.TestCase):
             win32_input.send_click(400, 20, settle_sec=0, between_sec=0, safe_rest_after=False)
             self.assertEqual(park.call_count, 1)
 
+    def test_right_click_uses_shared_flags_and_safe_rest(self):
+        from unittest.mock import MagicMock
+        class MOUSEINPUT:
+            def __init__(self, _dx, _dy, _wheel, flags, _time, _extra):
+                self.flags = flags
+        class INPUT:
+            def __init__(self, type=0):
+                self.type = type
+                self.mi = None
+        fake = MagicMock()
+        captured = []
+        fake.byref.side_effect = lambda x: x
+        fake.sizeof.return_value = 1
+        fake.windll.user32.SendInput.side_effect = lambda count, inp, size: captured.append(inp.mi.flags)
+        with (
+            patch.object(win32_input.sys, "platform", "win32"),
+            patch("scripts.win32_input._mouse_input_types", return_value=(fake,MOUSEINPUT,INPUT)),
+            patch("scripts.win32_input.time.sleep"),
+            patch("scripts.win32_input.park_safe_cursor_rest") as park,
+        ):
+            win32_input.send_right_click(300,800,settle_sec=0,between_sec=0)
+            self.assertEqual(captured,[8,16])
+            park.assert_called_once()
+
+    def test_nonwindows_right_click_fails_closed(self):
+        with patch.object(win32_input.sys, "platform", "linux"):
+            with self.assertRaises(win32_input.Win32InputError):
+                win32_input.send_right_click(300,800)
+
     def test_move_cursor_edge_redirects_to_safe_rest(self):
         with patch.object(win32_input.sys, "platform", "win32"), patch(
             "betterinstincts.camera_traverse.classify_cursor",

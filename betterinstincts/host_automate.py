@@ -85,6 +85,19 @@ def plan_automation(
             location_kind=str(location),
             objects_on_current_lot=on_lot,
             queue=queue,
+            # Forward optional independently observed scene/portrait/HUD
+            # evidence to the same host-stack gate. Never infer it from
+            # high-level intent or mark a click executable here.
+            sim_camera_observation=observation.get("sim_camera_observation"),
+            live_hud_observation=observation.get("live_hud_observation"),
+            requested_hud_panel=observation.get("requested_hud_panel"),
+            requested_hud_target=observation.get("requested_hud_target"),
+            scenery_observation=observation.get("scenery_observation"),
+            scenery_registry=observation.get("scenery_registry"),
+            camera_map_goal=observation.get("camera_map_goal"),
+            camera_clock_ms=observation.get("camera_clock_ms"),
+            camera_scan_needed=bool(observation.get("camera_scan_needed", False)),
+            camera_pan_directions=observation.get("camera_pan_directions") or (),
         )
         force = plan_force(
             location_kind=str(location),
