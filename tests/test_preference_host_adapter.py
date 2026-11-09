@@ -58,11 +58,12 @@ class PreferenceAdapterTests(unittest.TestCase):
 
     def test_reject_unsafe_receipt_destinations(self):
         with TemporaryDirectory() as tmp:
-            with patch.object(cli, "OUTPUT", Path(tmp)), patch.object(cli, "ROOT", Path(tmp)):
-                root = Path(tmp)
+            root = Path(tmp)
+            approved = root / "dist" / "game-host"
+            with patch.object(cli, "OUTPUT", approved), patch.object(cli, "ROOT", root):
                 with self.assertRaisesRegex(cli.PreferenceStepError, "RECEIPT_OUTSIDE_GAME_HOST"):
                     cli._receipt_path(root / "not-allowed.json")
-                self.assertEqual(cli._receipt_path(root / "good.json"), root / "good.json")
+                self.assertEqual(cli._receipt_path(approved / "good.json"), approved / "good.json")
 
     def test_one_yes_input_and_one_noncanonical_interrupt(self):
         with TemporaryDirectory() as tmp:
