@@ -131,3 +131,8 @@ Current Moonwake catalog `harness/exports/prompt-invocation-catalog.v1.json` (bl
 **P95:** read-only room-census architecture over revisioned `house_state`. **P124:** reuse `build_floor_activity` and the existing host listener, not a new daemon. **P78:** consolidate duplicated room documentation, keep glossary terms and executable owners discoverable; preserve only the unique offline runbook and P08 live proof boundary.
 
 **Trifecta:** **P82** measured tests and negative controls in `tests/test_room_census.py`; **P07** committed integration and GitHub CI; **P08** exact-build game room/boundary/object sensor certification remains unproven on this cloud runtime. Full functionality and glossary regression are separately verified by CI, not by an invented gameplay receipt.
+
+
+## 2026-11-09 screen atlas / camera-safe Playwright-hosted action (PR #90)
+
+**P95** prototyped the existing scene/host-menu inventory → mode/UI chrome → exact calibrated target → fresh independent host observation → cooperative queue checkpoint → one click → checkpoint → safe interior rest call stack; failure paths include active operator, stale scene, wrong patch/profile, unknown save permission and partial click. **P124** keeps the atlas as a composition peer rather than another screen daemon or duplicate console/key catalog. The **Trifecta** applies pre-prototype ontology consultation, focused negative simulation and GitHub PR CI/main integration. **P08 live evidence remains OPEN**: calibrated native Sims input and camera-no-pan proof must not be inferred from browser-mock tests. Owners: `docs/SCREEN_ATLAS.md`, `contracts/screen-atlas.v1.json`, `betterinstincts/screen_atlas.py`, `tests/test_screen_atlas.py`; consultation `BI-SCREEN-ATLAS-SAFE-REST-20261109`.
