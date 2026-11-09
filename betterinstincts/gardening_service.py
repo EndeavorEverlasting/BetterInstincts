@@ -13,6 +13,12 @@ from typing import Mapping
 
 from betterinstincts.need_service_base import normalize_needs, threshold_pair
 from betterinstincts.task_continuity import TaskContinuityError, evaluate_task_continuity
+from betterinstincts.selected_sim_continuity import (
+    SelectedSimContinuityError, evaluate_selected_sim_goal,
+)
+from betterinstincts.autonomy_moderation import (
+    AutonomyModerationError, evaluate_autonomy_moderation,
+)
 
 CONTRACT = Path(__file__).resolve().parents[1] / "contracts/gardening-service.v1.json"
 
@@ -97,14 +103,32 @@ def evaluate_gardening_turn(
         "proof_ceiling": cfg["proof_ceiling"],
     }
     continuity = None
+    selected_report = None
+    if "selected_sim_observation" in context and "task_continuity" not in context:
+        raise GardeningServiceError("SELECTED_SIM_TASK_REQUIRED")
     if "task_continuity" in context:
         try:
-            continuity = evaluate_task_continuity(
-                context["task_continuity"], capture_ref=capture_ref, now=now
-            )
-        except TaskContinuityError as exc:
+            if "selected_sim_observation" in context:
+                selected_report = evaluate_selected_sim_goal(
+                    context["task_continuity"], context["selected_sim_observation"],
+                    capture_ref=capture_ref, now=now,
+                )
+                continuity = selected_report["task_continuity"]
+                result["selected_sim_continuity"] = selected_report
+            else:
+                continuity = evaluate_task_continuity(
+                    context["task_continuity"], capture_ref=capture_ref, now=now
+                )
+        except (TaskContinuityError, SelectedSimContinuityError) as exc:
             raise GardeningServiceError(str(exc)) from exc
         result["task_continuity"] = continuity
+    if "autonomy_observation" in context:
+        try:
+            result["autonomy_moderation"] = evaluate_autonomy_moderation(
+                context["autonomy_observation"], capture_ref=capture_ref, now=now
+            )
+        except AutonomyModerationError as exc:
+            raise GardeningServiceError(str(exc)) from exc
 
     def finish(gate: str, action: str, *, inspections: tuple[str, ...] = ()) -> dict:
         result.update(gate=gate, action=action, inspection_targets=list(inspections))
@@ -112,7 +136,21 @@ def evaluate_gardening_turn(
 
     if player_directed:
         return finish("GARDEN_PLAYER_FIRST", "YIELD_WITH_GOAL_PRESERVED")
+    if selected_report is not None and selected_report["gate"] != "SELECTED_SIM_GOAL_EVALUATED":
+        if selected_report["gate"] == "PLAYER_GOAL_SUPERSEDED":
+            result["goal_state"] = "SUPERSEDED"
+            return finish("GARDEN_PLAYER_FIRST", "YIELD_TO_PLAYER_CANCELED_GOAL")
+        if selected_report["gate"] == "TASK_VERIFIED_COMPLETE":
+            result["goal_state"] = "VERIFIED_COMPLETE"
+            return finish("GARDEN_TASK_VERIFIED_COMPLETE", "NO_FURTHER_QUEUE")
+        return finish(
+            "GARDEN_SIM_NOT_SELECTED" if selected_report["gate"] == "SIM_NOT_SELECTED"
+            else "GARDEN_REOBSERVE_SELECTED_SIM",
+            "PRESERVE_OFFSCREEN_GOAL_AND_REOBSERVE",
+        )
     if already_busy:
+        if (result.get("autonomy_moderation") or {}).get("state") == "HARMFUL_AUTONOMOUS_ACTION_CANDIDATE":
+            return finish("GARDEN_AUTONOMY_REVIEW", "INSPECT_CANCELLATION_PROPOSAL_NO_INPUT")
         if continuity is not None and continuity["gate"] == "AUTONOMOUS_TASK_INTERRUPTION":
             return finish("GARDEN_AUTONOMOUS_INTERRUPTION", "WAIT_REOBSERVE_UNSOLICITED_ACTIVITY")
         if continuity is not None and continuity["gate"] == "TASK_ALREADY_QUEUED":
@@ -166,6 +204,8 @@ def evaluate_gardening_turn(
         raise GardeningServiceError("GARDENING_OBLIGATION_TIME_INVALID")
     elif minutes <= bounds["activity_window_sim_minutes"] + bounds["responsibility_reserve_sim_minutes"]:
         return finish("GARDEN_RESPONSIBILITY_FIRST", "KEEP_TIME_FOR_NEXT_OBLIGATION")
+    if (result.get("autonomy_moderation") or {}).get("state") == "HARMFUL_AUTONOMOUS_ACTION_CANDIDATE":
+        return finish("GARDEN_AUTONOMY_REVIEW", "INSPECT_CANCELLATION_PROPOSAL_NO_INPUT")
     if continuity is not None:
         gate = continuity["gate"]
         if gate in {"PLAYER_CHANGED_GOAL", "PLAYER_CHANGED_QUEUE"}:

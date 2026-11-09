@@ -1,0 +1,14 @@
+{
+  "schema": "betterinstincts.selected-sim-observation/v1",
+  "owner": "betterinstincts/selected_sim_continuity.py",
+  "required": [
+    "selected_sim_ref",
+    "selection_verified",
+    "selection_proof_ref",
+    "capture_ref",
+    "observed_at_unix"
+  ],
+  "default": "NOT_SELECTED_OR_UNVERIFIED_YIELD",
+  "target_owner": "betterinstincts/task_continuity.py",
+  "proof_ceiling": "SELECTED_SIM_OFFLINE_ONLY_NOT_GAME_QUEUE_PROOF"
+}
