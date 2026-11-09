@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-09 — Wall shelf synonym → A-OK-Bloomer (operator correction + Trifecta)
+
+**Operator correction:** “wall shelf” means the coveted **A-OK-Bloomer Vertical Garden** (`a_ok_bloomer`), not a newly invented shelf. Synonyms live on `contracts/ui-chrome.v1.json#catalog_items.a_ok_bloomer`; `resolve_catalog_item` / `plan --item-id "wall shelf"` / `resolve-item` fail closed without that alias. Consultation `BI-AOK-WALL-SHELF-SYNONYM-20261109.v1.json`. Live Household Inventory deposit remains P08 OPEN and still blocks the rest of the coveted list. Does not close BI-002.
+
 ## 2026-11-09 — Installation-local profiles and persistent user toggles (P141 + P124 + P95 + Trifecta)
 
 **Parent:** Each BetterInstincts installation needs user-controlled preferences separate from Sims personality, game compatibility and save files. P141 selected versioned user-owned local profiles over flat install-manifest booleans and premature accounts/cloud sync. P95 and P124 introduce a single toggle catalog, safe atomic configuration module, explicit CLI/Tk settings panel and profile-aware hover CLI opt-in, preserving legacy one-off consent. The installer links to Preferences without storing data in its managed directory. P82 regression tests cover profile isolation, invalid schemas/types, corrupt/oversized data, lock conflict, atomic replacement failure and CLI readback; actual results remain CI dependent. P07 integration is subject to PR and mainline verification; P08 physical GUI/game proof remains open. No presence/save/scene gate changes.

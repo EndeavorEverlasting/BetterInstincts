@@ -10,6 +10,7 @@ from betterinstincts.ui_chrome import (
     glossary_snapshot,
     load_contract,
     plan_catalog_to_inventory,
+    resolve_catalog_item,
     resolve_target,
 )
 
@@ -114,6 +115,49 @@ class UIChromeTests(unittest.TestCase):
         with self.assertRaisesRegex(UIChromeError, "AOK_SEARCH_TERM_REQUIRED"):
             load_contract(path)
         path.unlink(missing_ok=True)
+
+    def test_wall_shelf_synonym_resolves_to_aok_bloomer(self) -> None:
+        """Operator correction: wall shelf is the coveted Bloomer, not a new shelf."""
+        for query in (
+            "wall shelf",
+            "Wall Shelf",
+            "wall_shelf",
+            "vertical garden",
+            "a-ok",
+            "bloomer",
+            "A-OK-Bloomer Vertical Garden",
+        ):
+            with self.subTest(query=query):
+                hit = resolve_catalog_item(query, cfg=self.cfg)
+                self.assertEqual(hit["item_id"], "a_ok_bloomer")
+                self.assertEqual(hit["search_term"], "AOK")
+                self.assertEqual(hit["resolved_via"], "synonym")
+
+    def test_plan_accepts_wall_shelf_synonym(self) -> None:
+        plan = plan_catalog_to_inventory(
+            "wall shelf",
+            mode="BUILD",
+            client_width=1920,
+            client_height=1080,
+            cfg=self.cfg,
+        )
+        self.assertEqual(plan["item_id"], "a_ok_bloomer")
+        self.assertEqual(plan["search_term"], "AOK")
+        self.assertEqual(plan["display_name"], "A-OK-Bloomer Vertical Garden")
+
+    def test_wall_shelf_synonym_required_on_load(self) -> None:
+        bad = json.loads(json.dumps(self.cfg))
+        bad["catalog_items"]["a_ok_bloomer"]["synonyms"] = ["bloomer"]
+        path = ROOT / "dist" / "game-host" / "_tmp_ui_chrome_no_shelf.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(bad), encoding="utf-8")
+        with self.assertRaisesRegex(UIChromeError, "AOK_WALL_SHELF_SYNONYM_REQUIRED"):
+            load_contract(path)
+        path.unlink(missing_ok=True)
+
+    def test_unknown_synonym_fails_closed(self) -> None:
+        with self.assertRaisesRegex(UIChromeError, "UNKNOWN_CATALOG_ITEM_OR_SYNONYM"):
+            resolve_catalog_item("random bookshelf product", cfg=self.cfg)
 
 
 if __name__ == "__main__":

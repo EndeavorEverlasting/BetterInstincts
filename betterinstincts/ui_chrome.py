@@ -19,6 +19,10 @@ class UIChromeError(ValueError):
     pass
 
 
+def _normalize_alias(text: str) -> str:
+    return " ".join(str(text).strip().lower().replace("_", " ").replace("-", " ").split())
+
+
 def load_contract(path: Path = CONTRACT) -> dict:
     path = Path(path)
     if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_BYTES:
@@ -39,6 +43,9 @@ def load_contract(path: Path = CONTRACT) -> dict:
     item = (cfg.get("catalog_items") or {}).get("a_ok_bloomer") or {}
     if item.get("search_term") != "AOK":
         raise UIChromeError("AOK_SEARCH_TERM_REQUIRED")
+    synonyms = {_normalize_alias(s) for s in (item.get("synonyms") or [])}
+    if "wall shelf" not in synonyms:
+        raise UIChromeError("AOK_WALL_SHELF_SYNONYM_REQUIRED")
     return cfg
 
 
@@ -125,6 +132,36 @@ def resolve_target(
     return out
 
 
+def resolve_catalog_item(query: str, *, cfg: Optional[dict] = None) -> dict:
+    """Resolve an item id or operator synonym to a catalog_items row.
+
+    Operator correction: phrases like 'wall shelf' mean a_ok_bloomer — never a
+    newly invented wall-shelf product outside the coveted-item list.
+    """
+    cfg = cfg or load_contract()
+    items = cfg.get("catalog_items") or {}
+    raw = str(query or "").strip()
+    if not raw:
+        raise UIChromeError("EMPTY_CATALOG_QUERY")
+    if raw in items:
+        row = dict(items[raw])
+        row["item_id"] = raw
+        row["resolved_via"] = "item_id"
+        return row
+    needle = _normalize_alias(raw)
+    for item_id, row in items.items():
+        aliases = [_normalize_alias(item_id), _normalize_alias(row.get("display_name") or "")]
+        aliases.extend(_normalize_alias(s) for s in (row.get("synonyms") or []))
+        aliases.append(_normalize_alias(row.get("search_term") or ""))
+        if needle in aliases:
+            out = dict(row)
+            out["item_id"] = item_id
+            out["resolved_via"] = "synonym" if needle != _normalize_alias(item_id) else "item_id"
+            out["query"] = raw
+            return out
+    raise UIChromeError("UNKNOWN_CATALOG_ITEM_OR_SYNONYM")
+
+
 def plan_catalog_to_inventory(
     item_id: str,
     *,
@@ -138,10 +175,9 @@ def plan_catalog_to_inventory(
     cfg = cfg or load_contract()
     if mode not in {"BUY", "BUILD"}:
         raise UIChromeError("CATALOG_DEPOSIT_REQUIRES_BUY_OR_BUILD")
-    items = cfg.get("catalog_items") or {}
-    if item_id not in items:
-        raise UIChromeError("UNKNOWN_CATALOG_ITEM")
-    item = items[item_id]
+    resolved = resolve_catalog_item(item_id, cfg=cfg)
+    item_id = resolved["item_id"]
+    item = resolved
     recipe_id = item.get("recipe")
     recipe = (cfg.get("recipes") or {}).get(recipe_id)
     if not isinstance(recipe, dict):

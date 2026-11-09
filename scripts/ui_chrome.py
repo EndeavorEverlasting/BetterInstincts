@@ -4,7 +4,8 @@
 Examples:
   python -m scripts.ui_chrome glossary
   python -m scripts.ui_chrome resolve --mode BUILD --target catalog.search_field --client 1920 1080
-  python -m scripts.ui_chrome plan --item-id a_ok_bloomer --mode BUILD --client 1920 1080
+  python -m scripts.ui_chrome resolve-item --query "wall shelf"
+  python -m scripts.ui_chrome plan --item-id "wall shelf" --mode BUILD --client 1920 1080
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ from betterinstincts.ui_chrome import (
     glossary_snapshot,
     load_contract,
     plan_catalog_to_inventory,
+    resolve_catalog_item,
     resolve_target,
 )
 
@@ -40,8 +42,17 @@ def main(argv: list[str] | None = None) -> int:
     p_res.add_argument("--target", required=True)
     p_res.add_argument("--profile", default=None)
     p_res.add_argument("--client", nargs=2, type=int, metavar=("W", "H"), default=None)
+    p_item = commands.add_parser(
+        "resolve-item",
+        help="Resolve catalog item id or operator synonym (wall shelf → a_ok_bloomer)",
+    )
+    p_item.add_argument("--query", required=True)
     p_plan = commands.add_parser("plan", help="Catalog→Household Inventory plan")
-    p_plan.add_argument("--item-id", required=True)
+    p_plan.add_argument(
+        "--item-id",
+        required=True,
+        help="Catalog item id or synonym (e.g. a_ok_bloomer, wall shelf)",
+    )
     p_plan.add_argument("--mode", required=True, choices=["BUY", "BUILD"])
     p_plan.add_argument("--profile", default=None)
     p_plan.add_argument("--client", nargs=2, type=int, metavar=("W", "H"), default=None)
@@ -50,6 +61,8 @@ def main(argv: list[str] | None = None) -> int:
         cfg = load_contract()
         if args.command == "glossary":
             return _dump(glossary_snapshot(cfg))
+        if args.command == "resolve-item":
+            return _dump(resolve_catalog_item(args.query, cfg=cfg))
         width = height = None
         if args.client is not None:
             width, height = args.client
