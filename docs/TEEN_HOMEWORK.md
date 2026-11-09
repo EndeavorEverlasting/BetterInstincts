@@ -43,3 +43,19 @@ Listener observation fields: `inventory_has_homework`, `homework_on_lot`, `avail
 ## Proof ceiling
 
 `HOST_TEEN_HOMEWORK_CATALOG_NOT_EA_API_NOT_BI006_CERT`. Does not close BI-002 or certify BI-006 career promotions.
+
+## 2026-11-09 — P00 / P01 / P141 / P95 / Trifecta: queue-aware seated study
+
+**Observed failure:** An agent blindly chose `Do Homework` while the Sim was on a sidewalk, and attempted to stack actions without knowing the effective queue limit. The right correction is an admission rule in the existing planner, not another agent daemon.
+
+The player-reported capacity bands are **heuristics**, not certified universal Sims limits: **2–3** items while the Sim is multitasking, **6–7** otherwise. `betterinstincts/queue_capacity.py` admits at most the conservative low end (**2 / 6**) with fresh observed queue length. Unknown multitasking, a full queue or player-directed actions yield **zero new enqueues**. Reobserve after each successful or rejected enqueue; avoid duplicate homework. This is advice, never SendInput authorization.
+
+Before suggesting homework, the host reuses the already-bounded **`house_state` → `room_census`** projection. It ranks attested indoor rooms with a desk/table **and an observed seat**, preferring a desk/office zone to a dining table. Outdoor, unknown, unverified, chairless, or absent lot observations trigger `HOMEWORK_STUDY_SCAN_REQUIRED`. Once a room candidate is found, `PREPARE_STUDY_LOCATION` offers a relocation/seat plan **without queuing homework**. Only a subsequent observation that the Sim is in that exact room **and seated on that exact observed chair**, with a queue slot available and homework not already queued, returns `QUEUE_TEEN_HOMEWORK`.
+
+Focused emotion and Study Spot lot trait are used only as **explicitly observed cues**. A mood aura, faster homework rate, seat availability, travel path, or emotion change is never invented. A proposed seat must be revalidated against the current model revision and live scene before any game input. The existing school-premises, player-direction, and survival gates outrank homework.
+
+Host observation keys: `lot_model` (revisioned model), `multitasking` (boolean or unknown), `sim_room_id`, `sim_seated`, `sim_seat_id`, `lot_traits`, plus existing `emotion`, `queue`, homework and player-status fields. Study/queue reports are read-only and do not grant a control permit.
+
+P141's selected seam was **reuse the room census and teen homework gate**. The rejected approaches were a parallel scheduler and blind desk clicker. P95 prototyped the positive and missing-observation paths. P82 tests the two capacity bands, absent/outdoor/unverified/seatless spaces, duplicate homework, and independent seat attestation. P07 integrates through `host_stack` and opt-in `host_listener`; P08's real Sims game-lab proof is still **OPEN**. BI-002 hunger remains independently ACTIVE until its own live certification.
+
+Consultation before behavior changes: `contracts/consultations/BI-QUEUE-STUDY-P95-20261109.v1.json`. Regression suite: `python -m unittest tests.test_queue_study tests.test_teen_homework -v`.
