@@ -108,7 +108,10 @@
     "tests/test_portrait_follow.py",
     "tests/test_scene_ui_semantics.py",
     "tests/test_scenery_memory.py",
-    "tests/test_active_sim_camera_lock.py"
+    "tests/test_active_sim_camera_lock.py",
+    "scripts/win32_input.py",
+    "scripts/scenery_memory.py",
+    "tests/test_win32_input.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
