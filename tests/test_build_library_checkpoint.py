@@ -30,7 +30,7 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
         )
         denied = hs.admit_mutation(model, "SLEDGE", targets=["wall.1"])
         self.assertEqual(denied["state"], "MUTATION_DENIED")
-        self.assertEqual(denied["reason"], "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE")
+        self.assertEqual(denied["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
         self.assertEqual(denied["violation"], "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE")
 
     def test_library_then_save_as_then_sledge_admitted(self):
@@ -64,7 +64,7 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
         )
         # attest_save_as bumps revision → library checkpoint becomes stale.
         denied_stale = hs.admit_mutation(attested, "SLEDGE", targets=["wall.1"])
-        self.assertEqual(denied_stale["reason"], "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE")
+        self.assertEqual(denied_stale["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
         self.assertEqual(denied_stale["violation"], "STALE_LIBRARY_CHECKPOINT")
 
         fresh = hs.attest_library_save(
@@ -75,8 +75,8 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
             operator_confirmed=True,
         )
         ok = hs.admit_mutation(fresh, "SLEDGE", targets=["wall.1"])
-        self.assertEqual(ok["state"], "MUTATION_ADMITTED")
-        self.assertEqual(ok["library"]["state"], "LIBRARY_ADMIT")
+        self.assertEqual(ok["state"], "MUTATION_DENIED")
+        self.assertEqual(ok["violation"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
 
     def test_save_as_is_not_library_checkpoint(self):
         model = hs.observe(
@@ -97,7 +97,7 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
             operator_confirmed=True,
         )
         denied = hs.admit_mutation(only_save_as, "SLEDGE", targets=["wall.1"])
-        self.assertEqual(denied["reason"], "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE")
+        self.assertEqual(denied["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
 
     def test_outdoor_floater_inventory_skips_library(self):
         model = hs.observe(
@@ -114,11 +114,11 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
         gate = blc.evaluate_library_checkpoint(
             model, "BACKSPACE_TO_INVENTORY", targets=["floater.1"]
         )
-        self.assertEqual(gate["state"], "NOT_ROOM_MUTATION")
+        self.assertEqual(gate["state"], "LIBRARY_DENY")
         admitted = hs.admit_mutation(
             model, "BACKSPACE_TO_INVENTORY", targets=["floater.1"]
         )
-        self.assertEqual(admitted["state"], "MUTATION_ADMITTED")
+        self.assertEqual(admitted["state"], "MUTATION_DENIED")
 
     def test_plan_next_demands_library_before_restore(self):
         model = hs.observe(
@@ -135,7 +135,7 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
             open_goals=["RESTORE_FLOOR"],
         )
         plan = hs.plan_next(model)
-        self.assertEqual(plan["action"], "SAVE_TO_LIBRARY")
+        self.assertEqual(plan["action"], "SCAN_ALL_FLOORS_AND_ROOMS")
         self.assertEqual(plan["gate"], "LIBRARY_CHECKPOINT_REQUIRED")
 
     def test_save_to_library_lease_without_prior_checkpoint(self):
@@ -176,8 +176,8 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
             viewport={"state": "VIEWPORT_OK"},
         )
         self.assertEqual(turn["next_gate"], "LIBRARY_CHECKPOINT_REQUIRED")
-        self.assertEqual(turn["fallback"]["action"], "SAVE_TO_LIBRARY")
-        self.assertEqual(turn["build_library"]["action"], "SAVE_TO_LIBRARY")
+        self.assertEqual(turn["fallback"]["action"], "SCAN_ALL_FLOORS_AND_ROOMS")
+        self.assertEqual(turn["build_library"]["action"], "SCAN_ALL_FLOORS_AND_ROOMS")
 
     def test_building_scope_mismatch(self):
         model = hs.observe(

@@ -6,9 +6,11 @@ Order (durable — do not skip):
   stats.set_skill_level <stat> <N> × skills (Cooking/Fitness/NaturalLiving last) →
   ACCEPT_OFFERED_REWARD_TRAIT (Enter + OK hotspot; never Cancel)
 
-Household: --members N (observed portrait count) → for each member Space-select →
-    dispatch remaining skills only (completion ledger skips already-maxed) → Space
-    past fully-done members. --detach returns a worker receipt (opt-in, never autorun).
+Household: --members N (observed portrait count) → skill-round-robin:
+    for each skill, Space across every portrait and set that one skill, then the
+    next skill (completion ledger skips already-maxed cells). --detach returns a
+    worker receipt (opt-in, never autorun). Bootstrap: python bootstrap.py
+    household-skills -- --members N ...
 
 Typing owner: scripts.win32_input.type_text (keybd_event). Evaluate-only unless
 --execute. Disposable lab only; never edits saves. Not BI-005.
@@ -500,56 +502,100 @@ def _execute_household(
     completion_ledger_path: Path | None = None,
     redo: bool = False,
 ) -> dict:
-    """Traverse every member; skip already-maxed; Space to next needing Sim."""
+    """Skill-round-robin: one skill × every portrait, then the next skill."""
     ledger_path = (
         Path(completion_ledger_path)
         if completion_ledger_path is not None
         else default_completion_ledger_path()
     )
-    member_results: list[dict] = []
-    dispatched_members = 0
-    skipped_members = 0
+    units = list(household_plan.get("dispatch_units") or [])
+    if not units:
+        # Legacy / empty plans: synthesize round-robin from member_plans + skills.
+        skills = [str(s.get("id")) for s in (household_plan.get("skills") or []) if s.get("id")]
+        for sid in skills:
+            for slot in household_plan.get("member_plans") or []:
+                units.append(
+                    {
+                        "skill_id": sid,
+                        "member_index": int(slot.get("member_index") or 0),
+                        "member_key": slot.get("member_key"),
+                        "skip_dispatch": sid
+                        in set(slot.get("skipped_skill_ids") or []),
+                        "select_before": {"required": True} if units else None,
+                    }
+                )
+
+    cell_results: list[dict] = []
+    dispatched_cells = 0
+    skipped_cells = 0
     first_admit = True
-    for slot in household_plan.get("member_plans") or []:
-        index = int(slot.get("member_index") or 0)
-        mkey = str(slot.get("member_key") or completion_member_key(session_id, index))
-        select = slot.get("select")
-        if isinstance(select, dict) and select.get("required"):
+    first_unit = True
+    target = int(household_plan.get("level") or 10)
+    for unit in units:
+        index = int(unit.get("member_index") or 0)
+        mkey = str(unit.get("member_key") or completion_member_key(session_id, index))
+        skill_id = str(unit.get("skill_id") or "").strip().lower()
+        select_before = unit.get("select_before")
+        if not first_unit and (
+            isinstance(select_before, dict)
+            or int(household_plan.get("household_members") or 1) > 1
+        ):
             # Close console with Ctrl+Shift+C — never Esc (MENU collision).
             _toggle_cheat_console()
             time.sleep(0.25)
             select_report = _select_next_household_member()
         else:
             select_report = {"step": "KEEP_CURRENT_SELECTION", "member_index": index}
+        first_unit = False
 
         # Re-check ledger at execute time so mid-run / restarted workers skip done work.
-        target = int(household_plan.get("level") or 10)
         omit: list[str] = []
         if not redo:
             ledger = load_completion_ledger(ledger_path)
             omit = sorted(
                 completed_skill_ids_for_member(ledger, mkey, target_level=target)
             )
+        if (
+            bool(unit.get("skip_dispatch"))
+            or (skill_id and skill_id in omit)
+            or not skill_id
+        ):
+            skipped_cells += 1
+            cell_results.append(
+                {
+                    "member_index": index,
+                    "member_key": mkey,
+                    "skill_id": skill_id,
+                    "select": select_report,
+                    "skipped": True,
+                    "reason": "SKILL_ALREADY_MAXED_FOR_MEMBER",
+                    "live": {
+                        "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
+                        "commands": [],
+                    },
+                }
+            )
+            continue
+
         live_plan = plan_skill_force(
-            skill_ids=household_plan.get("requested_skill_ids"),
-            bundle=household_plan.get("bundle"),
+            skill_ids=[skill_id],
+            bundle=None,
             level=household_plan.get("level"),
             game_mode=str(household_plan.get("game_mode") or "unknown"),
             accept_reward_dialogs=household_plan.get("accept_reward_dialogs"),
-            omit_skill_ids=omit,
         )
         if live_plan.get("skip_dispatch") or live_plan.get("state") == (
             "SKILL_FORCE_MEMBER_ALREADY_MAXED"
         ):
-            skipped_members += 1
-            member_results.append(
+            skipped_cells += 1
+            cell_results.append(
                 {
                     "member_index": index,
                     "member_key": mkey,
+                    "skill_id": skill_id,
                     "select": select_report,
                     "skipped": True,
-                    "reason": "MEMBER_SKILLS_ALREADY_MAXED",
-                    "skipped_skill_ids": omit,
+                    "reason": "SKILL_ALREADY_MAXED_FOR_MEMBER",
                     "live": {
                         "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
                         "commands": [],
@@ -577,31 +623,35 @@ def _execute_household(
             member_index=index,
         )
         first_admit = False
-        dispatched_members += 1
-        member_results.append(
+        dispatched_cells += 1
+        cell_results.append(
             {
                 "member_index": index,
                 "member_key": mkey,
+                "skill_id": skill_id,
                 "select": select_report,
                 "skipped": False,
-                "remaining_skill_ids": [s["id"] for s in (live_plan.get("skills") or [])],
                 "live": live,
             }
         )
     state = (
         "HOUSEHOLD_SKILL_FORCE_ALL_MEMBERS_ALREADY_MAXED"
-        if dispatched_members == 0
+        if dispatched_cells == 0
         else "HOUSEHOLD_SKILL_FORCE_DISPATCHED"
     )
     cursor_rest = _park_safe_cursor_rest()
     return {
         "state": state,
+        "dispatch_order": household_plan.get("dispatch_order") or "skill_round_robin",
         "household_members": household_plan.get("household_members"),
-        "members_dispatched": dispatched_members,
-        "members_skipped_already_maxed": skipped_members,
+        "cells_dispatched": dispatched_cells,
+        "cells_skipped_already_maxed": skipped_cells,
+        "members_dispatched": len(
+            {c["member_index"] for c in cell_results if not c.get("skipped")}
+        ),
         "required_residual_skills": household_plan.get("required_residual_skills"),
         "completion_ledger": str(ledger_path),
-        "members": member_results,
+        "cells": cell_results,
         "close_console_before_space": "CTRL_SHIFT_C_TOGGLE",
         "safe_cursor_rest": cursor_rest,
         "proof_ceiling": household_plan.get("proof_ceiling"),

@@ -123,6 +123,32 @@ class BootstrapTests(unittest.TestCase):
         installed.assert_not_called()
         removed.assert_not_called()
 
+    def test_household_skills_recipe_never_autoruns(self):
+        recipe = bootstrap.household_skills_recipe(members="3")
+        self.assertEqual(recipe["state"], "HOUSEHOLD_SKILLS_BOOTSTRAP_RECIPE")
+        self.assertEqual(recipe["dispatch_order"], "skill_round_robin")
+        self.assertIn("--members 3", recipe["cli"])
+        self.assertEqual(bootstrap.main(["household-skills"]), 0)
+
+    def test_household_skills_forward_requires_observed_members(self):
+        with self.assertRaisesRegex(bootstrap.BootstrapError, "HOUSEHOLD_SKILLS_REQUIRES_OBSERVED_MEMBERS"):
+            bootstrap.run_household_skills(self.location, ["--bundle", "full_unlock"])
+        with patch.object(bootstrap.subprocess, "run") as run:
+            run.return_value = type("R", (), {"returncode": 0, "stdout": "{}", "stderr": ""})()
+            # Point development at a checkout that has the module path shape.
+            module = self.location["development"] / "scripts" / "diy_skill_force.py"
+            module.parent.mkdir(parents=True, exist_ok=True)
+            module.write_text("# stub\n", encoding="utf-8")
+            out = bootstrap.run_household_skills(
+                self.location,
+                ["--members", "3", "--bundle", "diy_maker"],
+            )
+        self.assertEqual(out["state"], "HOUSEHOLD_SKILLS_FORWARDED")
+        self.assertTrue(out["never_autorun"])
+        self.assertEqual(out["dispatch_order"], "skill_round_robin")
+        self.assertIn("--members", out["command"])
+        self.assertIn("3", out["command"])
+
     def test_gui_cancel_uninstall_requires_click_and_approval(self):
         import sys
         import types

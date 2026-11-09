@@ -85,6 +85,8 @@ def main(argv=None) -> int:
     lib.add_argument("--library-item-name", required=True)
     lib.add_argument("--capture-ref", required=True)
     lib.add_argument("--operator-confirmed", action="store_true")
+    lib.add_argument("--lot-manifest-file", type=Path, required=True,
+                     help="Bounded JSON with every floor and room classified")
 
     ckpt = sub.add_parser("checkpoint", help="Persist current model revision (continuity)")
     ckpt.add_argument("--run-id", required=True)
@@ -171,8 +173,15 @@ def main(argv=None) -> int:
         if args.cmd == "attest-library-save":
             if not args.operator_confirmed:
                 raise HouseStateError("LIBRARY_SAVE_REQUIRES_OPERATOR_CONFIRMATION")
+            path = args.lot_manifest_file
+            if path.is_symlink() or not path.is_file() or path.stat().st_size > 65536:
+                raise HouseStateError("LOT_MANIFEST_FILE_UNSAFE")
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(manifest, dict):
+                raise HouseStateError("LOT_MANIFEST_OBJECT_REQUIRED")
             model = attest_library_save(
                 model,
+                lot_manifest=manifest,
                 building_id=args.building_id,
                 library_item_name=args.library_item_name,
                 capture_ref=args.capture_ref,

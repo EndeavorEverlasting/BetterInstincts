@@ -1156,6 +1156,18 @@
         "scripts/win32_input.py"
       ]
     },
+    "PERSONAL_FERTILIZER_INVENTORY": {
+      "definition": "Only observed, eligible fertilizer physically stored in the selected Sim's personal inventory can supply a fertilize action. A stack on the ground or in household storage is not in that pocket.",
+      "owner": "betterinstincts/fertilizer_workflow.py"
+    },
+    "FERTILIZER_SUPPLY_TRANSFER": {
+      "definition": "Quantity-bounded and authorized movement of verified eligible fertilizer from the ground or household storage to the selected Sim inventory, requiring separate observation of the final pocket stock.",
+      "owner": "betterinstincts/fertilizer_workflow.py"
+    },
+    "FERTILIZER_GOAL_QUEUE": {
+      "definition": "Persistent gardening goal whose individual hydroponic plants are marked complete only with real outcome proof, never because an action disappears from the queue or a side quest interrupts the Sim.",
+      "owner": "betterinstincts/gardening_service.py"
+    },
     "PASSIVE_LOT_SURVEY": {
       "definition": "Read-only cross-domain evaluation of supplied lot rooms, needs, and queue state even while a Sim is busy or the player owns desktop control.",
       "owners": [

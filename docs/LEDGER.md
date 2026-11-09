@@ -1,5 +1,29 @@
 # Canonical project ledger
 
+## 2026-11-09 — Household skill-round-robin bootstrap after save reload (P95 + P141 + Trifecta)
+
+**Operator:** Save reload undid skills progression for at least one Sim. Restore every portrait fairly: one skill for every household member, then the next skill, until all requested skills are level 10. Include the path in the bootstrapper.
+
+**P95:** `household_traverse.dispatch_order=skill_round_robin` with `dispatch_units` (skill × member cells). **P141:** same `diy_skill_force` owner; opt-in `python bootstrap.py household-skills` recipe/forwarder (never autorun on install). Consultation `BI-HOUSEHOLD-SKILL-ROUND-ROBIN-BOOTSTRAP-20261109.v1.json`.
+
+**Proof ceiling:** host SendInput cheat dispatch + Skills-panel LOCAL_OBSERVED; not BI-005. Does not close BI-002.
+
+## 2026-11-09 — Fertilizer wait is not a gardening lock
+
+Post-merge cross-owner gap: opt-in fertilizer workflow initially suppressed
+ordinary WATER/WEED/HARVEST when fertilizer was cooling down or supply
+missing. The existing gardening owner now offers one **observed** related
+maintenance action from a constrained allowlist while preserving pending
+fertilization. Exact player-authored FERTILIZE task-continuity never
+switches objectives. New regression tests prove maintenance versus
+unrelated side quests and no bypass of sticky exact tasks.
+
+
+## 2026-11-09 — Hydroponic fertilizer pocket inventory and queue continuity
+
+**Objective:** keep an explicit gardening/each-plant fertilization goal intact despite autonomous distractions. Real prerequisite: move enough eligible fertilizer from ground/household storage into the selected Sim's *personal* inventory before queuing fertilization, with genuine readback. **Implementation:** opt-in `fertilizer_workflow` in the existing gardening peer, no second scheduler; per-plant proof, exact observed transfer action, opt-in transfer authorization, native `FERTILIZE_ALL` only when actually enabled and stocked, otherwise single-plant `FERTILIZE`; existing `task_continuity` prevents queue duplication and observes interruptions. Semantic terms added to the existing glossary. Ontology consultation committed before behavior source changes. Scope: offline planner/tests only; no game input, purchases, saves, inventory mutation, active daemon or live P08 verification. BI-002 remains independently ACTIVE.
+
+
 ## 2026-11-09 — CRITICAL: FLOOR_2 / stairs thrash without library save (regression harden)
 
 **Failure:** Agents deleted Bargain Bend **FLOOR_2 / stairs** while thrashing around a **Medicine Craftidink** stuck on a Servo, without saving the house to My Library first. Operator restored by reloading a previous save. Chat reminders to “save the house to the lot” did not bind.
@@ -627,6 +651,15 @@ Second-pass cohesion after `BI-AUTONOMY-HUD-OFFSCREEN-20261109`: `BI-DISCOVERY-H
 ## 2026-11-09 — Action and whim valence training, mouse-only pin intent
 
 P95/P124/Trifecta extends the same opt-in host listener, not a new scheduler. `behavior_valence` classifies every observed queue action and whim into positive/negative/neutral/unknown plus separate Beta-Binomial reviewed-sample advice; model predictions do not prove negative effects, suppress player choice or authorize queue cancellation. Exact-patch, opt-in operator-reviewed examples update bounded model counts; an optional active-session sidecar can persist an aggregate without storing names/raw media. `whim_pinning` declares a per-whim mouse-only pin route using existing cooperative `screen_atlas` native port and exact attested hitbox, rejecting stale actor/whim/layout or player control; live pin proof remains P08 OPEN. The three top-left Discovery Quest modules remain owned by existing `discovery_hud` and their established domain services. Consultation `BI-QUEUE-WHIM-LEARNING-PIN-20261109` committed first.
+
+## 2026-11-09 — Critical second-floor loss: full-lot pre-mutation protection
+
+**Operator report:** An agent destroyed the entire second floor while building, with no trusted pre-change save. Treat the current game state as a recovery incident; do not save over an intact prior version or claim a backup exists without independent evidence.
+
+**P00** hardens `AGENTS.md` and doctrine; **P01** requires every host Build/Buy caller to route through the same fail-closed lease; **P95** extends the existing `build_library_checkpoint` + `house_state` call stack to a complete multi-story room census with pre-change My Library save and persisted model readback; **P124** keeps `house_state` the sole model owner and `room_census` the projection, rejecting a competing home-snapshot daemon. **Trifecta P82/P07/P08:** falsification in `tests/test_lot_mutation_preservation.py`, repository integration/CI, and separately required Windows live host interception+recovery proof. Offline source commits, tests and merges must never be reported as game-file recovery or live input enforcement. The old inventory/purchase loophole is rejected; no agent mutations or purchases when any floor/room coverage is unknown.
+
+**Incident recovery:** preserve running game and any last-known-good saves from overwrite; verify available in-game Load Game and My Library building versions with human-approved read-only navigation. Only after checking known-good artifacts should an explicitly authorized local agent restore a disposable copy. The second floor is not claimed restored. Consultation: `contracts/consultations/BI-WHOLE-HOME-LATEST-MAIN-20261109.v1.json`.
+
 
 ## 2026-11-09 — Async lot opportunity intelligence and persistent hover affordances
 

@@ -435,17 +435,125 @@ def _gui() -> int:
     tk.Button(buttons, text="Preferences", command=open_settings, width=14).pack(
         side="left", padx=(8, 0)
     )
+
+    def show_household_skills_recipe() -> None:
+        """Show the opt-in skill bootstrap recipe only — never executes cheats."""
+        recipe = household_skills_recipe()
+        status_text.set("Household skill recipe shown. No cheats executed.")
+        messagebox.showinfo(
+            "BetterInstincts · Household skills",
+            json.dumps(recipe, indent=2),
+            parent=root,
+        )
+
+    tk.Button(
+        buttons,
+        text="Skill bootstrap…",
+        command=show_household_skills_recipe,
+        width=16,
+    ).pack(side="left", padx=(8, 0))
     root.mainloop()
     return 0
 
 
+def household_skills_recipe(*, members: str = "N") -> dict[str, object]:
+    """Durable opt-in lab skill bootstrap — never autorun on install/gui open."""
+    return {
+        "state": "HOUSEHOLD_SKILLS_BOOTSTRAP_RECIPE",
+        "dispatch_order": "skill_round_robin",
+        "note": (
+            "Observe Live portrait count N, then max skills fairly: one skill for "
+            "every household member, then the next skill, until level 10. Never "
+            "autorun from install/doctor/gui open."
+        ),
+        "owner": "contracts/diy-skill-force.v1.json",
+        "cli": (
+            "python -m scripts.diy_skill_force household --members "
+            + str(members)
+            + " --bundle full_unlock --execute --detach --process-id PID --session-id ID"
+        ),
+        "bootstrap_forward": (
+            "python bootstrap.py household-skills -- --members "
+            + str(members)
+            + " --bundle full_unlock --execute --detach --process-id PID --session-id ID"
+        ),
+    }
+
+
+def run_household_skills(
+    location: dict[str, Path],
+    diy_argv: list[str],
+) -> dict[str, object]:
+    """Forward explicit household skill-force args into the verified checkout.
+
+    Requires `--members` in diy_argv. Does not invent N. Does not run on install.
+    """
+    if "--members" not in diy_argv:
+        raise BootstrapError("HOUSEHOLD_SKILLS_REQUIRES_OBSERVED_MEMBERS")
+    checkout = location["development"]
+    module = checkout / "scripts" / "diy_skill_force.py"
+    if module.is_symlink() or not module.is_file():
+        raise BootstrapError("DIY_SKILL_FORCE_NOT_INSTALLED_OR_CHECKOUT_STALE")
+    cmd = [sys.executable, "-m", "scripts.diy_skill_force", "household", *diy_argv]
+    completed = subprocess.run(
+        cmd,
+        cwd=str(checkout),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    stdout = (completed.stdout or "").strip()
+    stderr = (completed.stderr or "").strip()
+    payload: object
+    try:
+        payload = json.loads(stdout) if stdout else {"state": "EMPTY_STDOUT"}
+    except json.JSONDecodeError:
+        payload = {"state": "NON_JSON_STDOUT", "stdout": stdout[-4000:]}
+    return {
+        "state": "HOUSEHOLD_SKILLS_FORWARDED",
+        "dispatch_order": "skill_round_robin",
+        "exit_code": int(completed.returncode),
+        "command": cmd,
+        "checkout": str(checkout),
+        "result": payload,
+        "stderr_tail": stderr[-2000:] if stderr else "",
+        "never_autorun": True,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
+    raw = list(sys.argv[1:] if argv is None else argv)
+    # Opt-in lab forwarder: everything after `--` goes to diy_skill_force household.
+    if raw and raw[0] == "household-skills":
+        try:
+            location = paths()
+            if len(raw) == 1 or (len(raw) == 2 and raw[1] == "--recipe"):
+                print(json.dumps(household_skills_recipe(), sort_keys=True))
+                return 0
+            diy_argv = raw[1:]
+            if diy_argv and diy_argv[0] == "--":
+                diy_argv = diy_argv[1:]
+            report = run_household_skills(location, diy_argv)
+            print(json.dumps(report, sort_keys=True))
+            return 0 if int(report.get("exit_code") or 0) == 0 else 2
+        except (BootstrapError, OSError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+            print(json.dumps({"state": "BLOCKED_PRESERVE", "reason": str(exc)}, sort_keys=True))
+            return 2
+
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", nargs="?", default="gui", choices=["install", "uninstall", "doctor", "gui"])
-    args = parser.parse_args(argv)
+    parser.add_argument(
+        "command",
+        nargs="?",
+        default="gui",
+        choices=["install", "uninstall", "doctor", "gui", "household-skills"],
+    )
+    args = parser.parse_args(raw)
     try:
         if args.command == "gui":
             return _gui()
+        if args.command == "household-skills":
+            print(json.dumps(household_skills_recipe(), sort_keys=True))
+            return 0
         location = paths()
         if args.command == "doctor":
             existing = _validated_manifest(location["use"], location["development"], sys.platform)

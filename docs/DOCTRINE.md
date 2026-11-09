@@ -3,6 +3,9 @@
 ## Product contract
 BetterInstincts should make autonomy more **competent and believable**, not maximize task throughput at any cost. A Sim may rest, socialize, pursue a hobby, or behave imperfectly. Explicit player direction always outranks mod suggestions. Pursuit of work/career must consider time, energy, relationships, traits, mood, and user settings after those capabilities are observed in the game.
 
+
+**Proof invariants:** An offline policy prototype is not a playable mod. First win: do not close BI-002 until hunger is live certified from the actual game, independently of CI.
+
 ## Product identity and capability freedom
 BetterInstincts improves the game's natural mechanics through safe, coordinated autonomy: six needs and financial sustainability are the core challenge; boot/save/scene/host infrastructure enables it rather than replacing it. Evaluate all relevant domains concurrently, respect real time/object/attention constraints, preserve ongoing goals when interrupted, and revalidate before resumption. Prefer native mechanics without prohibiting demonstrated, reversible extensions, new domains, economy experiments, or alternative engineering techniques. None of those extensions is a prerequisite to BI-002 without a proved dependency. The versioned semantic owner is `contracts/ontology.v1.json`; its consultation gate is not a game execution permit.
 
@@ -50,3 +53,7 @@ Preflight repo/branch/PR, protected paths, status, read-first ledger, and latest
 ## Portrait-first semantic camera and HUD continuity (2026-11-09)
 
 Camera framing is **not agent preference**. When the host is admitted and no named map-target lease is active, prefer **right-clicking the attested selected active Sim portrait** to follow that Sim. `Enter` is a one-shot center fallback, never continuing follow; `Shift+Enter` centers the lot only. Do not right-click an uncalibrated portrait or reuse stale selection. Before resuming queue work, resolve any independently observed career/random popup through the correct decision microsystem, dismiss only after its decision is accepted and its button verified, then revalidate queued goals. Track the exact active bottom-right panel and its current layout. Misdirected scenery must become reviewed/deduplicated `VIEW_SCENE` evidence, not ignored drift and never blind map-travel authority. Owners: `contracts/portrait-follow.v1.json`, `contracts/scenery-memory.v1.json`, `betterinstincts/scene_ui_semantics.py`. Player control and offline gameplay remain higher priority.
+
+## Complete lot backup / Build-Buy safety (2026-11-09)
+
+Protect the *whole home*, not just one target. Before **any agent** Build/Buy purchase or mutation, the host must attest coverage and classification of all observed stories, rooms and outdoor areas, reconcile the complete operator-attested floor roster with the revisioned model, verify a pre-change My Library building checkpoint and persist/read back the exact model. The old wall-only gate and inventory/purchase exemptions are prohibited. A single room or one screenshot is not proof the second floor was saved. Unknown floor counts are a hard stop; the player retains all native control. A game Save As does not replace My Library. The current pure-Python gate is offline decision machinery, **not** proof of interception of Cursor/Playwright or live Win32 input: independent adapters must consume fresh permits before any game UI mutation. No uncontrolled save edits or online EA path. Detailed policy: `docs/BUILD_LIBRARY_CHECKPOINT.md`.

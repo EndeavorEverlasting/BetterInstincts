@@ -30,6 +30,25 @@
     "no duplicate already queued fertilization",
     "autonomy-origin proof before interruption classification",
     "explicit player override and critical needs still win",
-    "verified per-target outcomes only; no blind cancellation"
-  ]
+    "verified per-target outcomes only; no blind cancellation",
+    "Opt-in fertilizer_workflow applies the same pocket inventory prerequisite to resumed tasks; no bypass through task_continuity"
+  ],
+  "fertilizer_workflow": {
+    "owner": "betterinstincts/fertilizer_workflow.py",
+    "schema": "betterinstincts.fertilizer-workflow/v1",
+    "enrollment": "Explicit current-capture gardening.fertilizer_workflow with verified selected Sim, plant targets, and inventory stock",
+    "prerequisite": "Fertilizer in GROUND or HOUSEHOLD_INVENTORY does not count as personally carried; exact observed transfer into SIM_INVENTORY plus readback before fertilizing",
+    "batch": "Only select native FERTILIZE_ALL if genuinely enabled and personal inventory holds sufficient stock; otherwise one observed exact-target FERTILIZE",
+    "continuity": "Existing task_continuity player's goal, queue origin, duplicate guard and verified per-plant outcomes outrank new work",
+    "authority": "One proposal per pass; never executes keyboard/mouse, purchases, saves or cancels.",
+    "fallback_action_order": [
+      "WATER",
+      "WEED",
+      "SPRAY_BUGS",
+      "EVOLVE",
+      "HARVEST",
+      "PLANT"
+    ],
+    "waiting_behavior": "While stock missing, target cooling down or picker absent: one observed gardening maintenance action may be selected, without changing verified fertilization progress; exact player-task continuity never falls back."
+  }
 }
