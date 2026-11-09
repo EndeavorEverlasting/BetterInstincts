@@ -96,7 +96,9 @@ def scan_lot_model(model: Mapping, *, cfg: dict | None = None) -> dict:
     unassigned = []
     floor_names: set[str] = set()
     unverified_claim_count = 0
-    attested_confidences = {"OPERATOR_ATTESTED", "LOCAL_OBSERVED", "GAME_CERTIFIED"}
+    # The canonical house_state observer admits only these two attested grades.
+    # A GAME_CERTIFIED string in arbitrary offline JSON is not a P08 proof receipt.
+    attested_confidences = {"OPERATOR_ATTESTED", "LOCAL_OBSERVED"}
     for key, entity in sorted(entities.items()):
         if not isinstance(key, str) or not isinstance(entity, Mapping):
             raise RoomCensusError("ROOM_CENSUS_ENTITY_INVALID")
@@ -146,7 +148,7 @@ def scan_lot_model(model: Mapping, *, cfg: dict | None = None) -> dict:
                                for name in sorted(floor_names, key=_sort_story)}
     rooms: dict[str, dict] = {}
     for (story, zone), data in sorted(groups.items(), key=lambda row: (_sort_story(row[0][0]), row[0][1])):
-        structural = any(c["confidence"] in {"OPERATOR_ATTESTED", "LOCAL_OBSERVED", "GAME_CERTIFIED"}
+        structural = any(c["confidence"] in {"OPERATOR_ATTESTED", "LOCAL_OBSERVED"}
                          for c in data["structure_claims"])
         enclosures = data["enclosures"]
         enclosure = next(iter(enclosures)) if len(enclosures) == 1 else "UNKNOWN_ENCLOSURE"
