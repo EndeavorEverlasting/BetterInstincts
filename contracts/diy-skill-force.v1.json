@@ -131,6 +131,22 @@
         "purchase_confirmation"
       ],
       "dialog_identity_required_before_input": true,
+      "refuse_blind_ok": true,
+      "forbidden_reward_traits": [
+        "trait_Evil"
+      ],
+      "forbidden_reward_trait_aliases": [
+        "evil",
+        "trait_evil",
+        "Evil"
+      ],
+      "harmful_trait_action": "ESCAPE_CANCEL_DIALOG",
+      "harmful_trait_fallback_action": "HOLD",
+      "harmful_trait_never_keys": [
+        "ENTER",
+        "OK_CLICK"
+      ],
+      "harmful_trait_note": "2026-11-09 incident: a new Servo accepted Evil and caused laundry fires. If the offered reward/trait classifies as Evil/harmful the only allowed dialog input is Escape-cancel of THAT dialog (never Enter/OK, never a coordinate OK click). Unclassified dialogs HOLD. never_press_cancel still applies to benign mastery traits.",
       "uncategorized_default": "NEEDS_DIALOG_IDENTIFICATION",
       "legacy_blind_enter_and_coordinate_clicks": "FORBIDDEN"
     },
@@ -182,8 +198,96 @@
       "treat_paused_skills_panel_as_fresh_proof",
       "claim_pass_from_console_text",
       "claim_pass_from_level_up_toast",
-      "claim_pass_without_skills_panel_local_observed"
+      "claim_pass_without_skills_panel_local_observed",
+      "blind_ok_harmful_reward_trait",
+      "accept_evil_reward_trait",
+      "escape_as_household_traverse_close",
+      "escape_spam",
+      "create_or_activate_new_servo_without_operator_consent",
+      "cas_continue_when_escape_cancel_requested",
+      "equip_good_trait_without_operator_request"
     ]
+  },
+  "trait_safety": {
+    "owner": "betterinstincts/diy_skill_force.py",
+    "forbidden_reward_traits": [
+      "trait_Evil"
+    ],
+    "aliases": {
+      "trait_Evil": [
+        "evil",
+        "trait_evil",
+        "Evil",
+        "TRAIT_EVIL"
+      ]
+    },
+    "harmful_label_tokens": [
+      "evil"
+    ],
+    "refuse_blind_ok": true,
+    "harmful_action": "ESCAPE_CANCEL_DIALOG",
+    "unclassified_action": "HOLD",
+    "extension_rule": "Append a harmful trait id here only with a LOCAL_OBSERVED console/CAS id; never remove an entry.",
+    "proof_ceiling": "OFFLINE_REWARD_TRAIT_POLICY_NOT_LIVE_DIALOG_OBSERVATION"
+  },
+  "trait_repair": {
+    "owner": "betterinstincts/diy_skill_force.py",
+    "purpose": "Console repair plan for the currently selected Sim after an unwanted Evil trait: traits.remove_trait trait_Evil",
+    "remove_command_template": "traits.remove_trait {trait_id}",
+    "equip_command_template": "traits.equip_trait {trait_id}",
+    "default_remove_trait_ids": [
+      "trait_Evil"
+    ],
+    "repairable_trait_ids": [
+      "trait_Evil"
+    ],
+    "aliases": {
+      "trait_Evil": [
+        "evil",
+        "trait_evil",
+        "Evil",
+        "TRAIT_EVIL"
+      ]
+    },
+    "optional_equip_good": {
+      "trait_id": "trait_Good",
+      "requires_operator_request": true,
+      "default": false
+    },
+    "requires_active_sim_selection": true,
+    "open_console_chord": [
+      "CTRL",
+      "SHIFT",
+      "C"
+    ],
+    "close_console_key": "CTRL_SHIFT_C_TOGGLE",
+    "execute_allowed": false,
+    "live_gate": "LOCAL_OBSERVED trait removal on the selected Sim (CAS/Traits panel) before any PASS claim; console text is not PASS",
+    "proof_ceiling": "OFFLINE_TRAIT_REPAIR_PLAN_NOT_LIVE_TRAIT_REMOVE_OBSERVED"
+  },
+  "ui_forbids": {
+    "owner": "betterinstincts/diy_skill_force.py",
+    "escape_as_household_traverse_close": {
+      "forbidden": true,
+      "use_instead": "CTRL_SHIFT_C_TOGGLE",
+      "reason": "Escape opens the Travel map / pause MENU and breaks Space household traverse"
+    },
+    "escape_spam": {
+      "forbidden": true,
+      "reason": "Repeated Escape opens the Travel map / pause MENU; one deliberate Escape-cancel of an observed dialog is the only allowed use"
+    },
+    "create_or_activate_new_servo": {
+      "forbidden_without_operator_consent": true,
+      "reason": "2026-11-09: a prior agent activated a NEW male Servo (CAS gender Continue) when the operator wanted Escape-cancel"
+    },
+    "cas_continue_when_escape_cancel_requested": {
+      "forbidden": true,
+      "reason": "Escape-cancel means leave CAS without creating a Sim; gender/Continue advances creation"
+    },
+    "equip_good_trait": {
+      "forbidden_without_operator_request": true
+    },
+    "proof_ceiling": "OFFLINE_UI_FORBID_POLICY_NOT_LIVE_UI_OBSERVATION"
   },
   "skill_catalog": [
     {
@@ -773,7 +877,14 @@
     "level_up_toast_is_not_pass",
     "send_key_chord_for_ctrl_shift_c",
     "detach_is_opt_in_never_autorun",
-    "never_accept_skill_reward_dialog_without_fresh_verified_classification"
+    "never_accept_skill_reward_dialog_without_fresh_verified_classification",
+    "never_blind_ok_evil_or_harmful_reward_trait",
+    "harmful_reward_trait_escape_cancel_or_hold",
+    "trait_repair_default_removes_evil_only",
+    "good_trait_only_on_operator_request",
+    "escape_never_household_traverse_close",
+    "escape_spam_forbidden_opens_travel_map_or_menu",
+    "new_servo_create_activate_requires_operator_consent"
   ],
   "execution_policy": {
     "model": "SINGLE_FOREGROUND_SERIAL_UI_OWNER",

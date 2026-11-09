@@ -57,9 +57,43 @@
         "funds_critical",
         "funds_low",
         "home_objects_incomplete",
-        "prefer_home_control"
+        "prefer_home_control",
+        "host_work_active"
       ],
       "notes": "LOCAL_OBSERVED RCA 2026-11-07: Joining Charlee at Copperdale under unfinished home + critical needs/funds stranded the host off-lot, blocked sleep/eat objects, burned money, and collapsed the lab life. Send Alone is mandatory under crisis — keep Bargain Bend under host control."
+    },
+    {
+      "prompt_id": "cas.servo.create_continue_vs_escape_cancel",
+      "title": "CREATE A SIM / SERVO (CAS)",
+      "repeatable": true,
+      "scene_tags": ["cas", "create_a_sim", "servo", "gender", "new_sim"],
+      "narrative_tokens": [
+        "Create a Sim",
+        "Servo",
+        "gender",
+        "Male",
+        "Continue"
+      ],
+      "options": [
+        {
+          "option_id": "continue",
+          "label": "Continue",
+          "tags": ["create_new_sim", "unrequested_activation", "risk_new_servo", "host_crisis_anti_pattern"]
+        },
+        {
+          "option_id": "escape_cancel",
+          "label": "Escape (cancel CAS)",
+          "tags": ["escape_cancel", "safe", "player_choice", "host_prep"]
+        }
+      ],
+      "default_when_unknown_needs": "escape_cancel",
+      "force_option_when_present": {
+        "escape_cancel_requested": "escape_cancel"
+      },
+      "force_option_when_absent": {
+        "new_servo_consent": "escape_cancel"
+      },
+      "notes": "2026-11-09 incident: a prior agent chose gender Male + Continue and activated a NEW Servo ('mail' was the male homophone) when the operator wanted Escape-cancel; that Servo later took Evil and caused laundry fires. Continue only with explicit operator consent for a new Servo; otherwise ONE Escape-cancel of CAS (never Escape spam — repeated Escape opens the Travel map / pause MENU). Owner of the forbid: contracts/diy-skill-force.v1.json ui_forbids."
     },
     {
       "prompt_id": "host.funds.federal_subsidy",

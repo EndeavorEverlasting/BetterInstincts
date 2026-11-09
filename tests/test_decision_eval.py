@@ -4,6 +4,7 @@ from pathlib import Path
 
 from betterinstincts.decision_eval import (
     DecisionEvalError,
+    _forced_option,
     get_prompt,
     load_catalog,
     measure_need_deltas,
@@ -36,6 +37,29 @@ class DecisionEvalTests(unittest.TestCase):
             prefer_home_control=True,
         )
         self.assertEqual(result.recommended_option_id, "send_alone")
+
+    def test_host_work_makes_send_alone_mandatory_even_with_green_needs(self):
+        result = recommend("school.attend.join_or_send_alone", SIX, host_work_active=True)
+        self.assertEqual(result.recommended_option_id, "send_alone")
+        flagged = recommend("school.attend.join_or_send_alone", SIX, flags=("host_work_active",))
+        self.assertEqual(flagged.recommended_option_id, "send_alone")
+        self.assertIn("host_work_active", get_prompt("school.attend.join_or_send_alone")["force_send_alone_when"])
+
+    def test_cas_continue_needs_consent_otherwise_escape_cancel(self):
+        pid = "cas.servo.create_continue_vs_escape_cancel"
+        self.assertEqual(recommend(pid, SIX).recommended_option_id, "escape_cancel")
+        # No consent flag -> catalog hard gate fires; with consent it does not.
+        prompt = get_prompt(pid)
+        self.assertEqual(_forced_option(prompt, set()), "escape_cancel")
+        self.assertIsNone(_forced_option(prompt, {"new_servo_consent"}))
+        # Even with consent, an explicit Escape-cancel request wins.
+        forced = recommend(pid, SIX, flags=("new_servo_consent", "escape_cancel_requested"))
+        self.assertEqual(forced.recommended_option_id, "escape_cancel")
+        # Escape-cancel requested without consent also cancels.
+        self.assertEqual(
+            recommend(pid, SIX, flags=("escape_cancel_requested",)).recommended_option_id,
+            "escape_cancel",
+        )
 
     def test_need_deltas_measure_influence(self):
         before = {**SIX, "hygiene": 0.1, "energy": 0.1}

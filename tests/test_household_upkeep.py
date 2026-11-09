@@ -300,6 +300,85 @@ class UpkeepMicrosystemTests(unittest.TestCase):
                 evaluate(obs(**x))
 
 
+class ServoFireLaundryPolicyTests(unittest.TestCase):
+    """P62 regression: 2026-11-09 low-Durability Servo + laundry/dryer lint fires."""
+
+    def policy(self, servos, laundry=None, **kwargs):
+        extra = {} if laundry is None else {"laundry": laundry}
+        out = evaluate_household_upkeep(
+            obs(servos=servos, **extra), capture_ref=CAP, **kwargs)
+        return out["laundry_policy"]
+
+    def test_critical_durability_blocks_laundry_until_repair_or_tune(self):
+        pol = self.policy([servo(durability=.1)],
+                          {"supervised": True, "clothesline_available": True,
+                           "lint_less": "INSTALLED", "dryer_lint_state": "CLEAN"})
+        self.assertEqual(pol["state"], "BLOCKED_REPAIR_FIRST")
+        self.assertEqual(pol["laundry_autonomy"], "BLOCKED")
+        self.assertEqual(pol["prerequisite_action"], "TUNE_UP_SERVO")
+        self.assertEqual(pol["blocking_servos"], ["servo:a"])
+        self.assertFalse(pol["dispatch_authorized"])
+
+    def test_broken_servo_blocks_laundry_with_repair_prerequisite(self):
+        pol = self.policy([servo(durability=.9, broken=True)],
+                          {"supervised": True})
+        self.assertEqual(pol["state"], "BLOCKED_REPAIR_FIRST")
+        self.assertEqual(pol["prerequisite_action"], "REPAIR_SERVO")
+
+    def test_unverified_durability_holds_laundry(self):
+        unverified = {"sim_ref": "servo:a", "needs_verified": False, "needs": None,
+                      "broken": False}
+        pol = self.policy([unverified], {"supervised": True})
+        self.assertEqual(pol["state"], "HOLD_DURABILITY_UNVERIFIED")
+        self.assertEqual(pol["laundry_autonomy"], "HOLD")
+
+    def test_stale_capture_holds_laundry_even_when_healthy(self):
+        out = evaluate_household_upkeep(
+            obs(servos=[servo()], observed_at_unix=time.time() - 3600),
+            capture_ref=CAP)
+        self.assertEqual(out["laundry_policy"]["state"], "HOLD_REOBSERVE_STALE")
+
+    def test_clothesline_preferred_when_unsupervised(self):
+        pol = self.policy([servo()], {"supervised": False, "clothesline_available": True,
+                                      "lint_less": "NOT_INSTALLED"})
+        self.assertEqual(pol["state"], "USE_CLOTHESLINE")
+        self.assertEqual(pol["preference_order"][0], "CLOTHESLINE")
+
+    def test_unsupervised_dryer_needs_lint_less_else_hold(self):
+        held = self.policy([servo()], {"supervised": False, "clothesline_available": False,
+                                       "lint_less": "NOT_INSTALLED"})
+        self.assertEqual(held["state"], "HOLD_UNSUPERVISED_NO_LINT_LESS")
+        self.assertEqual(held["laundry_autonomy"], "HOLD")
+        unknown = self.policy([servo()])  # no laundry observation: unsupervised + unknown
+        self.assertEqual(unknown["state"], "HOLD_UNSUPERVISED_NO_LINT_LESS")
+        ok = self.policy([servo()], {"supervised": False, "clothesline_available": False,
+                                     "lint_less": "INSTALLED"})
+        self.assertEqual(ok["state"], "DRYER_ALLOWED_LINT_LESS")
+
+    def test_supervised_dryer_requires_clean_lint_trap(self):
+        dirty = self.policy([servo()], {"supervised": True, "dryer_lint_state": "DIRTY",
+                                        "lint_less": "NOT_INSTALLED"})
+        self.assertEqual(dirty["state"], "CLEAN_LINT_THEN_DRYER_SUPERVISED")
+        clean = self.policy([servo()], {"supervised": True, "dryer_lint_state": "CLEAN",
+                                        "lint_less": "NOT_INSTALLED"})
+        self.assertEqual(clean["state"], "DRYER_ALLOWED_SUPERVISED_LINT_CLEAN")
+
+    def test_no_servos_not_applicable_and_bad_laundry_fails_closed(self):
+        self.assertEqual(self.policy([])["state"], "NOT_APPLICABLE_NO_SERVOS")
+        with self.assertRaisesRegex(HouseholdUpkeepError, "UPKEEP_LAUNDRY_LINT_STATE_INVALID"):
+            self.policy([servo()], {"dryer_lint_state": "SPARKLING"})
+        with self.assertRaisesRegex(HouseholdUpkeepError, "UPKEEP_LAUNDRY_INVALID"):
+            self.policy([servo()], "dryer")
+
+    def test_contract_pins_fire_policy(self):
+        fire = load_contract()["servo_fire_risk"]
+        self.assertTrue(fire["clothesline_preferred_when_unsupervised"])
+        self.assertTrue(fire["dryer_policy"]["clean_lint_trap_before_each_dryer_run"])
+        self.assertEqual(fire["dryer_policy"]["unsupervised_dryer"],
+                         "FORBIDDEN_UNLESS_LINT_LESS_INSTALLED")
+        self.assertIn("Lint-Less", fire["dryer_policy"]["lint_less_upgrade"])
+
+
 class HostUpkeepIntegrationTests(unittest.TestCase):
     def test_host_stack_attaches_upkeep_without_displacing_legacy(self):
         o=obs()

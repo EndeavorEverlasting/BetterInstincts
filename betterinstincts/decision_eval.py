@@ -21,11 +21,14 @@ CATALOG = ROOT / "contracts" / "decision-prompts.v1.json"
 SAFE_TAGS = frozenset({
     "ethical", "safe", "preserve_performance", "stable_mood", "host_prep",
     "rabbit_hole", "keep_home_lot", "funds_recovery", "player_choice",
+    "escape_cancel",
 })
 RISK_TAGS = frozenset({
     "theft", "risk_reputation", "risk_school", "risk_mood",
     "leave_home_lot", "blocks_home_build", "travel_with_sim", "host_crisis_anti_pattern",
+    "create_new_sim", "unrequested_activation", "risk_new_servo",
 })
+SCHOOL_PROMPT_ID = "school.attend.join_or_send_alone"
 
 
 class DecisionEvalError(ValueError):
@@ -140,6 +143,26 @@ def score_option(
     )
 
 
+def _forced_option(prompt: Mapping, flags: set[str]) -> Optional[str]:
+    """Return an option forced by catalog flags, or None.
+
+    ``force_option_when_present``: {flag: option} fires when the flag is set.
+    ``force_option_when_absent``: {flag: option} fires when the flag is NOT set
+    (consent-style gates: no explicit consent -> safe option).
+    """
+    present = prompt.get("force_option_when_present") or {}
+    if isinstance(present, Mapping):
+        for flag, option_id in present.items():
+            if flag in flags:
+                return str(option_id)
+    absent = prompt.get("force_option_when_absent") or {}
+    if isinstance(absent, Mapping):
+        for flag, option_id in absent.items():
+            if flag not in flags:
+                return str(option_id)
+    return None
+
+
 def recommend(
     prompt_id: str,
     needs: Mapping[str, float],
@@ -150,8 +173,13 @@ def recommend(
     funds: Optional[float] = None,
     soft_budget_floor: float = 2000.0,
     emergency_reserve: float = 400.0,
+    host_work_active: bool = False,
+    flags: Sequence[str] = (),
 ) -> DecisionRecommendation:
     prompt = get_prompt(prompt_id, catalog)
+    flag_set = {str(f) for f in flags}
+    if host_work_active:
+        flag_set.add("host_work_active")
     critical = _needs_critical(needs, urgent_threshold)
     funds_critical = False
     funds_low = False
@@ -161,8 +189,11 @@ def recommend(
         funds_critical = float(funds) < float(emergency_reserve)
         funds_low = float(funds) < float(soft_budget_floor)
     # Crisis auto-forces home control (Send Alone) — operator RCA: Join stranded the lab.
-    force_home = prefer_home_control or critical or funds_critical or funds_low
-    if force_home and prompt_id == "school.attend.join_or_send_alone":
+    force_home = (
+        prefer_home_control or critical or funds_critical or funds_low
+        or "host_work_active" in flag_set
+    )
+    if force_home and prompt_id == SCHOOL_PROMPT_ID:
         prefer_home_control = True
     ranked = tuple(sorted(
         (score_option(
@@ -177,7 +208,10 @@ def recommend(
     ))
     best = ranked[0]
     # Hard gate: under crisis never recommend Join for school attendance.
-    if prompt_id == "school.attend.join_or_send_alone" and (critical or funds_critical or funds_low):
+    # Host work (build/repair/skill force) makes Send Alone mandatory too.
+    if prompt_id == SCHOOL_PROMPT_ID and (
+        critical or funds_critical or funds_low or "host_work_active" in flag_set
+    ):
         for item in ranked:
             if item.option_id == "send_alone":
                 best = item
@@ -187,6 +221,14 @@ def recommend(
     if default and ranked[0].score == ranked[1].score:
         for item in ranked:
             if item.option_id == default:
+                best = item
+                break
+    # Catalog-declared hard gates (e.g. CAS: Escape-cancel unless the operator
+    # consented to a new Servo, or when Escape-cancel was explicitly requested).
+    forced = _forced_option(prompt, flag_set)
+    if forced is not None:
+        for item in ranked:
+            if item.option_id == forced:
                 best = item
                 break
     return DecisionRecommendation(
