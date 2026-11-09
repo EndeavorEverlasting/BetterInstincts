@@ -58,7 +58,7 @@ def classify(
     cfg = load_contract()
     from betterinstincts.control_handoff import as_presence, decide
 
-    idle_ms = int(grace_ms if grace_ms is not None else cfg.get("grace_ms_default", 8000))
+    idle_ms = int(grace_ms if grace_ms is not None else cfg.get("grace_ms_default", 15000))
     handoff = decide(probe, session_active=session_active, idle_ms=idle_ms)
     presence = as_presence(handoff)
     presence.update({
