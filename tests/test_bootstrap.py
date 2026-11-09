@@ -207,9 +207,24 @@ class BootstrapTests(unittest.TestCase):
             self.location["locks"].mkdir(parents=True, mode=0o700)
             removed = bootstrap.uninstall(self.location, platform="linux")
         self.assertTrue(removed["checkout_removed"])
+        self.assertTrue(removed["dev_parent_removed"])
         self.assertFalse(self.location["development"].exists())
+        self.assertFalse(self.location["development"].parent.exists())
         self.assertFalse(self.location["locks"].exists())
         self.assertFalse(self.location["use"].exists())
+
+    @unittest.skipUnless(shutil.which("git"), "Git CLI required")
+    def test_preexisting_empty_dev_root_is_preserved(self):
+        bare = self._make_local_remote()
+        dev = self.location["development"]
+        dev.parent.mkdir(parents=True)
+        with patch.object(bootstrap, "REPOSITORY", str(bare)), \
+             patch.object(bootstrap, "ALLOWED_ORIGINS", {str(bare)}):
+            bootstrap.install(self.location, platform="linux")
+            removed = bootstrap.uninstall(self.location, platform="linux")
+        self.assertTrue(removed["checkout_removed"])
+        self.assertFalse(removed["dev_parent_removed"])
+        self.assertTrue(dev.parent.is_dir())
 
     @unittest.skipUnless(shutil.which("git"), "Git CLI required")
     def test_clean_checkout_with_unpushed_commit_is_never_deleted(self):
