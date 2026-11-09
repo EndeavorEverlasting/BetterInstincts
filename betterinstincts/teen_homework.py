@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
-from betterinstincts.queue_capacity import evaluate_queue_capacity
+from betterinstincts.queue_capacity import QueueCapacityError, evaluate_queue_capacity
 from betterinstincts.study_space import evaluate_study_space
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -313,12 +313,15 @@ def evaluate_teen_homework_turn(
         available_objects=available_objects,
         cfg=cfg,
     )
-    queue_budget = evaluate_queue_capacity(
-        queue, multitasking=multitasking, player_directed=player_directed
-    )
-    study_space = evaluate_study_space(
-        lot_model, emotion=emotion, lot_traits=lot_traits
-    )
+    try:
+        queue_budget = evaluate_queue_capacity(
+            queue, multitasking=multitasking, player_directed=player_directed
+        )
+        study_space = evaluate_study_space(
+            lot_model, emotion=emotion, lot_traits=lot_traits
+        )
+    except (QueueCapacityError, ValueError) as exc:
+        raise TeenHomeworkError(str(exc)) from exc
     gate, action, next_actions, findings = _pick_gate(
         player_directed=player_directed,
         already_busy=already_busy,
