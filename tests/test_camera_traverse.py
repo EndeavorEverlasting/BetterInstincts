@@ -45,6 +45,16 @@ class CursorZoneTests(unittest.TestCase):
         self.assertTrue(hit["in_edge_band"])
         self.assertEqual(hit["practice"], "EDGE_MOUSE_PARK")
 
+    def test_default_edge_band_catches_console_strip_and_hud(self):
+        cfg = load_contract()
+        self.assertGreaterEqual(int(cfg["defaults"]["edge_band_px"]), 48)
+        self.assertTrue(cfg["defaults"].get("post_input_safe_rest"))
+        # Cheat-console strip / bottom HUD clicks must classify as edge under default band.
+        top = classify_cursor(400, 20, client_width=1920, client_height=1080)
+        bottom = classify_cursor(1200, 1060, client_width=1920, client_height=1080)
+        self.assertTrue(top["in_edge_band"])
+        self.assertTrue(bottom["in_edge_band"])
+
     def test_interior_is_safe(self):
         hit = classify_cursor(960, 540, client_width=1920, client_height=1080, edge_band_px=12)
         self.assertFalse(hit["in_edge_band"])

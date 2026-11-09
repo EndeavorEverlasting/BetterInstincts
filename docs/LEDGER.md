@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-09 — Cursor edge ban: post-input SAFE_CURSOR_REST (P95/P124 + Trifecta)
+
+**Operator:** agents keep parking the cursor on the Sims viewport/screen edge so the camera pans. **P95/P124** widen `edge_band_px` to 48, make `win32_input.send_click|send_wheel|right_drag` default `safe_rest_after` → `park_safe_cursor_rest()`, and require diy_skill_force console refocus + execute paths to end interior. Consultation `BI-CURSOR-EDGE-SAFE-REST-20261109.v1.json`. Reuses `CAMERA_SAFE_TRAVERSE` — no second edge policy. Not BI-005.
+
 ## 2026-11-09 — Completion ledger: skip maxed skills + Space to next needing Sim (P95 + Trifecta)
 
 **Operator:** Host revisited already-maxed skills on the same Sim; N is whatever the household is. **P95/P124** add durable `diy-skill-force-completion.json` (session + member key): record `DISPATCHED` after each typed cheat; omit complete skills on plan/execute; skip fully-done members and Space to the next that still needs work; `--redo` bypasses. `DISPATCHED` ≠ Skills-panel PASS. Consultation `BI-SKILL-FORCE-COMPLETION-LEDGER-20261109.v1.json`. `diy-skill-force` v9. Cursor-stable idle admit kept for synthetic-input flicker. Not BI-005.

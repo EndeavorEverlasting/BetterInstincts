@@ -12,13 +12,15 @@
     "rationale": "Agents must not gather lot data by holding the mouse in the screen-edge pan band and then leave it there while coding. Host owns bounded camera steps that always end at SAFE_CURSOR_REST; PrintWindow capture + lot-model observe are preferred over edge scrolling."
   },
   "defaults": {
-    "edge_band_px": 12,
+    "edge_band_px": 48,
     "max_pan_steps": 8,
     "prefer_capture_first": true,
     "client_width": 1920,
     "client_height": 1080,
     "pan_pixels": 240,
-    "safe_rest_inset_ratio": 0.5
+    "safe_rest_inset_ratio": 0.5,
+    "post_input_safe_rest": true,
+    "post_input_safe_rest_note": "Host mouse SendInput must park SAFE_CURSOR_REST after the click/drag/wheel so agents cannot leave the cursor in the viewport edge pan band."
   },
   "practices": {
     "CAPTURE_ONLY": {
