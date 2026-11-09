@@ -116,6 +116,8 @@ class EdgeInteractionSemanticsTests(unittest.TestCase):
                 self.assertEqual(result["gate"], "EDGE_TARGET_REOBSERVE_OR_REFRAME")
                 self.assertFalse(result["click_geometry_candidate"])
                 self.assertFalse(result["execute_allowed"])
+                self.assertTrue(result["post_input_safe_rest_required"])
+                self.assertEqual(result["safe_rest"]["zone"], "SAFE_INTERIOR")
 
     def test_transit_and_navigation_do_not_authorize_idle_edge_hold(self):
         for phase, gate in (
