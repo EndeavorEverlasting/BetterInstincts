@@ -19,6 +19,19 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
 | P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools + countertop mechanics (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
 
+## 2026-11-08 household useful-item force catalog trifecta
+
+**P95** designed the reusable household object-force call stack: elementary
+`bb.showhiddenobjects` unlock for catalog/hidden list items, `careers.promote`
+Household Inventory deposits for career rewards, optional BBB UX only (never a
+substitute), forbidden hallucinated `gsi_create_obj` hex. **P124** factored as a
+sibling to `funds_inject` / `curious_catalog` / `hidden_object_discovery` rather
+than a second spawn daemon. **P82** measured elementary-unlock refusal, BBB
+substitution refusal, career-only skip, and full-catalog plan commands in
+`tests/test_household_object_force.py`. **P08** live promote/search deposit
+remains OPEN. Consultation:
+`contracts/consultations/BI-HOUSEHOLD-OBJECT-FORCE-20261108.v1.json`.
+
 ## 2026-11-08 countertop mechanics + Env-max island hierarchy trifecta
 
 **P95** designed machine-readable countertop placement (standard vs island, gear

@@ -829,10 +829,34 @@
       ]
     },
     "SHOW_HIDDEN_OBJECTS": {
-      "definition": "Durable console line bb.showhiddenobjects (buydebug is a nickname only). Requires testingcheats first; one command per line.",
+      "definition": "Durable console line bb.showhiddenobjects (buydebug is a nickname only). Requires testingcheats first; one command per line. Elementary unlock for household useful-item catalog/hidden and fabrication rows — Better BuildBuy never substitutes.",
       "owners": [
         "contracts/curious-catalog.v1.json",
-        "docs/CURIOUS_CATALOG.md"
+        "docs/CURIOUS_CATALOG.md",
+        "contracts/household-object-force.v1.json",
+        "docs/HOUSEHOLD_OBJECT_FORCE.md"
+      ]
+    },
+    "HOUSEHOLD_OBJECT_FORCE": {
+      "definition": "Reusable host catalog and planner that forces named useful objects into any Sims household via careers.promote deposits or catalog search after elementary bb.showhiddenobjects unlock. Forbids hallucinated gsi_create_obj hex IDs.",
+      "owners": [
+        "contracts/household-object-force.v1.json",
+        "docs/HOUSEHOLD_OBJECT_FORCE.md",
+        "betterinstincts/household_object_force.py"
+      ]
+    },
+    "ELEMENTARY_HIDDEN_UNLOCK": {
+      "definition": "Required testingcheats true then bb.showhiddenobjects before any catalog_search or fabrication force row. TwistedMexi Better BuildBuy is optional catalog UX only and must never replace this unlock.",
+      "owners": [
+        "contracts/household-object-force.v1.json",
+        "docs/HOUSEHOLD_OBJECT_FORCE.md"
+      ]
+    },
+    "USEFUL_ITEM_CATALOG": {
+      "definition": "Machine-owned BetterInstincts list of forceable household objects (Out of This World Desktop, Cruelty-Free Meat Wall, UFO Bed, Captain Sigma, Eco-Matic Smog Vacuum, Hydroponic Planter, optional Positronic Pro).",
+      "owners": [
+        "contracts/household-object-force.v1.json",
+        "docs/HOUSEHOLD_OBJECT_FORCE.md"
       ]
     },
     "SITUATION": {

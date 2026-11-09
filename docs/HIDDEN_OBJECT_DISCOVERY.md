@@ -6,6 +6,8 @@
 
 Help the operator **find** hidden, environmental and potentially free Build/Buy objects in The Sims 4: toothbrushes, dishes, collectibles, crystals, ponds, invisible lights, trees, streetlights and decorative cars. This is **catalog discovery**, not a promise that every named item exists or is free, placeable, usable, or installed on the current patch/packs. Do not blend it with `bb.ignoregameplayunlocksentitlement` (career unlocks), `bb.moveobjects` (placement), or a new money cheat. Those are separate, non-default capabilities.
 
+To **force a named useful-item list into any household** (career rewards + Smog Vacuum / Hydroponic after elementary unlock), use the durable sibling [HOUSEHOLD_OBJECT_FORCE.md](HOUSEHOLD_OBJECT_FORCE.md) (`python -m scripts.household_object_force`). That owner still treats `bb.showhiddenobjects` as elementary for catalog/hidden rows and does not replace this discovery playbook.
+
 This builds on the existing `curious_catalog` seam rather than replacing its gardening opportunity queue. General discovery is an operator-requested host service: no autorun on boot, no whim-triggered keystrokes, no game-speed changes, no consumption of the player queue. Return to the original Sim needs / income / skill goals when the user finishes.
 
 ## P04 compulsory recipe retrieval and local host evidence

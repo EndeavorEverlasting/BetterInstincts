@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-08 — Household useful-item force catalog (P95 + P124 + trifecta)
+
+**Operator:** Durable reusable catalog for forcing named useful objects into any Sims household on command — must not stay chat-trapped. List: Out of This World Desktop, Cruelty-Free Meat Wall, UFO Bed, Captain Sigma, Eco-Matic Smog Vacuum, Hydroponic Planter, optional Positronic Pro. **Strong correction:** `bb.showhiddenobjects` is **elementary** for unlocking hidden/catalog rows on that list; Better BuildBuy is optional UX only and never a substitute; never hallucinate `gsi_create_obj` hex IDs. Large objects → Household Inventory or lot, never pocket. **P95** call stack: elementary unlock → career.promote deposits → catalog search. **P124** factors as sibling to `funds_inject` / `curious_catalog` / `hidden_object_discovery` — one `household_object_force` owner. Consultation `BI-HOUSEHOLD-OBJECT-FORCE-20261108.v1.json`. CLI: `python -m scripts.household_object_force catalog|elementary-unlock|plan`. Proof ceiling offline plan only; live P08 OPEN. Does not close BI-002.
+
 ## 2026-11-08 — Countertop mechanics + Env-max island hierarchy (P95 + P124 + trifecta)
 
 **Operator:** Live Build Mode learning — island vs standard counters, Auto-Counters
