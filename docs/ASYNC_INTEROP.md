@@ -19,6 +19,7 @@ This is **not** permission to run unattended, overwrite a player's command, or e
 | Browser adapter | `playwright_interop.py` | Reuse an injected existing Playwright page; one click/fill; never spawn a new context |
 | Game adapter | existing `scripts/*` host admission | Session/PID, scene, protected-save and player-queue checks still required |
 | Effect channel | `ui_chrome` input_preference + `win32_input` | **Prefer hotkeys/KEY over mouse** when equivalent; mouse is fallback only; no global keyhook |
+| Cursor park | `camera_traverse` + `win32_input.park_safe_cursor_rest` | After any mouse effect, park **SAFE_CURSOR_REST** (default 48px edge band). Never leave the cursor on the Sims viewport/screen edge. |
 | Machine paths | `bootstrap.py:paths` | Canonical dev/use/worktree roles, no arbitrary duplicate clones |
 
 ### States and control transitions

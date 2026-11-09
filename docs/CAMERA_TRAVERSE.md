@@ -10,7 +10,9 @@
 
 ## Problem
 
-Sims pans the camera when the cursor sits in the thin edge band. Agents often push the mouse to the edge to scan, then switch to coding with the cursor still there — the camera keeps drifting and the next observation is garbage.
+Sims pans the camera when the cursor sits in the edge band (default **48px**). Agents often push the mouse to the edge to scan — or leave it on the cheat-console strip / bottom HUD after a click — then switch to coding with the cursor still there. The camera keeps drifting and the next observation is garbage.
+
+**Mandatory park:** `scripts.win32_input.send_click` / `send_wheel` / `right_drag` default `safe_rest_after=True` and call `park_safe_cursor_rest()`. Skill-force and other host mouse work must end at `SAFE_CURSOR_REST`. Agents using Computer Use must not leave the cursor on the viewport edge; prefer hotkeys, then park with `python -m scripts.camera_traverse rest --execute ...` or interior center (~client 50%/50%).
 
 ## Selected architecture: `CAMERA_SAFE_TRAVERSE`
 

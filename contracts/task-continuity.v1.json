@@ -1,0 +1,35 @@
+{
+  "schema": "betterinstincts.task-continuity/v1",
+  "owner": "betterinstincts/task_continuity.py",
+  "purpose": "Evidence-qualified multi-target goal continuity through native-Sims autonomous distractions; no new daemon or game input",
+  "input": {
+    "goal_id": "opaque stable goal reference",
+    "sim_ref": "opaque verified actor reference",
+    "action_id": "observed task action ID",
+    "player_command_ref": "explicit player-selected goal provenance",
+    "targets": "1..32 unique stable plant/object references with PENDING, IN_PROGRESS, VERIFIED_DONE; each VERIFIED_DONE must have outcome_ref and outcome_capture_ref",
+    "queue": "0..24 bounded current Sim queue rows; origin needs origin_proof_ref for positive attribution",
+    "capture_ref": "same current host capture",
+    "observed_at_unix": "fresh observation (<=180 seconds)",
+    "queue_verified": "independently observed current queue"
+  },
+  "states": [
+    "REOBSERVE_TASK_QUEUE",
+    "PLAYER_CHANGED_GOAL",
+    "PLAYER_CHANGED_QUEUE",
+    "TASK_VERIFIED_COMPLETE",
+    "TASK_ALREADY_QUEUED",
+    "AUTONOMOUS_TASK_INTERRUPTION",
+    "OTHER_VERIFIED_WORK",
+    "TASK_RESUME_CANDIDATE"
+  ],
+  "invariants": [
+    "Never cancel or override a player command or a currently queued task",
+    "Do not turn ordinary queue labels into proof of SIM_AUTONOMY origin",
+    "Do not infer fertilization success from a dispatched click or absence from queue",
+    "Resume only the first pending target with a fresh observed exact-target affordance",
+    "Urgent needs, obligations, player presence, scene and screen_admit retain higher authority",
+    "No repeated resubmission, arbitrary background loop, or user save edits"
+  ],
+  "proof_ceiling": "OFFLINE_TASK_CONTINUITY_NOT_GAME_OUTCOME"
+}

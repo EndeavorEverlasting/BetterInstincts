@@ -96,3 +96,7 @@ homework priority, stale/disabled actions and the one-interaction limit. They do
 not prove planting, need restoration or career safety in The Sims. No runtime
 hook or playable-mod certificate is introduced; BI-002 remains ACTIVE. Catalog
 Scout has its own optional P04 setup gate and must not block this behavior lane.
+
+## Interrupted Fertilize All jobs (P95 / P124 / Trifecta)
+
+A verified player-authored multi-plant Fertilize command may include an optional `task_continuity` object. The separate pure evaluator at `betterinstincts/task_continuity.py` tracks completed versus still-pending plant references and recognizes independently verified autonomous chat/activity interruptions. The existing gardening service then emits a safe wait, reobserve, duplicate-queue guard, or **one** exact-target observed Fertilize candidate. Existing need, deadline, school, homework, live-mode, player-presence and independent screen-admit gates remain in force. No new queue daemon, live cancellation, or claim of Sims mod certification. See [TASK_CONTINUITY.md](TASK_CONTINUITY.md) and `contracts/task-continuity.v1.json`.

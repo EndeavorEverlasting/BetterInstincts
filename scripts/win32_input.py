@@ -224,15 +224,65 @@ def type_text(text: str, *, per_char_sec: float = 0.02) -> None:
         time.sleep(per_char_sec)
 
 
-def move_cursor(x: int, y: int, *, settle_sec: float = 0.05) -> None:
+def park_safe_cursor_rest(
+    *,
+    origin_x: int = 0,
+    origin_y: int = 0,
+    client_width: int | None = None,
+    client_height: int | None = None,
+    settle_sec: float = 0.05,
+) -> dict:
+    """Move the cursor to SAFE_CURSOR_REST (client interior; outside edge band).
+
+    Canonical post-input park so Sims edge-pan stops. Reuses camera_traverse
+    geometry — do not invent a second rest point in callers.
+    """
+    _require_win32()
+    from betterinstincts.camera_traverse import safe_rest_point
+
+    rest = safe_rest_point(
+        origin_x=int(origin_x),
+        origin_y=int(origin_y),
+        client_width=client_width,
+        client_height=client_height,
+    )
+    sx, sy = int(rest["screen"][0]), int(rest["screen"][1])
+    move_cursor(sx, sy, settle_sec=settle_sec, allow_edge=True)
+    return {
+        "state": "SAFE_CURSOR_REST",
+        "screen": [sx, sy],
+        "client": list(rest["client"]),
+        "edge_band_px": rest.get("edge_band_px"),
+    }
+
+
+def move_cursor(
+    x: int,
+    y: int,
+    *,
+    settle_sec: float = 0.05,
+    allow_edge: bool = False,
+) -> None:
     """Park the cursor at absolute screen coordinates without clicking.
 
     Used by camera-safe traverse to leave SAFE_CURSOR_REST outside the edge
     pan band so the Sims camera stops drifting after a host step.
+    Refuses EDGE_MOUSE_PARK unless allow_edge=True (internal rest helper).
     """
     _require_win32()
     import ctypes
 
+    if not allow_edge:
+        from betterinstincts.camera_traverse import classify_cursor, load_contract
+
+        cfg = load_contract()
+        d = cfg.get("defaults") or {}
+        w = int(d.get("client_width") or 1920)
+        h = int(d.get("client_height") or 1080)
+        hit = classify_cursor(int(x), int(y), client_width=w, client_height=h, cfg=cfg)
+        if hit.get("in_edge_band"):
+            park_safe_cursor_rest(settle_sec=settle_sec)
+            return
     ctypes.windll.user32.SetCursorPos(int(x), int(y))
     time.sleep(settle_sec)
 
@@ -243,8 +293,13 @@ def send_click(
     *,
     settle_sec: float = 0.05,
     between_sec: float = 0.05,
+    safe_rest_after: bool = True,
 ) -> None:
-    """Left click at absolute screen coordinates via SetCursorPos + SendInput."""
+    """Left click at absolute screen coordinates via SetCursorPos + SendInput.
+
+    By default parks SAFE_CURSOR_REST afterward so HUD/console strip clicks
+    cannot leave the cursor in the viewport edge pan band.
+    """
     _require_win32()
     ctypes, MOUSEINPUT, INPUT = _mouse_input_types()
     user32 = ctypes.windll.user32
@@ -256,9 +311,18 @@ def send_click(
         inp.mi = MOUSEINPUT(0, 0, 0, flag, 0, None)
         user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
         time.sleep(between_sec)
+    if safe_rest_after:
+        park_safe_cursor_rest(settle_sec=settle_sec)
 
 
-def send_wheel(notches: int, *, x: int = 960, y: int = 540, settle_sec: float = 0.05) -> None:
+def send_wheel(
+    notches: int,
+    *,
+    x: int = 960,
+    y: int = 540,
+    settle_sec: float = 0.05,
+    safe_rest_after: bool = True,
+) -> None:
     """Scroll wheel notches at a screen point (negative = toward user)."""
     _require_win32()
     ctypes, MOUSEINPUT, INPUT = _mouse_input_types()
@@ -272,6 +336,8 @@ def send_wheel(notches: int, *, x: int = 960, y: int = 540, settle_sec: float = 
         inp.mi = MOUSEINPUT(0, 0, delta & 0xFFFFFFFF, wheel, 0, None)
         user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
         time.sleep(0.03)
+    if safe_rest_after:
+        park_safe_cursor_rest(settle_sec=settle_sec)
 
 
 def right_drag(
@@ -282,6 +348,7 @@ def right_drag(
     y0: int = 540,
     steps: int = 24,
     settle_sec: float = 0.05,
+    safe_rest_after: bool = True,
 ) -> None:
     """Right-button drag from (x0,y0) by (dx,dy) over a fixed step count."""
     _require_win32()
@@ -300,3 +367,5 @@ def right_drag(
     inp = INPUT(type=0)
     inp.mi = MOUSEINPUT(0, 0, 0, ru, 0, None)
     user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+    if safe_rest_after:
+        park_safe_cursor_rest(settle_sec=settle_sec)

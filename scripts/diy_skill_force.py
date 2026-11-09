@@ -284,6 +284,7 @@ def _execute_plan(
             "member_index": member_index,
             "skipped_skill_ids": list(plan.get("skipped_skill_ids") or []),
             "commands": [],
+            "safe_cursor_rest": _park_safe_cursor_rest(),
             "proof_ceiling": plan.get("proof_ceiling"),
             "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
             "note": "Completion ledger: nothing left to type for this member",
@@ -384,9 +385,11 @@ def _execute_plan(
         panel_verify = None
         if verify_skills_panel:
             panel_verify = _play_brief_observe_repause(play_seconds=verify_play_seconds)
+    cursor_rest = _park_safe_cursor_rest()
     return {
         "state": "DIY_SKILL_FORCE_DISPATCHED",
         "commands": dispatched,
+        "safe_cursor_rest": cursor_rest,
         "reward_accepts": reward_accepts,
         "accept_reward_dialogs": bool(plan.get("accept_reward_dialogs")),
         "typing_owner": plan.get("typing_owner", "scripts/win32_input.type_text"),
@@ -442,11 +445,22 @@ def _toggle_cheat_console() -> dict:
 
 
 def _refocus_cheat_console() -> None:
-    """Click the top console strip so Enter submits the cheat line."""
+    """Click the top console strip so Enter submits the cheat line.
+
+    Click may touch the top HUD, then win32_input parks SAFE_CURSOR_REST so
+    the cursor is not left in the viewport edge pan band.
+    """
     from scripts.win32_input import send_click
 
-    send_click(400, 20, between_sec=0.04)
+    send_click(400, 20, between_sec=0.04, safe_rest_after=True)
     time.sleep(0.12)
+
+
+def _park_safe_cursor_rest() -> dict:
+    """Mandatory interior park after skill-force mouse work."""
+    from scripts.win32_input import park_safe_cursor_rest
+
+    return park_safe_cursor_rest()
 
 
 def _type_cheat_line(cmd: str) -> None:
@@ -579,6 +593,7 @@ def _execute_household(
         if dispatched_members == 0
         else "HOUSEHOLD_SKILL_FORCE_DISPATCHED"
     )
+    cursor_rest = _park_safe_cursor_rest()
     return {
         "state": state,
         "household_members": household_plan.get("household_members"),
@@ -588,6 +603,7 @@ def _execute_household(
         "completion_ledger": str(ledger_path),
         "members": member_results,
         "close_console_before_space": "CTRL_SHIFT_C_TOGGLE",
+        "safe_cursor_rest": cursor_rest,
         "proof_ceiling": household_plan.get("proof_ceiling"),
         "not_bi005": True,
         "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",

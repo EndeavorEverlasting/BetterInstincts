@@ -1,0 +1,27 @@
+{
+  "schema": "betterinstincts.consultation/v1",
+  "id": "BI-CURSOR-EDGE-SAFE-REST-20261109",
+  "title": "Mandatory SAFE_CURSOR_REST after host mouse input; widen edge band",
+  "status": "ACCEPTED",
+  "date": "2026-11-09",
+  "prompt_kit": ["P95", "P124", "P08", "P82", "P07"],
+  "observation": [
+    "Operator: agents keep parking the cursor on the Sims 4 viewport/screen edge so the camera pans while developing.",
+    "Existing CAMERA_SAFE_TRAVERSE / SAFE_CURSOR_REST existed but edge_band_px=12 was too thin and diy_skill_force left the cursor at cheat-console (400,20).",
+    "CUA / host clicks on bottom HUD also leave the cursor in the pan band."
+  ],
+  "decision": [
+    "Widen default edge_band_px to 48; keep SAFE_CURSOR_REST as the single terminal park owner in camera_traverse + win32_input.",
+    "P124: scripts.win32_input.send_click/send_wheel/right_drag default safe_rest_after=True → park_safe_cursor_rest(); diy_skill_force console refocus and household/level execute must end parked interior.",
+    "Agents must not invent a second edge policy; call python -m scripts.camera_traverse rest or park_safe_cursor_rest. Hotkey-first still preferred over edge HUD clicks.",
+    "DISPATCHED skill ledger and panel PASS rules unchanged."
+  ],
+  "owners": [
+    "contracts/camera-traverse.v1.json",
+    "betterinstincts/camera_traverse.py",
+    "scripts/win32_input.py",
+    "scripts/diy_skill_force.py",
+    "docs/CAMERA_TRAVERSE.md"
+  ],
+  "not": ["clone VLM", "autorun camera daemon", "disable cheat-console strip click", "BI-005"]
+}

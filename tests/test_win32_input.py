@@ -42,6 +42,51 @@ class Win32InputOwnershipTests(unittest.TestCase):
                 win32_input.send_click(1, 2)
         self.assertEqual(str(ctx.exception), "LOCAL_WINDOWS_GAME_HOST_REQUIRED")
 
+    def test_send_click_parks_safe_rest_after(self):
+        from unittest.mock import MagicMock
+
+        class MOUSEINPUT:
+            def __init__(self, *a, **k):
+                pass
+
+        class INPUT:
+            def __init__(self, type=0):
+                self.type = type
+                self.mi = None
+
+        fake_ctypes = MagicMock()
+        fake_ctypes.windll.user32.SetCursorPos.return_value = 1
+        fake_ctypes.windll.user32.SendInput.return_value = 1
+        fake_ctypes.byref.side_effect = lambda x: x
+        fake_ctypes.sizeof.return_value = 1
+
+        with patch.object(win32_input.sys, "platform", "win32"), patch(
+            "scripts.win32_input._mouse_input_types",
+            return_value=(fake_ctypes, MOUSEINPUT, INPUT),
+        ), patch("scripts.win32_input.time.sleep", return_value=None), patch(
+            "scripts.win32_input.park_safe_cursor_rest",
+            return_value={"state": "SAFE_CURSOR_REST"},
+        ) as park:
+            win32_input.send_click(400, 20, settle_sec=0, between_sec=0, safe_rest_after=True)
+            park.assert_called_once()
+            win32_input.send_click(400, 20, settle_sec=0, between_sec=0, safe_rest_after=False)
+            self.assertEqual(park.call_count, 1)
+
+    def test_move_cursor_edge_redirects_to_safe_rest(self):
+        with patch.object(win32_input.sys, "platform", "win32"), patch(
+            "betterinstincts.camera_traverse.classify_cursor",
+            return_value={
+                "in_edge_band": True,
+                "zone": "EDGE_BAND",
+                "practice": "EDGE_MOUSE_PARK",
+            },
+        ), patch(
+            "scripts.win32_input.park_safe_cursor_rest",
+            return_value={"state": "SAFE_CURSOR_REST"},
+        ) as park, patch("scripts.win32_input.time.sleep", return_value=None):
+            win32_input.move_cursor(5, 540)
+            park.assert_called_once()
+
     def test_non_windows_send_key_chord_fails_closed(self):
         with patch.object(win32_input.sys, "platform", "linux"):
             with self.assertRaises(win32_input.Win32InputError) as ctx:

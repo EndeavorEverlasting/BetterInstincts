@@ -2,7 +2,13 @@
   "schema": "betterinstincts.gardening-service/v1",
   "owner": "betterinstincts/gardening_service.py",
   "purpose": "One observed gardening interaction while maintaining needs and responsibilities; preserve the goal across deferral.",
-  "action_order": ["WATER", "WEED", "PLANT", "HARVEST"],
+  "action_order": [
+    "WATER",
+    "WEED",
+    "FERTILIZE",
+    "PLANT",
+    "HARVEST"
+  ],
   "bounds": {
     "max_observed_actions": 24,
     "max_capture_age_seconds": 180,
@@ -15,5 +21,15 @@
   "responsibility_owner": "betterinstincts/host_stack.py",
   "input_authority": "Independent screen_admit per action; this service never grants input authority.",
   "recovery": "Inspect existing need interactions. Failed remedies defer gardening without a purchase, placement, construction or approval prerequisite.",
-  "proof_ceiling": "HOST_GARDENING_OBSERVED_ACTION_PLAN_NOT_GAME_OUTCOME_NOT_BI005_CERT"
+  "proof_ceiling": "HOST_GARDENING_OBSERVED_ACTION_PLAN_NOT_GAME_OUTCOME_NOT_BI005_CERT",
+  "continuity_owner": "betterinstincts/task_continuity.py",
+  "continuity_contract": "contracts/task-continuity.v1.json",
+  "continuity_rules": [
+    "opt-in per-Sim/player-selected goal snapshot",
+    "one fresh exact-target affordance at a time",
+    "no duplicate already queued fertilization",
+    "autonomy-origin proof before interruption classification",
+    "explicit player override and critical needs still win",
+    "verified per-target outcomes only; no blind cancellation"
+  ]
 }

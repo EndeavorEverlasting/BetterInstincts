@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-09 — Cursor edge ban: post-input SAFE_CURSOR_REST (P95/P124 + Trifecta)
+
+**Operator:** agents keep parking the cursor on the Sims viewport/screen edge so the camera pans. **P95/P124** widen `edge_band_px` to 48, make `win32_input.send_click|send_wheel|right_drag` default `safe_rest_after` → `park_safe_cursor_rest()`, and require diy_skill_force console refocus + execute paths to end interior. Consultation `BI-CURSOR-EDGE-SAFE-REST-20261109.v1.json`. Reuses `CAMERA_SAFE_TRAVERSE` — no second edge policy. Not BI-005.
+
 ## 2026-11-09 — Completion ledger: skip maxed skills + Space to next needing Sim (P95 + Trifecta)
 
 **Operator:** Host revisited already-maxed skills on the same Sim; N is whatever the household is. **P95/P124** add durable `diy-skill-force-completion.json` (session + member key): record `DISPATCHED` after each typed cheat; omit complete skills on plan/execute; skip fully-done members and Space to the next that still needs work; `--redo` bypasses. `DISPATCHED` ≠ Skills-panel PASS. Consultation `BI-SKILL-FORCE-COMPLETION-LEDGER-20261109.v1.json`. `diy-skill-force` v9. Cursor-stable idle admit kept for synthetic-input flicker. Not BI-005.
@@ -561,6 +565,14 @@ A host intent previously planned edge-safe rest and target framing separately, b
 ### 2026-11-09 — Pause-first target stabilization
 
 Extended camera recovery to gate Live pixel sampling on independently verified PAUSED state, using a single guarded EA P toggle only if PLAYING. Already paused/unknown speed yields without input; player pause is preserved. Recheck pause HUD, game clock and clock_revision across new capture, camera reanchor and final native world-target effect. Pausing sim time is not evidence that camera stopped moving or stale skills HUD refreshed. Existing player-idle admission and separate skills panel 5–10s play/observe/re-pause remain intact. No automatic resume. P08 game sensor and physical effect unverified.
+
+### 2026-11-09 — Scene-specific semantic click microsystems (P95 + P124 + Trifecta)
+
+P95 prototype: distinct Sims UI panel/action namespaces (aspirations, career, skills, simology, Live inventory, needs, Build/Buy household inventory, pack-gated small business); composite skills/needs and literal unresolved `skit` do not invent clicks. P124 reuses canonical `screen_atlas`, `ui_chrome`, and `workflow_interop` instead of starting a competing Playwright/Win32 clicker. Runtime admission now checks exact-patch attested target rectangle, safe center, panel-specific visual/operator cues, current layout and selected-Sim revisions, target visibility/enabled/stability/occlusion, then the one-action 15-second idle desktop owner and interior rest. P82 focused regressions in `tests/test_ui_microsystems.py`; P07 GitHub CI/merge ownership. A glossary entry or offline mocked click is not native game proof: P08 exact-build screenshots, real local game click receipts and no-drift/target outcome remain OPEN; BI-002 hunger remains ACTIVE. See `docs/UI_MICROSYSTEMS.md` and consultation `BI-SEMANTIC-CLICK-MICROSYSTEMS-20261109`.
+
+## 2026-11-09 — Queued fertilization vs autonomous whims (P95 + P124 + Trifecta)
+
+**Operator:** Tim abandons queued plant fertilization to chat or follow unrelated Sims 4 autonomy. The user-requested task must survive distraction without fighting explicit player control. **P95:** a per-Sim, multi-target queue-continuity evaluator; **P124:** pure reusable peer, opt-in through existing gardening service and host listener, no second daemon. **P82:** deterministic target/provenance/queue falsifiers; **P07:** bounded source/contract/host tests and mainline convergence; **P08:** native exact-build game-input and fertilization outcome certification remains a local-game-only gate. Source: `docs/TASK_CONTINUITY.md`, `contracts/task-continuity.v1.json`; consultation: `contracts/consultations/BI-AUTONOMY-QUEUE-CONTINUITY-20261109.v1.json`. Proposals cannot click/cancel or mark success without independent evidence. BI-002 hunger remains ACTIVE.
 
 ## 2026-11-09 — P95 / P124 / Trifecta human interoperability and preference judgment
 
