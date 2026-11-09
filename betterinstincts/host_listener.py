@@ -195,6 +195,84 @@ def observe_hover(
         lock_path.unlink(missing_ok=True)
 
 
+
+def observe_click(
+    session_id: str, supplied_event: Mapping, *, explicit_opt_in: bool = False
+) -> dict:
+    """One optional click/camera feedback event in the existing active session.
+
+    No hooks or background poller. Reuse host_listener session admission and
+    one-writer atomic sidecar convention; never control a mouse or a save.
+    """
+    import os
+    import tempfile
+
+    from betterinstincts.click_learning import (
+        ClickLearningError, contract, empty_state, evaluate, observe,
+    )
+
+    if explicit_opt_in is not True:
+        raise HostListenerError("EXPLICIT_CLICK_LEARNING_OPT_IN_REQUIRED")
+    path = _session_dir(session_id)
+    meta_path = path / "session.json"
+    if meta_path.is_symlink() or not meta_path.is_file():
+        raise HostListenerError("CLICK_LEARNING_SESSION_NOT_ACTIVE")
+    state_path = path / "click-learning.json"
+    lock_path = path / ".click-learning-writer.lock"
+    try:
+        fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError as exc:
+        raise HostListenerError("CLICK_LEARNING_WRITER_BUSY") from exc
+    try:
+        os.close(fd)
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        if meta.get("state") != "ACTIVE":
+            raise HostListenerError("CLICK_LEARNING_SESSION_NOT_ACTIVE")
+        if state_path.is_symlink():
+            raise HostListenerError("CLICK_LEARNING_STATE_SYMLINK_FORBIDDEN")
+        cfg = contract()
+        budget = cfg["limits"]["max_state_bytes"]
+        if state_path.exists():
+            if not state_path.is_file() or state_path.stat().st_size > budget:
+                raise HostListenerError("CLICK_LEARNING_STATE_FILE_UNSAFE")
+            current = json.loads(state_path.read_text(encoding="utf-8"))
+        else:
+            current = empty_state()
+        try:
+            updated, transition = observe(current, supplied_event, cfg=cfg)
+            evaluation = evaluate(updated, cfg=cfg)
+        except (ClickLearningError, KeyError, TypeError, ValueError) as exc:
+            raise HostListenerError("CLICK_LEARNING_EVENT_INVALID:" + str(exc)) from exc
+        if transition["state"] != "DUPLICATE_IGNORED":
+            raw = json.dumps(updated, sort_keys=True, indent=2) + "\n"
+            if len(raw.encode("utf-8")) > budget:
+                raise HostListenerError("CLICK_LEARNING_STATE_BUDGET_EXCEEDED")
+            temporary = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                    mode="w", encoding="utf-8", dir=path,
+                    prefix=".click-learning-", suffix=".tmp", delete=False,
+                ) as handle:
+                    temporary = Path(handle.name)
+                    handle.write(raw)
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(temporary, state_path)
+            finally:
+                if temporary is not None:
+                    temporary.unlink(missing_ok=True)
+        return {
+            "schema": "betterinstincts.host-click-observation/v1",
+            "session_id": session_id, "transition": transition,
+            "evaluation": evaluation,
+            "state_path": str(state_path.relative_to(ROOT)),
+            "execute_clicks": False, "control_permit": None,
+        }
+    finally:
+        lock_path.unlink(missing_ok=True)
+
+
+
 def _load_observation(raw: Mapping) -> dict:
     if raw.get("schema") != "betterinstincts.host-listener.observation/v1":
         raise HostListenerError("BAD_OBSERVATION_SCHEMA")
@@ -454,6 +532,14 @@ def tick(
         raise HostListenerError("SESSION_TICK_BUDGET_EXCEEDED")
 
     obs = _load_observation(observation)
+    # Explicit caller-supplied game/host/user outcome signal. This path is
+    # observational even when the operator is actively playing; no host input.
+    click_feedback = None
+    if "click_feedback_event" in observation:
+        click_feedback = observe_click(
+            session_id, observation["click_feedback_event"],
+            explicit_opt_in=observation.get("click_learning_opt_in") is True,
+        )
     # New mode sensing is opt-in so pre-existing listener receipts remain valid.
     # Keyboard shortcuts and the old combined boolean are never scene proof.
     mode_context = None
@@ -521,6 +607,8 @@ def tick(
             "proof_ceiling": cfg.get("proof_ceiling"),
             "next": "Player playing or unknown presence — host stands down this tick.",
         }
+        if click_feedback is not None:
+            receipt["click_feedback"] = click_feedback
         _write_json(meta_path, meta)
         tick_path = path / f"tick-{ticks:04d}.json"
         _write_json(tick_path, receipt)
@@ -734,6 +822,8 @@ def tick(
     meta["ticks"] = ticks + 1
     meta["last_tick_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     meta["last_disposition"] = disposition
+    if click_feedback is not None:
+        receipt["click_feedback"] = click_feedback
     _write_json(meta_path, meta)
     tick_path = path / f"tick-{ticks + 1:04d}.json"
     _write_json(tick_path, receipt)
