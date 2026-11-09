@@ -86,10 +86,12 @@ class Win32InputOwnershipTests(unittest.TestCase):
         fake.byref.side_effect = lambda x: x
         fake.sizeof.return_value = 1
         fake.windll.user32.SendInput.side_effect = lambda count, inp, size: captured.append(inp.mi.flags)
-        with patch.object(win32_input.sys, "platform", "win32"), \\
-             patch("scripts.win32_input._mouse_input_types", return_value=(fake,MOUSEINPUT,INPUT)), \\
-             patch("scripts.win32_input.time.sleep"), \\
-             patch("scripts.win32_input.park_safe_cursor_rest") as park:
+        with (
+            patch.object(win32_input.sys, "platform", "win32"),
+            patch("scripts.win32_input._mouse_input_types", return_value=(fake,MOUSEINPUT,INPUT)),
+            patch("scripts.win32_input.time.sleep"),
+            patch("scripts.win32_input.park_safe_cursor_rest") as park,
+        ):
             win32_input.send_right_click(300,800,settle_sec=0,between_sec=0)
             self.assertEqual(captured,[8,16])
             park.assert_called_once()
