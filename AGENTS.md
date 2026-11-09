@@ -9,7 +9,7 @@ Build a community-native Sims 4 autonomy mod for needs, income, careers and pers
 Refresh HEAD/branch, PRs, status, game/version; declare host, scopes, collisions, tests, proof and parent gate. Resolve P-numbers via Moonwake catalog.
 
 ## P04 hidden-object discovery
-Inventory `plans/active/BI-HIDDEN-OBJECTS.P04.md`; `python -m scripts.hidden_object_discovery guide`. Scope: dispatch/scene/save/consent; else defer. Scout: `python -m scripts.hidden_object_scout goal` (`docs/HIDDEN_OBJECT_SCOUT.md`). No autorun.
+Inventory `plans/active/BI-HIDDEN-OBJECTS.P04.md`; `python -m scripts.hidden_object_discovery guide`. Scope: dispatch/scene/save/consent; else defer. Audit: `python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json`. Scout: `python -m scripts.hidden_object_scout goal` (`docs/HIDDEN_OBJECT_SCOUT.md`). No autorun.
 
 Useful-item force: `python -m scripts.household_object_force`. DIY parts: `python -m scripts.upgrade_parts_force`.
 
