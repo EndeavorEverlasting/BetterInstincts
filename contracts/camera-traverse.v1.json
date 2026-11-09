@@ -20,7 +20,7 @@
     "pan_pixels": 240,
     "safe_rest_inset_ratio": 0.5,
     "post_input_safe_rest": true,
-    "post_input_safe_rest_note": "Host mouse SendInput must park SAFE_CURSOR_REST after the click/drag/wheel so agents cannot leave the cursor in the viewport edge pan band."
+    "post_input_safe_rest_note": "Host-controlled click (including legitimate edge HUD clicks), wheel, and drag must end in SAFE_CURSOR_REST after release; never move player-owned cursor."
   },
   "practices": {
     "CAPTURE_ONLY": {
@@ -46,7 +46,7 @@
     "EDGE_MOUSE_PARK": {
       "verdict": "BAD_BEHAVIOR",
       "disposition": "OPTIMIZE",
-      "note": "Leaving the cursor in the edge pan band; camera keeps drifting."
+      "note": "Bad agent-owned idle dwell in potential edge-pan band; a momentary verified UI click is NOT EDGE_MOUSE_PARK."
     },
     "CONTINUOUS_EDGE_HOLD": {
       "verdict": "BAD_BEHAVIOR",
@@ -57,6 +57,11 @@
       "verdict": "BAD_BEHAVIOR",
       "disposition": "OPTIMIZE",
       "note": "Do not substitute Sim walking for camera/lot travel."
+    },
+    "EDGE_UI_CLICK_TRANSIENT": {
+      "verdict": "GOOD_BEHAVIOR",
+      "disposition": "EMULATE",
+      "note": "Freshly attested one-shot HUD/control click inside pan-guard band, followed immediately by safe interior park; separate host admission mandatory."
     }
   },
   "step_kinds": [
@@ -258,5 +263,36 @@
     "lot_center_hotkey": "SHIFT_ENTER_NOT_ACTIVE_SIM",
     "already_centered_once": "NOT_FOLLOW_LOCK;PORTRAIT_ATTESTATION_REQUIRED",
     "after_map_restore": "ADMITTED_PORTRAIT_RIGHT_CLICK_PREFERRED;ENTER_ONE_SHOT_IF_PORT_UNAVAILABLE;REOBSERVE_FOLLOW"
+  },
+  "edge_interaction": {
+    "meaning": "CLIENT_RELATIVE_CAMERA_PAN_GUARD_NOT_MONITOR_BEZEL",
+    "description": "'Screen edge' means the client-relative region that may trigger Sims camera translation when the pointer lingers; a conservative 48-pixel guard band stands in until exact-build pan activation is measured. HUD controls can overlap this band. A coordinate alone does not establish bad intent.",
+    "coordinate_frame": "SIMS_GAME_CLIENT_RECT_NOT_FULL_DESKTOP",
+    "calibration": "CONSERVATIVE_AVOIDANCE_MARGIN_NOT_EXACT_ENGINE_TRIGGER",
+    "phases": [
+      "REST",
+      "TARGETED_CLICK",
+      "TRANSIT",
+      "CAMERA_NAVIGATION"
+    ],
+    "valid_transient_edge_click": {
+      "target_kind": "UI_CHROME",
+      "fresh_target_attestation_required": true,
+      "one_click_only": true,
+      "post_release_safe_rest_required": true,
+      "host_input_admission_required": true,
+      "may_grant_control_permit": false
+    },
+    "forbidden": [
+      "HOST_OWNED_IDLE_EDGE_DWELL",
+      "UNKNOWN_EDGE_TARGET_CLICK",
+      "WORLD_OBJECT_EDGE_CLICK_WITHOUT_CAMERA_FRAMING",
+      "UNBOUNDED_EDGE_PAN_WHILE_AGENT_REASONING",
+      "REPOSITION_PLAYER_OWNED_CURSOR"
+    ],
+    "frame_revision_policy": "AFTER_ANY_ACTUAL_CAMERA_MOTION_RECAPTURE_AND_REVALIDATE_BEFORE_WORLD_CLICK",
+    "host_owner": "betterinstincts/camera_traverse.py",
+    "physical_input_owner": "scripts/win32_input.py",
+    "proof_ceiling": "OFFLINE_EDGE_POLICY_NOT_LIVE_CAMERA_VERIFICATION"
   }
 }

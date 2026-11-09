@@ -22,6 +22,7 @@ if str(ROOT) not in sys.path:
 from betterinstincts.camera_traverse import (
     CameraTraverseError,
     classify_cursor,
+    assess_edge_interaction,
     evaluate_cursor_risk,
     load_contract,
     plan_traverse,
@@ -288,6 +289,10 @@ def main(argv=None) -> int:
     risk.add_argument("--width", type=int, default=None)
     risk.add_argument("--height", type=int, default=None)
     risk.add_argument("--edge-band", type=int, default=None)
+    risk.add_argument("--phase", choices=("REST", "TARGETED_CLICK", "TRANSIT", "CAMERA_NAVIGATION"), default="REST")
+    risk.add_argument("--target-kind", choices=("UI_CHROME", "WORLD_OBJECT", "SIM", "LOT"), default=None)
+    risk.add_argument("--target-verified", action="store_true")
+    risk.add_argument("--player-owned", action="store_true")
     risk.add_argument("--scan-needed", action="store_true")
     risk.add_argument("--dir", action="append", default=[], dest="dirs")
     risk.set_defaults(handler="evaluate")
@@ -322,6 +327,10 @@ def main(argv=None) -> int:
                         edge_band_px=args.edge_band,
                         camera_scan_needed=args.scan_needed,
                         directions=args.dirs,
+                        interaction_phase=args.phase,
+                        target_kind=args.target_kind,
+                        target_verified=args.target_verified,
+                        player_owned=args.player_owned,
                     ),
                     indent=2,
                 )

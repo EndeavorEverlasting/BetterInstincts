@@ -45,3 +45,11 @@ Median time to begin eating improves by >=15% over >=5 vanilla trials, no player
 
 ## Privacy and storage
 The run receipt contains no OS user paths, save name, household IDs, Sims data, personal names or background collections. Put capture identifiers, **not personal URLs/private screenshots**, in observations. Keep raw media out of Git. A local agent may summarize sanitized evidence in a PR; it must not commit generated `dist/` or personal save data. No automatic upload or hidden telemetry.
+
+## Camera-edge semantic live certification — open P08 gate (2026-11-09)
+
+The operator's "screen edge" means the Sims **client camera-pan trigger/guard area**, not the monitor border. `contracts/camera-traverse.v1.json#edge_interaction` uses a conservative 48px avoidance band; it is **not** a measured engine activation threshold. Offline P82 behavior classification does not prove that mouse movement stops the game camera.
+
+On the **exact installed game build** and a disposable lab save, with user control respected, independently observe and record: (1) window origin/size, display scaling and Live/Build/Buy mode; (2) pointer dwell at all four client edges/corners versus safe interior and whether camera movement actually starts/stops over multiple seconds; (3) top controls, bottom HUD, active-Sim portraits and other near-edge targets successfully clicked without prolonged drift; (4) verified UI action and cursor release followed by host `SAFE_CURSOR_REST`; (5) stable target frame/camera revision after rest, fresh recapture following any pan, and no world click on stale pixels; (6) user activity interruption yields without moving their cursor; (7) unknown focus/scene/target fails closed. Preserve existing save/Build library gates and never treat an offline simulation or SendInput ACK as live camera proof.
+
+A PASS requires timestamped before/after capture(s), exact input session and ownership, observed camera stillness and UI result, plus a non-regression check that the player can use edge controls normally. Keep this gate **OPEN** until those observations exist.

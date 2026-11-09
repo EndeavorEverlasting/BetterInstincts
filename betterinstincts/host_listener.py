@@ -392,6 +392,12 @@ def _load_observation(raw: Mapping) -> dict:
         or len(json.dumps(dict(autonomy_observation)).encode("utf-8")) > 8192
     ):
         raise HostListenerError("OBSERVATION_AUTONOMY_POLICY_INVALID")
+    camera_pointer_context = raw.get("camera_pointer_context")
+    if camera_pointer_context is not None and (
+        not isinstance(camera_pointer_context, Mapping)
+        or len(json.dumps(dict(camera_pointer_context)).encode("utf-8")) > 2048
+    ):
+        raise HostListenerError("OBSERVATION_CAMERA_POINTER_CONTEXT_INVALID")
     cursor_x = raw.get("cursor_client_x")
     cursor_y = raw.get("cursor_client_y")
     for label, val in (("cursor_client_x", cursor_x), ("cursor_client_y", cursor_y)):
@@ -600,6 +606,9 @@ def _load_observation(raw: Mapping) -> dict:
         ),
         "camera_scan_needed": bool(raw.get("camera_scan_needed", False)),
         "camera_pan_directions": [str(x) for x in pan_dirs],
+        "camera_pointer_context": (
+            dict(camera_pointer_context) if camera_pointer_context is not None else None
+        ),
         "world_target": dict(world_target) if world_target is not None else None,
         "camera_recovery": dict(camera_recovery) if camera_recovery is not None else None,
         "sim_camera_command": sim_camera_command,
@@ -862,6 +871,7 @@ def tick(
             client_width=obs["client_width"],
             client_height=obs["client_height"],
             edge_band_px=obs["edge_band_px"],
+            camera_pointer_context=obs["camera_pointer_context"],
             camera_scan_needed=obs["camera_scan_needed"],
             camera_pan_directions=obs["camera_pan_directions"],
             world_target=obs["world_target"],
