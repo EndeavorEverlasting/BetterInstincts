@@ -185,6 +185,10 @@ def _load_observation(raw: Mapping) -> dict:
     floor_items = raw.get("floor_items") or ()
     if not isinstance(floor_items, (list, tuple)):
         raise HostListenerError("OBSERVATION_FLOOR_ITEMS_INVALID")
+    lot_model = raw.get("lot_model")
+    if lot_model is not None:
+        if not isinstance(lot_model, Mapping) or len(json.dumps(lot_model).encode("utf-8")) > 262144:
+            raise HostListenerError("OBSERVATION_LOT_MODEL_INVALID")
     return {
         "needs": {k: float(needs[k]) for k in SIX},
         "gardening": dict(gardening) if gardening is not None else None,
@@ -213,6 +217,7 @@ def _load_observation(raw: Mapping) -> dict:
         "active_story": raw.get("active_story"),
         "stories_touched": list(raw.get("stories_touched") or []),
         "floor_items": list(raw.get("floor_items") or []),
+        "lot_model": lot_model,
         "school_phase": (str(raw["school_phase"]) if raw.get("school_phase") else None),
         "pinned_whims": [str(x) for x in pinned],
         "homework_pending": bool(raw.get("homework_pending", False)),
@@ -406,6 +411,7 @@ def tick(
                 stories_touched=obs.get("stories_touched") or (),
                 floor_items=obs.get("floor_items") or (),
                 player_directed=obs["player_directed"],
+                lot_model=obs.get("lot_model"),
             )
         except BuildFloorActivityError as exc:
             raise HostListenerError(str(exc)) from exc
@@ -532,6 +538,7 @@ def tick(
             stories_touched=obs.get("stories_touched") or (),
             floor_items=obs.get("floor_items") or (),
             player_directed=obs["player_directed"],
+            lot_model=obs.get("lot_model"),
         )
     except (
         BehaviorEvalError,
