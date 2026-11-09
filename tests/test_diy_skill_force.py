@@ -6,7 +6,9 @@ from betterinstincts.diy_skill_force import (
     DiySkillForceError,
     catalog_snapshot,
     load_contract,
+    plan_household_skill_force,
     plan_skill_force,
+    required_residual_skills,
     resolve_skills,
     skills_panel_observation_policy,
     steps_to_commands,
@@ -25,7 +27,10 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(seq["default_level"], 10)
         self.assertIn("diy_maker", cfg["bundles"])
         self.assertIn("full_unlock", cfg["bundles"])
-        self.assertEqual(cfg["version"], 4)
+        self.assertEqual(cfg["version"], 5)
+        self.assertEqual(required_residual_skills(cfg), ["cooking", "fitness", "natural_living"])
+        self.assertIn("residual_core", cfg["bundles"])
+        self.assertEqual(cfg["household_traverse"]["next_member_key"], "SPACE")
         reward = seq["reward_dialog_accept"]
         self.assertTrue(reward["enabled_by_default"])
         self.assertTrue(reward["never_press_cancel"])
@@ -86,6 +91,13 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertIn("stats.set_skill_level Major_Logic 10", cmds)
         self.assertIn("stats.set_skill_level Major_Charisma 10", cmds)
         self.assertIn("stats.set_skill_level Major_Fitness 10", cmds)
+        self.assertIn("stats.set_skill_level Major_NaturalLiving 10", cmds)
+        # Residuals are re-applied at the tail so mid-batch truncation cannot drop them.
+        tail = cmds[-6:]
+        self.assertGreaterEqual(tail.count("stats.set_skill_level Major_Cooking 10"), 1)
+        self.assertGreaterEqual(tail.count("stats.set_skill_level Major_Fitness 10"), 1)
+        self.assertGreaterEqual(tail.count("stats.set_skill_level Major_NaturalLiving 10"), 1)
+        self.assertGreaterEqual(cmds.count("stats.set_skill_level Major_Cooking 10"), 2)
         self.assertTrue(plan["not_bi005"])
         self.assertFalse(plan["execute_allowed"])
         self.assertTrue(plan["accept_reward_dialogs"])
@@ -155,8 +167,9 @@ class DiySkillForceTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(raw["version"], 4)
+        self.assertEqual(raw["version"], 5)
         self.assertEqual(raw["bundles"]["full_unlock"]["default_level"], 10)
+        self.assertEqual(raw["required_residual_skills"], ["cooking", "fitness", "natural_living"])
         self.assertTrue(raw["inject_sequence"]["reward_dialog_accept"]["never_press_cancel"])
 
     def test_skills_panel_dispatch_keeps_paused(self):
@@ -189,6 +202,31 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertIn("KEEP_PAUSED", names)
         self.assertIn("PLAY_BRIEF_OBSERVE_REPAUSE", names)
         self.assertEqual(plan["skills_panel_observation"]["verify"]["action"], "PLAY_BRIEF_OBSERVE_REPAUSE")
+
+    def test_household_plan_counts_any_members_and_spaces(self):
+        plan = plan_household_skill_force(members=3, bundle="full_unlock", game_mode="live")
+        self.assertEqual(plan["state"], "HOUSEHOLD_SKILL_FORCE_PLAN_READY")
+        self.assertEqual(plan["household_members"], 3)
+        self.assertEqual(len(plan["member_plans"]), 3)
+        self.assertIsNone(plan["member_plans"][0]["select"])
+        self.assertEqual(plan["member_plans"][1]["select"]["key"], "SPACE")
+        self.assertEqual(plan["member_plans"][2]["select"]["key"], "SPACE")
+        self.assertEqual(plan["required_residual_skills"], ["cooking", "fitness", "natural_living"])
+        self.assertTrue(plan["async_detach_supported"])
+        self.assertFalse(plan["execute_allowed"])
+
+    def test_household_invalid_member_count_fails_closed(self):
+        with self.assertRaises(DiySkillForceError) as ctx:
+            plan_household_skill_force(members=0)
+        self.assertIn("INVALID_HOUSEHOLD_MEMBER_COUNT", str(ctx.exception))
+        with self.assertRaises(DiySkillForceError):
+            plan_household_skill_force(members=9)
+
+    def test_catalog_exposes_household_and_residuals(self):
+        snap = catalog_snapshot()
+        self.assertEqual(snap["required_residual_skills"], ["cooking", "fitness", "natural_living"])
+        self.assertEqual(snap["household_traverse"]["next_member_key"], "SPACE")
+        self.assertIn("residual_core", snap["bundles"])
 
 
 if __name__ == "__main__":

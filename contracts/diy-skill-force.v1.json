@@ -1,14 +1,14 @@
 {
   "schema": "betterinstincts.diy-skill-force/v1",
-  "version": 4,
+  "version": 5,
   "authority": "docs/DIY_SKILL_FORCE.md",
   "proof_ceiling": "HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT",
   "design_brief": {
-    "subject": "Skill-force — max adult Major_* skills on the active Sim/Servo so activities and unlockables are not gated",
+    "subject": "Skill-force — max adult Major_* skills on every household Sim/Servo so activities and unlockables are not gated",
     "audience": "operators and Windows host agents who need DIY and other skill unlocks immediately usable",
-    "job": "Reusable catalog + mode-agnostic cheat planner: soft-focus → Ctrl+Shift+C → testingcheats enabled true → stats.set_skill_level lines → bounded ACCEPT_OFFERED_REWARD_TRAIT (OK on offered mastery/reward traits). full_unlock defaults to level 10 across adult majors. Not BI-005 practice_skill growth certification.",
-    "architecture": "Sibling to funds_inject / household_object_force. Distinct from read-only sim_profile and aspiration life-state OK. No second skill/trait daemon. Typing owner: scripts/win32_input.type_text (keybd_event).",
-    "operator_correction": "Skill cheats apply to the currently selected Sim; select each household member before execute. Level them all the way (10) so activities/unlockables are not blocked. Press OK on offered cool new traits (e.g. Perfectionist-style) during leveling — durable host logic, not chat-only. Missing packs may no-op. Skills panel while PAUSED is stale. Keep Live paused during precious-time dispatch; to confirm panel data use PLAY_BRIEF (5–10s) → OBSERVE → REPAUSE — never leave the clock running."
+    "job": "Reusable catalog + mode-agnostic cheat planner: soft-focus → Ctrl+Shift+C → testingcheats enabled true → stats.set_skill_level lines → bounded ACCEPT_OFFERED_REWARD_TRAIT. full_unlock defaults to level 10. Household mode counts any N members, Space-traverses each, and may --detach so agents are not blocked for hours. Required residuals Cooking/Fitness/Natural Living always re-dispatched at end. Not BI-005.",
+    "architecture": "Sibling to funds_inject / household_object_force. Distinct from read-only sim_profile and aspiration life-state OK. No second skill/trait daemon. Typing owner: scripts/win32_input.type_text (keybd_event). P100 cohesive household traverse lives in this same owner.",
+    "operator_correction": "Do not stop at one Sim. Count household portraits (any N), traverse every member (Space), level all the way including Cooking/Fitness/Natural Living, and run asynchronously with --detach when serial wait would waste hours. Keep Live paused during precious-time dispatch; verify panel with PLAY_BRIEF → REPAUSE."
   },
   "activation": {
     "require_explicit_activate": true,
@@ -19,8 +19,21 @@
     "cli": {
       "catalog": "python -m scripts.diy_skill_force catalog",
       "plan": "python -m scripts.diy_skill_force plan --bundle full_unlock",
-      "level": "python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID"
+      "level": "python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID",
+      "household": "python -m scripts.diy_skill_force household --members N --bundle full_unlock --execute --detach --process-id PID --session-id ID"
     }
+  },
+  "required_residual_skills": ["cooking", "fitness", "natural_living"],
+  "household_traverse": {
+    "next_member_key": "SPACE",
+    "next_member_chord": ["SPACE"],
+    "ui_chrome_hotkey_id": "SELECT_NEXT_HOUSEHOLD_SIM",
+    "min_members": 1,
+    "max_members": 8,
+    "member_count_source": "operator_or_agent_observed_portrait_count",
+    "member_count_note": "Pass exact observed Live household portrait count as --members N. Host accepts any N in 1..8; it does not invent or auto-discover saves.",
+    "select_before_dispatch": true,
+    "close_console_before_space": true
   },
   "inject_sequence": {
     "mode_agnostic": true,
@@ -185,6 +198,12 @@
       "default_level": 10,
       "notes": "Athletic / outdoor unlocks."
     },
+    "residual_core": {
+      "display_name": "Required residual core",
+      "skill_ids": ["cooking", "fitness", "natural_living"],
+      "default_level": 10,
+      "notes": "Operator-observed miss set — always re-applied at end of full_unlock so mid-batch truncation cannot drop them."
+    },
     "full_unlock": {
       "display_name": "Full adult unlock (all the way)",
       "skill_ids": [
@@ -205,21 +224,25 @@
   "call_stack": {
     "success": [
       "PLAYER_FIRST / yield if player_directed",
-      "RESOLVE skill ids or bundle (full_unlock for all-the-way)",
-      "REQUIRE_FOREGROUND_SIMS (soft focus; no mode switch)",
-      "OPEN_CHEAT_CONSOLE via Ctrl+Shift+C",
-      "ACTIVATE_TESTING_CHEATS: testingcheats enabled true",
-      "SET_SKILL_LEVEL: stats.set_skill_level <stat> <N> per resolved skill",
-      "ACCEPT_OFFERED_REWARD_TRAIT: Enter + primary OK hotspot (interleaved + final)",
-      "optional CLOSE_CHEAT_CONSOLE",
-      "KEEP_PAUSED during precious-time skill dispatch / long idle",
-      "PLAY_BRIEF_OBSERVE_REPAUSE (5–10s @ 1x) to refresh Skills panel, capture, then pause again",
+      "OBSERVE household portrait count N (any 1..8) → --members N",
+      "RESOLVE skill ids or bundle (full_unlock + mandatory residual_core tail)",
+      "FOR each member index 0..N-1:",
+      "  if index>0: CLOSE console → SPACE (SELECT_NEXT_HOUSEHOLD_SIM)",
+      "  REQUIRE_FOREGROUND_SIMS (soft focus; no mode switch)",
+      "  OPEN_CHEAT_CONSOLE via Ctrl+Shift+C",
+      "  ACTIVATE_TESTING_CHEATS: testingcheats enabled true",
+      "  SET_SKILL_LEVEL per resolved skill (residuals Cooking/Fitness/NaturalLiving last)",
+      "  ACCEPT_OFFERED_REWARD_TRAIT",
+      "  optional CLOSE_CHEAT_CONSOLE / PLAY_BRIEF_OBSERVE_REPAUSE",
+      "optional --detach: spawn opt-in worker; return receipt path immediately",
       "Emit receipt; execute_allowed=false until independent screen_admit"
     ],
     "failure": [
       "player_directed -> YIELD_TO_PLAYER",
       "unknown skill/bundle -> UNKNOWN_DIY_SKILL / UNKNOWN_DIY_BUNDLE",
       "level outside 1..10 -> INVALID_SKILL_LEVEL",
+      "members outside 1..8 -> INVALID_HOUSEHOLD_MEMBER_COUNT",
+      "missing required residual skill in full_unlock -> REQUIRED_RESIDUAL_SKILL_MISSING",
       "no foreground Sims -> SIMS_FOREGROUND_REQUIRED",
       "skip Ctrl+Shift+C -> console never opens",
       "skip testingcheats -> skill commands fail",
@@ -229,21 +252,24 @@
       "press Cancel on reward trait -> FORBIDDEN",
       "concurrent live-cert screen owner -> YIELD",
       "leave_sim_speed_running_after_panel_verify -> FORBIDDEN",
-      "treat_paused_skills_panel_as_fresh_proof -> FORBIDDEN"
+      "treat_paused_skills_panel_as_fresh_proof -> FORBIDDEN",
+      "autorun household skill force on boot -> FORBIDDEN"
     ]
   },
   "composition": {
-    "orchestrator": "betterinstincts/diy_skill_force.py#plan_skill_force",
+    "orchestrator": "betterinstincts/diy_skill_force.py#plan_skill_force|plan_household_skill_force",
     "execute_adapter": "scripts/diy_skill_force.py",
     "reuses": [
       "scripts/win32_input.py",
       "betterinstincts/screen_admit.py",
-      "betterinstincts/funds_inject.py inject_sequence pattern"
+      "betterinstincts/funds_inject.py inject_sequence pattern",
+      "contracts/ui-chrome.v1.json SELECT_NEXT_HOUSEHOLD_SIM"
     ],
     "not": [
       "betterinstincts/sim_profile.py practice_skill",
       "BI-005 purposeful skill growth certification",
-      "background skill daemon"
+      "autorun background skill daemon",
+      "second household skill owner outside diy_skill_force"
     ]
   },
   "invariants": [
@@ -253,6 +279,8 @@
     "ctrl_shift_c_opens_cheat_console",
     "mode_agnostic_no_forced_F1",
     "active_sim_selection_required",
+    "household_traverse_all_observed_members",
+    "required_residual_skills_always_dispatched",
     "never_claim_BI005_from_cheat_dispatch",
     "never_queue_practice_skill",
     "yield_screen_to_concurrent_live_cert",
@@ -261,6 +289,7 @@
     "keep_paused_during_precious_time_dispatch",
     "paused_skills_panel_is_unproven_stale",
     "verify_via_play_brief_observe_repause",
-    "never_leave_sim_speed_running_after_panel_verify"
+    "never_leave_sim_speed_running_after_panel_verify",
+    "detach_is_opt_in_never_autorun"
   ]
 }
