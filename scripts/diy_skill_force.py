@@ -279,15 +279,15 @@ def _execute_plan(
     """Mode-agnostic skill force: no F1, no Esc spam — tandem with Build/Live/Buy."""
     if sys.platform != "win32":
         raise GateError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
-    if plan.get("skip_dispatch") or plan.get("state") == "SKILL_FORCE_MEMBER_ALREADY_MAXED":
+    if plan.get("skip_dispatch") or plan.get("state") == "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED":
         return {
-            "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
+            "state": "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED",
             "skipped": True,
             "member_key": member_key,
             "member_index": member_index,
             "skipped_skill_ids": list(plan.get("skipped_skill_ids") or []),
             "commands": [],
-            "safe_cursor_rest": _park_safe_cursor_rest(),
+            "safe_cursor_rest": "UNCHANGED_NO_INPUT",
             "proof_ceiling": plan.get("proof_ceiling"),
             "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
             "note": "Completion ledger: nothing left to type for this member",
@@ -648,7 +648,7 @@ def _execute_household(
                     "skipped": True,
                     "reason": "LEDGER_DISPATCH_RECORDED_NOT_PANEL_VERIFIED",
                     "live": {
-                        "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
+                        "state": "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED",
                         "commands": [],
                     },
                 }
@@ -663,7 +663,7 @@ def _execute_household(
             accept_reward_dialogs=household_plan.get("accept_reward_dialogs"),
         )
         if live_plan.get("skip_dispatch") or live_plan.get("state") == (
-            "SKILL_FORCE_MEMBER_ALREADY_MAXED"
+            "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED"
         ):
             skipped_cells += 1
             cell_results.append(
@@ -675,7 +675,7 @@ def _execute_household(
                     "skipped": True,
                     "reason": "SKILL_ALREADY_MAXED_FOR_MEMBER",
                     "live": {
-                        "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
+                        "state": "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED",
                         "commands": [],
                     },
                 }
