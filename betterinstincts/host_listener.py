@@ -20,6 +20,7 @@ from betterinstincts.instincts_host import InstinctsHostError, NeedSnapshot, pla
 from betterinstincts.needs_force import NeedsForceError, plan_force
 from betterinstincts.judgment_learning import JudgmentLearningError, recommend as recommend_judgment
 from betterinstincts.player_presence import PresenceProbe
+from betterinstincts.ui_mode import UIModeError, evaluate_mode
 from betterinstincts.control_handoff import (
     DEFAULT_IDLE_MS,
     HandoffError,
@@ -322,6 +323,34 @@ def tick(
         raise HostListenerError("SESSION_TICK_BUDGET_EXCEEDED")
 
     obs = _load_observation(observation)
+    # New mode sensing is opt-in so pre-existing listener receipts remain valid.
+    # Keyboard shortcuts and the old combined boolean are never scene proof.
+    mode_context = None
+    if any(k in observation for k in (
+        "mode_observations", "panel_observations", "shortcut_hint"
+    )):
+        try:
+            mode_context = evaluate_mode(
+                game_version=observation.get("game_version"),
+                mode_observations=observation.get("mode_observations", []),
+                panel_observations=observation.get("panel_observations"),
+                shortcut_hint=observation.get("shortcut_hint"),
+            )
+        except UIModeError as exc:
+            raise HostListenerError("MODE_CONTEXT_INVALID:" + str(exc)) from exc
+        observed_mode = mode_context["mode"]
+        # A contradictory legacy flag is a real sensor conflict, not a vote.
+        if (
+            "build_or_buy_mode" in observation
+            and bool(observation["build_or_buy_mode"]) != (observed_mode in {"BUY", "BUILD"})
+            and observed_mode != "UNKNOWN"
+        ):
+            mode_context = {
+                **mode_context, "state": "MODE_UNVERIFIED", "mode": "UNKNOWN",
+                "mode_autonomy_allowed": False, "reason": "LEGACY_MODE_CONFLICT",
+            }
+        else:
+            obs["build_or_buy_mode"] = observed_mode in {"BUY", "BUILD"}
     if (learning_model is None) != (learning_query is None):
         raise HostListenerError("LEARNING_MODEL_AND_QUERY_REQUIRED_TOGETHER")
     # Presence gate: if operator is on-canvas / playing, yield before eval side-plans.
@@ -356,10 +385,49 @@ def tick(
             "presence": presence,
             "handoff": handoff,
             "listener_action": "YIELD_TO_PLAYER",
+            "ui_mode": mode_context,
             "execute_clicks": False,
             "proof_ceiling": cfg.get("proof_ceiling"),
             "next": "Player playing or unknown presence — host stands down this tick.",
         }
+        _write_json(meta_path, meta)
+        tick_path = path / f"tick-{ticks:04d}.json"
+        _write_json(tick_path, receipt)
+        receipt["receipt"] = str(tick_path.relative_to(ROOT))
+        return receipt
+
+    # Non-Live and ambiguous scenes still provide bounded interface context,
+    # never a simulated Live queue/needs plan. The Build census is advisory.
+    if mode_context is not None and not mode_context["mode_autonomy_allowed"]:
+        try:
+            floor_activity = evaluate_floor_activity(
+                build_or_buy_mode=mode_context["mode"] in {"BUY", "BUILD"},
+                active_story=obs.get("active_story"),
+                stories_touched=obs.get("stories_touched") or (),
+                floor_items=obs.get("floor_items") or (),
+                player_directed=obs["player_directed"],
+            )
+        except BuildFloorActivityError as exc:
+            raise HostListenerError(str(exc)) from exc
+        ticks += 1
+        listener_action = (
+            "MODE_CONTEXT_ONLY" if mode_context["mode"] in {"BUY", "BUILD"}
+            else "MODE_UNVERIFIED"
+        )
+        receipt = {
+            "schema": "betterinstincts.host-listener.tick/v1",
+            "session_id": session_id, "tick": ticks,
+            "presence": presence, "handoff": handoff,
+            "ui_mode": mode_context,
+            "build_floor_activity": floor_activity,
+            "listener_action": listener_action,
+            "execute_clicks": False,
+            "proof_ceiling": cfg.get("proof_ceiling"),
+            "next": "Observe the game mode again; do not dispatch Live actions.",
+        }
+        meta["ticks"] = ticks
+        meta["last_tick_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        meta["last_disposition"] = listener_action
         _write_json(meta_path, meta)
         tick_path = path / f"tick-{ticks:04d}.json"
         _write_json(tick_path, receipt)
@@ -486,6 +554,7 @@ def tick(
         "host_stack": stack,
         "needs_force_plan": force,
         "build_floor_activity": floor_activity,
+        "ui_mode": mode_context,
         "learning_hint": None,
         "listener_action": (
             "RECORD_EMULATION_PLAN"

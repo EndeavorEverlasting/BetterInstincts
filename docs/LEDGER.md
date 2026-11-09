@@ -1,5 +1,10 @@
 # Canonical project ledger
 
+## 2026-11-09 — F1/F2/F3 game mode context shared across asynchronous microsystems (P95 + P124 + Trifecta)
+
+**Operator objective:** Determine Live (F1), Buy (F2), or Build (F3), and contextualize menus without mixing Live needs/queue automation into Build/Buy. **P95** designs scene-cue → mode → panel → listener → tandem (or Build floor census). **P124** reuses canonical `scenes` as authority and existing opt-in listener/tandem instead of duplicating a poller. Added `buy_mode` and `build_mode` to the scene catalog while preserving the ambiguous legacy `build_buy`. Candidate cue pairs and panel IDs live in `contracts/ui-mode.v1.json`; evaluator in `betterinstincts/ui_mode.py`; listener emits context-only receipts outside Live, and asynchronous `host_tandem` ends without new dispatch on non-Live/unknown mode. Legacy observations without explicit cue fields still work but do not constitute mode proof. Consultation `BI-UI-MODE-CONTEXT-20261109.v1.json` predates behavior mutations. **Trifecta:** offline P82 falsifiers in `tests/test_ui_mode.py`, P07 source/CI integration, P08 genuine game capture and focus/overlay calibration still OPEN on the local host. Source and documentation are not game-sensor certification; BI-002 remains ACTIVE.
+
+
 ## 2026-11-09 — Build floor activity for host listener (P95 + trifecta)
 
 **Operator:** While still in Build Mode, extend the listener so it can see activity differences across floors — one floor vs several, which floor is active, and floor theme from item types/specifics — evolving toward optimize suggestions. **P95** selects `FLOOR_ACTIVITY_CENSUS` (reuse `build_spatial` story aliases; attested `floor_items` only; no pixel invent). **P124** peer `build_floor_activity` wired into `host_listener` ticks when `build_or_buy_mode`. Consultation `BI-BUILD-FLOOR-ACTIVITY-20261109.v1.json`. CLI: `python -m scripts.build_floor_activity evaluate`. Live story chrome sensor P08 OPEN. Does not close BI-002.

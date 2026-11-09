@@ -155,6 +155,16 @@ async def run_tandem_session(
                 event("YIELD_TO_PLAYER_NO_QUEUE_CANCELLATION")
                 reason = "PLAYER_OR_UNKNOWN_PRESENCE"
                 break
+            mode_context = receipt.get("ui_mode")
+            if mode_context is not None and not mode_context["mode_autonomy_allowed"]:
+                event(
+                    "UI_MODE_REOBSERVATION_REQUIRED_NO_NEW_DISPATCH",
+                    mode=mode_context["mode"],
+                    panel=mode_context["active_panel"],
+                    scene=mode_context["scene_id"],
+                )
+                reason = "GAME_MODE_NOT_LIVE_REOBSERVE"
+                break
             stack = receipt["host_stack"]
             gate = stack["next_gate"]
             garden = stack.get("gardening") or {}
