@@ -97,6 +97,104 @@ def classify_cursor(
     }
 
 
+
+def assess_edge_interaction(
+    x: int,
+    y: int,
+    *,
+    phase: str = "REST",
+    target_kind: Optional[str] = None,
+    target_verified: bool = False,
+    player_owned: bool = False,
+    client_width: Optional[int] = None,
+    client_height: Optional[int] = None,
+    edge_band_px: Optional[int] = None,
+    cfg: Optional[Mapping[str, object]] = None,
+) -> dict:
+    """Interpret the camera-trigger edge by *intent*, not coordinates alone.
+
+    A screen edge means the Sims CLIENT viewport camera-pan guard region, not
+    the monitor bezel. The 48px default is a conservative avoidance margin,
+    not a claim that every pixel activates panning on every Sims build. Native
+    UI chrome may overlap it: a brief, verified HUD click is valid, whereas
+    leaving an agent-owned cursor there while idle is not.
+
+    This function is advisory. It never sends input or grants a control permit.
+    Existing player/scene/save/focus admission and post-click observation remain
+    mandatory, and player-owned input is never repositioned by the agent.
+    """
+    cfg = cfg or load_contract()
+    policy = cfg.get("edge_interaction") or {}
+    if policy.get("meaning") != "CLIENT_RELATIVE_CAMERA_PAN_GUARD_NOT_MONITOR_BEZEL":
+        raise CameraTraverseError("EDGE_SEMANTICS_CONTRACT_MISSING")
+    if type(phase) is not str or phase not in set(policy.get("phases") or []):
+        raise CameraTraverseError("UNKNOWN_EDGE_INTERACTION_PHASE")
+    if type(target_verified) is not bool or type(player_owned) is not bool:
+        raise CameraTraverseError("INVALID_EDGE_INTERACTION_EVIDENCE")
+    w, h, band = _geom(
+        client_width=client_width, client_height=client_height,
+        edge_band_px=edge_band_px, cfg=cfg,
+    )
+    if type(x) is not int or type(y) is not int or not (0 <= x < w and 0 <= y < h):
+        raise CameraTraverseError("CURSOR_OUTSIDE_CLIENT")
+    cursor = classify_cursor(x, y, client_width=w, client_height=h, edge_band_px=band, cfg=cfg)
+    base = {
+        "interaction_phase": phase,
+        "target_kind": target_kind,
+        "cursor": cursor,
+        "execute_allowed": False,
+        "click_geometry_candidate": False,
+        "post_input_safe_rest_required": False,
+        "proof_ceiling": PROOF_CEILING,
+    }
+    if player_owned:
+        return {
+            **base, "state": "PLAYER_OWNS_POINTER", "gate": "YIELD_TO_PLAYER",
+            "action": "NO_AGENT_POINTER_MOVEMENT",
+        }
+    if not cursor["in_edge_band"]:
+        return {
+            **base, "state": "CURSOR_SAFE_INTERIOR", "gate": None,
+            "action": "NO_CAMERA_ACTION",
+        }
+    if phase == "TARGETED_CLICK":
+        if target_kind == "UI_CHROME" and target_verified:
+            return {
+                **base, "state": "EDGE_UI_CLICK_TRANSIENT",
+                "gate": "EDGE_UI_CLICK_HOST_ADMISSION",
+                "action": "ONE_ATTESTED_UI_CLICK_THEN_SAFE_REST",
+                "click_geometry_candidate": True,
+                "post_input_safe_rest_required": True,
+                "note": "A legitimate brief HUD click may be at the edge; park interior after release.",
+            }
+        return {
+            **base, "state": "EDGE_CLICK_NOT_ATTESTED",
+            "gate": "EDGE_TARGET_REOBSERVE_OR_REFRAME",
+            "action": "DO_NOT_CLICK_UNVERIFIED_EDGE_TARGET",
+        }
+    if phase == "TRANSIT":
+        return {
+            **base, "state": "EDGE_TRANSIT_TEMPORARY",
+            "gate": "TRANSIT_MUST_END_AT_SAFE_REST",
+            "action": "FINISH_BOUNDED_TRANSIT_THEN_SAFE_REST",
+            "post_input_safe_rest_required": True,
+        }
+    if phase == "CAMERA_NAVIGATION":
+        return {
+            **base, "state": "EDGE_NAVIGATION_NOT_DWELL",
+            "gate": "CAMERA_SAFE_TRAVERSE",
+            "action": "USE_BOUNDED_CAMERA_PLAN_WITH_TERMINAL_SAFE_REST",
+            "post_input_safe_rest_required": True,
+        }
+    return {
+        **base, "state": "CAMERA_EDGE_DWELL_FORBIDDEN",
+        "gate": "CAMERA_SAFE_REST",
+        "action": "SAFE_CURSOR_REST",
+        "post_input_safe_rest_required": True,
+        "safe_rest": safe_rest_point(client_width=w, client_height=h, edge_band_px=band, cfg=cfg),
+    }
+
+
 def safe_rest_point(
     *,
     client_width: Optional[int] = None,
@@ -401,9 +499,13 @@ def evaluate_cursor_risk(
     edge_band_px: Optional[int] = None,
     camera_scan_needed: bool = False,
     directions: Sequence[str] = (),
+    interaction_phase: str = "REST",
+    target_kind: Optional[str] = None,
+    target_verified: bool = False,
+    player_owned: bool = False,
     cfg: Optional[Mapping[str, object]] = None,
 ) -> dict:
-    """Host gate helper: edge park outranks needs; otherwise optional traverse plan."""
+    """Host gate: distinguish legitimate transient edge clicks from unsafe rest."""
     cfg = cfg or load_contract()
     if cursor_client_x is None or cursor_client_y is None:
         if not camera_scan_needed and not directions:
@@ -429,6 +531,15 @@ def evaluate_cursor_risk(
             "practice": classify_practice("CAPTURE_ONLY", cfg=cfg),
             "proof_ceiling": PROOF_CEILING,
         }
+
+    if interaction_phase != "REST" or player_owned:
+        return assess_edge_interaction(
+            cursor_client_x, cursor_client_y,
+            phase=interaction_phase, target_kind=target_kind,
+            target_verified=target_verified, player_owned=player_owned,
+            client_width=client_width, client_height=client_height,
+            edge_band_px=edge_band_px, cfg=cfg,
+        )
 
     cursor = classify_cursor(
         int(cursor_client_x),
