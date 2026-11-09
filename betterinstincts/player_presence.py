@@ -94,14 +94,17 @@ def probe_windows(process_id: Optional[int] = None) -> PresenceProbe:
         return PresenceProbe(False, False, probe_ok=False)
     pid = wintypes.DWORD()
     user32.GetWindowThreadProcessId(fg, ctypes.byref(pid))
-    length = user32.GetWindowTextLengthW(fg)
-    buf = ctypes.create_unicode_buffer(length + 1)
-    user32.GetWindowTextW(fg, buf, length + 1)
-    title = buf.value or ""
-    is_sims = "Sims" in title
-    if process_id is not None and int(pid.value) != int(process_id):
-        # FG belongs to another process — treat as not on Sims canvas.
-        is_sims = False
+    if process_id is not None:
+        # Exact Sims PID is the caller's authority. Never read another
+        # application's title, which can expose dictated document content.
+        is_sims = int(pid.value) == int(process_id)
+    else:
+        # Legacy view-only fallback when the game PID has not been supplied.
+        # This local title is not included in the probe or a receipt.
+        length = user32.GetWindowTextLengthW(fg)
+        buf = ctypes.create_unicode_buffer(length + 1)
+        user32.GetWindowTextW(fg, buf, length + 1)
+        is_sims = "Sims" in (buf.value or "")
     rect = wintypes.RECT()
     if not user32.GetClientRect(fg, ctypes.byref(rect)):
         return PresenceProbe(is_sims, False, probe_ok=False)
