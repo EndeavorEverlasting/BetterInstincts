@@ -1,0 +1,30 @@
+{
+  "schema": "betterinstincts.click-error-eval.fixture/v1",
+  "note": "Representative agent misses from 2026-11-09 Bargain Bend Build: clicks landing ABOVE catalog.search_field into the lot.",
+  "trials": [
+    {
+      "target_id": "catalog.search_field",
+      "mode": "BUILD",
+      "observed_x": 125,
+      "observed_y": 780,
+      "client_width": 1920,
+      "client_height": 1080
+    },
+    {
+      "target_id": "catalog.search_field",
+      "mode": "BUILD",
+      "observed_x": 145,
+      "observed_y": 815,
+      "client_width": 1920,
+      "client_height": 1080
+    },
+    {
+      "target_id": "catalog.search_field",
+      "mode": "BUILD",
+      "observed_x": 140,
+      "observed_y": 864,
+      "client_width": 1920,
+      "client_height": 1080
+    }
+  ]
+}

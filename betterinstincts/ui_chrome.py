@@ -51,7 +51,7 @@ def load_contract(path: Path = CONTRACT) -> dict:
     if "LOT_PLACEMENT" not in set(deposit.get("forbidden") or []):
         raise UIChromeError("CATALOG_DEPOSIT_MUST_FORBID_LOT_PLACEMENT")
     item = (cfg.get("catalog_items") or {}).get("a_ok_bloomer") or {}
-    if item.get("search_term") != "AOK":
+    if item.get("search_term") != "A-OK":
         raise UIChromeError("AOK_SEARCH_TERM_REQUIRED")
     synonyms = {_normalize_alias(s) for s in (item.get("synonyms") or [])}
     if "wall shelf" not in synonyms:
@@ -271,7 +271,7 @@ def plan_catalog_to_inventory(
         raise UIChromeError("UNKNOWN_RECIPE")
     if mode not in set(recipe.get("required_modes") or []):
         raise UIChromeError("RECIPE_MODE_FORBIDDEN")
-    if item.get("search_term") != "AOK" and item_id == "a_ok_bloomer":
+    if item.get("search_term") != "A-OK" and item_id == "a_ok_bloomer":
         raise UIChromeError("AOK_SEARCH_TERM_REQUIRED")
     profile = profile or cfg["default_profile"]
     steps_out: list[dict] = []

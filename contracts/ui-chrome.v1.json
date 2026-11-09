@@ -296,9 +296,9 @@
       "profiles": {
         "1920x1080": {
           "kind": "point",
-          "nx": 0.0651,
-          "ny": 0.8019,
-          "note": "Center of Search pill; avoid magnifying glass and lot-name banner"
+          "nx": 0.0729,
+          "ny": 0.8,
+          "note": "Center-left of Search pill text (client ≈140,864 attested 2026-11-09). Agents systematically undershoot Y (ABOVE_TARGET → lot punch-through); score via click_error_eval and Escape-cancel on miss. CANDIDATE_UNVERIFIED until P08 attest."
         }
       },
       "status": "CANDIDATE_UNVERIFIED"
@@ -380,7 +380,8 @@
         {
           "op": "CLICK_TARGET",
           "target": "catalog.search_field",
-          "preferred_channel": "MOUSE_FALLBACK"
+          "preferred_channel": "MOUSE_FALLBACK",
+          "verify": "VERIFY_THEN_ESCAPE_ON_MISS"
         },
         {
           "op": "TYPE_TEXT",
@@ -395,7 +396,8 @@
         {
           "op": "CLICK_TARGET",
           "target": "catalog.first_result",
-          "preferred_channel": "MOUSE_FALLBACK"
+          "preferred_channel": "MOUSE_FALLBACK",
+          "verify": "VERIFY_THEN_ESCAPE_ON_MISS"
         },
         {
           "op": "OBSERVE",
@@ -412,7 +414,8 @@
         {
           "op": "CLICK_TARGET",
           "target": "catalog.household_inventory_tab",
-          "preferred_channel": "MOUSE_FALLBACK"
+          "preferred_channel": "MOUSE_FALLBACK",
+          "verify": "VERIFY_THEN_ESCAPE_ON_MISS"
         },
         {
           "op": "OBSERVE",
@@ -426,8 +429,8 @@
   "catalog_items": {
     "a_ok_bloomer": {
       "display_name": "A-OK-Bloomer Vertical Garden",
-      "search_term": "AOK",
-      "search_term_note": "Operator-preferred keyword; do not prefer a-ok or bloomer as primary",
+      "search_term": "A-OK",
+      "search_term_note": "Operator-corrected 2026-11-09: hyphenated A-OK (not AOK). Autocomplete shows A-OK-Bloomer Vertical Garden in Outdoor Activities.",
       "synonyms": [
         "wall shelf",
         "wall_shelf",

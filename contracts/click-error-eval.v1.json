@@ -1,0 +1,51 @@
+{
+  "schema": "betterinstincts.click-error-eval/v1",
+  "version": 1,
+  "authority": "docs/UI_CHROME.md",
+  "chrome_owner": "contracts/ui-chrome.v1.json",
+  "proof_ceiling": "OFFLINE_CLICK_ERROR_METRICS_AND_ESCAPE_CANCEL_POLICY_NO_LIVE_CLICK_CERTIFICATION",
+  "architecture": {
+    "selected": "POST_CLICK_VERIFY_ESCAPE_CANCEL",
+    "rejected": [
+      {
+        "id": "VISION_ONLY_HIT_GUESS",
+        "why": "Operators need numeric error against named chrome targets, not another vision thrash."
+      },
+      {
+        "id": "AUTO_RECLICK_ON_MISS",
+        "why": "Blind reclick amplifies lot punch-through; Escape-cancel then replan instead."
+      },
+      {
+        "id": "CONTINUE_RECIPE_AFTER_MISS",
+        "why": "Continuing TYPE/BUY after a miss places or grabs lot objects."
+      }
+    ]
+  },
+  "coordinate_space": {
+    "kind": "CLIENT_PIXELS",
+    "origin": "top_left",
+    "note": "Observed clicks must be client pixels of the same client_width/height used to resolve the intended ui_chrome target."
+  },
+  "thresholds_px": {
+    "hit_radius": 12,
+    "near_miss_radius": 36
+  },
+  "classifications": ["HIT", "NEAR_MISS", "MISS"],
+  "vertical_bias": ["NONE", "ABOVE_TARGET", "BELOW_TARGET"],
+  "surface_risk": ["NONE", "LOT_PUNCH_THROUGH_RISK"],
+  "recovery": {
+    "on_non_hit": "ESCAPE_CANCEL",
+    "hotkey_id": "CANCEL_HOLD",
+    "chord": ["ESC"],
+    "continue_recipe": false,
+    "forbidden": ["AUTO_RECLICK", "LOT_PLACEMENT", "SELL"]
+  },
+  "execute_allowed_default": false,
+  "guarantees": [
+    "Never SendInput from this module",
+    "NEAR_MISS/MISS halt recipe and plan Escape cancel",
+    "HIT does not emit Escape recovery",
+    "ui_chrome remains the named-target owner",
+    "Aggregate metrics are offline/session evidence only"
+  ]
+}

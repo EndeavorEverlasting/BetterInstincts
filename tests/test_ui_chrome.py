@@ -23,7 +23,7 @@ class UIChromeTests(unittest.TestCase):
         self.cfg = load_contract()
 
     def test_contract_aok_and_deposit_safety(self) -> None:
-        self.assertEqual(self.cfg["catalog_items"]["a_ok_bloomer"]["search_term"], "AOK")
+        self.assertEqual(self.cfg["catalog_items"]["a_ok_bloomer"]["search_term"], "A-OK")
         recipe = self.cfg["recipes"]["catalog_to_household_inventory"]
         self.assertIs(recipe["execute_allowed_default"], False)
         self.assertIn("LOT_PLACEMENT", recipe["forbidden"])
@@ -38,8 +38,8 @@ class UIChromeTests(unittest.TestCase):
             client_height=1080,
             cfg=self.cfg,
         )
-        self.assertEqual(hit["x"], 125)
-        self.assertEqual(hit["y"], 866)
+        self.assertEqual(hit["x"], 140)
+        self.assertEqual(hit["y"], 864)
         self.assertIs(hit["execute_allowed"], False)
 
     def test_resolve_unknown_profile_fails(self) -> None:
@@ -71,14 +71,16 @@ class UIChromeTests(unittest.TestCase):
             client_height=1080,
             cfg=self.cfg,
         )
-        self.assertEqual(plan["search_term"], "AOK")
+        self.assertEqual(plan["search_term"], "A-OK")
         self.assertIs(plan["execute_allowed"], False)
         self.assertEqual(plan["input_preference"], "HOTKEY_FIRST_WHEN_EQUIVALENT")
         self.assertIn("LOT_PLACEMENT", plan["forbidden"])
         typed = [s for s in plan["steps"] if s.get("op") == "TYPE_TEXT"]
-        self.assertEqual(typed[0]["text"], "AOK")
+        self.assertEqual(typed[0]["text"], "A-OK")
         clicks = [s for s in plan["steps"] if s.get("op") == "CLICK_TARGET"]
-        self.assertEqual(clicks[0]["resolved"]["x"], 125)
+        self.assertEqual(clicks[0]["resolved"]["x"], 140)
+        self.assertEqual(clicks[0]["resolved"]["y"], 864)
+        self.assertEqual(clicks[0]["verify"], "VERIFY_THEN_ESCAPE_ON_MISS")
         self.assertEqual(clicks[0]["channel"], "MOUSE_FALLBACK")
         keys = [s for s in plan["steps"] if s.get("op") == "KEY" and s.get("chord") == ["BACKSPACE"]]
         self.assertEqual(len(keys), 1)
@@ -154,7 +156,7 @@ class UIChromeTests(unittest.TestCase):
 
     def test_aok_search_drift_rejected_on_load(self) -> None:
         bad = json.loads(json.dumps(self.cfg))
-        bad["catalog_items"]["a_ok_bloomer"]["search_term"] = "a-ok"
+        bad["catalog_items"]["a_ok_bloomer"]["search_term"] = "AOK"
         path = ROOT / "dist" / "game-host" / "_tmp_ui_chrome_bad.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(bad), encoding="utf-8")
@@ -176,7 +178,7 @@ class UIChromeTests(unittest.TestCase):
             with self.subTest(query=query):
                 hit = resolve_catalog_item(query, cfg=self.cfg)
                 self.assertEqual(hit["item_id"], "a_ok_bloomer")
-                self.assertEqual(hit["search_term"], "AOK")
+                self.assertEqual(hit["search_term"], "A-OK")
                 self.assertEqual(hit["resolved_via"], "synonym")
 
     def test_plan_accepts_wall_shelf_synonym(self) -> None:
@@ -188,7 +190,7 @@ class UIChromeTests(unittest.TestCase):
             cfg=self.cfg,
         )
         self.assertEqual(plan["item_id"], "a_ok_bloomer")
-        self.assertEqual(plan["search_term"], "AOK")
+        self.assertEqual(plan["search_term"], "A-OK")
         self.assertEqual(plan["display_name"], "A-OK-Bloomer Vertical Garden")
 
     def test_wall_shelf_synonym_required_on_load(self) -> None:
