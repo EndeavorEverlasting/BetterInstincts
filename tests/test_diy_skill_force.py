@@ -288,6 +288,7 @@ class DiySkillForceTests(unittest.TestCase):
         plan = plan_household_skill_force(members=3, bundle="full_unlock", game_mode="live")
         self.assertEqual(plan["state"], "HOUSEHOLD_SKILL_FORCE_PLAN_READY")
         self.assertEqual(plan["household_members"], 3)
+        self.assertEqual(plan["dispatch_order"], "skill_round_robin")
         self.assertEqual(len(plan["member_plans"]), 3)
         self.assertIsNone(plan["member_plans"][0]["select"])
         self.assertEqual(plan["member_plans"][1]["select"]["key"], "SPACE")
@@ -296,6 +297,37 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(plan["required_residual_skills"], ["cooking", "fitness", "natural_living"])
         self.assertTrue(plan["async_detach_supported"])
         self.assertFalse(plan["execute_allowed"])
+        # Round-robin: skill0×m0, skill0×m1, skill0×m2, skill1×m0, ...
+        units = plan["dispatch_units"]
+        self.assertEqual(len(units), 3 * len(plan["skills"]))
+        self.assertEqual(units[0]["skill_id"], plan["skills"][0]["id"])
+        self.assertEqual(units[0]["member_index"], 0)
+        self.assertIsNone(units[0]["select_before"])
+        self.assertEqual(units[1]["member_index"], 1)
+        self.assertEqual(units[1]["select_before"]["key"], "SPACE")
+        self.assertEqual(units[2]["member_index"], 2)
+        self.assertEqual(units[3]["skill_id"], plan["skills"][1]["id"])
+        self.assertEqual(units[3]["member_index"], 0)
+
+    def test_household_skill_round_robin_diy_maker_order(self):
+        plan = plan_household_skill_force(members=2, bundle="diy_maker", game_mode="live")
+        ids = [u["skill_id"] for u in plan["dispatch_units"]]
+        members = [u["member_index"] for u in plan["dispatch_units"]]
+        self.assertEqual(
+            ids,
+            [
+                "handiness",
+                "handiness",
+                "robotics",
+                "robotics",
+                "fabrication",
+                "fabrication",
+                "programming",
+                "programming",
+            ],
+        )
+        self.assertEqual(members, [0, 1, 0, 1, 0, 1, 0, 1])
+        self.assertEqual(plan["cells_needing_work"], 8)
 
     def test_household_invalid_member_count_fails_closed(self):
         with self.assertRaises(DiySkillForceError) as ctx:
@@ -315,6 +347,7 @@ class DiySkillForceTests(unittest.TestCase):
         snap = catalog_snapshot()
         self.assertEqual(snap["required_residual_skills"], ["cooking", "fitness", "natural_living"])
         self.assertEqual(snap["household_traverse"]["next_member_key"], "SPACE")
+        self.assertEqual(snap["household_traverse"]["dispatch_order"], "skill_round_robin")
         self.assertIn("residual_core", snap["bundles"])
         self.assertEqual(snap.get("close_console_key"), "CTRL_SHIFT_C_TOGGLE")
         submit = str(snap.get("cheat_line_submit") or "").upper()
@@ -380,6 +413,15 @@ class DiySkillForceTests(unittest.TestCase):
             self.assertEqual(hh["member_plans"][1]["select"]["key"], "SPACE")
             self.assertEqual(hh["member_plans"][0]["member_key"], m0)
             self.assertEqual(hh["member_plans"][1]["member_key"], m1)
+            # Member 0 cells skipped; members 1–2 still need each servo_core skill.
+            self.assertEqual(hh["cells_needing_work"], 6)
+            skipped0 = [
+                u for u in hh["dispatch_units"] if u["member_index"] == 0
+            ]
+            self.assertTrue(all(u["skip_dispatch"] for u in skipped0))
+            self.assertFalse(hh["dispatch_units"][1]["skip_dispatch"])
+            self.assertEqual(hh["dispatch_units"][1]["member_index"], 1)
+            self.assertEqual(hh["dispatch_units"][1]["skill_id"], "handiness")
 
             # Fully done household
             for idx in (1, 2):

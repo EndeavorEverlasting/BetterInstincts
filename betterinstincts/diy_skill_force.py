@@ -3,10 +3,11 @@
 P95/P100 stack: soft-focus Sims → Ctrl+Shift+C → testingcheats enabled true →
 stats.set_skill_level <stat> <N> for each resolved skill → bounded
 ACCEPT_OFFERED_REWARD_TRAIT (OK on offered mastery/reward traits).
-Household: count N members → Space-traverse each → dispatch (opt-in --detach).
-Required residuals Cooking/Fitness/Natural Living always re-applied at end.
-Completion ledger: skip already-DISPATCHED skills; Space past members with
-nothing left. Mode-agnostic; never force F1 while the operator builds.
+Household: count N portraits → skill-round-robin (one skill × every member,
+then the next skill) via Space between cells (opt-in --detach). Required
+residuals Cooking/Fitness/Natural Living always re-applied at end.
+Completion ledger: skip already-DISPATCHED skill×member cells. Mode-agnostic;
+never force F1 while the operator builds.
 
 Bundles: diy_maker / servo_core / creative / social / athletic / residual_core /
 full_unlock. Library plans only; scripts/diy_skill_force.py owns typing + OK
@@ -282,6 +283,8 @@ def load_contract(path: Path = CONTRACT) -> dict:
     ht = cfg.get("household_traverse") or {}
     if not isinstance(ht, Mapping) or ht.get("next_member_key") != "SPACE":
         raise DiySkillForceError("HOUSEHOLD_TRAVERSE_SPACE_REQUIRED")
+    if str(ht.get("dispatch_order") or "") != "skill_round_robin":
+        raise DiySkillForceError("HOUSEHOLD_DISPATCH_ORDER_SKILL_ROUND_ROBIN_REQUIRED")
     return cfg
 
 
@@ -644,12 +647,13 @@ def plan_household_skill_force(
     redo: bool = False,
     cfg: Optional[dict] = None,
 ) -> dict:
-    """Plan skill-force across every observed household member.
+    """Plan skill-round-robin force across every observed household portrait.
 
     ``members`` is the exact Live portrait count (any N in contract min..max).
-    Traverse uses SPACE between members. Does not invent household size.
-    Completion ledger omits already-maxed skills; fully-done members are
-    marked skip_dispatch so execute Spaces to the next Sim that still needs work.
+    Default dispatch: for each skill, visit every member (SPACE between cells),
+    then the next skill — until all requested skills are at target. Does not
+    invent household size. Completion ledger skips already-maxed skill×member
+    cells while still advancing selection so Space stays in sync.
     """
     cfg = cfg or load_contract()
     ht = cfg.get("household_traverse") or {}
@@ -684,79 +688,137 @@ def plan_household_skill_force(
             **probe,
             "household_members": count,
             "member_plans": [],
+            "dispatch_units": [],
+            "dispatch_order": "skill_round_robin",
         }
 
     target = int(probe.get("level") or cfg["inject_sequence"]["default_level"])
     ledger = completion_ledger if completion_ledger is not None else empty_completion_ledger()
-    slots: list[dict] = []
-    needing = 0
-    for index in range(count):
-        mkey = completion_member_key(session_id, index, labels[index])
-        omit: list[str] = []
-        if not redo:
-            omit = sorted(
+    skill_rows = list(probe.get("skills") or [])
+    member_keys_resolved = [
+        completion_member_key(session_id, index, labels[index]) for index in range(count)
+    ]
+    completed_by_member: list[set[str]] = []
+    for mkey in member_keys_resolved:
+        if redo:
+            completed_by_member.append(set())
+        else:
+            completed_by_member.append(
                 completed_skill_ids_for_member(ledger, mkey, target_level=target)
             )
-        member_plan = plan_skill_force(
-            skill_ids=skill_ids,
-            bundle=bundle,
-            level=level,
-            player_directed=player_directed,
-            game_mode=game_mode,
-            accept_reward_dialogs=accept_reward_dialogs,
-            omit_skill_ids=omit,
-            cfg=cfg,
-        )
-        skip = bool(member_plan.get("skip_dispatch")) or member_plan.get("state") == (
-            "SKILL_FORCE_MEMBER_ALREADY_MAXED"
-        )
+
+    select_step = {
+        "step": "SELECT_NEXT_HOUSEHOLD_SIM",
+        "key": ht.get("next_member_key", "SPACE"),
+        "chord": list(ht.get("next_member_chord") or ["SPACE"]),
+        "close_console_before": bool(ht.get("close_console_before_space", True)),
+        "required": True,
+        "note": "Space to next portrait (wraps); keeps skill-round-robin selection aligned",
+    }
+
+    units: list[dict] = []
+    cells_needing = 0
+    for skill_row in skill_rows:
+        sid = str(skill_row["id"])
+        for index in range(count):
+            mkey = member_keys_resolved[index]
+            already = sid in completed_by_member[index]
+            if already:
+                unit_plan = {
+                    "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
+                    "skip_dispatch": True,
+                    "skills": [],
+                    "level": target,
+                }
+            else:
+                unit_plan = plan_skill_force(
+                    skill_ids=[sid],
+                    bundle=None,
+                    level=level,
+                    player_directed=player_directed,
+                    game_mode=game_mode,
+                    accept_reward_dialogs=accept_reward_dialogs,
+                    cfg=cfg,
+                )
+                cells_needing += 1
+            units.append(
+                {
+                    "skill_id": sid,
+                    "skill_stat": skill_row.get("skill_stat"),
+                    "display_name": skill_row.get("display_name"),
+                    "member_index": index,
+                    "member_key": mkey,
+                    "skip_dispatch": already,
+                    "select_before": None if not units else dict(select_step),
+                    "plan": unit_plan,
+                }
+            )
+
+    slots: list[dict] = []
+    members_needing = 0
+    for index in range(count):
+        mkey = member_keys_resolved[index]
+        omit = sorted(completed_by_member[index])
+        remaining = [str(s["id"]) for s in skill_rows if str(s["id"]) not in completed_by_member[index]]
+        skip = not remaining
         if not skip:
-            needing += 1
+            members_needing += 1
         slots.append(
             {
                 "member_index": index,
                 "member_key": mkey,
                 "skip_dispatch": skip,
                 "skipped_skill_ids": omit,
-                "remaining_skill_ids": [s["id"] for s in (member_plan.get("skills") or [])],
-                "select": (
-                    None
-                    if index == 0
-                    else {
-                        "step": "SELECT_NEXT_HOUSEHOLD_SIM",
-                        "key": ht.get("next_member_key", "SPACE"),
-                        "chord": list(ht.get("next_member_chord") or ["SPACE"]),
-                        "close_console_before": bool(ht.get("close_console_before_space", True)),
-                        "required": True,
-                        "note": "Space to next portrait; skip console when member already maxed",
-                    }
-                ),
-                "plan": member_plan,
+                "remaining_skill_ids": remaining,
+                "select": None if index == 0 else dict(select_step),
+                "plan": {
+                    "state": (
+                        "SKILL_FORCE_MEMBER_ALREADY_MAXED"
+                        if skip
+                        else "DIY_SKILL_FORCE_PLAN_READY"
+                    ),
+                    "skip_dispatch": skip,
+                    "skills": [
+                        {
+                            "id": s["id"],
+                            "skill_stat": s.get("skill_stat"),
+                            "level": target,
+                        }
+                        for s in skill_rows
+                        if str(s["id"]) not in completed_by_member[index]
+                    ],
+                    "level": target,
+                },
             }
         )
+
     state = (
         "HOUSEHOLD_SKILL_FORCE_ALL_MEMBERS_ALREADY_MAXED"
-        if needing == 0
+        if cells_needing == 0
         else "HOUSEHOLD_SKILL_FORCE_PLAN_READY"
     )
     return {
         "state": state,
         "next_gate": (
             "NONE_ALL_MEMBERS_COMPLETE"
-            if needing == 0
+            if cells_needing == 0
             else "EXECUTE_HOUSEHOLD_SKILL_FORCE"
         ),
         "household_members": count,
-        "members_needing_work": needing,
+        "members_needing_work": members_needing,
+        "cells_needing_work": cells_needing,
+        "dispatch_order": "skill_round_robin",
+        "dispatch_units": units,
         "household_traverse": {
             "next_member_key": ht.get("next_member_key", "SPACE"),
             "min_members": min_m,
             "sanity_max_members": max_m,
             "observed_n": count,
-            "skip_already_maxed_members": True,
+            "dispatch_order": "skill_round_robin",
+            "skip_already_maxed_cells": True,
             "note": (
                 "N is observed portrait count; sanity_max is anti-runaway only; "
-                "Space past members with no remaining skills"
+                "one skill for every member, then the next skill; Space between cells"
             ),
         },
         "completion_ledger": {
@@ -768,7 +830,7 @@ def plan_household_skill_force(
         "bundle": probe.get("bundle") or bundle,
         "requested_skill_ids": list(skill_ids) if skill_ids else None,
         "level": target,
-        "skills": probe.get("skills"),
+        "skills": skill_rows,
         "required_residual_skills": required_residual_skills(cfg),
         "member_plans": slots,
         "game_mode": probe.get("game_mode"),
