@@ -136,6 +136,15 @@ def execute_step(
         raise PreferenceStepError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
     if type(process_id) is not int or process_id <= 0:
         raise PreferenceStepError("EXACT_GAME_PID_REQUIRED")
+    # A prior YES may only advance the same active host session and game
+    # process. File contents alone are not an observed OK dialog or authority.
+    if stage == "OK":
+        if not isinstance(previous_receipt, dict) or (
+            previous_receipt.get("schema") != "betterinstincts.preference-step-receipt/v1"
+            or previous_receipt.get("session_id") != session_id
+            or previous_receipt.get("process_id") != process_id
+        ):
+            raise PreferenceStepError("OK_REQUIRES_SAME_SESSION_PID_RECEIPT")
     # The plan itself remains independent of screen permission.
     plan = plan_stage(
         observation, stage, automation_opt_in=True,
