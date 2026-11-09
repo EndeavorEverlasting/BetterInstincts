@@ -275,3 +275,12 @@ P95 resolved from current Moonwake registry: design a one-key, **state-driven** 
 ## 2026-11-09 — Complete-home preservation before Build/Buy mutations
 
 From current Moonwake/TokenCorridor prompt catalog SHA `8c281379ba7ccc871947391233b1db72f4a108ef`: **P00 Governance Doctrine Installer** (AGENTS/doctrine), **P01 Harness Infrastructure Builder** (shared fail-closed host gate), **P95 Program Design & Call-Stack Prototype Architect** (whole-lot manifest and pre-change backup seam), **P124 Repository Code Readability & Structural Refactorer** (keep house_state/room_census canonical). Trifecta means **P82 Prototype-Measure-Refine Delivery Loop** (negative tests), **P07 Repo Sprint Executor** (source integration/CI), **P08 Live Runtime Proof Executor** (separate Windows host proof, NOT satisfied by offline CI). Incident: second-floor deletion, source-owned consultation `BI-WHOLE-HOME-PRE-MUTATION-BACKUP-20261109`. No offline model claim substitutes for a game My Library building save or intercepts an external Cursor/Playwright click.
+
+
+## 2026-11-09 — Servo needs and bills household upkeep (P95, P124, Trifecta)
+
+Resolved from Moonwake current `harness/exports/prompt-invocation-catalog.v1.json` blob `8c281379ba7ccc871947391233b1db72f4a108ef`, resolver `scripts/prompt_invocation_resolver.py`, and current `AGENTS.md`:
+**P95 — Program Design & Call-Stack Prototype Architect**, **P124 — Repository Code Readability & Structural Refactorer** (architecture owner `spec-architecture-prompts.v1.json`, blob `5926a198a14567de55110ed19e922fc444b4dec7`).
+The Trifecta uses **P08 — Live Runtime Proof Executor** + **P82 — Prototype-Measure-Refine Delivery Loop** + **P07 — Repo Sprint Executor**; P08 is an open local-runtime evidence gate, not a claimed cloud-run game input.
+P95's prototype distinguishes Servo's four motives from six standard human needs and bills from ordinary budget purchases. P124 factors a thin read-only upkeep peer into the existing host listener/stack and queue owner; no background daemon, duplicate queue handler or arbitrary save modification.
+Consultation first: `BI-HOUSEHOLD-SERVO-BILLS-20261109.v1.json`; offline gates: `tests/test_household_upkeep.py`, `scripts.check_ontology` and repo CI. Details `docs/HOUSEHOLD_UPKEEP.md`.
