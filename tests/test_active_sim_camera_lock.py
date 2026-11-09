@@ -190,6 +190,41 @@ class ScopedMapExecutionTests(unittest.TestCase):
         self.assertNotIn(("SHIFT", "ENTER"), effects)
         self.assertEqual(out["restoration"], "ENTER_DISPATCHED_REOBSERVE_REQUIRED")
 
+    def test_default_native_restore_prefers_attested_portrait_right_click(self):
+        from tests.test_portrait_follow import scene as portrait_scene
+        effects = []
+        seen = observed(camera_centered_sim_id=492, camera_displaced=False,
+                        process_id=303, focused_process_id=303,
+                        session_id="demo", host_admitted=True,
+                        client_origin_x=0, client_origin_y=0)
+        p = dict(portrait_scene()["active_sim_portrait"])
+        p["capture_ref"] = "capture:anchor-1"
+        seen["active_sim_portrait"] = p
+
+        @contextmanager
+        def fake_lease(*args, **kwargs):
+            yield lambda: None
+
+        with (
+            patch("betterinstincts.screen_admit.require_execute_session"),
+            patch("betterinstincts.screen_admit.admitted_screen_lease", fake_lease),
+            patch("scripts.win32_input.right_drag", lambda *a, **k: effects.append("pan")),
+            patch("scripts.win32_input.send_right_click",
+                  lambda x, y, **kw: effects.append(("portrait_right_click", x, y))),
+            patch("scripts.win32_input.send_key_chord") as chord,
+            patch("scripts.win32_input.park_safe_cursor_rest"),
+            patch("scripts.camera_traverse._park_cursor"),
+            patch("scripts.camera_traverse.time.sleep"),
+        ):
+            out = _execute_plan(
+                plan_traverse(("E",)), process_id=303, session_id="demo",
+                idle_ms=15000, map_goal=goal(), observe=lambda: seen,
+                now_ms=105000,
+            )
+        self.assertIn(("portrait_right_click", 300, 800), effects)
+        self.assertEqual(out["restoration"], "PORTRAIT_FOLLOW_DISPATCHED_REOBSERVE_REQUIRED")
+        chord.assert_not_called()
+
     def test_human_owned_camera_blocks_map_before_native_input(self):
         owned = observed(camera_follow_sim_id=492, player_camera_owned=True)
         with patch("scripts.win32_input.right_drag") as drag:
