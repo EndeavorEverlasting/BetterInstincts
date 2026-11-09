@@ -1,0 +1,48 @@
+{
+  "schema": "betterinstincts.portrait-follow/v1",
+  "mode": "LIVE",
+  "default_camera": "FOLLOW_ACTIVE_SIM",
+  "preferred_input": "RIGHT_CLICK_CURRENT_ACTIVE_SIM_PORTRAIT",
+  "key_distinctions": [
+    {
+      "id": "RIGHT_CLICK_ACTIVE_SIM_PORTRAIT",
+      "effect": "FOLLOW_ACTIVE_SIM_CONTINUOUSLY_UNTIL_GAME_CANCELS_OR_SELECTION_CHANGES",
+      "source": "EA_OFFICIAL_SIM_CONTROLS"
+    },
+    {
+      "id": "ENTER",
+      "effect": "ONE_SHOT_CENTER_ACTIVE_SIM_NOT_FOLLOW",
+      "source": "EA_OFFICIAL_SIM_CONTROLS"
+    },
+    {
+      "id": "SHIFT_ENTER",
+      "effect": "ONE_SHOT_CENTER_CURRENT_LOT_NOT_SIM",
+      "source": "COMMUNITY_HOTKEY_REFERENCE"
+    }
+  ],
+  "portrait_lane": "BOTTOM_LEFT_HOUSEHOLD_PORTRAITS_RIGHT_OF_CALENDAR_PHONE",
+  "identity_keys": [
+    "capture_ref",
+    "active_sim_id",
+    "selected_sim_id",
+    "portrait_sim_id",
+    "selected_sim_revision",
+    "portrait_revision",
+    "ui_layout_revision"
+  ],
+  "expected_cues": {
+    "visual": "active_sim_portrait_selection",
+    "operator": "active_sim_identity_confirmed"
+  },
+  "calibration": "FRESH_EXACT_BUILD_CLIENT_HITBOX_CENTER",
+  "execution": {
+    "default_allowed": false,
+    "gate": "EXISTING_COOPERATIVE_SCREEN_QUEUE_AND_EXACT_NATIVE_GAME_HOST",
+    "right_click_port": "betterinstincts.portrait_follow.enqueue_native_portrait_follow",
+    "no_world_click_fallback": true,
+    "no_global_hook": true
+  },
+  "overlay": "DISMISS_VERIFIED_RESOLVED_MODAL_FIRST_NEVER_CANCEL_UNDECIDED_EVENT",
+  "human": "YIELD_TO_PLAYER_AND_DEFER",
+  "proof_ceiling": "OFFLINE_PORTRAIT_FOLLOW_NOT_LIVE_GAME_OBSERVED"
+}
