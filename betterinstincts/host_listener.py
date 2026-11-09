@@ -121,6 +121,79 @@ def status(session_id: str) -> dict:
     }
 
 
+def observe_hover(
+    session_id: str, supplied_event: Mapping, *, explicit_opt_in: bool = False
+) -> dict:
+    """Ingest one supplied tooltip edge/action/outcome into an active session.
+
+    This is an observational port; the caller owns any calibrated sensing.
+    One writer per session, atomic sidecar replacement, no game input or timer.
+    """
+    import os
+    import tempfile
+
+    from betterinstincts.hover_learning import (
+        HoverLearningError, MAX_BYTES, empty_state, evaluate, observe,
+    )
+
+    if explicit_opt_in is not True:
+        raise HostListenerError("EXPLICIT_HOVER_OPT_IN_REQUIRED")
+    path = _session_dir(session_id)
+    meta_path = path / "session.json"
+    if meta_path.is_symlink() or not meta_path.is_file():
+        raise HostListenerError("HOVER_SESSION_NOT_ACTIVE")
+    state_path = path / "hover-learning.json"
+    lock_path = path / ".hover-writer.lock"
+    try:
+        fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError as exc:
+        raise HostListenerError("HOVER_WRITER_BUSY") from exc
+    try:
+        os.close(fd)
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        if meta.get("state") != "ACTIVE":
+            raise HostListenerError("HOVER_SESSION_NOT_ACTIVE")
+        if state_path.is_symlink():
+            raise HostListenerError("HOVER_STATE_SYMLINK_FORBIDDEN")
+        if state_path.exists():
+            if not state_path.is_file() or state_path.stat().st_size > MAX_BYTES:
+                raise HostListenerError("HOVER_STATE_FILE_UNSAFE")
+            current = json.loads(state_path.read_text(encoding="utf-8"))
+        else:
+            current = empty_state()
+        try:
+            updated, transition = observe(current, supplied_event)
+            evaluation = evaluate(updated, now_ms=supplied_event["at_ms"])
+        except (HoverLearningError, KeyError) as exc:
+            raise HostListenerError("HOVER_EVENT_INVALID:" + str(exc)) from exc
+        if transition["recorded"]:
+            raw = json.dumps(updated, sort_keys=True, indent=2) + "\n"
+            if len(raw.encode("utf-8")) > MAX_BYTES:
+                raise HostListenerError("HOVER_STATE_BUDGET_EXCEEDED")
+            temporary = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                    mode="w", encoding="utf-8", dir=path,
+                    prefix=".hover-", suffix=".tmp", delete=False,
+                ) as handle:
+                    temporary = Path(handle.name)
+                    handle.write(raw)
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(temporary, state_path)
+            finally:
+                if temporary is not None:
+                    temporary.unlink(missing_ok=True)
+        return {
+            "schema": "betterinstincts.hover-observation-receipt/v1",
+            "session_id": session_id, "transition": transition,
+            "evaluation": evaluation, "state_path": str(state_path.relative_to(ROOT)),
+            "execute_clicks": False, "control_permit": None,
+        }
+    finally:
+        lock_path.unlink(missing_ok=True)
+
+
 def _load_observation(raw: Mapping) -> dict:
     if raw.get("schema") != "betterinstincts.host-listener.observation/v1":
         raise HostListenerError("BAD_OBSERVATION_SCHEMA")
