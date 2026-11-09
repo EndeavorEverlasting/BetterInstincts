@@ -118,6 +118,31 @@ class RoomCensusTests(unittest.TestCase):
             if path.exists():
                 shutil.rmtree(path)
 
+    def test_p78_glossary_and_documentation_single_authority(self):
+        root = Path(__file__).resolve().parents[1]
+        contract = load_contract()
+        self.assertEqual(contract["authority"], "betterinstincts/room_census.py")
+        glossary_contract = json.loads((root / "contracts/glossary.v1.json").read_text(encoding="utf-8"))
+        doc = (root / "docs/GLOSSARY.md").read_text(encoding="utf-8")
+        # P78 keeps human-facing glossary rows inside the existing table.
+        self.assertEqual(doc.count("| **ROOM_CENSUS** / **ROOM_CENSUS_COVERAGE** |"), 1)
+        self.assertLess(doc.index("| **ROOM_CENSUS** /"), doc.index("Related matrices:"))
+        for term in (
+            "ROOM_CENSUS", "ROOM_CENSUS_COVERAGE", "ROOM_ZONE_ATTESTED",
+            "ROOM_ZONE_CANDIDATE", "MULTI_LABEL_ROOM_FUNCTION", "ROOM_STYLE_EVIDENCE",
+        ):
+            self.assertIn(term, glossary_contract["terms"])
+            self.assertIn("**" + term + "**", doc)
+            for owner in glossary_contract["terms"][term]["owners"]:
+                self.assertTrue((root / owner).is_file(), owner)
+        runbook = (root / "docs/ROOM_CENSUS.md").read_text(encoding="utf-8")
+        provenance = (root / "docs/PROMPT_INVOCATIONS.md").read_text(encoding="utf-8")
+        self.assertIn("python -m scripts.room_census evaluate", runbook)
+        self.assertIn("P08 live-game gate", runbook)
+        self.assertIn("P78 — Repository Glossary & Documentation Diet", provenance)
+        self.assertNotIn("P95/P124/P178/Trifecta", provenance)
+        self.assertLess(len(runbook), 2000)
+
     def test_contract_and_cli(self):
         cfg = load_contract()
         self.assertIn("minimalist", cfg["style_labels"])
