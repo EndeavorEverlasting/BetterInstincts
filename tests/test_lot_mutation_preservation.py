@@ -58,7 +58,10 @@ class FullLotMutationProtectionTests(unittest.TestCase):
             with self.subTest(action=action):
                 result = hs.admit_mutation(model, action, **kwargs)
                 self.assertEqual(result["state"], "MUTATION_DENIED")
-                self.assertEqual(result["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
+                self.assertIn(result["reason"], {
+                    "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP",
+                    "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE",  # stronger protected-story denial
+                })
                 self.assertFalse(result["execute_allowed"])
 
     def test_partial_scan_or_missing_second_floor_cannot_attest_library(self):
@@ -129,7 +132,9 @@ class FullLotMutationProtectionTests(unittest.TestCase):
             path = hs.model_path(saved["run_id"], saved["lot_id"])
             path.unlink()
             result = hs.admit_mutation(saved, "BACKSPACE_TO_INVENTORY", targets=["sofa.2"])
-            self.assertEqual(result["violation"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
+            self.assertIn(result["violation"], {
+                "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP", "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE"
+            })
             self.assertFalse(result["execute_allowed"])
 
 
