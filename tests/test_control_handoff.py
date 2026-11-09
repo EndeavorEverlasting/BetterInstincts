@@ -13,7 +13,7 @@ from unittest.mock import patch
 from betterinstincts.control_handoff import HandoffError, as_presence, confirm, decide, exclusive_screen_owner, screen_owner_busy
 from betterinstincts.host_automate import plan_automation
 from betterinstincts.player_presence import PresenceProbe
-from scripts import needs_force, control_handoff as handoff_cli
+from scripts import needs_force, control_handoff as handoff_cli, host_listener as listener_cli, host_automate as automate_cli
 
 NEEDS = {
     "hunger": 0.05, "bladder": 0.7, "energy": 0.9,
@@ -229,6 +229,46 @@ class ControlHandoffTests(unittest.TestCase):
         self.assertEqual(result, 2)
         self.assertEqual(json.loads(output.getvalue())["reason"], "RECEIPT_OUTSIDE_DIST_GAME_HOST")
         click.assert_not_called()
+
+
+    def test_host_listener_cli_uses_shared_15_second_idle_default(self):
+        with TemporaryDirectory() as tmp:
+            observation = Path(tmp) / "obs.json"
+            observation.write_text("{}", encoding="utf-8")
+            with patch("scripts.host_listener.tick", return_value={"state": "TEST"}) as handler, \
+                 redirect_stdout(io.StringIO()):
+                exit_code = listener_cli.main([
+                    "tick", "--session-id", "unit", "--observation", str(observation),
+                ])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(handler.call_args.kwargs["idle_ms"], 15000)
+
+    def test_host_automate_cli_uses_shared_15_second_idle_default(self):
+        with TemporaryDirectory() as tmp:
+            observation = Path(tmp) / "obs.json"
+            probe_file = Path(tmp) / "probe.json"
+            observation.write_text("{}", encoding="utf-8")
+            probe_file.write_text(json.dumps({
+                "foreground_is_sims": False,
+                "cursor_in_client": False,
+                "last_input_age_ms": 20000,
+                "probe_ok": True,
+            }), encoding="utf-8")
+            with patch("scripts.host_automate.plan_automation", return_value={"state": "TEST"}) as handler, \
+                 redirect_stdout(io.StringIO()):
+                exit_code = automate_cli.main([
+                    "--observation", str(observation), "--probe-json", str(probe_file),
+                    "--session-active",
+                ])
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(handler.call_args.kwargs["idle_ms"], 15000)
+            with redirect_stdout(io.StringIO()) as output:
+                refused = automate_cli.main([
+                    "--observation", str(observation), "--probe-json", str(probe_file),
+                    "--session-active", "--idle-ms", "8000",
+                ])
+        self.assertEqual(refused, 2)
+        self.assertIn("IDLE_THRESHOLD_OUT_OF_RANGE", output.getvalue())
 
 
 if __name__ == "__main__":
