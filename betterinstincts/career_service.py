@@ -157,6 +157,13 @@ def evaluate_career_service(
     player_directed: bool = False,
     already_busy: bool = False,
     life_stage: Optional[str] = None,
+    lot_model: Optional[Mapping] = None,
+    multitasking: Optional[bool] = None,
+    sim_room_id: Optional[str] = None,
+    sim_seated: Optional[bool] = None,
+    sim_seat_id: Optional[str] = None,
+    emotion: Optional[str] = None,
+    lot_traits: Sequence[str] = (),
     scenario_active: bool = False,
     scenario_goals_incomplete: Sequence[str] = (),
     pinned_whims: Sequence[str] = (),
@@ -256,6 +263,13 @@ def evaluate_career_service(
                 player_directed=player_directed,
                 already_busy=already_busy,
                 life_stage=stage,
+                lot_model=lot_model,
+                multitasking=multitasking,
+                sim_room_id=sim_room_id,
+                sim_seated=sim_seated,
+                sim_seat_id=sim_seat_id,
+                emotion=emotion,
+                lot_traits=lot_traits,
                 capture_ref=capture_ref,
             )
             lanes["teen_homework"] = {
@@ -316,7 +330,11 @@ def evaluate_career_service(
         "QUEUE_TEEN_HOMEWORK",
         "HOMEWORK_INVENTORY_MISSING",
         "HOMEWORK_AFTER_NEEDS_QUEUE",
+        "HOMEWORK_STUDY_SCAN_REQUIRED",
+        "PREPARE_STUDY_LOCATION",
     }:
+        # READY denotes an observable next career step (including read-only
+        # scan or seat preparation); it does NOT license a homework enqueue.
         microsystem_state = "READY"
         if prior_obligation and homework_lane.get("gate") != "HOMEWORK_AFTER_NEEDS_QUEUE":
             gate = "CAREER_READY_AFTER_NEEDS"
