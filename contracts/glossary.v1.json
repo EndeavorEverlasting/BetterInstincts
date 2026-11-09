@@ -30,7 +30,7 @@
       ]
     },
     "EMULATE": {
-      "definition": "Reproduce the same intent class as the observed good queue (e.g. eat→eat). Does not invent new goals. May still route better under OPTIMIZE_ROUTING.",
+      "definition": "Reproduce the same intent class as the observed good queue (e.g. eat\u2192eat). Does not invent new goals. May still route better under OPTIMIZE_ROUTING.",
       "owners": [
         "contracts/behavior-matrix.v1.json"
       ]
@@ -110,7 +110,7 @@
       ]
     },
     "SIT_AND_CHAT_HERE_INDOOR": {
-      "definition": "Preferred EVENT_INDOOR_ROUTING host route: click indoor sofa/chair/bench → Sit and Chat Here (locale-equivalent).",
+      "definition": "Preferred EVENT_INDOOR_ROUTING host route: click indoor sofa/chair/bench \u2192 Sit and Chat Here (locale-equivalent).",
       "owners": [
         "contracts/event-balance.v1.json",
         "betterinstincts/host_stack.py"
@@ -212,7 +212,7 @@
       ]
     },
     "DOMAIN_CASCADE": {
-      "definition": "Ordered poll bus that emits cascading receipts across needs (with LB), budget, career, skills/whims, and relationships on each observation — not a background daemon.",
+      "definition": "Ordered poll bus that emits cascading receipts across needs (with LB), budget, career, skills/whims, and relationships on each observation \u2014 not a background daemon.",
       "owners": [
         "contracts/domain-cascade.v1.json",
         "docs/DOMAIN_CASCADE.md",
@@ -412,7 +412,7 @@
       ]
     },
     "FUNDS_INJECT": {
-      "definition": "Mode-agnostic cheat sequence: Ctrl+Shift+C → testingcheats enabled true → Money N (best-effort) → motherlode chunks. Never force F1; never claimed as BI-004 earned income.",
+      "definition": "Mode-agnostic cheat sequence: Ctrl+Shift+C \u2192 testingcheats enabled true \u2192 Money N (best-effort) \u2192 motherlode chunks. Never force F1; never claimed as BI-004 earned income.",
       "owners": [
         "contracts/host-funds.v1.json",
         "betterinstincts/funds_inject.py"
@@ -425,7 +425,7 @@
       ]
     },
     "CHEAT_CONSOLE_CHORD": {
-      "definition": "Ctrl+Shift+C opens the Sims cheat console on PC in Live, Build, or Buy. Host funds inject must press this chord before testingcheats/Money/motherlode — never skip, never force F1 to open it.",
+      "definition": "Ctrl+Shift+C opens the Sims cheat console on PC in Live, Build, or Buy. Host funds inject must press this chord before testingcheats/Money/motherlode \u2014 never skip, never force F1 to open it.",
       "owners": [
         "contracts/host-funds.v1.json",
         "scripts/funds_inject.py"
@@ -446,7 +446,7 @@
       ]
     },
     "HOST_CRISIS_ANTI_PATTERN": {
-      "definition": "School Join (or leaving home) while needs/funds are critical — stranded the lab off-lot; Send Alone is mandatory.",
+      "definition": "School Join (or leaving home) while needs/funds are critical \u2014 stranded the lab off-lot; Send Alone is mandatory.",
       "owners": [
         "contracts/decision-prompts.v1.json",
         "betterinstincts/decision_eval.py"
@@ -467,7 +467,7 @@
       ]
     },
     "ECO_FOOTPRINT_INDUSTRIAL": {
-      "definition": "Eco Lifestyle lot contribution toward smog / Gross Air; opt-in storytelling maximize only — excluded from green/balanced household defaults.",
+      "definition": "Eco Lifestyle lot contribution toward smog / Gross Air; opt-in storytelling maximize only \u2014 excluded from green/balanced household defaults.",
       "owners": [
         "contracts/build-optimize.v1.json",
         "docs/BUILD_OPTIMIZE.md"
@@ -857,7 +857,7 @@
       ]
     },
     "SHOW_HIDDEN_OBJECTS": {
-      "definition": "Durable console line bb.showhiddenobjects (buydebug is a nickname only). Requires testingcheats first; one command per line. Elementary unlock for household useful-item catalog/hidden and fabrication rows — Better BuildBuy never substitutes.",
+      "definition": "Durable console line bb.showhiddenobjects (buydebug is a nickname only). Requires testingcheats first; one command per line. Elementary unlock for household useful-item catalog/hidden and fabrication rows \u2014 Better BuildBuy never substitutes.",
       "owners": [
         "contracts/curious-catalog.v1.json",
         "docs/CURIOUS_CATALOG.md",
@@ -903,14 +903,14 @@
       ]
     },
     "HOTKEY_GLOSSARY": {
-      "definition": "Per-mode keyboard chord catalog (F1/F2/F3, Backspace→Household Inventory, Esc cancel hold, cheat console). Intent hints only — never mode proof or execute authority.",
+      "definition": "Per-mode keyboard chord catalog (F1/F2/F3, Backspace\u2192Household Inventory, Esc cancel hold, cheat console). Intent hints only \u2014 never mode proof or execute authority.",
       "owners": [
         "contracts/ui-chrome.v1.json",
         "docs/UI_CHROME.md"
       ]
     },
     "CATALOG_TO_HOUSEHOLD_INVENTORY": {
-      "definition": "Evaluate-only recipe: search → select → Backspace deposit into Household Inventory without lot placement. AOK Bloomer is the first catalog item.",
+      "definition": "Evaluate-only recipe: search \u2192 select \u2192 Backspace deposit into Household Inventory without lot placement. AOK Bloomer is the first catalog item.",
       "owners": [
         "contracts/ui-chrome.v1.json",
         "docs/UI_CHROME.md",
@@ -918,7 +918,7 @@
       ]
     },
     "AOK_BLOOMER_SEARCH": {
-      "definition": "Operator-preferred Build/Buy catalog search term AOK for the A-OK-Bloomer Vertical Garden (~§365 Eco Lifestyle).",
+      "definition": "Operator-preferred Build/Buy catalog search term AOK for the A-OK-Bloomer Vertical Garden (~\u00a7365 Eco Lifestyle).",
       "owners": [
         "contracts/ui-chrome.v1.json",
         "contracts/curious-catalog.v1.json",
@@ -1027,6 +1027,17 @@
       "definition": "Every floor represented in current model, never assertion that every actual game floor was inspected or a room discovered from raw pixels.",
       "owners": [
         "betterinstincts/room_census.py"
+      ]
+    },
+    "HOTKEY_FIRST_WHEN_EQUIVALENT": {
+      "definition": "Cooperative input preference: use catalogued hotkeys/KEY chords before mouse CLICK_TARGET when an equivalent exists; mouse is MOUSE_FALLBACK only. Improves ASYNC_INTEROP by avoiding cursor fights; never proves mode or grants execute.",
+      "owners": [
+        "contracts/ui-chrome.v1.json",
+        "contracts/workflow-interoperability.v1.json",
+        "docs/UI_CHROME.md",
+        "docs/ASYNC_INTEROP.md",
+        "betterinstincts/ui_chrome.py",
+        "scripts/win32_input.py"
       ]
     }
   }

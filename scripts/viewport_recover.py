@@ -34,14 +34,18 @@ from betterinstincts.viewport import (
 from scripts.game_capture import GateError, capture_sims
 from scripts.win32_input import right_drag as _right_drag
 from scripts.win32_input import send_click
+from scripts.win32_input import send_key_chord
 from scripts.win32_input import send_wheel as _send_wheel
 
 OUTPUT = ROOT / "dist" / "game-host"
 
 SIM_PORTRAIT = (290, 1020)
 # LOCAL_OBSERVED unstick: Build hammer alone → Buy catalog (bi002-quiz-boot 2026-11-07).
+# Hotkey-first: prefer F3/F1; HUD coords retained as mouse fallback only.
 HUD_BUILD = (1505, 22)
 HUD_LIVE_FROM_BUILD = (1585, 35)
+HOTKEY_BUILD = ("F3",)
+HOTKEY_LIVE = ("F1",)
 BUILD_BUY_SETTLE_SEC = 1.6
 
 
@@ -119,44 +123,55 @@ def run_recovery_step(step: str, *, process_id: int | None, authorize_restart: b
         _send_click(*SIM_PORTRAIT)
         return {"step": step, "click": list(SIM_PORTRAIT), "state": "STEP_DISPATCHED"}
     if step == "ENTER_BUILD_BUY_UNSTICK":
-        # Primary black-glitch unstick: Build hammer only. Observed to surface Buy
-        # catalog chrome; do not chain Live here (can re-black / skip recognition).
+        # Prefer F3 over Build hammer click (hotkey-first interop). Do not chain
+        # Live here (can re-black / skip recognition). HUD coords = mouse fallback.
         _focus(process_id)
-        _send_click(*HUD_BUILD)
+        send_key_chord(HOTKEY_BUILD)
         time.sleep(BUILD_BUY_SETTLE_SEC)
         return {
             "step": step,
-            "click": list(HUD_BUILD),
+            "channel": "HOTKEY",
+            "chord": list(HOTKEY_BUILD),
+            "hotkey_id": "MODE_BUILD",
+            "mouse_fallback": list(HUD_BUILD),
             "state": "STEP_DISPATCHED",
             "success_classification": "BUILD_BUY_CATALOG_RECOVERY",
             "note": (
-                "Build hammer @ (1505,22) — LOCAL_OBSERVED black→Buy unstick; "
+                "F3 hotkey-first Build request; mouse fallback HUD (1505,22) unused; "
                 "withhold needs clicks; next EXIT_BUILD_BUY_TO_LIVE or Save and Exit"
             ),
             "forbidden_followups": ["NEEDS_OBJECT_CLICK", "RESUME"],
         }
     if step == "EXIT_BUILD_BUY_TO_LIVE":
         _focus(process_id)
-        _send_click(*HUD_LIVE_FROM_BUILD)
+        send_key_chord(HOTKEY_LIVE)
         time.sleep(1.2)
         return {
             "step": step,
-            "click": list(HUD_LIVE_FROM_BUILD),
-            "state": "STEP_DISPATCHED",
-            "note": "People icon Live from Build/Buy; recheck PrintWindow before needs",
-        }
-    if step == "TOGGLE_BUILD_THEN_LIVE_CAMERA_RESET":
-        # Legacy combined path retained for ladder compatibility.
-        _focus(process_id)
-        _send_click(*HUD_BUILD)
-        time.sleep(BUILD_BUY_SETTLE_SEC)
-        _send_click(*HUD_LIVE_FROM_BUILD)
-        return {
-            "step": step,
-            "clicks": [list(HUD_BUILD), list(HUD_LIVE_FROM_BUILD)],
+            "channel": "HOTKEY",
+            "chord": list(HOTKEY_LIVE),
+            "hotkey_id": "MODE_LIVE",
+            "mouse_fallback": list(HUD_LIVE_FROM_BUILD),
             "state": "STEP_DISPATCHED",
             "note": (
-                "Legacy Build→Live; prefer ENTER_BUILD_BUY_UNSTICK then "
+                "F1 hotkey-first Live request; mouse fallback people icon unused; "
+                "recheck PrintWindow before needs"
+            ),
+        }
+    if step == "TOGGLE_BUILD_THEN_LIVE_CAMERA_RESET":
+        # Legacy combined path retained for ladder compatibility; still hotkey-first.
+        _focus(process_id)
+        send_key_chord(HOTKEY_BUILD)
+        time.sleep(BUILD_BUY_SETTLE_SEC)
+        send_key_chord(HOTKEY_LIVE)
+        return {
+            "step": step,
+            "channel": "HOTKEY",
+            "chords": [list(HOTKEY_BUILD), list(HOTKEY_LIVE)],
+            "mouse_fallback": [list(HUD_BUILD), list(HUD_LIVE_FROM_BUILD)],
+            "state": "STEP_DISPATCHED",
+            "note": (
+                "Legacy F3→F1; prefer ENTER_BUILD_BUY_UNSTICK then "
                 "EXIT_BUILD_BUY_TO_LIVE. Esc avoided."
             ),
         }

@@ -19,14 +19,18 @@
       {
         "id": "ABSOLUTE_PIXELS_ONLY",
         "why": "Resolution drift; prefer normalized client fractions plus a profile."
+      },
+      {
+        "id": "MOUSE_ALWAYS",
+        "why": "Cursor relocation fights the operator under ASYNC_INTEROP and amplifies lot punch-through; prefer catalogued hotkeys when equivalent."
       }
     ]
   },
   "coordinate_space": {
     "kind": "NORMALIZED_CLIENT_FRACTION",
     "origin": "top_left",
-    "x": "[0,1] left→right of game client",
-    "y": "[0,1] top→bottom of game client",
+    "x": "[0,1] left\u2192right of game client",
+    "y": "[0,1] top\u2192bottom of game client",
     "note": "Adapters multiply by live client width/height. Maps are keyed by resolution profile until P08 remeasures."
   },
   "resolution_profiles": {
@@ -42,10 +46,39 @@
     "LIVE": {
       "shortcut_intent": "F1",
       "hotkeys": [
-        {"id": "MODE_LIVE", "chord": ["F1"], "effect": "Request Live Mode", "proves_mode": false},
-        {"id": "PAUSE_MENU", "chord": ["ESC"], "effect": "Open/close pause or cancel overlay", "risk": "May open MENU if no overlay"},
-        {"id": "CHEAT_CONSOLE", "chord": ["CTRL", "SHIFT", "C"], "effect": "Toggle cheat console"},
-        {"id": "PHONE", "chord": ["M"], "effect": "Toggle Sim phone (localization may vary)", "status": "UNVERIFIED_CANDIDATE"}
+        {
+          "id": "MODE_LIVE",
+          "chord": [
+            "F1"
+          ],
+          "effect": "Request Live Mode",
+          "proves_mode": false
+        },
+        {
+          "id": "PAUSE_MENU",
+          "chord": [
+            "ESC"
+          ],
+          "effect": "Open/close pause or cancel overlay",
+          "risk": "May open MENU if no overlay"
+        },
+        {
+          "id": "CHEAT_CONSOLE",
+          "chord": [
+            "CTRL",
+            "SHIFT",
+            "C"
+          ],
+          "effect": "Toggle cheat console"
+        },
+        {
+          "id": "PHONE",
+          "chord": [
+            "M"
+          ],
+          "effect": "Toggle Sim phone (localization may vary)",
+          "status": "UNVERIFIED_CANDIDATE"
+        }
       ],
       "panels": {
         "needs": {
@@ -82,53 +115,184 @@
     "BUY": {
       "shortcut_intent": "F2",
       "hotkeys": [
-        {"id": "MODE_BUY", "chord": ["F2"], "effect": "Request Buy Mode", "proves_mode": false},
-        {"id": "BACKSPACE_TO_HOUSEHOLD_INVENTORY", "chord": ["BACKSPACE"], "effect": "Deposit held catalog or lot object into Household Inventory without placement", "requires_hold": true},
-        {"id": "CANCEL_HOLD", "chord": ["ESC"], "effect": "Cancel held object ghost", "risk": "May open MENU if nothing held"},
-        {"id": "CHEAT_CONSOLE", "chord": ["CTRL", "SHIFT", "C"], "effect": "Toggle cheat console"},
-        {"id": "UNDO", "chord": ["CTRL", "Z"], "effect": "Undo last Build/Buy mutation"}
+        {
+          "id": "MODE_BUY",
+          "chord": [
+            "F2"
+          ],
+          "effect": "Request Buy Mode",
+          "proves_mode": false
+        },
+        {
+          "id": "BACKSPACE_TO_HOUSEHOLD_INVENTORY",
+          "chord": [
+            "BACKSPACE"
+          ],
+          "effect": "Deposit held catalog or lot object into Household Inventory without placement",
+          "requires_hold": true
+        },
+        {
+          "id": "CANCEL_HOLD",
+          "chord": [
+            "ESC"
+          ],
+          "effect": "Cancel held object ghost",
+          "risk": "May open MENU if nothing held"
+        },
+        {
+          "id": "CHEAT_CONSOLE",
+          "chord": [
+            "CTRL",
+            "SHIFT",
+            "C"
+          ],
+          "effect": "Toggle cheat console"
+        },
+        {
+          "id": "UNDO",
+          "chord": [
+            "CTRL",
+            "Z"
+          ],
+          "effect": "Undo last Build/Buy mutation"
+        }
       ],
       "panels": {
-        "item_catalog": {"status": "SHARED_WITH_BUILD_OBJECTS_CHROME"},
-        "household_inventory": {"status": "SHARED_WITH_BUILD_OBJECTS_CHROME"},
-        "search_filters": {"status": "SHARED_WITH_BUILD_OBJECTS_CHROME"}
+        "item_catalog": {
+          "status": "SHARED_WITH_BUILD_OBJECTS_CHROME"
+        },
+        "household_inventory": {
+          "status": "SHARED_WITH_BUILD_OBJECTS_CHROME"
+        },
+        "search_filters": {
+          "status": "SHARED_WITH_BUILD_OBJECTS_CHROME"
+        }
       },
       "targets": {
-        "catalog.search_field": {"ref": "shared.buildbuy.catalog.search_field"},
-        "catalog.first_result": {"ref": "shared.buildbuy.catalog.first_result"},
-        "catalog.household_inventory_tab": {"ref": "shared.buildbuy.catalog.household_inventory_tab"}
+        "catalog.search_field": {
+          "ref": "shared.buildbuy.catalog.search_field",
+          "preferred_channel": "MOUSE_FALLBACK",
+          "mouse_fallback_reason": "NO_CATALOGUED_SEARCH_FOCUS_HOTKEY"
+        },
+        "catalog.first_result": {
+          "ref": "shared.buildbuy.catalog.first_result",
+          "preferred_channel": "MOUSE_FALLBACK",
+          "mouse_fallback_reason": "NO_CATALOGUED_RESULT_SELECT_HOTKEY"
+        },
+        "catalog.household_inventory_tab": {
+          "ref": "shared.buildbuy.catalog.household_inventory_tab",
+          "preferred_channel": "MOUSE_FALLBACK",
+          "mouse_fallback_reason": "NO_CATALOGUED_INVENTORY_TAB_HOTKEY"
+        }
       }
     },
     "BUILD": {
       "shortcut_intent": "F3",
       "hotkeys": [
-        {"id": "MODE_BUILD", "chord": ["F3"], "effect": "Request Build Mode", "proves_mode": false},
-        {"id": "BACKSPACE_TO_HOUSEHOLD_INVENTORY", "chord": ["BACKSPACE"], "effect": "Deposit held catalog or lot object into Household Inventory without placement", "requires_hold": true},
-        {"id": "CANCEL_HOLD", "chord": ["ESC"], "effect": "Cancel held object ghost", "risk": "May open MENU if nothing held"},
-        {"id": "CHEAT_CONSOLE", "chord": ["CTRL", "SHIFT", "C"], "effect": "Toggle cheat console"},
-        {"id": "UNDO", "chord": ["CTRL", "Z"], "effect": "Undo last Build/Buy mutation"},
-        {"id": "STORY_UP", "chord": ["PAGEUP"], "effect": "Raise active story", "status": "UNVERIFIED_CANDIDATE"},
-        {"id": "STORY_DOWN", "chord": ["PAGEDOWN"], "effect": "Lower active story", "status": "UNVERIFIED_CANDIDATE"}
+        {
+          "id": "MODE_BUILD",
+          "chord": [
+            "F3"
+          ],
+          "effect": "Request Build Mode",
+          "proves_mode": false
+        },
+        {
+          "id": "BACKSPACE_TO_HOUSEHOLD_INVENTORY",
+          "chord": [
+            "BACKSPACE"
+          ],
+          "effect": "Deposit held catalog or lot object into Household Inventory without placement",
+          "requires_hold": true
+        },
+        {
+          "id": "CANCEL_HOLD",
+          "chord": [
+            "ESC"
+          ],
+          "effect": "Cancel held object ghost",
+          "risk": "May open MENU if nothing held"
+        },
+        {
+          "id": "CHEAT_CONSOLE",
+          "chord": [
+            "CTRL",
+            "SHIFT",
+            "C"
+          ],
+          "effect": "Toggle cheat console"
+        },
+        {
+          "id": "UNDO",
+          "chord": [
+            "CTRL",
+            "Z"
+          ],
+          "effect": "Undo last Build/Buy mutation"
+        },
+        {
+          "id": "STORY_UP",
+          "chord": [
+            "PAGEUP"
+          ],
+          "effect": "Raise active story",
+          "status": "UNVERIFIED_CANDIDATE"
+        },
+        {
+          "id": "STORY_DOWN",
+          "chord": [
+            "PAGEDOWN"
+          ],
+          "effect": "Lower active story",
+          "status": "UNVERIFIED_CANDIDATE"
+        }
       ],
       "panels": {
-        "objects_by_function": {"status": "SHARED_WITH_BUY_CATALOG_CHROME"},
-        "household_inventory": {"status": "SHARED_WITH_BUY_CATALOG_CHROME"},
-        "wall_tools": {"status": "UNCALIBRATED_STUB"},
-        "room_tools": {"status": "UNCALIBRATED_STUB"},
-        "floor_controls": {"status": "UNCALIBRATED_STUB"},
-        "terrain_tools": {"status": "UNCALIBRATED_STUB"}
+        "objects_by_function": {
+          "status": "SHARED_WITH_BUY_CATALOG_CHROME"
+        },
+        "household_inventory": {
+          "status": "SHARED_WITH_BUY_CATALOG_CHROME"
+        },
+        "wall_tools": {
+          "status": "UNCALIBRATED_STUB"
+        },
+        "room_tools": {
+          "status": "UNCALIBRATED_STUB"
+        },
+        "floor_controls": {
+          "status": "UNCALIBRATED_STUB"
+        },
+        "terrain_tools": {
+          "status": "UNCALIBRATED_STUB"
+        }
       },
       "targets": {
-        "catalog.search_field": {"ref": "shared.buildbuy.catalog.search_field"},
-        "catalog.first_result": {"ref": "shared.buildbuy.catalog.first_result"},
-        "catalog.household_inventory_tab": {"ref": "shared.buildbuy.catalog.household_inventory_tab"}
+        "catalog.search_field": {
+          "ref": "shared.buildbuy.catalog.search_field",
+          "preferred_channel": "MOUSE_FALLBACK",
+          "mouse_fallback_reason": "NO_CATALOGUED_SEARCH_FOCUS_HOTKEY"
+        },
+        "catalog.first_result": {
+          "ref": "shared.buildbuy.catalog.first_result",
+          "preferred_channel": "MOUSE_FALLBACK",
+          "mouse_fallback_reason": "NO_CATALOGUED_RESULT_SELECT_HOTKEY"
+        },
+        "catalog.household_inventory_tab": {
+          "ref": "shared.buildbuy.catalog.household_inventory_tab",
+          "preferred_channel": "MOUSE_FALLBACK",
+          "mouse_fallback_reason": "NO_CATALOGUED_INVENTORY_TAB_HOTKEY"
+        }
       }
     }
   },
   "shared_targets": {
     "shared.buildbuy.catalog.search_field": {
       "label": "Build/Buy catalog search field",
-      "modes": ["BUY", "BUILD"],
+      "modes": [
+        "BUY",
+        "BUILD"
+      ],
       "profiles": {
         "1920x1080": {
           "kind": "point",
@@ -141,7 +305,10 @@
     },
     "shared.buildbuy.catalog.first_result": {
       "label": "First catalog thumbnail under active search",
-      "modes": ["BUY", "BUILD"],
+      "modes": [
+        "BUY",
+        "BUILD"
+      ],
       "profiles": {
         "1920x1080": {
           "kind": "point",
@@ -154,7 +321,10 @@
     },
     "shared.buildbuy.catalog.household_inventory_tab": {
       "label": "Household Inventory cardboard-box tab",
-      "modes": ["BUY", "BUILD"],
+      "modes": [
+        "BUY",
+        "BUILD"
+      ],
       "profiles": {
         "1920x1080": {
           "kind": "point",
@@ -170,21 +340,87 @@
     "catalog_to_household_inventory": {
       "id": "catalog_to_household_inventory",
       "destination": "HOUSEHOLD_INVENTORY",
-      "forbidden": ["LOT_PLACEMENT", "PERSONAL_POCKET", "HALLUCINATED_GSI_CREATE_OBJ"],
-      "required_modes": ["BUY", "BUILD"],
+      "forbidden": [
+        "LOT_PLACEMENT",
+        "PERSONAL_POCKET",
+        "HALLUCINATED_GSI_CREATE_OBJ"
+      ],
+      "required_modes": [
+        "BUY",
+        "BUILD"
+      ],
       "mutating_action": "BACKSPACE_TO_INVENTORY",
       "execute_allowed_default": false,
       "steps": [
-        {"op": "REQUIRE_MODE", "modes": ["BUY", "BUILD"]},
-        {"op": "CLICK_TARGET", "target": "catalog.search_field"},
-        {"op": "TYPE_TEXT", "from_recipe_field": "search_term"},
-        {"op": "KEY", "chord": ["ENTER"]},
-        {"op": "CLICK_TARGET", "target": "catalog.first_result"},
-        {"op": "OBSERVE", "cue": "held_object_cancel_esc", "fail": "ITEM_NOT_HELD"},
-        {"op": "KEY", "chord": ["BACKSPACE"], "hotkey_id": "BACKSPACE_TO_HOUSEHOLD_INVENTORY"},
-        {"op": "CLICK_TARGET", "target": "catalog.household_inventory_tab"},
-        {"op": "OBSERVE", "cue": "household_inventory_contains_item", "fail": "ITEM_NOT_IN_HOUSEHOLD_INVENTORY"}
-      ]
+        {
+          "op": "REQUIRE_MODE",
+          "modes": [
+            "BUY",
+            "BUILD"
+          ]
+        },
+        {
+          "op": "KEY",
+          "chord": [
+            "F3"
+          ],
+          "hotkey_id": "MODE_BUILD",
+          "when_mode": "BUILD",
+          "note": "Prefer F3 over HUD hammer click when requesting Build"
+        },
+        {
+          "op": "KEY",
+          "chord": [
+            "F2"
+          ],
+          "hotkey_id": "MODE_BUY",
+          "when_mode": "BUY",
+          "note": "Prefer F2 over HUD Buy click when requesting Buy"
+        },
+        {
+          "op": "CLICK_TARGET",
+          "target": "catalog.search_field",
+          "preferred_channel": "MOUSE_FALLBACK"
+        },
+        {
+          "op": "TYPE_TEXT",
+          "from_recipe_field": "search_term"
+        },
+        {
+          "op": "KEY",
+          "chord": [
+            "ENTER"
+          ]
+        },
+        {
+          "op": "CLICK_TARGET",
+          "target": "catalog.first_result",
+          "preferred_channel": "MOUSE_FALLBACK"
+        },
+        {
+          "op": "OBSERVE",
+          "cue": "held_object_cancel_esc",
+          "fail": "ITEM_NOT_HELD"
+        },
+        {
+          "op": "KEY",
+          "chord": [
+            "BACKSPACE"
+          ],
+          "hotkey_id": "BACKSPACE_TO_HOUSEHOLD_INVENTORY"
+        },
+        {
+          "op": "CLICK_TARGET",
+          "target": "catalog.household_inventory_tab",
+          "preferred_channel": "MOUSE_FALLBACK"
+        },
+        {
+          "op": "OBSERVE",
+          "cue": "household_inventory_contains_item",
+          "fail": "ITEM_NOT_IN_HOUSEHOLD_INVENTORY"
+        }
+      ],
+      "input_preference": "HOTKEY_FIRST_WHEN_EQUIVALENT"
     }
   },
   "catalog_items": {
@@ -205,7 +441,7 @@
         "meat wall planter",
         "cruelty free meat planter"
       ],
-      "synonym_note": "Operator coveted-item language: wall shelf means this Bloomer — never invent a separate wall-shelf catalog product",
+      "synonym_note": "Operator coveted-item language: wall shelf means this Bloomer \u2014 never invent a separate wall-shelf catalog product",
       "pack": "Eco Lifestyle",
       "recipe": "catalog_to_household_inventory",
       "why": "Civil Designer L5 unlocks Grow Cruelty-Free Meat on this planter; item itself is ordinary Buy/Build catalog purchase into Household Inventory",
@@ -220,6 +456,25 @@
     "Hotkeys are glossary entries; they never prove mode or grant execute_allowed",
     "Recipes default execute_allowed=false",
     "No second screen daemon; adapters consume plans after independent admission",
-    "Extensible: add Live phone/app maps and panel cells without replacing ui_mode"
-  ]
+    "Extensible: add Live phone/app maps and panel cells without replacing ui_mode",
+    "Plans prefer HOTKEY/KEY over CLICK_TARGET whenever a catalogued equivalent exists",
+    "Mouse clicks remain annotated MOUSE_FALLBACK when no hotkey equivalent exists"
+  ],
+  "input_preference": {
+    "selected": "HOTKEY_FIRST_WHEN_EQUIVALENT",
+    "order": [
+      "HOTKEY",
+      "KEY",
+      "TYPE_TEXT",
+      "CLICK_TARGET"
+    ],
+    "interop_rationale": "Keyboard chords avoid relocating the cursor into chrome/lot fights and share the cooperative 15s idle gate without mouse contention.",
+    "mouse_fallback": "Only when no catalogued hotkey equivalent exists for the effect",
+    "forbidden": [
+      "BACKGROUND_KEYLOGGER",
+      "GLOBAL_KEYHOOK",
+      "HOTKEY_PROVES_MODE",
+      "HOTKEY_GRANTS_EXECUTE"
+    ]
+  }
 }

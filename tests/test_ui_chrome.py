@@ -10,6 +10,7 @@ from betterinstincts.ui_chrome import (
     glossary_snapshot,
     load_contract,
     plan_catalog_to_inventory,
+    prefer_hotkey_step,
     resolve_catalog_item,
     resolve_target,
 )
@@ -72,13 +73,58 @@ class UIChromeTests(unittest.TestCase):
         )
         self.assertEqual(plan["search_term"], "AOK")
         self.assertIs(plan["execute_allowed"], False)
+        self.assertEqual(plan["input_preference"], "HOTKEY_FIRST_WHEN_EQUIVALENT")
         self.assertIn("LOT_PLACEMENT", plan["forbidden"])
         typed = [s for s in plan["steps"] if s.get("op") == "TYPE_TEXT"]
         self.assertEqual(typed[0]["text"], "AOK")
         clicks = [s for s in plan["steps"] if s.get("op") == "CLICK_TARGET"]
         self.assertEqual(clicks[0]["resolved"]["x"], 125)
+        self.assertEqual(clicks[0]["channel"], "MOUSE_FALLBACK")
         keys = [s for s in plan["steps"] if s.get("op") == "KEY" and s.get("chord") == ["BACKSPACE"]]
         self.assertEqual(len(keys), 1)
+        self.assertEqual(keys[0]["channel"], "HOTKEY")
+        mode_keys = [
+            s for s in plan["steps"]
+            if s.get("op") == "KEY" and s.get("hotkey_id") == "MODE_BUILD"
+        ]
+        self.assertEqual(len(mode_keys), 1)
+        self.assertEqual(mode_keys[0]["chord"], ["F3"])
+        self.assertFalse(any(s.get("hotkey_id") == "MODE_BUY" for s in plan["steps"]))
+
+    def test_hotkey_first_rewrites_click_when_preferred_hotkey(self) -> None:
+        rewritten = prefer_hotkey_step(
+            {"op": "CLICK_TARGET", "target": "catalog.search_field", "preferred_hotkey": "UNDO"},
+            mode="BUILD",
+            cfg=self.cfg,
+        )
+        self.assertEqual(rewritten["op"], "KEY")
+        self.assertEqual(rewritten["channel"], "HOTKEY")
+        self.assertEqual(rewritten["hotkey_id"], "UNDO")
+        self.assertEqual(rewritten["chord"], ["CTRL", "Z"])
+        self.assertEqual(rewritten["rewritten_from"], "CLICK_TARGET")
+
+    def test_mouse_fallback_preserved_without_hotkey(self) -> None:
+        step = prefer_hotkey_step(
+            {"op": "CLICK_TARGET", "target": "catalog.search_field"},
+            mode="BUILD",
+            cfg=self.cfg,
+        )
+        self.assertEqual(step["op"], "CLICK_TARGET")
+        self.assertEqual(step["channel"], "MOUSE_FALLBACK")
+        self.assertEqual(step["mouse_fallback_reason"], "NO_CATALOGUED_SEARCH_FOCUS_HOTKEY")
+
+    def test_unknown_hotkey_id_fails_closed(self) -> None:
+        with self.assertRaisesRegex(UIChromeError, "UNKNOWN_HOTKEY_ID"):
+            prefer_hotkey_step(
+                {"op": "KEY", "chord": ["X"], "hotkey_id": "NOT_A_REAL_HOTKEY"},
+                mode="BUILD",
+                cfg=self.cfg,
+            )
+
+    def test_buy_plan_prefers_f2_not_f3(self) -> None:
+        plan = plan_catalog_to_inventory("a_ok_bloomer", mode="BUY", cfg=self.cfg)
+        self.assertTrue(any(s.get("hotkey_id") == "MODE_BUY" for s in plan["steps"]))
+        self.assertFalse(any(s.get("hotkey_id") == "MODE_BUILD" for s in plan["steps"]))
 
     def test_aok_live_handoff_is_discoverable_and_has_proof_gates(self) -> None:
         """Protect the handoff from regressing to a plan-only success claim."""
