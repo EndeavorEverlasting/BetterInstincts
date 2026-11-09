@@ -107,3 +107,9 @@ Moonwake current source `AGENTS.md`, deterministic resolver `scripts/prompt_invo
 ## 2026-11-07 P04 — hidden-item operator playbook routing
 
 P04 remains the canonical Moonwake **[PARALLEL] Repo-Aware Sprint + Harness Factoring Distributor**, *not* an invented Sims-specific prompt. BetterInstincts `AGENTS.md` now requires every P04 inventory to inspect `plans/active/BI-HIDDEN-OBJECTS.P04.md` and run `python -m scripts.hidden_object_discovery guide` to retrieve the canonical five-step recipe. The machine dispatch `plans/active/BI-HIDDEN-OBJECTS.dispatch.v1.json` owns local-host work placement; `python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json` enforces receipt shape; CI `scripts/check_hidden_object_p04.py` guards the route and ordered instructions. This applies directly when the parent objective concerns hidden items; otherwise it is inventoried/deferred rather than creating a side quest. These are repository contracts, **not** a verified invocation of Moonwake's own agent dispatcher or a claim that a Windows game session was accessed.
+
+
+## 2026-11-09 — game mode and menu context microsystem
+
+Current Moonwake catalog verified at `harness/exports/prompt-invocation-catalog.v1.json` blob `8c281379ba7ccc871947391233b1db72f4a108ef`. **P95** selects a thin scene-backed F1/F2/F3 evaluator, reusing `scenes.classify` and honest declared cue status. **P124** factors a separate read-only `ui_mode` projection without a second screen detector, daemon or host listener. Trifecta: **P08** remains a local exact-build screenshot/overlay calibration gate, **P82** implements offline candidate/negative tests, and **P07** owns bounded source integration and CI. Ontology consultation `contracts/consultations/BI-UI-MODE-CONTEXT-20261109.v1.json` was committed before code. Detailed call flow: `docs/UI_MODE.md`. Passing offline tests cannot certify real Live/Buy/Build recognition.
+
