@@ -821,6 +821,8 @@ def evaluate_turn(
                 "UNCALIBRATED_PORTRAIT_RIGHT_CLICK", "AUTO_RECLICK",
             ],
         }
+    elif player_directed or already_busy:
+        next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
     elif camera_lock is not None and camera_lock["gate"] != "CAMERA_ACTIVE_SIM_LOCKED":
         # No discretionary camera placement. Restoring the active Sim outranks
         # exploration and ordinary game actions; the only map exception is a
