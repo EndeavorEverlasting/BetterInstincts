@@ -5,11 +5,16 @@ from pathlib import Path
 from betterinstincts.diy_skill_force import (
     DiySkillForceError,
     catalog_snapshot,
+    completed_skill_ids_for_member,
+    completion_member_key,
+    empty_completion_ledger,
     load_contract,
     plan_household_skill_force,
     plan_skill_force,
+    record_skill_dispatched,
     required_residual_skills,
     resolve_skills,
+    save_completion_ledger,
     skills_panel_observation_policy,
     steps_to_commands,
 )
@@ -27,7 +32,9 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(seq["default_level"], 10)
         self.assertIn("diy_maker", cfg["bundles"])
         self.assertIn("full_unlock", cfg["bundles"])
-        self.assertEqual(cfg["version"], 8)
+        self.assertEqual(cfg["version"], 9)
+        self.assertTrue(cfg["completion_ledger"]["space_to_next_needing"])
+        self.assertIn("skip_skills_already_recorded_complete", cfg["invariants"])
         self.assertEqual(cfg["household_traverse"]["min_members"], 1)
         self.assertGreaterEqual(int(cfg["household_traverse"]["sanity_max_members"]), 100)
         self.assertEqual(
@@ -201,10 +208,24 @@ class DiySkillForceTests(unittest.TestCase):
             cursor_in_client=False,
             last_input_age_ms=100,
         )
-        with patch("betterinstincts.player_presence.probe_windows", return_value=busy):
+        def _moving_cursor():
+            x = 10
+            while True:
+                yield (x, 10)
+                x += 1
+
+        with patch("betterinstincts.player_presence.probe_windows", return_value=busy), patch(
+            "scripts.diy_skill_force._cursor_pos", side_effect=_moving_cursor()
+        ):
             with self.assertRaises(cli.GateError) as ctx:
                 cli._wait_for_input_idle(1, idle_ms=15000, timeout_sec=0.3, poll_sec=0.05)
         self.assertIn("CONTINUOUS_INPUT_BLOCKING_ADMIT", str(ctx.exception))
+
+        with patch("betterinstincts.player_presence.probe_windows", return_value=busy), patch(
+            "scripts.diy_skill_force._cursor_pos", return_value=(400, 20)
+        ):
+            stable = cli._wait_for_input_idle(1, idle_ms=200, timeout_sec=2.0, poll_sec=0.05)
+        self.assertEqual(stable["reason"], "CURSOR_STABLE_DESPITE_INPUT_FLICKER")
 
     def test_contract_json_roundtrip(self):
         raw = json.loads(
@@ -212,7 +233,11 @@ class DiySkillForceTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(raw["version"], 8)
+        self.assertEqual(raw["version"], 9)
+        self.assertEqual(
+            raw["completion_ledger"]["schema"],
+            "betterinstincts.diy-skill-force.completion/v1",
+        )
         self.assertEqual(raw["bundles"]["full_unlock"]["default_level"], 10)
         self.assertEqual(raw["required_residual_skills"], ["cooking", "fitness", "natural_living"])
         self.assertTrue(raw["inject_sequence"]["reward_dialog_accept"]["never_press_cancel"])
@@ -290,6 +315,94 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(seq.get("close_console_key"), "CTRL_SHIFT_C_TOGGLE")
         self.assertTrue(seq.get("console_text_is_not_pass"))
         self.assertTrue(seq.get("pass_requires_skills_panel_local_observed"))
+
+    def test_completion_ledger_skips_maxed_skills_and_members(self):
+        import tempfile
+
+        ledger = empty_completion_ledger()
+        m0 = completion_member_key("sess-lab", 0)
+        m1 = completion_member_key("sess-lab", 1)
+        for sid, stat in (
+            ("handiness", "Major_Handiness"),
+            ("robotics", "Major_Robotics"),
+            ("programming", "Major_Programming"),
+        ):
+            record_skill_dispatched(
+                ledger, member_key=m0, skill_id=sid, skill_stat=stat, level=10
+            )
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "completion.json"
+            save_completion_ledger(ledger, path)
+            done = completed_skill_ids_for_member(
+                ledger, m0, target_level=10
+            )
+            self.assertEqual(done, {"handiness", "robotics", "programming"})
+
+            already = plan_skill_force(
+                bundle="servo_core",
+                omit_skill_ids=sorted(done),
+                game_mode="live",
+            )
+            self.assertEqual(already["state"], "SKILL_FORCE_MEMBER_ALREADY_MAXED")
+            self.assertTrue(already["skip_dispatch"])
+            self.assertEqual(already["skills"], [])
+
+            residual_only = plan_skill_force(
+                bundle="full_unlock",
+                omit_skill_ids=["handiness", "robotics", "programming"],
+                game_mode="live",
+            )
+            ids = {s["id"] for s in residual_only["skills"]}
+            self.assertNotIn("handiness", ids)
+            self.assertIn("cooking", ids)
+
+            hh = plan_household_skill_force(
+                members=3,
+                bundle="servo_core",
+                session_id="sess-lab",
+                completion_ledger=ledger,
+                game_mode="live",
+            )
+            self.assertEqual(hh["members_needing_work"], 2)
+            self.assertTrue(hh["member_plans"][0]["skip_dispatch"])
+            self.assertFalse(hh["member_plans"][1]["skip_dispatch"])
+            self.assertEqual(hh["member_plans"][1]["select"]["key"], "SPACE")
+            self.assertEqual(hh["member_plans"][0]["member_key"], m0)
+            self.assertEqual(hh["member_plans"][1]["member_key"], m1)
+
+            # Fully done household
+            for idx in (1, 2):
+                mk = completion_member_key("sess-lab", idx)
+                for sid, stat in (
+                    ("handiness", "Major_Handiness"),
+                    ("robotics", "Major_Robotics"),
+                    ("programming", "Major_Programming"),
+                ):
+                    record_skill_dispatched(
+                        ledger, member_key=mk, skill_id=sid, skill_stat=stat, level=10
+                    )
+            hh_done = plan_household_skill_force(
+                members=3,
+                bundle="servo_core",
+                session_id="sess-lab",
+                completion_ledger=ledger,
+                game_mode="live",
+            )
+            self.assertEqual(
+                hh_done["state"], "HOUSEHOLD_SKILL_FORCE_ALL_MEMBERS_ALREADY_MAXED"
+            )
+            self.assertEqual(hh_done["members_needing_work"], 0)
+
+            redo = plan_household_skill_force(
+                members=3,
+                bundle="servo_core",
+                session_id="sess-lab",
+                completion_ledger=ledger,
+                redo=True,
+                game_mode="live",
+            )
+            self.assertEqual(redo["members_needing_work"], 3)
+            self.assertFalse(any(s["skip_dispatch"] for s in redo["member_plans"]))
 
 
 if __name__ == "__main__":
