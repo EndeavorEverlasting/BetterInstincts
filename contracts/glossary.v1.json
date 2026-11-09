@@ -1,7 +1,7 @@
 {
   "schema": "betterinstincts.glossary/v1",
   "version": 1,
-  "authority": "docs/GLOSSARY.md",
+  "authority": "contracts/glossary.v1.json",
   "note": "Canonical host/evaluator vocabulary. Prefer these IDs over inventing synonyms. Cross-link DOCTRINE, HOST_EVAL, VALIDATION, SCENE_INTELLIGENCE.",
   "terms": {
     "PLAYER_FIRST": {
