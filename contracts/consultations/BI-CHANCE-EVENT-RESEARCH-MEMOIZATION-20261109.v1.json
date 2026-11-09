@@ -57,7 +57,7 @@
   "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
   "evidence_ceiling": "OFFLINE_OBSERVATION_FINGERPRINT_RESEARCH_DISPATCH_MEMOIZATION_AND_UI_MODEL; NO_LIVE_POPUP_SENSING_OVERLAY_OR_CLICK_CERTIFIED",
   "player_save_control_impact": "Read-only advisory from supplied evidence; no Sims input, save/mode mutations, automatic external requests, background daemon or unsolicited overlay focus. Unknown/stale/contradictory event consequences fail closed. Player retains all native option controls; persistent cache only under explicitly selected repo-owned dist path.",
-  "expected_outcome": "Build a deterministic chance-event coordinator with two independent visual cues, exact patch/pack/mod and content fingerprints, opt-in external research lane, local mechanic corroboration, bounded source-aware memo cache, explicit progress/failed/loading UI projection, irreversible outcome guard, and player-only selection. Preserve existing known chance-card decision_eval as canonical heuristic owner. Integrate real sensing/overlay only in separately certified Windows live lane.",
+  "expected_outcome": "Build a deterministic chance-event coordinator with two independent visual cues, exact patch/pack/mod and content fingerprints, opt-in external research lane, local mechanic corroboration, bounded source-aware memo cache, explicit progress/failed/loading UI projection, irreversible outcome guard, and player-only selection. Preserve existing known chance-card decision_eval as canonical heuristic owner. Integrate real sensing/overlay only in separately certified Windows live lane. Existing opt-in host listener consumes supplied event observation as a read-only sidecar even while human input yields, with no action permit or external call.",
   "negative_tests": [
     "one cue/unconfirmed popup cannot dispatch decisions",
     "unreviewed or incomplete research cannot memoize",
@@ -83,7 +83,10 @@
     "tests/test_chance_event_research.py",
     "docs/CHANCE_EVENT_RESEARCH.md",
     "docs/LEDGER.md",
-    "docs/PROMPT_INVOCATIONS.md"
+    "docs/PROMPT_INVOCATIONS.md",
+    "betterinstincts/host_listener.py",
+    "contracts/host-listener.v1.json",
+    "tests/test_chance_event_listener.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "source_main_sha": "6e352d2823b69b15cf82751ae26cf27913f2ca47",
