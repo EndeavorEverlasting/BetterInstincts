@@ -1,0 +1,81 @@
+{
+  "schema": "betterinstincts.ui-mode/v1",
+  "version": 1,
+  "scene_owner": "contracts/game-scenes.v1.json",
+  "proof_ceiling": "DECLARED_CUES_ONLY_NO_LIVE_SCREEN_RECOGNITION_OR_INPUT",
+  "shortcuts": {
+    "F1": "LIVE",
+    "F2": "BUY",
+    "F3": "BUILD"
+  },
+  "shortcuts_are": "INTENT_ONLY_NEVER_MODE_PROOF",
+  "scene_to_mode": {
+    "live_mode": "LIVE",
+    "buy_mode": "BUY",
+    "build_mode": "BUILD"
+  },
+  "ambiguous_legacy_scene": "build_buy",
+  "modes": {
+    "LIVE": {
+      "panels": {
+        "needs": {
+          "visual": "panel:live_needs",
+          "operator": "live_needs_visible"
+        },
+        "simology": {
+          "visual": "panel:live_simology",
+          "operator": "simology_visible"
+        },
+        "interaction_queue": {
+          "visual": "panel:live_queue",
+          "operator": "action_queue_visible"
+        }
+      }
+    },
+    "BUY": {
+      "panels": {
+        "item_catalog": {
+          "visual": "panel:buy_catalog",
+          "operator": "buy_catalog_visible"
+        },
+        "household_inventory": {
+          "visual": "panel:household_inventory",
+          "operator": "household_inventory_visible"
+        },
+        "search_filters": {
+          "visual": "panel:buy_filters",
+          "operator": "buy_filters_visible"
+        }
+      }
+    },
+    "BUILD": {
+      "panels": {
+        "wall_tools": {
+          "visual": "panel:build_walls",
+          "operator": "wall_tools_visible"
+        },
+        "room_tools": {
+          "visual": "panel:build_rooms",
+          "operator": "room_tools_visible"
+        },
+        "floor_controls": {
+          "visual": "panel:build_floors",
+          "operator": "floor_controls_visible"
+        },
+        "terrain_tools": {
+          "visual": "panel:build_terrain",
+          "operator": "terrain_tools_visible"
+        }
+      }
+    }
+  },
+  "guarantees": [
+    "Require exact game patch",
+    "Require independent visual and operator mode cues",
+    "A hotkey, previous mode, or legacy boolean is never confirmation",
+    "Conflicting or missing cues resolve to UNKNOWN",
+    "Recognize candidate panel context without UI interactions",
+    "Live automation proposals suspended in explicit Buy/Build/Unknown scenes",
+    "No daemon or input side effects"
+  ]
+}
