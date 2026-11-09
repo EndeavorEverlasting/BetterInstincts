@@ -11,6 +11,12 @@ from typing import Mapping, Sequence
 from dataclasses import replace
 
 from betterinstincts.behavior_eval import BehaviorEvalError, evaluate_queue
+from betterinstincts.affordance_memory import (
+    AffordanceMemoryError, empty_index, load_index, record_event,
+)
+from betterinstincts.opportunity_survey import (
+    OpportunitySurveyError, evaluate_opportunity_survey,
+)
 from betterinstincts.build_floor_activity import (
     BuildFloorActivityError,
     evaluate_floor_activity,
@@ -130,7 +136,8 @@ def status(session_id: str) -> dict:
 
 
 def observe_hover(
-    session_id: str, supplied_event: Mapping, *, explicit_opt_in: bool = False
+    session_id: str, supplied_event: Mapping, *, explicit_opt_in: bool = False,
+    game_version: str | None = None, lot_id: str | None = None,
 ) -> dict:
     """Ingest one supplied tooltip edge/action/outcome into an active session.
 
@@ -192,10 +199,26 @@ def observe_hover(
             finally:
                 if temporary is not None:
                     temporary.unlink(missing_ok=True)
+        # The session event ledger stays canonical; the bounded cross-session
+        # index is a projection, not a second hover event parser or policy owner.
+        memory = {"state": "UNCHANGED_TOOLTIP", "recorded": False}
+        if transition["recorded"]:
+            try:
+                memory = record_event(
+                    OUTPUT / "affordance-memory.v1.json", supplied_event,
+                    session_id=session_id, game_version=game_version,
+                    lot_id=lot_id, hover_state=updated,
+                )
+            except AffordanceMemoryError as exc:
+                # The session observation is already saved; return a recoverable
+                # index warning rather than lying about a durable discovery.
+                memory = {"state": "AFFORDANCE_INDEX_REPAIR_REQUIRED",
+                          "recorded": False, "reason": str(exc)}
         return {
             "schema": "betterinstincts.hover-observation-receipt/v1",
             "session_id": session_id, "transition": transition,
             "evaluation": evaluation, "state_path": str(state_path.relative_to(ROOT)),
+            "affordance_memory": memory,
             "execute_clicks": False, "control_permit": None,
         }
     finally:
@@ -409,6 +432,28 @@ def _load_observation(raw: Mapping) -> dict:
     if lot_model is not None:
         if not isinstance(lot_model, Mapping) or len(json.dumps(lot_model).encode("utf-8")) > 262144:
             raise HostListenerError("OBSERVATION_LOT_MODEL_INVALID")
+    survey_goals = raw.get("survey_goals", [])
+    if not isinstance(survey_goals, (list, tuple)) or len(survey_goals) > 16:
+        raise HostListenerError("OBSERVATION_SURVEY_GOALS_INVALID")
+    actor_ref = raw.get("actor_ref")
+    if actor_ref is not None and (
+        not isinstance(actor_ref, str) or not actor_ref or len(actor_ref) > 120
+    ):
+        raise HostListenerError("OBSERVATION_SURVEY_ACTOR_INVALID")
+    active_lot_id = raw.get("active_lot_id")
+    if active_lot_id is not None and (
+        not isinstance(active_lot_id, str) or not active_lot_id or len(active_lot_id) > 80
+    ):
+        raise HostListenerError("OBSERVATION_ACTIVE_LOT_INVALID")
+    camera_follow = raw.get("camera_follow_attested", False)
+    if type(camera_follow) is not bool:
+        raise HostListenerError("OBSERVATION_CAMERA_FOLLOW_INVALID")
+    game_version = raw.get("game_version")
+    if game_version is not None and (not isinstance(game_version, str) or len(game_version) > 40):
+        raise HostListenerError("OBSERVATION_GAME_VERSION_INVALID")
+    survey_occupied = raw.get("occupied_objects", [])
+    if not isinstance(survey_occupied, (list, tuple)) or len(survey_occupied) > 128:
+        raise HostListenerError("OBSERVATION_OCCUPIED_OBJECTS_INVALID")
     preference_offer = raw.get("preference_offer")
     if preference_offer is not None and (
         not isinstance(preference_offer, Mapping)
@@ -451,6 +496,12 @@ def _load_observation(raw: Mapping) -> dict:
         "stories_touched": list(raw.get("stories_touched") or []),
         "floor_items": list(raw.get("floor_items") or []),
         "lot_model": lot_model,
+        "actor_ref": actor_ref,
+        "active_lot_id": active_lot_id,
+        "camera_follow_attested": camera_follow,
+        "game_version": game_version,
+        "survey_goals": list(survey_goals),
+        "occupied_objects": list(survey_occupied),
         "school_phase": (str(raw["school_phase"]) if raw.get("school_phase") else None),
         "pinned_whims": [str(x) for x in pinned],
         "homework_pending": bool(raw.get("homework_pending", False)),
@@ -639,6 +690,35 @@ def tick(
     except HandoffError as exc:
         raise HostListenerError(str(exc)) from exc
     presence = as_presence(handoff)
+    # Read-only lot assessment continues even while the human owns the mouse.
+    # It reads supplied model/queue facts and the persistent token index only;
+    # no screen navigation or Sim queue mutation occurs in this path.
+    try:
+        knowledge = load_index(OUTPUT / "affordance-memory.v1.json")
+        memory_state = "INDEX_AVAILABLE"
+    except AffordanceMemoryError:
+        knowledge = empty_index()
+        memory_state = "INDEX_UNAVAILABLE_NEEDS_REPAIR"
+    try:
+        survey = evaluate_opportunity_survey(
+            obs["needs"], queue=obs["queue"], multitasking=obs["multitasking"],
+            lot_model=obs.get("lot_model"), active_lot_id=obs["active_lot_id"],
+            game_version=obs["game_version"], capture_ref=obs["capture_ref"],
+            homework_pending=obs["homework_pending"],
+            inventory_has_homework=obs["inventory_has_homework"],
+            observed_goals=obs["survey_goals"], aff_index=knowledge,
+            player_active=presence["host"] == "YIELD_TO_PLAYER",
+            host_may_control=bool(handoff["screen_control_allowed"]),
+            verified_live_mode=bool(
+                mode_context is not None and mode_context["mode"] == "LIVE"
+                and mode_context["mode_autonomy_allowed"]
+            ),
+            camera_follow_attested=obs["camera_follow_attested"],
+            actor_ref=obs["actor_ref"], occupied_objects=obs["occupied_objects"],
+        )
+    except OpportunitySurveyError as exc:
+        raise HostListenerError("SURVEY_OBSERVATION_INVALID:" + str(exc)) from exc
+    survey["affordance_index_state"] = memory_state
     if presence["host"] == "YIELD_TO_PLAYER":
         ticks = ticks + 1
         meta["ticks"] = ticks
@@ -651,6 +731,7 @@ def tick(
             "presence": presence,
             "handoff": handoff,
             "listener_action": "YIELD_TO_PLAYER",
+            "opportunity_survey": survey,
             "ui_mode": mode_context,
             "execute_clicks": False,
             "proof_ceiling": cfg.get("proof_ceiling"),
@@ -689,6 +770,7 @@ def tick(
             "presence": presence, "handoff": handoff,
             "ui_mode": mode_context,
             "build_floor_activity": floor_activity,
+            "opportunity_survey": survey,
             "listener_action": listener_action,
             "execute_clicks": False,
             "proof_ceiling": cfg.get("proof_ceiling"),
@@ -843,6 +925,7 @@ def tick(
         "host_stack": stack,
         "needs_force_plan": force,
         "build_floor_activity": floor_activity,
+        "opportunity_survey": survey,
         "ui_mode": mode_context,
         "learning_hint": None,
         "listener_action": (
