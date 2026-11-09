@@ -266,9 +266,21 @@ class SimCameraHostPortTests(unittest.TestCase):
         self.assertFalse(result["cursor_moved"])
 
     def test_s4cl_absence_never_substitutes_click(self):
-        with self.assertRaises(SimCameraError):
+        original_import = __import__
+        def missing_s4cl(name, *args, **kwargs):
+            if name.startswith("sims4communitylib"):
+                raise ImportError("simulated missing mod dependency")
+            return original_import(name, *args, **kwargs)
+        with patch("builtins.__import__", side_effect=missing_s4cl):
+            with self.assertRaisesRegex(SimCameraError, "COMPATIBLE_S4CL_GAME_RUNTIME_REQUIRED"):
+                follow_active_sim_in_game(
+                    492, admit=lambda: True, observe=lambda: observed(),
+                )
+
+    def test_in_game_explicit_admission_cannot_be_missing(self):
+        with self.assertRaisesRegex(SimCameraError, "IN_GAME_FOLLOW_ADMISSION_REQUIRED"):
             follow_active_sim_in_game(
-                492, admit=lambda: True, observe=lambda: observed(),
+                492, admit=None, observe=lambda: observed(),
             )
 
     def test_s4cl_follow_port_accepts_exact_active_sim_only(self):
