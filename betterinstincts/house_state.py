@@ -509,11 +509,13 @@ def admit_mutation(
     nest_risk: bool = False,
     strips_zone: str | None = None,
     building_id: str | None = None,
+    held_object: str | None = None,
 ) -> dict:
     """Admit one mutation only against the current accumulated model revision.
 
-    Order: model revision → library checkpoint (room/structure) → Save As
-    (destructive) → spatial axes → build integrity → lease.
+    Order: model revision → library checkpoint (room/structure/FLOOR_2/stairs)
+    → held-distractor cancel → Save As (destructive) → spatial axes →
+    build integrity → lease.
     """
     cfg = load_contract()
     mutating = set(cfg["mutating_actions"])
@@ -564,7 +566,18 @@ def admit_mutation(
             "execute_allowed": False,
         }
     target_list = [str(t) for t in (targets or []) if str(t).strip()]
-    if action in {"BACKSPACE_TO_INVENTORY", "HAND_MOVE", "SLEDGE", "EYEDROPPER_PLACE"} and not target_list:
+    if action in {
+        "BACKSPACE_TO_INVENTORY",
+        "HAND_MOVE",
+        "SLEDGE",
+        "EYEDROPPER_PLACE",
+        "DELETE_KEY",
+        "DELETE_OBJECT",
+        "BACKSPACE_STRUCTURE",
+        "REMOVE_FLOOR",
+        "REMOVE_FLOOR_TILE",
+        "DELETE_STAIRS",
+    } and not target_list:
         return {
             "state": "MUTATION_DENIED",
             "gate": "PLAN_FROM_MODEL",
@@ -602,7 +615,9 @@ def admit_mutation(
         action,
         targets=target_list,
         place_kind=place_kind,
+        place_story=place_story,
         building_id=building_id or str(model.get("lot_id") or ""),
+        held_object=held_object,
     )
     if action == "SAVE_TO_LIBRARY":
         return {
@@ -630,13 +645,24 @@ def admit_mutation(
                 "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
             ],
         }
-    if library.get("state") == "LIBRARY_DENY":
+    if library.get("state") in {
+        "LIBRARY_DENY",
+        "PROTECTED_STORY_DENY",
+        "STRUCTURE_WHILE_HELD_DISTRACTOR",
+    }:
+        reason = "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE"
+        if library.get("state") == "STRUCTURE_WHILE_HELD_DISTRACTOR":
+            reason = "STRUCTURE_WHILE_HELD_DISTRACTOR"
+        elif library.get("violation") == "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE":
+            reason = "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE"
         return {
             "state": "MUTATION_DENIED",
             "gate": library.get("gate") or "LIBRARY_CHECKPOINT_REQUIRED",
-            "reason": "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
+            "reason": reason,
             "violation": library.get("violation"),
             "detail": library.get("detail"),
+            "held_block": library.get("held_block"),
+            "required_action": library.get("required_action"),
             "library": library,
             "action": action,
             "model_revision": revision,
@@ -645,6 +671,9 @@ def admit_mutation(
                 "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
                 "SLEDGE_WALLS_WITHOUT_LIBRARY_SAVE",
                 "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
+                "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE",
+                "STRUCTURE_WHILE_HELD_DISTRACTOR",
+                "RAW_INPUT_BYPASS_OF_STRUCTURE_PREFLIGHT",
             ],
             "hint": library.get("hint"),
         }

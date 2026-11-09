@@ -65,7 +65,8 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **BUILD_INTEGRITY** / **STRUCTURE_FIRST_SPATIAL_ADMISSION** | Floor before furniture; indoor≠outdoor; no nesting; protect kitchen/bed/dining — see `docs/BUILD_INTEGRITY.md`. |
 | **OUTDOOR_AS_INDOOR** / **PLACE_WITHOUT_FLOOR** | Forbidden: grass-as-interior; indoor place with no attested floor. |
 | **BUILD_SPATIAL** / **ENCLOSURE_AND_STORY_AXES** | Inside vs outside + FLOOR_1 vs FLOOR_2 builder axes; see `docs/BUILD_SPATIAL.md`. |
-| **BUILD_LIBRARY_CHECKPOINT** / **LIBRARY_SAVE_BEFORE_ROOM_MUTATE** | Sims My Library building save required before room/structure mutation; Save As is not a substitute; see `docs/BUILD_LIBRARY_CHECKPOINT.md`. |
+| **BUILD_LIBRARY_CHECKPOINT** / **LIBRARY_SAVE_BEFORE_ROOM_MUTATE** | Sims My Library building save required before room/structure/FLOOR_2/stairs mutation; Save As is not a substitute; live preflight required; see `docs/BUILD_LIBRARY_CHECKPOINT.md`. |
+| **STRENGTHEN_LIBRARY_SAVE_BEFORE_STRUCTURE** / **ADMIT_LIVE_STRUCTURE_EFFECT** | P141 harden of the same owner for Delete/FLOOR_2/Craftidink thrash; mandatory preflight before structure SendInput. |
 | **FLOOR_1** / **FLOOR_2** | First vs second story; F2 indoor work requires F1 indoor floor first. |
 | **BUILD_FLOOR_ACTIVITY** / **FLOOR_ACTIVITY_CENSUS** | Listener peer: which story is active, single vs multi-floor span, theme from attested items. |
 | **FLOOR_THEME** | Majority theme on a story (kitchen, bedroom, outdoor_garden, …) from item categories. |

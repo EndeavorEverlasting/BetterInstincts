@@ -1,9 +1,10 @@
 """Library-save-before-room-mutate admission (P95).
 
-Preserves operator human judgment: before changing a room or building
-structure, require an attested Sims My Library building save. Distinct from
-game Save As. Pure evaluation / model attestation — no SendInput, no
-Documents-folder writes.
+Preserves operator human judgment: before changing a room, story, stairs,
+floor, wall, or building structure, require an attested Sims My Library
+building save. Distinct from game Save As. Includes live-structure preflight
+and held-object distractor blocks (Medicine Craftidink). Pure evaluation /
+model attestation — no SendInput, no Documents-folder writes.
 """
 from __future__ import annotations
 
@@ -20,6 +21,30 @@ CAPTURE_RE = re.compile(r"^capture:[A-Za-z0-9_./:-]{3,160}$")
 BUILDING_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 _.:-]{1,79}$")
 LIBRARY_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 _.'-]{2,79}$")
 
+_CORE_FORBIDDEN = frozenset(
+    {
+        "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
+        "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
+        "SLEDGE_WALLS_WITHOUT_LIBRARY_SAVE",
+        "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE",
+        "STRUCTURE_WHILE_HELD_DISTRACTOR",
+        "RAW_INPUT_BYPASS_OF_STRUCTURE_PREFLIGHT",
+    }
+)
+
+_STRUCTURE_DOMAIN_ACTIONS = frozenset(
+    {
+        "SLEDGE",
+        "HAND_MOVE",
+        "DELETE_KEY",
+        "DELETE_OBJECT",
+        "BACKSPACE_STRUCTURE",
+        "REMOVE_FLOOR",
+        "REMOVE_FLOOR_TILE",
+        "DELETE_STAIRS",
+    }
+)
+
 
 class BuildLibraryCheckpointError(ValueError):
     pass
@@ -35,11 +60,7 @@ def load_contract(path: Path = CONTRACT) -> dict:
     if data.get("architecture", {}).get("selected") != "LIBRARY_SAVE_BEFORE_ROOM_MUTATE":
         raise BuildLibraryCheckpointError("LIBRARY_SAVE_BEFORE_ROOM_MUTATE_REQUIRED")
     forbidden = set(data.get("forbidden", []))
-    if not {
-        "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
-        "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
-        "SLEDGE_WALLS_WITHOUT_LIBRARY_SAVE",
-    }.issubset(forbidden):
+    if not _CORE_FORBIDDEN.issubset(forbidden):
         raise BuildLibraryCheckpointError("CORE_FORBIDDEN_MISSING")
     return data
 
@@ -65,15 +86,76 @@ def room_mutating_actions(contract: Mapping[str, Any] | None = None) -> frozense
     return frozenset(str(x).upper() for x in cfg.get("room_mutating_actions") or [])
 
 
+def live_structure_effects(contract: Mapping[str, Any] | None = None) -> frozenset[str]:
+    cfg = contract if contract is not None else load_contract()
+    return frozenset(str(x).upper() for x in cfg.get("live_structure_effects") or [])
+
+
+def protected_stories(contract: Mapping[str, Any] | None = None) -> frozenset[str]:
+    cfg = contract if contract is not None else load_contract()
+    return frozenset(str(x).upper() for x in cfg.get("protected_stories") or [])
+
+
+def _normalize_held(held_object: str | None) -> str:
+    return " ".join(str(held_object or "").strip().lower().split())
+
+
+def held_object_structure_block(
+    held_object: str | None,
+    *,
+    contract: Mapping[str, Any] | None = None,
+) -> Optional[dict]:
+    """If a held object must cancel-only (never structure thrash), return the block row."""
+    cfg = contract if contract is not None else load_contract()
+    label = _normalize_held(held_object)
+    if not label:
+        return None
+    for row in cfg.get("held_object_structure_blocks") or []:
+        if not isinstance(row, dict):
+            continue
+        for needle in row.get("match_substrings") or []:
+            if str(needle).lower() in label:
+                return {
+                    "id": row.get("id"),
+                    "required_action": row.get("required_action") or "CANCEL_UI_ONLY",
+                    "forbid": [str(x).upper() for x in (row.get("forbid") or [])],
+                    "operator_correction": row.get("operator_correction"),
+                    "held_object": held_object,
+                }
+    return None
+
+
+def targets_protected_story(
+    model: Mapping[str, Any],
+    targets: Sequence[str] | None,
+    *,
+    place_story: str | None = None,
+    contract: Mapping[str, Any] | None = None,
+) -> bool:
+    stories = protected_stories(contract)
+    if place_story and str(place_story).upper() in stories:
+        return True
+    entities = _entities(model)
+    for tid in targets or []:
+        ent = entities.get(str(tid)) or {}
+        if str(ent.get("story") or "").upper() in stories:
+            return True
+        kind = str(ent.get("kind") or "").upper()
+        if kind in {"STAIR", "STAIRS", "STAIRCASE"}:
+            return True
+    return False
+
+
 def is_room_mutation(
     model: Mapping[str, Any],
     action: str,
     *,
     targets: Sequence[str] | None = None,
     place_kind: str | None = None,
+    place_story: str | None = None,
     contract: Mapping[str, Any] | None = None,
 ) -> bool:
-    """True when the action changes room envelope / structure (not outdoor floaters)."""
+    """True when the action changes room envelope / structure / stairs / story."""
     cfg = contract if contract is not None else load_contract()
     act = str(action or "").upper()
     if act in {str(x).upper() for x in cfg.get("exempt_actions") or []}:
@@ -85,17 +167,22 @@ def is_room_mutation(
     kinds = room_mutating_target_kinds(cfg)
     if place_kind and str(place_kind).upper() in kinds:
         return True
+    if place_story and str(place_story).upper() in protected_stories(cfg):
+        if act in {str(x).upper() for x in cfg.get("protected_story_actions") or []}:
+            return True
     entities = _entities(model)
     for tid in targets or []:
         ent = entities.get(str(tid)) or {}
-        if str(ent.get("kind") or "").upper() in kinds:
+        kind = str(ent.get("kind") or "").upper()
+        if kind in kinds:
             return True
-        if str(ent.get("domain") or "").upper() in {"WALL", "INDOOR_FLOOR"} and act in {
-            "SLEDGE", "HAND_MOVE", "EYEDROPPER_PLACE", "PLACE_FROM_CATALOG", "PLACE_FROM_INVENTORY"
+        domain = str(ent.get("domain") or "").upper()
+        if domain in {"WALL", "INDOOR_FLOOR"} and act in _STRUCTURE_DOMAIN_ACTIONS:
+            return True
+        if str(ent.get("story") or "").upper() in protected_stories(cfg) and act in {
+            str(x).upper() for x in cfg.get("protected_story_actions") or []
         }:
-            # HAND_MOVE of wall/floor is room mutation even if kind tagging drifted.
-            if act in {"SLEDGE", "HAND_MOVE"}:
-                return True
+            return True
     return False
 
 
@@ -161,9 +248,11 @@ def evaluate_library_checkpoint(
     *,
     targets: Sequence[str] | None = None,
     place_kind: str | None = None,
+    place_story: str | None = None,
     building_id: str | None = None,
+    held_object: str | None = None,
 ) -> dict:
-    """Admit or deny based on library-save-before-room-mutate."""
+    """Admit or deny based on library-save-before-room-mutate (+ held distractors)."""
     cfg = load_contract()
     if model.get("schema") != MODEL_SCHEMA:
         raise BuildLibraryCheckpointError("INVALID_LOT_MODEL_SCHEMA")
@@ -177,8 +266,30 @@ def evaluate_library_checkpoint(
             "proof_ceiling": cfg["proof_ceiling"],
             "detail": "SAVE_TO_LIBRARY creates the required checkpoint; it does not consume one",
         }
+
+    block = held_object_structure_block(held_object, contract=cfg)
+    if block and act in set(block.get("forbid") or []) | live_structure_effects(cfg):
+        return {
+            "state": "STRUCTURE_WHILE_HELD_DISTRACTOR",
+            "gate": "HELD_DISTRACTOR_CANCEL_ONLY",
+            "action": act,
+            "library_required": False,
+            "violation": "STRUCTURE_WHILE_HELD_DISTRACTOR",
+            "detail": block.get("operator_correction"),
+            "held_block": block,
+            "required_action": block.get("required_action"),
+            "execute_allowed": False,
+            "forbidden": list(cfg.get("forbidden") or []),
+            "proof_ceiling": cfg["proof_ceiling"],
+        }
+
     if not is_room_mutation(
-        model, act, targets=targets, place_kind=place_kind, contract=cfg
+        model,
+        act,
+        targets=targets,
+        place_kind=place_kind,
+        place_story=place_story,
+        contract=cfg,
     ):
         return {
             "state": "NOT_ROOM_MUTATION",
@@ -189,15 +300,26 @@ def evaluate_library_checkpoint(
             "proof_ceiling": cfg["proof_ceiling"],
         }
     freshness = library_checkpoint_fresh(model, building_id=building_id)
+    protected = targets_protected_story(
+        model, targets, place_story=place_story, contract=cfg
+    )
     if not freshness.get("fresh"):
+        violation = freshness.get("violation") or "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE"
+        if protected:
+            violation = "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE"
         return {
-            "state": "LIBRARY_DENY",
-            "gate": "LIBRARY_CHECKPOINT_REQUIRED",
+            "state": "LIBRARY_DENY" if not protected else "PROTECTED_STORY_DENY",
+            "gate": (
+                "PROTECTED_STORY_REQUIRES_LIBRARY"
+                if protected
+                else "LIBRARY_CHECKPOINT_REQUIRED"
+            ),
             "action": act,
             "library_required": True,
-            "violation": freshness.get("violation") or "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
+            "violation": violation,
             "detail": freshness.get("reason"),
             "freshness": freshness,
+            "protected_story": protected,
             "execute_allowed": False,
             "forbidden": list(cfg.get("forbidden") or []),
             "hint": "Call attest_library_save after observing Build Mode Save to My Library",
@@ -209,9 +331,64 @@ def evaluate_library_checkpoint(
         "action": act,
         "library_required": True,
         "freshness": freshness,
+        "protected_story": protected,
         "execute_allowed": False,
         "proof_ceiling": cfg["proof_ceiling"],
     }
+
+
+def admit_live_structure_effect(
+    model: Mapping[str, Any],
+    action: str,
+    *,
+    targets: Sequence[str] | None = None,
+    place_kind: str | None = None,
+    place_story: str | None = None,
+    building_id: str | None = None,
+    held_object: str | None = None,
+) -> dict:
+    """Mandatory live preflight before any structure SendInput effect.
+
+    Host/computer-use callers must invoke this and stop on any non-admit state.
+    Skipping this call is the forbidden RAW_INPUT_BYPASS_OF_STRUCTURE_PREFLIGHT.
+    Still execute_allowed=False: gallery write / SendInput remain separate.
+    """
+    cfg = load_contract()
+    act = str(action or "").upper()
+    if act not in live_structure_effects(cfg) and not is_room_mutation(
+        model,
+        act,
+        targets=targets,
+        place_kind=place_kind,
+        place_story=place_story,
+        contract=cfg,
+    ):
+        return {
+            "state": "NOT_ROOM_MUTATION",
+            "gate": "LIVE_STRUCTURE_PREFLIGHT",
+            "action": act,
+            "live_structure_effect": False,
+            "execute_allowed": False,
+            "proof_ceiling": cfg["proof_ceiling"],
+        }
+    result = evaluate_library_checkpoint(
+        model,
+        act,
+        targets=targets,
+        place_kind=place_kind,
+        place_story=place_story,
+        building_id=building_id,
+        held_object=held_object,
+    )
+    result = dict(result)
+    result["gate"] = "LIVE_STRUCTURE_PREFLIGHT"
+    result["live_structure_effect"] = True
+    result["raw_input_bypass_forbidden"] = True
+    if result.get("state") == "LIBRARY_ADMIT":
+        result["preflight"] = "ADMIT_STRUCTURE_EFFECT_OFFLINE_ONLY"
+    else:
+        result["preflight"] = "DENY_STRUCTURE_EFFECT"
+    return result
 
 
 def plan_library_save_if_required(model: Mapping[str, Any]) -> Optional[dict]:
@@ -235,7 +412,10 @@ def plan_library_save_if_required(model: Mapping[str, Any]) -> Optional[dict]:
         if str(ent.get("kind") or "").upper() in kinds
         and str(ent.get("status") or "").upper() in pending_statuses
     ]
-    restore_goals = any(g.startswith("RESTORE_") for g in goals)
+    restore_goals = any(
+        g.startswith("RESTORE_") or g in {"FLOOR_2", "STAIRS", "STAIR"}
+        for g in goals
+    )
     if not structure_targets and not restore_goals:
         return None
     building_id = str(model.get("lot_id") or "building.unknown")

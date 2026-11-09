@@ -63,6 +63,9 @@
       "DOOR",
       "WINDOW",
       "ROOF_PIECE",
+      "STAIR",
+      "STAIRS",
+      "STAIRCASE",
       "BED",
       "SLEEP_POD",
       "COUNTER",
@@ -117,6 +120,13 @@
     "MOVE_HOUSE_OR_ROOM",
     "MULTI_OBJECT_REARRANGE",
     "WALL_ROOM_TOOL",
+    "DELETE_KEY",
+    "DELETE_OBJECT",
+    "BACKSPACE_STRUCTURE",
+    "REMOVE_FLOOR",
+    "REMOVE_FLOOR_TILE",
+    "PLACE_STAIRS",
+    "DELETE_STAIRS",
     "SAVE_TO_LIBRARY"
   ],
   "non_mutating_allowed_without_lease": [
@@ -132,7 +142,13 @@
     "BULK_INVENTORY_SWEEP",
     "SLEDGE",
     "MOVE_HOUSE_OR_ROOM",
-    "MULTI_OBJECT_REARRANGE"
+    "MULTI_OBJECT_REARRANGE",
+    "DELETE_KEY",
+    "DELETE_OBJECT",
+    "BACKSPACE_STRUCTURE",
+    "REMOVE_FLOOR",
+    "REMOVE_FLOOR_TILE",
+    "DELETE_STAIRS"
   ],
   "states": [
     "MODEL_EMPTY",

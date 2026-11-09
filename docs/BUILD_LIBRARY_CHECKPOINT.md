@@ -6,43 +6,76 @@
 **Library / CLI:** `betterinstincts.build_library_checkpoint` / `python -m scripts.build_library_checkpoint`
 **Upstream model:** [`HOUSE_STATE.md`](HOUSE_STATE.md)
 
-## Motivating failure
+## Motivating failures
 
-An agent deleted the walls of the house in Build/Buy without first saving the
-building into **My Library**. There was no revertible building blueprint — only
-human judgment intervening after the damage. Chat reminders do not bind the host.
+1. An agent deleted the walls of the house in Build/Buy without first saving the
+   building into **My Library**. There was no revertible building blueprint — only
+   human judgment intervening after the damage. Chat reminders do not bind the host.
+2. **2026-11-09:** Agents deleted **FLOOR_2 / stairs** while thrashing around a
+   **Medicine Craftidink** stuck on a Servo, again without saving the house to the
+   lot/library. Operator restored by reloading a previous save. Prevention must be
+   fail-closed admission, not post-hoc rebuild instructions trapped in chat.
 
 ## Selected architecture: `LIBRARY_SAVE_BEFORE_ROOM_MUTATE`
+
+P141 (2026-11-09) selected **`STRENGTHEN_LIBRARY_SAVE_BEFORE_STRUCTURE`** — expand
+this same owner — and rejected a second safety daemon, Save-As-as-library, chat-only
+reminders, and “auto-rebuild FLOOR_2 as prevention.”
 
 | Candidate | Verdict |
 | --- | --- |
 | Game Save As only | **Rejected** — session recovery ≠ building blueprint; does not satisfy this gate |
 | Agent courtesy prompt | **Rejected** — not enforceable across callers |
 | Save to Library after mutation | **Rejected** — preserves wreckage, not judgment |
-| Library save before room/structure mutate | **Selected** |
+| New structure-safety daemon | **Rejected** — duplicates this owner (P124) |
+| Auto-rebuild FLOOR_2 as prevention | **Rejected** — recovery ≠ prevention |
+| Library save before room/structure mutate (+ live preflight) | **Selected** |
 
 ## Rules (fail closed)
 
-1. Before `SLEDGE`, `WALL_ROOM_TOOL`, `MOVE_HOUSE_OR_ROOM`, `MULTI_OBJECT_REARRANGE`, or any mutation targeting wall/floor/room structure: require a fresh `library_checkpoint` on the lot model.
+1. Before `SLEDGE`, `WALL_ROOM_TOOL`, `MOVE_HOUSE_OR_ROOM`, `MULTI_OBJECT_REARRANGE`,
+   `DELETE_KEY`, `DELETE_OBJECT`, `BACKSPACE_STRUCTURE`, `REMOVE_FLOOR`,
+   `PLACE_STAIRS`, `DELETE_STAIRS`, or any mutation targeting wall/floor/room/stairs
+   structure: require a fresh `library_checkpoint` on the lot model.
 2. Fresh means `library_checkpoint.model_revision ==` current model revision, matching `building_id`.
 3. `SAVE_TO_LIBRARY` is the only mutation that creates the checkpoint; it does not require a prior one.
 4. Game Save As (`BI_TMP_` / `BI_CONT_`) remains a separate destructive gate and **never** counts as a library checkpoint.
-5. Outdoor floater inventory alone is not a room mutation.
+5. Outdoor floater inventory alone is not a room mutation (`BACKSPACE_TO_INVENTORY` on floaters stays exempt).
+6. **FLOOR_2 / STAIRS** are protected: delete/sledge/remove without a fresh library checkpoint yields
+   `DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE`.
+7. **Held Medicine Craftidink / crafty drink** (and listed substrings) → `CANCEL_UI_ONLY`. Structure
+   effects while held are `STRUCTURE_WHILE_HELD_DISTRACTOR` — never sledge floors around a stuck craft drink.
+8. Live callers must run `admit_live_structure_effect` (CLI: `live-preflight`) **before** any structure
+   SendInput. Skipping that call is `RAW_INPUT_BYPASS_OF_STRUCTURE_PREFLIGHT`.
+
+Operator phrase **“save the house to the lot”** means **My Library building/lot blueprint**
+(`SAVE_TO_LIBRARY`), not chat acknowledgment and not Save As alone.
 
 ## Call stack
 
 ```
 lot model observe
-  -> plan_next / host_stack: if restore pending without library -> SAVE_TO_LIBRARY
+  -> if held craft-drink distractor -> CANCEL_UI only
+  -> plan_next / host_stack: if restore/structure pending without library -> SAVE_TO_LIBRARY
   -> attest_library_save(building_id, library_item_name, capture_ref)
-  -> admit_mutation: LIBRARY_ADMIT then Save As / spatial / integrity
-  -> optional live adapter
+  -> admit_live_structure_effect / admit_mutation: LIBRARY_ADMIT then Save As / spatial / integrity
+  -> optional live adapter (only after LIBRARY_ADMIT)
   -> observe outcome (invalidates library checkpoint until re-saved)
+```
+
+## CLI
+
+```text
+python -m scripts.build_library_checkpoint plan --run-id ID --lot-id "Bargain Bend"
+python -m scripts.build_library_checkpoint admit --run-id ID --lot-id "Bargain Bend" --action SLEDGE --target wall.1
+python -m scripts.build_library_checkpoint live-preflight --run-id ID --lot-id "Bargain Bend" \
+  --action DELETE_KEY --target floor.2 --place-story FLOOR_2 --held-object "Medicine Craftidink"
 ```
 
 ## Proof ceiling
 
-`OFFLINE_LIBRARY_SAVE_ADMISSION_NOT_LIVE_GALLERY_WRITE`
+`OFFLINE_LIBRARY_STRUCTURE_PREFLIGHT_NOT_LIVE_GALLERY_WRITE`
 
 Does not write EA Documents or Gallery from offline code. Live Save-to-My-Library
-UI remains a separate adapter under screen admission.
+UI remains a separate adapter under screen admission. Offline deny is regression
+protection; it is not proof that every external computer-use agent already complied.
