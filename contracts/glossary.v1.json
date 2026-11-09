@@ -994,15 +994,14 @@
     "ROOM_CENSUS": {
       "definition": "Read-only whole-lot projection of attested floor/zone/entity observations; never a second owner or autonomous scan.",
       "owners": [
-        "contracts/room-census.v1.json",
-        "docs/ROOM_CENSUS.md"
+        "betterinstincts/room_census.py",
+        "contracts/room-census.v1.json"
       ]
     },
     "ROOM_ZONE_ATTESTED": {
       "definition": "Room grouping supported by an explicitly observed ROOM_ZONE structural claim; no implication that vision-only geometry was certified.",
       "owners": [
-        "betterinstincts/room_census.py",
-        "docs/ROOM_CENSUS.md"
+        "betterinstincts/room_census.py"
       ]
     },
     "ROOM_ZONE_CANDIDATE": {
@@ -1027,7 +1026,7 @@
     "ROOM_CENSUS_COVERAGE": {
       "definition": "Every floor represented in current model, never assertion that every actual game floor was inspected or a room discovered from raw pixels.",
       "owners": [
-        "docs/ROOM_CENSUS.md"
+        "betterinstincts/room_census.py"
       ]
     }
   }
