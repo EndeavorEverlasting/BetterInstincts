@@ -110,7 +110,7 @@ class RoomCensusTests(unittest.TestCase):
                 "queue": [], "location_kind": "home", "capture_ref": "capture:room-lab",
                 "build_or_buy_mode": True, "active_story": "FLOOR_1",
                 "lot_model": sample_model(),
-            }, presence_probe=probe, idle_ms=1000)
+            }, presence_probe=probe, idle_ms=15000)
             self.assertEqual(receipt["build_floor_activity"]["room_census"]["room_count_total"], 3)
             self.assertFalse(receipt["execute_clicks"])
             deactivate(sid)
