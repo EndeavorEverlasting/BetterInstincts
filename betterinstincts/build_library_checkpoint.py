@@ -339,14 +339,16 @@ def plan_library_save_if_required(model: Mapping[str, Any]) -> Optional[dict]:
         and str(ent.get("status") or "").upper() in pending_statuses
     ]
     restore_goals = any(g.startswith("RESTORE_") for g in goals)
-    if not structure_targets and not restore_goals:
+    if not entities:
         return None
+    # Every prospective lot edit, including catalog purchases and inventory moves,
+    # must start with an all-floor scan, not only restoration of damaged walls.
     building_id = str(model.get("lot_id") or "building.unknown")
     return {
         "state": "LIBRARY_SAVE_REQUIRED",
         "gate": "LIBRARY_CHECKPOINT_REQUIRED",
-        "action": "SAVE_TO_LIBRARY",
-        "reason": "SAVE_BUILDING_TO_LIBRARY_BEFORE_ROOM_MUTATE",
+        "action": "SCAN_ALL_FLOORS_AND_ROOMS" if freshness.get("violation") == "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP" else "SAVE_TO_LIBRARY",
+        "reason": "COMPLETE_LOT_INVENTORY_AND_LIBRARY_SAVE_REQUIRED",
         "building_id": building_id,
         "targets": structure_targets[:8],
         "execute_allowed": False,
