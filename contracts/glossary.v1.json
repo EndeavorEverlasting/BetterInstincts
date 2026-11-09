@@ -418,6 +418,36 @@
         "betterinstincts/funds_inject.py"
       ]
     },
+    "DIY_SKILL_FORCE": {
+      "definition": "Mode-agnostic cheat planner that levels Handiness, Robotics, Fabrication, and Programming on the currently selected Sim/Servo via stats.set_skill_level. Sibling to FUNDS_INJECT; never practice_skill or BI-005 certification.",
+      "owners": [
+        "contracts/diy-skill-force.v1.json",
+        "docs/DIY_SKILL_FORCE.md",
+        "betterinstincts/diy_skill_force.py",
+        "scripts/diy_skill_force.py"
+      ]
+    },
+    "DIY_MAKER_BUNDLE": {
+      "definition": "Default super-useful DIY skill set: handiness + robotics + fabrication + programming at level 10 unless overridden.",
+      "owners": [
+        "contracts/diy-skill-force.v1.json",
+        "docs/DIY_SKILL_FORCE.md"
+      ]
+    },
+    "SERVO_CORE_BUNDLE": {
+      "definition": "Lean Servo DIY skill set: handiness + robotics + programming (omits Fabrication when Eco Lifestyle is absent).",
+      "owners": [
+        "contracts/diy-skill-force.v1.json",
+        "docs/DIY_SKILL_FORCE.md"
+      ]
+    },
+    "STATS_SET_SKILL_LEVEL": {
+      "definition": "Console command form stats.set_skill_level <Major_Skill> <1-10> applied to the active selected Sim after testingcheats. Host convenience only — not BI-005 skill growth proof.",
+      "owners": [
+        "contracts/diy-skill-force.v1.json",
+        "docs/DIY_SKILL_FORCE.md"
+      ]
+    },
     "TESTINGCHEATS_ENABLED_TRUE": {
       "definition": "Required console activation command before Money inject. Skipping it is a known live failure mode.",
       "owners": [

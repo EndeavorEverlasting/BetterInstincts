@@ -1,0 +1,147 @@
+{
+  "schema": "betterinstincts.diy-skill-force/v1",
+  "version": 1,
+  "authority": "docs/DIY_SKILL_FORCE.md",
+  "proof_ceiling": "HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT",
+  "design_brief": {
+    "subject": "DIY skill-force — level Handiness, Robotics, Fabrication, Programming on the active Sim/Servo",
+    "audience": "operators and Windows host agents who need maker skills maxed so DIY upgrades, bots, and fabricator recipes become usable",
+    "job": "Reusable catalog + mode-agnostic cheat planner: soft-focus → Ctrl+Shift+C → testingcheats enabled true → stats.set_skill_level lines. Not BI-005 practice_skill growth certification.",
+    "architecture": "Sibling to funds_inject / household_object_force. Distinct from read-only sim_profile. No second skill daemon.",
+    "operator_correction": "Skill cheats apply to the currently selected Sim; select each Servo before execute. Super-useful default is level 10."
+  },
+  "activation": {
+    "require_explicit_activate": true,
+    "never_on_startup": true,
+    "never_autorun": true,
+    "never_touch_game_speed": true,
+    "cli": {
+      "catalog": "python -m scripts.diy_skill_force catalog",
+      "plan": "python -m scripts.diy_skill_force plan --bundle diy_maker",
+      "level": "python -m scripts.diy_skill_force level --bundle diy_maker --execute --process-id PID --session-id ID"
+    }
+  },
+  "inject_sequence": {
+    "mode_agnostic": true,
+    "allowed_modes": ["live", "build", "buy", "unknown"],
+    "require_live_mode": false,
+    "never_force_mode_switch": true,
+    "open_console_chord": ["CTRL", "SHIFT", "C"],
+    "open_console_chord_label": "Ctrl+Shift+C",
+    "require_foreground_sims": true,
+    "soft_focus_only": true,
+    "activate_testing_cheats": "testingcheats enabled true",
+    "activate_testing_cheats_alias": "testingcheats true",
+    "skill_command_template": "stats.set_skill_level {skill_stat} {level}",
+    "default_level": 10,
+    "min_level": 1,
+    "max_level": 10,
+    "close_console_key": "ESCAPE",
+    "close_console_optional": true,
+    "selection_note": "Commands apply to the currently selected Sim/Servo only.",
+    "forbidden": [
+      "Resume",
+      "Delete",
+      "TerminateProcess",
+      "edit_save_file",
+      "force_F1_while_building",
+      "practice_skill",
+      "claim_BI005",
+      "autorun_on_host_boot"
+    ]
+  },
+  "skill_catalog": [
+    {
+      "id": "handiness",
+      "display_name": "Handiness",
+      "skill_stat": "Major_Handiness",
+      "pack_hint": "base",
+      "diy_role": "upgrade_repair_objects",
+      "useful_at": "Upgrades, plumbing/electronics repair, DIY object mastery"
+    },
+    {
+      "id": "robotics",
+      "display_name": "Robotics",
+      "skill_stat": "Major_Robotics",
+      "pack_hint": "Discover University",
+      "diy_role": "servo_build_upgrade",
+      "useful_at": "Build/upgrade Servos and robotics workstation projects"
+    },
+    {
+      "id": "fabrication",
+      "display_name": "Fabrication",
+      "skill_stat": "Major_Fabrication",
+      "pack_hint": "Eco Lifestyle",
+      "diy_role": "fabricator_recipes",
+      "useful_at": "Fabricator DIY recipes (furniture, eco gear)"
+    },
+    {
+      "id": "programming",
+      "display_name": "Programming",
+      "skill_stat": "Major_Programming",
+      "pack_hint": "Discover University",
+      "diy_role": "tech_diy_support",
+      "useful_at": "Tech/DIY support skills often paired with Robotics on Servos"
+    }
+  ],
+  "bundles": {
+    "diy_maker": {
+      "display_name": "DIY maker (super useful)",
+      "skill_ids": ["handiness", "robotics", "fabrication", "programming"],
+      "default_level": 10,
+      "notes": "Primary operator bundle for Servos and human DIY Sims."
+    },
+    "servo_core": {
+      "display_name": "Servo core DIY",
+      "skill_ids": ["handiness", "robotics", "programming"],
+      "default_level": 10,
+      "notes": "Lean Servo path when Eco Lifestyle Fabrication pack is absent."
+    }
+  },
+  "call_stack": {
+    "success": [
+      "PLAYER_FIRST / yield if player_directed",
+      "RESOLVE skill ids or bundle (diy_maker default)",
+      "REQUIRE_FOREGROUND_SIMS (soft focus; no mode switch)",
+      "OPEN_CHEAT_CONSOLE via Ctrl+Shift+C",
+      "ACTIVATE_TESTING_CHEATS: testingcheats enabled true",
+      "SET_SKILL_LEVEL: stats.set_skill_level <stat> <N> per resolved skill",
+      "optional CLOSE_CHEAT_CONSOLE",
+      "Emit receipt; execute_allowed=false until independent screen_admit"
+    ],
+    "failure": [
+      "player_directed -> YIELD_TO_PLAYER",
+      "unknown skill/bundle -> UNKNOWN_DIY_SKILL / UNKNOWN_DIY_BUNDLE",
+      "level outside 1..10 -> INVALID_SKILL_LEVEL",
+      "no foreground Sims -> SIMS_FOREGROUND_REQUIRED",
+      "skip Ctrl+Shift+C -> console never opens",
+      "skip testingcheats -> skill commands fail",
+      "force F1 while operator builds -> HOST_CRISIS_ANTI_PATTERN",
+      "claim BI-005 from this owner -> FORBIDDEN"
+    ]
+  },
+  "composition": {
+    "orchestrator": "betterinstincts/diy_skill_force.py#plan_skill_force",
+    "execute_adapter": "scripts/diy_skill_force.py",
+    "reuses": [
+      "scripts/win32_input.py",
+      "betterinstincts/screen_admit.py",
+      "betterinstincts/funds_inject.py inject_sequence pattern"
+    ],
+    "not": [
+      "betterinstincts/sim_profile.py practice_skill",
+      "BI-005 purposeful skill growth certification",
+      "background skill daemon"
+    ]
+  },
+  "invariants": [
+    "PLAYER_FIRST_outRanks_skill_force",
+    "disposable_lab_only_when_executing",
+    "testingcheats_enabled_true_before_skill_commands",
+    "ctrl_shift_c_opens_cheat_console",
+    "mode_agnostic_no_forced_F1",
+    "active_sim_selection_required",
+    "never_claim_BI005_from_cheat_dispatch",
+    "never_queue_practice_skill"
+  ]
+}

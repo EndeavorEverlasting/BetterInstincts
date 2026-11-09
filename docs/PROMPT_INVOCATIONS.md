@@ -19,6 +19,19 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
 | P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools + countertop mechanics (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
 
+## 2026-11-09 DIY skill-force for Servos / Handiness / Robotics (P95 + P124 + Trifecta)
+
+Resolved **P95 — Program Design & Call-Stack Prototype Architect** and
+**P124 — Repository Code Readability & Structural Refactorer** (Moonwake /
+TokenCorridor `spec-architecture-prompts.v1.json`, blob
+`5926a198a14567de55110ed19e922fc444b4dec7`). **P95** selects
+`DIY_SKILL_FORCE` (maker skill cheat planner; active-Sim selection; bundles
+`diy_maker` / `servo_core`). **P124** peers beside `funds_inject` without
+rewriting `sim_profile`. Trifecta: **P82** offline falsifiers in
+`tests/test_diy_skill_force.py`; **P07** source integration; **P08** live
+Skills-panel confirmation remains independently gated. Consultation:
+`contracts/consultations/BI-DIY-SKILL-FORCE-20261109.v1.json`.
+
 ## 2026-11-09 click-error eval + Escape-cancel on chrome miss trifecta
 
 **P95** designed `POST_CLICK_VERIFY_ESCAPE_CANCEL`: score intended ui_chrome

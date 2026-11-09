@@ -45,6 +45,7 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **HOUSEHOLD_FUNDS** | Observed/operator Simoleon balance for the disposable household. |
 | **FEDERAL_SUBSIDY_PROMPT** | Funds under 100 → Sims-styled notice; Yes runs durable funds inject. |
 | **FUNDS_INJECT** | Ctrl+Shift+C → `testingcheats enabled true` → Money/motherlode in any mode (not BI-004 income). |
+| **DIY_SKILL_FORCE** / **DIY_MAKER_BUNDLE** / **SERVO_CORE_BUNDLE** / **STATS_SET_SKILL_LEVEL** | Mode-agnostic DIY skill cheats (Handiness/Robotics/Fabrication/Programming) on the selected Sim/Servo; not BI-005. |
 | **TESTINGCHEATS_ENABLED_TRUE** | Required before Money; skipping it fails live inject. |
 | **CHEAT_CONSOLE_CHORD** | Ctrl+Shift+C opens the cheat console in Live/Build/Buy; required before testingcheats/Money. |
 | **MODE_AGNOSTIC_FUNDS_INJECT** | Inject preserves operator mode — never force F1 / Esc-spam while building. |
