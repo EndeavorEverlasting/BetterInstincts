@@ -8,7 +8,7 @@
     "PAUSED_FOR_AGENT",
     "HOST_READY"
   ],
-  "default_idle_ms": 8000,
+  "default_idle_ms": 15000,
   "min_idle_ms": 1000,
   "max_idle_ms": 120000,
   "policy": [
