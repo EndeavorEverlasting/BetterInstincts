@@ -11,7 +11,7 @@ python -m scripts.room_census taxonomy
 python -m scripts.room_census evaluate --model dist/house-state/<run_id>/<lot>.model.json
 ```
 
-Build/Buy observations can optionally pass `lot_model` to `build_floor_activity` / `host_listener` for a compact advisory summary. Full item lists remain in the explicit census result. Every observed story can be listed; missing coverage is **not** evidence that a floor or room does not exist. No game inputs or save mutations.
+Build/Buy observations can optionally pass `lot_model` to `build_floor_activity` / `host_listener` for a compact advisory summary. Full item lists remain in the explicit census result. Hypothetical or unknown-provenance entities are excluded and counted as `unverified_claim_count`. Every observed story can be listed; missing coverage is **not** evidence that a floor or room does not exist. No game inputs or save mutations.
 
 **P08 live-game gate:** independently certify exact-patch floor/room geometry, indoor/outdoor boundaries, object presence and style observations on a protected-safe lab session; offline CI cannot close BI-002.
 
