@@ -1,0 +1,66 @@
+{
+  "schema": "betterinstincts.screen-atlas/v1",
+  "version": 1,
+  "authority": {
+    "scenes": "contracts/game-scenes.v1.json",
+    "modes": "contracts/ui-mode.v1.json",
+    "targets_and_hotkeys": "contracts/ui-chrome.v1.json",
+    "camera": "contracts/camera-traverse.v1.json",
+    "console": "contracts/hidden-object-discovery.v1.json",
+    "presence": "betterinstincts/workflow_interop.py"
+  },
+  "policy": "OBSERVE_VERIFY_SINGLE_ACTION_SAFE_REST",
+  "mode_scenes": {
+    "LIVE": "live_mode",
+    "BUY": "buy_mode",
+    "BUILD": "build_mode"
+  },
+  "calibration": {
+    "status_required": "OPERATOR_VERIFIED_EXACT_BUILD",
+    "required": [
+      "target_id",
+      "mode",
+      "profile",
+      "game_version",
+      "client_width",
+      "client_height",
+      "x",
+      "y",
+      "evidence_ref",
+      "status"
+    ],
+    "coordinate_space": "CLIENT_PIXELS",
+    "confidence": "OPERATOR_ATTESTED_NOT_COMPUTER_VISION_CERTIFIED",
+    "max_evidence_ref_length": 96
+  },
+  "required_observation": {
+    "cues": [
+      "visual",
+      "operator"
+    ],
+    "capture_quality": "CONTENT_PRESENT",
+    "viewport_state": "NORMAL",
+    "target_visible": true,
+    "player_queue_owned": false,
+    "save_authorized": true
+  },
+  "mouse": {
+    "default_safe_rest": "CLIENT_INTERIOR_CENTER",
+    "margin_source": "contracts/camera-traverse.v1.json",
+    "never_park_in_edge_band": true,
+    "rest_requires_fresh_presence_checkpoint": true
+  },
+  "execution": {
+    "cooperative_queue_only": true,
+    "single_effect_per_intent": true,
+    "default_allowed": false,
+    "force_click": false,
+    "unattended_console_execution": false
+  },
+  "limits": {
+    "max_catalog_bytes": 180000,
+    "max_calibration_bytes": 8192,
+    "max_target_count": 256
+  },
+  "proof_ceiling": "OFFLINE_ATLAS_CONTRACT_AND_MOCKED_ADAPTER_NOT_LIVE_GAME_VERIFIED"
+}
