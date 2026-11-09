@@ -54,3 +54,7 @@ P95: the call stacks and explicit absence-of-evidence states above. P124: isolat
 ### Already-realized harm is a different recovery lane
 
 If independent evidence shows an autonomous action **already** caused a relationship/environment cost, a queue cancel cannot reverse it. The moderation evaluator can instead propose one currently observed, target-matched, enabled repair/apology/cleanup affordance with an opt-in policy, current actor/capture evidence and no input permit. Even a successful attempt requires independent proof of the resulting relationship or environmental state; never claim harm was erased merely because an apology/repair was queued. A player-authored harmful act is never silently undone.
+
+## Host listener integration (P95 / P124 second pass)
+
+A verified `discovery_hud` object may now travel through the existing opt-in `host_listener.tick` to `host_stack.evaluate_turn`. The host composes **one** current Discovery Quest interpretation. Scoring Simoleons and Navigating Needs activate their existing planners using only this attested panel's current incomplete goals; conflicting legacy per-quest flags fail closed. Build/Buy or current player input cannot silently promote a stale panel into a Live queue. The phone-only route receives an explicit `DISCOVERY_PHONE_REVIEW_ONLY` gate *after* needs, school, player commands and existing gardening goals, and always retains `execute_allowed: false`. Unknown panels do not trigger commands. No phone call/text or native UI click is issued by the host planner.
