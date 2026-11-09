@@ -128,6 +128,11 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(recipe["state"], "HOUSEHOLD_SKILLS_BOOTSTRAP_RECIPE")
         self.assertEqual(recipe["dispatch_order"], "skill_round_robin")
         self.assertIn("--members 3", recipe["cli"])
+        self.assertIn("--skill handiness", recipe["cli"])
+        self.assertNotIn("--execute", recipe["cli"])
+        self.assertNotIn("--detach", recipe["cli"])
+        self.assertNotIn("--execute", recipe["bootstrap_forward"])
+        self.assertEqual(recipe["proof_ceiling"], "PLAN_ONLY_NOT_LOCAL_GAME_PROOF")
         self.assertEqual(bootstrap.main(["household-skills"]), 0)
 
     def test_household_skills_forward_requires_observed_members(self):
