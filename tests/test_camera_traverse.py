@@ -200,8 +200,8 @@ class CameraFirstWorldTargetTests(unittest.TestCase):
             SIX, capture_ref=self.CAPTURE,
             client_width=1920, client_height=1080, world_target=requested,
         )
-        self.assertEqual(out["next_gate"], "CAMERA_TARGET_REFRAME_REQUIRED")
-        self.assertEqual(out["fallback"]["mechanism"], "CAMERA_FIRST_WORLD_TARGET")
+        self.assertEqual(out["next_gate"], "CAMERA_LOCK_REOBSERVE_OR_YIELD")
+        self.assertEqual(out["fallback"]["mechanism"], "ACTIVE_SIM_CAMERA_LOCK")
         self.assertFalse(out["world_target_framing"]["click_ready"])
         self.assertEqual(out["world_target_framing"]["camera_plan"]["steps"][-1]["kind"], "SAFE_REST")
 
@@ -238,8 +238,9 @@ class HostStackIntegrationTests(unittest.TestCase):
             camera_scan_needed=True,
             camera_pan_directions=["E"],
         )
-        self.assertEqual(turn["next_gate"], "CAMERA_SAFE_TRAVERSE")
-        self.assertEqual(turn["fallback"]["mechanism"], "CAMERA_SAFE_TRAVERSE")
+        self.assertEqual(turn["next_gate"], "CAMERA_LOCK_REOBSERVE_OR_YIELD")
+        self.assertEqual(turn["fallback"]["mechanism"], "ACTIVE_SIM_CAMERA_LOCK")
+        self.assertIsNone(turn["active_sim_camera_lock"]["map_plan"])
         self.assertEqual(turn["camera_traverse"]["plan"]["steps"][-1]["kind"], "SAFE_REST")
 
 
