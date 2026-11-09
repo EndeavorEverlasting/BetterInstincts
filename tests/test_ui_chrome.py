@@ -79,6 +79,28 @@ class UIChromeTests(unittest.TestCase):
         keys = [s for s in plan["steps"] if s.get("op") == "KEY" and s.get("chord") == ["BACKSPACE"]]
         self.assertEqual(len(keys), 1)
 
+    def test_aok_live_handoff_is_discoverable_and_has_proof_gates(self) -> None:
+        """Protect the handoff from regressing to a plan-only success claim."""
+        name = "BI-AOK-BLOOMER-INVENTORY-P04-2026-11-09.md"
+        handoff = ROOT / "docs" / "handoff" / name
+        self.assertTrue(handoff.is_file())
+        body = handoff.read_text(encoding="utf-8")
+        owner_doc = (ROOT / "docs" / "UI_CHROME.md").read_text(encoding="utf-8")
+        self.assertIn(name, owner_doc)
+        for required in (
+            "AOK",
+            "Backspace",
+            "HOUSEHOLD_INVENTORY",
+            "AOK_IN_HOUSEHOLD_INVENTORY_OBSERVED",
+            "ALREADY_PRESENT",
+            "NOT_PROVEN",
+            "15-second",
+            "CANDIDATE_UNVERIFIED",
+            "BI-002",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, body)
+
     def test_live_plan_refused(self) -> None:
         with self.assertRaisesRegex(UIChromeError, "CATALOG_DEPOSIT_REQUIRES_BUY_OR_BUILD"):
             plan_catalog_to_inventory("a_ok_bloomer", mode="LIVE", cfg=self.cfg)
