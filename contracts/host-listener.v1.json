@@ -71,7 +71,13 @@
       "emotion",
       "moodlets",
       "traits",
-      "whims"
+      "whims",
+      "lot_model",
+      "multitasking",
+      "sim_room_id",
+      "sim_seated",
+      "sim_seat_id",
+      "lot_traits"
     ],
     "optional_social_opportunity_fields": [
       "social_prompt_active",
@@ -122,7 +128,25 @@
       "chance_event_external_research_opt_in"
     ],
     "chance_event_contract": "docs/CHANCE_EVENT_RESEARCH.md",
-    "chance_event_scope": "Supplied, two-cue scene observation must share capture_ref; local memo read; evaluate-only companion. External work dispatch opt-in, never launched by listener. In player-yield state the event advisory is still read-only, never a game click."
+    "chance_event_scope": "Supplied, two-cue scene observation must share capture_ref; local memo read; evaluate-only companion. External work dispatch opt-in, never launched by listener. In player-yield state the event advisory is still read-only, never a game click.",
+    "homework_study_preflight": {
+      "owner": "betterinstincts/teen_homework.py",
+      "queue_owner": "betterinstincts/queue_capacity.py",
+      "lot_source": "betterinstincts/room_census.py over house_state",
+      "required_before_homework_enqueue": [
+        "inventory_has_homework=true",
+        "homework_pending=true",
+        "multitasking explicitly observed false or true",
+        "queue available below conservative cap",
+        "attested indoor table/desk plus chair",
+        "sim_room_id equals chosen room",
+        "sim_seated true",
+        "sim_seat_id equals chosen seat",
+        "no duplicate homework in current queue"
+      ],
+      "on_missing": "emit advisory scan/seat/wait; do not enqueue",
+      "proof_ceiling": "OFFLINE_HOST_LISTENER_NO_SENDINPUT"
+    }
   },
   "pipeline": [
     "load_session",
@@ -134,6 +158,7 @@
     "hold_live_planning_for_buy_build_unknown_mode",
     "behavior_eval",
     "instincts_plan",
+    "study_location_and_queue_capacity_advisory_if_homework",
     "host_stack_evaluate_turn",
     "school_day_goal_plan_if_active",
     "navigating_needs_tandem_if_active",

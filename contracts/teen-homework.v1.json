@@ -6,12 +6,24 @@
   "design_brief": {
     "subject": "Teen High School Student daily career-performance homework budget",
     "audience": "local host agent + operator at home lot",
-    "job": "Budget daily High School Student homework task; recover when inventory omits homework book; survival and premises rules outrank school-work routing",
+    "job": "Budget daily High School Student homework task; recover when inventory omits homework book; survival and premises rules outrank school-work routing; select attested indoor table/desk with actual seating and a verified available queue slot before any homework enqueue",
     "upstreams": [
-      {"id": "impeccable", "mechanism": "purpose before chrome"},
-      {"id": "UP-A85AD9DC3", "mechanism": "journey / call-stack storytelling"},
-      {"id": "UP-0F2FB5920", "mechanism": "iterate with measurement"},
-      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+      {
+        "id": "impeccable",
+        "mechanism": "purpose before chrome"
+      },
+      {
+        "id": "UP-A85AD9DC3",
+        "mechanism": "journey / call-stack storytelling"
+      },
+      {
+        "id": "UP-0F2FB5920",
+        "mechanism": "iterate with measurement"
+      },
+      {
+        "id": "UP-40FE662CF",
+        "mechanism": "validate before push"
+      }
     ],
     "forbidden_chrome": "No teen homework dashboard; contracts + evaluators only; not adult get_career scenario"
   },
@@ -54,22 +66,36 @@
     ]
   },
   "recovery_ladder": {
-    "when": ["inventory_has_homework", false],
+    "when": [
+      "inventory_has_homework",
+      false
+    ],
     "order": [
       {
         "id": "LOT_SCAN_PUT_HOMEWORK_IN_INVENTORY",
-        "labels": ["homework", "put in inventory", "lot scan"],
+        "labels": [
+          "homework",
+          "put in inventory",
+          "lot scan"
+        ],
         "steps": [
           "SCAN_LOT_SURFACES",
           "CLICK_HOMEWORK_BOOK",
           "PIE_PUT_IN_INVENTORY"
         ],
-        "when_homework_on_lot": ["true", "unknown"],
+        "when_homework_on_lot": [
+          "true",
+          "unknown"
+        ],
         "confidence": "HOST_HEURISTIC"
       },
       {
         "id": "COMPUTER_SCHOOL_DO_HOMEWORK",
-        "labels": ["do homework", "school", "computer"],
+        "labels": [
+          "do homework",
+          "school",
+          "computer"
+        ],
         "steps": [
           "CLICK_COMPUTER",
           "PIE_SCHOOL",
@@ -79,7 +105,11 @@
       },
       {
         "id": "COMPUTER_PURCHASE_SCHOOL_BOOKS",
-        "labels": ["purchase school books", "school", "computer"],
+        "labels": [
+          "purchase school books",
+          "school",
+          "computer"
+        ],
         "steps": [
           "CLICK_COMPUTER",
           "PIE_SCHOOL",
@@ -89,7 +119,11 @@
       },
       {
         "id": "PHONE_SCHOOL_ASK_HOMEWORK",
-        "labels": ["ask about homework", "school", "phone"],
+        "labels": [
+          "ask about homework",
+          "school",
+          "phone"
+        ],
         "steps": [
           "CLICK_PHONE",
           "PIE_SCHOOL",
@@ -99,7 +133,10 @@
       },
       {
         "id": "DESK_WORK_ON_HOMEWORK",
-        "labels": ["work on homework", "desk"],
+        "labels": [
+          "work on homework",
+          "desk"
+        ],
         "steps": [
           "CLICK_HOMEWORK_DESK",
           "PIE_WORK_ON_HOMEWORK"
@@ -113,17 +150,46 @@
     "inventory_present": [
       {
         "id": "DO_HOMEWORK",
-        "labels": ["do homework", "homework"],
-        "steps": ["CLICK_INVENTORY_HOMEWORK", "PIE_DO_HOMEWORK"],
+        "labels": [
+          "do homework",
+          "homework"
+        ],
+        "steps": [
+          "CLICK_INVENTORY_HOMEWORK",
+          "PIE_DO_HOMEWORK"
+        ],
         "confidence": "HOST_HEURISTIC"
       },
       {
         "id": "WORK_ON_HOMEWORK",
-        "labels": ["work on homework", "desk", "homework"],
-        "steps": ["CLICK_HOMEWORK_DESK", "PIE_WORK_ON_HOMEWORK"],
+        "labels": [
+          "work on homework",
+          "desk",
+          "homework"
+        ],
+        "steps": [
+          "CLICK_HOMEWORK_DESK",
+          "PIE_WORK_ON_HOMEWORK"
+        ],
         "confidence": "HOST_HEURISTIC"
       }
-    ]
+    ],
+    "operator_bounds": {
+      "multitasking_capacity_reported": [
+        2,
+        3
+      ],
+      "not_multitasking_capacity_reported": [
+        6,
+        7
+      ],
+      "conservative_admission": {
+        "multitasking": 2,
+        "not_multitasking": 6,
+        "unknown": 0
+      },
+      "note": "Operator heuristics; observed queue and possible capacity rejection override any guess. Reobserve after each enqueue."
+    }
   },
   "call_stack": {
     "order": [
@@ -132,40 +198,120 @@
       "HOMEWORK_PREMISES_BLOCKED",
       "HOMEWORK_AFTER_NEEDS_QUEUE",
       "HOMEWORK_INVENTORY_MISSING",
+      "HOMEWORK_ALREADY_QUEUED",
+      "HOMEWORK_STUDY_SCAN_REQUIRED",
+      "HOMEWORK_QUEUE_CAPACITY_HOLD",
+      "PREPARE_STUDY_LOCATION",
       "QUEUE_TEEN_HOMEWORK",
       "LEISURE_OR_IDLE"
     ],
     "gates": {
       "PLAYER_FIRST_OR_BUSY": {
-        "when": ["player_directed", "already_busy"],
+        "when": [
+          "player_directed",
+          "already_busy"
+        ],
         "action": "YIELD_OR_EMULATE_ONLY"
       },
       "SURVIVAL_BEFORE_HOMEWORK": {
-        "needs": ["hunger", "bladder", "energy"],
+        "needs": [
+          "hunger",
+          "bladder",
+          "energy"
+        ],
         "threshold": 0.35,
         "action": "RECOVER_SURVIVAL_BEFORE_HOMEWORK",
-        "outranks": ["QUEUE_TEEN_HOMEWORK", "HOMEWORK_INVENTORY_MISSING"]
+        "outranks": [
+          "QUEUE_TEEN_HOMEWORK",
+          "HOMEWORK_INVENTORY_MISSING"
+        ]
       },
       "HOMEWORK_PREMISES_BLOCKED": {
-        "when": ["homework_pending", "school_day_active_or_school_lot"],
+        "when": [
+          "homework_pending",
+          "school_day_active_or_school_lot"
+        ],
         "action": "DEFER_HOMEWORK_UNTIL_HOME",
-        "forbidden": ["DO_HOMEWORK_ON_SCHOOL_PREMISES"]
+        "forbidden": [
+          "DO_HOMEWORK_ON_SCHOOL_PREMISES"
+        ]
       },
       "HOMEWORK_AFTER_NEEDS_QUEUE": {
-        "when": ["homework_pending", "location_home", "needs_queue_active", "survival_ok"],
+        "when": [
+          "homework_pending",
+          "location_home",
+          "needs_queue_active",
+          "survival_ok"
+        ],
         "action": "FINISH_NEEDS_QUEUE_BEFORE_HOMEWORK"
       },
       "HOMEWORK_INVENTORY_MISSING": {
-        "when": ["homework_pending", "location_home", "inventory_has_homework_false", "survival_ok"],
+        "when": [
+          "homework_pending",
+          "location_home",
+          "inventory_has_homework_false",
+          "survival_ok"
+        ],
         "action": "RECOVER_HOMEWORK_VIA_LADDER",
         "ladder": "recovery_ladder"
       },
       "QUEUE_TEEN_HOMEWORK": {
-        "when": ["homework_pending", "location_home", "inventory_has_homework_true", "survival_ok"],
+        "when": [
+          "homework_pending",
+          "location_home",
+          "inventory_has_homework_true",
+          "survival_ok",
+          "study_seat_reobserved",
+          "queue_capacity_available",
+          "no_duplicate"
+        ],
         "action": "QUEUE_TEEN_HOMEWORK_ACTIONS"
       },
       "LEISURE_OR_IDLE": {
         "action": "ALLOW_HOME_LEISURE"
+      },
+      "HOMEWORK_ALREADY_QUEUED": {
+        "when": [
+          "homework_pending",
+          "queue_already_contains_homework"
+        ],
+        "action": "WAIT_FOR_EXISTING_HOMEWORK_NO_DUPLICATION"
+      },
+      "HOMEWORK_STUDY_SCAN_REQUIRED": {
+        "when": [
+          "homework_pending",
+          "inventory_has_homework_true",
+          "no_attested_indoor_study_seat"
+        ],
+        "action": "SCAN_LOT_FOR_INDOOR_STUDY_SPOT_BEFORE_HOMEWORK",
+        "forbidden": [
+          "HOMEWORK_ON_SIDEWALK",
+          "BLIND_FLOOR_HOMEWORK"
+        ]
+      },
+      "HOMEWORK_QUEUE_CAPACITY_HOLD": {
+        "when": [
+          "homework_pending",
+          "no_observed_queue_budget"
+        ],
+        "action": "WAIT_FOR_QUEUE_SLOT_AND_REOBSERVE",
+        "forbidden": [
+          "BLIND_ENQUEUE",
+          "CANCEL_PLAYER_QUEUE"
+        ]
+      },
+      "PREPARE_STUDY_LOCATION": {
+        "when": [
+          "homework_pending",
+          "attested_indoor_study_space",
+          "queue_capacity_available",
+          "sim_not_at_verified_seat"
+        ],
+        "action": "MOVE_TO_ATTESTED_STUDY_SEAT_AND_VERIFY",
+        "forbidden": [
+          "QUEUE_HOMEWORK_BEFORE_SEATED",
+          "ASSUME_SIM_AT_DESK"
+        ]
       }
     }
   },
@@ -174,7 +320,11 @@
     "HOMEWORK_PREMISES_BLOCKED",
     "HOMEWORK_INVENTORY_MISSING",
     "QUEUE_TEEN_HOMEWORK",
-    "HOMEWORK_AFTER_NEEDS_QUEUE"
+    "HOMEWORK_AFTER_NEEDS_QUEUE",
+    "HOMEWORK_ALREADY_QUEUED",
+    "HOMEWORK_STUDY_SCAN_REQUIRED",
+    "HOMEWORK_QUEUE_CAPACITY_HOLD",
+    "PREPARE_STUDY_LOCATION"
   ],
   "host_rules": [
     "survival outranks homework",
@@ -183,13 +333,45 @@
     "inventory false still requires lot scan before assuming book absent",
     "put found lot homework in inventory then queue do-homework",
     "never invent inventory or lot contents",
-    "does not close BI-002 or BI-006"
+    "does not close BI-002 or BI-006",
+    "scan all attested indoor room candidates from house_state/room_census before homework",
+    "check current action queue capacity using the operator bands (2-3 while multitasking, 6-7 otherwise), favor conservative lower bound",
+    "observe both current room and seated furniture ID before enqueuing homework",
+    "prefer appropriate Focused-mood opportunities when observed, but never invent moodlet auras or a guaranteed performance buff"
   ],
   "forbidden": [
     "motherlode",
     "skip_survival_for_homework",
     "claim_BI006_closure",
     "vision_invent_inventory",
-    "skip_lot_scan_when_inventory_empty"
-  ]
+    "skip_lot_scan_when_inventory_empty",
+    "blind_queue_fill",
+    "homework_on_sidewalk",
+    "homework_on_floor_without_workspace",
+    "duplicate_homework"
+  ],
+  "study_location": {
+    "source": "betterinstincts.room_census.scan_lot_model over revisioned house_state",
+    "priority": "SURVIVAL_AND_PLAYER_COMMANDS_FIRST",
+    "surface_types": [
+      "desk",
+      "dining_table"
+    ],
+    "seat_types": [
+      "dining_chair",
+      "living_chair"
+    ],
+    "indoor": "STRUCTURE_ATTESTED_AND_INSIDE_ONLY",
+    "must_observe": [
+      "lot_model_revision",
+      "sim_room_id",
+      "sim_seated",
+      "sim_seat_id"
+    ],
+    "emotion": "Focused/Very Focused observed is a cue; do not infer duration/speed boost or activate aura without observed affordance",
+    "lot_trait": "Study Spot considered only when explicitly supplied; does not replace physical seating",
+    "unknown": "INSPECT_LOT_BEFORE_HOMEWORK_NEVER_SIDEWALK",
+    "action": "navigate-to-selected-seat then reobserve seated; only subsequent tick may enqueue homework",
+    "proof_ceiling": "OFFLINE_SEATING_POLICY_NOT_GAME_PROOF"
+  }
 }

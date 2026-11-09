@@ -92,7 +92,7 @@ class DomainCascadeTests(unittest.TestCase):
                 self.assertNotIn("teen_homework", career["payload"])
 
     def test_pending_homework_and_survival_priority_remain(self):
-        for hunger, expected in ((0.9, "QUEUE_TEEN_HOMEWORK"), (0.1, "SURVIVAL_BEFORE_HOMEWORK")):
+        for hunger, expected in ((0.9, "HOMEWORK_STUDY_SCAN_REQUIRED"), (0.1, "SURVIVAL_BEFORE_HOMEWORK")):
             with self.subTest(hunger=hunger):
                 needs = {need: 0.9 for need in SIX}
                 needs["hunger"] = hunger

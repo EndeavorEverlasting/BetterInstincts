@@ -110,15 +110,17 @@ class TeenHomeworkTests(unittest.TestCase):
             report["preferred_routes"],
         )
 
-    def test_inventory_present_queues_homework(self):
+    def test_inventory_present_requires_attested_seated_study_location(self):
         report = evaluate_teen_homework_turn(
             SIX_OK,
             location_kind="home",
             homework_pending=True,
             inventory_has_homework=True,
         )
-        self.assertEqual(report["gate"], "QUEUE_TEEN_HOMEWORK")
-        self.assertIn(report["primary_route"], {"DO_HOMEWORK", "WORK_ON_HOMEWORK"})
+        self.assertEqual(report["gate"], "HOMEWORK_STUDY_SCAN_REQUIRED")
+        self.assertEqual(report["primary_route"], "SCAN_LOT_FOR_STUDY_STATION")
+        self.assertNotIn("DO_HOMEWORK", report["preferred_routes"])
+        self.assertFalse(report["queue_budget"]["enqueue_allowed"])
 
     def test_homework_after_needs_queue(self):
         report = evaluate_teen_homework_turn(
