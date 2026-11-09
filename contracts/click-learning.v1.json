@@ -42,7 +42,8 @@
     "modes": [
       "LIVE",
       "BUY",
-      "BUILD"
+      "BUILD",
+      "OTHER"
     ],
     "target_kinds": [
       "PANEL",
