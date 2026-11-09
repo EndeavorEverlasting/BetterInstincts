@@ -238,8 +238,9 @@ class HostStackIntegrationTests(unittest.TestCase):
             camera_scan_needed=True,
             camera_pan_directions=["E"],
         )
-        self.assertEqual(turn["next_gate"], "CAMERA_SAFE_TRAVERSE")
-        self.assertEqual(turn["fallback"]["mechanism"], "CAMERA_SAFE_TRAVERSE")
+        self.assertEqual(turn["next_gate"], "CAMERA_LOCK_REOBSERVE_OR_YIELD")
+        self.assertEqual(turn["fallback"]["mechanism"], "ACTIVE_SIM_CAMERA_LOCK")
+        self.assertIsNone(turn["active_sim_camera_lock"]["map_plan"])
         self.assertEqual(turn["camera_traverse"]["plan"]["steps"][-1]["kind"], "SAFE_REST")
 
 
