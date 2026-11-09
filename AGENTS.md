@@ -37,3 +37,4 @@ Report CHANGED | PROVED | NEXT with checks, SHA, push/PR/merge, patch, live stat
 
 P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`; ontology: `docs/handoff/BI-SEMANTIC-ONTOLOGY-P04-2026-11-07.md`.
 Interop: `docs/ASYNC_INTEROP.md` (15s idle). Likes: `docs/PREFERENCE_PROMPTS.md`.
+Skills: `docs/HOUSEHOLD_JUDGMENT.md` (fixed roster; serial/offline).

@@ -9,7 +9,7 @@ Order (durable — do not skip):
 Household: --members N (observed portrait count) → skill-round-robin:
     for each skill, Space across every portrait and set that one skill, then the
     next skill (completion ledger skips already-maxed cells). --detach returns a
-    worker receipt (opt-in, never autorun). Bootstrap: python bootstrap.py
+    is foreground-only; detached screen workers are denied. Bootstrap: python bootstrap.py
     household-skills -- --members N ...
 
 Typing owner: scripts.win32_input.type_text (keybd_event). Evaluate-only unless
@@ -20,14 +20,12 @@ Examples:
   python -m scripts.diy_skill_force plan --bundle full_unlock
   python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID
   python -m scripts.diy_skill_force household --members 3 --bundle full_unlock
-  python -m scripts.diy_skill_force household --members 3 --execute --detach --process-id PID --session-id ID
+  python -m scripts.diy_skill_force household --members 3 --execute --roster-key SIM1 --roster-key SIM2 --roster-key SIM3 --first-portrait-attested --process-id PID --session-id ID
 """
 from __future__ import annotations
 
 import argparse
 import json
-import os
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -36,6 +34,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from betterinstincts.household_judgment import (
+    HouseholdJudgmentError, require_fixed_roster, require_skill_action,
+)
 from betterinstincts.diy_skill_force import (
     DiySkillForceError,
     catalog_snapshot,
@@ -498,14 +499,32 @@ def _type_cheat_line(cmd: str) -> None:
     time.sleep(0.45)
 
 
-def _select_next_household_member() -> dict:
-    """EA Space = next household Sim. Console must already be closed."""
+def _select_next_household_member(
+    *, process_id: int | None, session_id: str | None, idle_ms: int,
+) -> dict:
+    """Space only under a fresh admitted screen lease; console is already closed.
+
+    Selection was previously an unguarded keypress between per-cell leases.
+    A competing Cursor/Playwright agent must never cause a blind Space press.
+    """
+    from betterinstincts.control_handoff import HandoffError
+    from betterinstincts.player_presence import probe_windows
+    from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
     from scripts.win32_input import tap_vk
 
-    # VK_SPACE
-    tap_vk(0x20)
+    try:
+        require_execute_session(session_id, process_id)
+        _wait_for_input_idle(int(process_id), idle_ms=idle_ms, timeout_sec=60.0)
+        with admitted_screen_lease(
+            int(process_id), str(session_id), idle_ms=idle_ms,
+            probe_fn=lambda: probe_windows(int(process_id)),
+        ) as ensure_ready:
+            ensure_ready()
+            tap_vk(0x20)  # VK_SPACE: select next household portrait
+    except HandoffError as exc:
+        raise GateError(str(exc)) from exc
     time.sleep(0.55)
-    return {"step": "SELECT_NEXT_HOUSEHOLD_SIM", "key": "SPACE"}
+    return {"step": "SELECT_NEXT_HOUSEHOLD_SIM", "key": "SPACE", "admitted": True}
 
 
 def _execute_household(
@@ -519,8 +538,19 @@ def _execute_household(
     verify_play_seconds: int | None = None,
     completion_ledger_path: Path | None = None,
     redo: bool = False,
+    roster_keys: list[str] | None = None,
+    first_portrait_attested: bool = False,
 ) -> dict:
     """Skill-round-robin: one skill × every portrait, then the next skill."""
+    if first_portrait_attested is not True:
+        raise GateError("FIRST_PORTRAIT_LOCAL_OBSERVATION_REQUIRED")
+    count = int(household_plan.get("household_members") or 0)
+    if roster_keys is None or len(roster_keys) != count:
+        raise GateError("EXACT_OBSERVED_PORTRAIT_ROSTER_REQUIRED")
+    try:
+        require_fixed_roster(roster_keys, roster_keys)
+    except HouseholdJudgmentError as exc:
+        raise GateError(str(exc)) from exc
     ledger_path = (
         Path(completion_ledger_path)
         if completion_ledger_path is not None
@@ -558,10 +588,18 @@ def _execute_household(
             isinstance(select_before, dict)
             or int(household_plan.get("household_members") or 1) > 1
         ):
-            # Close console with Ctrl+Shift+C — never Esc (MENU collision).
-            _toggle_cheat_console()
-            time.sleep(0.25)
-            select_report = _select_next_household_member()
+            # _execute_plan(close_console=True) already CLOSED the console.
+            # Toggling here used to reopen it and send Space to the console.
+            try:
+                require_skill_action(
+                    "SELECT_NEXT_HOUSEHOLD_SIM",
+                    original_roster=roster_keys, observed_roster=roster_keys,
+                )
+            except HouseholdJudgmentError as exc:
+                raise GateError(str(exc)) from exc
+            select_report = _select_next_household_member(
+                process_id=process_id, session_id=session_id, idle_ms=idle_ms,
+            )
         else:
             select_report = {"step": "KEEP_CURRENT_SELECTION", "member_index": index}
         first_unit = False
@@ -622,6 +660,13 @@ def _execute_household(
             )
             continue
 
+        try:
+            require_skill_action(
+                "SET_SKILL_LEVEL",
+                original_roster=roster_keys, observed_roster=roster_keys,
+            )
+        except HouseholdJudgmentError as exc:
+            raise GateError(str(exc)) from exc
         live = _execute_plan(
             live_plan,
             process_id=process_id,
@@ -676,47 +721,6 @@ def _execute_household(
         "not_bi005": True,
         "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
     }
-
-
-def _detach_household_worker(argv_tail: list[str], *, receipt: Path) -> dict:
-    """Opt-in async worker: return immediately; progress lands in receipt."""
-    receipt = receipt.resolve()
-    if not receipt.is_relative_to(OUTPUT.resolve()):
-        raise GateError("RECEIPT_OUTSIDE_DIST_GAME_HOST")
-    receipt.parent.mkdir(parents=True, exist_ok=True)
-    log_path = receipt.with_suffix(receipt.suffix + ".log")
-    cmd = [sys.executable, "-m", "scripts.diy_skill_force", *argv_tail, "--receipt", str(receipt)]
-    creationflags = 0
-    close_fds = True
-    if sys.platform == "win32":
-        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | getattr(
-            subprocess, "DETACHED_PROCESS", 0x00000008
-        )
-        close_fds = False
-    log_fh = open(log_path, "w", encoding="utf-8")
-    try:
-        proc = subprocess.Popen(
-            cmd,
-            cwd=str(ROOT),
-            stdin=subprocess.DEVNULL,
-            stdout=log_fh,
-            stderr=subprocess.STDOUT,
-            creationflags=creationflags,
-            close_fds=close_fds,
-            env={**os.environ, "PYTHONUNBUFFERED": "1"},
-        )
-    finally:
-        log_fh.close()
-    meta = {
-        "state": "HOUSEHOLD_SKILL_FORCE_DETACHED",
-        "worker_pid": int(proc.pid),
-        "receipt": str(receipt.relative_to(ROOT)),
-        "log": str(log_path.relative_to(ROOT)),
-        "command": cmd,
-        "note": "Opt-in worker — not autorun. Poll receipt for member progress.",
-    }
-    receipt.write_text(json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return meta
 
 
 def _add_common_execute_flags(ap: argparse.ArgumentParser) -> None:
@@ -798,10 +802,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Exact observed Live household portrait count (N = whatever the household is)",
     )
     _add_common_execute_flags(hh)
+    hh.add_argument("--roster-key", action="append", default=[],
+                    help="Observed stable portrait ID, once per Sim, ordered from first portrait")
+    hh.add_argument("--first-portrait-attested", action="store_true",
+                    help="Require local proof that portrait 0 is selected before skill dispatch")
     hh.add_argument(
         "--detach",
         action="store_true",
-        help="Opt-in async worker: return immediately; write progress under dist/game-host",
+        help="Disabled safety guard: detached UI worker execution is forbidden",
     )
 
     args = p.parse_args(argv)
@@ -809,6 +817,17 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "catalog":
             result = catalog_snapshot()
         elif args.command == "household":
+            if args.detach:
+                raise GateError("DETACHED_HOUSEHOLD_UI_UNSAFE_USE_FOREGROUND_SERIAL")
+            if args.execute:
+                if not args.first_portrait_attested:
+                    raise GateError("FIRST_PORTRAIT_LOCAL_OBSERVATION_REQUIRED")
+                if len(args.roster_key) != int(args.members):
+                    raise GateError("EXACT_OBSERVED_PORTRAIT_ROSTER_REQUIRED")
+                try:
+                    require_fixed_roster(args.roster_key, args.roster_key)
+                except HouseholdJudgmentError as exc:
+                    raise GateError(str(exc)) from exc
             skill_ids = list(args.skill) or None
             bundle = args.bundle
             if isinstance(bundle, str) and not bundle.strip():
@@ -836,62 +855,12 @@ def main(argv: list[str] | None = None) -> int:
                 game_mode=args.game_mode,
                 accept_reward_dialogs=accept,
                 session_id=getattr(args, "session_id", None),
+                member_keys=list(args.roster_key) if args.roster_key else None,
                 completion_ledger=ledger,
                 redo=bool(getattr(args, "redo", False)),
             )
             result = {"plan": plan, "execute": False, "detached": False}
-            if args.execute and args.detach:
-                receipt = args.receipt
-                if receipt is None:
-                    receipt = OUTPUT / "household-skill-force-async-receipt.json"
-                elif not receipt.is_absolute():
-                    receipt = ROOT / receipt
-                # Child must not detach again.
-                child_argv = [
-                    "household",
-                    "--members",
-                    str(int(args.members)),
-                    "--bundle",
-                    str(bundle or "full_unlock"),
-                    "--execute",
-                    "--close-console",
-                ]
-                if args.level is not None:
-                    child_argv.extend(["--level", str(args.level)])
-                if skill_ids:
-                    for sid in skill_ids:
-                        child_argv.extend(["--skill", sid])
-                if args.no_accept_reward_dialogs:
-                    child_argv.append("--no-accept-reward-dialogs")
-                if args.verify_skills_panel:
-                    child_argv.append("--verify-skills-panel")
-                if args.verify_play_seconds is not None:
-                    child_argv.extend(["--verify-play-seconds", str(args.verify_play_seconds)])
-                if args.process_id is not None:
-                    child_argv.extend(["--process-id", str(args.process_id)])
-                if args.session_id:
-                    child_argv.extend(["--session-id", str(args.session_id)])
-                if args.idle_ms:
-                    child_argv.extend(["--idle-ms", str(int(args.idle_ms))])
-                if getattr(args, "wait_idle_timeout_sec", None) is not None:
-                    child_argv.extend(
-                        ["--wait-idle-timeout-sec", str(float(args.wait_idle_timeout_sec))]
-                    )
-                child_argv.extend(["--completion-ledger", str(ledger_path)])
-                if getattr(args, "redo", False):
-                    child_argv.append("--redo")
-                result = _detach_household_worker(child_argv, receipt=Path(receipt))
-                result["plan"] = {
-                    "state": plan["state"],
-                    "household_members": plan["household_members"],
-                    "members_needing_work": plan.get("members_needing_work"),
-                    "required_residual_skills": plan.get("required_residual_skills"),
-                    "bundle": plan.get("bundle"),
-                }
-                result["completion_ledger"] = str(ledger_path.relative_to(ROOT)) if ledger_path.is_relative_to(ROOT) else str(ledger_path)
-                result["detached"] = True
-                result["execute"] = True
-            elif args.execute:
+            if args.execute:
                 result["live"] = _execute_household(
                     plan,
                     process_id=args.process_id,
@@ -902,6 +871,8 @@ def main(argv: list[str] | None = None) -> int:
                     verify_play_seconds=args.verify_play_seconds,
                     completion_ledger_path=ledger_path,
                     redo=bool(getattr(args, "redo", False)),
+                    roster_keys=list(args.roster_key),
+                    first_portrait_attested=bool(args.first_portrait_attested),
                 )
                 result["execute"] = True
         else:
@@ -966,7 +937,7 @@ def main(argv: list[str] | None = None) -> int:
 
         print(json.dumps(result, sort_keys=True))
         return 0
-    except (DiySkillForceError, GateError, OSError, ValueError, TypeError) as exc:
+    except (DiySkillForceError, HouseholdJudgmentError, GateError, OSError, ValueError, TypeError) as exc:
         print(json.dumps({"state": "BLOCKED", "reason": str(exc)}, sort_keys=True))
         return 2
 

@@ -12,7 +12,10 @@ from typing import Mapping, Sequence
 
 # Borderless 1920x1080 LOCAL_OBSERVED dismiss click (modal X top-right).
 MEMORY_BOOST_DISMISS_X = (1427, 188)
-FORBIDDEN = frozenset({"RESUME", "READ_FAQ", "STORE_TAB", "PLAY_SCENARIO"})
+FORBIDDEN = frozenset({"RESUME", "READ_FAQ", "STORE_TAB", "PLAY_SCENARIO",
+                       "CONNECT", "CONNECT_ONLINE", "EA_CONNECT", "OPEN_GALLERY",
+                       "OPEN_ONLINE_GALLERY", "OPEN_STORE", "FORCE_SIMS_ONLINE",
+                       "DOWNLOAD_HOUSEHOLD", "ONLINE_LOGIN"})
 
 
 class MenuBlockerError(ValueError):

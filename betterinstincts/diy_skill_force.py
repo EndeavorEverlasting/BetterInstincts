@@ -4,14 +4,14 @@ P95/P100 stack: soft-focus Sims → Ctrl+Shift+C → testingcheats enabled true 
 stats.set_skill_level <stat> <N> for each resolved skill → bounded
 ACCEPT_OFFERED_REWARD_TRAIT (OK on offered mastery/reward traits).
 Household: count N portraits → skill-round-robin (one skill × every member,
-then the next skill) via Space between cells (opt-in --detach). Required
+then the next skill) via Space between cells (one foreground screen owner). Required
 residuals Cooking/Fitness/Natural Living always re-applied at end.
 Completion ledger: skip already-DISPATCHED skill×member cells. Mode-agnostic;
 never force F1 while the operator builds.
 
 Bundles: diy_maker / servo_core / creative / social / athletic / residual_core /
 full_unlock. Library plans only; scripts/diy_skill_force.py owns typing + OK
-accept + household async worker. Never edits saves. Never practice_skill / BI-005.
+accept + foreground serial household executor. Never edits saves. Never practice_skill / BI-005.
 """
 from __future__ import annotations
 
@@ -285,6 +285,10 @@ def load_contract(path: Path = CONTRACT) -> dict:
         raise DiySkillForceError("HOUSEHOLD_TRAVERSE_SPACE_REQUIRED")
     if str(ht.get("dispatch_order") or "") != "skill_round_robin":
         raise DiySkillForceError("HOUSEHOLD_DISPATCH_ORDER_SKILL_ROUND_ROBIN_REQUIRED")
+    if (cfg.get("execution_policy") or {}).get("detached_worker") is not False:
+        raise DiySkillForceError("DETACHED_HOUSEHOLD_EXECUTION_FORBIDDEN")
+    if (cfg.get("execution_policy") or {}).get("model") != "SINGLE_FOREGROUND_SERIAL_UI_OWNER":
+        raise DiySkillForceError("HOUSEHOLD_FOREGROUND_SERIAL_OWNER_REQUIRED")
     return cfg
 
 
@@ -845,7 +849,7 @@ def plan_household_skill_force(
         "proof_ceiling": probe.get("proof_ceiling"),
         "not_bi005": True,
         "not_practice_skill": True,
-        "async_detach_supported": True,
+        "async_detach_supported": False,
     }
 
 
