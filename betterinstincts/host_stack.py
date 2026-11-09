@@ -187,6 +187,7 @@ def evaluate_turn(
     client_width: Optional[int] = None,
     client_height: Optional[int] = None,
     edge_band_px: Optional[int] = None,
+    camera_pointer_context: Optional[Mapping[str, object]] = None,
     camera_scan_needed: bool = False,
     camera_pan_directions: Sequence[str] = (),
     world_target: Optional[Mapping[str, object]] = None,
@@ -818,6 +819,17 @@ def evaluate_turn(
         except (SimCameraError, CameraTraverseError, TypeError) as exc:
             raise HostStackError(str(exc)) from exc
 
+    # Pointer context is an optional observed phase, never a control permit.
+    # Player-directed work always owns the cursor even if an agent supplied
+    # a contradictory context flag.
+    pointer_context = camera_pointer_context or {}
+    if camera_pointer_context is not None:
+        if not isinstance(camera_pointer_context, Mapping) or len(str(dict(camera_pointer_context))) > 2048:
+            raise HostStackError("CAMERA_POINTER_CONTEXT_INVALID")
+        if cursor_client_x is None or cursor_client_y is None:
+            raise HostStackError("CAMERA_POINTER_CONTEXT_REQUIRES_CURSOR")
+        if set(camera_pointer_context) - {"phase", "target_kind", "target_verified", "player_owned"}:
+            raise HostStackError("CAMERA_POINTER_CONTEXT_UNKNOWN_FIELD")
     camera_traverse = None
     try:
         camera_traverse = evaluate_cursor_risk(
@@ -826,6 +838,10 @@ def evaluate_turn(
             client_width=client_width,
             client_height=client_height,
             edge_band_px=edge_band_px,
+            interaction_phase=pointer_context.get("phase", "REST"),
+            target_kind=pointer_context.get("target_kind"),
+            target_verified=pointer_context.get("target_verified", False),
+            player_owned=player_directed or pointer_context.get("player_owned", False),
             camera_scan_needed=camera_scan_needed,
             directions=camera_pan_directions,
         )
@@ -880,6 +896,24 @@ def evaluate_turn(
                 "NEEDS_OBJECT_CLICK",
                 "RESUME",
             ],
+        }
+    elif camera_traverse is not None and camera_traverse.get("gate") == "YIELD_TO_PLAYER":
+        next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
+        fallback = None
+    elif camera_traverse is not None and camera_traverse.get("gate") in {
+        "EDGE_UI_CLICK_HOST_ADMISSION",
+        "EDGE_TARGET_REOBSERVE_OR_REFRAME",
+        "TRANSIT_MUST_END_AT_SAFE_REST",
+    }:
+        next_gate = (
+            "RESPECT_PLAYER_OR_BUSY_STATE" if (player_directed or already_busy)
+            else camera_traverse["gate"]
+        )
+        fallback = {
+            "mechanism": "CAMERA_EDGE_INTERACTION",
+            "owner": "betterinstincts/camera_traverse.py",
+            "edge_interaction": camera_traverse,
+            "execute_allowed": False,
         }
     elif player_directed or already_busy:
         next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
