@@ -24,7 +24,16 @@
     "TOUCH_RICHARDSON",
     "STORE_TAB",
     "PLAY_SCENARIO",
-    "EMPTY_LOT_CAS_PERSON"
+    "EMPTY_LOT_CAS_PERSON",
+    "CONNECT",
+    "CONNECT_ONLINE",
+    "EA_CONNECT",
+    "OPEN_GALLERY",
+    "OPEN_ONLINE_GALLERY",
+    "OPEN_STORE",
+    "FORCE_SIMS_ONLINE",
+    "DOWNLOAD_HOUSEHOLD",
+    "ONLINE_LOGIN"
   ],
   "observed": {
     "run_id": "bi002-lablab-reboot",
@@ -46,37 +55,51 @@
     "memory_boost_modal": {
       "family": "modal",
       "next_transition": "dismiss_memory_boost",
-      "substeps": ["dismiss_memory_boost_x"],
+      "substeps": [
+        "dismiss_memory_boost_x"
+      ],
       "note": "EA MEMORY BOOST IS NOW ON — dismiss X before any Load Game click"
     },
     "main_menu": {
       "family": "menu",
       "next_transition": "open_load_game",
-      "substeps": ["open_load_game"],
+      "substeps": [
+        "open_load_game"
+      ],
       "note": "Never main-menu Resume"
     },
     "load_game_picker": {
       "family": "save_picker",
       "next_transition": "play_lablab_slot",
-      "substeps": ["select_lablab_save_row", "play_lablab_slot"],
+      "substeps": [
+        "select_lablab_save_row",
+        "play_lablab_slot"
+      ],
       "note": "LabLab My Saved Game 3 only — never Richardson"
     },
     "manage_worlds_or_map": {
       "family": "map",
       "next_transition": "select_lablab_domicile",
-      "substeps": ["select_lablab_domicile"],
+      "substeps": [
+        "select_lablab_domicile"
+      ],
       "note": "Pick LabLab domicile/estate on Willow Creek map"
     },
     "lablab_lot_selected": {
       "family": "map",
       "next_transition": "confirm_play_lablab_lot",
-      "substeps": ["confirm_play_lablab_lot"],
+      "substeps": [
+        "confirm_play_lablab_lot"
+      ],
       "note": "Lot panel open (LabLab 30x20) — bottom-right Play triangle"
     },
     "select_sim_to_play": {
       "family": "modal",
       "next_transition": "select_charlee_profile",
-      "substeps": ["select_charlee_profile", "confirm_play_after_sim"],
+      "substeps": [
+        "select_charlee_profile",
+        "confirm_play_after_sim"
+      ],
       "note": "SELECT A SIM TO PLAY — pick household profile before Live"
     },
     "live_mode": {
@@ -101,10 +124,16 @@
       "to": "main_menu",
       "gate": "DISMISS_MEMORY_BOOST",
       "execution": "HOST_SENDINPUT",
-      "click": [1427, 188],
+      "click": [
+        1427,
+        188
+      ],
       "substep": "dismiss_memory_boost_x",
       "scene_id": "memory_boost_modal",
-      "forbidden": ["RESUME", "READ_FAQ"],
+      "forbidden": [
+        "RESUME",
+        "READ_FAQ"
+      ],
       "note": "Modal X only."
     },
     {
@@ -113,9 +142,14 @@
       "to": "load_game_picker",
       "gate": "OPEN_LOAD_GAME",
       "execution": "HOST_SENDINPUT",
-      "click": [202, 575],
+      "click": [
+        202,
+        575
+      ],
       "substep": "open_load_game",
-      "forbidden": ["RESUME"],
+      "forbidden": [
+        "RESUME"
+      ],
       "note": "LOAD GAME text — never Resume plumbob row."
     },
     {
@@ -124,10 +158,16 @@
       "to": "manage_worlds_or_map",
       "gate": "PLAY_LAB_DISPOSABLE",
       "execution": "HOST_SENDINPUT",
-      "click": [1295, 340],
+      "click": [
+        1295,
+        340
+      ],
       "substep": "play_lablab_slot",
       "save_alias": "BI_TMP_LABLAB_01",
-      "forbidden": ["DELETE", "TOUCH_RICHARDSON"],
+      "forbidden": [
+        "DELETE",
+        "TOUCH_RICHARDSON"
+      ],
       "note": "Play on LabLab My Saved Game 3 row only."
     },
     {
@@ -136,10 +176,17 @@
       "to": "lablab_lot_selected",
       "gate": "SELECT_LABLAB_DOMICILE",
       "execution": "HOST_SENDINPUT",
-      "click": [1409, 871],
+      "click": [
+        1409,
+        871
+      ],
       "substep": "select_lablab_domicile",
       "save_alias": "BI_TMP_LABLAB_01",
-      "forbidden": ["DELETE", "TOUCH_RICHARDSON", "EMPTY_LOT_CAS_PERSON"],
+      "forbidden": [
+        "DELETE",
+        "TOUCH_RICHARDSON",
+        "EMPTY_LOT_CAS_PERSON"
+      ],
       "note": "Pick LabLab domicile/estate on map (plumbob/tip). Alias of enter_live_from_map_lablab."
     },
     {
@@ -148,10 +195,17 @@
       "to": "lablab_lot_selected",
       "gate": "SELECT_LABLAB_DOMICILE",
       "execution": "HOST_SENDINPUT",
-      "click": [1409, 871],
+      "click": [
+        1409,
+        871
+      ],
       "substep": "select_lablab_domicile",
       "save_alias": "BI_TMP_LABLAB_01",
-      "forbidden": ["DELETE", "TOUCH_RICHARDSON", "EMPTY_LOT_CAS_PERSON"],
+      "forbidden": [
+        "DELETE",
+        "TOUCH_RICHARDSON",
+        "EMPTY_LOT_CAS_PERSON"
+      ],
       "note": "Legacy id retained; same as select_lablab_domicile."
     },
     {
@@ -160,10 +214,18 @@
       "to": "select_sim_to_play",
       "gate": "CONFIRM_PLAY_LABLAB_LOT",
       "execution": "HOST_SENDINPUT",
-      "click": [1840, 1005],
+      "click": [
+        1840,
+        1005
+      ],
       "substep": "confirm_play_lablab_lot",
       "save_alias": "BI_TMP_LABLAB_01",
-      "forbidden": ["DELETE", "TOUCH_RICHARDSON", "EMPTY_LOT_CAS_PERSON", "BUILD_MODE_WRENCH"],
+      "forbidden": [
+        "DELETE",
+        "TOUCH_RICHARDSON",
+        "EMPTY_LOT_CAS_PERSON",
+        "BUILD_MODE_WRENCH"
+      ],
       "note": "Bottom-right Play after domicile selected — may open SELECT A SIM TO PLAY."
     },
     {
@@ -172,10 +234,16 @@
       "to": "select_sim_to_play",
       "gate": "SELECT_HOUSEHOLD_PROFILE",
       "execution": "HOST_SENDINPUT",
-      "click": [838, 392],
+      "click": [
+        838,
+        392
+      ],
       "substep": "select_charlee_profile",
       "save_alias": "BI_TMP_LABLAB_01",
-      "forbidden": ["DELETE", "TOUCH_RICHARDSON"],
+      "forbidden": [
+        "DELETE",
+        "TOUCH_RICHARDSON"
+      ],
       "note": "LOCAL_OBSERVED select-sim-now.png: Charlee LabLab portrait center ≈ (838,392)."
     },
     {
@@ -184,10 +252,17 @@
       "to": "live_mode",
       "gate": "CONFIRM_PLAY_AFTER_SIM",
       "execution": "HOST_SENDINPUT",
-      "click": [1840, 1005],
+      "click": [
+        1840,
+        1005
+      ],
       "substep": "confirm_play_after_sim",
       "save_alias": "BI_TMP_LABLAB_01",
-      "forbidden": ["DELETE", "TOUCH_RICHARDSON", "EMPTY_LOT_CAS_PERSON"],
+      "forbidden": [
+        "DELETE",
+        "TOUCH_RICHARDSON",
+        "EMPTY_LOT_CAS_PERSON"
+      ],
       "note": "After profile selected, bottom-right Play into Live Mode."
     }
   ],
@@ -216,5 +291,12 @@
     "from_scene": "python -m scripts.host_menu plan --from-scene select_sim_to_play",
     "execute": "python -m scripts.host_menu run --journey reboot --process-id PID --execute --run-id RUN",
     "execute_from_scene": "python -m scripts.host_menu run --from-scene SCENE --process-id PID --execute --run-id RUN"
+  },
+  "offline_guard": {
+    "policy": "STAY_OFFLINE_ONLY",
+    "forbid_ea_connect": true,
+    "forbid_gallery_and_store": true,
+    "scope": "ALL_AGENT_MENU_NAVIGATION",
+    "note": "Menu transitions and adapters cannot treat online feature activation as part of any offline game task."
   }
 }
