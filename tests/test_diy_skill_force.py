@@ -182,6 +182,30 @@ class DiySkillForceTests(unittest.TestCase):
         script = Path(__file__).resolve().parents[1] / "scripts" / "diy_skill_force.py"
         compile(script.read_text(encoding="utf-8"), str(script), "exec")
 
+    def test_wait_for_input_idle_ready_and_continuous_block(self):
+        import scripts.diy_skill_force as cli
+        from betterinstincts.player_presence import PresenceProbe
+        from unittest.mock import patch
+
+        ready = PresenceProbe(
+            foreground_is_sims=True,
+            cursor_in_client=False,
+            last_input_age_ms=20000,
+        )
+        with patch("betterinstincts.player_presence.probe_windows", return_value=ready):
+            out = cli._wait_for_input_idle(1, idle_ms=15000, timeout_sec=2.0, poll_sec=0.01)
+        self.assertEqual(out["state"], "INPUT_IDLE_READY")
+
+        busy = PresenceProbe(
+            foreground_is_sims=True,
+            cursor_in_client=False,
+            last_input_age_ms=100,
+        )
+        with patch("betterinstincts.player_presence.probe_windows", return_value=busy):
+            with self.assertRaises(cli.GateError) as ctx:
+                cli._wait_for_input_idle(1, idle_ms=15000, timeout_sec=0.3, poll_sec=0.05)
+        self.assertIn("CONTINUOUS_INPUT_BLOCKING_ADMIT", str(ctx.exception))
+
     def test_contract_json_roundtrip(self):
         raw = json.loads(
             (Path(__file__).resolve().parents[1] / "contracts" / "diy-skill-force.v1.json").read_text(

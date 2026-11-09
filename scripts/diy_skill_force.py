@@ -49,6 +49,47 @@ class GateError(ValueError):
     pass
 
 
+def _wait_for_input_idle(
+    process_id: int,
+    *,
+    idle_ms: int,
+    timeout_sec: float = 90.0,
+    poll_sec: float = 0.5,
+) -> dict:
+    """Poll OS last-input age until idle_ms is met or timeout.
+
+    Detached household workers reuse this so another agent does not reinvent
+    admit timing. Continuous mouse/key activity (e.g. another input sidecar)
+    yields CONTINUOUS_INPUT_BLOCKING_ADMIT with measured max_age_ms.
+    """
+    from betterinstincts.player_presence import probe_windows
+
+    deadline = time.monotonic() + max(1.0, float(timeout_sec))
+    max_age = 0
+    samples = 0
+    while True:
+        probe = probe_windows(int(process_id))
+        age = probe.last_input_age_ms
+        samples += 1
+        if isinstance(age, int) and age >= 0:
+            max_age = max(max_age, age)
+            if age >= int(idle_ms):
+                return {
+                    "state": "INPUT_IDLE_READY",
+                    "last_input_age_ms": age,
+                    "idle_ms": int(idle_ms),
+                    "max_age_ms": max_age,
+                    "samples": samples,
+                }
+        if time.monotonic() >= deadline:
+            raise GateError(
+                "CONTINUOUS_INPUT_BLOCKING_ADMIT:"
+                f"max_age_ms={max_age};need_idle_ms={int(idle_ms)};"
+                "stop_mouse_keyboard_sidecars_then_retry"
+            )
+        time.sleep(poll_sec)
+
+
 def _focus(process_id: int | None, *, click_client: bool = False) -> dict:
     """Soft-focus Sims without stealing Build tools (no center click by default)."""
     import ctypes
@@ -200,6 +241,7 @@ def _execute_plan(
         require_execute_session(session_id, process_id)
     except HandoffError as exc:
         raise GateError(str(exc)) from exc
+    idle_wait = _wait_for_input_idle(int(process_id), idle_ms=idle_ms)
     with admitted_screen_lease(
         int(process_id),
         str(session_id),
@@ -210,6 +252,7 @@ def _execute_plan(
             handoff = ensure_ready()
         except HandoffError as exc:
             raise GateError(str(exc)) from exc
+        handoff = {**handoff, "idle_wait": idle_wait}
         focus_report = _focus(process_id)
         hwnd = int(focus_report["hwnd"])
         time.sleep(0.2)
