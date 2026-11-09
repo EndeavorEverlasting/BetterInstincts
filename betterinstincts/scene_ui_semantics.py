@@ -78,7 +78,7 @@ def _score_observed_overlay_choices(
         if (not _token(identifier) or identifier in seen
                 or choice.get("source") != "HOST_CAPTURE"
                 or not isinstance(tags, list) or len(tags) > 12
-                or any(t not in SAFE_TAGS | RISK_TAGS for t in tags)
+                or any(not isinstance(t, str) or t not in SAFE_TAGS | RISK_TAGS for t in tags)
                 or not isinstance(rect, list) or len(rect) != 4
                 or any(type(n) is not int for n in rect)):
             return base
@@ -316,3 +316,101 @@ def enqueue_resolved_overlay_dismiss(
     return {"state": "QUEUED_RESOLVED_OVERLAY_DISMISS",
             "work_id": work_id, "receipt": receipt, "execute_allowed": False,
             "proof_ceiling": PROOF}
+
+
+def enqueue_native_overlay_choice(
+    queue, *, work_id: str, capture_ref: str, observe,
+    process_id: int, session_id: str, click_screen, move_screen,
+) -> dict:
+    """One recommended, freshly corroborated choice; never guess a popup option.
+
+    The local host must explicitly permit choice automation for this event.
+    Revalidates selected Sim, event, layout, options and ranking immediately
+    before a single native click; no repeated or negative-score selection.
+    """
+    from betterinstincts.workflow_interop import CooperativeScreenQueue, QueuedStep
+    from betterinstincts.screen_atlas import _native_owner
+    from betterinstincts.camera_traverse import safe_rest_point
+
+    if (not isinstance(queue, CooperativeScreenQueue)
+            or not _token(work_id) or not _token(capture_ref)
+            or type(process_id) is not int or process_id <= 0
+            or not _token(session_id)
+            or not all(callable(x) for x in (observe, click_screen, move_screen))):
+        raise SceneUISemanticsError("OVERLAY_CHOICE_NATIVE_PORT_REQUIRED")
+    anchor = {}
+    receipt = {"state": "NOT_DISPATCHED", "choice_acknowledged": False,
+               "resume_queued_game_actions": False}
+    async def verified():
+        obs = await observe()
+        if not _native_owner(obs, process_id, session_id):
+            return None
+        ui = assess_live_hud(
+            capture_ref=capture_ref, observation=obs, needs=obs.get("needs"),
+        )
+        if ui["gate"] != "OVERLAY_DECISION_REQUIRED":
+            return None
+        overlay = obs.get("overlay")
+        if not isinstance(overlay, Mapping) or overlay.get("auto_choice_authorized") is not True:
+            return None
+        advice = ui["overlay"]["choice_advisory"]
+        if advice["state"] != "OVERLAY_CHOICE_RECOMMENDED":
+            return None
+        fingerprint = (
+            overlay["overlay_id"], advice["recommended_option_id"],
+            tuple(advice["option_hitbox"]), obs["ui_layout_revision"],
+            obs["selected_sim_revision"], obs["active_sim_id"],
+            ui["continuation"]["active_goal_id"],
+        )
+        if anchor and anchor["fingerprint"] != fingerprint:
+            return None
+        if not anchor:
+            anchor["fingerprint"] = fingerprint
+        return ui, obs
+
+    async def validate():
+        return await verified() is not None
+
+    async def action(checkpoint):
+        await checkpoint()
+        ready = await verified()
+        if ready is None:
+            raise SceneUISemanticsError("OVERLAY_CHOICE_CHANGED_AT_EFFECT")
+        plan, obs = ready
+        advice = plan["overlay"]["choice_advisory"]
+        l, t, r, b = advice["option_hitbox"]
+        origin = (obs["client_origin_x"], obs["client_origin_y"])
+        try:
+            await click_screen(origin[0]+(l+r)//2, origin[1]+(t+b)//2)
+            receipt["state"] = "OVERLAY_CHOICE_DISPATCHED_UNVERIFIED"
+        finally:
+            await checkpoint()
+            after = await observe()
+            if (not _native_owner(after, process_id, session_id)
+                    or (after["client_origin_x"], after["client_origin_y"]) != origin):
+                raise SceneUISemanticsError("OVERLAY_CHOICE_REST_INTERRUPTED")
+            rest = safe_rest_point(
+                client_width=obs["client_width"], client_height=obs["client_height"],
+                origin_x=origin[0], origin_y=origin[1],
+            )
+            await move_screen(*rest["screen"])
+            next_overlay = after.get("overlay")
+            receipt["choice_acknowledged"] = (
+                after.get("source") == "HOST_CAPTURE"
+                and after.get("active_sim_id") == obs["active_sim_id"]
+                and (
+                    next_overlay is None
+                    or (
+                        isinstance(next_overlay, Mapping)
+                        and next_overlay.get("overlay_id") == obs["overlay"]["overlay_id"]
+                        and next_overlay.get("decision_state") == "RESOLVED"
+                    )
+                )
+            )
+            if receipt["choice_acknowledged"]:
+                receipt["state"] = "CHOICE_ACKNOWLEDGED_NEXT_OVERLAY_REOBSERVE_REQUIRED"
+
+    queue.enqueue(QueuedStep(work_id=work_id, validate=validate, action=action))
+    return {"state": "QUEUED_VERIFIED_OVERLAY_CHOICE",
+            "work_id": work_id, "execute_allowed": False,
+            "receipt": receipt, "proof_ceiling": PROOF}
