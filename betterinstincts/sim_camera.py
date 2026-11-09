@@ -98,7 +98,9 @@ def plan_sim_camera(
         return hold("ACTIVE_SIM_ID_UNVERIFIED")
     if command == FOLLOW_SIM and observation.get("active_sim_instanced") is not True:
         return hold("ACTIVE_SIM_NOT_INSTANCED")
-    if command == FOLLOW_SIM and observation.get("camera_follow_sim_id") == sim_id:
+    if command in (FOLLOW_SIM, CENTER_SIM) and observation.get("camera_follow_sim_id") == sim_id:
+        # Preserve an existing follow lock instead of issuing a redundant
+        # center or refocus that could alter the player's chosen view.
         return {**base, "state": "ALREADY_FOLLOWING_SIM", "gate": "NO_EFFECT",
                 "sim_id": sim_id, "camera_revision": revision, "effect": None}
     if command == FOLLOW_SIM:
