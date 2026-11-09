@@ -96,7 +96,7 @@ def _park_cursor(x: int, y: int) -> None:
 
 def _execute_plan(
     plan: dict, *, process_id: int, session_id: str, idle_ms: int,
-    map_goal=None, observe=None, now_ms=None,
+    map_goal=None, observe=None, now_ms=None, portrait_follow=None,
 ) -> dict:
     """Execute only when a live host proves a bounded target-map lease.
 
@@ -108,6 +108,7 @@ def _execute_plan(
     from scripts.win32_input import right_drag, send_wheel, send_key_chord
     from betterinstincts.active_sim_camera_lock import evaluate_active_sim_camera_lock
     from betterinstincts.sim_camera import CENTER_SIM, plan_sim_camera
+    from betterinstincts.portrait_follow import plan_portrait_follow
 
     camera_motion = any(s["kind"] in ("RIGHT_DRAG_PAN", "WHEEL_ZOOM")
                         for s in plan["steps"])
@@ -181,9 +182,22 @@ def _execute_plan(
                     )
                     if center.get("sim_id") != initial_sim_id:
                         raise CameraTraverseError("ACTIVE_SIM_CHANGED_DURING_MAP_LEASE")
+                    portrait = plan_portrait_follow(
+                        capture_ref=after.get("capture_ref"), observation=after,
+                    )
                     if center["state"] == "ALREADY_FOLLOWING_SIM":
                         restoration = "ACTIVE_SIM_FOLLOW_ALREADY_OBSERVED"
+                    elif (portrait["state"] == "PORTRAIT_FOLLOW_READY_FOR_ADMISSION"
+                          and callable(portrait_follow)):
+                        # Preferred: verified portrait click under same lease.
+                        # The injected callback must use the canonical native
+                        # owner and the exactly attested client hitbox.
+                        ensure_ready()
+                        if portrait_follow(portrait) is not True:
+                            raise CameraTraverseError("PORTRAIT_FOLLOW_PORT_NOT_ACKNOWLEDGED")
+                        restoration = "PORTRAIT_FOLLOW_DISPATCHED_REOBSERVE_REQUIRED"
                     elif center["state"] == "SIM_CAMERA_READY_FOR_ADMISSION":
+                        # One-shot center is merely a fallback, never follow.
                         ensure_ready()
                         send_key_chord(center["effect"]["chord"])
                         restoration = "ENTER_DISPATCHED_REOBSERVE_REQUIRED"
