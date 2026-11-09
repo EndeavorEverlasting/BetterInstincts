@@ -164,5 +164,34 @@
       "NO_AUTO_PAN_LOOP",
       "PLAYER_PRESENCE_AND_SAVE_ADMISSION_INDEPENDENT"
     ]
+  },
+  "drift_recovery": {
+    "owner": "betterinstincts/camera_traverse.py",
+    "goal": "REANCHOR_CAMERA_BEFORE_PIXEL_SAMPLE_OR_WORLD_CLICK",
+    "safe_rest_before_pixel_targeting": true,
+    "require_camera_revision_at_world_click": true,
+    "require_fresh_capture_after_any_camera_move": true,
+    "max_camera_reanchor_attempts": 2,
+    "step_order": [
+      "YIELD_IF_PLAYER_OWNS_SCREEN_OR_INPUT_FIELD",
+      "SAFE_REST_WHEN_CURSOR_IN_EDGE_BAND",
+      "CAPTURE_NEW_FRAME_AND_CAMERA_REVISION",
+      "ENTER_FOR_ACTIVE_SIM_OR_SHIFT_ENTER_FOR_LOT_ONLY_IF_DISPLACED",
+      "OPTIONAL_FOLLOW_ONLY_BY_APPROVED_GAME_API_OR_VERIFIED_PORTRAIT_ADAPTER",
+      "HOST_OBSERVED_BOUNDED_TRAVERSE_FOR_WORLD_OBJECT",
+      "CAPTURE_NEW_FRAME_AND_REDETECT_TARGET",
+      "VERIFY_PIXEL_BBOX_AND_CAMERA_REVISION_BEFORE_SINGLE_CLICK"
+    ],
+    "forbid": [
+      "REUSE_WORLD_PIXELS_AFTER_REANCHOR",
+      "UNCALIBRATED_PORTRAIT_RIGHT_CLICK",
+      "BLIND_EDGE_PAN",
+      "UNBOUNDED_CAMERA_RECENTER_LOOP",
+      "IGNORE_PLAYER_INTERRUPT",
+      "CLICK_WITHOUT_SAME_REVISION_TARGET"
+    ],
+    "chrome_exemption": "FIXED_HUD_UI_CHROME_NO_CAMERA_REVISION_REQUIRED_BUT_PLAYER_SCREEN_GATES_UNCHANGED",
+    "no_auto_execute": true,
+    "note": "Recovery is a host decision, not a new global mouse hook. Every physical action still needs the existing exact-PID/session/15-second idle admission and a fresh host observation. No physical game follow proof in cloud."
   }
 }
