@@ -19,6 +19,17 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
 | P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools + countertop mechanics (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
 
+## 2026-11-09 Servo mutual Tune Up peer helper (P95 + P124 + Trifecta)
+
+**P95** admits verified-Robotics peer Servo helpers for Tune Up/Repair under
+`household_upkeep` with HUMAN preference retained. **P124** keeps one owner and
+extracts helper eligibility helpers. Consultation
+`contracts/consultations/BI-SERVO-MUTUAL-TUNEUP-HELPER-20261109.v1.json`.
+**P82** falsifiers in `tests/test_household_upkeep.py`. **P08** local
+`diy_skill_force` Robotics/Handiness on the helper Servo, then live
+Repair/Tune Up engagement. Skill-gap gate routes to `servo_core`, not
+practice_skill / BI-005.
+
 ## 2026-11-09 household skill-round-robin bootstrap (P95 + P141 + Trifecta)
 
 **P95** selects skill-round-robin household dispatch (one skill × every

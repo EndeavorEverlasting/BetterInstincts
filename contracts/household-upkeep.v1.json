@@ -41,6 +41,16 @@
     "insufficient_funds": "REPORT_BUDGET_SHORTFALL_TO_EXISTING_INCOME_LANE",
     "spend_class": "OBLIGATION_NOT_BUILD_BUY_PURCHASE"
   },
+  "servo_helper_policy": {
+    "allow_servo_peer_helpers": true,
+    "prefer_human_helpers_first": true,
+    "forbid_self_helper_on_peer_path": true,
+    "min_robotics_level": 3,
+    "required_verified_skill": "robotics",
+    "skill_gap_gate": "UPKEEP_HELPER_SKILL_GAP",
+    "skill_force_bundle": "servo_core",
+    "notes": "Conservative Robotics floor for peer Servo Tune Up/Repair proposals. Exact live menu unlocks remain observation-gated. HUMAN helpers stay preferred when available. SOCIALIZE_SERVO and PAY_BILLS remain HUMAN-only."
+  },
   "safety": {
     "never_override_player_queue": true,
     "never_add_while_human_survival_critical": true,
@@ -52,6 +62,7 @@
     "never_use_ea_connect": true,
     "water_exposure_wet": "BLOCK_UNVERIFIED_SERVO_ACTION_AND_ALERT",
     "prioritize_other_human_sims_for_tune_up": true,
+    "allow_verified_robotics_servo_peer_helpers": true,
     "prohibit_repeating_queued_or_dispatched_attempts": true,
     "local_input_gate": "independent screen_admit + current UI/menu + player idleness + exact actor/target"
   },

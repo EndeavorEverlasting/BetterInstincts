@@ -23,8 +23,11 @@ MAX_CAPTURE_AGE_SECONDS = 180
 SERVO_NEEDS = frozenset({"durability", "charge", "fun", "social"})
 ACTIONS = {"TUNE_UP_SERVO", "REPAIR_SERVO", "RECHARGE_SERVO",
            "SERVO_SELF_TUNE_UP", "SOCIALIZE_SERVO", "SERVO_FUN_ACTIVITY", "PAY_BILLS"}
+PEER_MAINTENANCE = frozenset({"TUNE_UP_SERVO", "REPAIR_SERVO"})
+HUMAN_ONLY_ACTIONS = frozenset({"SOCIALIZE_SERVO", "PAY_BILLS"})
 ATTEMPTS = {"NONE", "QUEUED", "DISPATCHED"}
 BILL_STATES = {"UNPAID", "PAID", "NOT_DUE", "UNKNOWN"}
+SKILL_LEVEL_MAX = 10
 
 
 class HouseholdUpkeepError(ValueError):
@@ -62,6 +65,45 @@ def _num(v: object, *, lower: float = 0, upper: float | None = None) -> bool:
 
 def _bool(v: object) -> bool:
     return type(v) is bool
+
+
+def _verified_skill_level(actor: Mapping, skill_id: str) -> float | None:
+    """Return verified skill level, or None when missing/unverified."""
+    skills = actor.get("skills")
+    if not isinstance(skills, Mapping):
+        return None
+    entry = skills.get(skill_id)
+    if not isinstance(entry, Mapping) or entry.get("verified") is not True:
+        return None
+    level = entry.get("level")
+    return float(level) if _num(level, lower=0, upper=SKILL_LEVEL_MAX) else None
+
+
+def _actor_can_help(actor: Mapping, proposal: Mapping, *, min_robotics: float) -> bool:
+    """HUMAN helpers first-class; peer Servo only for maintenance with Robotics."""
+    action_id = proposal["action_id"]
+    target = proposal["target_ref"]
+    if action_id in HUMAN_ONLY_ACTIONS:
+        return actor.get("kind") == "HUMAN"
+    if action_id in PEER_MAINTENANCE:
+        if actor.get("sim_ref") == target:
+            return False
+        if actor.get("kind") == "HUMAN":
+            return True
+        if actor.get("kind") == "SERVO":
+            level = _verified_skill_level(actor, "robotics")
+            return level is not None and level >= min_robotics
+        return False
+    if action_id in {"RECHARGE_SERVO", "SERVO_FUN_ACTIVITY"}:
+        return actor.get("kind") == "SERVO" and actor.get("sim_ref") == target
+    return actor.get("kind") == "HUMAN"
+
+
+def _helper_iter(actors: list[dict]) -> list[dict]:
+    """Prefer HUMAN helpers, then Servo peers — preserves prior HUMAN-first policy."""
+    humans = [a for a in actors if a.get("kind") == "HUMAN"]
+    servos = [a for a in actors if a.get("kind") == "SERVO"]
+    return humans + servos
 
 
 def _validate(visit: Mapping) -> tuple[list[dict], list[dict], list[dict], Mapping | None]:
@@ -123,6 +165,25 @@ def _validate(visit: Mapping) -> tuple[list[dict], list[dict], list[dict], Mappi
                     or action.get("origin") not in {"PLAYER", "HOST", "SIM_AUTONOMY", "UNKNOWN"}
                     or (action.get("target_ref") is not None and not _ref(action["target_ref"]))):
                 raise HouseholdUpkeepError("UPKEEP_QUEUE_ROW_INVALID")
+        skills = row.get("skills")
+        if skills is not None:
+            if not isinstance(skills, Mapping):
+                raise HouseholdUpkeepError("UPKEEP_ACTOR_SKILLS_INVALID")
+            cleaned_skills: dict = {}
+            for skill_id, entry in skills.items():
+                if not isinstance(skill_id, str) or not _ref(skill_id):
+                    raise HouseholdUpkeepError("UPKEEP_ACTOR_SKILL_ID_INVALID")
+                if not isinstance(entry, Mapping) or not _bool(entry.get("verified")):
+                    raise HouseholdUpkeepError("UPKEEP_ACTOR_SKILL_PROOF_INVALID")
+                level = entry.get("level")
+                if entry["verified"]:
+                    if not _num(level, lower=0, upper=SKILL_LEVEL_MAX):
+                        raise HouseholdUpkeepError("UPKEEP_ACTOR_SKILL_LEVEL_INVALID")
+                elif level is not None:
+                    raise HouseholdUpkeepError("UPKEEP_UNVERIFIED_SKILL_LEVEL_MUST_BE_NULL")
+                cleaned_skills[skill_id] = dict(entry)
+            row = dict(row)
+            row["skills"] = cleaned_skills
         cleaned_actors.append(dict(row))
     cleaned_actions: list[dict] = []
     for row in actions:
@@ -291,20 +352,31 @@ def evaluate_household_upkeep(
         return finish("UPKEEP_QUEUE_ORIGIN_HOLD", "REOBSERVE_PLAYER_QUEUE")
 
     candidates.sort(key=lambda c: (c["rank"], c["target_ref"], c["action_id"]))
+    helper_policy = cfg.get("servo_helper_policy") or {}
+    min_robotics = float(helper_policy.get("min_robotics_level", 3))
+    if not _num(min_robotics, lower=0, upper=SKILL_LEVEL_MAX):
+        raise HouseholdUpkeepError("UPKEEP_HELPER_ROBOTICS_THRESHOLD_INVALID")
+    allow_servo_helpers = helper_policy.get("allow_servo_peer_helpers", True) is True
+    skill_gap_seen = False
     for proposal in candidates:
         if any(item["action_id"] == proposal["action_id"]
                and item.get("target_ref") == proposal["target_ref"]
                for actor in actors for item in actor["queue"]):
             continue
-        for actor in actors:
+        for actor in _helper_iter(actors):
             if (not actor["available"] or actor["player_reserved"]
                     or actor["urgent_needs"]):
                 continue
-            if proposal["action_id"] in {"TUNE_UP_SERVO", "REPAIR_SERVO", "SOCIALIZE_SERVO", "PAY_BILLS"} and actor["kind"] != "HUMAN":
-                continue
-            if proposal["action_id"] in {"RECHARGE_SERVO", "SERVO_FUN_ACTIVITY"} and (
-                actor["kind"] != "SERVO" or actor["sim_ref"] != proposal["target_ref"]
-            ):
+            if actor["kind"] == "SERVO" and proposal["action_id"] in PEER_MAINTENANCE:
+                if not allow_servo_helpers:
+                    continue
+                if actor["sim_ref"] == proposal["target_ref"]:
+                    continue
+                level = _verified_skill_level(actor, "robotics")
+                if level is None or level < min_robotics:
+                    skill_gap_seen = True
+                    continue
+            if not _actor_can_help(actor, proposal, min_robotics=min_robotics):
                 continue
             try:
                 capacity = evaluate_queue_capacity(
@@ -332,8 +404,25 @@ def evaluate_household_upkeep(
             selected["proposal_key"] = ":".join(
                 (capture_ref, actor["sim_ref"], proposal["action_id"], proposal["target_ref"])
             )
+            if actor["kind"] == "SERVO" and proposal["action_id"] in PEER_MAINTENANCE:
+                selected["helper_kind"] = "SERVO_PEER"
+                selected["helper_robotics_level"] = _verified_skill_level(actor, "robotics")
+            elif proposal["action_id"] in PEER_MAINTENANCE:
+                selected["helper_kind"] = "HUMAN"
             if "amount" in proposal:
                 selected["observed_bill_amount"] = proposal["amount"]
             result["next_actions"] = [selected]
             return finish("UPKEEP_ACTION_READY", "QUEUE_ONE_VERIFIED_HOUSEHOLD_ACTION_THEN_REOBSERVE")
+    if skill_gap_seen and any(c["action_id"] in PEER_MAINTENANCE for c in candidates):
+        result["skill_force_hint"] = {
+            "bundle": "servo_core",
+            "skills": ["robotics", "handiness"],
+            "min_robotics_level": min_robotics,
+            "cli": "python -m scripts.diy_skill_force level --bundle servo_core --execute",
+            "proof_ceiling": "HOST_SKILL_FORCE_HINT_NOT_PANEL_PASS_NOT_BI005",
+        }
+        return finish(
+            "UPKEEP_HELPER_SKILL_GAP",
+            "LEVEL_HELPER_ROBOTICS_VIA_DIY_SKILL_FORCE_THEN_REOBSERVE",
+        )
     return finish("UPKEEP_NO_SAFE_ACTOR_OR_AFFORDANCE", "INSPECT_HOUSEHOLD_HELPER_QUEUE_OR_MENU")
