@@ -347,7 +347,7 @@ def plan_library_save_if_required(model: Mapping[str, Any]) -> Optional[dict]:
     return {
         "state": "LIBRARY_SAVE_REQUIRED",
         "gate": "LIBRARY_CHECKPOINT_REQUIRED",
-        "action": "SCAN_ALL_FLOORS_AND_ROOMS" if freshness.get("violation") == "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP" else "SAVE_TO_LIBRARY",
+        "action": "SCAN_ALL_FLOORS_AND_ROOMS" if not isinstance((model.get("library_checkpoint") or {}).get("lot_inventory"), dict) else "SAVE_TO_LIBRARY",
         "reason": "COMPLETE_LOT_INVENTORY_AND_LIBRARY_SAVE_REQUIRED",
         "building_id": building_id,
         "targets": structure_targets[:8],
