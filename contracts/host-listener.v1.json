@@ -90,6 +90,12 @@
       "navigating_needs_profile",
       "build_or_buy_mode"
     ],
+    "optional_build_floor_activity_fields": [
+      "build_or_buy_mode",
+      "active_story",
+      "stories_touched",
+      "floor_items"
+    ],
     "optional_gardening_fields": ["gardening"],
     "optional_tandem_binding_fields": ["actor_ref", "host_activity_ref", "host_activity_owner"]
   },
@@ -104,6 +110,7 @@
     "school_day_goal_plan_if_active",
     "navigating_needs_tandem_if_active",
     "scenario_goal_plan_if_active",
+    "build_floor_activity_if_build_buy",
     "needs_force_route_if_optimize",
     "emit_receipt"
   ],

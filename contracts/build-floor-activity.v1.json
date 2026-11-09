@@ -1,0 +1,119 @@
+{
+  "schema": "betterinstincts.build-floor-activity/v1",
+  "version": 1,
+  "authority": "docs/BUILD_FLOOR_ACTIVITY.md",
+  "proof_ceiling": "OFFLINE_BUILD_FLOOR_ACTIVITY_NOT_LIVE_STORY_SENSOR_NOT_OPTIMIZE_CERT",
+  "prompt": {
+    "id": "P95",
+    "name": "Program Design & Call-Stack Prototype Architect",
+    "provenance": "docs/PROMPT_INVOCATIONS.md"
+  },
+  "architecture": {
+    "selected": "FLOOR_ACTIVITY_CENSUS",
+    "rejected": [
+      {
+        "id": "PIXEL_ONLY_HEIGHT_HEURISTIC",
+        "why": "Screen Y is not story proof; reuse build_spatial attested FLOOR_1/FLOOR_2."
+      },
+      {
+        "id": "SECOND_SPATIAL_DAEMON",
+        "why": "Would duplicate build_spatial and house_state; listener should consume a peer evaluator."
+      },
+      {
+        "id": "INVENT_ITEMS_FROM_SCREENSHOT",
+        "why": "False precision; floor theme requires attested item labels/categories."
+      }
+    ]
+  },
+  "depends_on": [
+    "contracts/build-spatial.v1.json",
+    "contracts/host-listener.v1.json",
+    "contracts/build-optimize.v1.json"
+  ],
+  "stories": ["FLOOR_1", "FLOOR_2", "UNKNOWN_STORY"],
+  "activity_spans": ["SINGLE_FLOOR", "MULTI_FLOOR", "UNKNOWN_SPAN"],
+  "themes": [
+    "kitchen",
+    "bedroom",
+    "bathroom",
+    "living",
+    "dining",
+    "office",
+    "outdoor_garden",
+    "kids",
+    "decor_mixed",
+    "unknown"
+  ],
+  "category_to_theme": {
+    "counter": "kitchen",
+    "counter_island": "kitchen",
+    "appliance": "kitchen",
+    "plumbing": "bathroom",
+    "bed": "bedroom",
+    "sofa": "living",
+    "living_chair": "living",
+    "dining_table": "dining",
+    "dining_chair": "dining",
+    "desk": "office",
+    "computer": "office",
+    "plant": "outdoor_garden",
+    "planter": "outdoor_garden",
+    "garden": "outdoor_garden",
+    "outdoor": "outdoor_garden",
+    "toy": "kids",
+    "decor": "decor_mixed",
+    "lighting": "decor_mixed",
+    "wall": "decor_mixed",
+    "floor_covering": "decor_mixed"
+  },
+  "theme_optimize_hints": {
+    "kitchen": ["appliance", "counter", "counter_island", "plumbing"],
+    "bedroom": ["bed", "lighting", "decor"],
+    "bathroom": ["plumbing", "lighting"],
+    "living": ["sofa", "lighting", "decor"],
+    "dining": ["dining_table", "dining_chair", "lighting"],
+    "office": ["desk", "computer", "lighting"],
+    "outdoor_garden": ["plant", "planter", "outdoor"],
+    "kids": ["toy", "decor", "lighting"],
+    "decor_mixed": ["decor", "lighting", "wall"],
+    "unknown": []
+  },
+  "observation_fields": {
+    "required_when_evaluating": ["build_or_buy_mode"],
+    "story_fields": ["active_story", "stories_touched"],
+    "census_fields": ["floor_items"],
+    "floor_item_shape": {
+      "id": "string",
+      "category": "string",
+      "story": "FLOOR_1|FLOOR_2|UNKNOWN_STORY",
+      "label": "optional string"
+    }
+  },
+  "call_stack": {
+    "success": [
+      "Require build_or_buy_mode (else SKIP)",
+      "Normalize active_story via build_spatial aliases",
+      "Union stories_touched + item stories → activity span",
+      "Per-story category histogram → theme",
+      "Map theme → advisory build_optimize category hints",
+      "Attach to host_listener tick; execute_allowed=false"
+    ],
+    "failure": [
+      "Invent story from cursor Y alone",
+      "Claim theme without attested floor_items",
+      "Autorun / SendInput / save edit"
+    ]
+  },
+  "invariants": [
+    "attested_story_only",
+    "no_pixel_invented_items",
+    "player_first_yields",
+    "advisory_optimize_only",
+    "reuses_build_spatial_aliases",
+    "does_not_close_bi002"
+  ],
+  "cli": {
+    "evaluate": "python -m scripts.build_floor_activity evaluate --observation PATH",
+    "themes": "python -m scripts.build_floor_activity themes"
+  }
+}

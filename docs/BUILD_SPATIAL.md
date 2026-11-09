@@ -33,6 +33,8 @@ Host must classify before placing. Build order:
 
 `host_stack.evaluate_turn(..., build_or_buy_mode=True, lot_model=...)` attaches `build_spatial.inventory` + `build_spatial.order` and elevates gate `BUILD_ORDER_FLOOR1_BEFORE_FLOOR2` when gaps remain.
 
+Listener floor-activity (which story is active, single vs multi-floor, theme from attested items) lives in [`BUILD_FLOOR_ACTIVITY.md`](BUILD_FLOOR_ACTIVITY.md) — peer to this axis owner, not a competing spatial daemon.
+
 ## Proof ceiling
 
 `OFFLINE_BUILD_SPATIAL_AXES_NOT_LIVE_LOT_RESTORE`

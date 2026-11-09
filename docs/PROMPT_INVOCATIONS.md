@@ -19,6 +19,17 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
 | P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools + countertop mechanics (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
 
+## 2026-11-09 build floor activity listener trifecta
+
+**P95** designed `FLOOR_ACTIVITY_CENSUS`: active story, SINGLE vs MULTI floor
+span, per-floor themes from attested item categories, advisory
+`build_optimize` hints. **P124** peer module `build_floor_activity` consumed by
+`host_listener` (no second spatial daemon). **P82** measured kitchen/single,
+bedroom+living/multi, skip-when-not-build, and listener tick attachment in
+`tests/test_build_floor_activity.py`. **P08** live wall-up / story chrome sensor
+remains OPEN. Consultation:
+`contracts/consultations/BI-BUILD-FLOOR-ACTIVITY-20261109.v1.json`.
+
 ## 2026-11-08 household useful-item force catalog trifecta
 
 **P95** designed the reusable household object-force call stack: elementary
