@@ -1,8 +1,9 @@
-"""Build/Buy yield microsystem — per-category best-value pools (P95 + P124).
+"""Build/Buy yield microsystem — pools, countertop mechanics (P95 + P124).
 
 Deterministic ranking of attested catalog items by environment, neighborhood
-eco footprint, and bill (power/water) axes. Evaluate-only — never SendInput,
-never mutates saves. Aesthetics never rank.
+eco footprint, and bill (power/water) axes, plus machine-readable countertop
+placement / seating-snap rules. Evaluate-only — never SendInput, never mutates
+saves. Aesthetics never rank.
 """
 from __future__ import annotations
 
@@ -29,6 +30,8 @@ AXIS_FIELDS = frozenset({
     "bill_power",
     "bill_water",
 })
+COUNTER_KINDS = frozenset({"standard_counter", "island_counter", "unknown"})
+SEATING_KINDS = frozenset({"barstool", "dining_chair", "unknown"})
 
 
 class BuildOptimizeError(ValueError):
@@ -50,7 +53,78 @@ def load_contract(path: Path = CONTRACT) -> dict:
         raise BuildOptimizeError("VALUE_AXES_MISSING")
     if not isinstance(data.get("categories"), dict) or not data["categories"]:
         raise BuildOptimizeError("CATEGORIES_MISSING")
+    mechanics = data.get("placement_mechanics")
+    if not isinstance(mechanics, dict) or "countertops" not in mechanics:
+        raise BuildOptimizeError("COUNTERTOP_MECHANICS_MISSING")
     return data
+
+
+def countertop_mechanics(cfg: Optional[dict] = None) -> dict:
+    """Return the machine-readable countertop placement rules block."""
+    cfg = cfg or load_contract()
+    block = cfg["placement_mechanics"]["countertops"]
+    if not isinstance(block, dict) or not block.get("seating_rules"):
+        raise BuildOptimizeError("COUNTERTOP_MECHANICS_INVALID")
+    return dict(block)
+
+
+def seating_snap_verdict(
+    *,
+    counter_kind: str,
+    seating_kind: str,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Decide whether seating may snap to a counter kind (fail closed)."""
+    cfg = cfg or load_contract()
+    mechanics = countertop_mechanics(cfg)
+    ck = str(counter_kind or "unknown").strip().lower()
+    sk = str(seating_kind or "unknown").strip().lower()
+    if ck not in COUNTER_KINDS:
+        ck = "unknown"
+    if sk not in SEATING_KINDS:
+        sk = "unknown"
+
+    # Dining chairs never snap — checked before counter kind.
+    if sk == "dining_chair":
+        return {
+            "verdict": "DENY_SNAP",
+            "rule_id": "DINING_CHAIR_NEVER_SNAPS",
+            "counter_kind": ck,
+            "seating_kind": sk,
+            "reason": "Only barstools attach to counters; dining chairs never snap",
+        }
+    if ck == "unknown" or sk == "unknown":
+        return {
+            "verdict": "DENY_SNAP",
+            "rule_id": "UNKNOWN_KIND_FAIL_CLOSED",
+            "counter_kind": ck,
+            "seating_kind": sk,
+            "reason": "Unknown counter or seating kind fails closed",
+        }
+    if ck == "standard_counter":
+        return {
+            "verdict": "DENY_SNAP",
+            "rule_id": "BARSTOOL_ON_STANDARD_DENIED",
+            "counter_kind": ck,
+            "seating_kind": sk,
+            "reason": "Standard counters have no overhang for legroom",
+        }
+    if ck == "island_counter" and sk == "barstool":
+        return {
+            "verdict": "ALLOW_SNAP",
+            "rule_id": "BARSTOOL_ONLY_ON_ISLAND",
+            "counter_kind": ck,
+            "seating_kind": sk,
+            "snap_edge": mechanics["kinds"]["island_counter"].get("snap_edge", "overhang"),
+            "reason": "Barstools snap to the island overhang edge",
+        }
+    return {
+        "verdict": "DENY_SNAP",
+        "rule_id": "SEATING_COMBINATION_UNSUPPORTED",
+        "counter_kind": ck,
+        "seating_kind": sk,
+        "reason": "No seating-snap rule admits this combination",
+    }
 
 
 def _norm(token: str) -> str:
@@ -198,21 +272,39 @@ def _pack_allowed(
     return False
 
 
+def _unlock_allowed(
+    item: Mapping[str, object], *, ignore_gameplay_unlocks: bool
+) -> bool:
+    unlock = item.get("unlock")
+    if not isinstance(unlock, dict):
+        return True
+    if unlock.get("default_available", True):
+        return True
+    return bool(ignore_gameplay_unlocks)
+
+
 def filter_catalog(
     *,
     category: Optional[str] = None,
     owned_packs: Optional[Sequence[str]] = None,
     budget: Optional[float] = None,
+    ignore_gameplay_unlocks: Optional[bool] = None,
     cfg: Optional[dict] = None,
 ) -> list[dict]:
     cfg = cfg or load_contract()
     packs = set(owned_packs) if owned_packs is not None else None
+    if ignore_gameplay_unlocks is None:
+        ignore_gameplay_unlocks = bool(
+            cfg.get("policies", {}).get("default_ignore_gameplay_unlocks", False)
+        )
     out: list[dict] = []
     for row in cfg["catalog"]:
         item = dict(row)
         if category and item.get("category") != category:
             continue
         if not _pack_allowed(item, packs, cfg):
+            continue
+        if not _unlock_allowed(item, ignore_gameplay_unlocks=ignore_gameplay_unlocks):
             continue
         if budget is not None:
             if isinstance(budget, bool) or not isinstance(budget, (int, float)) or budget < 0:
@@ -231,6 +323,7 @@ def rank_items(
     owned_packs: Optional[Sequence[str]] = None,
     budget: Optional[float] = None,
     limit: int = 5,
+    ignore_gameplay_unlocks: Optional[bool] = None,
     cfg: Optional[dict] = None,
 ) -> list[dict]:
     """Return ranked catalog rows for an objective (best first)."""
@@ -241,7 +334,11 @@ def rank_items(
         raise BuildOptimizeError("INVALID_LIMIT")
     candidates = []
     for row in filter_catalog(
-        category=category, owned_packs=owned_packs, budget=budget, cfg=cfg
+        category=category,
+        owned_packs=owned_packs,
+        budget=budget,
+        ignore_gameplay_unlocks=ignore_gameplay_unlocks,
+        cfg=cfg,
     ):
         if _excluded(row, objective, cfg):
             continue
@@ -278,6 +375,7 @@ def rank_axis(
     budget: Optional[float] = None,
     limit: int = 3,
     exclude_industrial_from_green: bool = True,
+    ignore_gameplay_unlocks: Optional[bool] = None,
     cfg: Optional[dict] = None,
 ) -> list[dict]:
     """Rank items on one value axis (higher transformed score first)."""
@@ -288,7 +386,11 @@ def rank_axis(
         raise BuildOptimizeError("INVALID_LIMIT")
     candidates = []
     for row in filter_catalog(
-        category=category, owned_packs=owned_packs, budget=budget, cfg=cfg
+        category=category,
+        owned_packs=owned_packs,
+        budget=budget,
+        ignore_gameplay_unlocks=ignore_gameplay_unlocks,
+        cfg=cfg,
     ):
         if exclude_industrial_from_green and axis in {
             "eco_footprint_green",
@@ -315,6 +417,54 @@ def rank_axis(
     return out
 
 
+def category_hierarchy(
+    category: str,
+    objective: str = "MAXIMIZE_ENV",
+    *,
+    owned_packs: Optional[Sequence[str]] = None,
+    budget: Optional[float] = None,
+    limit: int = 10,
+    ignore_gameplay_unlocks: Optional[bool] = None,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Ordered best-item dictionary for one Build/Buy category."""
+    cfg = cfg or load_contract()
+    if category not in cfg["categories"]:
+        raise BuildOptimizeError("UNKNOWN_CATEGORY:" + category)
+    ranked = rank_items(
+        objective,
+        category=category,
+        owned_packs=owned_packs,
+        budget=budget,
+        limit=limit,
+        ignore_gameplay_unlocks=ignore_gameplay_unlocks,
+        cfg=cfg,
+    )
+    return {
+        "schema": "betterinstincts.build-category-hierarchy/v1",
+        "category": category,
+        "objective": objective,
+        "surface_kind": cfg["categories"][category].get("surface_kind"),
+        "seating_kind": cfg["categories"][category].get("seating_kind"),
+        "hierarchy": [
+            {
+                "rank": i + 1,
+                "id": row["id"],
+                "name": row["name"],
+                "objective_score": row.get("objective_score"),
+                "lot_environment_gain": row.get("lot_environment_gain"),
+                "eco_footprint_green": row.get("eco_footprint_green"),
+                "seating_snap": row.get("seating_snap"),
+                "unlock": row.get("unlock"),
+                "evidence_state": row.get("evidence_state"),
+                "pack": row.get("pack"),
+            }
+            for i, row in enumerate(ranked)
+        ],
+        "proof_ceiling": cfg["proof_ceiling"],
+    }
+
+
 def best_pools(
     *,
     owned_packs: Optional[Sequence[str]] = None,
@@ -322,6 +472,7 @@ def best_pools(
     pool_size: Optional[int] = None,
     categories: Optional[Sequence[str]] = None,
     axes: Optional[Sequence[str]] = None,
+    ignore_gameplay_unlocks: Optional[bool] = None,
     cfg: Optional[dict] = None,
 ) -> dict:
     """Per-category pools of best items for each value axis.
@@ -339,7 +490,6 @@ def best_pools(
     for cat in cat_ids:
         if cat not in cfg["categories"]:
             raise BuildOptimizeError("UNKNOWN_CATEGORY:" + cat)
-        cat_axes = axis_ids
         primary = cfg["categories"][cat].get("primary_axes") or axis_ids
         # Prefer category primary axes, still allow requested axes that apply.
         ordered_axes = []
@@ -354,6 +504,7 @@ def best_pools(
                 owned_packs=owned_packs,
                 budget=budget,
                 limit=size,
+                ignore_gameplay_unlocks=ignore_gameplay_unlocks,
                 cfg=cfg,
             )
             if ranked:
@@ -417,6 +568,7 @@ def evaluate_category_pools(
     owned_packs: Optional[Sequence[str]] = None,
     budget: Optional[float] = None,
     pool_size: Optional[int] = None,
+    ignore_gameplay_unlocks: Optional[bool] = None,
     player_directed: bool = False,
     build_or_buy_mode: bool = True,
     capture_ref: str = "capture:build-yield-pools",
@@ -447,6 +599,7 @@ def evaluate_category_pools(
         owned_packs=owned_packs,
         budget=budget,
         pool_size=pool_size,
+        ignore_gameplay_unlocks=ignore_gameplay_unlocks,
         cfg=cfg,
     )
     if not pools["categories"]:
@@ -505,6 +658,134 @@ def evaluate_category_pools(
     }
 
 
+def evaluate_countertop_plan(
+    *,
+    objective: str = "MAXIMIZE_ENV",
+    owned_packs: Optional[Sequence[str]] = None,
+    budget: Optional[float] = None,
+    ignore_gameplay_unlocks: Optional[bool] = None,
+    seating_kind: str = "barstool",
+    player_directed: bool = False,
+    build_or_buy_mode: bool = True,
+    capture_ref: str = "capture:countertop-plan",
+) -> dict:
+    """Evaluate-only receipt: best island hierarchy + seating-snap gate + setup stack."""
+    cfg = load_contract()
+    mechanics = countertop_mechanics(cfg)
+    if player_directed:
+        return {
+            "schema": "betterinstincts.build-optimize-result/v1",
+            "state": "YIELD_TO_PLAYER",
+            "gate": "PLAYER_FIRST",
+            "disposition": "EMULATE",
+            "capture_ref": capture_ref,
+            "proof_ceiling": cfg["proof_ceiling"],
+        }
+    if not build_or_buy_mode:
+        return {
+            "schema": "betterinstincts.build-optimize-result/v1",
+            "state": "BUILD_OR_BUY_REQUIRED",
+            "gate": "ENTER_BUILD_OR_BUY",
+            "disposition": "EMULATE",
+            "capture_ref": capture_ref,
+            "proof_ceiling": cfg["proof_ceiling"],
+        }
+
+    hierarchy = category_hierarchy(
+        "counter_island",
+        objective,
+        owned_packs=owned_packs,
+        budget=budget,
+        ignore_gameplay_unlocks=ignore_gameplay_unlocks,
+        cfg=cfg,
+    )
+    if not hierarchy["hierarchy"]:
+        return {
+            "schema": "betterinstincts.build-optimize-result/v1",
+            "state": "ABSTAIN_NO_ELIGIBLE_ITEMS",
+            "hierarchy": hierarchy,
+            "seating": None,
+            "plan": None,
+            "gate": "EXPAND_PACKS_OR_UNLOCKS_OR_CATALOG",
+            "disposition": "EMULATE",
+            "capture_ref": capture_ref,
+            "proof_ceiling": cfg["proof_ceiling"],
+        }
+
+    best = hierarchy["hierarchy"][0]
+    snap = seating_snap_verdict(
+        counter_kind="island_counter",
+        seating_kind=seating_kind,
+        cfg=cfg,
+    )
+    if snap["verdict"] != "ALLOW_SNAP":
+        return {
+            "schema": "betterinstincts.build-optimize-result/v1",
+            "state": "ABSTAIN_WRONG_COUNTER_OR_SEATING",
+            "hierarchy": hierarchy,
+            "best_island": best,
+            "seating": snap,
+            "plan": None,
+            "gate": "SEATING_SNAP_DENIED",
+            "disposition": "EMULATE",
+            "mechanics": {
+                "env_cap": mechanics.get("env_cap"),
+                "catalog_tray": mechanics.get("catalog_tray"),
+            },
+            "capture_ref": capture_ref,
+            "proof_ceiling": cfg["proof_ceiling"],
+        }
+
+    barstools = category_hierarchy(
+        "barstool",
+        "MAXIMIZE_ENV",
+        owned_packs=owned_packs,
+        budget=budget,
+        ignore_gameplay_unlocks=ignore_gameplay_unlocks,
+        limit=3,
+        cfg=cfg,
+    )
+    return {
+        "schema": "betterinstincts.build-optimize-result/v1",
+        "state": "COUNTERTOP_PLAN_READY",
+        "microsystem": "BUILD_YIELD",
+        "objective": objective,
+        "hierarchy": hierarchy,
+        "best_island": best,
+        "seating": snap,
+        "barstool_hierarchy": barstools,
+        "mechanics": {
+            "env_cap": mechanics.get("env_cap"),
+            "catalog_tray": mechanics.get("catalog_tray"),
+            "shape_tools": mechanics.get("shape_tools"),
+            "unlock_cheats": mechanics.get("unlock_cheats"),
+            "setup_call_stack": mechanics.get("setup_call_stack"),
+            "yield_default_islands_without_cheat": mechanics.get(
+                "yield_default_islands_without_cheat"
+            ),
+        },
+        "plan": {
+            "action": "PLACE_ISLAND_THEN_SNAP_BARSTOOL",
+            "island_id": best["id"],
+            "island_name": best["name"],
+            "seating_kind": seating_kind,
+            "execute_allowed": False,
+            "steps": list(mechanics.get("setup_call_stack") or []),
+            "forbidden": [
+                "SENDINPUT_WITHOUT_SESSION",
+                "TOUCH_USER_SAVES",
+                "SNAP_DINING_CHAIR_TO_COUNTER",
+                "EXPECT_SEATING_ON_STANDARD_COUNTER",
+                "RANK_BY_AESTHETICS",
+            ],
+        },
+        "gate": "BUILD_OPTIMIZE_EVALUATE_ONLY",
+        "disposition": "OPTIMIZE",
+        "capture_ref": capture_ref,
+        "proof_ceiling": cfg["proof_ceiling"],
+    }
+
+
 def evaluate_build_optimize(
     objective: Optional[str] = None,
     *,
@@ -513,6 +794,7 @@ def evaluate_build_optimize(
     budget: Optional[float] = None,
     panels: int = 1,
     limit: int = 5,
+    ignore_gameplay_unlocks: Optional[bool] = None,
     player_directed: bool = False,
     build_or_buy_mode: bool = True,
     include_pools: bool = False,
@@ -555,6 +837,7 @@ def evaluate_build_optimize(
             owned_packs=owned_packs,
             budget=budget,
             pool_size=pool_size,
+            ignore_gameplay_unlocks=ignore_gameplay_unlocks,
             cfg=cfg,
         )
 
@@ -564,6 +847,7 @@ def evaluate_build_optimize(
         owned_packs=owned_packs,
         budget=budget,
         limit=limit,
+        ignore_gameplay_unlocks=ignore_gameplay_unlocks,
         cfg=cfg,
     )
     if not ranked:

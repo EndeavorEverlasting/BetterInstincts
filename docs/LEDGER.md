@@ -1,5 +1,21 @@
 # Canonical project ledger
 
+## 2026-11-08 — Countertop mechanics + Env-max island hierarchy (P95 + P124 + trifecta)
+
+**Operator:** Live Build Mode learning — island vs standard counters, Auto-Counters
+gear shapes/corners, barstools snap only to island overhangs, dining chairs never
+snap, counter Env cap **2**, Corporate Chic Env-2 locked behind Culinary 2 (cheat
+`bb.ignoregameplayunlocksentitlement`), default Env-2 islands Harbinger / Real Flat /
+Immemorial. **P95** adds `placement_mechanics.countertops` + `counter` /
+`counter_island` / `barstool` categories inside `build-optimize` v3. **P124** keeps
+the single `build_optimize` owner (`seating_snap_verdict`, `category_hierarchy`,
+`evaluate_countertop_plan`) — no second catalog daemon. Consultation
+`BI-COUNTERTOP-MECHANICS-20261108.v1.json`. CLI:
+`python -m scripts.build_optimize --countertops` /
+`--hierarchy --category counter_island`. Proof ceiling
+`OFFLINE_COUNTERTOP_MECHANICS_AND_YIELD_POOLS_NOT_LIVE_PLACE_NOT_BILL_METER_CERT`.
+Live place/snap/pathing P08 OPEN. Does not close BI-002.
+
 ## 2026-11-08 — Build yield microsystem: per-category best pools (P95 + P124 + trifecta)
 Operator ask: complete the microsystem that maximizes best values in **each Build/Buy category** so the host has a pool for environment, neighborhood, bills, etc. Ontology consultation `BI-BUILD-YIELD-MICROSYSTEM-20261108` precedes mutation. **P95** expands `build-optimize` v2 with value axes + category trays; **P124** keeps a single evaluate-only owner (`best_pools` / `evaluate_category_pools`) instead of a second daemon. Dual Env+Green 2/2 walls remain yield floor; bill pools skip null axes. CLI: `python -m scripts.build_optimize --pools`. Live paint/meters OPEN; BI-002 ACTIVE.
 

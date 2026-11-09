@@ -11,13 +11,23 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P97 | Open-Source Prior-Art & Gap Analyst | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | docs/PRIOR_ART.md: reference implementation, gap map and adoption decisions |
 | P141 | Repository Strategic Opportunity Scout | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | docs/STRATEGY.md: compare/falsify competing theses, select next investigation |
 | P04 | [PARALLEL] Repo-Aware Sprint + Harness Factoring Distributor | `src/tokencorridor/interface/promptkit/registry/base/prompts.json` | `848728632c1243ebba023fa0012292a2ad33cada` | plans/active/BI-001.md: runtime partition, safe owner lanes, proof/gates |
-| P95 | Program Design & Call-Stack Prototype Architect | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build-yield category pools (`docs/BUILD_OPTIMIZE.md`) + balance/imbalance microsystem (`docs/BALANCE_SERVICE.md`) + aspiration + career + camera-safe traverse + library-save-before-room-mutate + build spatial/integrity/house-state |
+| P95 | Program Design & Call-Stack Prototype Architect | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 countertop mechanics + Env-max island hierarchy (`docs/BUILD_OPTIMIZE.md`) + build-yield category pools + balance/imbalance + aspiration + career + camera-safe traverse + library-save-before-room-mutate + build spatial/integrity/house-state |
 | P83 | Agent Work Verifier & Iterative Advancer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 verify Bargain Bend destruction claims then harden Build mechanisms |
 | P78 | Repository Glossary & Documentation Diet | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-07 preserve existing `contracts/glossary.v1.json` as vocabulary owner and `contracts/ontology.v1.json` as graph owner |
 
 | P67 | Repository Eval Framework Builder | `src/tokencorridor/interface/promptkit/registry/prompts/ai-engineering-level-up-prompts.v1.json` | `5350ce61085e748ab219fa482e25d70517b10e0f` | 2026-11-07 progression/CI honesty eval pyramid — see docs/PROGRESSION_EVAL.md |
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
-| P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
+| P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools + countertop mechanics (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
+
+## 2026-11-08 countertop mechanics + Env-max island hierarchy trifecta
+
+**P95** designed machine-readable countertop placement (standard vs island, gear
+shapes/corners, barstool-only snap, Env cap 2) and seeded the attested island
+hierarchy inside the existing Build/Buy yield owner. **P124** expanded
+`build_optimize` in place rather than spawning a surfaces daemon. **P82** measured
+ALLOW/DENY seating snap, career-lock exclusion, and default Env-2 island heads in
+`tests/test_build_optimize.py`. **P08** live place/snap/Sim pathing remains OPEN.
+Consultation: `contracts/consultations/BI-COUNTERTOP-MECHANICS-20261108.v1.json`.
 
 ## 2026-11-08 build-yield category pools trifecta
 

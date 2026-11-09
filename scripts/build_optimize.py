@@ -6,10 +6,14 @@ import sys
 from betterinstincts.build_optimize import (
     BuildOptimizeError,
     best_pools,
+    category_hierarchy,
+    countertop_mechanics,
     evaluate_build_optimize,
     evaluate_category_pools,
+    evaluate_countertop_plan,
     load_contract,
     rank_items,
+    seating_snap_verdict,
 )
 
 
@@ -42,6 +46,9 @@ def main(argv=None):
             "furniture_decor",
             "outdoor",
             "buy_object",
+            "counter",
+            "counter_island",
+            "barstool",
             "all",
         ],
     )
@@ -57,6 +64,24 @@ def main(argv=None):
     p.add_argument("--pools", action="store_true", help="Emit per-category best-value pools")
     p.add_argument("--pools-only", action="store_true", help="Only evaluate category pools")
     p.add_argument("--include-pools", action="store_true", help="Attach pools to rank receipt")
+    p.add_argument("--hierarchy", action="store_true", help="Emit ordered best-item hierarchy for --category")
+    p.add_argument("--countertops", action="store_true", help="Emit countertop plan + seating snap")
+    p.add_argument("--show-mechanics", action="store_true", help="Print countertop placement_mechanics block")
+    p.add_argument(
+        "--seating-kind",
+        default="barstool",
+        choices=["barstool", "dining_chair", "unknown"],
+    )
+    p.add_argument(
+        "--counter-kind",
+        default="island_counter",
+        choices=["standard_counter", "island_counter", "unknown"],
+    )
+    p.add_argument(
+        "--ignore-gameplay-unlocks",
+        action="store_true",
+        help="Include Culinary-locked Corporate Chic rows (bb.ignoregameplayunlocksentitlement)",
+    )
     p.add_argument("--player-directed", action="store_true")
     p.add_argument("--not-build-mode", action="store_true")
     p.add_argument("--rank-only", action="store_true")
@@ -66,13 +91,52 @@ def main(argv=None):
         if args.show_contract:
             print(json.dumps(load_contract(), indent=2))
             return 0
+        if args.show_mechanics:
+            print(json.dumps(countertop_mechanics(), indent=2))
+            return 0
         packs = [x.strip() for x in args.owned_packs.split(",") if x.strip()]
         category = None if args.category == "all" else args.category
+        unlocks = True if args.ignore_gameplay_unlocks else None
+        if args.countertops:
+            result = evaluate_countertop_plan(
+                objective=args.objective or "MAXIMIZE_ENV",
+                owned_packs=packs,
+                budget=args.budget,
+                ignore_gameplay_unlocks=unlocks,
+                seating_kind=args.seating_kind,
+                player_directed=args.player_directed,
+                build_or_buy_mode=not args.not_build_mode,
+            )
+            # Also surface an ad-hoc snap check when counter-kind differs from island default.
+            result["ad_hoc_snap"] = seating_snap_verdict(
+                counter_kind=args.counter_kind,
+                seating_kind=args.seating_kind,
+            )
+            print(json.dumps(result, indent=2))
+            return 0
+        if args.hierarchy:
+            if category is None:
+                raise BuildOptimizeError("HIERARCHY_REQUIRES_CATEGORY")
+            print(
+                json.dumps(
+                    category_hierarchy(
+                        category,
+                        args.objective or "MAXIMIZE_ENV",
+                        owned_packs=packs,
+                        budget=args.budget,
+                        limit=args.limit,
+                        ignore_gameplay_unlocks=unlocks,
+                    ),
+                    indent=2,
+                )
+            )
+            return 0
         if args.pools_only or args.pools:
             result = evaluate_category_pools(
                 owned_packs=packs,
                 budget=args.budget,
                 pool_size=args.pool_size,
+                ignore_gameplay_unlocks=unlocks,
                 player_directed=args.player_directed,
                 build_or_buy_mode=not args.not_build_mode,
             )
@@ -86,6 +150,7 @@ def main(argv=None):
                 owned_packs=packs,
                 budget=args.budget,
                 limit=args.limit,
+                ignore_gameplay_unlocks=unlocks,
             )
             payload = {"objective": obj, "picks": ranked}
             if args.include_pools:
@@ -93,6 +158,7 @@ def main(argv=None):
                     owned_packs=packs,
                     budget=args.budget,
                     pool_size=args.pool_size,
+                    ignore_gameplay_unlocks=unlocks,
                 )
             print(json.dumps(payload, indent=2))
             return 0
@@ -103,6 +169,7 @@ def main(argv=None):
             budget=args.budget,
             panels=args.panels,
             limit=args.limit,
+            ignore_gameplay_unlocks=unlocks,
             player_directed=args.player_directed,
             build_or_buy_mode=not args.not_build_mode,
             include_pools=args.include_pools,
