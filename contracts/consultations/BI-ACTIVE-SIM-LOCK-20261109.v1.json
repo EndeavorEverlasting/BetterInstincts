@@ -1,0 +1,50 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-ACTIVE-SIM-LOCK-20261109",
+  "ontology": "contracts/ontology.v1.json",
+  "predecessor": "contracts/consultations/BI-ACTIVE-SIM-CAMERA-20261109.v1.json",
+  "target": "P00/P01 governance and harness, P95 camera lock design/prototype, P141 strategic recurrence scan, P124 integration and regression. Human judgment: agent-controlled camera defaults to active Sim; only verified named target/goal permits time-bounded map traversal, with mandatory return to active Sim.",
+  "affected_concepts": [
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "SIM",
+    "HOST_SESSION",
+    "VIEWPORT_STATE",
+    "HOST_ACTION",
+    "CONTROL_PERMIT",
+    "OBSERVATION",
+    "PROOF_RECEIPT"
+  ],
+  "selected_architecture": "ACTIVE_SIM_DEFAULT_WITH_GOAL_SCOPED_MAP_LEASE",
+  "rejected": [
+    "AGENT_CHOOSES_CAMERA_POSITION",
+    "UNBOUNDED_PAN_ZOOM",
+    "CAMERA_STREET_PARK",
+    "BACKGROUND_FOLLOW_RECLICK_LOOP",
+    "CAMERA_OVERRIDE_DURING_HUMAN_CONTROL"
+  ],
+  "source_main_sha": "9abd3e17c183800e558c6fc189e267f5248d0dd8",
+  "owners": [
+    "betterinstincts/sim_camera.py",
+    "betterinstincts/host_stack.py",
+    "scripts/camera_traverse.py",
+    "contracts/camera-traverse.v1.json",
+    "docs/CAMERA_TRAVERSE.md",
+    "tests/test_active_sim_camera_lock.py"
+  ],
+  "approval": "OPERATOR_EXPLICIT_REQUEST",
+  "gates": [
+    "PRESERVE_PLAYER_CAMERA_AUTHORITY",
+    "FRESH_TWO_CUE_LIVE_SCENE",
+    "EXACT_ACTIVE_SIM_ID",
+    "NAMED_TARGET_AND_GOAL_FOR_MAP_EXCEPTION",
+    "BOUNDED_LEASE_AND_MOVEMENT",
+    "REANCHOR_AFTER_MAP_TRAVERSAL_OR_DEFER_IF_HUMAN_INTERRUPTS",
+    "NO_SAVE_WRITES",
+    "OFFLINE_TESTS_NOT_LIVE_GAME_CERT"
+  ],
+  "max_map_lease_ms": 30000,
+  "fallback": "If no authentic host observation or target-goal permit, refuse pan/zoom and request active-Sim center only through admitted host port. If player takes over, yield; never force a follow loop.",
+  "evidence_ceiling": "REPOSITORY_POLICY_AND_INJECTED_PORTS_NO_LIVE_SIMS_TEST",
+  "status": "ONTOLOGY_CONSULTATION_RECORDED_BEFORE_MUTATION"
+}
