@@ -1,9 +1,9 @@
 # DIY skill-force — P95 host maker skills
 
-**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect  
-**P124:** sibling owner beside `funds_inject` / `household_object_force`; distinct from read-only `sim_profile`  
-**Machine owner:** [`contracts/diy-skill-force.v1.json`](../contracts/diy-skill-force.v1.json)  
-**Evaluator / planner:** `betterinstincts.diy_skill_force`  
+**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
+**P124:** sibling owner beside `funds_inject` / `household_object_force`; distinct from read-only `sim_profile`
+**Machine owner:** [`contracts/diy-skill-force.v1.json`](../contracts/diy-skill-force.v1.json)
+**Evaluator / planner:** `betterinstincts.diy_skill_force`
 **Execute adapter:** `python -m scripts.diy_skill_force`
 
 ## Design brief
