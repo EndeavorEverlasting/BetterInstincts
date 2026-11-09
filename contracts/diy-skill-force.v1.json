@@ -8,7 +8,7 @@
     "audience": "operators and Windows host agents who need DIY and other skill unlocks immediately usable",
     "job": "Reusable catalog + mode-agnostic cheat planner: soft-focus → Ctrl+Shift+C → testingcheats enabled true → stats.set_skill_level lines → bounded ACCEPT_OFFERED_REWARD_TRAIT. full_unlock defaults to level 10. Household mode counts any N members, Space-traverses each, skips skills already recorded complete, Spaces past fully-done members to the next Sim that still needs work, and may --detach so agents are not blocked for hours. Required residuals Cooking/Fitness/Natural Living re-dispatched at end unless already complete. Not BI-005.",
     "architecture": "Sibling to funds_inject / household_object_force. Distinct from read-only sim_profile and aspiration life-state OK. No second skill/trait daemon. Typing owner: scripts/win32_input.type_text (keybd_event). P100 cohesive household traverse + completion ledger live in this same owner.",
-    "operator_correction": "Do not stop at one Sim. N is the observed Live household portrait count — whatever that household is — not an invented ceiling. Do not retype skills already maxed on the current Sim. Traverse every member (Space), skip fully-done members, level remaining skills including Cooking/Fitness/Natural Living with correct internal ids (Major_HomestyleCooking, Skill_Fitness, Skill_NLS), and run asynchronously with --detach so another agent can reuse this owner without reinventing it. Keep Live paused during precious-time dispatch; verify with PLAY_BRIEF → Skills panel LOCAL_OBSERVED → REPAUSE. Console text and LEVEL UP toasts are not PASS. Ledger DISPATCHED is resume/skip evidence only."
+    "operator_correction": "Do not stop at one Sim. N is the observed Live household portrait count — whatever that household is — not an invented ceiling. After a save reload that undoes progression, bootstrap the household with skill-round-robin: one skill for every portrait, then the next skill for every portrait, until all requested skills are level 10. Do not dump every skill onto one Sim before Space. Do not retype skills already maxed on the current Sim. Space between members, skip already-complete skill×member cells, include Cooking/Fitness/Natural Living with correct internal ids (Major_HomestyleCooking, Skill_Fitness, Skill_NLS), and run asynchronously with --detach so another agent can reuse this owner without reinventing it. Opt-in bootstrap entry: python bootstrap.py household-skills -- --members N ... (never autorun on install). Keep Live paused during precious-time dispatch; verify with PLAY_BRIEF → Skills panel LOCAL_OBSERVED → REPAUSE. Console text and LEVEL UP toasts are not PASS. Ledger DISPATCHED is resume/skip evidence only."
   },
   "completion_ledger": {
     "schema": "betterinstincts.diy-skill-force.completion/v1",
@@ -39,7 +39,8 @@
       "catalog": "python -m scripts.diy_skill_force catalog",
       "plan": "python -m scripts.diy_skill_force plan --bundle full_unlock",
       "level": "python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID",
-      "household": "python -m scripts.diy_skill_force household --members N --bundle full_unlock --execute --detach --process-id PID --session-id ID"
+      "household": "python -m scripts.diy_skill_force household --members N --bundle full_unlock --execute --detach --process-id PID --session-id ID",
+      "bootstrap_household_skills": "python bootstrap.py household-skills -- --members N --bundle full_unlock --execute --detach --process-id PID --session-id ID"
     }
   },
   "required_residual_skills": [
@@ -58,8 +59,11 @@
     "max_members": 100,
     "member_count_source": "operator_or_agent_observed_portrait_count",
     "member_count_note": "Pass exact observed Live household portrait count as --members N. N is whatever that household is. Host does not invent size and does not treat 8 or 10 as the product ceiling — sanity_max_members is anti-runaway only. Another agent reuses --detach + Space-traverse; do not reinvent.",
+    "dispatch_order": "skill_round_robin",
+    "dispatch_order_note": "For each skill in catalog/bundle order: visit every portrait (Space), set that one skill to target, then advance to the next skill. Fairer after save-reload than member_then_skills (all skills on one Sim before Space).",
     "select_before_dispatch": true,
-    "close_console_before_space": true
+    "close_console_before_space": true,
+    "bootstrap_cli": "python bootstrap.py household-skills -- --members N --bundle full_unlock --execute --detach --process-id PID --session-id ID"
   },
   "inject_sequence": {
     "mode_agnostic": true,
@@ -686,17 +690,19 @@
       "PLAYER_FIRST / yield if player_directed",
       "OBSERVE household portrait count N (whatever the household is) → --members N",
       "LOAD completion ledger (session_id + member key/index); omit already-complete skills unless --redo",
-      "RESOLVE skill ids or bundle (full_unlock + mandatory residual_core tail, minus completed)",
-      "FOR each member index 0..N-1:",
-      "  if index>0: CLOSE console → SPACE (SELECT_NEXT_HOUSEHOLD_SIM)",
-      "  if member has no remaining skills: SKIP_DISPATCH (already maxed) → continue",
-      "  REQUIRE_FOREGROUND_SIMS (soft focus; no mode switch)",
-      "  OPEN_CHEAT_CONSOLE via Ctrl+Shift+C",
-      "  ACTIVATE_TESTING_CHEATS: testingcheats enabled true",
-      "  SET_SKILL_LEVEL per remaining skill; RECORD DISPATCHED in completion ledger after each typed line",
-      "  ACCEPT_OFFERED_REWARD_TRAIT",
-      "  optional CLOSE_CHEAT_CONSOLE / PLAY_BRIEF_OBSERVE_REPAUSE",
+      "RESOLVE skill ids or bundle (full_unlock + mandatory residual_core tail)",
+      "DISPATCH_ORDER skill_round_robin (default): FOR each skill in order:",
+      "  FOR each member index 0..N-1:",
+      "    if not first cell: CLOSE console → SPACE (SELECT_NEXT_HOUSEHOLD_SIM; wraps after last portrait)",
+      "    if skill already complete for this member: SKIP_DISPATCH → continue",
+      "    REQUIRE_FOREGROUND_SIMS (soft focus; no mode switch)",
+      "    OPEN_CHEAT_CONSOLE via Ctrl+Shift+C",
+      "    ACTIVATE_TESTING_CHEATS: testingcheats enabled true",
+      "    SET_SKILL_LEVEL for this one skill; RECORD DISPATCHED in completion ledger",
+      "    ACCEPT_OFFERED_REWARD_TRAIT",
+      "    optional CLOSE_CHEAT_CONSOLE / PLAY_BRIEF_OBSERVE_REPAUSE",
       "optional --detach: spawn opt-in worker; return receipt path immediately",
+      "bootstrap.py household-skills forwards the same household CLI (never autorun on install)",
       "Emit receipt; execute_allowed=false until independent screen_admit; ledger DISPATCHED ≠ panel PASS"
     ],
     "failure": [
@@ -745,8 +751,9 @@
     "mode_agnostic_no_forced_F1",
     "active_sim_selection_required",
     "household_traverse_all_observed_members",
+    "skill_round_robin_one_skill_per_member_then_next_skill",
     "skip_skills_already_recorded_complete",
-    "space_to_next_member_that_needs_work",
+    "space_between_round_robin_cells",
     "required_residual_skills_dispatched_unless_already_complete",
     "completion_ledger_dispatched_is_not_panel_pass",
     "never_claim_BI005_from_cheat_dispatch",

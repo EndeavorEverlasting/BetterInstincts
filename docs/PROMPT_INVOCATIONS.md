@@ -19,6 +19,15 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
 | P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools + countertop mechanics (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
 
+## 2026-11-09 household skill-round-robin bootstrap (P95 + P141 + Trifecta)
+
+**P95** selects skill-round-robin household dispatch (one skill × every
+portrait, then next skill to level 10). **P141** integrates into existing
+`diy_skill_force` + opt-in `bootstrap.py household-skills`. Consultation
+`contracts/consultations/BI-HOUSEHOLD-SKILL-ROUND-ROBIN-BOOTSTRAP-20261109.v1.json`.
+**P82** falsifiers in `tests/test_diy_skill_force.py` /
+`tests/test_bootstrap.py`. **P08** live household restore after save reload.
+
 ## 2026-11-09 Sims offline-install (P00 + P01)
 
 **P00** Governance Doctrine Installer + **P01** Harness Infrastructure Builder:

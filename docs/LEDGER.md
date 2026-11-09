@@ -1,5 +1,13 @@
 # Canonical project ledger
 
+## 2026-11-09 — Household skill-round-robin bootstrap after save reload (P95 + P141 + Trifecta)
+
+**Operator:** Save reload undid skills progression for at least one Sim. Restore every portrait fairly: one skill for every household member, then the next skill, until all requested skills are level 10. Include the path in the bootstrapper.
+
+**P95:** `household_traverse.dispatch_order=skill_round_robin` with `dispatch_units` (skill × member cells). **P141:** same `diy_skill_force` owner; opt-in `python bootstrap.py household-skills` recipe/forwarder (never autorun on install). Consultation `BI-HOUSEHOLD-SKILL-ROUND-ROBIN-BOOTSTRAP-20261109.v1.json`.
+
+**Proof ceiling:** host SendInput cheat dispatch + Skills-panel LOCAL_OBSERVED; not BI-005. Does not close BI-002.
+
 ## 2026-11-09 — Fertilizer wait is not a gardening lock
 
 Post-merge cross-owner gap: opt-in fertilizer workflow initially suppressed
