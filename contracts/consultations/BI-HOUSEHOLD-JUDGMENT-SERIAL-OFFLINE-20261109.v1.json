@@ -83,7 +83,8 @@
     "docs/PROMPT_INVOCATIONS.md",
     "docs/HOUSEHOLD_JUDGMENT.md",
     "AGENTS.md",
-    ".cursor/rules/household-judgment.mdc"
+    ".cursor/rules/household-judgment.mdc",
+    "bootstrap.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "decision_rationale": "Existing working skill-round-robin contract should be repaired at its actual execution seam and bounded by clear task-scope guards, not replaced with a second scheduler.",
