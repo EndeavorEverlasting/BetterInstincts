@@ -1,5 +1,10 @@
 # Canonical project ledger
 
+## 2026-11-09 — Explicit-click desktop bootstrap UI (P92)
+
+Repository main page `bootstrap.py` now defaults to an opt-in local Tkinter window with Inspect paths, Install and Uninstall buttons; the uninstall action requires explicit confirmation and reuses the same manifest/checkout safety gates as the CLI. Opening the window or denying confirmation changes nothing. This is a local Python GUI (not a GitHub web execution privilege), with CLI fallback if Tkinter is unavailable. New consultation `BI-BOOTSTRAP-GUI-P92-20261109.v1.json`; offline unit tests cover command routing and cancel. Live workstation click/install proof remains open.
+
+
 ## 2026-11-09 — Operator-first asynchronous control and canonical install lifecycle
 
 **Parent:** user and agents must share the computer without agents cancelling queued work or stealing focus. P00/P01 preserve canonical governance/harness; P95 prototypes an opt-in `CooperativeScreenQueue` at 15 seconds OS-wide trusted inactivity; P124 reuses existing `control_handoff` as the admission owner, with one `desktop-shared.lock` for participating Playwright/host executors and a bounded queue. A Playwright adapter reuses an existing page; no new browser is launched. Human input on any app yields; unknown input or stale scene fails closed; possible partial effects require reconciliation rather than blind replay. This does not automatically retrofit every external agent/legacy `host_tandem` callback.

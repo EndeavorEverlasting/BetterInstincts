@@ -104,5 +104,60 @@ class BootstrapTests(unittest.TestCase):
                 bootstrap.uninstall(self.location, platform="linux")
 
 
+    def test_no_arg_and_gui_cli_open_local_window_not_mutate_directly(self):
+        with patch.object(bootstrap, "_gui", return_value=0) as gui, \
+             patch.object(bootstrap, "install") as installed, \
+             patch.object(bootstrap, "uninstall") as removed:
+            self.assertEqual(bootstrap.main([]), 0)
+            self.assertEqual(bootstrap.main(["gui"]), 0)
+        self.assertEqual(gui.call_count, 2)
+        installed.assert_not_called()
+        removed.assert_not_called()
+
+    def test_gui_cancel_uninstall_requires_click_and_approval(self):
+        import sys
+        import types
+
+        commands = {}
+        class Widget:
+            def __init__(self, *args, **kwargs):
+                if "text" in kwargs and "command" in kwargs:
+                    commands[kwargs["text"]] = kwargs["command"]
+            def pack(self, *args, **kwargs):
+                return None
+        class Root(Widget):
+            def title(self, *args):
+                return None
+            def geometry(self, *args):
+                return None
+            def resizable(self, *args):
+                return None
+            def mainloop(self):
+                commands["Uninstall"]()
+        class StringVar:
+            def __init__(self, value):
+                self.value = value
+            def set(self, value):
+                self.value = value
+        gui = types.ModuleType("tkinter")
+        gui.TclError = RuntimeError
+        gui.Tk = Root
+        gui.Frame = gui.Label = gui.Button = Widget
+        gui.StringVar = StringVar
+        msg = types.ModuleType("tkinter.messagebox")
+        approvals = []
+        def deny(*args, **kwargs):
+            approvals.append(args)
+            return False
+        msg.askyesno = deny
+        msg.showinfo = lambda *a, **k: self.fail("no informational dialog after cancelled uninstall")
+        msg.showerror = lambda *a, **k: self.fail("no error dialog after cancelled uninstall")
+        gui.messagebox = msg
+        with patch.dict(sys.modules, {"tkinter": gui, "tkinter.messagebox": msg}), \
+             patch.object(bootstrap, "paths", side_effect=AssertionError("NO_PATH_LOOKUP")):
+            self.assertEqual(bootstrap._gui(), 0)
+        self.assertEqual(len(approvals), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
