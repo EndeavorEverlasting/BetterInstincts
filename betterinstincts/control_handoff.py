@@ -12,7 +12,7 @@ import os
 import time
 
 from betterinstincts.player_presence import PresenceProbe
-from bootstrap import paths as workstation_paths
+from bootstrap import BootstrapError, paths as workstation_paths
 
 DEFAULT_IDLE_MS = 15000
 MIN_IDLE_MS = 15000
@@ -114,11 +114,22 @@ def as_presence(handoff: dict) -> dict:
     }
 
 
-LOCK_ROOT = workstation_paths()["locks"]
+# Optional test/host override. The normal workstation path is resolved lazily,
+# so the pure presence policy can still be imported without an installation.
+LOCK_ROOT: Path | None = None
+
+
+def canonical_lock_root() -> Path:
+    """One profile-owned lock location across all development worktrees/clones."""
+    try:
+        return workstation_paths()["locks"]
+    except BootstrapError as exc:
+        raise HandoffError("SCREEN_LOCK_PROFILE_UNRESOLVED") from exc
 
 
 def _lock_dir(lock_root: Path | None = None) -> Path:
-    root = Path(lock_root) if lock_root is not None else LOCK_ROOT
+    candidate = lock_root if lock_root is not None else LOCK_ROOT
+    root = Path(candidate) if candidate is not None else canonical_lock_root()
     if root.is_symlink() or (root.exists() and not root.is_dir()):
         raise HandoffError("SCREEN_LOCK_ROOT_UNSAFE")
     if root.exists() and os.name != "nt":
