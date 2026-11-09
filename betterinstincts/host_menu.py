@@ -69,6 +69,10 @@ def load_contract(path: Path = CONTRACT) -> dict:
         raise HostMenuError("BAD_HOST_MENU_SCHEMA")
     if "RESUME" not in set(cfg.get("forbidden_always", [])):
         raise HostMenuError("RESUME_MUST_STAY_FORBIDDEN")
+    if not {"CONNECT", "CONNECT_ONLINE", "EA_CONNECT", "OPEN_GALLERY"}.issubset(
+        cfg.get("forbidden_always", [])
+    ):
+        raise HostMenuError("OFFLINE_MENU_GUARD_MISSING")
     if not isinstance(cfg.get("transitions"), list) or not cfg["transitions"]:
         raise HostMenuError("HOST_MENU_TRANSITIONS_REQUIRED")
     if tuple(cfg.get("reboot_journey") or ()) != REQUIRED_REBOOT_JOURNEY:
