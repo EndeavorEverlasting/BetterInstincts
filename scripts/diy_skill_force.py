@@ -573,6 +573,28 @@ def _execute_household(
                     }
                 )
 
+    # A completed dispatch ledger is not a Skills-panel certificate. Critically,
+    # when every cell is skipped, do NOT send Space, open the console, or move
+    # the pointer just to produce a misleading `already maxed` result.
+    if (
+        not redo
+        and household_plan.get("state") == "HOUSEHOLD_SKILL_FORCE_NO_PENDING_DISPATCH_UNVERIFIED"
+        and all(bool(u.get("skip_dispatch")) for u in units)
+    ):
+        return {
+            "state": "HOUSEHOLD_SKILL_FORCE_NO_PENDING_DISPATCH_UNVERIFIED",
+            "dispatch_order": "skill_round_robin",
+            "household_members": count,
+            "cells_dispatched": 0,
+            "cells_skipped_ledger_only": len(units),
+            "members_dispatched": 0,
+            "safe_cursor_rest": "UNCHANGED_NO_INPUT",
+            "completion_ledger": str(ledger_path),
+            "proof_ceiling": household_plan.get("proof_ceiling"),
+            "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
+            "next_gate": "REVIEW_SKILLS_PANEL_OR_RED0_IN_DISPOSABLE_LAB",
+        }
+
     cell_results: list[dict] = []
     dispatched_cells = 0
     skipped_cells = 0
@@ -624,7 +646,7 @@ def _execute_household(
                     "skill_id": skill_id,
                     "select": select_report,
                     "skipped": True,
-                    "reason": "SKILL_ALREADY_MAXED_FOR_MEMBER",
+                    "reason": "LEDGER_DISPATCH_RECORDED_NOT_PANEL_VERIFIED",
                     "live": {
                         "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
                         "commands": [],
@@ -698,7 +720,7 @@ def _execute_household(
             }
         )
     state = (
-        "HOUSEHOLD_SKILL_FORCE_ALL_MEMBERS_ALREADY_MAXED"
+        "HOUSEHOLD_SKILL_FORCE_NO_PENDING_DISPATCH_UNVERIFIED"
         if dispatched_cells == 0
         else "HOUSEHOLD_SKILL_FORCE_DISPATCHED"
     )
