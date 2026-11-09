@@ -87,7 +87,7 @@ def plan_sim_camera(
         not isinstance(cues, list) or len(cues) != 2
         or not all(isinstance(c, Mapping) and isinstance(c.get("token"), str)
                    and 1 <= len(c["token"]) <= 80 for c in cues)
-        or {c["source"] for c in cues} != {"visual", "operator"}
+        or {c.get("source") for c in cues} != {"visual", "operator"}
     ):
         return hold("INDEPENDENT_SCENE_CUES_REQUIRED")
     revision = observation.get("camera_revision")
