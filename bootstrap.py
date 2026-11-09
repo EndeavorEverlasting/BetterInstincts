@@ -224,10 +224,12 @@ def install(location: dict[str, Path], *, platform: str | None = None) -> dict:
     if use.exists() and any(use.iterdir()):
         raise BootstrapError("NONEMPTY_UNOWNED_INSTALL_DIRECTORY")
     created = False
+    created_dev_parent = False
     if dev.exists():
         if not _origin_ok(dev):
             raise BootstrapError("CANONICAL_CHECKOUT_CONFLICT_PRESERVE")
     else:
+        created_dev_parent = not dev.parent.exists()
         dev.parent.mkdir(parents=True, exist_ok=True)
         _run("git", "clone", "--", REPOSITORY, str(dev))
         created = True
@@ -245,7 +247,8 @@ def install(location: dict[str, Path], *, platform: str | None = None) -> dict:
     data = {
         "schema": SCHEMA, "repository": REPOSITORY, "checkout": str(dev),
         "use": str(use), "launcher": launcher_name, "launcher_sha256": _sha(content),
-        "created_checkout": created, "profile": platform, "clone_signature": signature,
+        "created_checkout": created, "created_dev_parent": created_dev_parent,
+        "profile": platform, "clone_signature": signature,
     }
     (use / MANIFEST).write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     return {"state": "INSTALLED", "checkout": str(dev), "use": str(use),
@@ -277,11 +280,21 @@ def uninstall(location: dict[str, Path], *, platform: str | None = None) -> dict
     target.unlink()
     manifest_file.unlink()
     use.rmdir()
+    dev_parent_removed = False
     if can_remove_clone:
         shutil.rmtree(dev)
+        # Remove an empty development parent only when this installer created
+        # that parent. Never touch a pre-existing or nonempty ~/dev directory.
+        if data.get("created_dev_parent") is True and not dev.parent.is_symlink():
+            try:
+                dev.parent.rmdir()
+                dev_parent_removed = True
+            except OSError:
+                pass
     cleanup = _prune_empty_runtime_paths(location)
     return {"state": "UNINSTALLED", "managed_files_removed": 2,
-            "checkout_removed": can_remove_clone, "runtime_cleanup": cleanup,
+            "checkout_removed": can_remove_clone, "dev_parent_removed": dev_parent_removed,
+            "runtime_cleanup": cleanup,
             "checkout_preserved_reason": None if can_remove_clone else
             ("PREEXISTING_CHECKOUT" if not data["created_checkout"] else
              "MODIFIED_OR_UNVERIFIED_GIT_HISTORY")}
