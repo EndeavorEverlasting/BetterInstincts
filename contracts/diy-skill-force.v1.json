@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.diy-skill-force/v1",
-  "version": 6,
+  "version": 7,
   "authority": "docs/DIY_SKILL_FORCE.md",
   "proof_ceiling": "HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT",
   "design_brief": {
@@ -8,7 +8,7 @@
     "audience": "operators and Windows host agents who need DIY and other skill unlocks immediately usable",
     "job": "Reusable catalog + mode-agnostic cheat planner: soft-focus → Ctrl+Shift+C → testingcheats enabled true → stats.set_skill_level lines → bounded ACCEPT_OFFERED_REWARD_TRAIT. full_unlock defaults to level 10. Household mode counts any N members, Space-traverses each, and may --detach so agents are not blocked for hours. Required residuals Cooking/Fitness/Natural Living always re-dispatched at end. Not BI-005.",
     "architecture": "Sibling to funds_inject / household_object_force. Distinct from read-only sim_profile and aspiration life-state OK. No second skill/trait daemon. Typing owner: scripts/win32_input.type_text (keybd_event). P100 cohesive household traverse lives in this same owner.",
-    "operator_correction": "Do not stop at one Sim. Count household portraits (any N), traverse every member (Space), level all the way including Cooking/Fitness/Natural Living, and run asynchronously with --detach when serial wait would waste hours. Keep Live paused during precious-time dispatch; verify panel with PLAY_BRIEF → REPAUSE."
+    "operator_correction": "Do not stop at one Sim. Count household portraits (any N), traverse every member (Space), level all the way including Cooking/Fitness/Natural Living, and run asynchronously with --detach when serial wait would waste hours. Keep Live paused during precious-time dispatch; verify with PLAY_BRIEF → Skills panel LOCAL_OBSERVED → REPAUSE. Console text and LEVEL UP toasts are not PASS."
   },
   "activation": {
     "require_explicit_activate": true,
@@ -54,8 +54,13 @@
     "close_console_key_legacy_escape": "ESCAPE",
     "close_console_note": "Prefer Ctrl+Shift+C toggle. Escape while Live often opens pause MENU and breaks Space household traverse.",
     "close_console_optional": true,
-    "cheat_line_submit": "type_text_then_ENTER_keybd_event",
-    "cheat_line_submit_note": "computer_type newlines do not submit Sims cheat lines; durable host must keybd_event Enter after each command and re-click the console strip.",
+    "open_console_chord_owner": "scripts.win32_input.send_key_chord",
+    "open_console_chord_note": "Use send_key_chord so CTRL+SHIFT stay held for C. Manual send_vk/tap sequences can drop SHIFT and fire bare C (screenshot) instead of the console.",
+    "cheat_line_submit": "type_text_embedded_newline_keybd_event",
+    "cheat_line_submit_note": "computer_type newlines do not submit Sims cheat lines. Durable host: re-click console strip then type_text(cmd + '\\n') so Enter is keybd_event inside the typing owner.",
+    "pass_requires_skills_panel_local_observed": true,
+    "console_text_is_not_pass": true,
+    "level_up_toast_is_not_pass": true,
     "selection_note": "Commands apply to the currently selected Sim/Servo only.",
     "typing_owner": "scripts/win32_input.type_text",
     "typing_note": "Prefer keybd_event VkKeyScan typing; KEYEVENTF_UNICODE alone is a silent miss on some TS4 DirectInput hosts.",
@@ -120,7 +125,10 @@
       "press_Cancel_on_reward_trait",
       "auto_accept_invite_dialogs",
       "leave_sim_speed_running_after_panel_verify",
-      "treat_paused_skills_panel_as_fresh_proof"
+      "treat_paused_skills_panel_as_fresh_proof",
+      "claim_pass_from_console_text",
+      "claim_pass_from_level_up_toast",
+      "claim_pass_without_skills_panel_local_observed"
     ]
   },
   "skill_catalog": [
@@ -257,6 +265,9 @@
       "concurrent live-cert screen owner -> YIELD",
       "leave_sim_speed_running_after_panel_verify -> FORBIDDEN",
       "treat_paused_skills_panel_as_fresh_proof -> FORBIDDEN",
+      "claim_pass_from_console_text -> FORBIDDEN",
+      "claim_pass_from_level_up_toast -> FORBIDDEN",
+      "claim_pass_without_skills_panel_local_observed -> FORBIDDEN",
       "autorun household skill force on boot -> FORBIDDEN"
     ]
   },
@@ -294,6 +305,10 @@
     "paused_skills_panel_is_unproven_stale",
     "verify_via_play_brief_observe_repause",
     "never_leave_sim_speed_running_after_panel_verify",
+    "skills_panel_local_observed_required_for_pass",
+    "console_text_is_not_pass",
+    "level_up_toast_is_not_pass",
+    "send_key_chord_for_ctrl_shift_c",
     "detach_is_opt_in_never_autorun"
   ]
 }

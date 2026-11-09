@@ -27,7 +27,14 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(seq["default_level"], 10)
         self.assertIn("diy_maker", cfg["bundles"])
         self.assertIn("full_unlock", cfg["bundles"])
-        self.assertEqual(cfg["version"], 6)
+        self.assertEqual(cfg["version"], 7)
+        self.assertTrue(seq["pass_requires_skills_panel_local_observed"])
+        self.assertTrue(seq["console_text_is_not_pass"])
+        self.assertTrue(seq["level_up_toast_is_not_pass"])
+        self.assertEqual(seq["cheat_line_submit"], "type_text_embedded_newline_keybd_event")
+        self.assertEqual(seq["open_console_chord_owner"], "scripts.win32_input.send_key_chord")
+        self.assertIn("claim_pass_from_console_text", seq["forbidden"])
+        self.assertIn("skills_panel_local_observed_required_for_pass", cfg["invariants"])
         self.assertEqual(required_residual_skills(cfg), ["cooking", "fitness", "natural_living"])
         self.assertIn("residual_core", cfg["bundles"])
         self.assertEqual(cfg["household_traverse"]["next_member_key"], "SPACE")
@@ -167,7 +174,7 @@ class DiySkillForceTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(raw["version"], 6)
+        self.assertEqual(raw["version"], 7)
         self.assertEqual(raw["bundles"]["full_unlock"]["default_level"], 10)
         self.assertEqual(raw["required_residual_skills"], ["cooking", "fitness", "natural_living"])
         self.assertTrue(raw["inject_sequence"]["reward_dialog_accept"]["never_press_cancel"])
@@ -235,9 +242,15 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(snap["household_traverse"]["next_member_key"], "SPACE")
         self.assertIn("residual_core", snap["bundles"])
         self.assertEqual(snap.get("close_console_key"), "CTRL_SHIFT_C_TOGGLE")
-        self.assertIn("ENTER", str(snap.get("cheat_line_submit") or "").upper())
+        submit = str(snap.get("cheat_line_submit") or "").upper()
+        self.assertTrue(
+            "NEWLINE" in submit or "ENTER" in submit,
+            msg=f"cheat_line_submit must embed newline/Enter submit, got {submit!r}",
+        )
         seq = snap.get("inject_sequence") or {}
         self.assertEqual(seq.get("close_console_key"), "CTRL_SHIFT_C_TOGGLE")
+        self.assertTrue(seq.get("console_text_is_not_pass"))
+        self.assertTrue(seq.get("pass_requires_skills_panel_local_observed"))
 
 
 if __name__ == "__main__":

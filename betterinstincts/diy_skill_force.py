@@ -153,6 +153,12 @@ def catalog_snapshot(cfg: Optional[dict] = None) -> dict:
             "close_console_key": seq.get("close_console_key"),
             "cheat_line_submit": seq.get("cheat_line_submit"),
             "mode_agnostic": bool(seq.get("mode_agnostic")),
+            "open_console_chord_owner": seq.get("open_console_chord_owner"),
+            "pass_requires_skills_panel_local_observed": bool(
+                seq.get("pass_requires_skills_panel_local_observed")
+            ),
+            "console_text_is_not_pass": bool(seq.get("console_text_is_not_pass")),
+            "level_up_toast_is_not_pass": bool(seq.get("level_up_toast_is_not_pass")),
         },
         "proof_ceiling": cfg["proof_ceiling"],
         "forbidden": list(seq.get("forbidden") or []),

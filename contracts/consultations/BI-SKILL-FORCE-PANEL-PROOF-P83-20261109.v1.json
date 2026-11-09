@@ -1,0 +1,30 @@
+{
+  "schema": "betterinstincts.consultation/v1",
+  "id": "BI-SKILL-FORCE-PANEL-PROOF-P83-20261109",
+  "title": "P83/P95/P124 — Skills panel is sole live PASS; console text is not",
+  "status": "ACCEPTED",
+  "date": "2026-11-09",
+  "prompt_kit": ["P08", "P82", "P07", "P83", "P95", "P124"],
+  "observation": [
+    "Operator Skills panel for Servo showed Comedy/Fishing/Mischief/Painting at 1, Robotics 3, Video Gaming 2 after a host claim that skills were leveled — false PASS.",
+    "computer_type / console-visible text / reward toasts / mid-cascade LEVEL UP overlays do not prove max skill.",
+    "Manual send_vk CTRL+SHIFT then tap C can drop SHIFT and fire bare C (screenshot) instead of opening the cheat console.",
+    "LOCAL_OBSERVED working path: send_key_chord(['CTRL','SHIFT','C']) → click console strip → type_text(cmd + '\\n'); Servo then showed cascading level-ups and FITNESS MAXED.",
+    "While PAUSED, set_skill_level cascades through intermediate LEVEL UP toasts; Skills panel after PLAY_BRIEF is the proof surface."
+  ],
+  "decision": [
+    "Durable _toggle_cheat_console uses scripts.win32_input.send_key_chord only.",
+    "Durable _type_cheat_line uses type_text(line + '\\n') after console strip refocus; no computer_type submit.",
+    "Receipt pass_claim stays FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED; console_text_is_not_pass and level_up_toast_is_not_pass are true.",
+    "Contract forbids claim_pass_from_console_text and claim_pass_from_level_up_toast.",
+    "PLAY_BRIEF_OBSERVE_REPAUSE remains required before treating Skills panel as fresh."
+  ],
+  "owners": [
+    "contracts/diy-skill-force.v1.json",
+    "scripts/diy_skill_force.py",
+    "betterinstincts/diy_skill_force.py",
+    "docs/DIY_SKILL_FORCE.md",
+    "docs/LEDGER.md"
+  ],
+  "not": ["BI-005 skill growth cert", "save edit", "autorun", "claim PASS from console text"]
+}
