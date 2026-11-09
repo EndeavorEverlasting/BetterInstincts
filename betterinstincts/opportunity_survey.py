@@ -101,18 +101,24 @@ def evaluate_opportunity_survey(
         raise OpportunitySurveyError("OCCUPANCY_OBSERVATION_INVALID")
     if type(player_active) is not bool or type(host_may_control) is not bool:
         raise OpportunitySurveyError("PRESENCE_FLAGS_INVALID")
+    if lot_model is not None and not isinstance(lot_model, Mapping):
+        raise OpportunitySurveyError("LOT_MODEL_MUST_BE_MAPPING")
     try:
         snap = normalize_needs(needs)
         budget = evaluate_queue_capacity(
             queue, multitasking=multitasking, player_directed=player_active
         )
-        known = known_targets(aff_index or empty_index(), game_version=game_version)
+        known = known_targets(
+            aff_index or empty_index(), game_version=game_version,
+            lot_id=active_lot_id,
+        )
     except (NeedServiceBaseError, QueueCapacityError, AffordanceMemoryError) as exc:
         raise OpportunitySurveyError(str(exc)) from exc
     goals = _validated_goals(observed_goals, capture_ref)
     report = {
         "schema": SCHEMA, "state": "SURVEY_WAITING_FOR_LOT",
         "capture_ref": capture_ref, "lot_id": None, "lot_revision": None,
+        "game_version": game_version, "actor_ref": actor_ref,
         "queue_budget": budget, "room_count": 0, "rooms": [],
         "candidates": [], "exploration_targets": [], "queue_recommendation": None,
         "survey_mode": "PASSIVE_READ_ONLY",
