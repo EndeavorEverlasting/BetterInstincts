@@ -192,11 +192,36 @@ class OverlayChoiceQueueTests(unittest.IsolatedAsyncioTestCase):
             outcome=enqueue_native_overlay_choice(
                 queue,work_id="event-choice-1",capture_ref=CAP,
                 observe=observe,process_id=303,session_id="demo",
-                click_screen=click,move_screen=move)
+                click_screen=click,move_screen=move,
+                player_choice_approval={
+                    "source":"PLAYER_CHOICE_APPROVAL", "approved":True,
+                    "capture_ref":CAP,"overlay_id":"evt:promotion",
+                    "selected_sim_id":492,"ui_layout_revision":"hud:1",
+                    "option_id":"choice:ethical","approval_ref":"player:choice-1",
+                })
             self.assertEqual((await queue.run_once())["state"],"COMPLETED")
             self.assertEqual(actions[0],("choice",550,620))
             self.assertTrue(outcome["receipt"]["choice_acknowledged"])
             self.assertFalse(outcome["receipt"]["resume_queued_game_actions"])
+
+    async def test_observed_high_score_is_not_a_player_choice(self):
+        from betterinstincts.scene_ui_semantics import enqueue_native_overlay_choice
+        with tempfile.TemporaryDirectory() as root:
+            current=frame(overlay=choice_overlay(),needs=SIX)
+            actions=[]
+            async def observe():return current
+            async def click(x,y):actions.append((x,y))
+            async def move(x,y):actions.append((x,y))
+            async def sleep(_):pass
+            queue=CooperativeScreenQueue(
+                lambda:PresenceProbe(False,False,last_input_age_ms=18000),
+                lambda:True,lock_root=Path(root),sleep=sleep)
+            enqueue_native_overlay_choice(
+                queue,work_id="event-choice-not-approved",capture_ref=CAP,
+                observe=observe,process_id=303,session_id="demo",
+                click_screen=click,move_screen=move)
+            self.assertEqual((await queue.run_once())["state"],"NEEDS_REVALIDATION")
+            self.assertEqual(actions,[])
 
     async def test_no_auto_choice_without_explicit_session_authority(self):
         from betterinstincts.scene_ui_semantics import enqueue_native_overlay_choice
