@@ -1,0 +1,165 @@
+{
+  "schema": "betterinstincts.preference-prompts/v1",
+  "version": 1,
+  "purpose": "Evaluate in-game Sims 4 likes/dislikes offers caused by skill and aspiration events; never conflate with occult/life-state or skill reward-trait dialogs.",
+  "proof_ceiling": "CATALOGUED_OFFLINE_POLICY_NOT_GAME_OBSERVATION_OR_INPUT_PERMISSION",
+  "default": "HOLD",
+  "action_sequence": {
+    "ACCEPT": [
+      "YES",
+      "OK"
+    ],
+    "DECLINE": [
+      "NO"
+    ],
+    "HOLD": []
+  },
+  "target_roles": {
+    "YES": "Yes",
+    "NO": "No",
+    "OK": "OK"
+  },
+  "mandatory_observation": [
+    "dialog_class",
+    "dialog_stage",
+    "scene",
+    "sim_ref",
+    "topic_id",
+    "offer_kind",
+    "capture_ref",
+    "visible_buttons"
+  ],
+  "constraints": [
+    "No live action unless an exact, freshly observed game prompt and selected Sim match",
+    "No automatic input for unknown preference, unfamiliar packs, ambiguous button, life-state or trait reward dialogs",
+    "Positive skill likes and negative skill dislikes are advisory, not universal personality truths",
+    "Explicit agent-session opt-in and independent screen, save, scene, PID and player ownership gates remain mandatory",
+    "YES and OK are separate steps and OK requires distinct new observation and verified prior YES receipt",
+    "A user override outranks any heuristic; do not infer permission from catalog, P95 design, UI coordinates, or a model",
+    "Preference recommendations may run while other application owns the desktop; only the input lease requires desktop control"
+  ],
+  "preferences": {
+    "gardening": {
+      "label": "Gardening",
+      "like": "POSITIVE",
+      "dislike": "NEGATIVE",
+      "goals": [
+        "self_sufficiency",
+        "gardening",
+        "income_gardening"
+      ]
+    },
+    "cooking": {
+      "label": "Cooking",
+      "like": "POSITIVE",
+      "dislike": "NEGATIVE",
+      "goals": [
+        "survival_needs",
+        "cooking",
+        "self_sufficiency"
+      ]
+    },
+    "handiness": {
+      "label": "Handiness",
+      "like": "POSITIVE",
+      "dislike": "NEGATIVE",
+      "goals": [
+        "home_maintenance",
+        "handiness",
+        "upgrading"
+      ]
+    },
+    "programming": {
+      "label": "Programming",
+      "like": "POSITIVE",
+      "dislike": "NEGATIVE",
+      "goals": [
+        "programming",
+        "income",
+        "technology"
+      ]
+    },
+    "robotics": {
+      "label": "Robotics",
+      "like": "POSITIVE",
+      "dislike": "NEGATIVE",
+      "goals": [
+        "robotics",
+        "technology",
+        "servo"
+      ]
+    },
+    "fabrication": {
+      "label": "Fabrication",
+      "like": "POSITIVE",
+      "dislike": "NEGATIVE",
+      "goals": [
+        "fabrication",
+        "crafting",
+        "self_sufficiency"
+      ]
+    },
+    "fitness": {
+      "label": "Fitness",
+      "like": "POSITIVE",
+      "dislike": "NEGATIVE",
+      "goals": [
+        "fitness",
+        "health",
+        "sports"
+      ]
+    },
+    "painting": {
+      "label": "Painting",
+      "like": "POSITIVE",
+      "dislike": "NEGATIVE",
+      "goals": [
+        "painting",
+        "creativity",
+        "income_art"
+      ]
+    },
+    "writing": {
+      "label": "Writing",
+      "like": "POSITIVE",
+      "dislike": "NEGATIVE",
+      "goals": [
+        "writing",
+        "creativity",
+        "income_royalties"
+      ]
+    },
+    "charisma": {
+      "label": "Charisma",
+      "like": "POSITIVE",
+      "dislike": "NEGATIVE",
+      "goals": [
+        "career",
+        "social",
+        "relationships"
+      ]
+    },
+    "mischief": {
+      "label": "Mischief",
+      "like": "GOAL_ONLY",
+      "dislike": "GOAL_ONLY",
+      "like_goals": [
+        "mischief_play"
+      ],
+      "dislike_goals": [
+        "avoid_mischief"
+      ]
+    },
+    "music": {
+      "label": "Music",
+      "like": "GOAL_ONLY",
+      "dislike": "GOAL_ONLY",
+      "like_goals": [
+        "creative_expression"
+      ],
+      "dislike_goals": [
+        "quiet_focus"
+      ]
+    }
+  }
+}
