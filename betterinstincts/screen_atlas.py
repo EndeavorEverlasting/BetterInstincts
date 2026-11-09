@@ -19,6 +19,7 @@ from betterinstincts.workflow_interop import CooperativeScreenQueue, QueuedStep
 ROOT = Path(__file__).resolve().parents[1]
 ATLAS = ROOT / "contracts" / "screen-atlas.v1.json"
 CONSOLE = ROOT / "contracts" / "hidden-object-discovery.v1.json"
+HOST_MENU = ROOT / "contracts" / "host-menu.v1.json"
 EVIDENCE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$")
 
 
@@ -61,11 +62,37 @@ def inventory(*, atlas: dict | None = None) -> dict:
     if console.get("schema") != "betterinstincts.hidden-object-discovery/v1":
         raise ScreenAtlasError("CONSOLE_OWNER_SCHEMA_UNKNOWN")
     modes = glossary_snapshot(chrome)["modes"]
+    menu = _bounded_json(HOST_MENU, 180_000)
+    if menu.get("schema") != "betterinstincts.host-menu/v1" or menu.get("game_version") != scene["game_version"]:
+        raise ScreenAtlasError("HOST_MENU_VERSION_OR_SCHEMA_DRIFT")
+    by_scene = {scene_id: mode for mode, scene_id in atlas["mode_scenes"].items()}
+    screens = []
+    for row in scene["scenes"]:
+        mode = by_scene.get(row["id"])
+        transitions = []
+        for transition in menu["transitions"]:
+            if transition.get("from") == row["id"] and "click" in transition:
+                transitions.append({
+                    "id": transition["id"], "to": transition["to"],
+                    "client_point": list(transition["click"]),
+                    "status": "HISTORICAL_HOST_CANDIDATE_RECALIBRATE",
+                    "execute_allowed": False,
+                })
+        targets = list(modes[mode]["targets"]) if mode else []
+        screens.append({
+            "scene_id": row["id"], "mode": mode,
+            "required_cues": row["required_cues"],
+            "target_ids": targets,
+            "menu_clicks": transitions,
+            "unmapped": not bool(targets or transitions),
+            "execute_allowed": False,
+        })
     return {
         "schema": "betterinstincts.screen-atlas.inventory/v1",
         "exact_game_version": scene["game_version"],
         "modes": modes,
         "scenes": [s["id"] for s in scene["scenes"]],
+        "screen_maps": screens,
         "console": {
             "source": "contracts/hidden-object-discovery.v1.json",
             "toggle_chords": console["platform_console_chords"],
@@ -193,4 +220,70 @@ def enqueue_game_click(
     queue.enqueue(QueuedStep(work_id=work_id, validate=validate, action=action))
     return {"state": "QUEUED_REQUIRES_LIVE_REVALIDATION", "work_id": work_id,
             "target_id": resolved["target_id"], "safe_rest": resolved["safe_rest"],
+            "execute_allowed": False, "proof_ceiling": resolved["proof_ceiling"]}
+
+
+def enqueue_native_game_click(
+    queue: CooperativeScreenQueue, *, work_id: str,
+    calibration: Mapping[str, Any],
+    observe: Callable[[], Awaitable[Mapping[str, Any]]],
+    process_id: int, session_id: str,
+    click_screen: Callable[[int, int], Awaitable[None]],
+    move_screen: Callable[[int, int], Awaitable[None]],
+) -> dict:
+    """Win32-compatible *injected port*, not a second native input owner.
+
+    Caller must supply exact-PID/window-bounds observation and admitted
+    click/move functions from the existing local Sims host. This interface
+    never calls Win32 directly or changes a save. Queue owns 15s idle + lock.
+    """
+    resolved = resolved_calibration(calibration)
+    if (not _valid_int(process_id, 1, 2_147_483_647)
+            or not isinstance(session_id, str) or not EVIDENCE_ID.fullmatch(session_id)
+            or not callable(observe) or not callable(click_screen) or not callable(move_screen)):
+        raise ScreenAtlasError("EXACT_NATIVE_HOST_PORT_REQUIRED")
+
+    def native_owner(obs: Mapping[str, Any]) -> bool:
+        return (isinstance(obs, Mapping) and
+                obs.get("process_id") == process_id and
+                obs.get("focused_process_id") == process_id and
+                obs.get("session_id") == session_id and
+                obs.get("host_admitted") is True and
+                _valid_int(obs.get("client_origin_x"), -20_000, 20_000) and
+                _valid_int(obs.get("client_origin_y"), -20_000, 20_000))
+
+    async def validate() -> bool:
+        obs = await observe()
+        return native_owner(obs) and _observation_matches(obs, resolved)
+
+    async def action(checkpoint) -> None:
+        if not await validate():
+            raise ScreenAtlasError("NATIVE_TARGET_STALE")
+        await checkpoint()
+        obs = await observe()
+        if not native_owner(obs) or not _observation_matches(obs, resolved):
+            raise ScreenAtlasError("NATIVE_TARGET_CHANGED_AT_EFFECT")
+        origin = (obs["client_origin_x"], obs["client_origin_y"])
+        point = (origin[0] + resolved["click"][0], origin[1] + resolved["click"][1])
+        try:
+            await click_screen(*point)
+        finally:
+            # The game may change scene after click; verify desktop ownership
+            # and stable window geometry, not the clicked target's visibility.
+            await checkpoint()
+            after = await observe()
+            if (not native_owner(after) or
+                    (after["client_origin_x"], after["client_origin_y"]) != origin or
+                    (after.get("client_width"), after.get("client_height")) !=
+                    (resolved["client_width"], resolved["client_height"])):
+                raise ScreenAtlasError("WINDOW_MOVED_OR_CONTROL_CHANGED_BEFORE_REST")
+            await move_screen(
+                origin[0] + resolved["safe_rest"][0],
+                origin[1] + resolved["safe_rest"][1],
+            )
+
+    queue.enqueue(QueuedStep(work_id=work_id, validate=validate, action=action))
+    return {"state": "QUEUED_REQUIRES_NATIVE_HOST_REVALIDATION",
+            "work_id": work_id, "target_id": resolved["target_id"],
+            "safe_rest_client": resolved["safe_rest"],
             "execute_allowed": False, "proof_ceiling": resolved["proof_ceiling"]}
