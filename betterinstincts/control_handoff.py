@@ -43,7 +43,7 @@ def decide(
         reason = "SESSION_INACTIVE"
     elif not isinstance(probe, PresenceProbe) or not probe.probe_ok:
         reason = "PRESENCE_UNKNOWN"
-    elif probe.operator_declared_playing or probe.player_directed_queue:
+    elif probe.operator_declared_playing or probe.operator_busy or probe.player_directed_queue:
         reason = "PLAYER_OVERRIDE"
     elif (
         isinstance(probe.last_input_age_ms, bool)
@@ -59,6 +59,11 @@ def decide(
         "reason": reason or "IDLE_CONFIRMED",
         "idle_ms": idle_ms,
         "screen_control_allowed": reason is None,
+        "foreground_process": {
+            "pid": probe.foreground_process_id if isinstance(probe, PresenceProbe) else None,
+            "name": probe.foreground_process_name if isinstance(probe, PresenceProbe) else None,
+            "is_sims": probe.foreground_is_sims if isinstance(probe, PresenceProbe) else False,
+        },
         "proof_ceiling": "PROBE_ONLY_NOT_GAME_CONTROL_OR_CERTIFICATION",
     }
 
