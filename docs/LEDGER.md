@@ -1,5 +1,11 @@
 # Canonical project ledger
 
+## 2026-11-09 — Servo mutual Tune Up: peer helper + Robotics skill gate (P95 + P124 + Trifecta)
+
+**Operator:** One household Servo must work on the other (Tune Up/Repair). Identify which Servo needs to level, force host skill logic, engage maintenance, commit durable host logic to main.
+
+**P95:** extend `household_upkeep` so a peer Servo may propose `TUNE_UP_SERVO` / `REPAIR_SERVO` when verified Robotics ≥ contract minimum; prefer HUMAN helpers first; forbid self-helper on that path; missing Robotics → `UPKEEP_HELPER_SKILL_GAP` + `diy_skill_force` `servo_core` hint. **P124:** extract `_actor_can_help` / `_helper_iter` / `_verified_skill_level`; no second daemon. **Trifecta:** P08 local Robotics dispatch on helper Servo + Repair/Tune Up attempt; P82 falsifiers; P07 merge. Consultation `BI-SERVO-MUTUAL-TUNEUP-HELPER-20261109.v1.json`. Does not close BI-002/BI-005.
+
 ## 2026-11-09 — Servo four-motive health and household bill-payment microservices (P95/P124/Trifecta)
 
 **Parent:** Keep every observed household Servo alive with repeated need checks and eligible other-Sim Tune Up/Repair requests, Charge/Fun/Social support, and ensure actual unpaid bills are monitored and safely queued before utility interruption.

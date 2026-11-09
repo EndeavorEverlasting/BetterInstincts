@@ -78,10 +78,69 @@ class UpkeepMicrosystemTests(unittest.TestCase):
         self.assertEqual(result["next_actions"][0]["action_id"],"TUNE_UP_SERVO")
         self.assertEqual(result["next_actions"][0]["actor_ref"],"sim:helper")
         self.assertEqual(result["next_actions"][0]["target_ref"],"servo:a")
+        self.assertEqual(result["next_actions"][0]["helper_kind"],"HUMAN")
         self.assertFalse(result["dispatch_authorized"])
         self.assertEqual(result["servo_health"][0]["health"],"CRITICAL")
         self.assertEqual(result["next_monitor_seconds"],30)
         self.assertEqual(o,original)
+
+    def test_servo_peer_helper_with_verified_robotics(self):
+        helper=actor("servo:helper","SERVO",
+                     skills={"robotics":{"level":10,"verified":True}})
+        out=evaluate(obs(
+            actors=[helper],
+            observed_actions=[action("TUNE_UP_SERVO","servo:helper","servo:a")]))
+        self.assertEqual(out["gate"],"UPKEEP_ACTION_READY")
+        self.assertEqual(out["next_actions"][0]["actor_ref"],"servo:helper")
+        self.assertEqual(out["next_actions"][0]["helper_kind"],"SERVO_PEER")
+        self.assertEqual(out["next_actions"][0]["helper_robotics_level"],10.0)
+
+    def test_servo_peer_helper_prefers_human_when_both_available(self):
+        human=actor("sim:helper","HUMAN")
+        servo_helper=actor("servo:helper","SERVO",
+                           skills={"robotics":{"level":10,"verified":True}})
+        out=evaluate(obs(
+            actors=[servo_helper, human],
+            observed_actions=[
+                action("TUNE_UP_SERVO","servo:helper","servo:a"),
+                action("TUNE_UP_SERVO","sim:helper","servo:a"),
+            ]))
+        self.assertEqual(out["next_actions"][0]["actor_ref"],"sim:helper")
+        self.assertEqual(out["next_actions"][0]["helper_kind"],"HUMAN")
+
+    def test_servo_without_robotics_yields_skill_gap(self):
+        helper=actor("servo:helper","SERVO")
+        out=evaluate(obs(
+            actors=[helper],
+            observed_actions=[action("TUNE_UP_SERVO","servo:helper","servo:a")]))
+        self.assertEqual(out["gate"],"UPKEEP_HELPER_SKILL_GAP")
+        self.assertEqual(out["skill_force_hint"]["bundle"],"servo_core")
+        self.assertIn("robotics", out["skill_force_hint"]["skills"])
+        self.assertFalse(out["next_actions"])
+
+    def test_servo_cannot_self_tune_on_peer_path(self):
+        self_helper=actor("servo:a","SERVO",
+                          skills={"robotics":{"level":10,"verified":True}})
+        out=evaluate(obs(
+            actors=[self_helper],
+            observed_actions=[action("TUNE_UP_SERVO","servo:a","servo:a")]))
+        self.assertIn(out["gate"],
+                      {"UPKEEP_HELPER_SKILL_GAP","UPKEEP_NO_SAFE_ACTOR_OR_AFFORDANCE"})
+        self.assertFalse(out["next_actions"])
+
+    def test_socialize_and_bills_remain_human_only(self):
+        servo_helper=actor("servo:helper","SERVO",
+                           skills={"robotics":{"level":10,"verified":True}})
+        out=evaluate(obs(
+            servos=[servo(durability=.8,social=.1)],
+            actors=[servo_helper],
+            observed_actions=[action("SOCIALIZE_SERVO","servo:helper","servo:a")]))
+        self.assertFalse(out["next_actions"])
+        out_bill=evaluate(obs(
+            servos=[], bill=bill(), bill_payment_authorized=True,
+            actors=[servo_helper],
+            observed_actions=[action("PAY_BILLS","servo:helper","bill:1")]))
+        self.assertFalse(out_bill["next_actions"])
 
     def test_servo_four_motives_without_fake_human_needs(self):
         o=obs(servos=[servo(durability=.8,charge=.8,fun=.1,social=.1)],

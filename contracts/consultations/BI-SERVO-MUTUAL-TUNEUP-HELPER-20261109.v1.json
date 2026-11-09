@@ -1,0 +1,109 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SERVO-MUTUAL-TUNEUP-HELPER-20261109",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "38feb77f2c305cfedac51c01cd58059c99c4387e",
+  "proposed_capability": "P95: extend household_upkeep so an eligible other Servo may propose TUNE_UP_SERVO / REPAIR_SERVO on a peer when verified Robotics meets contract minimum; prefer HUMAN helpers first; never self-helper on that path; missing Robotics yields UPKEEP_HELPER_SKILL_GAP routing to diy_skill_force servo_core (not practice_skill). P124: keep one owner household_upkeep + existing diy_skill_force; no second daemon or input owner. Extract helper eligibility helper for readability. Trifecta: P82 offline falsifiers, P07 merge, P08 local mutual Tune Up observation.",
+  "affected_concepts": [
+    "HOUSEHOLD",
+    "SIM",
+    "NEED",
+    "NEED_STATE",
+    "AFFORDANCE",
+    "ACTION_QUEUE",
+    "OBSERVATION",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "HOST_ACTION",
+    "OUTCOME",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/ONTOLOGY.md",
+    "docs/HOUSEHOLD_UPKEEP.md",
+    "contracts/household-upkeep.v1.json",
+    "betterinstincts/household_upkeep.py",
+    "contracts/diy-skill-force.v1.json",
+    "betterinstincts/diy_skill_force.py",
+    "scripts/diy_skill_force.py",
+    "betterinstincts/host_stack.py",
+    "betterinstincts/host_listener.py",
+    "betterinstincts/queue_capacity.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018",
+    "BI-ONT-019",
+    "BI-ONT-020",
+    "BI-ONT-021",
+    "BI-ONT-022"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "HOST_UPKEEP_SERVO_PEER_HELPER_OFFLINE_NOT_LIVE_MENU_OR_QUEUE_PROOF",
+  "player_save_control_impact": "No save or install file edits. Offline evaluator and docs/tests only in this consultation lane. Live diy_skill_force and pie-menu Tune Up/Repair/Activate remain separate local host-session actions under screen_admit; never auto-daemonized.",
+  "expected_outcome": "Offline evaluator admits HUMAN helpers first, then verified Robotics-ready peer Servos for Tune Up/Repair; skill-gap gate when Servo helper lacks Robotics; docs/contract/tests updated. Does not close BI-002 or BI-005.",
+  "negative_tests": [
+    "SERVO actor without verified Robotics cannot be selected for TUNE_UP_SERVO or REPAIR_SERVO",
+    "Self-target Servo is rejected on peer helper path",
+    "HUMAN helpers still preferred when both HUMAN and SERVO are available",
+    "SOCIALIZE_SERVO and PAY_BILLS remain HUMAN-only",
+    "Missing Robotics on sole Servo helper yields UPKEEP_HELPER_SKILL_GAP not a silent HUMAN-only dead end",
+    "No practice_skill queue and no BI-005 claim from cheat dispatch"
+  ],
+  "rollback_path": "Revert isolated PR; preserve game, saves, previously certified profiles and existing HUMAN helper path.",
+  "unresolved_unknowns": [
+    "Exact live Robotics level gate for Tune Up/Repair/Activate on this patch requires local observation",
+    "Deactivated Servo station Activate vs living-Sim Tune Up are distinct affordances and must be observed separately"
+  ],
+  "files_expected": [
+    "betterinstincts/household_upkeep.py",
+    "contracts/household-upkeep.v1.json",
+    "tests/test_household_upkeep.py",
+    "docs/HOUSEHOLD_UPKEEP.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "contracts/consultations/BI-SERVO-MUTUAL-TUNEUP-HELPER-20261109.v1.json"
+  ],
+  "accepted_terms": [
+    {
+      "term": "SERVO_PEER_HELPER",
+      "definition": "Another household Servo (sim_ref != target) proposed as actor for observed TUNE_UP_SERVO or REPAIR_SERVO when verified Robotics level meets household-upkeep contract minimum."
+    },
+    {
+      "term": "UPKEEP_HELPER_SKILL_GAP",
+      "definition": "Gate when a peer Servo is the only available maintenance actor but Robotics is missing or below contract minimum; routes to diy_skill_force servo_core / robotics without claiming panel PASS."
+    }
+  ],
+  "rejected_terms": [
+    {
+      "term": "SERVO_ALWAYS_HELPER",
+      "reason": "Unverified Robotics or self-target must fail closed."
+    },
+    {
+      "term": "PRACTICE_SKILL_FOR_TUNEUP",
+      "reason": "Skill growth certification remains BI-005; cheat dispatch is disposable host tooling only."
+    }
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
+  "source_main_sha": "dab789c",
+  "operator_authorization": "chat:servo-mutual-tuneup-20261109",
+  "created_utc": "2026-11-09T22:22:00Z"
+}
