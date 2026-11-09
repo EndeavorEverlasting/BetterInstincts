@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.ontology/v1",
-  "revision": 2,
+  "revision": 3,
   "state": "CANDIDATE_REVIEW_NOT_RUNTIME_AUTHORITY",
   "owner": "BetterInstincts",
   "source_main_sha": "502f66efc0eedd4136d6a8cd0879f566c3f3612f",
@@ -231,6 +231,36 @@
       "kind": "process",
       "definition": "Bounded evaluation of multiple domain receipts plus shared resources, contingencies and continuity that emits advisory plans, not host permits.",
       "canonical_owner": "contracts/domain-cascade.v1.json"
+    },
+    "VIEW_SCENE": {
+      "kind": "state",
+      "definition": "One observed camera viewpoint of a world/lot, independent of Live/Buy/Build game scene and changing with camera or floor movement.",
+      "canonical_owner": "contracts/scenery-memory.v1.json"
+    },
+    "SIM_PORTRAIT": {
+      "kind": "ui_entity",
+      "definition": "Selected active Sim identity tied to a fresh, attested household-portrait hitbox, not an arbitrary world click.",
+      "canonical_owner": "contracts/portrait-follow.v1.json"
+    },
+    "CAMERA_FOLLOW": {
+      "kind": "state",
+      "definition": "Continuing active-Sim camera attachment after right-clicking the selected portrait or verified game-camera API; distinct from one-shot Enter centering.",
+      "canonical_owner": "contracts/portrait-follow.v1.json"
+    },
+    "HUD_PANEL": {
+      "kind": "ui_state",
+      "definition": "Exactly observed bottom-right selected Live panel identity and current UI/Sim revisions, never an inferred fixed target position.",
+      "canonical_owner": "contracts/ui-microsystems.v1.json"
+    },
+    "EVENT_OVERLAY": {
+      "kind": "ui_state",
+      "definition": "Current career/random/decision overlay that can interrupt an active queue; requires choice evaluation and attested resolution before resumption.",
+      "canonical_owner": "contracts/ui-microsystems.v1.json"
+    },
+    "SCENE_MEMORY": {
+      "kind": "evidence",
+      "definition": "Deduplicated metadata-only, evidence-labeled viewpoint discovery requiring review before serving as a future navigation hint.",
+      "canonical_owner": "contracts/scenery-memory.v1.json"
     }
   },
   "relations": [
@@ -458,6 +488,61 @@
       "from": "OUTCOME",
       "predicate": "MAY_SATISFY",
       "to": "RESUME_CONDITION"
+    },
+    {
+      "from": "GAME_SCENE",
+      "predicate": "CONTAINS_VIEWPOINT",
+      "to": "VIEW_SCENE"
+    },
+    {
+      "from": "OBSERVATION",
+      "predicate": "IDENTIFIES_VIEWPOINT",
+      "to": "VIEW_SCENE"
+    },
+    {
+      "from": "VIEW_SCENE",
+      "predicate": "INDEXED_BY",
+      "to": "SCENE_MEMORY"
+    },
+    {
+      "from": "SIM",
+      "predicate": "REPRESENTED_BY",
+      "to": "SIM_PORTRAIT"
+    },
+    {
+      "from": "SIM_PORTRAIT",
+      "predicate": "REQUESTS",
+      "to": "CAMERA_FOLLOW"
+    },
+    {
+      "from": "CAMERA_FOLLOW",
+      "predicate": "TRACKS",
+      "to": "SIM"
+    },
+    {
+      "from": "GAME_SCENE",
+      "predicate": "EXPOSES",
+      "to": "HUD_PANEL"
+    },
+    {
+      "from": "GAME_SCENE",
+      "predicate": "MAY_SHOW",
+      "to": "EVENT_OVERLAY"
+    },
+    {
+      "from": "EVENT_OVERLAY",
+      "predicate": "INTERRUPTS",
+      "to": "ACTION_QUEUE"
+    },
+    {
+      "from": "EVENT_OVERLAY",
+      "predicate": "INTERRUPTS",
+      "to": "GOAL_THREAD"
+    },
+    {
+      "from": "OBSERVATION",
+      "predicate": "PROVES_PANEL_CONTEXT",
+      "to": "HUD_PANEL"
     }
   ],
   "invariants": [
@@ -609,6 +694,40 @@
       "owned_by": [
         "docs/LIVE_CERT.md"
       ]
+    },
+    {
+      "id": "BI-ONT-019",
+      "term": "PORTRAIT_FOLLOW_IS_IDENTITY_BOUND",
+      "rule": "Follow is only available for a fresh exact selected active Sim portrait with current independent cues and native host admission. Enter is one-shot center only and Shift+Enter centers the lot.",
+      "owned_by": [
+        "contracts/portrait-follow.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-020",
+      "term": "MAP_SCENE_TRAVEL_IS_GOAL_LEASED",
+      "rule": "Camera follows active Sim by default; only a verified named current goal permits bounded map viewing, after which the active Sim is reobserved and restored.",
+      "owned_by": [
+        "contracts/camera-traverse.v1.json",
+        "contracts/portrait-follow.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-021",
+      "term": "OVERLAY_CHOICE_AND_QUEUE_CONTINUITY",
+      "rule": "Career/random overlays cannot silently discard or replay action-queue goals; current independently observed choices must be ranked/admitted and clearing confirmed before resumption.",
+      "owned_by": [
+        "contracts/ui-microsystems.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-022",
+      "term": "VIEW_SCENE_DISCOVERY_IS_EVIDENCE_BOUND",
+      "rule": "Off-target viewpoints are distinct deduplicated records; review is required before reuse, and even reviewed records never grant map/click authority without fresh observations.",
+      "owned_by": [
+        "contracts/scenery-memory.v1.json",
+        "contracts/scenery-discoveries.v1.json"
+      ]
     }
   ],
   "interpretation_rules": [
@@ -681,5 +800,17 @@
     ],
     "control_boundary": "No semantic advisory score, learned preference, goal priority, or emergency label grants CONTROL_PERMIT.",
     "scales": "sim, household, world or future actor scope are optional, extensible labels; no central actor class is exclusive."
+  },
+  "semantic_viewpoint_extension": {
+    "revision": 3,
+    "created_for": "P95/P124_AGENT_CAMERA_AND_HUD_REFINEMENT_20261109",
+    "distinction": "GAME_SCENE_NOT_EQUAL_VIEW_SCENE_NOT_EQUAL_HUD_PANEL",
+    "camera_default": "FOLLOW_ACTIVE_SIM_VIA_VERIFIED_PORTRAIT_RIGHT_CLICK",
+    "evidence": "OFFLINE_CONTRACTS_NOT_LIVE_SIMS_PROOF",
+    "canonical_owners": [
+      "contracts/portrait-follow.v1.json",
+      "contracts/scenery-memory.v1.json",
+      "contracts/ui-microsystems.v1.json"
+    ]
   }
 }
