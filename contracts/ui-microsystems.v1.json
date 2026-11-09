@@ -351,6 +351,14 @@
     "decision_first": true,
     "unknown_event_close": false,
     "dismiss_only_when": "EXPLICIT_RESOLVED_DECISION_AND_ATTESTED_DISMISS_HITBOX",
-    "action_queue": "SUSPEND_REFS_AND_REVALIDATE_AFTER_OVERLAY_DISAPPEARS"
+    "action_queue": "SUSPEND_REFS_AND_REVALIDATE_AFTER_OVERLAY_DISAPPEARS",
+    "decision_score_owner": "betterinstincts.decision_eval.score_option",
+    "choice_evidence": "CURRENT_CAPTURE_TWO_INDEPENDENT_CHOICE_CUES_AND_ALL_EXACT_OPTION_RECTANGLES",
+    "choice_vocabulary": "EXISTING_SAFE_TAGS_AND_RISK_TAGS",
+    "rank_requirement": "UNIQUE_POSITIVE_SCORE_OR_REVIEW",
+    "native_choice_port": "betterinstincts.scene_ui_semantics.enqueue_native_overlay_choice",
+    "choice_automation_authority": "EXPLICIT_CURRENT_SESSION_AUTO_CHOICE_AUTHORIZATION",
+    "choice_after_effect": "NEW_OVERLAY_OR_ABSENT_CAPTURE_BEFORE_DISMISS_OR_QUEUE_RESUME",
+    "queue_continuation": "PRESERVE_GOAL_AND_PENDING_REFS;REVALIDATE_EACH_AFTER_OVERLAY"
   }
 }
