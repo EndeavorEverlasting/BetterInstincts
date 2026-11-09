@@ -118,7 +118,8 @@ class TeenHomeworkTests(unittest.TestCase):
             inventory_has_homework=True,
         )
         self.assertEqual(report["gate"], "HOMEWORK_STUDY_SCAN_REQUIRED")
-        self.assertIsNone(report["primary_route"])
+        self.assertEqual(report["primary_route"], "SCAN_LOT_FOR_STUDY_STATION")
+        self.assertNotIn("DO_HOMEWORK", report["preferred_routes"])
         self.assertFalse(report["queue_budget"]["enqueue_allowed"])
 
     def test_homework_after_needs_queue(self):
