@@ -26,7 +26,9 @@
     "betterinstincts/camera_traverse.py",
     "contracts/camera-traverse.v1.json",
     "contracts/glossary.v1.json",
-    "scripts/win32_input.py"
+    "scripts/win32_input.py",
+    "betterinstincts/host_stack.py",
+    "betterinstincts/host_listener.py"
   ],
   "invariants_checked": [
     "BI-ONT-001",
@@ -55,7 +57,7 @@
   "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
   "evidence_ceiling": "OFFLINE_EDGE_INTERACTION_POLICY_NOT_LIVE_CAMERA_PAN_CERTIFIED",
   "player_save_control_impact": "Pure host policy only. A verified UI-edge click remains a candidate subject to independent exact-session scene/save/player/admission controls; never seize a player-owned cursor. Unattended host edge dwell must end with safe interior parking. No Sims input, gameplay state, saves, builds, purchases, or runtime agent launched by this change.",
-  "expected_outcome": "One canonical machine-readable interpretation of screen edge across host policy, CLI, glossary, docs and tests: transient HUD interaction allowed, unknown world-edge interactions withheld, host idle edge parking requires safe rest, player-owned pointer yields, and observed camera-motion context requires new capture/revision.",
+  "expected_outcome": "One canonical machine-readable interpretation of screen edge across host policy, CLI, glossary, docs and tests: transient HUD interaction allowed, unknown world-edge interactions withheld, host idle edge parking requires safe rest, player-owned pointer yields, and observed camera-motion context requires new capture/revision. Existing host_stack priority and opt-in host_listener observation path pass explicit pointer phase, prevent player-owned cursor rest, and expose edge-click host admission rather than falling through to needs.",
   "negative_tests": [
     "Exact 48px threshold and corners on arbitrary client dimensions, not desktop pixel origin",
     "Verified HUD edge click is transient and requires post-click safe rest, without granting execution",
@@ -64,7 +66,8 @@
     "Player-owned pointer never receives automatic host park",
     "Off-client, unknown phase, bool/noninteger coordinates fail closed",
     "Camera movement and post-click stale frame require recapture",
-    "Existing camera traverse, world targeting and Win32 mouse primitives retain their contracts"
+    "Existing camera traverse, world targeting and Win32 mouse primitives retain their contracts",
+    "Host stack and listener preserve explicit edge click intent and player-owned pointer yield before needs/camera rest."
   ],
   "rollback_path": "Revert the isolated feature PR on GitHub; no local game or save modifications were performed.",
   "unresolved_unknowns": [
@@ -80,7 +83,9 @@
     "docs/CAMERA_TRAVERSE.md",
     "docs/LIVE_CERT.md",
     "docs/LEDGER.md",
-    "docs/PROMPT_INVOCATIONS.md"
+    "docs/PROMPT_INVOCATIONS.md",
+    "betterinstincts/host_stack.py",
+    "betterinstincts/host_listener.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
 }
