@@ -1,0 +1,70 @@
+{
+  "schema": "betterinstincts.household-judgment/v1",
+  "version": 1,
+  "authority": [
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/DIY_SKILL_FORCE.md"
+  ],
+  "active_task": "HOUSEHOLD_SKILL_ROUND_ROBIN",
+  "fixed_scope": "Level target skills to 10 on the observed original N household portraits; no household expansion or unrelated navigation",
+  "roster": {
+    "source": "locally_observed_live_portraits",
+    "min": 1,
+    "sanity_max": 100,
+    "stable_order_required": true,
+    "first_portrait_selected_before_start": true,
+    "changes": "STOP_AND_RECONCILE",
+    "no_synthetic_members": true
+  },
+  "execution": {
+    "model": "SINGLE_FOREGROUND_SERIAL_UI_OWNER",
+    "detached_worker": false,
+    "parallel_game_inputs": false,
+    "skill_order": "SKILL_MAJOR_THEN_PORTRAIT_MINOR",
+    "panel_proof": "LOCAL_OBSERVED_REQUIRED_FOR_PASS",
+    "dispatch_receipt_is_not_pass": true
+  },
+  "forbidden_online_actions": [
+    "CONNECT",
+    "CONNECT_ONLINE",
+    "EA_CONNECT",
+    "OPEN_GALLERY",
+    "OPEN_ONLINE_GALLERY",
+    "DOWNLOAD_HOUSEHOLD",
+    "OPEN_STORE",
+    "FORCE_SIMS_ONLINE",
+    "ENABLE_ONLINE_FEATURES",
+    "ONLINE_LOGIN",
+    "READ_FAQ"
+  ],
+  "forbidden_skill_task_actions": [
+    "ADD_SIM",
+    "CREATE_SIM",
+    "ADD_SERVO",
+    "CREATE_SERVO",
+    "CAS_ADD_SIM",
+    "ADOPT_SIM",
+    "MOVE_IN_SIM",
+    "MERGE_HOUSEHOLDS",
+    "SPLIT_HOUSEHOLD",
+    "INVITE_NEW_MEMBER",
+    "HOUSEHOLD_EXPANSION",
+    "BUILD_BUY_MUTATE",
+    "BUY_OBJECT",
+    "DELETE_OBJECT",
+    "DELETE_SIM"
+  ],
+  "allowed_skill_task_actions": [
+    "SET_SKILL_LEVEL",
+    "SELECT_NEXT_HOUSEHOLD_SIM",
+    "OPEN_SKILLS_PANEL",
+    "CLOSE_SKILLS_PANEL",
+    "PLAY_BRIEF_OBSERVE_REPAUSE",
+    "PAUSE_GAME",
+    "STAY_OFFLINE"
+  ],
+  "fail_closed_on_unknown_action": true,
+  "allow_stay_offline_only_during_connection_gate": true,
+  "proof_ceiling": "OFFLINE_GUARD_PLAN_NOT_UI_INTERCEPTION_NOT_GAME_PROOF"
+}
