@@ -19,6 +19,17 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
 | P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools + countertop mechanics (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
 
+## 2026-11-09 upgrade-parts spam-buy for Gardener-Bot (P95 + P124 + Trifecta)
+
+Resolved **P95 — Program Design & Call-Stack Prototype Architect** and
+**P124 — Repository Code Readability & Structural Refactorer**. **W24** did not
+resolve in the pinned TokenCorridor catalog; holistic factoring/commit role
+carried by P124 + Trifecta P07. **P95** selects `UPGRADE_PARTS_FORCE`
+(computer Order spam-buy + workstation Spawn Crafting Supplies). Consultation:
+`contracts/consultations/BI-UPGRADE-PARTS-SPAM-BUY-20261109.v1.json`. **P82**
+offline falsifiers in `tests/test_upgrade_parts_force.py`; **P08** live
+inventory delta remains OPEN.
+
 ## 2026-11-09 skill-force trait OK + keybd typing (P95 + Trifecta)
 
 **P95/P124** keep one `diy_skill_force` owner: v3 adds `ACCEPT_OFFERED_REWARD_TRAIT`

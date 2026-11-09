@@ -427,6 +427,29 @@
         "scripts/diy_skill_force.py"
       ]
     },
+    "UPGRADE_PARTS_FORCE": {
+      "definition": "Host planner that spam-buys named upgrade parts (especially Robot Salvage Parts) via Computer Order → Purchase Upgrade Parts, or lab-bulk Spawns Crafting Supplies after testingcheats. Sibling to DIY_SKILL_FORCE; pocket inventory only; never gsi_create_obj hex or BI-002 closure.",
+      "owners": [
+        "contracts/upgrade-parts-force.v1.json",
+        "docs/UPGRADE_PARTS_FORCE.md",
+        "betterinstincts/upgrade_parts_force.py",
+        "scripts/upgrade_parts_force.py"
+      ]
+    },
+    "COMPUTER_PURCHASE_UPGRADE_PARTS": {
+      "definition": "Vanilla Live path: any computer → Order → Purchase Upgrade Parts → select Robot Salvage Parts (or sibling upgrade part); delivers to Sim pocket inventory. Default spam-buy path for Gardener-Bot Tune Up.",
+      "owners": [
+        "contracts/upgrade-parts-force.v1.json",
+        "docs/UPGRADE_PARTS_FORCE.md"
+      ]
+    },
+    "ROBOT_SALVAGE_PARTS": {
+      "definition": "Discover University robotics crafting/tune-up material. Observed Tune Up miss: 4 units. Buy via COMPUTER_PURCHASE_UPGRADE_PARTS or bulk via workstation Spawn Crafting Supplies.",
+      "owners": [
+        "contracts/upgrade-parts-force.v1.json",
+        "docs/UPGRADE_PARTS_FORCE.md"
+      ]
+    },
     "ACCEPT_OFFERED_REWARD_TRAIT": {
       "definition": "During DIY_SKILL_FORCE execute, press Enter and primary OK hotspot for offered skill-mastery / reward-trait dialogs (e.g. Perfectionist-style). Never Cancel; not aspiration life-state, invite OK, or CAS quiz Okay.",
       "owners": [
