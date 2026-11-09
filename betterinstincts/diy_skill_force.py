@@ -1,9 +1,10 @@
-"""DIY skill-force planner for Handiness / Robotics / Fabrication / Programming.
+"""Skill-force planner: DIY maker set plus full adult unlock catalog.
 
 P95 stack: soft-focus Sims → Ctrl+Shift+C → testingcheats enabled true →
-stats.set_skill_level <stat> <N> for each resolved DIY skill. Mode-agnostic;
+stats.set_skill_level <stat> <N> for each resolved skill. Mode-agnostic;
 never force F1 while the operator builds.
 
+Bundles: diy_maker / servo_core / creative / social / athletic / full_unlock.
 Library plans only; scripts/diy_skill_force.py owns SendInput. Never edits
 saves. Never authorizes practice_skill or BI-005 skill-growth certification.
 """
@@ -15,7 +16,7 @@ from typing import Mapping, Optional, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "diy-skill-force.v1.json"
-MAX_BYTES = 48_000
+MAX_BYTES = 96_000
 
 
 class DiySkillForceError(ValueError):
@@ -49,6 +50,11 @@ def load_contract(path: Path = CONTRACT) -> dict:
     bundles = cfg.get("bundles")
     if not isinstance(bundles, dict) or "diy_maker" not in bundles:
         raise DiySkillForceError("DIY_MAKER_BUNDLE_REQUIRED")
+    if "full_unlock" not in bundles:
+        raise DiySkillForceError("FULL_UNLOCK_BUNDLE_REQUIRED")
+    full_ids = list((bundles["full_unlock"] or {}).get("skill_ids") or [])
+    if "handiness" not in full_ids or "cooking" not in full_ids or "logic" not in full_ids:
+        raise DiySkillForceError("FULL_UNLOCK_CORE_SKILLS_REQUIRED")
     return cfg
 
 
@@ -107,8 +113,9 @@ def resolve_skills(
         for sid in skill_ids:
             _add(str(sid))
     if not ordered:
-        # Default operator bundle when nothing named.
-        for sid in (cfg["bundles"]["diy_maker"].get("skill_ids") or []):
+        # All-the-way unlock is the operator default when nothing is named.
+        default_bundle = "full_unlock" if "full_unlock" in cfg["bundles"] else "diy_maker"
+        for sid in (cfg["bundles"][default_bundle].get("skill_ids") or []):
             _add(str(sid))
     return [index[sid] for sid in ordered]
 
