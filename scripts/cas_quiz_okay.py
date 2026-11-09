@@ -17,7 +17,17 @@ import time
 OKAY_CLICK = (1271, 257)  # offline-calibrated from PrintWindow CAS quiz bitmap
 
 
-def click_okay(process_id: int | None, delay_s: float) -> dict:
+def click_okay(
+    process_id: int | None,
+    delay_s: float,
+    point: tuple[int, int] | None = None,
+) -> dict:
+    """Detached SendInput click; `point` defaults to the CAS Okay! control.
+
+    Other callers (scripts.school_attend_click) pass an explicit, gated point so
+    there is one native click owner. The result is dispatch-only proof.
+    """
+    click_point = OKAY_CLICK if point is None else (int(point[0]), int(point[1]))
     if sys.platform != "win32":
         raise RuntimeError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
     import ctypes
@@ -83,7 +93,7 @@ def click_okay(process_id: int | None, delay_s: float) -> dict:
 
     sx = user32.GetSystemMetrics(0)
     sy = user32.GetSystemMetrics(1)
-    x, y = OKAY_CLICK
+    x, y = click_point
     ax = int(x * 65535 / (sx - 1))
     ay = int(y * 65535 / (sy - 1))
 
@@ -100,7 +110,7 @@ def click_okay(process_id: int | None, delay_s: float) -> dict:
         "state": "OKAY_CLICK_DISPATCHED",
         "process_id": pid,
         "hwnd": hwnd,
-        "click": list(OKAY_CLICK),
+        "click": list(click_point),
         "iconic_after": bool(user32.IsIconic(hwnd)),
         "proof_ceiling": "CLICK_DISPATCH_ONLY_VERIFY_WITH_PRINTWINDOW",
     }

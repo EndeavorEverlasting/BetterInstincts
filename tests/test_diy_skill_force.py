@@ -5,12 +5,17 @@ from pathlib import Path
 from betterinstincts.diy_skill_force import (
     DiySkillForceError,
     catalog_snapshot,
+    classify_reward_trait,
     completed_skill_ids_for_member,
     completion_member_key,
+    decide_reward_dialog,
     empty_completion_ledger,
+    evaluate_ui_action,
     load_contract,
     plan_household_skill_force,
     plan_skill_force,
+    plan_trait_repair,
+    trait_repair_commands,
     record_skill_dispatched,
     required_residual_skills,
     resolve_skills,
@@ -578,6 +583,206 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(plan["state"], "HOUSEHOLD_SKILL_FORCE_PLAN_READY")
         self.assertEqual(plan["cells_needing_work"], 1)
         self.assertFalse(plan["max_level_verified_by_ledger"])
+
+
+class ServoEvilEscapeRegressionTests(unittest.TestCase):
+    """P62 falsifiers for the 2026-11-09 new-Servo Evil / Escape / laundry incident."""
+
+    # (1) Evil reward -> never ACCEPT / never Enter or OK
+    def test_evil_reward_is_never_accepted(self):
+        for observed, text in (
+            ("trait_Evil", None),
+            ("Evil", None),
+            ("TRAIT_EVIL", None),
+            (None, "Mastery reward: you have become Evil"),
+            ("trait evil", "Accept this trait?"),
+        ):
+            d = decide_reward_dialog(observed, dialog_text=text)
+            self.assertEqual(d["decision"], "ESCAPE_CANCEL_DIALOG", msg=(observed, text))
+            self.assertFalse(d["accept"])
+            self.assertEqual(d["allowed_keys"], ["ESCAPE"])
+            self.assertIn("ENTER", d["forbidden_keys"])
+            self.assertIn("OK_CLICK", d["forbidden_keys"])
+            self.assertEqual(d["classification"]["trait_id"], "trait_Evil")
+        # Unclassified dialogs HOLD: no Enter, no OK, no Cancel.
+        held = decide_reward_dialog(None)
+        self.assertEqual(held["decision"], "HOLD")
+        self.assertFalse(held["accept"])
+        self.assertEqual(held["allowed_keys"], [])
+        # A benign trait is not misclassified by substring (devil-ish words).
+        self.assertEqual(classify_reward_trait("trait_Creative")["class"], "OTHER")
+        self.assertEqual(classify_reward_trait(None, dialog_text="medieval armor")["class"], "OTHER")
+
+    def test_reward_plan_step_and_cli_guard_refuse_blind_ok(self):
+        import scripts.diy_skill_force as cli
+        from unittest.mock import patch
+
+        plan = plan_skill_force(bundle="diy_maker", game_mode="live")
+        step = next(s for s in plan["steps"] if s["step"] == "ACCEPT_OFFERED_REWARD_TRAIT")
+        self.assertTrue(step["refuse_blind_ok"])
+        self.assertIn("trait_Evil", step["forbidden_reward_traits"])
+        self.assertEqual(step["harmful_trait_action"], "ESCAPE_CANCEL_DIALOG")
+        self.assertTrue(step["never_press_cancel"])  # benign traits: still never Cancel
+        with patch("scripts.win32_input.send_click") as click, patch(
+            "scripts.win32_input.tap_vk"
+        ) as tap, patch("scripts.win32_input.send_vk", create=True) as send_vk:
+            refused = cli._accept_offered_reward_trait(step, hwnd=1, observed_trait="trait_Evil")
+            blind = cli._accept_offered_reward_trait(step, hwnd=1)
+        self.assertEqual(refused["state"], "HARMFUL_REWARD_TRAIT_REFUSED")
+        self.assertEqual(refused["recommended_action"], "ESCAPE_CANCEL_DIALOG")
+        self.assertEqual(refused["actions"], [])
+        self.assertEqual(blind["state"], "NEEDS_DIALOG_IDENTIFICATION")
+        self.assertEqual(blind["actions"], [])
+        click.assert_not_called()
+        tap.assert_not_called()
+        send_vk.assert_not_called()
+
+    def test_contract_pins_evil_guard_and_load_fails_closed_without_it(self):
+        import copy
+        import tempfile
+
+        cfg = load_contract()
+        reward = cfg["inject_sequence"]["reward_dialog_accept"]
+        self.assertTrue(reward["refuse_blind_ok"])
+        self.assertEqual(reward["forbidden_reward_traits"], ["trait_Evil"])
+        self.assertEqual(reward["harmful_trait_action"], "ESCAPE_CANCEL_DIALOG")
+        self.assertIn("blind_ok_harmful_reward_trait", cfg["inject_sequence"]["forbidden"])
+        self.assertIn("never_blind_ok_evil_or_harmful_reward_trait", cfg["invariants"])
+        for mutate, code in (
+            (lambda c: c["inject_sequence"]["reward_dialog_accept"].__setitem__("refuse_blind_ok", False),
+             "REWARD_REFUSE_BLIND_OK_REQUIRED"),
+            (lambda c: c["inject_sequence"]["reward_dialog_accept"].__setitem__("forbidden_reward_traits", []),
+             "REWARD_FORBID_EVIL_REQUIRED"),
+            (lambda c: c["trait_repair"].__setitem__("default_remove_trait_ids", ["trait_Evil", "trait_Good"]),
+             "TRAIT_REPAIR_DEFAULT_REMOVE_EVIL_ONLY_REQUIRED"),
+            (lambda c: c["trait_repair"]["optional_equip_good"].__setitem__("requires_operator_request", False),
+             "TRAIT_REPAIR_GOOD_REQUIRES_OPERATOR_REQUEST"),
+            (lambda c: c["ui_forbids"]["escape_as_household_traverse_close"].__setitem__("forbidden", False),
+             "UI_FORBID_ESCAPE_TRAVERSE_CLOSE_REQUIRED"),
+            (lambda c: c["ui_forbids"]["create_or_activate_new_servo"].__setitem__(
+                "forbidden_without_operator_consent", False),
+             "UI_FORBID_NEW_SERVO_CONSENT_REQUIRED"),
+        ):
+            weakened = copy.deepcopy(cfg)
+            mutate(weakened)
+            with tempfile.TemporaryDirectory() as td:
+                path = Path(td) / "weak.json"
+                path.write_text(json.dumps(weakened), encoding="utf-8")
+                with self.assertRaisesRegex(DiySkillForceError, code):
+                    load_contract(path)
+
+    # (2) trait_repair plan emits remove Evil (and only that by default)
+    def test_trait_repair_default_plan_removes_evil_only(self):
+        plan = plan_trait_repair(game_mode="live")
+        self.assertEqual(plan["state"], "TRAIT_REPAIR_PLAN_READY")
+        self.assertFalse(plan["execute_allowed"])
+        self.assertEqual(plan["remove_trait_ids"], ["trait_Evil"])
+        self.assertEqual(plan["equip_trait_ids"], [])
+        cmds = trait_repair_commands(plan)
+        self.assertEqual(cmds[0], "testingcheats enabled true")
+        self.assertIn("traits.remove_trait trait_Evil", cmds)
+        self.assertFalse(any(c.startswith("traits.equip_trait") for c in cmds))
+        names = [s["step"] for s in plan["steps"]]
+        self.assertIn("REQUIRE_ACTIVE_SIM_SELECTION", names)
+        close = next(s for s in plan["steps"] if s["step"] == "CLOSE_CHEAT_CONSOLE")
+        self.assertEqual(close["key"], "CTRL_SHIFT_C_TOGGLE")
+        self.assertFalse(
+            any(str(s.get("key") or "").upper() in {"ESCAPE", "ESC"} for s in plan["steps"])
+        )
+        self.assertIn("OBSERVE_TRAIT_REMOVED", names)
+
+    def test_trait_repair_aliases_good_gate_and_unknown_traits(self):
+        for alias in ("evil", "Evil", "trait_evil", "TRAIT_EVIL", "trait_Evil"):
+            plan = plan_trait_repair(remove_traits=[alias])
+            self.assertEqual(plan["remove_trait_ids"], ["trait_Evil"], msg=alias)
+        dup = plan_trait_repair(remove_traits=["evil", "trait_Evil"])
+        self.assertEqual(dup["remove_trait_ids"], ["trait_Evil"])
+        with self.assertRaisesRegex(DiySkillForceError, "GOOD_TRAIT_REQUIRES_OPERATOR_REQUEST"):
+            plan_trait_repair(equip_good=True)
+        good = plan_trait_repair(equip_good=True, operator_requested_good=True)
+        self.assertIn("traits.equip_trait trait_Good", trait_repair_commands(good))
+        self.assertIn("traits.remove_trait trait_Evil", trait_repair_commands(good))
+        # operator_requested_good alone (no equip_good) never equips
+        self.assertEqual(plan_trait_repair(operator_requested_good=True)["equip_trait_ids"], [])
+        with self.assertRaisesRegex(DiySkillForceError, "TRAIT_NOT_REPAIRABLE"):
+            plan_trait_repair(remove_traits=["trait_Genius"])
+        self.assertEqual(plan_trait_repair(player_directed=True)["state"], "YIELD_TO_PLAYER")
+
+    # (3) Escape forbidden as household-traverse console close
+    def test_escape_forbidden_as_household_traverse_close(self):
+        for ctx in ("household_traverse", "console close", "CLOSE_CHEAT_CONSOLE", "skill_force"):
+            v = evaluate_ui_action("ESCAPE", context=ctx)
+            self.assertFalse(v["allowed"], msg=ctx)
+            self.assertEqual(v["reason"], "ESCAPE_AS_HOUSEHOLD_TRAVERSE_CLOSE_FORBIDDEN")
+            self.assertEqual(v["use_instead"], "CTRL_SHIFT_C_TOGGLE")
+        spam = evaluate_ui_action("ESCAPE", context="cas", repeat_count=3)
+        self.assertFalse(spam["allowed"])
+        self.assertIn("TRAVEL_MAP_OR_MENU", spam["reason"])
+        self.assertFalse(evaluate_ui_action("ESCAPE", context="mystery")["allowed"])
+        # One deliberate Escape-cancel of an observed dialog remains allowed.
+        self.assertTrue(evaluate_ui_action("ESCAPE", context="reward_dialog")["allowed"])
+        # No generated household plan closes with Escape.
+        hh = plan_household_skill_force(members=3, bundle="servo_core", game_mode="live")
+        self.assertEqual(hh["household_traverse"]["next_member_key"], "SPACE")
+        self.assertTrue(hh["ui_forbids"]["escape_as_household_traverse_close"]["forbidden"])
+        for unit in hh["dispatch_units"]:
+            for step in (unit["plan"] or {}).get("steps") or []:
+                if step.get("step") == "CLOSE_CHEAT_CONSOLE":
+                    self.assertEqual(step["key"], "CTRL_SHIFT_C_TOGGLE")
+        self.assertIn("escape_as_household_traverse_close", catalog_snapshot()["forbidden"])
+        self.assertIn("escape_spam", catalog_snapshot()["forbidden"])
+
+    # (4) new-Servo activate forbidden without explicit consent
+    def test_new_servo_activate_forbidden_without_consent(self):
+        for act in ("ACTIVATE_NEW_SERVO", "create new servo", "CREATE_NEW_SIM"):
+            v = evaluate_ui_action(act)
+            self.assertFalse(v["allowed"], msg=act)
+            self.assertEqual(v["reason"], "NEW_SERVO_CREATE_ACTIVATE_REQUIRES_OPERATOR_CONSENT")
+        cancel = evaluate_ui_action("ACTIVATE_NEW_SERVO", escape_cancel_requested=True)
+        self.assertFalse(cancel["allowed"])
+        self.assertEqual(cancel["use_instead"], "ESCAPE_CANCEL_CAS")
+        # Consent does not override an explicit Escape-cancel request.
+        self.assertFalse(
+            evaluate_ui_action(
+                "ACTIVATE_NEW_SERVO", operator_consent=True, escape_cancel_requested=True
+            )["allowed"]
+        )
+        self.assertTrue(evaluate_ui_action("ACTIVATE_NEW_SERVO", operator_consent=True)["allowed"])
+        # CAS gender Continue is the incident path.
+        for act in ("CAS_CONTINUE", "CAS_GENDER_CONTINUE"):
+            blocked = evaluate_ui_action(act, escape_cancel_requested=True, operator_consent=True)
+            self.assertFalse(blocked["allowed"], msg=act)
+            self.assertEqual(blocked["reason"], "CAS_CONTINUE_FORBIDDEN_WHEN_ESCAPE_CANCEL_REQUESTED")
+            self.assertFalse(evaluate_ui_action(act)["allowed"])
+        self.assertFalse(evaluate_ui_action("EQUIP_TRAIT_GOOD")["allowed"])
+        self.assertTrue(evaluate_ui_action("EQUIP_TRAIT_GOOD", operator_requested_good=True)["allowed"])
+        self.assertFalse(evaluate_ui_action("BLIND_OK_REWARD_TRAIT")["allowed"])
+
+    def test_cli_trait_repair_reward_and_ui_check(self):
+        import io
+        from contextlib import redirect_stdout
+
+        import scripts.diy_skill_force as cli
+
+        def run(argv):
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                code = cli.main(argv)
+            return code, json.loads(buf.getvalue())
+
+        code, out = run(["trait-repair"])
+        self.assertEqual(code, 0)
+        self.assertIn("traits.remove_trait trait_Evil", out["commands"])
+        self.assertFalse(out["execute"])
+        code, out = run(["reward-check", "--trait", "trait_Evil"])
+        self.assertEqual(code, 0)
+        self.assertEqual(out["decision"]["decision"], "ESCAPE_CANCEL_DIALOG")
+        code, out = run(["ui-check", "--action", "ESCAPE", "--context", "household_traverse"])
+        self.assertEqual(code, 0)
+        self.assertFalse(out["verdict"]["allowed"])
+        code, out = run(["trait-repair", "--equip-good"])
+        self.assertEqual(code, 2)
+        self.assertIn("GOOD_TRAIT_REQUIRES_OPERATOR_REQUEST", out["reason"])
 
 
 if __name__ == "__main__":

@@ -102,3 +102,20 @@ The original task is **skill across a fixed household**, not `create a Sim`, `cr
 **Important evidence limit:** the GitHub-hosted planner cannot read real-time Sims portrait IDs. The CLI receives operator/local-agent `--roster-key` attestations and does not itself recapture IDs after each Space. Local Cursor/Win32 adapters must observe the selection and roster for P08 validation. Invariant `fixed N` is guaranteed for planned target slots, **not proven against on-screen changes** until actual runtime observation. A typed cheat and completion ledger `DISPATCHED` are weaker than Skills-panel `LOCAL_OBSERVED` and never certify level 10 by themselves. No other autonomy microservice or player-directed activity is disabled by this task-specific foreground restriction.
 
 **Individual-cell clarification:** `plan_skill_force` now returns `SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED` (not `ALREADY_MAXED`) when its requested skills are merely recorded in the ledger. Its execute skip path is input-free, including no cursor park. These names are proof states, not assurances that the Sims game kept level 10 after reload.
+
+## Trait safety, Escape forbids and trait repair (2026-11-09 Servo Evil incident)
+
+A prior agent activated a NEW male Servo (CAS gender Continue) when the operator wanted Escape-cancel; the Servo became Evil and caused laundry fires. Same owner, no second trait daemon (contract v10):
+
+- **Reward dialogs never blind-OK Evil/harmful traits.** `decide_reward_dialog` / `classify_reward_trait`: Evil (id `trait_Evil`, aliases `evil`, `trait_evil`, `Evil`, or "evil" in the observed dialog text) -> `ESCAPE_CANCEL_DIALOG` (Escape on that one observed dialog; never Enter, never an OK click); unclassified -> `HOLD`. `ACCEPT_OFFERED_REWARD_TRAIT` plan steps carry `refuse_blind_ok`, `forbidden_reward_traits` and `harmful_trait_action`; the executor still dispatches no reward-dialog input. Benign mastery traits keep `never_press_cancel`.
+- **`trait_repair` plan (selected Sim):** `python -m scripts.diy_skill_force trait-repair` -> `testingcheats enabled true` -> `traits.remove_trait trait_Evil` -> Ctrl+Shift+C close -> `OBSERVE_TRAIT_REMOVED`. Default removes Evil only; `traits.equip_trait trait_Good` is emitted only with `--equip-good --operator-requested-good`. Other trait ids fail closed (`TRAIT_NOT_REPAIRABLE`). Evaluate-only (`execute_allowed=false`); the console id is community-documented and needs LOCAL_OBSERVED on the installed build.
+- **`ui_forbids` / `evaluate_ui_action` (`ui-check` CLI):** Escape is never the household-traverse / console close (use **Ctrl+Shift+C**) and is never spammed (opens the Travel map / pause MENU); creating or activating a new Servo needs explicit operator consent; CAS gender **Continue** is forbidden once Escape-cancel was requested; `trait_Good` needs an operator request. Decision catalog: `cas.servo.create_continue_vs_escape_cancel` (Escape-cancel unless `new_servo_consent`); `school.attend.join_or_send_alone` forces **Send Alone** under host work (`host_work_active`).
+- **Fire risk:** see `docs/HOUSEHOLD_UPKEEP.md` (repair/tune before laundry autonomy; Lint-Less / clean lint / clothesline).
+
+```text
+python -m scripts.diy_skill_force trait-repair
+python -m scripts.diy_skill_force reward-check --trait trait_Evil
+python -m scripts.diy_skill_force ui-check --action ESCAPE --context household_traverse
+```
+
+**Live gates still open (LOCAL_OBSERVED required, no PASS claimed):** trait removal on the selected Sim; household skill force with Skills-panel read after PLAY_BRIEF_OBSERVE_REPAUSE; Send Alone dialog. Proof ceiling `OFFLINE_REGRESSION_GUARDS_NOT_LIVE_TRAIT_REMOVE_OR_SKILLS_PANEL_PASS`.

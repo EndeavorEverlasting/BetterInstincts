@@ -51,6 +51,32 @@
     "skill_force_bundle": "servo_core",
     "notes": "Conservative Robotics floor for peer Servo Tune Up/Repair proposals. Exact live menu unlocks remain observation-gated. HUMAN helpers stay preferred when available. SOCIALIZE_SERVO and PAY_BILLS remain HUMAN-only."
   },
+  "servo_fire_risk": {
+    "incident": "2026-11-09: a Servo with low Durability plus laundry (dryer lint) caused fires",
+    "durability_gate": "Servo BROKEN or durability <= servo_thresholds.durability_critical blocks laundry autonomy until Repair/Tune Up is done and reobserved; unverified durability holds laundry autonomy (unknown -> no action)",
+    "block_laundry_when": ["BROKEN", "CRITICAL_DURABILITY", "DURABILITY_UNVERIFIED", "STALE_OBSERVATION"],
+    "prerequisite_actions": ["REPAIR_SERVO", "TUNE_UP_SERVO"],
+    "dryer_policy": {
+      "clean_lint_trap_before_each_dryer_run": true,
+      "lint_less_upgrade": "Lint-Less (Handiness dryer upgrade) removes the lint-fire risk",
+      "lint_less_requires": "Handiness upgrade availability is observation-gated (pack/skill dependent)",
+      "unsupervised_dryer": "FORBIDDEN_UNLESS_LINT_LESS_INSTALLED"
+    },
+    "clothesline_preferred_when_unsupervised": true,
+    "default_supervised": false,
+    "states": [
+      "BLOCKED_REPAIR_FIRST",
+      "HOLD_DURABILITY_UNVERIFIED",
+      "HOLD_REOBSERVE_STALE",
+      "USE_CLOTHESLINE",
+      "DRYER_ALLOWED_LINT_LESS",
+      "CLEAN_LINT_THEN_DRYER_SUPERVISED",
+      "DRYER_ALLOWED_SUPERVISED_LINT_CLEAN",
+      "HOLD_UNSUPERVISED_NO_LINT_LESS",
+      "NOT_APPLICABLE_NO_SERVOS"
+    ],
+    "proof_ceiling": "OFFLINE_SERVO_FIRE_POLICY_NOT_LIVE_FIRE_PREVENTION_PROOF"
+  },
   "safety": {
     "never_override_player_queue": true,
     "never_add_while_human_survival_critical": true,

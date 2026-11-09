@@ -49,6 +49,14 @@ def load_contract() -> dict:
         raise HouseholdUpkeepError("UPKEEP_DURABILITY_THRESHOLDS_INVALID")
     if not thresholds["charge_critical"] < thresholds["charge_watch"]:
         raise HouseholdUpkeepError("UPKEEP_CHARGE_THRESHOLDS_INVALID")
+    fire = cfg.get("servo_fire_risk")
+    if not isinstance(fire, Mapping) or fire.get("clothesline_preferred_when_unsupervised") is not True:
+        raise HouseholdUpkeepError("UPKEEP_FIRE_RISK_POLICY_REQUIRED")
+    dryer = fire.get("dryer_policy") or {}
+    if (not isinstance(dryer, Mapping)
+            or dryer.get("clean_lint_trap_before_each_dryer_run") is not True
+            or dryer.get("unsupervised_dryer") != "FORBIDDEN_UNLESS_LINT_LESS_INSTALLED"):
+        raise HouseholdUpkeepError("UPKEEP_FIRE_RISK_DRYER_POLICY_REQUIRED")
     return cfg
 
 
@@ -213,6 +221,87 @@ def _validate(visit: Mapping) -> tuple[list[dict], list[dict], list[dict], Mappi
     return cleaned_servos, cleaned_actors, cleaned_actions, bill
 
 
+LINT_STATES = {"CLEAN", "DIRTY", "UNKNOWN"}
+LINT_LESS_STATES = {"INSTALLED", "NOT_INSTALLED", "UNKNOWN"}
+
+
+def _validate_laundry(laundry: object) -> dict | None:
+    if laundry is None:
+        return None
+    if not isinstance(laundry, Mapping):
+        raise HouseholdUpkeepError("UPKEEP_LAUNDRY_INVALID")
+    if "supervised" in laundry and not _bool(laundry["supervised"]):
+        raise HouseholdUpkeepError("UPKEEP_LAUNDRY_SUPERVISED_INVALID")
+    if "clothesline_available" in laundry and not _bool(laundry["clothesline_available"]):
+        raise HouseholdUpkeepError("UPKEEP_LAUNDRY_CLOTHESLINE_INVALID")
+    if laundry.get("dryer_lint_state", "UNKNOWN") not in LINT_STATES:
+        raise HouseholdUpkeepError("UPKEEP_LAUNDRY_LINT_STATE_INVALID")
+    if laundry.get("lint_less", "UNKNOWN") not in LINT_LESS_STATES:
+        raise HouseholdUpkeepError("UPKEEP_LAUNDRY_LINT_LESS_INVALID")
+    return dict(laundry)
+
+
+def _laundry_policy(
+    servo_health: list[dict],
+    laundry: Mapping | None,
+    *,
+    fresh: bool,
+    cfg: Mapping,
+    levels: Mapping,
+    prerequisite: str | None,
+) -> dict:
+    """Servo-household laundry/fire gate. Advisory; never an execution authority.
+
+    Durability gates first (repair/tune before laundry autonomy), then the
+    clothesline-over-dryer preference when unsupervised, then dryer lint rules.
+    """
+    fire = cfg["servo_fire_risk"]
+    base = {
+        "schema": "betterinstincts.household-upkeep-laundry/v1",
+        "incident": fire["incident"],
+        "preference_order": ["CLOTHESLINE", "DRYER_LINT_LESS", "DRYER_SUPERVISED_CLEAN_LINT"],
+        "prerequisite_action": prerequisite,
+        "dispatch_authorized": False,
+        "proof_ceiling": fire["proof_ceiling"],
+    }
+    if not servo_health:
+        return {**base, "state": "NOT_APPLICABLE_NO_SERVOS", "laundry_autonomy": "NOT_APPLICABLE",
+                "action": "NO_SERVO_FIRE_POLICY"}
+    unsafe = [h for h in servo_health
+              if h["health"] == "BROKEN"
+              or (h["needs_verified"] and h["needs"].get("durability", 1) <= levels["durability_critical"])]
+    unverified = [h for h in servo_health if not h["needs_verified"]]
+    if unsafe:
+        return {**base, "state": "BLOCKED_REPAIR_FIRST", "laundry_autonomy": "BLOCKED",
+                "action": "REPAIR_OR_TUNE_UP_SERVO_THEN_REOBSERVE_BEFORE_LAUNDRY",
+                "blocking_servos": [h["servo_ref"] for h in unsafe]}
+    if unverified:
+        return {**base, "state": "HOLD_DURABILITY_UNVERIFIED", "laundry_autonomy": "HOLD",
+                "action": "OBSERVE_SERVO_DURABILITY_BEFORE_LAUNDRY",
+                "blocking_servos": [h["servo_ref"] for h in unverified]}
+    if not fresh:
+        return {**base, "state": "HOLD_REOBSERVE_STALE", "laundry_autonomy": "HOLD",
+                "action": "REOBSERVE_BEFORE_LAUNDRY"}
+    obs = laundry or {}
+    supervised = obs.get("supervised", fire.get("default_supervised", False)) is True
+    lint = obs.get("dryer_lint_state", "UNKNOWN")
+    lint_less = obs.get("lint_less", "UNKNOWN")
+    line = obs.get("clothesline_available") is True
+    allowed = {**base, "laundry_autonomy": "ALLOWED_WITH_FIRE_POLICY"}
+    if not supervised and line:
+        return {**allowed, "state": "USE_CLOTHESLINE", "action": "PREFER_CLOTHESLINE_OVER_DRYER_UNSUPERVISED"}
+    if lint_less == "INSTALLED":
+        return {**allowed, "state": "DRYER_ALLOWED_LINT_LESS", "action": "DRYER_OK_LINT_LESS_INSTALLED"}
+    if not supervised:
+        return {**allowed, "laundry_autonomy": "HOLD", "state": "HOLD_UNSUPERVISED_NO_LINT_LESS",
+                "action": "NO_UNSUPERVISED_DRYER_BUILD_CLOTHESLINE_OR_INSTALL_LINT_LESS_HANDINESS_UPGRADE"}
+    if lint != "CLEAN":
+        return {**allowed, "state": "CLEAN_LINT_THEN_DRYER_SUPERVISED",
+                "action": "CLEAN_LINT_TRAP_THEN_REOBSERVE_THEN_SUPERVISED_DRYER"}
+    return {**allowed, "state": "DRYER_ALLOWED_SUPERVISED_LINT_CLEAN",
+            "action": "SUPERVISED_DRYER_WITH_CLEAN_LINT_TRAP"}
+
+
 def evaluate_household_upkeep(
     observation: Mapping,
     *,
@@ -330,6 +419,13 @@ def evaluate_household_upkeep(
                 amount=amount,
             ))
     result["candidate_count"] = len(candidates)
+    maint = sorted((c for c in candidates if c["action_id"] in PEER_MAINTENANCE),
+                   key=lambda c: (c["rank"], c["target_ref"], c["action_id"]))
+    result["laundry_policy"] = _laundry_policy(
+        result["servo_health"], _validate_laundry(observation.get("laundry")),
+        fresh=fresh, cfg=cfg, levels=levels,
+        prerequisite=maint[0]["action_id"] if maint else None,
+    )
 
     def finish(gate: str, action: str) -> dict:
         result.update(gate=gate, action=action)

@@ -12,10 +12,18 @@ never force F1 while the operator builds.
 Bundles: diy_maker / servo_core / creative / social / athletic / residual_core /
 full_unlock. Library plans only; scripts/diy_skill_force.py owns typing + OK
 accept + foreground serial household executor. Never edits saves. Never practice_skill / BI-005.
+
+Trait safety (2026-11-09 Evil/laundry-fire incident, same owner — no trait daemon):
+classify_reward_trait / decide_reward_dialog never blind-OK Evil or other harmful
+reward traits (ESCAPE_CANCEL_DIALOG or HOLD only); plan_trait_repair emits
+``traits.remove_trait trait_Evil`` for the selected Sim (equip trait_Good only on
+explicit operator request); evaluate_ui_action encodes the Escape / new-Servo /
+CAS-Continue forbids. All library plans: execute_allowed=False.
 """
 from __future__ import annotations
 
 import json
+import re
 import time
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
@@ -289,7 +297,405 @@ def load_contract(path: Path = CONTRACT) -> dict:
         raise DiySkillForceError("DETACHED_HOUSEHOLD_EXECUTION_FORBIDDEN")
     if (cfg.get("execution_policy") or {}).get("model") != "SINGLE_FOREGROUND_SERIAL_UI_OWNER":
         raise DiySkillForceError("HOUSEHOLD_FOREGROUND_SERIAL_OWNER_REQUIRED")
+    _validate_trait_safety(cfg)
     return cfg
+
+
+def _validate_trait_safety(cfg: Mapping[str, object]) -> None:
+    """Fail closed if the durable Evil / Escape / new-Servo guards are weakened."""
+    seq = cfg.get("inject_sequence") or {}
+    reward = (seq.get("reward_dialog_accept") or {}) if isinstance(seq, Mapping) else {}
+    if not isinstance(reward, Mapping) or reward.get("refuse_blind_ok") is not True:
+        raise DiySkillForceError("REWARD_REFUSE_BLIND_OK_REQUIRED")
+    if "trait_Evil" not in list(reward.get("forbidden_reward_traits") or []):
+        raise DiySkillForceError("REWARD_FORBID_EVIL_REQUIRED")
+    if reward.get("harmful_trait_action") != "ESCAPE_CANCEL_DIALOG":
+        raise DiySkillForceError("REWARD_HARMFUL_ACTION_ESCAPE_CANCEL_REQUIRED")
+    safety = cfg.get("trait_safety")
+    if not isinstance(safety, Mapping) or safety.get("refuse_blind_ok") is not True:
+        raise DiySkillForceError("TRAIT_SAFETY_REQUIRED")
+    if "trait_Evil" not in list(safety.get("forbidden_reward_traits") or []):
+        raise DiySkillForceError("TRAIT_SAFETY_EVIL_REQUIRED")
+    repair = cfg.get("trait_repair")
+    if not isinstance(repair, Mapping):
+        raise DiySkillForceError("TRAIT_REPAIR_REQUIRED")
+    if list(repair.get("default_remove_trait_ids") or []) != ["trait_Evil"]:
+        raise DiySkillForceError("TRAIT_REPAIR_DEFAULT_REMOVE_EVIL_ONLY_REQUIRED")
+    good = repair.get("optional_equip_good") or {}
+    if not isinstance(good, Mapping) or good.get("requires_operator_request") is not True:
+        raise DiySkillForceError("TRAIT_REPAIR_GOOD_REQUIRES_OPERATOR_REQUEST")
+    if repair.get("execute_allowed") is not False:
+        raise DiySkillForceError("TRAIT_REPAIR_EXECUTE_MUST_BE_FALSE")
+    forbids = cfg.get("ui_forbids")
+    if not isinstance(forbids, Mapping):
+        raise DiySkillForceError("UI_FORBIDS_REQUIRED")
+    esc = forbids.get("escape_as_household_traverse_close") or {}
+    if not isinstance(esc, Mapping) or esc.get("forbidden") is not True:
+        raise DiySkillForceError("UI_FORBID_ESCAPE_TRAVERSE_CLOSE_REQUIRED")
+    if (forbids.get("escape_spam") or {}).get("forbidden") is not True:
+        raise DiySkillForceError("UI_FORBID_ESCAPE_SPAM_REQUIRED")
+    servo = forbids.get("create_or_activate_new_servo") or {}
+    if not isinstance(servo, Mapping) or servo.get("forbidden_without_operator_consent") is not True:
+        raise DiySkillForceError("UI_FORBID_NEW_SERVO_CONSENT_REQUIRED")
+    if (forbids.get("cas_continue_when_escape_cancel_requested") or {}).get("forbidden") is not True:
+        raise DiySkillForceError("UI_FORBID_CAS_CONTINUE_REQUIRED")
+
+
+def _trait_key(value: object) -> str:
+    return str(value or "").strip().lower().replace(" ", "_")
+
+
+def _forbidden_trait_keys(cfg: Mapping[str, object]) -> dict[str, str]:
+    """lower-case alias/id -> canonical forbidden trait id."""
+    safety = cfg.get("trait_safety") or {}
+    reward = ((cfg.get("inject_sequence") or {}).get("reward_dialog_accept") or {})
+    out: dict[str, str] = {}
+    for tid in list(safety.get("forbidden_reward_traits") or []) + list(
+        reward.get("forbidden_reward_traits") or []
+    ):
+        out[_trait_key(tid)] = str(tid)
+    aliases = safety.get("aliases") or {}
+    if isinstance(aliases, Mapping):
+        for canon, names in aliases.items():
+            out[_trait_key(canon)] = str(canon)
+            for name in names or []:
+                out[_trait_key(name)] = str(canon)
+    for name in reward.get("forbidden_reward_trait_aliases") or []:
+        key = _trait_key(name)
+        out.setdefault(key, "trait_Evil" if "evil" in key else str(name))
+    return out
+
+
+def classify_reward_trait(
+    observed: object = None,
+    *,
+    dialog_text: object = None,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Classify an observed reward/trait id or dialog text. Offline; no input.
+
+    HARMFUL: id/alias matches a forbidden trait, or text contains a harmful
+    label token (e.g. "evil"). UNKNOWN: nothing observed. OTHER: observed but
+    not harmful — still never auto-OK'd here (decide_reward_dialog owns that).
+    """
+    cfg = cfg or load_contract()
+    keys = _forbidden_trait_keys(cfg)
+    tokens = [
+        _trait_key(t)
+        for t in ((cfg.get("trait_safety") or {}).get("harmful_label_tokens") or [])
+        if str(t).strip()
+    ]
+    obs = _trait_key(observed)
+    text = str(dialog_text or "").lower()
+    if not obs and not text.strip():
+        return {"class": "UNKNOWN", "trait_id": None, "reason": "NO_OBSERVATION"}
+    if obs in keys:
+        return {"class": "HARMFUL", "trait_id": keys[obs], "reason": "FORBIDDEN_TRAIT_ID"}
+    haystack = " ".join(w for w in (obs.replace("_", " "), text) if w)
+    for token in tokens:
+        if token and re.search(r"\b" + re.escape(token.replace("_", " ")) + r"\b", haystack):
+            return {
+                "class": "HARMFUL",
+                "trait_id": keys.get(token, "trait_Evil" if token == "evil" else token),
+                "reason": "HARMFUL_LABEL_TOKEN:" + token,
+            }
+    return {"class": "OTHER", "trait_id": obs or None, "reason": "NOT_FORBIDDEN"}
+
+
+def decide_reward_dialog(
+    observed: object = None,
+    *,
+    dialog_text: object = None,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Reward-dialog policy. Never ACCEPT an Evil/harmful trait; never blind-OK.
+
+    Harmful -> ESCAPE_CANCEL_DIALOG (Escape on that one observed dialog only).
+    Unknown/unclassified -> HOLD. Other observed rewards -> ACCEPT_ELIGIBLE,
+    which still requires the owning one-step adapter and a fresh observation.
+    """
+    cfg = cfg or load_contract()
+    reward = ((cfg.get("inject_sequence") or {}).get("reward_dialog_accept") or {})
+    verdict = classify_reward_trait(observed, dialog_text=dialog_text, cfg=cfg)
+    never = list(reward.get("harmful_trait_never_keys") or ["ENTER", "OK_CLICK"])
+    base = {
+        "classification": verdict,
+        "refuse_blind_ok": True,
+        "forbidden_keys": never,
+        "proof_ceiling": "OFFLINE_REWARD_TRAIT_POLICY_NOT_LIVE_DIALOG_OBSERVATION",
+    }
+    if verdict["class"] == "HARMFUL":
+        return {
+            **base,
+            "decision": "ESCAPE_CANCEL_DIALOG",
+            "accept": False,
+            "allowed_keys": ["ESCAPE"],
+            "scope": "THIS_OBSERVED_DIALOG_ONLY",
+            "note": "Harmful reward trait: cancel the dialog; never Enter/OK. Escape is not a console or traverse close.",
+        }
+    if verdict["class"] == "UNKNOWN":
+        return {
+            **base,
+            "decision": "HOLD",
+            "accept": False,
+            "allowed_keys": [],
+            "state": "NEEDS_DIALOG_IDENTIFICATION",
+            "note": "No classified dialog: no Enter, no OK click, no Cancel.",
+        }
+    return {
+        **base,
+        "decision": "ACCEPT_ELIGIBLE",
+        "accept": True,
+        "allowed_keys": [str(reward.get("primary_confirm_key") or "ENTER")],
+        "note": "Non-harmful observed reward; owning one-step adapter must still verify the fresh dialog.",
+    }
+
+
+def _canonical_repair_trait(trait: object, cfg: Mapping[str, object]) -> str:
+    repair = cfg.get("trait_repair") or {}
+    repairable = {str(t) for t in repair.get("repairable_trait_ids") or []}
+    key = _trait_key(trait)
+    lookup = {_trait_key(t): str(t) for t in repairable}
+    aliases = repair.get("aliases") or {}
+    if isinstance(aliases, Mapping):
+        for canon, names in aliases.items():
+            if str(canon) in repairable:
+                for name in names or []:
+                    lookup[_trait_key(name)] = str(canon)
+    if key not in lookup:
+        raise DiySkillForceError("TRAIT_NOT_REPAIRABLE:" + str(trait))
+    return lookup[key]
+
+
+def plan_trait_repair(
+    *,
+    remove_traits: Optional[Sequence[str]] = None,
+    equip_good: bool = False,
+    operator_requested_good: bool = False,
+    player_directed: bool = False,
+    game_mode: str = "unknown",
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Console plan for the selected Sim: remove Evil (default), optional Good.
+
+    ``traits.equip_trait trait_Good`` is emitted ONLY when the operator asked for
+    it (equip_good AND operator_requested_good). Evaluate-only; no live execute.
+    """
+    cfg = cfg or load_contract()
+    repair = cfg["trait_repair"]
+    if player_directed:
+        return {
+            "state": "YIELD_TO_PLAYER",
+            "next_gate": "YIELD_TO_PLAYER",
+            "steps": [],
+            "execute_allowed": False,
+            "proof_ceiling": repair["proof_ceiling"],
+        }
+    seq = cfg["inject_sequence"]
+    mode = str(game_mode or "unknown").lower()
+    allowed = {str(m) for m in (seq.get("allowed_modes") or [])}
+    if allowed and mode not in allowed:
+        raise DiySkillForceError("UNSUPPORTED_GAME_MODE")
+    names = list(remove_traits) if remove_traits else list(repair["default_remove_trait_ids"])
+    canon: list[str] = []
+    for name in names:
+        tid = _canonical_repair_trait(name, cfg)
+        if tid not in canon:
+            canon.append(tid)
+    good_cfg = repair.get("optional_equip_good") or {}
+    good_id = str(good_cfg.get("trait_id") or "trait_Good")
+    if equip_good and not operator_requested_good:
+        raise DiySkillForceError("GOOD_TRAIT_REQUIRES_OPERATOR_REQUEST")
+    steps: list[dict] = [
+        {
+            "step": "REQUIRE_FOREGROUND_SIMS",
+            "required": True,
+            "note": "Soft focus only; never force F1",
+        },
+        {
+            "step": "REQUIRE_ACTIVE_SIM_SELECTION",
+            "required": True,
+            "note": "Select the Sim that has the unwanted trait; commands apply to the selected Sim only. Do NOT create or activate a new Sim.",
+        },
+        {
+            "step": "OPEN_CHEAT_CONSOLE",
+            "chord": list(repair.get("open_console_chord") or seq["open_console_chord"]),
+            "chord_label": "Ctrl+Shift+C",
+            "required": True,
+        },
+        {
+            "step": "ACTIVATE_TESTING_CHEATS",
+            "command": seq["activate_testing_cheats"],
+            "alias": seq.get("activate_testing_cheats_alias"),
+            "required": True,
+        },
+    ]
+    removed: list[str] = []
+    for tid in canon:
+        cmd = str(repair["remove_command_template"]).format(trait_id=tid)
+        steps.append({"step": "REMOVE_TRAIT", "command": cmd, "trait_id": tid, "required": True})
+        removed.append(tid)
+    equipped: list[str] = []
+    if equip_good and operator_requested_good:
+        cmd = str(repair["equip_command_template"]).format(trait_id=good_id)
+        steps.append(
+            {
+                "step": "EQUIP_TRAIT",
+                "command": cmd,
+                "trait_id": good_id,
+                "required": True,
+                "operator_requested": True,
+            }
+        )
+        equipped.append(good_id)
+    steps.append(
+        {
+            "step": "CLOSE_CHEAT_CONSOLE",
+            "key": repair.get("close_console_key") or seq["close_console_key"],
+            "required": True,
+            "note": "Ctrl+Shift+C toggle — never Escape (opens Travel map / pause MENU)",
+        }
+    )
+    steps.append(
+        {
+            "step": "OBSERVE_TRAIT_REMOVED",
+            "required": True,
+            "note": "LOCAL_OBSERVED trait gone on the selected Sim (CAS/Traits panel) before any PASS claim",
+        }
+    )
+    return {
+        "state": "TRAIT_REPAIR_PLAN_READY",
+        "next_gate": "OPERATOR_OR_LOCAL_AGENT_EXECUTE_AFTER_SELECTION_VERIFIED",
+        "game_mode": mode,
+        "mode_agnostic": True,
+        "remove_trait_ids": removed,
+        "equip_trait_ids": equipped,
+        "operator_requested_good": bool(operator_requested_good and equip_good),
+        "open_console": "Ctrl+Shift+C",
+        "steps": steps,
+        "forbidden": list(seq.get("forbidden") or []),
+        "ui_forbids": dict(cfg.get("ui_forbids") or {}),
+        "execute_allowed": False,
+        "live_gate": repair["live_gate"],
+        "proof_ceiling": repair["proof_ceiling"],
+        "not_bi005": True,
+        "not_practice_skill": True,
+    }
+
+
+def trait_repair_commands(plan: Mapping[str, object]) -> list[str]:
+    """Flatten a trait-repair plan to console lines (testingcheats first)."""
+    out: list[str] = []
+    for step in plan.get("steps") or []:
+        if isinstance(step, Mapping) and isinstance(step.get("command"), str):
+            out.append(step["command"].strip())
+    if not out or out[0] != "testingcheats enabled true":
+        raise DiySkillForceError("PLAN_MUST_START_WITH_TESTINGCHEATS_ENABLED_TRUE")
+    if not any(c.startswith("traits.remove_trait ") for c in out[1:]):
+        raise DiySkillForceError("PLAN_MISSING_TRAIT_REMOVE")
+    return out
+
+
+_ESCAPE_ACTIONS = frozenset({"ESCAPE", "ESC", "PRESS_ESCAPE", "TAP_ESCAPE"})
+_NEW_SERVO_ACTIONS = frozenset(
+    {
+        "ACTIVATE_NEW_SERVO",
+        "CREATE_NEW_SERVO",
+        "CREATE_NEW_SIM",
+        "ACTIVATE_NEW_SIM",
+        "PLAY_NEW_SERVO",
+    }
+)
+
+
+def evaluate_ui_action(
+    action: str,
+    *,
+    context: str = "",
+    operator_consent: bool = False,
+    escape_cancel_requested: bool = False,
+    operator_requested_good: bool = False,
+    repeat_count: int = 1,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Offline verdict for a proposed UI action. Never dispatches input.
+
+    Encodes: Escape is never the household-traverse / console close (use
+    Ctrl+Shift+C); Escape spam opens the Travel map / pause MENU; creating or
+    activating a new Servo needs explicit operator consent; CAS Continue is
+    forbidden once Escape-cancel was requested; trait_Good needs an operator ask.
+    """
+    cfg = cfg or load_contract()
+    forbids = cfg["ui_forbids"]
+    act = str(action or "").strip().upper().replace(" ", "_")
+    ctx = str(context or "").strip().upper().replace(" ", "_")
+
+    def verdict(allowed: bool, reason: str, **extra: object) -> dict:
+        return {
+            "action": act,
+            "context": ctx,
+            "allowed": allowed,
+            "reason": reason,
+            "proof_ceiling": forbids.get("proof_ceiling"),
+            **extra,
+        }
+
+    if act in _ESCAPE_ACTIONS:
+        if int(repeat_count) > 1 or ctx in {"SPAM", "ESCAPE_SPAM"}:
+            return verdict(
+                False,
+                "ESCAPE_SPAM_FORBIDDEN_OPENS_TRAVEL_MAP_OR_MENU",
+                use_instead="ONE_ESCAPE_CANCEL_OF_OBSERVED_DIALOG_OR_CTRL_SHIFT_C",
+            )
+        if ctx in {
+            "HOUSEHOLD_TRAVERSE",
+            "HOUSEHOLD_TRAVERSE_CLOSE",
+            "CONSOLE_CLOSE",
+            "CLOSE_CHEAT_CONSOLE",
+            "SKILL_FORCE",
+        }:
+            return verdict(
+                False,
+                "ESCAPE_AS_HOUSEHOLD_TRAVERSE_CLOSE_FORBIDDEN",
+                use_instead=str(
+                    (forbids.get("escape_as_household_traverse_close") or {}).get("use_instead")
+                    or "CTRL_SHIFT_C_TOGGLE"
+                ),
+            )
+        if ctx in {"CAS", "REWARD_DIALOG", "OBSERVED_DIALOG", "CANCEL_DIALOG"}:
+            return verdict(True, "ESCAPE_CANCEL_OF_OBSERVED_DIALOG_ONLY", scope="ONE_PRESS")
+        return verdict(False, "ESCAPE_CONTEXT_UNIDENTIFIED_HOLD", use_instead="HOLD")
+    if act in _NEW_SERVO_ACTIONS:
+        if not operator_consent:
+            return verdict(
+                False,
+                "NEW_SERVO_CREATE_ACTIVATE_REQUIRES_OPERATOR_CONSENT",
+                use_instead="ESCAPE_CANCEL_CAS" if escape_cancel_requested else "HOLD",
+            )
+        if escape_cancel_requested:
+            return verdict(False, "ESCAPE_CANCEL_REQUESTED_CONFLICTS_WITH_NEW_SERVO", use_instead="ESCAPE_CANCEL_CAS")
+        return verdict(True, "OPERATOR_CONSENTED_NEW_SERVO")
+    if act in {"CAS_CONTINUE", "CAS_GENDER_CONTINUE", "CAS_GENDER_SELECT_CONTINUE"}:
+        if escape_cancel_requested:
+            return verdict(
+                False,
+                "CAS_CONTINUE_FORBIDDEN_WHEN_ESCAPE_CANCEL_REQUESTED",
+                use_instead="ESCAPE_CANCEL_CAS",
+            )
+        if not operator_consent:
+            return verdict(
+                False,
+                "CAS_CONTINUE_REQUIRES_OPERATOR_CONSENT_FOR_NEW_SIM",
+                use_instead="HOLD",
+            )
+        return verdict(True, "OPERATOR_CONSENTED_CAS_CONTINUE")
+    if act in {"EQUIP_TRAIT_GOOD", "EQUIP_GOOD_TRAIT"}:
+        if not operator_requested_good:
+            return verdict(False, "GOOD_TRAIT_REQUIRES_OPERATOR_REQUEST")
+        return verdict(True, "OPERATOR_REQUESTED_GOOD_TRAIT")
+    if act in {"ENTER_ON_REWARD_DIALOG", "OK_CLICK_REWARD_DIALOG", "BLIND_OK_REWARD_TRAIT"}:
+        return verdict(False, "BLIND_OK_REWARD_TRAIT_FORBIDDEN", use_instead="decide_reward_dialog")
+    return verdict(True, "NOT_COVERED_BY_UI_FORBIDS")
 
 
 def required_residual_skills(cfg: Optional[dict] = None) -> list[str]:
@@ -321,6 +727,9 @@ def catalog_snapshot(cfg: Optional[dict] = None) -> dict:
         },
         "proof_ceiling": cfg["proof_ceiling"],
         "forbidden": list(seq.get("forbidden") or []),
+        "trait_safety": dict(cfg.get("trait_safety") or {}),
+        "trait_repair": dict(cfg.get("trait_repair") or {}),
+        "ui_forbids": dict(cfg.get("ui_forbids") or {}),
     }
 
 
@@ -495,7 +904,15 @@ def plan_skill_force(
         "ok_click_client_fractions": list(
             reward.get("ok_click_client_fractions") or [[0.50, 0.72]]
         ),
-        "note": "Operator-authorized OK on offered mastery/reward traits; never Cancel",
+        "refuse_blind_ok": True,
+        "forbidden_reward_traits": list(reward.get("forbidden_reward_traits") or []),
+        "harmful_trait_action": str(reward.get("harmful_trait_action") or "ESCAPE_CANCEL_DIALOG"),
+        "harmful_trait_fallback_action": str(reward.get("harmful_trait_fallback_action") or "HOLD"),
+        "policy_owner": "betterinstincts.diy_skill_force.decide_reward_dialog",
+        "note": (
+            "Only a fresh classified non-harmful mastery/reward trait may be OK'd; "
+            "Evil/harmful -> ESCAPE_CANCEL_DIALOG or HOLD, never Enter/OK; benign traits never Cancel"
+        ),
     }
     steps = [
         {
@@ -628,6 +1045,8 @@ def plan_skill_force(
         "steps": steps,
         "forbidden": list(seq.get("forbidden") or []),
         "invariants": list(cfg.get("invariants") or []),
+        "ui_forbids": dict(cfg.get("ui_forbids") or {}),
+        "trait_safety": dict(cfg.get("trait_safety") or {}),
         "execute_allowed": False,
         "proof_ceiling": cfg["proof_ceiling"],
         "not_bi005": True,
@@ -847,6 +1266,8 @@ def plan_household_skill_force(
         "skills_panel_observation": probe.get("skills_panel_observation"),
         "keep_paused_default": True,
         "forbidden": probe.get("forbidden"),
+        "ui_forbids": probe.get("ui_forbids"),
+        "trait_safety": probe.get("trait_safety"),
         "invariants": probe.get("invariants"),
         "execute_allowed": False,
         "proof_ceiling": probe.get("proof_ceiling"),

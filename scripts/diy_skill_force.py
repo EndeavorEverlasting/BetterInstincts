@@ -15,7 +15,16 @@ Household: --members N (observed portrait count) → skill-round-robin:
 Typing owner: scripts.win32_input.type_text (keybd_event). Evaluate-only unless
 --execute. Disposable lab only; never edits saves. Not BI-005.
 
+Trait safety (2026-11-09 Servo Evil incident): reward dialogs classified Evil/harmful
+are never Enter/OK'd (ESCAPE_CANCEL_DIALOG or HOLD). trait-repair plans
+`traits.remove_trait trait_Evil` for the selected Sim (evaluate-only). Escape is never
+the household-traverse / console close (Ctrl+Shift+C) and never spammed (opens
+Travel map / pause MENU); never create/activate a new Servo without operator consent.
+
 Examples:
+  python -m scripts.diy_skill_force trait-repair
+  python -m scripts.diy_skill_force reward-check --trait trait_Evil
+  python -m scripts.diy_skill_force ui-check --action ESCAPE --context household_traverse
   python -m scripts.diy_skill_force catalog
   python -m scripts.diy_skill_force plan --bundle full_unlock
   python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID
@@ -41,6 +50,10 @@ from betterinstincts.diy_skill_force import (
     DiySkillForceError,
     catalog_snapshot,
     completed_skill_ids_for_member,
+    decide_reward_dialog,
+    plan_trait_repair,
+    trait_repair_commands,
+    evaluate_ui_action,
     completion_member_key,
     default_completion_ledger_path,
     empty_completion_ledger,
@@ -242,20 +255,45 @@ def _play_brief_observe_repause(
     }
 
 
-def _accept_offered_reward_trait(step: dict, *, hwnd: int) -> dict:
+def _accept_offered_reward_trait(
+    step: dict,
+    *,
+    hwnd: int,
+    observed_trait: str | None = None,
+    dialog_text: str | None = None,
+) -> dict:
     """Never dispatch unverified Enter/OK presses into arbitrary dialogs.
 
     Skill upgrades can surface preference Yes/No, occult, unrelated rewards,
     or no dialog at all. A fresh observation must reach its owning one-step
     adapter before UI input is authorized.
+
+    Evil / harmful reward traits are NEVER blind-OK'd (2026-11-09 Servo Evil
+    incident): when classified harmful the policy decision is ESCAPE_CANCEL_DIALOG
+    (reported, not dispatched here); unclassified dialogs HOLD.
     """
     if step.get("never_press_cancel") is False:
         raise GateError("REWARD_TRAIT_CANCEL_FORBIDDEN")
+    decision = decide_reward_dialog(observed_trait, dialog_text=dialog_text)
+    if decision["decision"] == "ESCAPE_CANCEL_DIALOG":
+        return {
+            "step": "ACCEPT_OFFERED_REWARD_TRAIT",
+            "state": "HARMFUL_REWARD_TRAIT_REFUSED",
+            "actions": [],
+            "never_press_cancel": True,
+            "refuse_blind_ok": True,
+            "decision": decision,
+            "recommended_action": "ESCAPE_CANCEL_DIALOG",
+            "next": "ONE_ESCAPE_CANCEL_OF_OBSERVED_DIALOG_BY_OWNING_ADAPTER_NEVER_ENTER_OR_OK",
+            "proof_ceiling": "NO_REWARD_DIALOG_INPUT_DISPATCHED",
+        }
     return {
         "step": "ACCEPT_OFFERED_REWARD_TRAIT",
         "state": "NEEDS_DIALOG_IDENTIFICATION",
         "actions": [],
         "never_press_cancel": True,
+        "refuse_blind_ok": True,
+        "decision": decision,
         "next": "REOBSERVE_AND_CLASSIFY_REWARD_OR_PREFERENCE_PROMPT",
         "proof_ceiling": "NO_REWARD_DIALOG_INPUT_DISPATCHED",
     }
@@ -813,6 +851,40 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip ACCEPT_OFFERED_REWARD_TRAIT steps",
     )
 
+    tr = sub.add_parser(
+        "trait-repair",
+        help="Evaluate-only console plan: traits.remove_trait trait_Evil on the selected Sim",
+    )
+    tr.add_argument("--trait", action="append", default=[], help="Trait id/alias to remove (default trait_Evil)")
+    tr.add_argument("--equip-good", action="store_true", help="Also equip trait_Good (needs --operator-requested-good)")
+    tr.add_argument(
+        "--operator-requested-good",
+        action="store_true",
+        help="Operator explicitly asked for trait_Good; default repair removes Evil only",
+    )
+    tr.add_argument("--game-mode", default="unknown")
+    tr.add_argument("--receipt", type=Path, default=None)
+
+    rc = sub.add_parser(
+        "reward-check",
+        help="Offline reward-dialog policy: Evil/harmful -> ESCAPE_CANCEL_DIALOG, never Enter/OK",
+    )
+    rc.add_argument("--trait", default=None, help="Observed reward trait id/label")
+    rc.add_argument("--text", default=None, help="Observed dialog text")
+    rc.add_argument("--receipt", type=Path, default=None)
+
+    uc = sub.add_parser(
+        "ui-check",
+        help="Offline verdict for Escape / new-Servo / CAS-Continue / trait_Good actions",
+    )
+    uc.add_argument("--action", required=True)
+    uc.add_argument("--context", default="")
+    uc.add_argument("--operator-consent", action="store_true")
+    uc.add_argument("--escape-cancel-requested", action="store_true")
+    uc.add_argument("--operator-requested-good", action="store_true")
+    uc.add_argument("--repeat-count", type=int, default=1)
+    uc.add_argument("--receipt", type=Path, default=None)
+
     lv = sub.add_parser("level")
     _add_common_execute_flags(lv)
 
@@ -838,6 +910,35 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "catalog":
             result = catalog_snapshot()
+        elif args.command == "trait-repair":
+            plan = plan_trait_repair(
+                remove_traits=list(args.trait) or None,
+                equip_good=bool(args.equip_good),
+                operator_requested_good=bool(args.operator_requested_good),
+                game_mode=args.game_mode,
+            )
+            result = {
+                "plan": plan,
+                "commands": trait_repair_commands(plan),
+                "execute": False,
+            }
+        elif args.command == "reward-check":
+            result = {
+                "decision": decide_reward_dialog(args.trait, dialog_text=args.text),
+                "execute": False,
+            }
+        elif args.command == "ui-check":
+            result = {
+                "verdict": evaluate_ui_action(
+                    args.action,
+                    context=args.context,
+                    operator_consent=bool(args.operator_consent),
+                    escape_cancel_requested=bool(args.escape_cancel_requested),
+                    operator_requested_good=bool(args.operator_requested_good),
+                    repeat_count=int(args.repeat_count),
+                ),
+                "execute": False,
+            }
         elif args.command == "household":
             if args.detach:
                 raise GateError("DETACHED_HOUSEHOLD_UI_UNSAFE_USE_FOREGROUND_SERIAL")

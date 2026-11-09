@@ -57,9 +57,91 @@
         "funds_critical",
         "funds_low",
         "home_objects_incomplete",
-        "prefer_home_control"
+        "prefer_home_control",
+        "host_work_active"
       ],
-      "notes": "LOCAL_OBSERVED RCA 2026-11-07: Joining Charlee at Copperdale under unfinished home + critical needs/funds stranded the host off-lot, blocked sleep/eat objects, burned money, and collapsed the lab life. Send Alone is mandatory under crisis — keep Bargain Bend under host control."
+      "notes": "LOCAL_OBSERVED RCA 2026-11-07: Joining Charlee at Copperdale under unfinished home + critical needs/funds stranded the host off-lot, blocked sleep/eat objects, burned money, and collapsed the lab life. Send Alone is mandatory under crisis — keep Bargain Bend under host control.",
+      "hit_targets": {
+        "status": "PROVISIONAL_UNCALIBRATED_REQUIRES_MEASURED_JOIN_Y",
+        "owner": "betterinstincts/school_attend_click.py",
+        "coordinate_space": {
+          "kind": "SCREEN_PIXELS",
+          "reference_client": [1920, 1080],
+          "origin": "top_left"
+        },
+        "layout_model": {
+          "kind": "VERTICAL_STACK_RELATIVE",
+          "order_top_to_bottom": ["join", "send_alone"],
+          "modal_center_x": 960,
+          "provisional_join_y": 600,
+          "pill_half_width": 140,
+          "pill_half_height": 22,
+          "gap_px": 56,
+          "send_alone_y_formula": "join_y + gap_px",
+          "invariant": "send_alone box top is STRICTLY BELOW join box bottom",
+          "provisional_note": "provisional_join_y is the point proven (2026-11-09 RCA) to lie INSIDE the Join pill; it is a placeholder, not a calibrated center. Execution requires a PrintWindow/operator-measured join_y."
+        },
+        "join": {"option_id": "join", "role": "FORBIDDEN_TARGET_WHEN_HOST_WORK_ACTIVE"},
+        "send_alone": {"option_id": "send_alone", "role": "INTENDED_TARGET", "must_be_strictly_below": "join"},
+        "legacy": {
+          "send_alone_screen_xy": [960, 600],
+          "status": "SUPERSEDED / FORBIDDEN",
+          "actual_hit": "join",
+          "rca_date": "2026-11-09",
+          "reason": "Calibrated as the Send Alone pill but actually landed on JOIN; Charlee traveled to school. Never use as a Send Alone target."
+        },
+        "post_click": {
+          "expected_lot_kind": "home",
+          "school_hud_expected": false,
+          "dialog_expected_gone": true,
+          "school_text_cues": ["school day ends", "high school free time"],
+          "observation_sources": ["PRINTWINDOW", "OPERATOR_OBSERVED"],
+          "max_observation_age_s": 60,
+          "pass_state": "SEND_ALONE_VERIFIED",
+          "fail_state": "JOIN_MISCLICK_CONFIRMED",
+          "rule": "A claimed Send Alone is never proven by intent or click dispatch; only a post-click observation of the home lot with the dialog gone and the school HUD absent proves it."
+        },
+        "executor_policy": {
+          "required": "native_sendinput_detached",
+          "reference": "scripts/cas_quiz_okay.py",
+          "forbidden": ["computer_use_overlay"],
+          "forbidden_reason": "Cursor computer-use overlay clicks do not reach the Sims UI (documented in scripts/cas_quiz_okay.py)."
+        },
+        "execute_allowed_default": false
+      }
+    },
+    {
+      "prompt_id": "cas.servo.create_continue_vs_escape_cancel",
+      "title": "CREATE A SIM / SERVO (CAS)",
+      "repeatable": true,
+      "scene_tags": ["cas", "create_a_sim", "servo", "gender", "new_sim"],
+      "narrative_tokens": [
+        "Create a Sim",
+        "Servo",
+        "gender",
+        "Male",
+        "Continue"
+      ],
+      "options": [
+        {
+          "option_id": "continue",
+          "label": "Continue",
+          "tags": ["create_new_sim", "unrequested_activation", "risk_new_servo", "host_crisis_anti_pattern"]
+        },
+        {
+          "option_id": "escape_cancel",
+          "label": "Escape (cancel CAS)",
+          "tags": ["escape_cancel", "safe", "player_choice", "host_prep"]
+        }
+      ],
+      "default_when_unknown_needs": "escape_cancel",
+      "force_option_when_present": {
+        "escape_cancel_requested": "escape_cancel"
+      },
+      "force_option_when_absent": {
+        "new_servo_consent": "escape_cancel"
+      },
+      "notes": "2026-11-09 incident: a prior agent chose gender Male + Continue and activated a NEW Servo ('mail' was the male homophone) when the operator wanted Escape-cancel; that Servo later took Evil and caused laundry fires. Continue only with explicit operator consent for a new Servo; otherwise ONE Escape-cancel of CAS (never Escape spam — repeated Escape opens the Travel map / pause MENU). Owner of the forbid: contracts/diy-skill-force.v1.json ui_forbids."
     },
     {
       "prompt_id": "host.funds.federal_subsidy",

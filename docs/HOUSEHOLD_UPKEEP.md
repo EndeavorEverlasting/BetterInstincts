@@ -54,3 +54,14 @@ One actor queue row contains action_id, origin (PLAYER/HOST/SIM_AUTONOMY/UNKNOWN
 ## P08 live proof still required
 
 The installed Sims build, real four-motive screenshot, actual eligible helper menu, exact Tune Up/Recharge/Repair effects, independent queue completion, bill UI and balance delta are not accessible from this GitHub lane. A local opt-in host runner must verify all of them under exact game version and player-idle control before any autonomous input. CI cannot certify these observations.
+
+## Servo fire-risk laundry gate (2026-11-09)
+
+Incident: a Servo with low Durability plus laundry (dryer lint) caused fires. `evaluate_household_upkeep` now returns `laundry_policy` (advisory, `dispatch_authorized=false`) from `contracts/household-upkeep.v1.json` `servo_fire_risk`:
+
+- **Durability first:** a BROKEN Servo or durability at/below `durability_critical` -> `BLOCKED_REPAIR_FIRST` (prerequisite `REPAIR_SERVO` / `TUNE_UP_SERVO`, reobserve before laundry). Unverified durability -> `HOLD_DURABILITY_UNVERIFIED`; stale capture -> `HOLD_REOBSERVE_STALE`.
+- **Clothesline over dryer when unsupervised:** `USE_CLOTHESLINE` when `laundry.clothesline_available`.
+- **Dryer lint:** unsupervised dryer is forbidden unless the Lint-Less Handiness upgrade is installed (`DRYER_ALLOWED_LINT_LESS`), otherwise `HOLD_UNSUPERVISED_NO_LINT_LESS`; a supervised dryer needs a clean lint trap (`CLEAN_LINT_THEN_DRYER_SUPERVISED`).
+- Optional observation `laundry`: `{supervised, clothesline_available, dryer_lint_state: CLEAN|DIRTY|UNKNOWN, lint_less: INSTALLED|NOT_INSTALLED|UNKNOWN}`. Missing data is treated as unsupervised/unknown (fail closed).
+
+Proof ceiling `OFFLINE_SERVO_FIRE_POLICY_NOT_LIVE_FIRE_PREVENTION_PROOF`; Lint-Less/clothesline availability is observation-gated (pack and Handiness dependent).
