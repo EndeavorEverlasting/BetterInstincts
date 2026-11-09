@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.house-state/v1",
-  "version": 2,
+  "version": 3,
   "owner": "betterinstincts/house_state.py",
   "product_contract": "Build/Buy work maintains one durable, revisioned lot environment model that accumulates observations and mutation outcomes recursively. Agents plan the next move from that model; they never wipe understanding and reassess from a blank slate after each action. Checkpoints persist the current model revision (and optional Save As) for recovery — they are continuity of understanding, not extract-from-scratch rituals.",
   "prompt": {
@@ -42,12 +42,13 @@
       "captures",
       "save_as_attestation",
       "library_checkpoint",
-      "unknowns"
+      "unknowns",
+      "library_checkpoint.lot_inventory"
     ],
     "library_checkpoint": {
       "module": "betterinstincts/build_library_checkpoint.py",
       "contract": "contracts/build-library-checkpoint.v1.json",
-      "rule": "admit_mutation must LIBRARY_ADMIT before room/structure leases; Save As is not a substitute"
+      "rule": "All Build/Buy purchases, placements, inventory moves, deletions and structural edits require a current, readback-verified whole-lot floor/room census, an operator-attested pre-change My Library building save, and matching exact revision; no agent exception"
     },
     "entity_kinds": [
       "DINING_TABLE",
@@ -117,7 +118,14 @@
     "MOVE_HOUSE_OR_ROOM",
     "MULTI_OBJECT_REARRANGE",
     "WALL_ROOM_TOOL",
-    "SAVE_TO_LIBRARY"
+    "SAVE_TO_LIBRARY",
+    "BUY_FROM_CATALOG",
+    "PURCHASE_BUILD_OBJECT",
+    "SELL_OBJECT",
+    "DELETE_ROOM",
+    "DELETE_FLOOR",
+    "REPLACE_ROOM",
+    "REPLACE_FLOOR"
   ],
   "non_mutating_allowed_without_lease": [
     "CAMERA_PAN_ZOOM",
@@ -173,7 +181,10 @@
     "MUTATE_WITHOUT_BUILD_INTEGRITY",
     "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
     "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
-    "SLEDGE_WALLS_WITHOUT_LIBRARY_SAVE"
+    "SLEDGE_WALLS_WITHOUT_LIBRARY_SAVE",
+    "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP",
+    "PURCHASE_WITHOUT_FULL_LOT_BACKUP",
+    "UNSCANNED_SECOND_FLOOR_MUTATION"
   ],
   "storage": {
     "root": "dist/house-state/",
@@ -190,6 +201,6 @@
     "never": "Overwrite a known-good play save with a rearranged wreckage session",
     "model_after_load": "Seed a new model revision from the loaded save; do not pretend prior wreckage model is still authoritative"
   },
-  "proof_ceiling": "OFFLINE_RECURSIVE_LOT_MODEL_NOT_EA_SAVE_API_NOT_LOT_RESTORE_PROOF",
+  "proof_ceiling": "OFFLINE_RECURSIVE_LOT_MODEL_AND_METADATA_BACKUP_NOT_GAME_SAVE_OR_LIVE_INTERLOCK",
   "next_parent_gate": "BI-002_HUNGER_LIVE_CERTIFICATION"
 }
