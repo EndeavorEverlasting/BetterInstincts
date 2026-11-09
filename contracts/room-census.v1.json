@@ -1,0 +1,148 @@
+{
+  "schema": "betterinstincts.room-census/v1",
+  "version": 1,
+  "authority": "docs/ROOM_CENSUS.md",
+  "owner": "betterinstincts/room_census.py",
+  "source_model": "betterinstincts.lot-environment-model/v1",
+  "architecture": "READ_ONLY_REVISIONED_ROOM_PROJECTION",
+  "proof_ceiling": "OFFLINE_ATTESTED_LOT_MODEL_NOT_LIVE_SCANNER",
+  "bounds": {
+    "max_entities": 2000,
+    "max_rooms": 250,
+    "max_labels_per_item": 12
+  },
+  "floor_format": [
+    "FLOOR_N",
+    "BASEMENT_N",
+    "UNKNOWN_STORY"
+  ],
+  "enclosures": [
+    "INSIDE",
+    "OUTSIDE",
+    "UNKNOWN_ENCLOSURE"
+  ],
+  "functional_labels": [
+    "kitchen",
+    "dining",
+    "living",
+    "bedroom",
+    "bathroom",
+    "office",
+    "garden",
+    "playroom",
+    "utility",
+    "entryway",
+    "storage",
+    "workshop"
+  ],
+  "style_labels": [
+    "modern",
+    "contemporary",
+    "traditional",
+    "rustic",
+    "industrial",
+    "mid_century",
+    "scandinavian",
+    "minimalist",
+    "bohemian",
+    "eclectic",
+    "coastal",
+    "farmhouse",
+    "cottagecore",
+    "gothic",
+    "whimsical",
+    "tropical"
+  ],
+  "category_to_functions": {
+    "appliance": [
+      "kitchen",
+      "utility"
+    ],
+    "counter": [
+      "kitchen"
+    ],
+    "cabinet": [
+      "kitchen",
+      "storage"
+    ],
+    "plumbing": [
+      "bathroom",
+      "kitchen"
+    ],
+    "bed": [
+      "bedroom"
+    ],
+    "sleep_pod": [
+      "bedroom"
+    ],
+    "sofa": [
+      "living"
+    ],
+    "living_chair": [
+      "living"
+    ],
+    "dining_table": [
+      "dining"
+    ],
+    "dining_chair": [
+      "dining"
+    ],
+    "desk": [
+      "office"
+    ],
+    "computer": [
+      "office"
+    ],
+    "planter": [
+      "garden"
+    ],
+    "plant": [
+      "garden"
+    ],
+    "toy": [
+      "playroom"
+    ],
+    "workbench": [
+      "workshop"
+    ],
+    "storage": [
+      "storage"
+    ],
+    "door": [
+      "entryway"
+    ]
+  },
+  "kind_to_category": {
+    "APPLIANCE": "appliance",
+    "COUNTER": "counter",
+    "CABINET": "cabinet",
+    "DINING_TABLE": "dining_table",
+    "DINING_CHAIR": "dining_chair",
+    "BED": "bed",
+    "SLEEP_POD": "sleep_pod",
+    "SOFA": "sofa",
+    "DESK": "desk",
+    "PLANTER": "planter",
+    "DOOR": "door",
+    "WINDOW": "window",
+    "FLOATER": "unknown",
+    "DECOR": "decor",
+    "UNKNOWN_OBJECT": "unknown",
+    "ROOM_ZONE": "room_zone",
+    "FLOOR_TILE": "floor_tile",
+    "WALL_SEGMENT": "wall_segment",
+    "ROOF_PIECE": "roof_piece",
+    "SIM": "sim"
+  },
+  "invariants": [
+    "reader_of_house_state_not_second_persistence_owner",
+    "all_observed_floors_no_floor_2_cap",
+    "unknown_floor_or_zone_unassigned",
+    "inside_outside_derived_from_attested_claims_only",
+    "unverified_zone_remains_candidate",
+    "multiple_function_and_style_labels_retained",
+    "conflicting_enclosure_not_forced",
+    "no_pixel_room_detection_without_sensed_geometry",
+    "no_autorun_or_SendInput_or_save_mutation"
+  ]
+}
