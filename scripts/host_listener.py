@@ -50,6 +50,8 @@ def main(argv: list[str] | None = None) -> int:
         hv.add_argument("--session-id", required=True)
         hv.add_argument("--event", type=Path, required=True)
         hv.add_argument("--explicit-opt-in", action="store_true")
+        hv.add_argument("--use-active-profile", action="store_true",
+                        help="Use this channel's active local profile preference")
     sub.add_parser("behavior-catalog", help="Show canonical safe hotkey and cheat IDs")
     args = p.parse_args(argv)
     try:
@@ -66,7 +68,15 @@ def main(argv: list[str] | None = None) -> int:
             if args.event.is_symlink() or not args.event.is_file() or args.event.stat().st_size > 4096:
                 raise HostListenerError("BEHAVIOR_EVENT_FILE_UNSAFE")
             event = json.loads(args.event.read_text(encoding="utf-8"))
-            result = observe_hover(args.session_id, event, explicit_opt_in=args.explicit_opt_in)
+            opt_in = args.explicit_opt_in
+            if args.use_active_profile and not opt_in:
+                from betterinstincts.installation_profiles import view
+                kind = event.get("kind")
+                setting = ("learning.hotkey_observations" if kind == "hotkey_action"
+                           else "learning.cheat_observations" if kind == "cheat_action"
+                           else "learning.hover_observations")
+                opt_in = view()["settings"][setting]
+            result = observe_hover(args.session_id, event, explicit_opt_in=opt_in)
         else:
             path = args.observation
             if not path.is_file() or path.stat().st_size > 32_000:

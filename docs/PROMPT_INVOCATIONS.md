@@ -153,3 +153,7 @@ negative, review and temporal regression cases; P07 owns branch/CI/main
 integration. P08 live command/shortcut proof remains an independently
 unproved local-host gate. Early ontology receipt:
 `contracts/consultations/BI-INPUT-CHANNELS-20261109.v1.json`.
+
+## 2026-11-09 — Installation profiles settings (P141 + P124 + P95 + Trifecta)
+
+Resolved against Moonwake main catalog: P141 = Repository Strategic Opportunity Scout; P124 = Repository Code Readability & Structural Refactorer; P95 = Program Design & Call-Stack Prototype Architect. Trifecta here is P82 = Prototype-Measure-Refine Delivery Loop, P07 = Repo Sprint Executor, P08 = Live Runtime Proof Executor. P141 compares and falsifies architectures rather than implementing; the selected scoped profile owner is implemented through P95/P124 and P82/P07. Local workstation/GPU/Sims P08 remains pending. See docs/INSTALLATION_PROFILES.md for path ownership, runtime status and proof boundary.

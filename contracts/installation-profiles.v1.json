@@ -1,0 +1,29 @@
+{
+  "schema": "betterinstincts.installation-profiles-catalog/v1",
+  "purpose": "Typed, instance-local user preferences only; not a game input permit, game patch compatibility profile, Sim personality or installer manifest.",
+  "storage": "Windows LOCALAPPDATA/BetterInstincts/settings.v1.json; Linux XDG_CONFIG_HOME/betterinstincts/settings.v1.json (or ~/.config/betterinstincts)",
+  "defaults": {
+    "ui.show_advanced_settings": false,
+    "ui.show_evidence_details": true,
+    "learning.hover_observations": false,
+    "learning.hotkey_observations": false,
+    "learning.cheat_observations": false,
+    "automation.cooperative_screen_queue": false,
+    "automation.host_suggestions": false,
+    "privacy.local_evaluation_receipts": false
+  },
+  "bounds": {
+    "max_profiles": 16,
+    "max_file_bytes": 32768,
+    "profile_id_pattern": "^[a-z][a-z0-9_-]{0,31}$"
+  },
+  "invariants": [
+    "Read-only defaults never create or mutate state",
+    "Toggles are preferences consumed only by explicitly integrated adapters; defaults never grant control authority",
+    "Mandatory hard safety (save/presence/scene/15s idle/consent) cannot be turned off",
+    "No network, global hooks, telemetry, game saves, silent services, or workstation settings",
+    "Settings survive installer uninstall; uninstall never deletes user preferences",
+    "One writer via exclusive lock, bounded validated JSON, atomic replacement; bad files fail closed"
+  ],
+  "proof_ceiling": "CONFIGURATION_FUNCTIONALITY_OFFLINE_ONLY"
+}

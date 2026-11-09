@@ -364,7 +364,7 @@ def _gui() -> int:
     except tk.TclError as exc:
         raise BootstrapError("GRAPHICAL_DESKTOP_UNAVAILABLE_USE_CLI") from exc
     root.title("BetterInstincts · Installation")
-    root.geometry("540x280")
+    root.geometry("650x280")
     root.resizable(False, False)
     frame = tk.Frame(root, padx=22, pady=18)
     frame.pack(fill="both", expand=True)
@@ -417,6 +417,23 @@ def _gui() -> int:
     )
     tk.Button(buttons, text="Uninstall", command=lambda: handle("uninstall"), width=12).pack(
         side="left"
+    )
+    def open_settings() -> None:
+        """Launch the explicit local settings UI from the verified checkout."""
+        try:
+            location = paths()
+            checkout = location["development"]
+            if not (checkout / "scripts" / "instance_settings.py").is_file():
+                raise BootstrapError("SETTINGS_MODULE_NOT_INSTALLED_OR_CHECKOUT_STALE")
+            subprocess.Popen([sys.executable, "-m", "scripts.instance_settings", "gui"],
+                             cwd=checkout, close_fds=True)
+            status_text.set("Local settings window opened. Preferences remain user-owned.")
+        except (BootstrapError, OSError) as exc:
+            status_text.set("SETTINGS_UNAVAILABLE: " + str(exc))
+            messagebox.showerror("BetterInstincts", str(exc), parent=root)
+
+    tk.Button(buttons, text="Preferences", command=open_settings, width=14).pack(
+        side="left", padx=(8, 0)
     )
     root.mainloop()
     return 0

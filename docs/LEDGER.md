@@ -1,5 +1,13 @@
 # Canonical project ledger
 
+## 2026-11-09 — Installation-local profiles and persistent user toggles (P141 + P124 + P95 + Trifecta)
+
+**Parent:** Each BetterInstincts installation needs user-controlled preferences separate from Sims personality, game compatibility and save files. P141 selected versioned user-owned local profiles over flat install-manifest booleans and premature accounts/cloud sync. P95 and P124 introduce a single toggle catalog, safe atomic configuration module, explicit CLI/Tk settings panel and profile-aware hover CLI opt-in, preserving legacy one-off consent. The installer links to Preferences without storing data in its managed directory. P82 regression tests cover profile isolation, invalid schemas/types, corrupt/oversized data, lock conflict, atomic replacement failure and CLI readback; actual results remain CI dependent. P07 integration is subject to PR and mainline verification; P08 physical GUI/game proof remains open. No presence/save/scene gate changes.
+
+Sources: contracts/installation-profiles.v1.json; consultation BI-INSTALLATION-PROFILES-20261109.v1.json; docs/INSTALLATION_PROFILES.md. Profile preferences are local user state, never committed. Other setting toggles remain preferences pending individual integration.
+
+
+
 ## 2026-11-09 — P83 independently hardened async input and reversible uninstall
 
 **Inherited claims tested:** PR #86 15s idle, shared cooperative lock, queued Playwright and safe installer; PR #88 clickable install/uninstall. Offline CI was green but did **not** prove unique Git work survival or cross-worktree lock location. The earlier default remained overrideable to 1s, and cleanup only checked the Git working tree.
