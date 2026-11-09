@@ -186,6 +186,45 @@ class FertilizerWorkflowTests(unittest.TestCase):
         low = {**NEEDS, "energy": .01}
         self.assertEqual(run_garden(ctx, needs=low)["gate"], "GARDEN_INSPECT_NEED_ACTIONS")
 
+    def test_fertilizer_cooldown_allows_garden_maintenance_without_goal_loss(self):
+        ctx = garden_context(
+            workflow(plants=[plant(ready=False)]),
+            [act("WATER", "plant:a"), act("TEND_GARDEN", "plant:a")],
+        )
+        out = run_garden(ctx)
+        self.assertEqual(out["gate"], "GARDEN_ACTION_READY")
+        self.assertEqual(out["next_actions"][0]["action_id"], "WATER")
+        self.assertEqual(out["goal_state"], "PENDING")
+        self.assertEqual(out["fertilizer_workflow"]["pending_targets"], ["plant:a"])
+
+    def test_missing_stock_allows_evolve_or_weed_but_not_side_quest(self):
+        w = workflow(supplies=[supply(location="GROUND", qty=4)])
+        ctx = garden_context(w, [act("EVOLVE", "plant:a"),
+                                 act("CHAT_WITH_NEIGHBOR", "sim:other")])
+        out = run_garden(ctx)
+        self.assertEqual(out["next_actions"][0]["action_id"], "EVOLVE")
+        self.assertEqual(out["goal_state"], "PENDING")
+        out = run_garden(garden_context(w, [act("CHAT_WITH_NEIGHBOR", "sim:other")]))
+        self.assertEqual(out["gate"], "GARDEN_FERTILIZER_SUPPLY_REQUIRED")
+        self.assertFalse(out["next_actions"])
+
+    def test_exact_player_fertilization_task_is_not_replaced_with_other_care(self):
+        task = {
+            "schema": "betterinstincts.task-continuity/v1",
+            "goal_id": "goal:fertilize", "sim_ref": "sim:garden",
+            "action_id": "FERTILIZE", "player_command_ref": "player:command",
+            "targets": [{"target_ref": "plant:a", "state": "PENDING"}],
+            "capture_ref": CAPTURE, "observed_at_unix": time.time(),
+            "queue_verified": True, "queue": [],
+        }
+        ctx = garden_context(workflow(supplies=[
+            supply(location="GROUND", qty=1)]),
+            [act("WATER", "plant:a")], task_continuity=task)
+        out = run_garden(ctx)
+        self.assertEqual(out["gate"], "GARDEN_FERTILIZER_SUPPLY_REQUIRED")
+        self.assertEqual(out["next_actions"], [])
+        self.assertEqual(out["goal_state"], "PENDING")
+
     def test_no_workflow_keeps_legacy_gardening_behavior(self):
         ctx = garden_context(workflow(), [act("FERTILIZE", "plant:a")])
         del ctx["fertilizer_workflow"]
