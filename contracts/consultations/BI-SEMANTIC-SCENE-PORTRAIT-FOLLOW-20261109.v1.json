@@ -113,7 +113,9 @@
     "scripts/scenery_memory.py",
     "tests/test_win32_input.py",
     "scripts/sim_camera.py",
-    "tests/test_sim_camera.py"
+    "tests/test_sim_camera.py",
+    "betterinstincts/host_automate.py",
+    "tests/test_host_semantic_automation.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
