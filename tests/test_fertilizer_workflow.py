@@ -103,7 +103,7 @@ class FertilizerWorkflowTests(unittest.TestCase):
             with self.subTest(changes=changes):
                 out = evaluate(workflow(transfer_authorized=True,
                     supplies=[supply(location="GROUND", qty=2,
-                                     transferable=True, **changes)]),
+                                     **({"transferable": True} | changes))]),
                     [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:a")])
                 self.assertEqual(out["gate"], "FERTILIZER_SUPPLY_REQUIRED")
 
