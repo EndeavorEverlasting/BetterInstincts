@@ -1,14 +1,14 @@
 {
   "schema": "betterinstincts.diy-skill-force/v1",
-  "version": 9,
+  "version": 10,
   "authority": "docs/DIY_SKILL_FORCE.md",
   "proof_ceiling": "HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT",
   "design_brief": {
     "subject": "Skill-force — max adult Major_* skills on every household Sim/Servo so activities and unlockables are not gated",
     "audience": "operators and Windows host agents who need DIY and other skill unlocks immediately usable",
-    "job": "Reusable catalog + mode-agnostic cheat planner: soft-focus → Ctrl+Shift+C → testingcheats enabled true → stats.set_skill_level lines → bounded ACCEPT_OFFERED_REWARD_TRAIT. full_unlock defaults to level 10. Household mode counts any N members, Space-traverses each, skips skills already recorded complete, Spaces past fully-done members to the next Sim that still needs work, and may --detach so agents are not blocked for hours. Required residuals Cooking/Fitness/Natural Living re-dispatched at end unless already complete. Not BI-005.",
+    "job": "Reusable catalog + mode-agnostic cheat planner: soft-focus → Ctrl+Shift+C → testingcheats enabled true → stats.set_skill_level lines → bounded ACCEPT_OFFERED_REWARD_TRAIT. full_unlock defaults to level 10. Household mode counts any N members, Space-traverses each, skips skills already recorded complete, Spaces past fully-done members to the next Sim that still needs work, and now runs foreground-only: detached game input cannot verify the current selected portrait. Required residuals Cooking/Fitness/Natural Living re-dispatched at end unless already complete. Not BI-005.",
     "architecture": "Sibling to funds_inject / household_object_force. Distinct from read-only sim_profile and aspiration life-state OK. No second skill/trait daemon. Typing owner: scripts/win32_input.type_text (keybd_event). P100 cohesive household traverse + completion ledger live in this same owner.",
-    "operator_correction": "Do not stop at one Sim. N is the observed Live household portrait count — whatever that household is — not an invented ceiling. After a save reload that undoes progression, bootstrap the household with skill-round-robin: one skill for every portrait, then the next skill for every portrait, until all requested skills are level 10. Do not dump every skill onto one Sim before Space. Do not retype skills already maxed on the current Sim. Space between members, skip already-complete skill×member cells, include Cooking/Fitness/Natural Living with correct internal ids (Major_HomestyleCooking, Skill_Fitness, Skill_NLS), and run asynchronously with --detach so another agent can reuse this owner without reinventing it. Opt-in bootstrap entry: python bootstrap.py household-skills -- --members N ... (never autorun on install). Keep Live paused during precious-time dispatch; verify with PLAY_BRIEF → Skills panel LOCAL_OBSERVED → REPAUSE. Console text and LEVEL UP toasts are not PASS. Ledger DISPATCHED is resume/skip evidence only."
+    "operator_correction": "Do not stop at one Sim. N is the observed Live household portrait count — whatever that household is — not an invented ceiling. After a save reload that undoes progression, bootstrap the household with skill-round-robin: one skill for every portrait, then the next skill for every portrait, until all requested skills are level 10. Do not dump every skill onto one Sim before Space. Do not retype skills already maxed on the current Sim. Space between members, skip already-complete skill×member cells, include Cooking/Fitness/Natural Living with correct internal ids (Major_HomestyleCooking, Skill_Fitness, Skill_NLS), and never launch a detached concurrent UI worker; a single foreground owner must attest each portrait and preserve the roster. Do not add Sims/Servos or go online. Opt-in bootstrap entry: python bootstrap.py household-skills -- --members N ... (never autorun on install). Keep Live paused during precious-time dispatch; verify with PLAY_BRIEF → Skills panel LOCAL_OBSERVED → REPAUSE. Console text and LEVEL UP toasts are not PASS. Ledger DISPATCHED is resume/skip evidence only."
   },
   "completion_ledger": {
     "schema": "betterinstincts.diy-skill-force.completion/v1",
@@ -18,7 +18,7 @@
       "DISPATCHED": "Host typed stats.set_skill_level at target — resume/skip only; not panel PASS",
       "PANEL_OBSERVED_MAX": "Optional stronger mark after Skills-panel LOCAL_OBSERVED"
     },
-    "skip_skill_when": "recorded status in {DISPATCHED, PANEL_OBSERVED_MAX} and level >= target",
+    "skip_skill_when": "DISPATCHED only means typed (resume/avoid duplicate commands), not proof of max level; reconcile stale/session/roster state before skipping. PANEL_OBSERVED_MAX requires genuine Skills panel observation.",
     "skip_member_when": "no remaining skills for the requested bundle after ledger filter",
     "space_to_next_needing": true,
     "redo_flag": "--redo ignores ledger for this run",
@@ -39,8 +39,8 @@
       "catalog": "python -m scripts.diy_skill_force catalog",
       "plan": "python -m scripts.diy_skill_force plan --bundle full_unlock",
       "level": "python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID",
-      "household": "python -m scripts.diy_skill_force household --members N --bundle full_unlock --execute --detach --process-id PID --session-id ID",
-      "bootstrap_household_skills": "python bootstrap.py household-skills -- --members N --bundle full_unlock --execute --detach --process-id PID --session-id ID"
+      "household": "python -m scripts.diy_skill_force household --members N --bundle full_unlock --execute --roster-key PORTRAIT_1 [--roster-key PORTRAIT_2 ...] --first-portrait-attested --process-id PID --session-id ID",
+      "bootstrap_household_skills": "python bootstrap.py household-skills -- --members N --bundle full_unlock --execute --roster-key PORTRAIT_1 [--roster-key PORTRAIT_2 ...] --first-portrait-attested --process-id PID --session-id ID"
     }
   },
   "required_residual_skills": [
@@ -58,12 +58,15 @@
     "sanity_max_members": 100,
     "max_members": 100,
     "member_count_source": "operator_or_agent_observed_portrait_count",
-    "member_count_note": "Pass exact observed Live household portrait count as --members N. N is whatever that household is. Host does not invent size and does not treat 8 or 10 as the product ceiling — sanity_max_members is anti-runaway only. Another agent reuses --detach + Space-traverse; do not reinvent.",
+    "member_count_note": "Pass exact observed Live household portrait count as --members N. N is whatever that household is. Host does not invent size and does not treat 8 or 10 as the product ceiling — sanity_max_members is anti-runaway only. Only one foreground executor controls Space-traverse. Reobserve exact ordered portrait identity after any roster change; stop and reconcile, never silently expand.",
     "dispatch_order": "skill_round_robin",
     "dispatch_order_note": "For each skill in catalog/bundle order: visit every portrait (Space), set that one skill to target, then advance to the next skill. Fairer after save-reload than member_then_skills (all skills on one Sim before Space).",
     "select_before_dispatch": true,
     "close_console_before_space": true,
-    "bootstrap_cli": "python bootstrap.py household-skills -- --members N --bundle full_unlock --execute --detach --process-id PID --session-id ID"
+    "bootstrap_cli": "python bootstrap.py household-skills -- --members N --bundle full_unlock --execute --roster-key PORTRAIT_1 [--roster-key PORTRAIT_2 ...] --first-portrait-attested --process-id PID --session-id ID",
+    "console_lifecycle": "Each cell closes the console; do NOT toggle console again before Space. Reopen only inside the next admitted cell.",
+    "selected_member_validation": "First portrait locally attested before run; exact roster stable and fresh per cell in local game host; offline policy cannot by itself prove real UI identity.",
+    "async_detach_supported": false
   },
   "inject_sequence": {
     "mode_agnostic": true,
@@ -771,5 +774,16 @@
     "send_key_chord_for_ctrl_shift_c",
     "detach_is_opt_in_never_autorun",
     "never_accept_skill_reward_dialog_without_fresh_verified_classification"
-  ]
+  ],
+  "execution_policy": {
+    "model": "SINGLE_FOREGROUND_SERIAL_UI_OWNER",
+    "detached_worker": false,
+    "roster_source": "locally_observed_live_portrait_ids",
+    "first_portrait_attested_before_execute": true,
+    "roster_change_action": "STOP_AND_RECONCILE",
+    "no_new_sims_or_servos": true,
+    "one_skill_across_all_portraits_before_next": true,
+    "connection_policy": "STAY_OFFLINE_ONLY",
+    "scope_guard": "contracts/household-judgment.v1.json"
+  }
 }
