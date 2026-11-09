@@ -532,3 +532,8 @@ P95/P124 camera-intent seam added: native Enter centers active Sim; Shift+Enter 
 ### 2026-11-09 — Repair recurring camera drift before pixel targets
 
 A host intent previously planned edge-safe rest and target framing separately, but native world pixels were not checked against the current camera revision at the final action boundary. Camera drift during an agent's screenshot/pixel target analysis can therefore invalidate its measurements. Added a canonical recovery decision, host/listener routing and separate camera-revision-bound native world-click adapter that refuses stale pixels. Stable operator-calibrated HUD buttons remain unaffected. Stop-click when user resumes play, avoid blind portrait right-click, use one-shot native center controls and opt-in in-game follow only with independent admission. Exact-build live game certification remains P08; BI-002 hunger/needs status unchanged.
+
+
+### 2026-11-09 — Pause-first target stabilization
+
+Extended camera recovery to gate Live pixel sampling on independently verified PAUSED state, using a single guarded EA P toggle only if PLAYING. Already paused/unknown speed yields without input; player pause is preserved. Recheck pause HUD, game clock and clock_revision across new capture, camera reanchor and final native world-target effect. Pausing sim time is not evidence that camera stopped moving or stale skills HUD refreshed. Existing player-idle admission and separate skills panel 5–10s play/observe/re-pause remain intact. No automatic resume. P08 game sensor and physical effect unverified.
