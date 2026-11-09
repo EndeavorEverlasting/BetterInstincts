@@ -15,12 +15,12 @@ Useful-item force: `python -m scripts.household_object_force` (`bb.showhiddenobj
 
 ## Invariants
 - **Player first:** no interrupt of explicit player commands; no uncontrolled autonomy loops.
-- **Save-safe:** never edit/delete/migrate/overwrite user saves/game files. Unknown saves protected.
+- **Save-safe:** never edit/delete/migrate/overwrite user saves/game files. Unknown/user saves protected.
 - **Offline install:** never EA Connect; Stay Offline only; play as installed.
 - **Storage:** no arbitrary profile writes, auto-discovery, asset copy, daemons, telemetry, unbounded logs.
 - **Community-native:** review prior art/licensing; favor tuning before script hooks where justified.
 - **Performance:** bounded work; no global per-frame scans, busy-waits or unmeasured runtime hooks.
-- **Evidence:** separate tests, build, PR, merge and gameplay. Two independent scene cues; unknown -> no action.
+- **Evidence:** separate tests, build, PR, merge and gameplay. See docs/SCENE_INTELLIGENCE.md; two cues; unknown -> no action.
 - **Continuity:** keep docs/LEDGER.md, docs/ROADMAP.md and sprint current; no chat-only decisions.
 
 ## Multiversion + real-game closure
