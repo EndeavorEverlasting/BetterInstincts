@@ -357,8 +357,12 @@
     "choice_vocabulary": "EXISTING_SAFE_TAGS_AND_RISK_TAGS",
     "rank_requirement": "UNIQUE_POSITIVE_SCORE_OR_REVIEW",
     "native_choice_port": "betterinstincts.scene_ui_semantics.enqueue_native_overlay_choice",
-    "choice_automation_authority": "EXPLICIT_CURRENT_SESSION_AUTO_CHOICE_AUTHORIZATION",
+    "choice_automation_authority": "EXPLICIT_INDEPENDENT_PLAYER_CHOICE_APPROVAL_FOR_EXACT_OPTION_AND_CAPTURE",
     "choice_after_effect": "NEW_OVERLAY_OR_ABSENT_CAPTURE_BEFORE_DISMISS_OR_QUEUE_RESUME",
-    "queue_continuation": "PRESERVE_GOAL_AND_PENDING_REFS;REVALIDATE_EACH_AFTER_OVERLAY"
+    "queue_continuation": "PRESERVE_GOAL_AND_PENDING_REFS;REVALIDATE_EACH_AFTER_OVERLAY",
+    "research_owner": "betterinstincts.chance_event_research",
+    "research_gate": "EXACT_VERSION_CONTEXT_REVIEWED_MEMO_AND_PLAYER_CHOICE",
+    "chance_event_policy": "PLAYER_ONLY_NATIVE_CHOICE_UNLESS_INDEPENDENT_PLAYER_CHOICE_APPROVAL",
+    "heuristic_recommendation": "ADVISORY_NOT_APPROVAL"
   }
 }
