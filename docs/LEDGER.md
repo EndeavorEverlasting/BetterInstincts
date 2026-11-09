@@ -1,5 +1,14 @@
 # Canonical project ledger
 
+## 2026-11-09 — Operator-first asynchronous control and canonical install lifecycle
+
+**Parent:** user and agents must share the computer without agents cancelling queued work or stealing focus. P00/P01 preserve canonical governance/harness; P95 prototypes an opt-in `CooperativeScreenQueue` at 15 seconds OS-wide trusted inactivity; P124 reuses existing `control_handoff` as the admission owner, with one `desktop-shared.lock` for participating Playwright/host executors and a bounded queue. A Playwright adapter reuses an existing page; no new browser is launched. Human input on any app yields; unknown input or stale scene fails closed; possible partial effects require reconciliation rather than blind replay. This does not automatically retrofit every external agent/legacy `host_tandem` callback.
+
+**P92:** `bootstrap.py` is the canonical Windows/Linux profile path owner, cloning into the development rule if absent; creates only a user-scoped offline launcher and SHA-bound manifest. Uninstall removes only proven owned paths; preexisting/dirty clones, saves and mods survive. No PATH/registry/cron/task/service mutation or playable mod claimed.
+
+**Trifecta:** P82 deterministic failure/interruption/installer tests; P07 actual GitHub implementation/CI; P08 real Windows host, Linux trusted probe and Sims/Playwright tests are OPEN. Remote merge, local checkout, install/use path and real entrypoint are independent proofs. Consultation `BI-ASYNC-INTEROP-P92-20261109.v1.json` precedes code changes. `docs/ASYNC_INTEROP.md` is the operator/agent runbook. BI-002 hunger certification remains active.
+
+
 ## 2026-11-09 — Host UI chrome map + hotkey glossary + AOK inventory recipe (P95 + P124 + Trifecta)
 
 **Operator:** Agentic Build clicks keep missing chrome; need durable per-mode element maps, hotkey glossary (Build/Live/Buy), extensible Live phone/bottom-right panels, and host logic that finds **AOK** Bloomer, buys it, and deposits to Household Inventory — not vision thrash. **P95** selects `UI_CHROME_PEER_MAP` (normalized client fractions + recipes; stubs for Live needs/career/skills/phone). **P124** peer `ui_chrome` beside `ui_mode` / `household_object_force` — no second screen daemon. Consultation `BI-UI-CHROME-MAP-20261109.v1.json`. CLI: `python -m scripts.ui_chrome glossary|resolve|plan`. Preferred search **AOK**; Meat Wall career note corrected (Grow unlock on Bloomer, not auto inventory drop). P08 live click calibration OPEN. Does not close BI-002.
