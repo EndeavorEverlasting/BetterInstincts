@@ -110,7 +110,12 @@ def _play_brief_observe_repause(
     seconds = max(int(policy["min_play_seconds"]), min(int(policy["max_play_seconds"]), seconds))
     play = str(play_key or policy["play_key"] or "1")[:1]
     pause = str(pause_key or policy["pause_key"] or "0")[:1]
-    # Speed keys are typed into Live HUD (console must be closed).
+    # Speed keys must hit Live HUD. Caller must close the cheat console first
+    # (see _execute_plan); if console is open, '1'/'0' become console text.
+    from scripts.win32_input import send_click
+
+    send_click(960, 400, between_sec=0.04)
+    time.sleep(0.15)
     type_text(play)
     time.sleep(float(seconds))
     type_text(pause)
@@ -265,10 +270,20 @@ def _execute_plan(
         "session_id": session_id,
         "proof_ceiling": plan.get("proof_ceiling"),
         "not_bi005": True,
-        "next": (
-            "Skills panel LOCAL_OBSERVED after PLAY_BRIEF_OBSERVE_REPAUSE"
+        # Fail-closed: console text / reward toasts / level-up overlays are NOT PASS.
+        "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
+        "console_text_is_not_pass": True,
+        "level_up_toast_is_not_pass": True,
+        "panel_proof_status": (
+            "PLAY_BRIEF_RAN_PANEL_STILL_REQUIRES_OPERATOR_OR_AGENT_READ"
             if panel_verify
-            else "Dispatch done while paused; panel still UNPROVEN_STALE until play-brief verify"
+            else "UNPROVEN_STALE_NO_PLAY_BRIEF"
+        ),
+        "next": (
+            "Open Skills panel and LOCAL_OBSERVE max levels after PLAY_BRIEF_OBSERVE_REPAUSE; "
+            "do not claim PASS from console text or level-up toasts"
+            if panel_verify
+            else "Dispatch done while paused; panel still UNPROVEN_STALE until play-brief + Skills panel read"
         ),
     }
 
@@ -278,38 +293,41 @@ def _toggle_cheat_console() -> dict:
 
     Prefer this over Escape: Esc while Live often opens the pause MENU and
     blocks household Space-traverse / skill typing.
-    """
-    from scripts.win32_input import send_vk, tap_vk
 
-    send_vk(0x11)  # CTRL
-    send_vk(0x10)  # SHIFT
-    tap_vk(0x43)   # C
-    send_vk(0x10, up=True)
-    send_vk(0x11, up=True)
-    time.sleep(0.45)
-    return {"step": "TOGGLE_CHEAT_CONSOLE", "chord": "Ctrl+Shift+C"}
+    Use send_key_chord so modifiers stay held for the C tap. A bare
+    send_vk/tap_vk sequence can drop SHIFT and fire screenshot (C) instead.
+    """
+    from scripts.win32_input import send_key_chord
+
+    send_key_chord(["CTRL", "SHIFT", "C"], down_sec=0.06, after_sec=0.35)
+    time.sleep(0.15)
+    return {
+        "step": "TOGGLE_CHEAT_CONSOLE",
+        "chord": "Ctrl+Shift+C",
+        "chord_owner": "scripts.win32_input.send_key_chord",
+    }
 
 
 def _refocus_cheat_console() -> None:
     """Click the top console strip so Enter submits the cheat line."""
     from scripts.win32_input import send_click
 
-    send_click(250, 16, between_sec=0.04)
+    send_click(400, 20, between_sec=0.04)
     time.sleep(0.12)
 
 
 def _type_cheat_line(cmd: str) -> None:
-    """Type one cheat and submit with Enter (keybd_event), then pause.
+    """Type one cheat and submit with embedded newline via type_text.
 
-    Live cert (P83): computer_type newlines do not submit Sims console lines;
-    durable host must use type_text + Enter (or type_text with embedded \\n).
+    Live cert (P83): computer_type newlines do not submit Sims console lines.
+    Durable path: refocus strip → type_text(cmd + '\\n') so keybd_event Enter
+    is part of the same typing owner (proven LOCAL_OBSERVED on Servo level-ups).
     """
-    from scripts.win32_input import tap_vk, type_text
+    from scripts.win32_input import type_text
 
     _refocus_cheat_console()
-    type_text(str(cmd))
-    time.sleep(0.08)
-    tap_vk(0x0D)
+    line = str(cmd).rstrip("\r\n")
+    type_text(line + "\n")
     time.sleep(0.45)
 
 
