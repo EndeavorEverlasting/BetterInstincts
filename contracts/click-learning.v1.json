@@ -1,0 +1,134 @@
+{
+  "schema": "betterinstincts.click-learning/v1",
+  "version": 1,
+  "authority": {
+    "scene": "contracts/game-scenes.v1.json",
+    "panel": "contracts/ui-microsystems.v1.json",
+    "fixed_chrome": "contracts/ui-chrome.v1.json",
+    "geometry": "betterinstincts/click_error_eval.py",
+    "camera": "contracts/camera-traverse.v1.json",
+    "host_session": "betterinstincts/host_listener.py",
+    "input": "betterinstincts/workflow_interop.py"
+  },
+  "policy": "VERIFIED_OUTCOME_FEEDBACK_NOT_GEOMETRY_AS_SUCCESS",
+  "opt_in_default": false,
+  "execute_allowed_default": false,
+  "learning": {
+    "algorithm": "EXPONENTIALLY_DISCOUNTED_BETA_BERNOULLI",
+    "alpha_prior": 1,
+    "beta_prior": 1,
+    "evidence_decay": 0.98,
+    "minimum_reviewed_trials_for_signal": 3,
+    "posterior": "mean_and_2sd_heuristic_not_calibrated_credible_interval"
+  },
+  "event": {
+    "schema": "betterinstincts.click-learning.event/v1",
+    "kinds": [
+      "CLICK_OUTCOME",
+      "CAMERA_CONTEXT",
+      "TARGET_DISCOVERY"
+    ],
+    "actors": [
+      "AGENT",
+      "HOST",
+      "USER"
+    ],
+    "sources": [
+      "INJECTED_HOST",
+      "GAME_BRIDGE",
+      "OPT_IN_POLL",
+      "OPERATOR_REVIEW"
+    ],
+    "modes": [
+      "LIVE",
+      "BUY",
+      "BUILD"
+    ],
+    "target_kinds": [
+      "PANEL",
+      "CHROME",
+      "WORLD_OBJECT",
+      "CAMERA",
+      "UNMAPPED"
+    ],
+    "results": [
+      "INTENDED",
+      "UNINTENDED",
+      "UNKNOWN"
+    ],
+    "geometry": [
+      "HIT",
+      "NEAR_MISS",
+      "MISS",
+      "UNKNOWN"
+    ],
+    "camera_events": [
+      "NONE",
+      "EDGE_PAN",
+      "OVER_ZOOM",
+      "LOST_FRAMING",
+      "REFOCUSED",
+      "BOUNDED_ZOOM_IN"
+    ],
+    "evidence_sources": [
+      "HOST_CAPTURE",
+      "GAME_EVENT",
+      "OPERATOR"
+    ],
+    "independent_evidence_count": 2,
+    "all_fields": [
+      "schema",
+      "event_id",
+      "at_ms",
+      "kind",
+      "actor",
+      "source",
+      "game_version",
+      "mode",
+      "scene_id",
+      "target_id",
+      "target_kind",
+      "panel_id",
+      "interaction_id",
+      "result",
+      "geometry",
+      "camera_event",
+      "evidence_sources",
+      "evidence_ref",
+      "opt_in",
+      "operator_reviewed"
+    ]
+  },
+  "classification": {
+    "positive": "Observed intended postcondition AND verified geometry HIT or independently verified camera reframing; never geometric HIT alone",
+    "negative": "Independent proof of unintended outcome or agent/host-created camera context loss; never punish deliberate player navigation",
+    "unverified": "Missing/conflicting/unsupported evidence, discovery-only or unresolved outcome has zero effect on posterior"
+  },
+  "mapping": {
+    "discovery_status": "CANDIDATE_REQUIRES_EXACT_BUILD_CALIBRATION",
+    "known_status": "CATALOGUED_UNVERIFIED_GAMEPLAY",
+    "never_auto_promote": true,
+    "never_execute_from_statistics": true
+  },
+  "camera": {
+    "signals_from": "EXPLICIT_BOUNDED_POLL_OR_INJECTED_GAME_CALLBACK",
+    "no_native_webhook_claim": true,
+    "mouse_edge_band_recovery": "SAFE_REST_VIA_CANONICAL_CAMERA_OWNER",
+    "sim_focus_hotkey_owner": "betterinstincts/sim_camera.py",
+    "focus_sim": "CENTER_ACTIVE_SIM",
+    "focus_lot": "CENTER_CURRENT_LOT",
+    "zoom": "OBSERVED_BOUNDED_ZOOM_IN_NOT_GUESSED_KEYS",
+    "rotation": "HOST_OBSERVED_BOUNDED_ROTATION_ONLY",
+    "no_automatic_replay": true
+  },
+  "limits": {
+    "max_state_bytes": 64000,
+    "max_evidence_ref_chars": 96,
+    "max_event_id_chars": 48,
+    "max_seen_ids": 256,
+    "max_recent_events": 128,
+    "max_target_contexts": 128,
+    "max_candidate_targets": 128
+  },
+  "proof_ceiling": "OFFLINE_OPT_IN_OUTCOME_MODEL_NOT_NATIVE_SIMS_SIGNAL_OR_GAMEPLAY_CERTIFIED"
+}
