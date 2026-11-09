@@ -150,7 +150,7 @@ def launch(run_id: str, cfg: dict, digest: str, execute: bool) -> dict:
 
 def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
              disposable_confirmed: bool, timeout: int = 45, gui=None,
-             session_id: str | None = None, idle_ms: int = 8000) -> dict:
+             session_id: str | None = None, idle_ms: int = 15000) -> dict:
     if not execute or not disposable_confirmed:
         raise GateError("NAVIGATION_REQUIRES_EXECUTE_AND_DISPOSABLE_SAVE_CONFIRMATION")
     if not 1 <= timeout <= 90:
@@ -422,7 +422,7 @@ def main(argv=None) -> int:
             p.add_argument("--timeout", type=int, default=45)
             p.add_argument("--session-id", default=None,
                            help="ACTIVE host_listener session for menu-blocker --execute")
-            p.add_argument("--idle-ms", type=int, default=8000)
+            p.add_argument("--idle-ms", type=int, default=15000)
     p = sub.add_parser("manual-cas-complete")
     p.add_argument("--run-id", required=True)
     p.add_argument("--disposable-confirmed", action="store_true")
