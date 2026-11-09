@@ -7,7 +7,7 @@ from pathlib import Path
 
 from betterinstincts.player_presence import PresenceProbe
 from betterinstincts.screen_atlas import (
-    ScreenAtlasError, enqueue_game_click, inventory, load_atlas,
+    ScreenAtlasError, enqueue_game_click, enqueue_native_game_click, inventory, load_atlas,
     resolved_calibration,
 )
 from betterinstincts.workflow_interop import CooperativeScreenQueue
@@ -56,6 +56,13 @@ class AtlasInventoryTests(unittest.TestCase):
         self.assertIn("bb.showhiddenobjects", [r["line"] for r in out["console"]["ordered_commands"]])
         self.assertTrue(all(r["execute_allowed"] is False for r in out["console"]["ordered_commands"]))
         self.assertFalse(out["execute_allowed"])
+        screens = {x["scene_id"]: x for x in out["screen_maps"]}
+        self.assertEqual(set(screens), set(out["scenes"]))
+        self.assertIn("open_load_game", [x["id"] for x in screens["main_menu"]["menu_clicks"]])
+        self.assertIn("catalog.search_field", screens["build_mode"]["target_ids"])
+        self.assertTrue(screens["unknown"]["unmapped"])
+        self.assertTrue(all(not x["execute_allowed"] for screen in screens.values()
+                            for x in screen["menu_clicks"]))
 
     def test_requires_exact_version_and_explicit_attestation(self):
         for changes, reason in [
@@ -172,6 +179,95 @@ class CooperativeAtlasTests(unittest.IsolatedAsyncioTestCase):
         self.enqueue()
         self.assertEqual((await self.queue.run_once())["state"], "NEEDS_REVALIDATION")
         self.assertEqual(self.page.mouse.effects, [])
+
+
+
+class NativeGameScreenAtlasTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.age = 16000
+        self.effects = []
+        self.current = observation(
+            process_id=4521, focused_process_id=4521, session_id="lab-session",
+            host_admitted=True, client_origin_x=100, client_origin_y=50,
+        )
+
+        async def no_delay(seconds):
+            pass
+
+        self.queue = CooperativeScreenQueue(
+            lambda: PresenceProbe(False, False, last_input_age_ms=self.age),
+            lambda: True,
+            lock_root=Path(self.tmp.name),
+            sleep=no_delay,
+        )
+
+    async def observed(self):
+        return self.current
+
+    async def click(self, x, y):
+        self.effects.append(("click", x, y))
+
+    async def move(self, x, y):
+        self.effects.append(("rest", x, y))
+
+    def enqueue(self):
+        return enqueue_native_game_click(
+            self.queue, work_id="native-click", calibration=calibration(),
+            observe=self.observed, process_id=4521, session_id="lab-session",
+            click_screen=self.click, move_screen=self.move,
+        )
+
+    async def test_native_client_to_screen_conversion_and_safe_rest(self):
+        self.enqueue()
+        self.assertEqual((await self.queue.run_once())["state"], "COMPLETED")
+        self.assertEqual(self.effects, [("click", 225, 916), ("rest", 1060, 590)])
+
+    async def test_wrong_pid_or_stale_scene_never_click(self):
+        for bad in [{"focused_process_id": 999}, {"host_admitted": False},
+                    {"client_origin_x": None}, {"scene_id": "buy_mode"},
+                    {"session_id": "other-session"}]:
+            with self.subTest(bad=bad):
+                self.current = observation(
+                    process_id=4521, focused_process_id=4521,
+                    session_id="lab-session", host_admitted=True,
+                    client_origin_x=100, client_origin_y=50, **{},
+                )
+                self.current.update(bad)
+                self.queue.pending.clear()
+                self.queue.needs_review.clear()
+                self.enqueue()
+                self.assertEqual((await self.queue.run_once())["state"], "NEEDS_REVALIDATION")
+                self.assertEqual(self.effects, [])
+
+    async def test_native_after_click_human_takeover_yields_without_rest(self):
+        async def interrupted_click(x, y):
+            self.effects.append(("click", x, y))
+            self.age = 0
+
+        enqueue_native_game_click(
+            self.queue, work_id="native-interrupted",
+            calibration=calibration(), observe=self.observed,
+            process_id=4521, session_id="lab-session",
+            click_screen=interrupted_click, move_screen=self.move,
+        )
+        self.assertEqual((await self.queue.run_once())["state"], "NEEDS_RECONCILIATION")
+        self.assertEqual(self.effects, [("click", 225, 916)])
+
+    async def test_native_window_move_after_click_quarantines(self):
+        async def moved_click(x, y):
+            self.effects.append(("click", x, y))
+            self.current = dict(self.current, client_origin_x=120)
+
+        enqueue_native_game_click(
+            self.queue, work_id="window-moved",
+            calibration=calibration(), observe=self.observed,
+            process_id=4521, session_id="lab-session",
+            click_screen=moved_click, move_screen=self.move,
+        )
+        self.assertEqual((await self.queue.run_once())["state"], "NEEDS_RECONCILIATION")
+        self.assertEqual(self.effects, [("click", 225, 916)])
 
 
 if __name__ == "__main__":
