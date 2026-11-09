@@ -1,5 +1,10 @@
 # Canonical project ledger
 
+## 2026-11-09 — Chance-event research + memoization companion (P95 + P124 + Trifecta)
+
+**Operator requirement:** On a random decision-forcing Sims popup, investigate local game mechanics and (only with explicit opt-in) contemporary frontier/search references **before** recommending, mapping benefits, risks, confidence, permanence and source provenance for every option. The persistence model is **memoization** of reviewed computation, not memorization or unsupervised training. Local observations outrank potentially stale guides. **P95** selects an opt-in read-only coordinator with two distinct popup cues, exact version/DLC/mod/locale/text cache keys, local-first dispatch and an adjacent non-modal research/implications presentation model. **P124** keeps `decision_eval`, `host_stack`, `host_listener`, `screen_atlas`, and the player-control owner intact instead of adding a second click/daemon authority. **Trifecta:** P82 tests offline success and adversarial outcomes; P07 integrates implementation after ontology preflight; P08 actual game popup detection, independent research execution, overlay rendering and real in-game option validation are **OPEN**. No game-side code, saves, network calls, UI clicks, screen capture, or runtime overlay are introduced by this offline branch. Research input, reviewed memo and presentation model are machine-readable; stale/unreviewed/permanent frontier-only claims fail closed. Consultation: `contracts/consultations/BI-CHANCE-EVENT-RESEARCH-MEMOIZATION-20261109.v1.json`; implementation: `betterinstincts/chance_event_research.py`, `scripts/chance_event_research.py`, `tests/test_chance_event_research.py`; guide: `docs/CHANCE_EVENT_RESEARCH.md`.
+
+
 ## 2026-11-09 — Semantic scene intelligence, portrait follow and event overlays (P95/P124/Trifecta)
 
 **Extension:** New option-choice scoring reuses `decision_eval.score_option` on current independent overlay-option cues with a unique positive-score gate. An explicitly player-approved native choice queue (one click) is separate from event dismissal and downstream goal/queue revalidation. No arbitrary or unobserved decision is selected.\n

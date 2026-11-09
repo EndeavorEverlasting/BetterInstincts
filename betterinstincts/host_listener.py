@@ -16,6 +16,9 @@ from betterinstincts.build_floor_activity import (
     evaluate_floor_activity,
 )
 from betterinstincts.host_stack import HostStackError, evaluate_turn
+from betterinstincts.chance_event_research import (
+    ChanceEventError, assess as assess_chance_event, load_memo as load_chance_memo,
+)
 from betterinstincts.sim_camera import command_from_app_hotkey
 from betterinstincts.instincts_host import InstinctsHostError, NeedSnapshot, plan, plan_to_dict
 from betterinstincts.needs_force import NeedsForceError, plan_force
@@ -545,6 +548,25 @@ def tick(
         raise HostListenerError("SESSION_TICK_BUDGET_EXCEEDED")
 
     obs = _load_observation(observation)
+    # Optional supplied chance card. This is a READ-ONLY sidecar: even when the
+    # listener yields to the player the UI may explain an observed popup.
+    # No network request, worker launch, button press or session auto-start.
+    chance_event_advisory = None
+    if "chance_event" in observation:
+        event = observation["chance_event"]
+        if not isinstance(event, Mapping) or event.get("capture_ref") != obs["capture_ref"]:
+            raise HostListenerError("CHANCE_EVENT_CAPTURE_MISMATCH")
+        if observation.get("chance_event_external_research_opt_in") not in (None, False, True):
+            raise HostListenerError("CHANCE_EVENT_EXTERNAL_OPT_IN_INVALID")
+        try:
+            memo = load_chance_memo(ROOT / "dist" / "chance-event-research" / "memo.json")
+            chance_event_advisory = assess_chance_event(
+                event, memo,
+                external_research_opt_in=observation.get(
+                    "chance_event_external_research_opt_in") is True,
+            )
+        except ChanceEventError as exc:
+            raise HostListenerError("CHANCE_EVENT_INVALID:" + str(exc)) from exc
     # New mode sensing is opt-in so pre-existing listener receipts remain valid.
     # Keyboard shortcuts and the old combined boolean are never scene proof.
     mode_context = None
@@ -614,6 +636,8 @@ def tick(
         }
         _write_json(meta_path, meta)
         tick_path = path / f"tick-{ticks:04d}.json"
+        if chance_event_advisory is not None:
+            receipt["chance_event"] = chance_event_advisory
         _write_json(tick_path, receipt)
         receipt["receipt"] = str(tick_path.relative_to(ROOT))
         return receipt
@@ -653,6 +677,8 @@ def tick(
         meta["last_disposition"] = listener_action
         _write_json(meta_path, meta)
         tick_path = path / f"tick-{ticks:04d}.json"
+        if chance_event_advisory is not None:
+            receipt["chance_event"] = chance_event_advisory
         _write_json(tick_path, receipt)
         receipt["receipt"] = str(tick_path.relative_to(ROOT))
         return receipt
@@ -829,6 +855,8 @@ def tick(
     meta["last_disposition"] = disposition
     _write_json(meta_path, meta)
     tick_path = path / f"tick-{ticks + 1:04d}.json"
+    if chance_event_advisory is not None:
+        receipt["chance_event"] = chance_event_advisory
     _write_json(tick_path, receipt)
     receipt["receipt"] = str(tick_path.relative_to(ROOT))
     return receipt
