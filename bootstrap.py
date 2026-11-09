@@ -93,7 +93,7 @@ def _launcher(checkout: Path, *, platform: str) -> tuple[str, str]:
         )
     interpreter = shlex.quote(sys.executable)
     return "betterinstincts", (
-        LAUNCHER_HEADER + "\n#!/bin/sh\n"
+        "#!/bin/sh\n" + LAUNCHER_HEADER + "\n"
         + "cd " + shlex.quote(str(checkout)) + " || exit 2\n"
         + "exec " + interpreter + " -m scripts.host_listener \"$@\"\n"
     )
