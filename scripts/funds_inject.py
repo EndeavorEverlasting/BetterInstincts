@@ -159,7 +159,7 @@ def _execute_plan(
     process_id: int | None,
     close_console: bool = False,
     session_id: str | None = None,
-    idle_ms: int = 8000,
+    idle_ms: int = 15000,
 ) -> dict:
     """Mode-agnostic inject: no F1, no Esc spam — tandem with Build/Live/Buy."""
     if sys.platform != "win32":
@@ -310,7 +310,7 @@ def main(argv: list[str] | None = None) -> int:
     gate.add_argument("--close-console", action="store_true", help="Optional Esc after inject (off by default)")
     gate.add_argument("--process-id", type=int, default=None)
     gate.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
-    gate.add_argument("--idle-ms", type=int, default=8000)
+    gate.add_argument("--idle-ms", type=int, default=15000)
     gate.add_argument("--receipt", type=Path, default=None)
 
     inj = sub.add_parser("inject")
@@ -321,7 +321,7 @@ def main(argv: list[str] | None = None) -> int:
     inj.add_argument("--close-console", action="store_true")
     inj.add_argument("--process-id", type=int, default=None)
     inj.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
-    inj.add_argument("--idle-ms", type=int, default=8000)
+    inj.add_argument("--idle-ms", type=int, default=15000)
     inj.add_argument("--receipt", type=Path, default=None)
 
     args = p.parse_args(argv)
