@@ -65,9 +65,22 @@ def load_contract(path: Path = CONTRACT) -> dict:
         if pid not in index:
             raise UpgradePartsForceError("DIY_KIT_UNKNOWN_PART:" + str(pid))
     forbidden = set(cfg.get("forbidden") or [])
-    for needle in ("gsi_create_obj", "objects.gsi_create_obj", "hallucinated_instance_hex"):
+    for needle in (
+        "gsi_create_obj",
+        "objects.gsi_create_obj",
+        "hallucinated_instance_hex",
+        "ea_online_connect",
+        "CONNECT_BUTTON",
+        "CONNECT_ONLINE",
+        "force_sims_online",
+    ):
         if needle not in forbidden:
             raise UpgradePartsForceError("FORBIDDEN_LIST_INCOMPLETE:" + needle)
+    offline = cfg.get("offline_install") or {}
+    if offline.get("forbid_ea_online_connect") is not True:
+        raise UpgradePartsForceError("FORBID_EA_ONLINE_CONNECT_REQUIRED")
+    if offline.get("connection_required_dialog") != "STAY_OFFLINE_ONLY":
+        raise UpgradePartsForceError("STAY_OFFLINE_ONLY_REQUIRED")
     how = (cfg.get("how_to_buy") or {}).get("robot_salvage_parts") or {}
     if "Purchase Upgrade Parts" not in " ".join(how.get("steps") or []):
         raise UpgradePartsForceError("HOW_TO_BUY_MUST_NAME_PURCHASE_UPGRADE_PARTS")
@@ -300,6 +313,18 @@ def plan_parts_force(
         if not cmds or "testingcheats enabled true" not in cmds:
             raise UpgradePartsForceError("TESTINGCHEATS_REQUIRED_BEFORE_SPAWN")
 
+    for step in steps:
+        choice = str(step.get("choice") or "").strip().lower()
+        never = {str(x).strip().lower() for x in (step.get("never") or [])}
+        if choice in {"connect", "connect online"} or "connect" in never and choice == "connect":
+            raise UpgradePartsForceError("EA_ONLINE_CONNECT_FORBIDDEN")
+        if any(tok in {"connect", "connect_button", "connect_online"} for tok in never):
+            # Stay Offline path is required; Connect tokens may only appear in never[].
+            pass
+        blob = json.dumps(step).lower()
+        if '"choice": "connect"' in blob or '"text": "connect"' in blob:
+            raise UpgradePartsForceError("EA_ONLINE_CONNECT_FORBIDDEN")
+
     if path_key == "spawn":
         purchase_units = int(cfg["quantity"].get("spawn_bulk_hint") or 50)
     else:
@@ -314,6 +339,7 @@ def plan_parts_force(
         "display_name": part.get("display_name"),
         "quantity": qty,
         "purchase_units_planned": purchase_units,
+        "offline_install": dict(cfg.get("offline_install") or {}),
         "game_mode": mode,
         "destination": path_cfg.get("destination"),
         "mutating_action": path_cfg.get("mutating_action"),

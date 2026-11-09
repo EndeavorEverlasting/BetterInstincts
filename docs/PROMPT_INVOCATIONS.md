@@ -19,6 +19,15 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
 | P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools + countertop mechanics (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
 
+## 2026-11-09 Sims offline-install (P00 + P01)
+
+**P00** Governance Doctrine Installer + **P01** Harness Infrastructure Builder:
+operator correction never EA-Connect The Sims 4; Stay Offline only; play as
+installed. Encoded in `AGENTS.md`, `docs/DOCTRINE.md`,
+`contracts/upgrade-parts-force.v1.json` `offline_install`, planner forbidden list,
+and `tests/test_upgrade_parts_force.py`. Consultation
+`contracts/consultations/BI-SIMS-OFFLINE-ONLY-20261109.v1.json`.
+
 ## 2026-11-09 household DIY parts budget + cert (P95 + P124 + Trifecta)
 
 **P95** selects `HOUSEHOLD_DIY_PARTS_BUDGET` (per-Sim pocket DIY kit for

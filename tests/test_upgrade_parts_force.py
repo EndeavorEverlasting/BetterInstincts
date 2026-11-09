@@ -28,6 +28,19 @@ class UpgradePartsForceTests(unittest.TestCase):
         self.assertEqual(cfg["household_budget"]["preferred_acquisition_order"][0], "spawn")
         self.assertIn("phone", cfg["paths"])
         self.assertIn("gsi_create_obj", cfg["forbidden"])
+        self.assertTrue(cfg["offline_install"]["forbid_ea_online_connect"])
+        self.assertEqual(cfg["offline_install"]["connection_required_dialog"], "STAY_OFFLINE_ONLY")
+        for needle in ("ea_online_connect", "CONNECT_BUTTON", "CONNECT_ONLINE", "force_sims_online"):
+            self.assertIn(needle, cfg["forbidden"])
+
+    def test_phone_plan_never_presses_connect(self):
+        plan = plan_parts_force(part_id="kitchen_upgrade_parts", path="phone", quantity=2)
+        blob = json.dumps(plan).lower()
+        self.assertIn("stay offline", blob)
+        self.assertNotIn('"choice": "connect"', blob)
+        self.assertEqual(plan["offline_install"]["forbid_ea_online_connect"], True)
+        ops = [s.get("op") for s in plan["steps"]]
+        self.assertIn("IF_CONNECTION_REQUIRED", ops)
 
     def test_catalog_diy_kit_covers_core_parts(self):
         snap = catalog_snapshot()

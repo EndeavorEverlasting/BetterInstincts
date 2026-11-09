@@ -26,6 +26,9 @@ Observe the game's native tuning and compare with community implementations **be
 ## Long-lived patch support (P00)
 Support multiple independently verified game builds. Do not equate newest with only-supported. Certified profile and proof bytes are immutable across future updates; patch updates add new profiles and compare tuning against prior local evidence. Do not silently reinterpret a certified older game's configuration. Match exact full game version, OS/platform and feature module; unknown patches fail closed. Mod version and game patch are different concepts. No real game build has yet been certified.
 
+## Offline install (P00/P01 — 2026-11-09)
+The Sims 4 host must **never** press EA **Connect** or otherwise force the installed game online. Play as installed offline. On `CONNECTION IS REQUIRED`, choose **Stay Offline** only. Prefer on-lot spawn / local computer Order over phone paths that surface an online gate. See `contracts/upgrade-parts-force.v1.json` `offline_install`.
+
 BI-002 game-capable agent must actually perform the hunger A/B and rollback, attach evidence, and pass maintainer review before sprint closure. Without game access it remains BLOCKED and ACTIVE, not completed via handoff.
 
 ## Long-horizon continuity (P141/P82/P07/P04)
