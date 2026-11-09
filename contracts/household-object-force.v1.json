@@ -1,0 +1,195 @@
+{
+  "schema": "betterinstincts.household-object-force/v1",
+  "version": 1,
+  "authority": "docs/HOUSEHOLD_OBJECT_FORCE.md",
+  "proof_ceiling": "OFFLINE_HOUSEHOLD_OBJECT_FORCE_PLAN_NOT_LIVE_SPAWN_NOT_GSI_CREATE_OBJ_CERT",
+  "design_brief": {
+    "subject": "Household Object Force — durable useful-item catalog into any household on command",
+    "audience": "operators and Windows host agents who need career rewards and hidden fabrication gear without hallucinated hex IDs",
+    "job": "Reusable catalog + planner: elementary bb.showhiddenobjects unlock for catalog/hidden list items; careers.promote deposits into Household Inventory; optional Better BuildBuy UX only — never a substitute for the elementary unlock",
+    "operator_correction": "bb.showhiddenobjects IS ELEMENTARY to unlocking the hidden items on the operator list"
+  },
+  "activation": {
+    "require_explicit_activate": true,
+    "never_on_startup": true,
+    "never_autorun": true,
+    "never_touch_game_speed": true,
+    "cli": {
+      "catalog": "python -m scripts.household_object_force catalog",
+      "plan": "python -m scripts.household_object_force plan --item-id ID_OR_all",
+      "elementary-unlock": "python -m scripts.household_object_force elementary-unlock"
+    }
+  },
+  "elementary_unlock": {
+    "required_for": ["catalog_search", "fabrication_recipe", "hidden_debug_item"],
+    "never_substituted_by": [
+      "twistedmexi_better_buildbuy",
+      "gsi_create_obj",
+      "mccc_spawn_by_name",
+      "hallucinated_instance_hex"
+    ],
+    "open_console_chord": ["CTRL", "SHIFT", "C"],
+    "open_console_chord_label": "Ctrl+Shift+C",
+    "activate_testing_cheats": "testingcheats true",
+    "activate_testing_cheats_alias": "testingcheats enabled true",
+    "show_hidden_objects": "bb.showhiddenobjects",
+    "one_command_per_line": true,
+    "player_lines": [
+      "testingcheats true",
+      "bb.showhiddenobjects"
+    ],
+    "forbidden_typable_forms": [
+      "bb.showhiddenobjects / buydebug",
+      "bb.showhiddenobjects/buydebug",
+      "buydebug",
+      "objects.gsi_create_obj",
+      "gsi_create_obj"
+    ]
+  },
+  "inventory_rules": {
+    "large_objects_forbidden_destinations": ["PERSONAL_POCKET"],
+    "allowed_destinations": ["HOUSEHOLD_INVENTORY", "LOT_PLACEMENT"],
+    "note": "UFO Bed, Out of This World Desktop, Cruelty-Free Meat Wall and similar large objects cannot live in a Sim pocket inventory."
+  },
+  "optional_catalog_ux": {
+    "id": "twistedmexi_better_buildbuy",
+    "role": "OPTIONAL_CATALOG_UX_ONLY",
+    "never_replaces_elementary_unlock": true,
+    "helps_with": ["Organized Debug filter", "named search when vanilla debug catalog is blank"],
+    "required": false
+  },
+  "forbidden_always": [
+    "HALLUCINATED_INSTANCE_HEX",
+    "objects.gsi_create_obj_WITHOUT_EXTRACTED_ID",
+    "MCCC_SPAWN_BY_NAME_ASSUMPTION",
+    "SUBSTITUTE_BBB_FOR_SHOW_HIDDEN_OBJECTS",
+    "SKIP_ELEMENTARY_UNLOCK_FOR_CATALOG_PATH",
+    "PERSONAL_POCKET_FOR_LARGE_OBJECT",
+    "SLASH_JOIN_CONSOLE",
+    "TYPE_BUYDEBUG",
+    "TOUCH_GAME_SPEED",
+    "AUTORUN_ON_HOST_BOOT",
+    "EDIT_USER_SAVE"
+  ],
+  "useful_item_catalog": [
+    {
+      "id": "out_of_this_world_desktop",
+      "display_name": "Out of This World Desktop",
+      "delivery": "career_promote",
+      "destination": "HOUSEHOLD_INVENTORY",
+      "career_cheat": "careers.promote techguru",
+      "target_level": 10,
+      "branch": "eSports Gamer",
+      "pack_hint": "Get Famous or base Tech Guru path as installed",
+      "large_object": true,
+      "requires_elementary_unlock": false,
+      "notes": "Career reward bypasses Build/Buy catalog and deposits into Household Inventory."
+    },
+    {
+      "id": "cruelty_free_meat_wall",
+      "display_name": "Cruelty-Free Meat Wall",
+      "delivery": "career_promote",
+      "destination": "HOUSEHOLD_INVENTORY",
+      "career_cheat": "careers.promote careers_Adult_CivilDesigner",
+      "target_level": 5,
+      "branch": "Green Technician",
+      "pack_hint": "Eco Lifestyle",
+      "large_object": true,
+      "requires_elementary_unlock": false,
+      "notes": "Civil Designer career reward into Household Inventory."
+    },
+    {
+      "id": "ufo_bed",
+      "display_name": "UFO Bed (Retro Rocket Bed)",
+      "delivery": "career_promote",
+      "destination": "HOUSEHOLD_INVENTORY",
+      "career_cheat": "careers.promote astronaut",
+      "target_level": 10,
+      "branch": "Smuggler",
+      "pack_hint": "Get to Work",
+      "large_object": true,
+      "requires_elementary_unlock": false,
+      "notes": "Astronaut Smuggler branch Level 10 reward."
+    },
+    {
+      "id": "captain_sigma_statue",
+      "display_name": "Captain Sigma Statue",
+      "delivery": "career_promote",
+      "destination": "HOUSEHOLD_INVENTORY",
+      "career_cheat": "careers.promote astronaut",
+      "target_level": 8,
+      "branch": "Space Ranger",
+      "pack_hint": "Get to Work",
+      "large_object": true,
+      "requires_elementary_unlock": false,
+      "notes": "Astronaut Space Ranger branch Level 8 reward."
+    },
+    {
+      "id": "positronic_pro",
+      "display_name": "Positronic Pro (Magnetic Knife Rack)",
+      "delivery": "career_promote",
+      "destination": "HOUSEHOLD_INVENTORY",
+      "career_cheat": "careers.promote culinary",
+      "target_level": 6,
+      "branch": "Chef",
+      "pack_hint": "base Culinary",
+      "large_object": false,
+      "requires_elementary_unlock": false,
+      "optional": true,
+      "notes": "Not a statue — Culinary Chef Level 6 Magnetic Knife Rack. Include only when operator still wants it."
+    },
+    {
+      "id": "eco_matic_smog_vacuum",
+      "display_name": "Eco-Matic Smog Vacuum",
+      "delivery": "catalog_search",
+      "destination": "LOT_PLACEMENT",
+      "search_terms": ["Smog Vacuum", "Eco-Matic", "debug"],
+      "pack_hint": "Eco Lifestyle",
+      "large_object": true,
+      "requires_elementary_unlock": true,
+      "fabrication_recipe": true,
+      "optional_ux": "twistedmexi_better_buildbuy",
+      "notes": "Fabrication recipe — does not drop via career promote. Elementary unlock bb.showhiddenobjects is REQUIRED before search. BBB Organized Debug is optional UX when vanilla debug catalog is blank — never a substitute for the unlock."
+    },
+    {
+      "id": "hydroponic_planter",
+      "display_name": "Hydroponic Planter",
+      "delivery": "catalog_search",
+      "destination": "LOT_PLACEMENT",
+      "search_terms": ["Hydroponic", "Planter", "debug"],
+      "pack_hint": "Eco Lifestyle or garden debug shelves",
+      "large_object": true,
+      "requires_elementary_unlock": true,
+      "fabrication_recipe": true,
+      "optional_ux": "twistedmexi_better_buildbuy",
+      "notes": "Same elementary unlock rule as Smog Vacuum. Reuses Curious Catalog search affinity for Hydroponic without replacing that owner."
+    }
+  ],
+  "call_stack": {
+    "success": [
+      "PLAYER_FIRST / yield if player_directed",
+      "RESOLVE useful_item_catalog rows for requested ids (or all non-optional)",
+      "If any row requires_elementary_unlock: OPEN console → testingcheats true → bb.showhiddenobjects (one line per Enter)",
+      "For career_promote rows: repeat careers.promote … until observed target_level / branch reward deposits into HOUSEHOLD_INVENTORY; optional demote after claim",
+      "For catalog_search rows: enter observed Build/Buy, search attested terms; optional BBB Organized Debug filter only AFTER elementary unlock",
+      "Place large objects from HOUSEHOLD_INVENTORY or directly on lot — never PERSONAL_POCKET",
+      "Emit receipt with exact commands planned; execute_allowed=false until independent screen_admit"
+    ],
+    "failure": [
+      "skip bb.showhiddenobjects for catalog_search → ELEMENTARY_UNLOCK_REQUIRED",
+      "substitute BBB for showhiddenobjects → SUBSTITUTE_BBB_FOR_SHOW_HIDDEN_OBJECTS",
+      "emit gsi_create_obj / hex → HALLUCINATED_INSTANCE_HEX_FORBIDDEN",
+      "pocket destination for large object → PERSONAL_POCKET_FORBIDDEN"
+    ]
+  },
+  "invariants": [
+    "bb_showhiddenobjects_elementary_for_catalog_hidden_list_items",
+    "bbb_never_replaces_elementary_unlock",
+    "no_hallucinated_gsi_create_obj_hex",
+    "large_objects_household_inventory_or_lot_only",
+    "one_command_per_line",
+    "player_first_yields",
+    "library_plans_execute_allowed_false",
+    "does_not_close_bi002"
+  ]
+}

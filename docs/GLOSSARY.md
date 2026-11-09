@@ -71,6 +71,9 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **CAPTURE_BEFORE_EDGE_SCAN** | Prefer PrintWindow + lot-model observe before any pan. |
 | **CAMERA_SAFE_REST** | Host gate that parks to SAFE_CURSOR_REST when edge-park is detected. |
 | **CURIOUS_CATALOG** | Opt-in hidden Buy shelves for rare/money gardening; never on startup; never touch game speed. |
-| **SHOW_HIDDEN_OBJECTS** | Console line `bb.showhiddenobjects` only — never type `buydebug` or slash-join. |
+| **SHOW_HIDDEN_OBJECTS** | Console line `bb.showhiddenobjects` only — never type `buydebug` or slash-join. Elementary unlock for household useful-item catalog/hidden rows. |
+| **HOUSEHOLD_OBJECT_FORCE** | Durable useful-item catalog + planner to force named objects into any household; career promote and catalog paths; no hallucinated hex spawn. |
+| **ELEMENTARY_HIDDEN_UNLOCK** | Required `testingcheats true` then `bb.showhiddenobjects` before catalog/hidden force rows; BBB never substitutes. |
+| **USEFUL_ITEM_CATALOG** | Machine-owned list of forceable household objects (Desktop, Meat Wall, UFO Bed, Sigma, Smog Vacuum, Hydroponic, optional Positronic Pro). |
 
-Related matrices: `contracts/behavior-matrix.v1.json`, `contracts/player-presence.v1.json`, `contracts/needs-force.v1.json`, `contracts/host-listener.v1.json`, `contracts/host-funds.v1.json`, `contracts/build-optimize.v1.json`.
+Related matrices: `contracts/behavior-matrix.v1.json`, `contracts/player-presence.v1.json`, `contracts/needs-force.v1.json`, `contracts/host-listener.v1.json`, `contracts/host-funds.v1.json`, `contracts/build-optimize.v1.json`, `contracts/household-object-force.v1.json`.

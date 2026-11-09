@@ -9,9 +9,9 @@ Build a community-native Sims 4 autonomy mod for needs, income, careers and pers
 Refresh HEAD/branch, PRs, status, game/version; declare host, scopes, collisions, tests, proof and parent gate. Resolve P-numbers via Moonwake catalog.
 
 ## P04 hidden-object discovery
-For any BetterInstincts P04, inventory `plans/active/BI-HIDDEN-OBJECTS.P04.md` and run `python -m scripts.hidden_object_discovery guide`. On hidden-item scope, follow its dispatch/scene/save/consent gates; otherwise defer without blocking the parent. Audit real local evidence using `python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json`. This cannot certify gameplay.
+Inventory `plans/active/BI-HIDDEN-OBJECTS.P04.md`; `python -m scripts.hidden_object_discovery guide`. Hidden-item scope: follow dispatch/scene/save/consent; else defer. Audit: `python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json`. Scout: `python -m scripts.hidden_object_scout goal` (`docs/HIDDEN_OBJECT_SCOUT.md`). No autorun.
 
-For sustained local discovery, run `python -m scripts.hidden_object_scout goal`; owner: `docs/HIDDEN_OBJECT_SCOUT.md`. No autorun.
+Useful-item force (not chat): `contracts/household-object-force.v1.json`; `python -m scripts.household_object_force`. `bb.showhiddenobjects` elementary for catalog/hidden rows; BBB never substitutes; no hallucinated `gsi_create_obj`. `docs/HOUSEHOLD_OBJECT_FORCE.md`.
 
 ## Invariants
 - **Player first:** no interruption of explicit player commands; no uncontrolled repeated autonomy loops.
@@ -31,6 +31,6 @@ The **local agent** owns hunger: inspect installed game/tuning, build reversible
 Read `docs/HORIZON.md`, `plans/horizon.v1.json`, `plans/active/BI-003.execution.v1.json`. Order: all six needs, balance, income, skills, careers; preserve prior systems/patches. Offline != game proof; BI-002 stays open. `python -m scripts.check_horizon`.
 
 ## Completion contract
-Report CHANGED | PROVED | NEXT, including exact checks run/skipped, commit SHA, push/PR/merge, game patch and live-test status. A plan is not implementation; a green CI check is not playable-mod proof. Do not publish pre-alpha as a release.
+Report CHANGED | PROVED | NEXT with checks, SHA, push/PR/merge, patch, live status. A plan is not implementation; a green CI check is not playable-mod proof.
 
 P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`; ontology: `docs/handoff/BI-SEMANTIC-ONTOLOGY-P04-2026-11-07.md`; hidden objects: `plans/active/BI-HIDDEN-OBJECTS.P04.md` (BI-002 active).
