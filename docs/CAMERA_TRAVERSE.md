@@ -8,6 +8,32 @@
 **Vocabulary:** [GLOSSARY.md](GLOSSARY.md)
 **Program home:** [HOST_AUTONOMY.md](HOST_AUTONOMY.md)
 
+
+## Semantic definition: screen edge versus camera-trigger region (2026-11-09)
+
+**Screen edge** in operator shorthand is **not** the monitor bezel, the first/last literal pixel, or a prohibition against near-edge UI buttons. It means the portion of the **Sims 4 game client** where the pointer can cause camera translation by lingering. The single conservative host policy calls this `SCREEN_EDGE_CAMERA_TRIGGER_ZONE`: the current default 48px inset from each client boundary. Actual activation depends on exact game build, overlays, HUD coverage, input mode, and window geometry; 48px is a **protective margin**, not an experimentally established engine hitbox. All coordinates are client-relative; never substitute absolute desktop/monitor edges.
+
+Interpret a pointer observation by **phase + target + ownership + camera outcome**, not by pixel location alone:
+
+- **Idle/park** at a potential camera-trigger edge: **bad** for agent-owned pointer. Classify `CAMERA_EDGE_DWELL_FORBIDDEN` and require `SAFE_CURSOR_REST` before thinking, coding, waiting, vision sampling, or another world-target click.
+- **A verified, brief HUD/control click near the edge:** **legitimate**. `TARGETED_CLICK` + fresh `UI_CHROME` attestation yields only `EDGE_UI_CLICK_HOST_ADMISSION` as a geometry candidate. Existing exact-mode/scene/save/player/idle controls must still admit the one click. Release, park the host-controlled cursor inside the client, and independently verify the HUD outcome. Do not mislabel this as `EDGE_MOUSE_PARK`.
+- **Cursor transit through an edge:** not automatically a misclick; no prolonged dwell. Finish bounded movement and park safely.
+- **Deliberate camera navigation:** must be host-owned, bounded, explicitly goal-scoped, and end at `SAFE_REST` plus fresh capture/camera revision before any world click. Never park near the edge while reasoning or keep stale target coordinates.
+- **Unverified control or world-object target near the edge:** abstain and reobserve/reframe; do **not** use the transient HUD exception to bypass world framing.
+- **Player-owned pointer:** yield and do not commandeer or reposition it merely because it is at an edge. A host must reacquire permitted control after the user becomes idle.
+
+The machine-readable policy is in `contracts/camera-traverse.v1.json#edge_interaction`; the sole pure evaluator is `betterinstincts.camera_traverse.assess_edge_interaction` (also exposed via `evaluate_cursor_risk`). For agent CLI runs:
+
+```sh
+python -m scripts.camera_traverse evaluate --x 800 --y 20 --phase TARGETED_CLICK --target-kind UI_CHROME --target-verified
+python -m scripts.camera_traverse evaluate --x 800 --y 20 --phase REST
+python -m scripts.camera_traverse rest --session-id SID --process-id PID --execute
+```
+
+The first command **does not click**; it returns an explicit host-admission gate and mandatory post-click safe rest. The second shows the forbidden unattended dwell. The third requires a real admitted active session; do not run it against a player-owned cursor. `scripts.win32_input.send_click`, `send_right_click`, `send_wheel` and `right_drag` already default to `safe_rest_after=True`; caller overrides must be contained by an admitted higher-level finally/rest contract, never used as a permanent cursor park.
+
+**Live certification boundary:** P82 offline tests prove classification and guard behavior only. P08 must observe the exact Sims client, changing camera revision and screen imagery over sustained cursor dwell, then demonstrate that valid edge HUD clicks still work and admitted safe rest stops camera movement. Tests must also include player interruption and window geometry. A CI PASS is not P08 proof.
+
 ## Problem
 
 Sims pans the camera when the cursor sits in the edge band (default **48px**). Agents often push the mouse to the edge to scan — or leave it on the cheat-console strip / bottom HUD after a click — then switch to coding with the cursor still there. The camera keeps drifting and the next observation is garbage.
