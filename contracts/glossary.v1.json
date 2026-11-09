@@ -428,7 +428,7 @@
       ]
     },
     "UPGRADE_PARTS_FORCE": {
-      "definition": "Host planner that spam-buys named upgrade parts (especially Robot Salvage Parts) via Computer Order → Purchase Upgrade Parts, or lab-bulk Spawns Crafting Supplies after testingcheats. Sibling to DIY_SKILL_FORCE; pocket inventory only; never gsi_create_obj hex or BI-002 closure.",
+      "definition": "Host planner that stocks named upgrade/DIY parts via spawn bulk or phone/computer Order. Evolved into HOUSEHOLD_DIY_PARTS_BUDGET; pocket inventory only; never gsi_create_obj hex or BI-002 closure.",
       "owners": [
         "contracts/upgrade-parts-force.v1.json",
         "docs/UPGRADE_PARTS_FORCE.md",
@@ -436,18 +436,42 @@
         "scripts/upgrade_parts_force.py"
       ]
     },
+    "HOUSEHOLD_DIY_PARTS_BUDGET": {
+      "definition": "Per-Sim pocket stock for every observed household member N: DIY builder kit (common/electronic/plumbing/kitchen upgrade parts, robot salvage, computer chip, mechanism) with spawn-first acquisition and machine-readable cert schema.",
+      "owners": [
+        "contracts/upgrade-parts-force.v1.json",
+        "docs/UPGRADE_PARTS_FORCE.md",
+        "betterinstincts/upgrade_parts_force.py",
+        "scripts/upgrade_parts_force.py"
+      ]
+    },
+    "DIY_BUILDER_KIT": {
+      "definition": "Canonical set of pocket craft/upgrade materials every household Sim should hold at budget target so DIY builds and Tune Up are not blocked by missing parts.",
+      "owners": [
+        "contracts/upgrade-parts-force.v1.json",
+        "docs/UPGRADE_PARTS_FORCE.md"
+      ]
+    },
     "COMPUTER_PURCHASE_UPGRADE_PARTS": {
-      "definition": "Vanilla Live path: any computer → Order → Purchase Upgrade Parts → select Robot Salvage Parts (or sibling upgrade part); delivers to Sim pocket inventory. Default spam-buy path for Gardener-Bot Tune Up.",
+      "definition": "Vanilla Live path: phone or computer → Order → Purchase Upgrade Parts → select a buyable upgrade/salvage part; delivers to Sim pocket inventory.",
       "owners": [
         "contracts/upgrade-parts-force.v1.json",
         "docs/UPGRADE_PARTS_FORCE.md"
       ]
     },
     "ROBOT_SALVAGE_PARTS": {
-      "definition": "Discover University robotics crafting/tune-up material. Observed Tune Up miss: 4 units. Buy via COMPUTER_PURCHASE_UPGRADE_PARTS or bulk via workstation Spawn Crafting Supplies.",
+      "definition": "Discover University robotics crafting/tune-up material. Observed Tune Up miss: 4 units. Prefer Spawn Crafting Supplies bulk; Order purchase remains valid.",
       "owners": [
         "contracts/upgrade-parts-force.v1.json",
         "docs/UPGRADE_PARTS_FORCE.md"
+      ]
+    },
+    "DIY_PARTS_BUDGET_CERT": {
+      "definition": "Machine-readable receipt (betterinstincts.diy-parts-budget.cert/v1) scoring each household member × DIY kit part as UNKNOWN/SHORT/MET from attested pocket counts; never auto-certified from plans alone.",
+      "owners": [
+        "contracts/upgrade-parts-force.v1.json",
+        "docs/UPGRADE_PARTS_FORCE.md",
+        "scripts/upgrade_parts_force.py"
       ]
     },
     "ACCEPT_OFFERED_REWARD_TRAIT": {

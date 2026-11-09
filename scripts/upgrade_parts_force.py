@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
-"""Upgrade-parts spam-buy planner CLI (Robot Salvage Parts and siblings).
+"""Household DIY parts budget + upgrade-parts spam-buy CLI.
 
-Remembers the forgotten path:
-  Computer → Order → Purchase Upgrade Parts → Robot Salvage Parts
-
-Lab bulk alternative:
-  testingcheats → Shift+click robotics workstation → Spawn Crafting Supplies
-
-Evaluate-only by default. Live pie-menu / Shift+click SendInput remains P08-gated
-under screen_admit — this CLI prints durable plans and how-to-buy checklists.
+Always-ready DIY stock lives in each Sim's pocket inventory (N members).
+Preferred scalable path: Spawn Crafting Supplies bulk; phone/computer Order fills gaps.
 
 Examples:
   python -m scripts.upgrade_parts_force catalog
+  python -m scripts.upgrade_parts_force budget
   python -m scripts.upgrade_parts_force how-to-buy
-  python -m scripts.upgrade_parts_force how-to-buy --part robot_salvage_parts
   python -m scripts.upgrade_parts_force plan --part robot_salvage_parts --quantity 20
-  python -m scripts.upgrade_parts_force plan --part \"gardener bot parts\" --path spawn
-  python -m scripts.upgrade_parts_force plan --quantity 4 --checklist
+  python -m scripts.upgrade_parts_force household --members 4 --path spawn --checklist
+  python -m scripts.upgrade_parts_force certify --members 4 --observations obs.json
+  python -m scripts.upgrade_parts_force record --run-id diy-parts-lab-001 --members 4 --member-slot 0 --part-id robot_salvage_parts --observed-count 50
+  python -m scripts.upgrade_parts_force status --run-id diy-parts-lab-001
 """
 from __future__ import annotations
 
@@ -31,9 +27,14 @@ if str(ROOT) not in sys.path:
 
 from betterinstincts.upgrade_parts_force import (
     UpgradePartsForceError,
+    budget_snapshot,
     catalog_snapshot,
+    evaluate_diy_parts_cert,
     how_to_buy,
+    plan_household_parts_budget,
     plan_parts_force,
+    record_part_observation,
+    status_cert,
     steps_to_operator_checklist,
 )
 
@@ -48,26 +49,51 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("catalog", help="List upgrade-part catalog + path summaries")
+    sub.add_parser("budget", help="Show DIY kit pocket-stock targets")
 
-    how = sub.add_parser("how-to-buy", help="Print the forgotten computer Order path")
+    how = sub.add_parser("how-to-buy", help="Print phone/computer Order path")
     how.add_argument("--part", default="robot_salvage_parts")
 
     plan = sub.add_parser("plan", help="Emit evaluate-only spam-buy / spawn plan")
     plan.add_argument("--part", default="robot_salvage_parts")
     plan.add_argument("--quantity", type=int, default=None)
-    plan.add_argument("--path", choices=["computer", "spawn"], default=None)
-    plan.add_argument("--mode", default="live", help="Game mode (computer/spawn require live)")
+    plan.add_argument("--path", choices=["spawn", "phone", "computer"], default=None)
+    plan.add_argument("--mode", default="live")
     plan.add_argument("--player-directed", action="store_true")
-    plan.add_argument(
-        "--checklist",
-        action="store_true",
-        help="Also emit a flat operator checklist beside the plan JSON",
+    plan.add_argument("--checklist", action="store_true")
+
+    household = sub.add_parser("household", help="Plan DIY kit stock for every portrait (N)")
+    household.add_argument("--members", type=int, required=True, help="Observed Live portrait count N")
+    household.add_argument("--path", choices=["spawn", "phone", "computer"], default="spawn")
+    household.add_argument("--quantity", type=int, default=None)
+    household.add_argument("--mode", default="live")
+    household.add_argument("--player-directed", action="store_true")
+    household.add_argument("--checklist", action="store_true")
+
+    certify = sub.add_parser("certify", help="Evaluate machine-readable cert from attested observations")
+    certify.add_argument("--members", type=int, required=True)
+    certify.add_argument(
+        "--observations",
+        required=True,
+        help="JSON file: [{member_slot, parts:{part_id:count|null}}, ...]",
     )
+
+    record = sub.add_parser("record", help="Record one attested pocket count into a cert run")
+    record.add_argument("--run-id", required=True)
+    record.add_argument("--members", type=int, default=None, help="Required on first record")
+    record.add_argument("--member-slot", type=int, required=True)
+    record.add_argument("--part-id", required=True)
+    record.add_argument("--observed-count", type=int, required=True)
+
+    status = sub.add_parser("status", help="Read cert.json for a run-id")
+    status.add_argument("--run-id", required=True)
 
     args = parser.parse_args(argv)
     try:
         if args.cmd == "catalog":
             return _print(catalog_snapshot())
+        if args.cmd == "budget":
+            return _print(budget_snapshot())
         if args.cmd == "how-to-buy":
             return _print(how_to_buy(args.part))
         if args.cmd == "plan":
@@ -82,7 +108,42 @@ def main(argv: list[str] | None = None) -> int:
                 result = dict(result)
                 result["operator_checklist"] = steps_to_operator_checklist(result)
             return _print(result)
+        if args.cmd == "household":
+            result = plan_household_parts_budget(
+                members=args.members,
+                path=args.path,
+                quantity=args.quantity,
+                game_mode=args.mode,
+                player_directed=bool(args.player_directed),
+            )
+            if args.checklist:
+                result = dict(result)
+                result["operator_checklist"] = steps_to_operator_checklist(result)
+            return _print(result)
+        if args.cmd == "certify":
+            obs_path = Path(args.observations)
+            raw = json.loads(obs_path.read_text(encoding="utf-8"))
+            if isinstance(raw, dict) and "members" in raw:
+                observations = raw["members"]
+            else:
+                observations = raw
+            return _print(evaluate_diy_parts_cert(members=args.members, observations=observations))
+        if args.cmd == "record":
+            return _print(
+                record_part_observation(
+                    run_id=args.run_id,
+                    member_slot=args.member_slot,
+                    part_id=args.part_id,
+                    observed_count=args.observed_count,
+                    members=args.members,
+                )
+            )
+        if args.cmd == "status":
+            return _print(status_cert(args.run_id))
     except UpgradePartsForceError as exc:
+        print(json.dumps({"error": str(exc)}, indent=2, sort_keys=True), file=sys.stderr)
+        return 2
+    except (OSError, json.JSONDecodeError) as exc:
         print(json.dumps({"error": str(exc)}, indent=2, sort_keys=True), file=sys.stderr)
         return 2
     parser.error("unknown command")

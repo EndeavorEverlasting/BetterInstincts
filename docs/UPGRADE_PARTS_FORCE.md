@@ -1,45 +1,61 @@
-# Upgrade-parts force — spam-buy Robot Salvage Parts
+# Household DIY parts budget — pocket stock for every Sim (N)
 
 **Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
-**P124:** sibling owner beside `diy_skill_force` / `funds_inject` / `household_object_force` / `ui_chrome`
-**Machine owner:** [`contracts/upgrade-parts-force.v1.json`](../contracts/upgrade-parts-force.v1.json)
+**P124:** expand existing `upgrade_parts_force` (peer to `diy_skill_force` household traverse)
+**Machine owner:** [`contracts/upgrade-parts-force.v1.json`](../contracts/upgrade-parts-force.v1.json) v2
 **Planner:** `betterinstincts.upgrade_parts_force`
 **CLI:** `python -m scripts.upgrade_parts_force`
 
-## Why this exists
+## Goal
 
-Gardener-Bot **Tune Up** fails when the Sim is missing **Robot Salvage Parts** (observed: Charlee needed **4**). The buy path is easy to forget:
+Every household Sim (observed portrait count **N**) keeps DIY building parts in **personal pocket inventory** so crafts / Tune Up still work when another member is at work or removed. Shared Household Inventory is the wrong destination for these materials.
 
-**Any computer → Order → Purchase Upgrade Parts → Robot Salvage Parts**
+## Scalable acquisition (preferred order)
 
-Parts deliver straight into the Sim’s **pocket inventory**. This is not a Build/Buy catalog row and not a Household Inventory deposit.
+1. **spawn** — `testingcheats` → Shift+click Dr. F robotics workstation → **Spawn Crafting Supplies** (~50 each; one action stocks most DIY materials).
+2. **phone** — Phone → Order → Purchase Upgrade Parts (buyable rows).
+3. **computer** — Computer/laptop → Order → Purchase Upgrade Parts.
 
-## Paths
+Buy Mode debug catalog is **not** the preferred stock path.
 
-| Path | What it does | Mode | Notes |
-| --- | --- | --- | --- |
-| `computer` | Spam-buy via Order → Purchase Upgrade Parts × quantity | LIVE | Default. Default quantity **20** (craft-scale); use `--quantity 4` for one Tune Up. |
-| `spawn` | `testingcheats enabled true` → Shift+click Dr. F robotics workstation → **Spawn Crafting Supplies** | LIVE | Lab bulk (~50 each). Planning hint only until P08 Shift+click is calibrated. |
+## DIY builder kit
 
-Forbidden: hallucinated `gsi_create_obj` hex, Build/Buy search for pocket parts, autorun, save edits, claiming BI-002 from a plan.
+| Part | Buyable via Order? | Default path |
+| --- | --- | --- |
+| Common Upgrade Parts | yes | spawn |
+| Electronic Upgrade Parts | yes | spawn |
+| Plumbing Upgrade Parts | yes | spawn |
+| Kitchen Upgrade Parts | yes | phone |
+| Robot Salvage Parts | yes | spawn |
+| Computer Chip | no (spawn/craft) | spawn |
+| Mechanism | no (spawn/craft) | spawn |
+
+Optional pack row: Eco-Upgrade Parts (often missing from Order).
+
+Default budget target: **20** of each kit part per Sim (spawn bulk ~50 satisfies this).
 
 ## CLI
 
 ```text
-python -m scripts.upgrade_parts_force catalog
-python -m scripts.upgrade_parts_force how-to-buy
+python -m scripts.upgrade_parts_force budget
+python -m scripts.upgrade_parts_force household --members 4 --path spawn --checklist
 python -m scripts.upgrade_parts_force how-to-buy --part robot_salvage_parts
-python -m scripts.upgrade_parts_force plan --part robot_salvage_parts --quantity 20
-python -m scripts.upgrade_parts_force plan --part "gardener bot parts" --quantity 4 --checklist
-python -m scripts.upgrade_parts_force plan --path spawn --part robot_salvage_parts
+python -m scripts.upgrade_parts_force plan --part electronics --path phone --quantity 20
+python -m scripts.upgrade_parts_force record --run-id diy-parts-lab-001 --members 4 --member-slot 0 --part-id robot_salvage_parts --observed-count 50
+python -m scripts.upgrade_parts_force status --run-id diy-parts-lab-001
+python -m scripts.upgrade_parts_force certify --members 4 --observations obs.json
 ```
 
-Library plans keep `execute_allowed=false`. Live pie-menu / Shift+click SendInput requires independent `screen_admit` + disposable lab proof (P08 OPEN).
+`--members N` must match the Live portrait strip. Host never invents household size.
 
-## Synonyms
+## Machine-readable live certification
 
-`gardener bot parts`, `tune up parts`, `robot salvage`, `salvage parts` resolve to `robot_salvage_parts`.
+Receipt schema `betterinstincts.diy-parts-budget.cert/v1` under `dist/diy-parts-budget/<run-id>/`.
+
+Per part states: `UNKNOWN` | `SHORT` | `MET`. Aggregate: `UNPROVEN` | `PARTIAL` | `ALL_MEMBERS_MET_REVIEW_REQUIRED`.
+
+Plans alone never certify. `MET` requires independently attested pocket counts ≥ target for every diy_kit part on every member. Even `ALL_MEMBERS_MET_REVIEW_REQUIRED` stays `certified=false` until human/agent review.
 
 ## Proof ceiling
 
-`HOST_UPGRADE_PARTS_PLAN_NOT_LIVE_INVENTORY_CERT` — offline plans and operator checklists only until a live inventory delta is independently observed.
+`HOST_DIY_PARTS_BUDGET_PLAN_AND_CERT_SCHEMA_NOT_BI002` — offline plans + cert schema; live SendInput / inventory OCR remain P08. Does not close BI-002.

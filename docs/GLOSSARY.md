@@ -46,7 +46,7 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **FEDERAL_SUBSIDY_PROMPT** | Funds under 100 → Sims-styled notice; Yes runs durable funds inject. |
 | **FUNDS_INJECT** | Ctrl+Shift+C → `testingcheats enabled true` → Money/motherlode in any mode (not BI-004 income). |
 | **DIY_SKILL_FORCE** / **FULL_UNLOCK_BUNDLE** / **RESIDUAL_CORE** / **HOUSEHOLD_SKILL_FORCE** / **ACCEPT_OFFERED_REWARD_TRAIT** / **TYPE_TEXT_KEYBD_EVENT** / **PLAY_BRIEF_OBSERVE_REPAUSE** | Mode-agnostic skill cheats: `full_unlock` for all adult majors; mandatory residual Cooking/Fitness/Natural Living re-applied at end; `household --members N` Space-traverses every portrait; `--detach` async worker; play-brief then re-pause for panel proof; not BI-005. |
-| **UPGRADE_PARTS_FORCE** / **COMPUTER_PURCHASE_UPGRADE_PARTS** / **ROBOT_SALVAGE_PARTS** | Spam-buy Robot Salvage Parts (and sibling upgrade parts) via Computer → Order → Purchase Upgrade Parts, or lab Spawn Crafting Supplies; pocket inventory only. |
+| **HOUSEHOLD_DIY_PARTS_BUDGET** / **DIY_BUILDER_KIT** / **DIY_PARTS_BUDGET_CERT** / **UPGRADE_PARTS_FORCE** | Per-Sim pocket DIY parts for household size N; spawn-first then phone/computer Order; machine-readable MET/SHORT/UNKNOWN cert. |
 | **TESTINGCHEATS_ENABLED_TRUE** | Required before Money; skipping it fails live inject. |
 | **CHEAT_CONSOLE_CHORD** | Ctrl+Shift+C opens the cheat console in Live/Build/Buy; required before testingcheats/Money. |
 | **MODE_AGNOSTIC_FUNDS_INJECT** | Inject preserves operator mode — never force F1 / Esc-spam while building. |
