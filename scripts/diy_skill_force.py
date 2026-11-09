@@ -53,7 +53,7 @@ def _wait_for_input_idle(
     process_id: int,
     *,
     idle_ms: int,
-    timeout_sec: float = 90.0,
+    timeout_sec: float = 600.0,
     poll_sec: float = 0.5,
 ) -> dict:
     """Poll OS last-input age until idle_ms is met or timeout.
@@ -219,6 +219,7 @@ def _execute_plan(
     close_console: bool = False,
     session_id: str | None = None,
     idle_ms: int = 15000,
+    wait_idle_timeout_sec: float = 600.0,
     verify_skills_panel: bool = False,
     verify_play_seconds: int | None = None,
 ) -> dict:
@@ -241,7 +242,11 @@ def _execute_plan(
         require_execute_session(session_id, process_id)
     except HandoffError as exc:
         raise GateError(str(exc)) from exc
-    idle_wait = _wait_for_input_idle(int(process_id), idle_ms=idle_ms)
+    idle_wait = _wait_for_input_idle(
+        int(process_id),
+        idle_ms=idle_ms,
+        timeout_sec=float(wait_idle_timeout_sec),
+    )
     with admitted_screen_lease(
         int(process_id),
         str(session_id),
@@ -390,6 +395,7 @@ def _execute_household(
     process_id: int | None,
     session_id: str | None = None,
     idle_ms: int = 15000,
+    wait_idle_timeout_sec: float = 600.0,
     verify_skills_panel: bool = False,
     verify_play_seconds: int | None = None,
 ) -> dict:
@@ -411,6 +417,11 @@ def _execute_household(
             close_console=True,
             session_id=session_id,
             idle_ms=idle_ms,
+            # Only the first member waits the long quiet window; later members
+            # re-admit under the same quiet period after our own SendInput.
+            wait_idle_timeout_sec=(
+                float(wait_idle_timeout_sec) if index == 0 else min(60.0, float(wait_idle_timeout_sec))
+            ),
             verify_skills_panel=verify_skills_panel,
             verify_play_seconds=verify_play_seconds,
         )
@@ -504,6 +515,12 @@ def _add_common_execute_flags(ap: argparse.ArgumentParser) -> None:
         default=15000,
         help="Player-idle gate ms (contract floor 15000; below raises IDLE_THRESHOLD_OUT_OF_RANGE)",
     )
+    ap.add_argument(
+        "--wait-idle-timeout-sec",
+        type=float,
+        default=600.0,
+        help="Max seconds to wait for OS input idle before admit (detached agents reuse this)",
+    )
     ap.add_argument("--receipt", type=Path, default=None)
 
 
@@ -595,6 +612,10 @@ def main(argv: list[str] | None = None) -> int:
                     child_argv.extend(["--session-id", str(args.session_id)])
                 if args.idle_ms:
                     child_argv.extend(["--idle-ms", str(int(args.idle_ms))])
+                if getattr(args, "wait_idle_timeout_sec", None) is not None:
+                    child_argv.extend(
+                        ["--wait-idle-timeout-sec", str(float(args.wait_idle_timeout_sec))]
+                    )
                 result = _detach_household_worker(child_argv, receipt=Path(receipt))
                 result["plan"] = {
                     "state": plan["state"],
@@ -610,6 +631,7 @@ def main(argv: list[str] | None = None) -> int:
                     process_id=args.process_id,
                     session_id=args.session_id,
                     idle_ms=int(args.idle_ms),
+                    wait_idle_timeout_sec=float(args.wait_idle_timeout_sec),
                     verify_skills_panel=bool(args.verify_skills_panel),
                     verify_play_seconds=args.verify_play_seconds,
                 )
@@ -637,6 +659,7 @@ def main(argv: list[str] | None = None) -> int:
                     close_console=bool(args.close_console),
                     session_id=args.session_id,
                     idle_ms=int(args.idle_ms),
+                    wait_idle_timeout_sec=float(args.wait_idle_timeout_sec),
                     verify_skills_panel=bool(args.verify_skills_panel),
                     verify_play_seconds=args.verify_play_seconds,
                 )
