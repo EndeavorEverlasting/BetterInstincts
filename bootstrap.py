@@ -186,11 +186,84 @@ def uninstall(location: dict[str, Path], *, platform: str | None = None) -> dict
             "checkout_preserved_reason": None if can_remove_clone else "PREEXISTING_OR_MODIFIED_CHECKOUT"}
 
 
+
+def _gui() -> int:
+    """Explicitly clicked local installer. Opening never changes the workstation."""
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+    except ImportError as exc:
+        raise BootstrapError("TKINTER_UNAVAILABLE_USE_CLI") from exc
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        raise BootstrapError("GRAPHICAL_DESKTOP_UNAVAILABLE_USE_CLI") from exc
+    root.title("BetterInstincts · Installation")
+    root.geometry("540x280")
+    root.resizable(False, False)
+    frame = tk.Frame(root, padx=22, pady=18)
+    frame.pack(fill="both", expand=True)
+    tk.Label(frame, text="BetterInstincts", font=("Arial", 18, "bold")).pack(anchor="w")
+    tk.Label(
+        frame,
+        text="Local offline toolkit · no Sims game files or services are installed",
+        wraplength=488, justify="left",
+    ).pack(anchor="w", pady=(5, 10))
+    status_text = tk.StringVar(value="No changes made. Choose an action.")
+    tk.Label(frame, textvariable=status_text, justify="left", anchor="w", wraplength=488).pack(
+        fill="x", pady=(0, 10)
+    )
+
+    def handle(command: str) -> None:
+        if command == "uninstall" and not messagebox.askyesno(
+            "Confirm uninstall",
+            "Remove verified BetterInstincts-owned launcher and manifest?\n"
+            "A pristine checkout created by this installer may also be removed.\n"
+            "Pre-existing or modified checkouts and Sims saves are preserved.",
+            parent=root,
+        ):
+            status_text.set("Uninstall cancelled. No changes made.")
+            return
+        try:
+            location = paths()
+            if command == "doctor":
+                installed = _validated_manifest(location["use"], location["development"], sys.platform)
+                result = {
+                    "state": "INSTALLED" if installed else "NOT_INSTALLED",
+                    **{key: str(value) for key, value in location.items()},
+                }
+            elif command == "install":
+                result = install(location)
+            else:
+                result = uninstall(location)
+            status_text.set(result["state"] + ": " + str(result.get("use", result.get("checkout", ""))))
+            messagebox.showinfo("BetterInstincts", json.dumps(result, indent=2), parent=root)
+        except (BootstrapError, OSError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+            status_text.set("BLOCKED_PRESERVE: " + str(exc))
+            messagebox.showerror("BetterInstincts", str(exc), parent=root)
+
+    buttons = tk.Frame(frame)
+    buttons.pack(anchor="w", pady=(5, 0))
+    tk.Button(buttons, text="Inspect paths", command=lambda: handle("doctor"), width=15).pack(
+        side="left", padx=(0, 8)
+    )
+    tk.Button(buttons, text="Install", command=lambda: handle("install"), width=12).pack(
+        side="left", padx=(0, 8)
+    )
+    tk.Button(buttons, text="Uninstall", command=lambda: handle("uninstall"), width=12).pack(
+        side="left"
+    )
+    root.mainloop()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["install", "uninstall", "doctor"])
+    parser.add_argument("command", nargs="?", default="gui", choices=["install", "uninstall", "doctor", "gui"])
     args = parser.parse_args(argv)
     try:
+        if args.command == "gui":
+            return _gui()
         location = paths()
         if args.command == "doctor":
             existing = _validated_manifest(location["use"], location["development"], sys.platform)
