@@ -39,3 +39,7 @@ No playable-mod claim until a real package/script is built, installed on a **dis
 
 ## Agent accountability
 Preflight repo/branch/PR, protected paths, status, read-first ledger, and latest provider evidence. Execute safe ready work, run the focused validators and regression tests, produce durable tracked artifacts, and report proof ceiling. Do not mark work done because a plan exists or because an agent acknowledges a request. Human-only game testing may be routed to a named operator gate; continue independent work meanwhile.
+
+## Agent-controlled camera authority (2026-11-09)
+
+**Binding runtime default:** the agent-owned camera stays centered on the active Sim. `Enter` centers the Sim; `Shift+Enter` centers the lot and is not a substitute. Never park on a street, choose arbitrary camera views, or free-pan/zoom based on agent preference. A **named, verified current host-task goal and target** may receive a single bounded map traversal lease (30-second maximum, eight directions); only when the active Sim was already anchored. Traversal must re-center the active Sim under the same admitted host lease in `finally`, then reobserve. Human input, unknown Sim, dialog or focus loss means yield and restoration pending — not forceful override. The machine owner is `betterinstincts/active_sim_camera_lock.py`; see `contracts/camera-traverse.v1.json`, `docs/CAMERA_TRAVERSE.md`, `tests/test_active_sim_camera_lock.py`. Retain player-first and no save writes.
