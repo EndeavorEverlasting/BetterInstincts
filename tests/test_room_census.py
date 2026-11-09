@@ -181,6 +181,7 @@ class RoomCensusTests(unittest.TestCase):
         contract = load_contract()
         self.assertEqual(contract["authority"], "betterinstincts/room_census.py")
         glossary_contract = json.loads((root / "contracts/glossary.v1.json").read_text(encoding="utf-8"))
+        self.assertEqual(glossary_contract["authority"], "contracts/glossary.v1.json")
         doc = (root / "docs/GLOSSARY.md").read_text(encoding="utf-8")
         # P78 keeps human-facing glossary rows inside the existing table.
         self.assertEqual(doc.count("| **ROOM_CENSUS** / **ROOM_CENSUS_COVERAGE** |"), 1)
