@@ -485,6 +485,105 @@ def evaluate_cursor_risk(
     }
 
 
+
+def assess_game_pause(
+    *,
+    capture_ref: str,
+    observation: Optional[Mapping[str, object]],
+    cfg: Optional[Mapping[str, object]] = None,
+) -> dict:
+    """Verify Live time is actually frozen before screen target sampling.
+
+    Sims P / 0 are *toggles*, not idempotent pause commands. Never recommend
+    pressing P unless an independently observed playing clock agrees with the
+    HUD indicator. This only plans; it never sends a key or resumes the game.
+    Pausing Sims time does not freeze mouse/camera movement or stale UI panels.
+    """
+    cfg = cfg or load_contract()
+    policy = cfg.get("drift_recovery", {}).get("gameplay_pause") or {}
+    if (policy.get("pause_before_live_pixel_targeting") is not True
+            or policy.get("toggle_key") != ["P"]
+            or policy.get("auto_resume") is not False):
+        raise CameraTraverseError("GAME_PAUSE_POLICY_UNSAFE")
+    if not isinstance(capture_ref, str) or not 1 <= len(capture_ref) <= 128:
+        raise CameraTraverseError("GAME_PAUSE_CAPTURE_INVALID")
+    base = {
+        "paused_verified": False, "execute_allowed": False,
+        "capture_ref": capture_ref, "auto_resume_allowed": False,
+        "proof_ceiling": PROOF_CEILING,
+        "forbidden": ["BLIND_PAUSE_TOGGLE", "AUTO_RESUME", "REUSE_PRE_PAUSE_PIXELS"],
+    }
+
+    def hold(reason: str) -> dict:
+        return {**base, "gate": "GAME_PAUSE_REOBSERVE",
+                "reason": reason, "state": "GAME_PAUSE_UNVERIFIED"}
+
+    if not isinstance(observation, Mapping):
+        return hold("HOST_CLOCK_OBSERVATION_MISSING")
+    if (observation.get("source") != "HOST_CAPTURE"
+            or observation.get("capture_ref") != capture_ref
+            or observation.get("mode") != "LIVE"
+            or observation.get("scene_id") != "live_mode"
+            or observation.get("capture_quality") != "CONTENT_PRESENT"
+            or observation.get("viewport_state") != "NORMAL"):
+        return hold("GAME_PAUSE_LIVE_SCENE_UNVERIFIED")
+    from betterinstincts.scenes import load_catalog
+    version = load_catalog()["game_version"]
+    if observation.get("game_version") != version:
+        return hold("GAME_PAUSE_GAME_PATCH_UNVERIFIED")
+    if any(observation.get(key) is not value for key, value in (
+        ("player_camera_owned", False), ("player_queue_owned", False),
+        ("modal_open", False), ("text_entry_active", False),
+        ("save_authorized", True),
+    )):
+        return hold("GAME_PAUSE_PLAYER_OR_INPUT_OWNED")
+    cues = observation.get("independent_cues")
+    if (not isinstance(cues, list) or len(cues) != 2
+            or {c.get("source") for c in cues if isinstance(c, Mapping)}
+                != {"visual", "operator"}
+            or not all(isinstance(c, Mapping)
+                       and isinstance(c.get("token"), str)
+                       and 1 <= len(c["token"]) <= 80 for c in cues)):
+        return hold("GAME_PAUSE_INDEPENDENT_SCENE_CUES_MISSING")
+    camera_revision = observation.get("camera_revision")
+    if not isinstance(camera_revision, str) or not 1 <= len(camera_revision) <= 80:
+        return hold("GAME_PAUSE_CAMERA_REVISION_UNVERIFIED")
+    clock = observation.get("game_clock")
+    if not isinstance(clock, Mapping):
+        return hold("GAME_CLOCK_SENSOR_MISSING")
+    if (clock.get("source") != "HOST_GAME_CLOCK"
+            or clock.get("capture_ref") != capture_ref
+            or clock.get("camera_revision") != camera_revision
+            or clock.get("game_version") != version):
+        return hold("GAME_CLOCK_STALE_OR_UNTRUSTED")
+    clock_revision = clock.get("clock_revision")
+    if not isinstance(clock_revision, str) or not 1 <= len(clock_revision) <= 80:
+        return hold("GAME_CLOCK_REVISION_UNVERIFIED")
+    state = clock.get("speed_state")
+    indicator = clock.get("pause_indicator_active")
+    still = clock.get("clock_still_during_sample")
+    if type(indicator) is not bool or type(still) is not bool:
+        return hold("GAME_CLOCK_PAUSE_EVIDENCE_UNKNOWN")
+    if state == "PAUSED" and indicator and still:
+        return {
+            **base, "gate": "GAME_PAUSED_FOR_TARGETING",
+            "state": "GAME_PAUSED_CONFIRMED", "paused_verified": True,
+            "camera_revision": camera_revision, "clock_revision": clock_revision,
+            "pause_origin": clock.get("pause_origin") if clock.get("pause_origin") in {"PLAYER", "AGENT"} else "UNKNOWN",
+            "key": None,
+        }
+    if state == "PLAYING" and not indicator and not still:
+        return {
+            **base, "gate": "GAME_PAUSE_REQUIRED",
+            "state": "GAME_PLAYING_CONFIRMED",
+            "camera_revision": camera_revision, "clock_revision": clock_revision,
+            "key": list(policy["toggle_key"]),
+            "next_step": "RECAPTURE_AND_VERIFY_GAME_PAUSED",
+        }
+    return hold("GAME_CLOCK_CONFLICTING_PAUSE_INDICATORS")
+
+
+
 def assess_drift_recovery(
     *,
     target_kind: str,
