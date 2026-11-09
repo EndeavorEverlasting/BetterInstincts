@@ -1209,6 +1209,39 @@
       "owners": [
         "contracts/hover-learning.v1.json"
       ]
+    },
+    "SERVO_NEEDS": {
+      "definition": "A Servo in The Sims 4 has four independently observed motives: durability, charge, fun and social. The human six-needs map must never be silently applied.",
+      "owners": [
+        "betterinstincts/household_upkeep.py",
+        "docs/HOUSEHOLD_UPKEEP.md"
+      ]
+    },
+    "SERVO_TUNE_UP": {
+      "definition": "An eligible other household Sim may queue an observed Servo Tune Up or broken-Servo repair when durability requires it; selection is only advisory and requires actual action-menu evidence.",
+      "owners": [
+        "betterinstincts/household_upkeep.py"
+      ]
+    },
+    "SERVO_RECHARGE": {
+      "definition": "A Servo with low battery charge uses a separate self-recharge action and queue, not the human Energy/sleep route or an unrelated helper Tune Up.",
+      "owners": [
+        "betterinstincts/household_upkeep.py"
+      ]
+    },
+    "HOUSEHOLD_BILLS": {
+      "definition": "Observed in-game household bill obligation including bill reference, due state, simoleon amount, affordability, proposed payer, and independent payment receipt. Not a Build/Buy purchase.",
+      "owners": [
+        "betterinstincts/household_upkeep.py",
+        "betterinstincts/budget_eval.py"
+      ]
+    },
+    "UPKEEP_QUEUE_CONTINUITY": {
+      "definition": "Household upkeep propositions are bounded, priority-aware, per-actor queue checked, nonduplicating and fail closed after already-queued or dispatched attempts until independent reobservation.",
+      "owners": [
+        "betterinstincts/household_upkeep.py",
+        "betterinstincts/queue_capacity.py"
+      ]
     }
   }
 }
