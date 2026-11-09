@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-09 — DIY skill-force for Servos / Handiness / Robotics (P95 + P124 + Trifecta)
+
+**Operator:** Build and use host logic to level Servos, Handiness, Robotics, and other DIY skills so they become super useful. **P95** selects `DIY_SKILL_FORCE`: mode-agnostic cheat stack soft-focus → Ctrl+Shift+C → `testingcheats enabled true` → `stats.set_skill_level` for Handiness / Robotics / Fabrication / Programming (default level 10; bundles `diy_maker` + `servo_core`). **P124** factors as sibling to `funds_inject` / `household_object_force`, distinct from read-only `sim_profile` (never `practice_skill` / BI-005). Consultation `BI-DIY-SKILL-FORCE-20261109.v1.json`. CLI: `python -m scripts.diy_skill_force catalog|plan|level`. Live execute requires ACTIVE session + PID; select each Servo before dispatch. Does not close BI-002 or BI-005.
+
 ## 2026-11-09 — Click-error eval + Escape-cancel on chrome miss (P95 + Trifecta)
 
 Offline `click_error_eval` scores intended ui_chrome targets vs observed client pixels (HIT/NEAR_MISS/MISS, ABOVE_TARGET, LOT_PUNCH_THROUGH_RISK). Non-HIT → `ESCAPE_CANCEL` via `CANCEL_HOLD`; recipe must not continue into the lot. Remapped `catalog.search_field` 1920×1080 to client ≈(140,864). Proof ceiling: offline metrics + recovery plan only — not live click certification.
