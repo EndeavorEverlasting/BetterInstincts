@@ -116,12 +116,19 @@
       "panel_observations",
       "shortcut_hint"
     ],
-    "mode_context_contract": "contracts/ui-mode.v1.json"
+    "mode_context_contract": "contracts/ui-mode.v1.json",
+    "optional_chance_event_fields": [
+      "chance_event",
+      "chance_event_external_research_opt_in"
+    ],
+    "chance_event_contract": "docs/CHANCE_EVENT_RESEARCH.md",
+    "chance_event_scope": "Supplied, two-cue scene observation must share capture_ref; local memo read; evaluate-only companion. External work dispatch opt-in, never launched by listener. In player-yield state the event advisory is still read-only, never a game click."
   },
   "pipeline": [
     "load_session",
     "validate_observation",
     "classify_optional_mode_context_from_two_distinct_scene_cues",
+    "assess_optional_supplied_chance_event_for_read_only_companion",
     "player_presence_classify",
     "yield_if_player_playing",
     "hold_live_planning_for_buy_build_unknown_mode",
