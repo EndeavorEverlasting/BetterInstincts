@@ -320,11 +320,29 @@ def _execute_plan(
     def _admit_probe():
         return probe_windows(int(process_id))
 
+    def _focus_then_reidle() -> dict:
+        """Soft-focus Alt ages last-input; wait again before admit confirm.
+
+        Without a second idle wait, confirm() immediately sees RECENT_HUMAN_INPUT
+        from the synthetic Alt unlock and fails closed even when the operator is quiet.
+        """
+        report = _focus(process_id)
+        # Focus already slept ~15.25s; still re-poll in case a sidecar pulsed input.
+        reidle = _wait_for_input_idle(
+            int(process_id),
+            idle_ms=idle_ms,
+            timeout_sec=min(180.0, float(wait_idle_timeout_sec)),
+            progress_path=wait_idle_progress_path,
+        )
+        report["idle_before_focus"] = idle_wait
+        report["idle_after_focus"] = reidle
+        return report
+
     with admitted_screen_lease(
         int(process_id),
         str(session_id),
         idle_ms=idle_ms,
-        focus_fn=lambda: _focus(process_id),
+        focus_fn=_focus_then_reidle,
         probe_fn=_admit_probe,
     ) as ensure_ready:
         try:
