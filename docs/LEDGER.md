@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-09 — Skill-force trait OK + durable keybd typing (P95 + Trifecta)
+
+**Operator:** While leveling Sims all the way, press OK on cool new traits (e.g. Perfectionist-style); ensure host logic is built and durable, not chat-trapped. **P95** extends `diy-skill-force` v3 with `ACCEPT_OFFERED_REWARD_TRAIT` (Enter + OK hotspot; never Cancel) interleaved through full_unlock, and makes `type_text` (keybd_event) the typing owner after KEYEVENTF_UNICODE silent-miss on TS4. Consultation `BI-SKILL-FORCE-TRAIT-ACCEPT-20261109.v1.json`. Not aspiration life-state / invite OK / BI-005.
+
 ## 2026-11-09 — Full skill unlock ladder (extend diy_skill_force)
 
 **Operator:** While another agent runs live certification, build host logic that levels Sims all the way so activities/unlockables are not gated. Expanded `diy-skill-force` v2 with adult Major_* catalog + `full_unlock` (default), preserving `diy_maker` / `servo_core`. Consultation `BI-SKILL-FORCE-FULL-UNLOCK-20261109.v1.json`. Still not BI-005. Yield screen to concurrent live-cert owner.

@@ -94,9 +94,9 @@ def _tap(vk: int) -> None:
 
 
 def _type_text(text: str) -> None:
-    from scripts.win32_input import type_unicode
+    from scripts.win32_input import type_text
 
-    type_unicode(text)
+    type_text(text)
 
 
 def _click(x: int, y: int) -> None:
