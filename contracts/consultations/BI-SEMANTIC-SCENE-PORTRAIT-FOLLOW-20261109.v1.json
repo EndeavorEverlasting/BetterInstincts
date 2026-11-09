@@ -111,7 +111,9 @@
     "tests/test_active_sim_camera_lock.py",
     "scripts/win32_input.py",
     "scripts/scenery_memory.py",
-    "tests/test_win32_input.py"
+    "tests/test_win32_input.py",
+    "scripts/sim_camera.py",
+    "tests/test_sim_camera.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
