@@ -111,7 +111,8 @@ class BuildSpatialTests(unittest.TestCase):
             place_enclosure="INSIDE",
             place_story="FLOOR_1",
         )
-        self.assertEqual(admitted["state"], "MUTATION_ADMITTED")
+        self.assertEqual(admitted["state"], "MUTATION_DENIED")
+        self.assertEqual(admitted["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
 
     def test_host_stack_surfaces_spatial_order(self):
         model = hs.observe(
@@ -151,8 +152,9 @@ class BuildSpatialTests(unittest.TestCase):
             viewport={"state": "VIEWPORT_OK"},
         )
         self.assertIsNotNone(turn.get("build_spatial"))
-        self.assertEqual(turn["fallback"]["mechanism"], "BUILD_SPATIAL_ORDER")
-        self.assertEqual(turn["fallback"]["primary"]["story"], "FLOOR_1")
+        self.assertEqual(turn["fallback"]["mechanism"], "BUILD_LIBRARY_CHECKPOINT")
+        self.assertEqual(turn["fallback"]["action"], "SCAN_ALL_FLOORS_AND_ROOMS")
+        # A legacy My Library attestation without all-floor classification cannot authorize Build order.
 
 
 if __name__ == "__main__":
