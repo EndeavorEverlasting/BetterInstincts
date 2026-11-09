@@ -592,7 +592,7 @@ def _execute_household(
             "completion_ledger": str(ledger_path),
             "proof_ceiling": household_plan.get("proof_ceiling"),
             "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
-            "next_gate": "REVIEW_SKILLS_PANEL_OR_RED0_IN_DISPOSABLE_LAB",
+            "next_gate": "REVIEW_SKILLS_PANEL_OR_REDO_IN_DISPOSABLE_LAB",
         }
 
     cell_results: list[dict] = []
