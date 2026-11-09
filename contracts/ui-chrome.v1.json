@@ -80,6 +80,18 @@
           "status": "UNVERIFIED_CANDIDATE"
         },
         {
+          "id": "PAUSE_GAME_TOGGLE",
+          "chord": [
+            "P"
+          ],
+          "effect": "Toggle Live game pause ONLY after current host/game clock proves PLAYING; never toggle from PAUSED or UNKNOWN",
+          "status": "EA_DOCUMENTED_NATIVE",
+          "proves_mode": false,
+          "not_idempotent": true,
+          "requires_clock_precondition": "PLAYING_CORROBORATED",
+          "auto_resume": false
+        },
+        {
           "id": "CENTER_ACTIVE_SIM",
           "chord": [
             "ENTER"
