@@ -29,7 +29,7 @@
     "locks": "User-scoped shared UI-input mutex, not inside any clone/worktree. 0700 directory on POSIX; stale locks fail closed."
   },
   "installation": "bootstrap.py install clones only if canonical checkout absent and writes only manifest-owned launcher+manifest",
-  "uninstallation": "bootstrap.py uninstall removes only verified launcher+manifest; removes exact checkout only if this installer created it and it has no tracked modifications, untracked or ignored data Empty owned lock directory is pruned; active/stale lock files block removal and are never force-deleted.",
+  "uninstallation": "bootstrap.py uninstall removes only verified launcher+manifest; removes exact checkout only if this installer created it and it has no tracked modifications, untracked or ignored data Empty owned lock directory is pruned; active/stale lock files block removal and are never force-deleted. The installer removes an empty development parent only if its manifest records that the installer created it; existing project roots are never removed.",
   "forbidden": [
     "HARDCODE_USERNAME",
     "SILENT_SECOND_CLONE",
