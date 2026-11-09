@@ -1,0 +1,26 @@
+{
+  "schema": "betterinstincts.consultation/v1",
+  "id": "BI-SKILL-FORCE-COMPLETION-LEDGER-20261109",
+  "title": "Durable per-member skill completion ledger + Space to next needing Sim",
+  "status": "ACCEPTED",
+  "date": "2026-11-09",
+  "prompt_kit": ["P95", "P08", "P82", "P07", "P124"],
+  "observation": [
+    "Host revisited already-maxed skills on the same Sim when household skill-force was restarted.",
+    "N is the observed household portrait count; do not invent an 8/10 member ceiling.",
+    "Holistic host sense: know which skills are already done, skip them, Space to the next Sim that still needs work."
+  ],
+  "decision": [
+    "Own a repository-wide completion ledger under dist/game-host (diy-skill-force-completion.json) keyed by session_id + member index/key.",
+    "After each stats.set_skill_level cheat is typed, record DISPATCHED at target level for that member/skill.",
+    "On plan/execute, omit skills already DISPATCHED or PANEL_OBSERVED_MAX at target; if a member has none left, skip console dispatch and Space to the next needing member.",
+    "DISPATCHED is resume evidence only — Skills-panel LOCAL_OBSERVED remains the sole PASS. --redo forces a full re-dispatch. Not a second skill owner."
+  ],
+  "owners": [
+    "contracts/diy-skill-force.v1.json",
+    "betterinstincts/diy_skill_force.py",
+    "scripts/diy_skill_force.py",
+    "docs/DIY_SKILL_FORCE.md"
+  ],
+  "not": ["BI-005", "save edit", "autorun", "panel PASS from ledger", "invented household size"]
+}

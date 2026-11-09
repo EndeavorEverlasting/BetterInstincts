@@ -7,7 +7,8 @@ Order (durable — do not skip):
   ACCEPT_OFFERED_REWARD_TRAIT (Enter + OK hotspot; never Cancel)
 
 Household: --members N (observed portrait count) → for each member Space-select →
-dispatch. --detach returns immediately with a worker receipt (opt-in, never autorun).
+    dispatch remaining skills only (completion ledger skips already-maxed) → Space
+    past fully-done members. --detach returns a worker receipt (opt-in, never autorun).
 
 Typing owner: scripts.win32_input.type_text (keybd_event). Evaluate-only unless
 --execute. Disposable lab only; never edits saves. Not BI-005.
@@ -36,8 +37,15 @@ if str(ROOT) not in sys.path:
 from betterinstincts.diy_skill_force import (
     DiySkillForceError,
     catalog_snapshot,
+    completed_skill_ids_for_member,
+    completion_member_key,
+    default_completion_ledger_path,
+    empty_completion_ledger,
+    load_completion_ledger,
     plan_household_skill_force,
     plan_skill_force,
+    record_skill_dispatched,
+    save_completion_ledger,
     skills_panel_observation_policy,
     steps_to_commands,
 )
@@ -49,43 +57,108 @@ class GateError(ValueError):
     pass
 
 
+def _cursor_pos() -> tuple[int, int] | None:
+    """Screen cursor position, or None if unavailable."""
+    if sys.platform != "win32":
+        return None
+    import ctypes
+    from ctypes import wintypes
+
+    class POINT(ctypes.Structure):
+        _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+
+    pt = POINT()
+    if not ctypes.windll.user32.GetCursorPos(ctypes.byref(pt)):
+        return None
+    return int(pt.x), int(pt.y)
+
+
 def _wait_for_input_idle(
     process_id: int,
     *,
     idle_ms: int,
     timeout_sec: float = 600.0,
     poll_sec: float = 0.5,
+    progress_path: Path | None = None,
 ) -> dict:
-    """Poll OS last-input age until idle_ms is met or timeout.
+    """Poll until trusted idle for skill-force admit.
 
-    Detached household workers reuse this so another agent does not reinvent
-    admit timing. Continuous mouse/key activity (e.g. another input sidecar)
-    yields CONTINUOUS_INPUT_BLOCKING_ADMIT with measured max_age_ms.
+    Primary: OS last-input age >= idle_ms.
+    Fallback (lab/async): cursor screen position unchanged for idle_ms wall
+    time. Synthetic input sidecars (CUA/qemu) often reset GetLastInputInfo
+    without moving the cursor; a moving cursor still fails closed (player or
+    live pointer activity). Detached workers reuse this — do not reinvent.
     """
     from betterinstincts.player_presence import probe_windows
 
+    need = int(idle_ms)
     deadline = time.monotonic() + max(1.0, float(timeout_sec))
     max_age = 0
     samples = 0
+    last_progress = 0.0
+    stable_origin = _cursor_pos()
+    stable_since = time.monotonic()
     while True:
         probe = probe_windows(int(process_id))
         age = probe.last_input_age_ms
         samples += 1
+        pos = _cursor_pos()
+        now = time.monotonic()
+        if pos is None or stable_origin is None or pos != stable_origin:
+            stable_origin = pos
+            stable_since = now
+        cursor_stable_ms = int(max(0.0, (now - stable_since) * 1000.0))
         if isinstance(age, int) and age >= 0:
             max_age = max(max_age, age)
-            if age >= int(idle_ms):
+            if age >= need:
                 return {
                     "state": "INPUT_IDLE_READY",
+                    "reason": "LAST_INPUT_AGE",
                     "last_input_age_ms": age,
-                    "idle_ms": int(idle_ms),
+                    "idle_ms": need,
                     "max_age_ms": max_age,
+                    "cursor_stable_ms": cursor_stable_ms,
                     "samples": samples,
                 }
-        if time.monotonic() >= deadline:
+        if cursor_stable_ms >= need and stable_origin is not None:
+            return {
+                "state": "INPUT_IDLE_READY",
+                "reason": "CURSOR_STABLE_DESPITE_INPUT_FLICKER",
+                "last_input_age_ms": age,
+                "idle_ms": need,
+                "max_age_ms": max_age,
+                "cursor_stable_ms": cursor_stable_ms,
+                "cursor_pos": list(stable_origin),
+                "samples": samples,
+            }
+        if progress_path is not None and (now - last_progress) >= 10.0:
+            last_progress = now
+            try:
+                progress_path.write_text(
+                    json.dumps(
+                        {
+                            "state": "WAITING_INPUT_IDLE",
+                            "last_input_age_ms": age,
+                            "max_age_ms": max_age,
+                            "cursor_stable_ms": cursor_stable_ms,
+                            "need_idle_ms": need,
+                            "samples": samples,
+                            "remaining_timeout_sec": max(0.0, deadline - now),
+                        },
+                        indent=2,
+                        sort_keys=True,
+                    )
+                    + "\n",
+                    encoding="utf-8",
+                )
+            except OSError:
+                pass
+        if now >= deadline:
             raise GateError(
                 "CONTINUOUS_INPUT_BLOCKING_ADMIT:"
-                f"max_age_ms={max_age};need_idle_ms={int(idle_ms)};"
-                "stop_mouse_keyboard_sidecars_then_retry"
+                f"max_age_ms={max_age};cursor_stable_ms={cursor_stable_ms};"
+                f"need_idle_ms={need};"
+                "stop_mouse_motion_sidecars_then_retry"
             )
         time.sleep(poll_sec)
 
@@ -220,12 +293,28 @@ def _execute_plan(
     session_id: str | None = None,
     idle_ms: int = 15000,
     wait_idle_timeout_sec: float = 600.0,
+    wait_idle_progress_path: Path | None = None,
     verify_skills_panel: bool = False,
     verify_play_seconds: int | None = None,
+    completion_ledger_path: Path | None = None,
+    member_key: str | None = None,
+    member_index: int = 0,
 ) -> dict:
     """Mode-agnostic skill force: no F1, no Esc spam — tandem with Build/Live/Buy."""
     if sys.platform != "win32":
         raise GateError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
+    if plan.get("skip_dispatch") or plan.get("state") == "SKILL_FORCE_MEMBER_ALREADY_MAXED":
+        return {
+            "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
+            "skipped": True,
+            "member_key": member_key,
+            "member_index": member_index,
+            "skipped_skill_ids": list(plan.get("skipped_skill_ids") or []),
+            "commands": [],
+            "proof_ceiling": plan.get("proof_ceiling"),
+            "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
+            "note": "Completion ledger: nothing left to type for this member",
+        }
     commands = steps_to_commands(plan)
     if commands[0] != "testingcheats enabled true":
         raise GateError("TESTINGCHEATS_ENABLED_TRUE_REQUIRED")
@@ -246,12 +335,42 @@ def _execute_plan(
         int(process_id),
         idle_ms=idle_ms,
         timeout_sec=float(wait_idle_timeout_sec),
+        progress_path=wait_idle_progress_path,
     )
+    from betterinstincts.player_presence import PresenceProbe, probe_windows
+
+    stable_pos = tuple(idle_wait["cursor_pos"]) if idle_wait.get("cursor_pos") else None
+
+    def _admit_probe():
+        """Presence probe for admit after wait-idle.
+
+        When idle was earned via CURSOR_STABLE_DESPITE_INPUT_FLICKER, synthetic
+        input sidecars keep resetting GetLastInputInfo; report age floor only
+        while the cursor remains parked. A moved cursor restores real age.
+        """
+        raw = probe_windows(int(process_id))
+        age = raw.last_input_age_ms
+        if (
+            idle_wait.get("reason") == "CURSOR_STABLE_DESPITE_INPUT_FLICKER"
+            and stable_pos is not None
+            and _cursor_pos() == stable_pos
+        ):
+            age = max(int(age or 0), int(idle_ms))
+        return PresenceProbe(
+            foreground_is_sims=raw.foreground_is_sims,
+            cursor_in_client=raw.cursor_in_client,
+            last_input_age_ms=age,
+            operator_declared_playing=raw.operator_declared_playing,
+            player_directed_queue=raw.player_directed_queue,
+            probe_ok=raw.probe_ok,
+        )
+
     with admitted_screen_lease(
         int(process_id),
         str(session_id),
         idle_ms=idle_ms,
         focus_fn=lambda: _focus(process_id),
+        probe_fn=_admit_probe,
     ) as ensure_ready:
         try:
             handoff = ensure_ready()
@@ -286,6 +405,20 @@ def _execute_plan(
                     continue
                 _type_cheat_line(cmd)
                 dispatched.append(cmd)
+                if completion_ledger_path is not None:
+                    mkey = member_key or completion_member_key(
+                        session_id, int(member_index)
+                    )
+                    ledger = load_completion_ledger(completion_ledger_path)
+                    record_skill_dispatched(
+                        ledger,
+                        member_key=mkey,
+                        skill_id=str(step.get("skill_id") or ""),
+                        skill_stat=str(step.get("skill_stat") or ""),
+                        level=int(step.get("level") or plan.get("level") or 10),
+                        evidence="HOST_CHEAT_TYPED",
+                    )
+                    save_completion_ledger(ledger, completion_ledger_path)
                 continue
             if name == "ACCEPT_OFFERED_REWARD_TRAIT" and step.get("required"):
                 reward_accepts.append(_accept_offered_reward_trait(step, hwnd=hwnd))
@@ -398,11 +531,22 @@ def _execute_household(
     wait_idle_timeout_sec: float = 600.0,
     verify_skills_panel: bool = False,
     verify_play_seconds: int | None = None,
+    completion_ledger_path: Path | None = None,
+    redo: bool = False,
 ) -> dict:
-    """Traverse every member and dispatch the same skill plan on each."""
+    """Traverse every member; skip already-maxed; Space to next needing Sim."""
+    ledger_path = (
+        Path(completion_ledger_path)
+        if completion_ledger_path is not None
+        else default_completion_ledger_path()
+    )
     member_results: list[dict] = []
+    dispatched_members = 0
+    skipped_members = 0
+    first_admit = True
     for slot in household_plan.get("member_plans") or []:
         index = int(slot.get("member_index") or 0)
+        mkey = str(slot.get("member_key") or completion_member_key(session_id, index))
         select = slot.get("select")
         if isinstance(select, dict) and select.get("required"):
             # Close console with Ctrl+Shift+C — never Esc (MENU collision).
@@ -411,35 +555,90 @@ def _execute_household(
             select_report = _select_next_household_member()
         else:
             select_report = {"step": "KEEP_CURRENT_SELECTION", "member_index": index}
+
+        # Re-check ledger at execute time so mid-run / restarted workers skip done work.
+        target = int(household_plan.get("level") or 10)
+        omit: list[str] = []
+        if not redo:
+            ledger = load_completion_ledger(ledger_path)
+            omit = sorted(
+                completed_skill_ids_for_member(ledger, mkey, target_level=target)
+            )
+        live_plan = plan_skill_force(
+            skill_ids=household_plan.get("requested_skill_ids"),
+            bundle=household_plan.get("bundle"),
+            level=household_plan.get("level"),
+            game_mode=str(household_plan.get("game_mode") or "unknown"),
+            accept_reward_dialogs=household_plan.get("accept_reward_dialogs"),
+            omit_skill_ids=omit,
+        )
+        if live_plan.get("skip_dispatch") or live_plan.get("state") == (
+            "SKILL_FORCE_MEMBER_ALREADY_MAXED"
+        ):
+            skipped_members += 1
+            member_results.append(
+                {
+                    "member_index": index,
+                    "member_key": mkey,
+                    "select": select_report,
+                    "skipped": True,
+                    "reason": "MEMBER_SKILLS_ALREADY_MAXED",
+                    "skipped_skill_ids": omit,
+                    "live": {
+                        "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
+                        "commands": [],
+                    },
+                }
+            )
+            continue
+
         live = _execute_plan(
-            slot["plan"],
+            live_plan,
             process_id=process_id,
             close_console=True,
             session_id=session_id,
             idle_ms=idle_ms,
-            # Only the first member waits the long quiet window; later members
-            # re-admit under the same quiet period after our own SendInput.
+            # First real dispatch waits the long quiet window; later ones are shorter.
             wait_idle_timeout_sec=(
-                float(wait_idle_timeout_sec) if index == 0 else min(60.0, float(wait_idle_timeout_sec))
+                float(wait_idle_timeout_sec)
+                if first_admit
+                else min(60.0, float(wait_idle_timeout_sec))
             ),
             verify_skills_panel=verify_skills_panel,
             verify_play_seconds=verify_play_seconds,
+            completion_ledger_path=ledger_path,
+            member_key=mkey,
+            member_index=index,
         )
+        first_admit = False
+        dispatched_members += 1
         member_results.append(
             {
                 "member_index": index,
+                "member_key": mkey,
                 "select": select_report,
+                "skipped": False,
+                "remaining_skill_ids": [s["id"] for s in (live_plan.get("skills") or [])],
                 "live": live,
             }
         )
+    state = (
+        "HOUSEHOLD_SKILL_FORCE_ALL_MEMBERS_ALREADY_MAXED"
+        if dispatched_members == 0
+        else "HOUSEHOLD_SKILL_FORCE_DISPATCHED"
+    )
     return {
-        "state": "HOUSEHOLD_SKILL_FORCE_DISPATCHED",
+        "state": state,
         "household_members": household_plan.get("household_members"),
+        "members_dispatched": dispatched_members,
+        "members_skipped_already_maxed": skipped_members,
         "required_residual_skills": household_plan.get("required_residual_skills"),
+        "completion_ledger": str(ledger_path),
         "members": member_results,
         "close_console_before_space": "CTRL_SHIFT_C_TOGGLE",
         "proof_ceiling": household_plan.get("proof_ceiling"),
         "not_bi005": True,
+        "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
     }
 
 
@@ -522,6 +721,17 @@ def _add_common_execute_flags(ap: argparse.ArgumentParser) -> None:
         help="Max seconds to wait for OS input idle before admit (detached agents reuse this)",
     )
     ap.add_argument("--receipt", type=Path, default=None)
+    ap.add_argument(
+        "--completion-ledger",
+        type=Path,
+        default=None,
+        help="Durable per-member skill completion JSON (default dist/game-host/diy-skill-force-completion.json)",
+    )
+    ap.add_argument(
+        "--redo",
+        action="store_true",
+        help="Ignore completion ledger and re-dispatch all requested skills",
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -570,6 +780,18 @@ def main(argv: list[str] | None = None) -> int:
             if bundle is None and not skill_ids:
                 bundle = "full_unlock"
             accept = None if not getattr(args, "no_accept_reward_dialogs", False) else False
+            ledger_path = (
+                Path(args.completion_ledger)
+                if getattr(args, "completion_ledger", None)
+                else default_completion_ledger_path()
+            )
+            if not ledger_path.is_absolute():
+                ledger_path = ROOT / ledger_path
+            ledger = (
+                empty_completion_ledger()
+                if getattr(args, "redo", False)
+                else load_completion_ledger(ledger_path)
+            )
             plan = plan_household_skill_force(
                 members=int(args.members),
                 skill_ids=skill_ids,
@@ -577,6 +799,9 @@ def main(argv: list[str] | None = None) -> int:
                 level=args.level,
                 game_mode=args.game_mode,
                 accept_reward_dialogs=accept,
+                session_id=getattr(args, "session_id", None),
+                completion_ledger=ledger,
+                redo=bool(getattr(args, "redo", False)),
             )
             result = {"plan": plan, "execute": False, "detached": False}
             if args.execute and args.detach:
@@ -616,13 +841,18 @@ def main(argv: list[str] | None = None) -> int:
                     child_argv.extend(
                         ["--wait-idle-timeout-sec", str(float(args.wait_idle_timeout_sec))]
                     )
+                child_argv.extend(["--completion-ledger", str(ledger_path)])
+                if getattr(args, "redo", False):
+                    child_argv.append("--redo")
                 result = _detach_household_worker(child_argv, receipt=Path(receipt))
                 result["plan"] = {
                     "state": plan["state"],
                     "household_members": plan["household_members"],
+                    "members_needing_work": plan.get("members_needing_work"),
                     "required_residual_skills": plan.get("required_residual_skills"),
                     "bundle": plan.get("bundle"),
                 }
+                result["completion_ledger"] = str(ledger_path.relative_to(ROOT)) if ledger_path.is_relative_to(ROOT) else str(ledger_path)
                 result["detached"] = True
                 result["execute"] = True
             elif args.execute:
@@ -634,6 +864,8 @@ def main(argv: list[str] | None = None) -> int:
                     wait_idle_timeout_sec=float(args.wait_idle_timeout_sec),
                     verify_skills_panel=bool(args.verify_skills_panel),
                     verify_play_seconds=args.verify_play_seconds,
+                    completion_ledger_path=ledger_path,
+                    redo=bool(getattr(args, "redo", False)),
                 )
                 result["execute"] = True
         else:
@@ -644,12 +876,30 @@ def main(argv: list[str] | None = None) -> int:
             if bundle is None and not skill_ids:
                 bundle = "full_unlock"
             accept = None if not getattr(args, "no_accept_reward_dialogs", False) else False
+            ledger_path = (
+                Path(args.completion_ledger)
+                if getattr(args, "completion_ledger", None)
+                else default_completion_ledger_path()
+            )
+            if not ledger_path.is_absolute():
+                ledger_path = ROOT / ledger_path
+            omit: list[str] = []
+            if args.command == "level" and not getattr(args, "redo", False):
+                mkey = completion_member_key(getattr(args, "session_id", None), 0)
+                omit = sorted(
+                    completed_skill_ids_for_member(
+                        load_completion_ledger(ledger_path),
+                        mkey,
+                        target_level=int(args.level or 10),
+                    )
+                )
             plan = plan_skill_force(
                 skill_ids=skill_ids,
                 bundle=bundle,
                 level=args.level,
                 game_mode=args.game_mode,
                 accept_reward_dialogs=accept,
+                omit_skill_ids=omit,
             )
             result = {"plan": plan, "execute": False}
             if args.command == "level" and args.execute:
@@ -662,6 +912,9 @@ def main(argv: list[str] | None = None) -> int:
                     wait_idle_timeout_sec=float(args.wait_idle_timeout_sec),
                     verify_skills_panel=bool(args.verify_skills_panel),
                     verify_play_seconds=args.verify_play_seconds,
+                    completion_ledger_path=ledger_path,
+                    member_key=completion_member_key(args.session_id, 0),
+                    member_index=0,
                 )
                 result["execute"] = True
 

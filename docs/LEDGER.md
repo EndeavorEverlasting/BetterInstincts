@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-09 — Completion ledger: skip maxed skills + Space to next needing Sim (P95 + Trifecta)
+
+**Operator:** Host revisited already-maxed skills on the same Sim; N is whatever the household is. **P95/P124** add durable `diy-skill-force-completion.json` (session + member key): record `DISPATCHED` after each typed cheat; omit complete skills on plan/execute; skip fully-done members and Space to the next that still needs work; `--redo` bypasses. `DISPATCHED` ≠ Skills-panel PASS. Consultation `BI-SKILL-FORCE-COMPLETION-LEDGER-20261109.v1.json`. `diy-skill-force` v9. Cursor-stable idle admit kept for synthetic-input flicker. Not BI-005.
+
 ## 2026-11-09 — Residual skill_stat IDs + observed-N household async reuse (P83/P95/P124)
 
 **Operator Skills-panel proof:** Servo still L1–L3 after claimed force; Charlee mostly L10 but Cooking/Fitness/Natural Living stuck — wrong internal ids (`Major_Cooking`/`Major_Fitness`/`Major_NaturalLiving` no-ops). **Fix:** catalog → `Major_HomestyleCooking`, `Skill_Fitness`, `Skill_NLS`. **N = observed portrait count** (whatever the household is); do not invent 8/10 ceilings — `sanity_max_members` is anti-runaway only. `--detach` remains the shared async mechanism. Consultation `BI-SKILL-FORCE-RESIDUAL-IDS-OBSERVED-N-20261109.v1.json`. `diy-skill-force` v8. Not BI-005.
