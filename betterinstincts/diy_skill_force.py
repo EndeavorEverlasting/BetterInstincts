@@ -140,14 +140,22 @@ def required_residual_skills(cfg: Optional[dict] = None) -> list[str]:
 
 def catalog_snapshot(cfg: Optional[dict] = None) -> dict:
     cfg = cfg or load_contract()
+    seq = cfg.get("inject_sequence") or {}
     return {
         "skills": list(cfg["skill_catalog"]),
         "bundles": dict(cfg["bundles"]),
         "required_residual_skills": required_residual_skills(cfg),
         "household_traverse": dict(cfg.get("household_traverse") or {}),
-        "default_level": int(cfg["inject_sequence"]["default_level"]),
+        "default_level": int(seq["default_level"]),
+        "close_console_key": seq.get("close_console_key"),
+        "cheat_line_submit": seq.get("cheat_line_submit"),
+        "inject_sequence": {
+            "close_console_key": seq.get("close_console_key"),
+            "cheat_line_submit": seq.get("cheat_line_submit"),
+            "mode_agnostic": bool(seq.get("mode_agnostic")),
+        },
         "proof_ceiling": cfg["proof_ceiling"],
-        "forbidden": list(cfg["inject_sequence"].get("forbidden") or []),
+        "forbidden": list(seq.get("forbidden") or []),
     }
 
 

@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-09 — P83 household skill-force live: Enter submit + no Esc MENU
+
+**Operator:** Floor moved; refresh provider truth; P83 live-cert level every household member and harden host for any N / trifecta. Live LabLab dispatch proved `computer_type` newlines leave concatenated console text; Esc-before-Space opens pause MENU; `--idle-ms` below 15000 fails closed. **P82/P07** promote `diy-skill-force` v6: Ctrl+Shift+C console toggle, refocus+Enter per cheat line, early IDLE_THRESHOLD reject, household N∈1..8. Consultation `BI-HOUSEHOLD-SKILL-FORCE-P83-LIVE-20261109.v1.json`. Not BI-005.
+
 ## 2026-11-09 — Upgrade-parts spam-buy for Gardener-Bot Tune Up (P95 + P124 + Trifecta)
 
 **Operator:** Forgot how to buy parts while Gardener-Bot Tune Up required **Robot Salvage Parts** (observed miss: 4). Host must spam-buy so the Order path is not rediscovered each time. **P95** selects `UPGRADE_PARTS_FORCE`: computer Order → Purchase Upgrade Parts × quantity (default 20), plus lab Shift+click workstation → Spawn Crafting Supplies after testingcheats. **P124** peers beside `diy_skill_force` / `funds_inject` / `ui_chrome` (W24 unresolved in TokenCorridor catalog — factoring role carried here). Consultation `BI-UPGRADE-PARTS-SPAM-BUY-20261109.v1.json`. CLI: `python -m scripts.upgrade_parts_force catalog|how-to-buy|plan`. Proof ceiling offline plan only; live P08 OPEN. Does not close BI-002.
