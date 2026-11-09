@@ -27,7 +27,7 @@ def ev(kind, i, **extra):
 
 
 def study_lot():
-    model = create_model(LOT, "Learning Lab")
+    model = create_model("affordance_run", LOT)
     return observe_lot(model, entities={
         "room": {"kind": "ROOM_ZONE", "story": "FLOOR_1", "zone": "BED",
                  "enclosure": "INSIDE"},
