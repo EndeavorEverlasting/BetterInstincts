@@ -278,6 +278,14 @@ class CameraDriftRecoveryRegressionTests(unittest.TestCase):
             "player_camera_owned": False, "text_entry_active": False,
             "modal_open": False, "player_queue_owned": False,
             "save_authorized": True,
+            "game_clock": {
+                "source": "HOST_GAME_CLOCK", "capture_ref": "capture:recover-1",
+                "camera_revision": "camera:9",
+                "game_version": load_catalog()["game_version"],
+                "clock_revision": "clock:12", "speed_state": "PAUSED",
+                "pause_indicator_active": True,
+                "clock_still_during_sample": True, "pause_origin": "PLAYER",
+            },
             "independent_cues": [
                 {"source": "visual", "token": "live_hud"},
                 {"source": "operator", "token": "live_confirmed"},

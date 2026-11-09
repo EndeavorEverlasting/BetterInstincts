@@ -350,6 +350,7 @@ def enqueue_world_game_click(
             return None
         return {
             "revision": candidate["camera_revision"],
+            "clock_revision": candidate.get("clock_revision"),
             "click": tuple(candidate["target_framing"]["click_candidate"]),
             "origin": (obs["client_origin_x"], obs["client_origin_y"]),
             "safe_rest": tuple(candidate["safe_rest"]["client"]),
