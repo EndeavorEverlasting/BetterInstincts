@@ -137,7 +137,7 @@ class SocialOpportunityTests(unittest.TestCase):
                     "sim_library": [{"name": "Morgan", "occult_status": "HUMAN"}],
                     "social_lookup_ran": True,
                 },
-                presence_probe=PresenceProbe(False, False, last_input_age_ms=9000),
+                presence_probe=PresenceProbe(False, False, last_input_age_ms=19000),
             )
             stack = receipt["host_stack"]
             self.assertEqual(stack["next_gate"], "SOCIAL_OPPORTUNITY_OK_ALLOWED")
