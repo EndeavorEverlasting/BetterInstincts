@@ -1,5 +1,14 @@
 # Canonical project ledger
 
+## 2026-11-09 — Servo four-motive health and household bill-payment microservices (P95/P124/Trifecta)
+
+**Parent:** Keep every observed household Servo alive with repeated need checks and eligible other-Sim Tune Up/Repair requests, Charge/Fun/Social support, and ensure actual unpaid bills are monitored and safely queued before utility interruption.
+
+**P95:** two bounded observation policies under one opt-in `household_upkeep` reducer: Durability/Charge/Fun/Social and bill due/affordability/attempt lifecycle. **P124:** existing `host_stack` + `host_listener`, `queue_capacity`, `budget_eval`, and familiar semantic glossary own integration; no new daemon, no duplicate six-needs normalization, no purchase/saving mutation. **Trifecta:** P82 negative tests, P07 integration/CI/main; P08 real Windows Sims UI/queue/receipt outcomes remain separately open.
+
+The service emits `servo_health` and `bill_health` even when busy, with at most one deduplicated queue proposal, no SendInput. Actual bill pay requires independent observed amount/funds/UNPAID state and explicit local-session authorization; no repeated charge after queued/dispatched. Water-exposed Servo and offscreen/unknown motive state are held, never guessed. Console/CI proof is not gameplay proof. Source consultation: `contracts/consultations/BI-HOUSEHOLD-SERVO-BILLS-20261109.v1.json`. Runbook: `docs/HOUSEHOLD_UPKEEP.md`. BI-002 remains ACTIVE.
+
+
 ## 2026-11-09 — Household skill-round-robin bootstrap after save reload (P95 + P141 + Trifecta)
 
 **Operator:** Save reload undid skills progression for at least one Sim. Restore every portrait fairly: one skill for every household member, then the next skill, until all requested skills are level 10. Include the path in the bootstrapper.
