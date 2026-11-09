@@ -138,6 +138,15 @@ def assess_edge_interaction(
     if type(x) is not int or type(y) is not int or not (0 <= x < w and 0 <= y < h):
         raise CameraTraverseError("CURSOR_OUTSIDE_CLIENT")
     cursor = classify_cursor(x, y, client_width=w, client_height=h, edge_band_px=band, cfg=cfg)
+    # Raw coordinate classification assumes REST for older callers. A transient
+    # edge click must never inherit the misleading EDGE_MOUSE_PARK verdict.
+    if cursor["in_edge_band"] and phase != "REST":
+        semantic_practice = {
+            "TARGETED_CLICK": "EDGE_UI_CLICK_TRANSIENT" if target_kind == "UI_CHROME" and target_verified else "EDGE_CLICK_NOT_ATTESTED",
+            "TRANSIT": "EDGE_TRANSIT_TEMPORARY",
+            "CAMERA_NAVIGATION": "RIGHT_DRAG_BOUNDED",
+        }[phase]
+        cursor = {**cursor, "practice": semantic_practice}
     base = {
         "interaction_phase": phase,
         "target_kind": target_kind,
