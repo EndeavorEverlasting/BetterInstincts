@@ -11,7 +11,7 @@ from pathlib import Path
 import re
 from typing import Mapping
 
-from betterinstincts.build_spatial import classify_entity, normalize_story
+from betterinstincts.build_spatial import classify_entity, load_contract as load_spatial_contract, normalize_story
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "room-census.v1.json"
@@ -47,9 +47,9 @@ def _story(raw: object) -> str:
     return value if FLOOR_PATTERN.fullmatch(value) else "UNKNOWN_STORY"
 
 
-def _enclosure(entity: Mapping) -> str:
+def _enclosure(entity: Mapping, spatial_contract: Mapping) -> str:
     # The existing spatial authority owns the two canonical axes.
-    value = classify_entity(entity).get("enclosure", "UNKNOWN_ENCLOSURE")
+    value = classify_entity(entity, cfg=spatial_contract).get("enclosure", "UNKNOWN_ENCLOSURE")
     return value if value in {"INSIDE", "OUTSIDE"} else "UNKNOWN_ENCLOSURE"
 
 
@@ -88,6 +88,7 @@ def scan_lot_model(model: Mapping, *, cfg: dict | None = None) -> dict:
     entities = model.get("entities")
     if not isinstance(entities, Mapping) or len(entities) > cfg["bounds"]["max_entities"]:
         raise RoomCensusError("ROOM_CENSUS_ENTITIES_INVALID")
+    spatial_contract = load_spatial_contract()  # Once per scan, not once per object.
     max_tags = cfg["bounds"]["max_labels_per_item"]
     styles = set(cfg["style_labels"])
     funcs = set(cfg["functional_labels"])
@@ -101,7 +102,7 @@ def scan_lot_model(model: Mapping, *, cfg: dict | None = None) -> dict:
             continue
         story = _story(entity.get("story") or entity.get("floor_level"))
         zone = _zone(entity.get("zone"))
-        enclosure = _enclosure(entity)
+        enclosure = _enclosure(entity, spatial_contract)
         kind = str(entity.get("kind") or "UNKNOWN_OBJECT").upper()
         if story != "UNKNOWN_STORY":
             floor_names.add(story)
@@ -181,6 +182,7 @@ def summarize_for_listener(census: Mapping) -> dict:
             for r in census["rooms"].values()
         ][:100],
         "room_count_total": len(census["rooms"]),
+        "summary_truncated": len(census["rooms"]) > 100,
         "unassigned_count": len(census["unassigned_items"]),
         "execute_allowed": False,
         "proof_ceiling": census["proof_ceiling"],
