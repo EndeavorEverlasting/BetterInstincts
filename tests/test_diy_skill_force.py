@@ -504,6 +504,27 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(rc, 2)
         self.assertIn("DETACHED_HOUSEHOLD_UI_UNSAFE", out.getvalue())
 
+    def test_single_skipped_member_no_longer_claims_max_or_moves_cursor(self):
+        from unittest.mock import patch
+        from scripts import diy_skill_force as executor
+
+        plan = plan_skill_force(
+            bundle="servo_core",
+            omit_skill_ids=["handiness", "robotics", "programming"],
+        )
+        self.assertEqual(
+            plan["state"], "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED"
+        )
+        self.assertTrue(plan["skip_dispatch"])
+        with patch.object(executor.sys, "platform", "win32"), \
+             patch.object(executor, "_park_safe_cursor_rest") as park:
+            result = executor._execute_plan(plan, process_id=None)
+        park.assert_not_called()
+        self.assertTrue(result["skipped"])
+        self.assertEqual(result["state"], "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED")
+        self.assertEqual(result["safe_cursor_rest"], "UNCHANGED_NO_INPUT")
+        self.assertIn("LOCAL_OBSERVED", result["pass_claim"])
+
     def test_dispatched_ledger_never_proves_panel_max_and_all_skip_sends_no_input(self):
         """P83: DISPATCHED means typed, not live Skills-panel verification."""
         from unittest.mock import patch
