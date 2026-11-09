@@ -1,5 +1,10 @@
 # Canonical project ledger
 
+## 2026-11-09 — Camera lock for agents (P00/P01/P95/P141/P124 + Trifecta)
+
+**Operator correction:** Agents repeatedly leave the camera on a top-down street. During admitted agent control the camera defaults to active Sim. A named, verified current host target/goal may permit <=30 seconds of map traversal with restored active Sim, not unbounded camera discretion. Code: `betterinstincts/active_sim_camera_lock.py`, `betterinstincts/host_stack.py`, `scripts/camera_traverse.py`. Contract: `contracts/camera-traverse.v1.json`. Consultation: `contracts/consultations/BI-ACTIVE-SIM-LOCK-20261109.v1.json`. Regression: `tests/test_active_sim_camera_lock.py`. Human camera ownership first; no save modifications. Offline injected-port tests do not certify physical gameplay.
+
+
 ## 2026-11-09 — Sims offline-install invariant (P00 + P01)
 
 **Operator:** NEVER connect The Sims 4 to the internet; play as installed offline. **P00** doctrine + AGENTS invariant; **P01** harness via `upgrade_parts_force` `offline_install` + forbidden `ea_online_connect`/`CONNECT_BUTTON`. Phone path: Stay Offline only; prefer spawn/computer when connection gate appears. Consultation `BI-SIMS-OFFLINE-ONLY-20261109.v1.json`. Does not close BI-002.
