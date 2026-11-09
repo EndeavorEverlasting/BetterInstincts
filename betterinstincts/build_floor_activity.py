@@ -207,4 +207,3 @@ def evaluate_floor_activity(
         except RoomCensusError as exc:
             raise BuildFloorActivityError(str(exc)) from exc
     return result
-
