@@ -146,7 +146,8 @@ REQUIRED = (
 )
 MARKERS = (
     "docs/DOCTRINE.md", "docs/LEDGER.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
-    "Player first", "Save-safe", "Storage", "Performance",
+    "Player first", "Save-safe", "Build structure / FLOOR_2", "Storage", "Performance",
+    "admit_live_structure_effect",
     "Evidence", "Continuity", "CHANGED | PROVED | NEXT",
     "docs/COMPATIBILITY.md", "docs/LIVE_CERT.md", "BLOCKED_LOCAL_GAME_ACCESS",
     "docs/HORIZON.md", "plans/horizon.v1.json", "six needs",
