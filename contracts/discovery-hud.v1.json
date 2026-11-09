@@ -1,0 +1,32 @@
+{
+  "schema": "betterinstincts.discovery-hud/v1",
+  "owner": "betterinstincts/discovery_hud.py",
+  "mode": "LIVE",
+  "source": "DISCOVERY_QUEST",
+  "known_quests": [
+    "Scoring Simoleons",
+    "Navigating Needs",
+    "You and Your Phone",
+    "Skillful Sims",
+    "Lifelong Aspirations",
+    "Always on the Move"
+  ],
+  "domain_owners": {
+    "Scoring Simoleons": "betterinstincts/scenario_goals.py",
+    "Navigating Needs": "betterinstincts/navigating_needs.py",
+    "You and Your Phone": "observed enabled phone_menu affordance only"
+  },
+  "bounds": {
+    "max_goals": 12,
+    "max_phone_actions": 24,
+    "max_capture_age_seconds": 180
+  },
+  "authority": {
+    "click": false,
+    "queue": false,
+    "call": false,
+    "send_text": false,
+    "change_settings": false
+  },
+  "proof_ceiling": "OFFLINE_DISCOVERY_ROUTING_NOT_GAME_HUD_PROOF"
+}

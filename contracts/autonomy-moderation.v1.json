@@ -1,0 +1,45 @@
+{
+  "schema": "betterinstincts.autonomy-moderation/v1",
+  "owner": "betterinstincts/autonomy_moderation.py",
+  "setting_values": [
+    "FULL",
+    "OFF",
+    "UNKNOWN"
+  ],
+  "queue_effects": [
+    "RELATIONSHIP_HARM",
+    "ENVIRONMENT_HARM",
+    "BENEFICIAL",
+    "NEUTRAL",
+    "UNKNOWN"
+  ],
+  "queue_origins": [
+    "PLAYER",
+    "HOST",
+    "SIM_AUTONOMY",
+    "UNKNOWN"
+  ],
+  "bounds": {
+    "max_queue": 24,
+    "max_whims": 12,
+    "max_age_seconds": 180,
+    "max_cancel_candidates": 1,
+    "max_positive_whim_candidates": 1
+  },
+  "requirements": [
+    "verified_selected_actor",
+    "verified_queue_and_capture",
+    "independent_origin_and_effect_provenance_for_cancel",
+    "player_idle",
+    "opt_in",
+    "never_cancel_player_queue",
+    "no_urgent_needs_or_obligations",
+    "reobserve_after_suspected_effect"
+  ],
+  "authority": {
+    "can_cancel": false,
+    "can_enqueue": false,
+    "can_change_global_settings": false
+  },
+  "proof_ceiling": "HOST_AUTONOMY_POLICY_ONLY_NOT_GAME_CANCELLATION"
+}

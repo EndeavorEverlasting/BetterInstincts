@@ -233,6 +233,27 @@
       "notes": "Literal user term 'skit': no game-panel identity inferred until evidence resolves it",
       "actions": {},
       "cues": null
+    },
+    "top_left_discovery": {
+      "family": "LIVE_PANEL",
+      "modes": [
+        "LIVE"
+      ],
+      "status": "UNCALIBRATED_CANDIDATE",
+      "cues": {
+        "visual": "DISCOVERY_QUEST_HEADER",
+        "operator": "DISCOVERY_QUEST_CONFIRMATION"
+      },
+      "actions": {
+        "inspect_active_quest": {
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION",
+          "purpose": "Inspect the currently observed top-left Discovery Quest identity"
+        },
+        "inspect_quest_goals": {
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION",
+          "purpose": "Inspect current incomplete goals; never invent action/coordinates"
+        }
+      }
     }
   },
   "calibration": {
