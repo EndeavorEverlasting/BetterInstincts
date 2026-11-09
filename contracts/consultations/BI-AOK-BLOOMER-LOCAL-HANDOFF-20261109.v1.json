@@ -1,0 +1,83 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-AOK-BLOOMER-LOCAL-HANDOFF-20261109",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "eda1b4664714ca21a3caa659e40cbd6061ac36c8",
+  "proposed_capability": "P03/P141/P124 scoped branch/PR reconciliation and actionable P04-style local-game handoff for depositing A-OK-Bloomer Vertical Garden in Household Inventory. Reuse merged ui_chrome catalog recipe and screen_atlas; no alternate controller, plan-only acceptance or assumption of a native game connection from GitHub. No code path for direct game input is introduced here.",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "GAME_SCENE",
+    "HOST_SESSION",
+    "OBSERVATION",
+    "CLAIM",
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT",
+    "SAVE_SLOT",
+    "GAME_OBJECT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/UI_CHROME.md",
+    "docs/SCREEN_ATLAS.md",
+    "docs/HOUSE_STATE.md",
+    "docs/LIVE_CERT.md",
+    "betterinstincts/ui_chrome.py",
+    "contracts/ui-chrome.v1.json",
+    "contracts/control-handoff.v1.json",
+    "plans/active/BI-002.execution.v1.json",
+    "docs/LEDGER.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_HANDOFF_ONLY_NO_LOCAL_GAME_CONNECTION",
+  "evidence_ceiling": "GITHUB_MERGE_AND_REPO_HANDOFF_NOT_ACTUAL_SIMS_INVENTORY_PROOF",
+  "player_save_control_impact": "Documentation and regression tests only; no Sims input, no save/mod writes, no background watcher. Actual deposit requires a game-capable local agent, explicit disposable save permission, fresh exact-patch calibration, independent scene cues and a screen-control grant respecting human priority.",
+  "expected_outcome": "A repo-owned, executable local-agent handoff that requires AOK search, confirmed A-OK-Bloomer selection, held-object state, Backspace deposit, and independent Household Inventory item verification; aligns with existing screen atlas and UI chrome. Historical 38-branch reconciliation classifies strictly-behind and diverged heads without deleting unique work.",
+  "negative_tests": [
+    "No claim that GitHub CI proves game inventory success",
+    "No lot placement or personal Sim pocket destination",
+    "No blind retry or double purchase after ambiguous Backspace result",
+    "No applying candidate 1920x1080 coordinates on an unverified exact-game build",
+    "No player input competition, screen lock bypass, or idle period below 15 seconds",
+    "No close of issue #35 or BI-002 without real host/game proof",
+    "No prune/force reset of diverged branches solely on commit counts"
+  ],
+  "rollback_path": "Revert docs-only PR; already-merged UI chrome and screen atlas remain unchanged; branch refs and user saves preserved.",
+  "unresolved_unknowns": [
+    "Current running game patch, target UI scale and client bounds require local observation",
+    "Whether Eco Lifestyle is installed and AOK catalog item is visible on the authorized disposable save requires local observation",
+    "Real inventory before/after and funds changes require game-host evidence",
+    "Diverged branch tree-equivalence and user local worktrees were not available to GitHub search alone"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-AOK-BLOOMER-LOCAL-HANDOFF-20261109.v1.json",
+    "docs/handoff/BI-AOK-BLOOMER-INVENTORY-P04-2026-11-09.md",
+    "tests/test_ui_chrome.py"
+  ],
+  "decision": "ADMIT_FOR_DOCUMENTATION_AND_OFFLINE_REGRESSION",
+  "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
+  "source_main_sha": "fd5fa3536029cae7a9020fa543d0c321d709c23d"
+}
