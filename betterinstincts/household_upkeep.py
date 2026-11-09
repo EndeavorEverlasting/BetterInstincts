@@ -211,9 +211,9 @@ def evaluate_household_upkeep(
         if servo["needs_verified"]:
             if servo["broken"]:
                 health["health"] = "BROKEN"
-            elif vals["durability"] <= levels["durability_critical"] or vals["charge"] <= levels["charge_critical"] or vals["fun"] <= levels["fun_watch"] or vals["social"] <= levels["social_watch"]:
+            elif vals["durability"] <= levels["durability_critical"] or vals["charge"] <= levels["charge_critical"]:
                 health["health"] = "CRITICAL"
-            elif vals["durability"] <= levels["durability_watch"] or vals["charge"] <= levels["charge_watch"]:
+            elif vals["durability"] <= levels["durability_watch"] or vals["charge"] <= levels["charge_watch"] or vals["fun"] <= levels["fun_watch"] or vals["social"] <= levels["social_watch"]:
                 health["health"] = "WATCH"
             else:
                 health["health"] = "STABLE"
@@ -324,6 +324,7 @@ def evaluate_household_upkeep(
             selected = {k: row[k] for k in
                         ("action_id", "actor_ref", "target_ref", "capture_ref")}
             selected["proposal_kind"] = proposal["kind"]
+            selected["priority"] = proposal["rank"]
             selected["proposal_key"] = ":".join(
                 (capture_ref, actor["sim_ref"], proposal["action_id"], proposal["target_ref"])
             )
