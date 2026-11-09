@@ -419,12 +419,28 @@
       ]
     },
     "DIY_SKILL_FORCE": {
-      "definition": "Mode-agnostic cheat planner that levels adult Major_* skills on the currently selected Sim/Servo via stats.set_skill_level. Includes DIY maker and full_unlock bundles. Sibling to FUNDS_INJECT; never practice_skill or BI-005 certification.",
+      "definition": "Mode-agnostic cheat planner that levels adult Major_* skills on the currently selected Sim/Servo via stats.set_skill_level, then confirms offered mastery/reward-trait OK dialogs. Includes DIY maker and full_unlock bundles. Sibling to FUNDS_INJECT; never practice_skill or BI-005 certification.",
       "owners": [
         "contracts/diy-skill-force.v1.json",
         "docs/DIY_SKILL_FORCE.md",
         "betterinstincts/diy_skill_force.py",
         "scripts/diy_skill_force.py"
+      ]
+    },
+    "ACCEPT_OFFERED_REWARD_TRAIT": {
+      "definition": "During DIY_SKILL_FORCE execute, press Enter and primary OK hotspot for offered skill-mastery / reward-trait dialogs (e.g. Perfectionist-style). Never Cancel; not aspiration life-state, invite OK, or CAS quiz Okay.",
+      "owners": [
+        "contracts/diy-skill-force.v1.json",
+        "docs/DIY_SKILL_FORCE.md",
+        "scripts/diy_skill_force.py"
+      ]
+    },
+    "TYPE_TEXT_KEYBD_EVENT": {
+      "definition": "Preferred Sims cheat-console typing path via VkKeyScan + keybd_event. KEYEVENTF_UNICODE alone is a silent miss on some TS4 DirectInput hosts.",
+      "owners": [
+        "scripts/win32_input.py",
+        "scripts/diy_skill_force.py",
+        "scripts/funds_inject.py"
       ]
     },
     "FULL_UNLOCK_BUNDLE": {

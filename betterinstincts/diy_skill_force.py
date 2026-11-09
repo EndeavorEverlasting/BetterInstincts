@@ -1,12 +1,13 @@
 """Skill-force planner: DIY maker set plus full adult unlock catalog.
 
 P95 stack: soft-focus Sims → Ctrl+Shift+C → testingcheats enabled true →
-stats.set_skill_level <stat> <N> for each resolved skill. Mode-agnostic;
-never force F1 while the operator builds.
+stats.set_skill_level <stat> <N> for each resolved skill → bounded
+ACCEPT_OFFERED_REWARD_TRAIT (OK on offered mastery/reward traits).
+Mode-agnostic; never force F1 while the operator builds.
 
 Bundles: diy_maker / servo_core / creative / social / athletic / full_unlock.
-Library plans only; scripts/diy_skill_force.py owns SendInput. Never edits
-saves. Never authorizes practice_skill or BI-005 skill-growth certification.
+Library plans only; scripts/diy_skill_force.py owns keybd_event typing + OK
+accept. Never edits saves. Never authorizes practice_skill or BI-005.
 """
 from __future__ import annotations
 
@@ -120,6 +121,13 @@ def resolve_skills(
     return [index[sid] for sid in ordered]
 
 
+def _reward_accept_cfg(seq: Mapping[str, object]) -> dict:
+    raw = seq.get("reward_dialog_accept") or {}
+    if not isinstance(raw, Mapping):
+        return {}
+    return dict(raw)
+
+
 def plan_skill_force(
     *,
     skill_ids: Optional[Sequence[str]] = None,
@@ -127,6 +135,7 @@ def plan_skill_force(
     level: Optional[int] = None,
     player_directed: bool = False,
     game_mode: str = "unknown",
+    accept_reward_dialogs: Optional[bool] = None,
     cfg: Optional[dict] = None,
 ) -> dict:
     """Return ordered console steps. Mode-agnostic; does not touch the game."""
@@ -142,6 +151,12 @@ def plan_skill_force(
             "proof_ceiling": cfg["proof_ceiling"],
         }
     seq = cfg["inject_sequence"]
+    reward = _reward_accept_cfg(seq)
+    accept = (
+        bool(reward.get("enabled_by_default", True))
+        if accept_reward_dialogs is None
+        else bool(accept_reward_dialogs)
+    )
     allowed = {str(m) for m in (seq.get("allowed_modes") or [])}
     mode = str(game_mode or "unknown").lower()
     if allowed and mode not in allowed:
@@ -156,6 +171,18 @@ def plan_skill_force(
         raise DiySkillForceError("INVALID_SKILL_LEVEL")
 
     template = str(seq["skill_command_template"])
+    interleave_n = int(reward.get("interleave_every_n_skill_commands") or 5)
+    accept_step = {
+        "step": "ACCEPT_OFFERED_REWARD_TRAIT",
+        "required": bool(accept),
+        "confirm_key": reward.get("primary_confirm_key", "ENTER"),
+        "never_press_cancel": True,
+        "max_rounds": int(reward.get("max_accept_rounds_per_batch") or 3),
+        "ok_click_client_fractions": list(
+            reward.get("ok_click_client_fractions") or [[0.50, 0.72]]
+        ),
+        "note": "Operator-authorized OK on offered mastery/reward traits; never Cancel",
+    }
     steps = [
         {
             "step": "REQUIRE_FOREGROUND_SIMS",
@@ -190,7 +217,7 @@ def plan_skill_force(
         },
     ]
     resolved = []
-    for row in skills:
+    for idx, row in enumerate(skills, start=1):
         skill_stat = str(row["skill_stat"])
         cmd = template.format(skill_stat=skill_stat, level=target)
         steps.append(
@@ -214,6 +241,10 @@ def plan_skill_force(
                 "diy_role": row.get("diy_role"),
             }
         )
+        if accept and interleave_n > 0 and idx % interleave_n == 0:
+            steps.append(dict(accept_step))
+    if accept:
+        steps.append({**accept_step, "note": "Final reward-trait OK sweep after skill lines"})
     if seq.get("close_console_optional", True):
         steps.append(
             {
@@ -231,7 +262,9 @@ def plan_skill_force(
         "skills": resolved,
         "game_mode": mode,
         "mode_agnostic": True,
+        "accept_reward_dialogs": accept,
         "open_console": seq.get("open_console_chord_label", "Ctrl+Shift+C"),
+        "typing_owner": seq.get("typing_owner", "scripts/win32_input.type_text"),
         "steps": steps,
         "forbidden": list(seq.get("forbidden") or []),
         "invariants": list(cfg.get("invariants") or []),

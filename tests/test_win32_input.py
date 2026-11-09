@@ -33,7 +33,7 @@ class Win32InputOwnershipTests(unittest.TestCase):
     def test_funds_inject_delegates_keyboard_to_shared_owner(self):
         src = Path(funds_inject.__file__).read_text(encoding="utf-8")
         self.assertIn("from scripts.win32_input import send_vk", src)
-        self.assertIn("from scripts.win32_input import type_unicode", src)
+        self.assertIn("from scripts.win32_input import type_text", src)
         self.assertNotIn("class KEYBDINPUT", src)
 
     def test_non_windows_send_click_fails_closed(self):

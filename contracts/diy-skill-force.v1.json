@@ -1,14 +1,14 @@
 {
   "schema": "betterinstincts.diy-skill-force/v1",
-  "version": 2,
+  "version": 3,
   "authority": "docs/DIY_SKILL_FORCE.md",
   "proof_ceiling": "HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT",
   "design_brief": {
     "subject": "Skill-force — max adult Major_* skills on the active Sim/Servo so activities and unlockables are not gated",
     "audience": "operators and Windows host agents who need DIY and other skill unlocks immediately usable",
-    "job": "Reusable catalog + mode-agnostic cheat planner: soft-focus → Ctrl+Shift+C → testingcheats enabled true → stats.set_skill_level lines. full_unlock defaults to level 10 across adult majors. Not BI-005 practice_skill growth certification.",
-    "architecture": "Sibling to funds_inject / household_object_force. Distinct from read-only sim_profile. No second skill daemon.",
-    "operator_correction": "Skill cheats apply to the currently selected Sim; select each household member before execute. Level them all the way (10) so activities/unlockables are not blocked. Missing packs may no-op."
+    "job": "Reusable catalog + mode-agnostic cheat planner: soft-focus → Ctrl+Shift+C → testingcheats enabled true → stats.set_skill_level lines → bounded ACCEPT_OFFERED_REWARD_TRAIT (OK on offered mastery/reward traits). full_unlock defaults to level 10 across adult majors. Not BI-005 practice_skill growth certification.",
+    "architecture": "Sibling to funds_inject / household_object_force. Distinct from read-only sim_profile and aspiration life-state OK. No second skill/trait daemon. Typing owner: scripts/win32_input.type_text (keybd_event).",
+    "operator_correction": "Skill cheats apply to the currently selected Sim; select each household member before execute. Level them all the way (10) so activities/unlockables are not blocked. Press OK on offered cool new traits (e.g. Perfectionist-style) during leveling — durable host logic, not chat-only. Missing packs may no-op."
   },
   "activation": {
     "require_explicit_activate": true,
@@ -39,6 +39,24 @@
     "close_console_key": "ESCAPE",
     "close_console_optional": true,
     "selection_note": "Commands apply to the currently selected Sim/Servo only.",
+    "typing_owner": "scripts/win32_input.type_text",
+    "typing_note": "Prefer keybd_event VkKeyScan typing; KEYEVENTF_UNICODE alone is a silent miss on some TS4 DirectInput hosts.",
+    "reward_dialog_accept": {
+      "enabled_by_default": true,
+      "step": "ACCEPT_OFFERED_REWARD_TRAIT",
+      "purpose": "Confirm offered skill-mastery / reward-trait OK dialogs during skill force so unlockables are not left modal-blocked",
+      "primary_confirm_key": "ENTER",
+      "never_press_cancel": true,
+      "interleave_every_n_skill_commands": 5,
+      "max_accept_rounds_per_batch": 3,
+      "ok_click_client_fractions": [[0.50, 0.72], [0.55, 0.78]],
+      "not": [
+        "aspiration_life_state_completion",
+        "invite_over_OK",
+        "CAS_quiz_Okay",
+        "purchase_confirmation"
+      ]
+    },
     "forbidden": [
       "Resume",
       "Delete",
@@ -47,7 +65,9 @@
       "force_F1_while_building",
       "practice_skill",
       "claim_BI005",
-      "autorun_on_host_boot"
+      "autorun_on_host_boot",
+      "press_Cancel_on_reward_trait",
+      "auto_accept_invite_dialogs"
     ]
   },
   "skill_catalog": [
@@ -154,6 +174,7 @@
       "OPEN_CHEAT_CONSOLE via Ctrl+Shift+C",
       "ACTIVATE_TESTING_CHEATS: testingcheats enabled true",
       "SET_SKILL_LEVEL: stats.set_skill_level <stat> <N> per resolved skill",
+      "ACCEPT_OFFERED_REWARD_TRAIT: Enter + primary OK hotspot (interleaved + final)",
       "optional CLOSE_CHEAT_CONSOLE",
       "Emit receipt; execute_allowed=false until independent screen_admit"
     ],
@@ -164,8 +185,10 @@
       "no foreground Sims -> SIMS_FOREGROUND_REQUIRED",
       "skip Ctrl+Shift+C -> console never opens",
       "skip testingcheats -> skill commands fail",
+      "KEYEVENTF_UNICODE_only_typing -> silent miss on some TS4 hosts",
       "force F1 while operator builds -> HOST_CRISIS_ANTI_PATTERN",
       "claim BI-005 from this owner -> FORBIDDEN",
+      "press Cancel on reward trait -> FORBIDDEN",
       "concurrent live-cert screen owner -> YIELD"
     ]
   },
@@ -192,6 +215,8 @@
     "active_sim_selection_required",
     "never_claim_BI005_from_cheat_dispatch",
     "never_queue_practice_skill",
-    "yield_screen_to_concurrent_live_cert"
+    "yield_screen_to_concurrent_live_cert",
+    "type_text_keybd_event_for_cheat_console",
+    "accept_offered_reward_traits_never_cancel"
   ]
 }

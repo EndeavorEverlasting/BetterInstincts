@@ -158,7 +158,11 @@ def send_key_chord(
 
 
 def type_unicode(text: str, *, per_char_sec: float = 0.015) -> None:
-    """Type unicode text via KEYEVENTF_UNICODE (no clipboard)."""
+    """Type unicode text via KEYEVENTF_UNICODE (no clipboard).
+
+    Prefer type_text() for Sims cheat console — KEYEVENTF_UNICODE is a
+    silent miss on some TS4 hosts while VK/scancode typing is accepted.
+    """
     _require_win32()
     if not isinstance(text, str):
         raise Win32InputError("TYPE_TEXT_MUST_BE_STR")
@@ -173,6 +177,50 @@ def type_unicode(text: str, *, per_char_sec: float = 0.015) -> None:
         up = INPUT(type=1)
         up.ki = KEYBDINPUT(0, ord(ch), KEYEVENTF_UNICODE | KEYEVENTF_KEYUP, 0, None)
         user32.SendInput(1, ctypes.byref(up), ctypes.sizeof(INPUT))
+        time.sleep(per_char_sec)
+
+
+def type_text(text: str, *, per_char_sec: float = 0.02) -> None:
+    """Type ASCII/cheat-console text via VkKeyScan + keybd_event.
+
+    Sims 4's DirectInput cheat box often ignores KEYEVENTF_UNICODE and can
+    also miss SendInput VK injection on some hosts; keybd_event matches the
+    path that computer-use typing successfully reaches for motherlode/skills.
+    """
+    _require_win32()
+    if not isinstance(text, str):
+        raise Win32InputError("TYPE_TEXT_MUST_BE_STR")
+    import ctypes
+
+    user32 = ctypes.windll.user32
+    KEYEVENTF_KEYUP = 0x0002
+    VK_SHIFT = 0x10
+    for ch in text:
+        if ch == "\n":
+            user32.keybd_event(0x0D, 0, 0, 0)
+            time.sleep(0.02)
+            user32.keybd_event(0x0D, 0, KEYEVENTF_KEYUP, 0)
+            time.sleep(per_char_sec)
+            continue
+        if ch == "\t":
+            user32.keybd_event(0x09, 0, 0, 0)
+            time.sleep(0.02)
+            user32.keybd_event(0x09, 0, KEYEVENTF_KEYUP, 0)
+            time.sleep(per_char_sec)
+            continue
+        scanned = int(user32.VkKeyScanW(ord(ch)))
+        if scanned == -1 or scanned == 0xFFFF:
+            type_unicode(ch, per_char_sec=per_char_sec)
+            continue
+        vk = scanned & 0xFF
+        shift = bool(scanned & 0x100)
+        if shift:
+            user32.keybd_event(VK_SHIFT, 0, 0, 0)
+        user32.keybd_event(vk, 0, 0, 0)
+        time.sleep(0.012)
+        user32.keybd_event(vk, 0, KEYEVENTF_KEYUP, 0)
+        if shift:
+            user32.keybd_event(VK_SHIFT, 0, KEYEVENTF_KEYUP, 0)
         time.sleep(per_char_sec)
 
 

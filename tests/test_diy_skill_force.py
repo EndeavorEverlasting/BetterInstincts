@@ -24,7 +24,12 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(seq["default_level"], 10)
         self.assertIn("diy_maker", cfg["bundles"])
         self.assertIn("full_unlock", cfg["bundles"])
-        self.assertEqual(cfg["version"], 2)
+        self.assertEqual(cfg["version"], 3)
+        reward = seq["reward_dialog_accept"]
+        self.assertTrue(reward["enabled_by_default"])
+        self.assertTrue(reward["never_press_cancel"])
+        self.assertEqual(reward["primary_confirm_key"], "ENTER")
+        self.assertEqual(seq["typing_owner"], "scripts/win32_input.type_text")
 
     def test_catalog_includes_diy_and_unlock_cores(self):
         snap = catalog_snapshot()
@@ -74,6 +79,23 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertIn("stats.set_skill_level Major_Fitness 10", cmds)
         self.assertTrue(plan["not_bi005"])
         self.assertFalse(plan["execute_allowed"])
+        self.assertTrue(plan["accept_reward_dialogs"])
+        accept_steps = [s for s in plan["steps"] if s.get("step") == "ACCEPT_OFFERED_REWARD_TRAIT"]
+        self.assertGreaterEqual(len(accept_steps), 2)
+        for step in accept_steps:
+            self.assertTrue(step["never_press_cancel"])
+            self.assertEqual(step["confirm_key"], "ENTER")
+
+    def test_reward_accept_can_be_disabled(self):
+        plan = plan_skill_force(
+            bundle="diy_maker",
+            accept_reward_dialogs=False,
+            game_mode="live",
+        )
+        self.assertFalse(plan["accept_reward_dialogs"])
+        self.assertFalse(
+            any(s.get("step") == "ACCEPT_OFFERED_REWARD_TRAIT" for s in plan["steps"])
+        )
 
     def test_default_empty_resolves_full_unlock(self):
         rows = resolve_skills()
@@ -124,8 +146,9 @@ class DiySkillForceTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(raw["version"], 2)
+        self.assertEqual(raw["version"], 3)
         self.assertEqual(raw["bundles"]["full_unlock"]["default_level"], 10)
+        self.assertTrue(raw["inject_sequence"]["reward_dialog_accept"]["never_press_cancel"])
 
 
 if __name__ == "__main__":

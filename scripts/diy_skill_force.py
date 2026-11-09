@@ -3,10 +3,12 @@
 
 Order (durable — do not skip):
   soft-focus → Ctrl+Shift+C → testingcheats enabled true →
-  stats.set_skill_level <stat> <N> × skills
+  stats.set_skill_level <stat> <N> × skills →
+  ACCEPT_OFFERED_REWARD_TRAIT (Enter + OK hotspot; never Cancel)
 
-Applies to the currently selected Sim/Servo. Evaluate-only unless --execute.
-Disposable lab only; never edits saves. Not BI-005 skill-growth certification.
+Typing owner: scripts.win32_input.type_text (keybd_event). Applies to the
+currently selected Sim/Servo. Evaluate-only unless --execute. Disposable lab
+only; never edits saves. Not BI-005 skill-growth certification.
 
 Examples:
   python -m scripts.diy_skill_force catalog
@@ -84,6 +86,45 @@ def _focus(process_id: int | None, *, click_client: bool = False) -> dict:
     return report
 
 
+def _accept_offered_reward_trait(step: dict, *, hwnd: int) -> dict:
+    """Confirm offered mastery/reward-trait dialogs. Never Cancel."""
+    import ctypes
+    from ctypes import wintypes
+
+    from scripts.win32_input import send_click, tap_vk
+
+    if step.get("never_press_cancel") is False:
+        raise GateError("REWARD_TRAIT_CANCEL_FORBIDDEN")
+    rounds = max(1, int(step.get("max_rounds") or 3))
+    fractions = list(step.get("ok_click_client_fractions") or [[0.50, 0.72]])
+    user32 = ctypes.windll.user32
+    rect = wintypes.RECT()
+    user32.GetClientRect(int(hwnd), ctypes.byref(rect))
+    actions: list[str] = []
+    for _ in range(rounds):
+        # Enter is the durable primary confirm for Sims OK dialogs.
+        tap_vk(0x0D)
+        actions.append("ENTER")
+        time.sleep(0.2)
+        for frac in fractions:
+            if not isinstance(frac, (list, tuple)) or len(frac) != 2:
+                continue
+            fx, fy = float(frac[0]), float(frac[1])
+            pt = wintypes.POINT(
+                int(rect.left + (rect.right - rect.left) * fx),
+                int(rect.top + (rect.bottom - rect.top) * fy),
+            )
+            user32.ClientToScreen(int(hwnd), ctypes.byref(pt))
+            send_click(int(pt.x), int(pt.y), between_sec=0.04)
+            actions.append(f"OK_CLICK_CLIENT:{fx:.2f},{fy:.2f}")
+            time.sleep(0.18)
+    return {
+        "step": "ACCEPT_OFFERED_REWARD_TRAIT",
+        "actions": actions,
+        "never_press_cancel": True,
+    }
+
+
 def _execute_plan(
     plan: dict,
     *,
@@ -102,7 +143,7 @@ def _execute_plan(
         raise GateError("ENSURE_LIVE_MODE_FORBIDDEN_IN_MODE_AGNOSTIC_STACK")
     from betterinstincts.control_handoff import HandoffError
     from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
-    from scripts.win32_input import send_vk, tap_vk, type_unicode
+    from scripts.win32_input import send_click, send_vk, tap_vk, type_text
 
     try:
         require_execute_session(session_id, process_id)
@@ -118,7 +159,8 @@ def _execute_plan(
             handoff = ensure_ready()
         except HandoffError as exc:
             raise GateError(str(exc)) from exc
-        focus_report = {"state": "FOCUS_VIA_SCREEN_ADMIT"}
+        focus_report = _focus(process_id)
+        hwnd = int(focus_report["hwnd"])
         time.sleep(0.2)
         # Durable console open in whatever mode the operator is in: Ctrl+Shift+C
         send_vk(0x11)  # CTRL
@@ -127,24 +169,50 @@ def _execute_plan(
         send_vk(0x10, up=True)
         send_vk(0x11, up=True)
         time.sleep(0.55)
-        from scripts.win32_input import send_click
-
         send_click(250, 16, between_sec=0.04)
         time.sleep(0.2)
         dispatched: list[str] = []
-        run_cmds = list(commands)
-        if run_cmds and run_cmds[0] == "testingcheats enabled true":
-            run_cmds.insert(1, "testingcheats true")
-        for cmd in run_cmds:
-            type_unicode(cmd)
-            tap_vk(0x0D)
-            time.sleep(0.45)
-            dispatched.append(cmd)
+        reward_accepts: list[dict] = []
+        testing_alias_sent = False
+        for step in plan.get("steps") or []:
+            name = str(step.get("step") or "")
+            if name == "ACTIVATE_TESTING_CHEATS":
+                cmd = str(step.get("command") or "")
+                type_text(cmd)
+                tap_vk(0x0D)
+                time.sleep(0.45)
+                dispatched.append(cmd)
+                alias = step.get("alias")
+                if isinstance(alias, str) and alias.strip() and not testing_alias_sent:
+                    type_text(alias.strip())
+                    tap_vk(0x0D)
+                    time.sleep(0.35)
+                    dispatched.append(alias.strip())
+                    testing_alias_sent = True
+                continue
+            if name == "SET_SKILL_LEVEL":
+                cmd = str(step.get("command") or "")
+                if not cmd:
+                    continue
+                type_text(cmd)
+                tap_vk(0x0D)
+                time.sleep(0.45)
+                dispatched.append(cmd)
+                continue
+            if name == "ACCEPT_OFFERED_REWARD_TRAIT" and step.get("required"):
+                reward_accepts.append(_accept_offered_reward_trait(step, hwnd=hwnd))
+                # Re-focus cheat console after OK clicks.
+                send_click(250, 16, between_sec=0.04)
+                time.sleep(0.15)
+                continue
         if close_console:
             tap_vk(0x1B)
     return {
         "state": "DIY_SKILL_FORCE_DISPATCHED",
         "commands": dispatched,
+        "reward_accepts": reward_accepts,
+        "accept_reward_dialogs": bool(plan.get("accept_reward_dialogs")),
+        "typing_owner": plan.get("typing_owner", "scripts/win32_input.type_text"),
         "open_console": "Ctrl+Shift+C",
         "mode_agnostic": True,
         "forced_live_mode": False,
@@ -171,6 +239,11 @@ def main(argv: list[str] | None = None) -> int:
     pl.add_argument("--skill", action="append", default=[], help="Repeatable skill id")
     pl.add_argument("--level", type=int, default=None)
     pl.add_argument("--game-mode", default="unknown")
+    pl.add_argument(
+        "--no-accept-reward-dialogs",
+        action="store_true",
+        help="Skip ACCEPT_OFFERED_REWARD_TRAIT steps",
+    )
 
     lv = sub.add_parser("level")
     lv.add_argument("--bundle", default=None, help="Named bundle (default full_unlock when no --skill)")
@@ -179,6 +252,11 @@ def main(argv: list[str] | None = None) -> int:
     lv.add_argument("--game-mode", default="unknown")
     lv.add_argument("--execute", action="store_true")
     lv.add_argument("--close-console", action="store_true")
+    lv.add_argument(
+        "--no-accept-reward-dialogs",
+        action="store_true",
+        help="Skip Enter/OK accept of offered mastery/reward traits",
+    )
     lv.add_argument("--process-id", type=int, default=None)
     lv.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
     lv.add_argument("--idle-ms", type=int, default=15000)
@@ -195,11 +273,13 @@ def main(argv: list[str] | None = None) -> int:
                 bundle = None
             if bundle is None and not skill_ids:
                 bundle = "full_unlock"
+            accept = None if not getattr(args, "no_accept_reward_dialogs", False) else False
             plan = plan_skill_force(
                 skill_ids=skill_ids,
                 bundle=bundle,
                 level=args.level,
                 game_mode=args.game_mode,
+                accept_reward_dialogs=accept,
             )
             result = {"plan": plan, "execute": False}
             if args.command == "level" and args.execute:

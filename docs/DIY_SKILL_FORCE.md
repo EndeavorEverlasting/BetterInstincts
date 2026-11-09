@@ -2,16 +2,17 @@
 
 **Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
 **P124:** sibling owner beside `funds_inject` / `household_object_force`; distinct from read-only `sim_profile`
-**Machine owner:** [`contracts/diy-skill-force.v1.json`](../contracts/diy-skill-force.v1.json) (v2)
+**Machine owner:** [`contracts/diy-skill-force.v1.json`](../contracts/diy-skill-force.v1.json) (v3)
 **Evaluator / planner:** `betterinstincts.diy_skill_force`
 **Execute adapter:** `python -m scripts.diy_skill_force`
+**Typing owner:** `scripts.win32_input.type_text` (keybd_event — UNICODE-only is a silent miss on some TS4 hosts)
 
 ## Design brief
 
 - **Subject:** Adult `Major_*` skills on the **currently selected** Sim or Servo.
 - **Audience:** operators who need activities and unlockables ungated (DIY and beyond).
-- **Job:** Mode-agnostic cheat planner. Default **`full_unlock`** maxes the adult catalog at level **10**.
-- **Not:** BI-005 purposeful skill-growth certification; `practice_skill` queueing; a second skill daemon; save edits.
+- **Job:** Mode-agnostic cheat planner. Default **`full_unlock`** maxes the adult catalog at level **10**, then confirms offered mastery/reward-trait **OK** dialogs (e.g. Perfectionist-style) so unlockables are not left modal-blocked.
+- **Not:** BI-005 purposeful skill-growth certification; `practice_skill` queueing; a second skill/trait daemon; aspiration life-state completion; invite OK; save edits.
 
 ## Bundles
 
@@ -33,10 +34,11 @@ CLI plan/level (bundle full_unlock | skill ids)
   -> Ctrl+Shift+C
   -> testingcheats enabled true
   -> stats.set_skill_level <Major_*> 10  (× resolved skills)
+  -> ACCEPT_OFFERED_REWARD_TRAIT (Enter + OK hotspot; interleaved + final; never Cancel)
   -> optional Esc
 ```
 
-Library plans keep `execute_allowed=false`. Live SendInput requires an ACTIVE `host_listener` session, exact PID, and `screen_admit`. Yield the screen when another agent owns live certification.
+Library plans keep `execute_allowed=false`. Live execute requires an ACTIVE `host_listener` session, exact PID, and `screen_admit`. Yield the screen when another agent owns live certification. Pass `--no-accept-reward-dialogs` to skip trait OK accepts.
 
 ## CLI
 
