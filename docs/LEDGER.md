@@ -1,3 +1,9 @@
+## 2026-11-09 — camera-trigger edge interpretation (P95 / P124 / Trifecta)
+
+**Parent outcome:** agents must distinguish a camera-panning pointer **rest** near the Sims client edge from a legitimate momentary click on HUD controls that overlap the edge. The canonical 48px band is a conservative client-relative avoidance zone, not a measured engine activation map. Code: `camera_traverse.assess_edge_interaction` / `evaluate_cursor_risk`, existing `scripts.camera_traverse` CLI, machine policy `contracts/camera-traverse.v1.json#edge_interaction` and glossary. No new daemon or Click/SendInput owner. Host-owned unattended edge dwell returns SAFE_REST; verified one-shot UI-chrome click returns a separate admission candidate with required post-click rest; unknown/world edge targets withhold; player-owned mouse yields. Cross-area recapture after actual camera move is required.
+
+**Execution/proof:** consultation first on branch `feat/semantic-camera-edge-intent-20261109`; offline P82 tests in `tests/test_camera_traverse.py`; P08 live exact-build camera/HUD/interrupt verification **OPEN**. Branch/PR/CI/merge status must be checked via provider before any claim of landing on main. No game input or save mutation was performed by this repository-only work.
+
 # Canonical project ledger
 
 ## 2026-11-09 — Servo four-motive health and household bill-payment microservices (P95/P124/Trifecta)
