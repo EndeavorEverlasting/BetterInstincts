@@ -10,7 +10,7 @@ from collections.abc import Awaitable, Callable, Mapping
 from typing import Any
 
 from betterinstincts.scenes import load_catalog
-from betterinstincts.ui_chrome import hotkeys_for_mode, load_contract as load_chrome
+from betterinstincts.ui_chrome import hotkeys_for_mode, resolve_app_hotkey
 from betterinstincts.workflow_interop import CooperativeScreenQueue, QueuedStep
 
 CENTER_SIM = "CENTER_ACTIVE_SIM"
@@ -32,20 +32,8 @@ def _chord(hotkey_id: str) -> list[str]:
 
 
 def command_from_app_hotkey(event: Mapping[str, Any]) -> str:
-    """Decode a *supplied* opt-in app event; this is not a keyboard listener."""
-    if not isinstance(event, Mapping):
-        raise SimCameraError("APP_HOTKEY_EVENT_REQUIRED")
-    cfg = load_chrome()["app_hotkeys"]["follow_active_sim"]
-    if cfg.get("in_game_native") is not False or cfg.get("registered_with_os") is not False:
-        raise SimCameraError("FOLLOW_HOTKEY_MUST_NOT_IMPERSONATE_NATIVE_KEY")
-    if (
-        event.get("source") != "APP_SCOPED_HOST_HOTKEY"
-        or event.get("listener_opt_in") is not True
-        or event.get("mode") != "LIVE"
-        or event.get("chord") != cfg["chord"]
-    ):
-        raise SimCameraError("HOTKEY_NOT_ADMITTED_OR_NOT_REGISTERED")
-    return FOLLOW_SIM
+    """Resolve the opt-in app shortcut through the existing UI-chrome owner."""
+    return resolve_app_hotkey(event)
 
 
 def plan_sim_camera(
