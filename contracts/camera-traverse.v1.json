@@ -64,14 +64,38 @@
     "SAFE_REST"
   ],
   "directions": {
-    "N": [0, -1],
-    "S": [0, 1],
-    "E": [1, 0],
-    "W": [-1, 0],
-    "NE": [1, -1],
-    "NW": [-1, -1],
-    "SE": [1, 1],
-    "SW": [-1, 1]
+    "N": [
+      0,
+      -1
+    ],
+    "S": [
+      0,
+      1
+    ],
+    "E": [
+      1,
+      0
+    ],
+    "W": [
+      -1,
+      0
+    ],
+    "NE": [
+      1,
+      -1
+    ],
+    "NW": [
+      -1,
+      -1
+    ],
+    "SE": [
+      1,
+      1
+    ],
+    "SW": [
+      -1,
+      1
+    ]
   },
   "gates": [
     "CAMERA_SAFE_REST",
@@ -87,7 +111,11 @@
     "RESUME",
     "DELETE_SAVE",
     "TOUCH_USER_SAVE",
-    "BACKGROUND_CAMERA_DAEMON"
+    "BACKGROUND_CAMERA_DAEMON",
+    "BLIND_WORLD_CLICK",
+    "AUTO_RECLICK",
+    "REUSE_PRE_PAN_TARGET_COORDINATES",
+    "UNBOUNDED_TARGET_REFRAME"
   ],
   "house_state_actions": [
     "CAMERA_PAN_ZOOM",
@@ -102,11 +130,39 @@
     "docs": "docs/CAMERA_TRAVERSE.md",
     "mouse_primitives": "scripts/win32_input.py",
     "capture": "scripts/game_capture.py",
-    "admission": "betterinstincts/screen_admit.py"
+    "admission": "betterinstincts/screen_admit.py",
+    "world_framing_host": "betterinstincts/host_stack.py"
   },
   "prior_art": {
     "automation_visual_intelligence": "ADAPT observe≠act seam; do not clone donor CV stacks into BetterInstincts",
     "tokencorridor_visual_incubation": "ADAPT deterministic PrintWindow/luma before optional CV escalation",
     "local_printwindow": "ADOPT existing scripts/game_capture.py as primary see-without-edge-pan sensor"
+  },
+  "world_target_framing": {
+    "camera_before_world_click": true,
+    "applies_to": "WORLD_OBJECT_TARGETS_NOT_FIXED_UI_CHROME",
+    "interior_margin_px": 48,
+    "min_target_extent_px": 44,
+    "max_reframe_attempts": 3,
+    "required_host_observation": [
+      "source:HOST_CAPTURE",
+      "target_id",
+      "capture_ref",
+      "camera_revision",
+      "target_visible",
+      "occluded",
+      "bbox_client_if_visible",
+      "framing_attempts"
+    ],
+    "planner_behavior": "OBSERVE_TARGET_THEN_BOUNDED_CAMERA_REFRAME_THEN_SAFE_REST_THEN_FRESH_REOBSERVATION_THEN_HOST_ADMISSION",
+    "coordinates": "CLIENT_RELATIVE_TARGET_BOUNDING_BOX",
+    "camera_directions": "HOST_OBSERVED_ONLY_NO_BLIND_GUESS",
+    "safety_guards": [
+      "NO_WORLD_CLICK_BEFORE_FRAMED",
+      "REOBSERVE_AFTER_ANY_CAMERA_MOVE",
+      "NO_AUTO_RECLICK",
+      "NO_AUTO_PAN_LOOP",
+      "PLAYER_PRESENCE_AND_SAVE_ADMISSION_INDEPENDENT"
+    ]
   }
 }
