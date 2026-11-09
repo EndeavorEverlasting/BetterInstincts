@@ -16,6 +16,7 @@ from betterinstincts.build_floor_activity import (
     evaluate_floor_activity,
 )
 from betterinstincts.host_stack import HostStackError, evaluate_turn
+from betterinstincts.sim_camera import command_from_app_hotkey
 from betterinstincts.instincts_host import InstinctsHostError, NeedSnapshot, plan, plan_to_dict
 from betterinstincts.needs_force import NeedsForceError, plan_force
 from betterinstincts.judgment_learning import JudgmentLearningError, recommend as recommend_judgment
@@ -252,6 +253,21 @@ def _load_observation(raw: Mapping) -> dict:
     pan_dirs = raw.get("camera_pan_directions") or ()
     if not isinstance(pan_dirs, (list, tuple)):
         raise HostListenerError("OBSERVATION_CAMERA_PAN_DIRS_INVALID")
+    sim_camera_command = raw.get("sim_camera_command")
+    if sim_camera_command is not None and not isinstance(sim_camera_command, str):
+        raise HostListenerError("SIM_CAMERA_COMMAND_INVALID")
+    hotkey_event = raw.get("sim_camera_hotkey_event")
+    if hotkey_event is not None:
+        if sim_camera_command is not None:
+            raise HostListenerError("SIM_CAMERA_DOUBLE_INTENT")
+        try:
+            sim_camera_command = command_from_app_hotkey(hotkey_event)
+        except ValueError as exc:
+            raise HostListenerError("SIM_CAMERA_HOTKEY_INVALID") from exc
+    sim_camera_observation = raw.get("sim_camera_observation")
+    if sim_camera_observation is not None:
+        if not isinstance(sim_camera_observation, Mapping) or len(json.dumps(dict(sim_camera_observation))) > 8192:
+            raise HostListenerError("SIM_CAMERA_OBSERVATION_INVALID")
     world_target = raw.get("world_target")
     if world_target is not None:
         if not isinstance(world_target, Mapping) or len(json.dumps(dict(world_target))) > 8192:
@@ -380,6 +396,8 @@ def _load_observation(raw: Mapping) -> dict:
         "camera_scan_needed": bool(raw.get("camera_scan_needed", False)),
         "camera_pan_directions": [str(x) for x in pan_dirs],
         "world_target": dict(world_target) if world_target is not None else None,
+        "sim_camera_command": sim_camera_command,
+        "sim_camera_observation": dict(sim_camera_observation) if sim_camera_observation is not None else None,
     }
 
 
@@ -580,6 +598,8 @@ def tick(
             camera_scan_needed=obs["camera_scan_needed"],
             camera_pan_directions=obs["camera_pan_directions"],
             world_target=obs["world_target"],
+            sim_camera_command=obs["sim_camera_command"],
+            sim_camera_observation=obs["sim_camera_observation"],
             emotion=obs["emotion"],
             moodlets=obs["moodlets"],
             traits=obs["traits"],
