@@ -35,3 +35,5 @@ Report CHANGED | PROVED | NEXT with checks, SHA, push/PR/merge, patch, live stat
 
 P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`; ontology: `docs/handoff/BI-SEMANTIC-ONTOLOGY-P04-2026-11-07.md`; hidden objects: `plans/active/BI-HIDDEN-OBJECTS.P04.md` (BI-002 active).
 Interop: `docs/ASYNC_INTEROP.md` (15s idle).
+
+Likes/dislikes: `docs/PREFERENCE_PROMPTS.md`.

@@ -221,11 +221,22 @@ class DiySkillForceTests(unittest.TestCase):
                 cli._wait_for_input_idle(1, idle_ms=15000, timeout_sec=0.3, poll_sec=0.05)
         self.assertIn("CONTINUOUS_INPUT_BLOCKING_ADMIT", str(ctx.exception))
 
+        # Stationary cursor is not idleness during voice dictation/typing.
         with patch("betterinstincts.player_presence.probe_windows", return_value=busy), patch(
             "scripts.diy_skill_force._cursor_pos", return_value=(400, 20)
         ):
-            stable = cli._wait_for_input_idle(1, idle_ms=200, timeout_sec=2.0, poll_sec=0.05)
-        self.assertEqual(stable["reason"], "CURSOR_STABLE_DESPITE_INPUT_FLICKER")
+            with self.assertRaisesRegex(cli.GateError, "CONTINUOUS_INPUT_BLOCKING_ADMIT"):
+                cli._wait_for_input_idle(1, idle_ms=15000, timeout_sec=0.3, poll_sec=0.05)
+
+        # No reward-trait "OK" click is dispatched without classified dialog.
+        with patch("scripts.win32_input.send_click") as click, patch(
+            "scripts.win32_input.tap_vk"
+        ) as tap:
+            held = cli._accept_offered_reward_trait({"never_press_cancel": True}, hwnd=12)
+        self.assertEqual(held["state"], "NEEDS_DIALOG_IDENTIFICATION")
+        self.assertEqual(held["actions"], [])
+        click.assert_not_called()
+        tap.assert_not_called()
 
     def test_contract_json_roundtrip(self):
         raw = json.loads(

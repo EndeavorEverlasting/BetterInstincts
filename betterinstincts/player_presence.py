@@ -29,6 +29,11 @@ class PresenceProbe:
     operator_declared_playing: bool = False
     player_directed_queue: bool = False
     probe_ok: bool = True
+    # Ephemeral foreground diagnostics only; no window title, executable path,
+    # background process census, keyboard content or activity history.
+    foreground_process_id: Optional[int] = None
+    foreground_process_name: Optional[str] = None
+    operator_busy: bool = False
 
 
 def load_contract(path: Path = CONTRACT) -> dict:
@@ -89,14 +94,17 @@ def probe_windows(process_id: Optional[int] = None) -> PresenceProbe:
         return PresenceProbe(False, False, probe_ok=False)
     pid = wintypes.DWORD()
     user32.GetWindowThreadProcessId(fg, ctypes.byref(pid))
-    length = user32.GetWindowTextLengthW(fg)
-    buf = ctypes.create_unicode_buffer(length + 1)
-    user32.GetWindowTextW(fg, buf, length + 1)
-    title = buf.value or ""
-    is_sims = "Sims" in title
-    if process_id is not None and int(pid.value) != int(process_id):
-        # FG belongs to another process — treat as not on Sims canvas.
-        is_sims = False
+    if process_id is not None:
+        # Exact Sims PID is the caller's authority. Never read another
+        # application's title, which can expose dictated document content.
+        is_sims = int(pid.value) == int(process_id)
+    else:
+        # Legacy view-only fallback when the game PID has not been supplied.
+        # This local title is not included in the probe or a receipt.
+        length = user32.GetWindowTextLengthW(fg)
+        buf = ctypes.create_unicode_buffer(length + 1)
+        user32.GetWindowTextW(fg, buf, length + 1)
+        is_sims = "Sims" in (buf.value or "")
     rect = wintypes.RECT()
     if not user32.GetClientRect(fg, ctypes.byref(rect)):
         return PresenceProbe(is_sims, False, probe_ok=False)
@@ -121,11 +129,41 @@ def probe_windows(process_id: Optional[int] = None) -> PresenceProbe:
             last_input_age = int(tick - info.dwTime) & 0xFFFFFFFF
     except Exception:
         last_input_age = None
+    # Best-effort executable BASENAME for debugging handoffs. Never infer
+    # activity from it, store a path/title, or inspect a foreign process.
+    process_name = None
+    try:
+        import ntpath
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel32.OpenProcess.restype = wintypes.HANDLE
+        kernel32.QueryFullProcessImageNameW.argtypes = [
+            wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR,
+            ctypes.POINTER(wintypes.DWORD),
+        ]
+        kernel32.QueryFullProcessImageNameW.restype = wintypes.BOOL
+        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        handle = kernel32.OpenProcess(0x1000, False, pid.value)
+        if handle:
+            try:
+                length = wintypes.DWORD(32768)
+                image = ctypes.create_unicode_buffer(length.value)
+                if kernel32.QueryFullProcessImageNameW(handle, 0, image, ctypes.byref(length)):
+                    basename = ntpath.basename(image.value)
+                    if basename and len(basename) <= 128 and all(ord(c) >= 32 for c in basename):
+                        process_name = basename
+            finally:
+                kernel32.CloseHandle(handle)
+    except (OSError, AttributeError, ValueError):
+        process_name = None
     return PresenceProbe(
         foreground_is_sims=bool(is_sims),
         cursor_in_client=bool(in_client and is_sims),
         last_input_age_ms=last_input_age,
         probe_ok=True,
+        foreground_process_id=int(pid.value),
+        foreground_process_name=process_name,
     )
 
 

@@ -13,7 +13,8 @@
       "any_of": [
         "operator_declared_playing",
         "player_directed_queue",
-        "trusted_global_input_age_below_idle_threshold"
+        "trusted_global_input_age_below_idle_threshold",
+        "operator_busy_explicit_voice_or_work_signal"
       ],
       "host": "YIELD_TO_PLAYER"
     },
@@ -40,7 +41,9 @@
     "ASSUME_IDLE_FROM_CLOCK_ALONE",
     "TREAT_RESTING_CURSOR_AS_PERMANENT_ACTIVITY",
     "ASSUME_OFF_CANVAS_MEANS_IDLE",
-    "EXECUTE_WITH_UNKNOWN_INPUT_AGE"
+    "EXECUTE_WITH_UNKNOWN_INPUT_AGE",
+    "STORE_EXTERNAL_WINDOW_TITLE_PATH_OR_KEYSTROKES",
+    "INFER_VOICE_DICTATION_IDLE_FROM_RUNNING_PROCESS_NAME"
   ],
   "probe_fields": [
     "foreground_is_sims",
@@ -48,9 +51,12 @@
     "client_rect",
     "last_input_age_ms",
     "operator_declared_playing",
-    "global_input_age_trustworthy"
+    "global_input_age_trustworthy",
+    "foreground_process_id",
+    "foreground_process_name",
+    "operator_busy"
   ],
   "handoff_contract": "contracts/control-handoff.v1.json",
-  "evidence_note": "Foreground/cursor location informs display; only observed global input age and explicit player intent arbitrate screen control. Idle does not imply trusted scene/save. No override below 15 seconds is valid.",
+  "evidence_note": "Foreground/cursor location informs display; only observed global input age and explicit player intent arbitrate screen control. Idle does not imply trusted scene/save. No override below 15 seconds is valid. Foreground PID/name is an ephemeral diagnostic hint; OS global input age arbitrates clicks, and an explicit operator_busy signal handles voice dictation that emits no keyboard events.",
   "grace_ms_minimum": 15000
 }

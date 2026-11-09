@@ -83,11 +83,10 @@ def _wait_for_input_idle(
 ) -> dict:
     """Poll until trusted idle for skill-force admit.
 
-    Primary: OS last-input age >= idle_ms.
-    Fallback (lab/async): cursor screen position unchanged for idle_ms wall
-    time. Synthetic input sidecars (CUA/qemu) often reset GetLastInputInfo
-    without moving the cursor; a moving cursor still fails closed (player or
-    live pointer activity). Detached workers reuse this — do not reinvent.
+    Only trustworthy OS last-input age >= idle_ms permits continuation.
+    A stationary mouse during typing or dictation is NOT idle, even when
+    synthetic tools repeatedly reset GetLastInputInfo. Detached workers may
+    wait longer but must never substitute cursor stability for input evidence.
     """
     from betterinstincts.player_presence import probe_windows
 
@@ -108,9 +107,14 @@ def _wait_for_input_idle(
             stable_origin = pos
             stable_since = now
         cursor_stable_ms = int(max(0.0, (now - stable_since) * 1000.0))
-        if isinstance(age, int) and age >= 0:
+        if type(age) is int and age >= 0 and probe.probe_ok:
             max_age = max(max_age, age)
-            if age >= need:
+            if (
+                age >= need
+                and not probe.operator_declared_playing
+                and not probe.player_directed_queue
+                and not probe.operator_busy
+            ):
                 return {
                     "state": "INPUT_IDLE_READY",
                     "reason": "LAST_INPUT_AGE",
@@ -120,17 +124,6 @@ def _wait_for_input_idle(
                     "cursor_stable_ms": cursor_stable_ms,
                     "samples": samples,
                 }
-        if cursor_stable_ms >= need and stable_origin is not None:
-            return {
-                "state": "INPUT_IDLE_READY",
-                "reason": "CURSOR_STABLE_DESPITE_INPUT_FLICKER",
-                "last_input_age_ms": age,
-                "idle_ms": need,
-                "max_age_ms": max_age,
-                "cursor_stable_ms": cursor_stable_ms,
-                "cursor_pos": list(stable_origin),
-                "samples": samples,
-            }
         if progress_path is not None and (now - last_progress) >= 10.0:
             last_progress = now
             try:
@@ -247,41 +240,21 @@ def _play_brief_observe_repause(
 
 
 def _accept_offered_reward_trait(step: dict, *, hwnd: int) -> dict:
-    """Confirm offered mastery/reward-trait dialogs. Never Cancel."""
-    import ctypes
-    from ctypes import wintypes
+    """Never dispatch unverified Enter/OK presses into arbitrary dialogs.
 
-    from scripts.win32_input import send_click, tap_vk
-
+    Skill upgrades can surface preference Yes/No, occult, unrelated rewards,
+    or no dialog at all. A fresh observation must reach its owning one-step
+    adapter before UI input is authorized.
+    """
     if step.get("never_press_cancel") is False:
         raise GateError("REWARD_TRAIT_CANCEL_FORBIDDEN")
-    rounds = max(1, int(step.get("max_rounds") or 3))
-    fractions = list(step.get("ok_click_client_fractions") or [[0.50, 0.72]])
-    user32 = ctypes.windll.user32
-    rect = wintypes.RECT()
-    user32.GetClientRect(int(hwnd), ctypes.byref(rect))
-    actions: list[str] = []
-    for _ in range(rounds):
-        # Enter is the durable primary confirm for Sims OK dialogs.
-        tap_vk(0x0D)
-        actions.append("ENTER")
-        time.sleep(0.2)
-        for frac in fractions:
-            if not isinstance(frac, (list, tuple)) or len(frac) != 2:
-                continue
-            fx, fy = float(frac[0]), float(frac[1])
-            pt = wintypes.POINT(
-                int(rect.left + (rect.right - rect.left) * fx),
-                int(rect.top + (rect.bottom - rect.top) * fy),
-            )
-            user32.ClientToScreen(int(hwnd), ctypes.byref(pt))
-            send_click(int(pt.x), int(pt.y), between_sec=0.04)
-            actions.append(f"OK_CLICK_CLIENT:{fx:.2f},{fy:.2f}")
-            time.sleep(0.18)
     return {
         "step": "ACCEPT_OFFERED_REWARD_TRAIT",
-        "actions": actions,
+        "state": "NEEDS_DIALOG_IDENTIFICATION",
+        "actions": [],
         "never_press_cancel": True,
+        "next": "REOBSERVE_AND_CLASSIFY_REWARD_OR_PREFERENCE_PROMPT",
+        "proof_ceiling": "NO_REWARD_DIALOG_INPUT_DISPATCHED",
     }
 
 
@@ -338,33 +311,12 @@ def _execute_plan(
         timeout_sec=float(wait_idle_timeout_sec),
         progress_path=wait_idle_progress_path,
     )
-    from betterinstincts.player_presence import PresenceProbe, probe_windows
+    from betterinstincts.player_presence import probe_windows
 
-    stable_pos = tuple(idle_wait["cursor_pos"]) if idle_wait.get("cursor_pos") else None
-
+    # Never falsify last_input_age_ms. The old stationary-pointer fallback
+    # could seize the keyboard from a human using dictation or typing.
     def _admit_probe():
-        """Presence probe for admit after wait-idle.
-
-        When idle was earned via CURSOR_STABLE_DESPITE_INPUT_FLICKER, synthetic
-        input sidecars keep resetting GetLastInputInfo; report age floor only
-        while the cursor remains parked. A moved cursor restores real age.
-        """
-        raw = probe_windows(int(process_id))
-        age = raw.last_input_age_ms
-        if (
-            idle_wait.get("reason") == "CURSOR_STABLE_DESPITE_INPUT_FLICKER"
-            and stable_pos is not None
-            and _cursor_pos() == stable_pos
-        ):
-            age = max(int(age or 0), int(idle_ms))
-        return PresenceProbe(
-            foreground_is_sims=raw.foreground_is_sims,
-            cursor_in_client=raw.cursor_in_client,
-            last_input_age_ms=age,
-            operator_declared_playing=raw.operator_declared_playing,
-            player_directed_queue=raw.player_directed_queue,
-            probe_ok=raw.probe_ok,
-        )
+        return probe_windows(int(process_id))
 
     with admitted_screen_lease(
         int(process_id),
@@ -423,8 +375,8 @@ def _execute_plan(
                 continue
             if name == "ACCEPT_OFFERED_REWARD_TRAIT" and step.get("required"):
                 reward_accepts.append(_accept_offered_reward_trait(step, hwnd=hwnd))
-                # Re-focus cheat console after OK clicks.
-                _refocus_cheat_console()
+                # Do not blind-ENTER: this might be a like/dislike or occult
+                # dialog. Never claim a reward acceptance from these steps.
                 continue
         if close_console or verify_skills_panel:
             # Never Esc-close: Esc opens pause MENU and breaks household traverse.

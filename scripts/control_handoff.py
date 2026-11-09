@@ -19,22 +19,29 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--session-id", required=True)
     p.add_argument("--process-id", type=int, required=True)
-    p.add_argument("--idle-ms", type=int, default=15000)
+    p.add_argument("--idle-ms", type=int, default=30000,
+                   help="Trusted desktop quiet time: 30000, 60000, 120000 ms supported")
+    p.add_argument("--operator-busy", action="store_true",
+                   help="Explicit voice dictation or human work holds screen, regardless of input age")
     p.add_argument("--confirm", action="store_true", help="Two distinct input observations for next one-step admission")
     args = p.parse_args(argv)
     try:
         if args.process_id <= 0 or sys.platform != "win32":
             raise HandoffError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
         active = status(args.session_id).get("state") == "ACTIVE"
+        from dataclasses import replace
+        def probe():
+            base = probe_windows(args.process_id)
+            return replace(base, operator_busy=bool(args.operator_busy) or base.operator_busy)
         if args.confirm:
             result = confirm(
-                lambda: probe_windows(args.process_id),
+                probe,
                 session_active=active,
                 idle_ms=args.idle_ms,
             )
         else:
             result = decide(
-                probe_windows(args.process_id),
+                probe(),
                 session_active=active,
                 idle_ms=args.idle_ms,
             )

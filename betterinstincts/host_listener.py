@@ -286,7 +286,16 @@ def _load_observation(raw: Mapping) -> dict:
     if lot_model is not None:
         if not isinstance(lot_model, Mapping) or len(json.dumps(lot_model).encode("utf-8")) > 262144:
             raise HostListenerError("OBSERVATION_LOT_MODEL_INVALID")
+    preference_offer = raw.get("preference_offer")
+    if preference_offer is not None and (
+        not isinstance(preference_offer, Mapping)
+        or len(json.dumps(dict(preference_offer)).encode("utf-8")) > 4096
+    ):
+        raise HostListenerError("OBSERVATION_PREFERENCE_OFFER_INVALID")
     return {
+        "preference_offer": dict(preference_offer) if preference_offer is not None else None,
+        "preference_automation_opt_in": raw.get("preference_automation_opt_in") is True,
+        "preference_game_build_confirmed": raw.get("preference_game_build_confirmed") is True,
         "needs": {k: float(needs[k]) for k in SIX},
         "gardening": dict(gardening) if gardening is not None else None,
         "queue": [str(x) for x in queue],
@@ -621,6 +630,9 @@ def tick(
             occult_needs_engine_ready=obs.get("occult_needs_engine_ready", False),
             operator_prefers_aspiration_ok=obs.get("operator_prefers_aspiration_ok"),
             prior_aspiration_state=obs.get("prior_aspiration_state"),
+            preference_offer=obs.get("preference_offer"),
+            preference_automation_opt_in=obs.get("preference_automation_opt_in", False),
+            preference_game_build_confirmed=obs.get("preference_game_build_confirmed", False),
             balance_level=obs.get("balance_level"),
             ailment=obs.get("ailment"),
             inventory_has_holistic_cure=obs.get("inventory_has_holistic_cure"),

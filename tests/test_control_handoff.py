@@ -63,6 +63,25 @@ class ControlHandoffTests(unittest.TestCase):
         self.assertTrue(result["screen_control_allowed"])
         self.assertEqual(result["state"], "HOST_READY")
 
+    def test_foreground_pid_name_is_ephemeral_not_a_control_grant(self):
+        busy = probe(300, foreground_is_sims=False, cursor_in_client=False,
+                     foreground_process_id=4321, foreground_process_name="Dictation.exe")
+        result = decide(busy, session_active=True, idle_ms=30000)
+        self.assertFalse(result["screen_control_allowed"])
+        self.assertEqual(result["foreground_process"]["pid"], 4321)
+        self.assertEqual(result["foreground_process"]["name"], "Dictation.exe")
+        quiet = probe(60000, foreground_is_sims=False, cursor_in_client=False,
+                      foreground_process_id=4321, foreground_process_name="Dictation.exe")
+        self.assertTrue(decide(quiet, session_active=True, idle_ms=30000)["screen_control_allowed"])
+        self.assertFalse(decide(quiet, session_active=True, idle_ms=60001)["screen_control_allowed"])
+        self.assertEqual(decide(quiet, session_active=True, idle_ms=60000)["state"], "HOST_READY")
+
+    def test_explicit_dictation_busy_blocks_even_when_clock_says_idle(self):
+        value = probe(120000, foreground_process_id=500, operator_busy=True)
+        result = decide(value, session_active=True)
+        self.assertEqual(result["reason"], "PLAYER_OVERRIDE")
+        self.assertFalse(result["screen_control_allowed"])
+
     def test_other_app_input_also_blocks_takeover(self):
         result = decide(
             probe(150, foreground_is_sims=False, cursor_in_client=False),
@@ -139,11 +158,27 @@ class ControlHandoffTests(unittest.TestCase):
         with exclusive_screen_owner(process_id):
             pass
 
+    def test_cli_explicit_busy_pauses_with_dormant_cursor(self):
+        with (
+            patch.object(handoff_cli.sys, "platform", "win32"),
+            patch("scripts.control_handoff.status", return_value={"state": "ACTIVE"}),
+            patch("scripts.control_handoff.probe_windows", return_value=probe(120000)),
+            redirect_stdout(io.StringIO()) as output,
+        ):
+            exit_code = handoff_cli.main([
+                "--session-id", "unit-test", "--process-id", "42",
+                "--operator-busy",
+            ])
+        self.assertEqual(exit_code, 3)
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["reason"], "PLAYER_OVERRIDE")
+        self.assertFalse(result["screen_control_allowed"])
+
     def test_cli_reports_other_agent_as_distinct_owner(self):
         with (
             patch.object(handoff_cli.sys, "platform", "win32"),
             patch("scripts.control_handoff.status", return_value={"state": "ACTIVE"}),
-            patch("scripts.control_handoff.probe_windows", return_value=probe(20000)),
+            patch("scripts.control_handoff.probe_windows", return_value=probe(40000)),
             patch("scripts.control_handoff.screen_owner_busy", return_value=True),
             redirect_stdout(io.StringIO()) as output,
         ):

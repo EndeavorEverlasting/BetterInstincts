@@ -63,6 +63,7 @@ from betterinstincts.career_service import (
     evaluate_career_service,
     should_attach_career_service,
 )
+from betterinstincts.preference_prompts import evaluate_offer as evaluate_preference_offer
 from betterinstincts.aspiration_service import (
     AspirationServiceError,
     compact_aspiration_service,
@@ -180,6 +181,9 @@ def evaluate_turn(
     occult_needs_engine_ready: bool = False,
     operator_prefers_aspiration_ok: Optional[bool] = None,
     prior_aspiration_state: Optional[Mapping[str, object]] = None,
+    preference_offer: Optional[Mapping[str, object]] = None,
+    preference_automation_opt_in: bool = False,
+    preference_game_build_confirmed: bool = False,
     balance_level: Optional[str] = None,
     ailment: Optional[str] = None,
     inventory_has_holistic_cure: Optional[bool] = None,
@@ -247,6 +251,17 @@ def evaluate_turn(
     teen_homework = None
     career_service = None
     aspiration_service = None
+    # Independent, read-only likes/dislikes judgment; does not take the
+    # aspiration life-state lane or authorize host screen control.
+    preference_prompt = (
+        evaluate_preference_offer(
+            preference_offer,
+            automation_opt_in=preference_automation_opt_in,
+            known_game_build=preference_game_build_confirmed,
+            player_directed=player_directed or already_busy,
+        )
+        if preference_offer is not None else None
+    )
     balance_service = None
     scenario = None
     fun_service = None
@@ -1284,6 +1299,7 @@ def evaluate_turn(
         "career_service": (
             compact_career_service(career_service) if career_service is not None else None
         ),
+        "preference_prompt": preference_prompt,
         "aspiration_service": (
             compact_aspiration_service(aspiration_service)
             if aspiration_service is not None
