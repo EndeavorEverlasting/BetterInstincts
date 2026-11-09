@@ -1,7 +1,7 @@
 # Household Object Force — durable useful-item catalog
 
-**Owner:** `contracts/household-object-force.v1.json` and `betterinstincts/household_object_force.py`.  
-**CLI:** `python -m scripts.household_object_force`.  
+**Owner:** `contracts/household-object-force.v1.json` and `betterinstincts/household_object_force.py`.
+**CLI:** `python -m scripts.household_object_force`.
 **Proof ceiling:** offline library plans only — not live spawn certification, not BI-002 closure.
 
 ## Operator correction (binding)
@@ -26,12 +26,12 @@ Career rewards deposit into **Household Inventory** (large objects cannot live i
 
 ## Forbidden
 
-- Hallucinated `objects.gsi_create_obj` hex instance IDs  
-- Treating BBB as a replacement for `bb.showhiddenobjects`  
-- Skipping elementary unlock for catalog/hidden list items  
-- `buydebug` nickname or slash-joined console lines  
-- Pocket inventory for large objects  
-- Autorun, game-speed thrash, user-save edits  
+- Hallucinated `objects.gsi_create_obj` hex instance IDs
+- Treating BBB as a replacement for `bb.showhiddenobjects`
+- Skipping elementary unlock for catalog/hidden list items
+- `buydebug` nickname or slash-joined console lines
+- Pocket inventory for large objects
+- Autorun, game-speed thrash, user-save edits
 
 ## CLI
 
@@ -52,6 +52,6 @@ Sibling to `funds_inject` (household inject pattern), `curious_catalog` (gardeni
 
 ## Related
 
-- [Curious Catalog](CURIOUS_CATALOG.md) — rare/money gardening shelves  
-- [Hidden Object Discovery](HIDDEN_OBJECT_DISCOVERY.md) — general debug browse / P04  
-- [Host funds](../contracts/host-funds.v1.json) — household money inject pattern  
+- [Curious Catalog](CURIOUS_CATALOG.md) — rare/money gardening shelves
+- [Hidden Object Discovery](HIDDEN_OBJECT_DISCOVERY.md) — general debug browse / P04
+- [Host funds](../contracts/host-funds.v1.json) — household money inject pattern
