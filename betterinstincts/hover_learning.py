@@ -170,6 +170,10 @@ def observe(state: Mapping, supplied_event: Mapping) -> tuple[dict, dict]:
             if active is None or active["target_ref"] != event["target_ref"]:
                 raise HoverLearningError("ACTION_WITHOUT_MATCHED_TOOLTIP")
             event["tooltip_ref"] = active["tooltip_ref"]
+        else:
+            # A keyboard/console pathway may change focus or scene; a prior
+            # tooltip is no longer reliable evidence for the next mouse action.
+            next_active = None
         if any(e["kind"] in ACTION_KINDS and
                e["interaction_ref"] == event["interaction_ref"] for e in events):
             raise HoverLearningError("DUPLICATE_INTERACTION_REF")
