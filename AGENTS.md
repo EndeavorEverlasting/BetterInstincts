@@ -35,5 +35,5 @@ Report CHANGED | PROVED | NEXT with checks, SHA, push/PR/merge, patch, live stat
 
 P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`; ontology: `docs/handoff/BI-SEMANTIC-ONTOLOGY-P04-2026-11-07.md`; hidden objects: `plans/active/BI-HIDDEN-OBJECTS.P04.md` (BI-002 active).
 
-## Repository-wide desktop interoperability and installer (P00 + P01 + P124 + P95 + Trifecta + P92)
-Read `docs/ASYNC_INTEROP.md`, `contracts/workflow-interoperability.v1.json`, `contracts/workstation-paths.v1.json` before Playwright/Sims screen input, new agent worker loops, or install/uninstall. **Human input wins:** queue work; do not cancel an intended task just because the operator is active. Every cooperating UI executor must prove a live opt-in session, wait for **15,000ms trusted OS-wide input idle**, use the shared desktop lock, revalidate exact target/scene/save/player queue, and double-check immediately before every effect. Unknown/failed sensor or partial outcomes must pause/quarantine; no independent Playwright launch, brute focus, hidden input recording, or unsanctioned background daemon. Legacy adapter migration and actual game/browser proof are OPEN, not completed by these offline contracts. `bootstrap.py` owns the canonical profile-derived dev/use/worktree paths; no guessed alternate clone; uninstall only manifest-proved app-owned artifacts and an installer-created pristine clone. Keep user files and saves protected. CI/ontology consultations are mandatory for edits to these boundaries.
+
+Interop: `docs/ASYNC_INTEROP.md` (15s idle).
