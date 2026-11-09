@@ -37,8 +37,8 @@ class UIChromeTests(unittest.TestCase):
             client_height=1080,
             cfg=self.cfg,
         )
-        self.assertEqual(hit["x"], 125)
-        self.assertEqual(hit["y"], 866)
+        self.assertEqual(hit["x"], 140)
+        self.assertEqual(hit["y"], 864)
         self.assertIs(hit["execute_allowed"], False)
 
     def test_resolve_unknown_profile_fails(self) -> None:
@@ -76,7 +76,9 @@ class UIChromeTests(unittest.TestCase):
         typed = [s for s in plan["steps"] if s.get("op") == "TYPE_TEXT"]
         self.assertEqual(typed[0]["text"], "AOK")
         clicks = [s for s in plan["steps"] if s.get("op") == "CLICK_TARGET"]
-        self.assertEqual(clicks[0]["resolved"]["x"], 125)
+        self.assertEqual(clicks[0]["resolved"]["x"], 140)
+        self.assertEqual(clicks[0]["resolved"]["y"], 864)
+        self.assertEqual(clicks[0]["verify"], "VERIFY_THEN_ESCAPE_ON_MISS")
         keys = [s for s in plan["steps"] if s.get("op") == "KEY" and s.get("chord") == ["BACKSPACE"]]
         self.assertEqual(len(keys), 1)
 

@@ -50,7 +50,7 @@
   "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
   "evidence_ceiling": "OFFLINE_CLICK_ERROR_METRICS_AND_ESCAPE_CANCEL_POLICY_NO_LIVE_CLICK_CERTIFICATION",
   "player_save_control_impact": "Evaluate-only scoring plus Escape-cancel recovery *plans*. No SendInput from this module, no lot mutation, no save edits. Live Escape dispatch remains a separate host admission. Forbids treating lot placement as success after a missed catalog click.",
-  "expected_outcome": "contracts/click-error-eval.v1.json + betterinstincts/click_error_eval.py + scripts/click_error_eval.py + tests; decide_post_click → ESCAPE_CANCEL via CANCEL_HOLD on NEAR_MISS/MISS; ui_chrome CLICK_TARGET steps carry VERIFY_THEN_ESCAPE_ON_MISS; remapped search_field ny ~0.7519; docs/LEDGER + UI_CHROME + PROMPT_INVOCATIONS pointers.",
+  "expected_outcome": "contracts/click-error-eval.v1.json + betterinstincts/click_error_eval.py + scripts/click_error_eval.py + tests; decide_post_click → ESCAPE_CANCEL via CANCEL_HOLD on NEAR_MISS/MISS; ui_chrome CLICK_TARGET steps carry VERIFY_THEN_ESCAPE_ON_MISS; remapped search_field client ≈(140,864) ny=0.8000; docs/LEDGER + UI_CHROME + PROMPT_INVOCATIONS pointers.",
   "negative_tests": [
     "Missing intended or observed coords fails closed",
     "Coordinate space mismatch (client vs screen) fails closed unless converter supplied",

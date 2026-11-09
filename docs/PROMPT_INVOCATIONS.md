@@ -19,6 +19,18 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
 | P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools + countertop mechanics (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
 
+## 2026-11-09 click-error eval + Escape-cancel on chrome miss trifecta
+
+**P95** designed `POST_CLICK_VERIFY_ESCAPE_CANCEL`: score intended ui_chrome
+targets vs observed client pixels (HIT/NEAR_MISS/MISS, ABOVE_TARGET,
+LOT_PUNCH_THROUGH_RISK); non-HIT → Escape-cancel via CANCEL_HOLD. Remapped
+`catalog.search_field` 1920×1080 to client ≈(140,864). **P124** peer
+`click_error_eval` beside `ui_chrome` / `screen_atlas` (evaluate + recovery plan
+only; no SendInput). **P82** measured above-search lot punch-through →
+ESCAPE_CANCEL in `tests/test_click_error_eval.py`. **P08** live click attest
+remains OPEN. Consultation:
+`contracts/consultations/BI-CLICK-ERROR-EVAL-20261109.v1.json`.
+
 ## 2026-11-09 host UI chrome map + AOK inventory recipe trifecta
 
 **P95** designed `UI_CHROME_PEER_MAP`: normalized Build/Buy chrome targets,

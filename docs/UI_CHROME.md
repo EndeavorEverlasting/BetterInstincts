@@ -17,6 +17,8 @@ Agentic screenshot clicking keeps missing Build/Buy chrome (search field vs lot-
 
 Normalized client fractions `[0,1]×[0,1]`, origin top-left, keyed by resolution profile (`1920x1080` candidate from Bargain Bend Build host). Absolute pixels are derived only when the caller supplies live client width/height.
 
+Search field candidate (1920×1080) is client **(140, 864)** (`nx=0.0729`, `ny=0.8000`). After every chrome click, score with `python -m scripts.click_error_eval against-chrome …`; **NEAR_MISS/MISS → Escape-cancel** (do not continue the recipe into the lot). Cursor computer-use canvas coords are not client pixels — convert before scoring.
+
 ## Hotkeys (intent / glossary)
 
 | Mode | Chord | Effect | Notes |

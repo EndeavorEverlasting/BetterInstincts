@@ -132,9 +132,9 @@
       "profiles": {
         "1920x1080": {
           "kind": "point",
-          "nx": 0.0651,
-          "ny": 0.8019,
-          "note": "Center of Search pill; avoid magnifying glass and lot-name banner"
+          "nx": 0.0729,
+          "ny": 0.8,
+          "note": "Center-left of Search pill text (client ≈140,864 attested 2026-11-09). Agents systematically undershoot Y (ABOVE_TARGET → lot punch-through); score via click_error_eval and Escape-cancel on miss. CANDIDATE_UNVERIFIED until P08 attest."
         }
       },
       "status": "CANDIDATE_UNVERIFIED"
@@ -176,13 +176,13 @@
       "execute_allowed_default": false,
       "steps": [
         {"op": "REQUIRE_MODE", "modes": ["BUY", "BUILD"]},
-        {"op": "CLICK_TARGET", "target": "catalog.search_field"},
+        {"op": "CLICK_TARGET", "target": "catalog.search_field", "verify": "VERIFY_THEN_ESCAPE_ON_MISS"},
         {"op": "TYPE_TEXT", "from_recipe_field": "search_term"},
         {"op": "KEY", "chord": ["ENTER"]},
-        {"op": "CLICK_TARGET", "target": "catalog.first_result"},
+        {"op": "CLICK_TARGET", "target": "catalog.first_result", "verify": "VERIFY_THEN_ESCAPE_ON_MISS"},
         {"op": "OBSERVE", "cue": "held_object_cancel_esc", "fail": "ITEM_NOT_HELD"},
         {"op": "KEY", "chord": ["BACKSPACE"], "hotkey_id": "BACKSPACE_TO_HOUSEHOLD_INVENTORY"},
-        {"op": "CLICK_TARGET", "target": "catalog.household_inventory_tab"},
+        {"op": "CLICK_TARGET", "target": "catalog.household_inventory_tab", "verify": "VERIFY_THEN_ESCAPE_ON_MISS"},
         {"op": "OBSERVE", "cue": "household_inventory_contains_item", "fail": "ITEM_NOT_IN_HOUSEHOLD_INVENTORY"}
       ]
     }

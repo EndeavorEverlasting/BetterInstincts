@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-09 — Click-error eval + Escape-cancel on chrome miss (P95 + Trifecta)
+
+Offline `click_error_eval` scores intended ui_chrome targets vs observed client pixels (HIT/NEAR_MISS/MISS, ABOVE_TARGET, LOT_PUNCH_THROUGH_RISK). Non-HIT → `ESCAPE_CANCEL` via `CANCEL_HOLD`; recipe must not continue into the lot. Remapped `catalog.search_field` 1920×1080 to client ≈(140,864). Proof ceiling: offline metrics + recovery plan only — not live click certification.
+
 ## 2026-11-09 — Wall shelf synonym → A-OK-Bloomer (operator correction + Trifecta)
 
 **Operator correction:** “wall shelf” means the coveted **A-OK-Bloomer Vertical Garden** (`a_ok_bloomer`), not a newly invented shelf. Synonyms live on `contracts/ui-chrome.v1.json#catalog_items.a_ok_bloomer`; `resolve_catalog_item` / `plan --item-id "wall shelf"` / `resolve-item` fail closed without that alias. Consultation `BI-AOK-WALL-SHELF-SYNONYM-20261109.v1.json`. Live Household Inventory deposit remains P08 OPEN and still blocks the rest of the coveted list. Does not close BI-002.
