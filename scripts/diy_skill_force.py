@@ -61,7 +61,9 @@ def _focus(process_id: int | None, *, click_client: bool = False) -> dict:
     user32.SetForegroundWindow(hwnd)
     user32.SetActiveWindow(hwnd)
     user32.AttachThreadInput(tid_fg, tid_t, False)
-    time.sleep(0.35)
+    # Synthetic Alt unlock counts as last-input; age past interop idle (15s)
+    # so screen_admit confirm does not immediately PAUSE_FOR_PLAYER.
+    time.sleep(15.25)
     if click_client:
         from ctypes import wintypes
 
