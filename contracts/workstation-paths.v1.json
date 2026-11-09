@@ -9,24 +9,27 @@
       "use": "%LOCALAPPDATA%/BetterInstincts/app",
       "worktrees": "%USERPROFILE%/dev/.worktrees/BetterInstincts",
       "entrypoint": "betterinstincts.cmd",
-      "status": "RULE_ONLY_NOT_LOCAL_HOST_VERIFIED"
+      "status": "RULE_ONLY_NOT_LOCAL_HOST_VERIFIED",
+      "locks": "%LOCALAPPDATA%/BetterInstincts/runtime/locks"
     },
     "linux": {
       "development": "$HOME/dev/BetterInstincts",
       "use": "${XDG_DATA_HOME:-$HOME/.local/share}/betterinstincts/app",
       "worktrees": "$HOME/dev/.worktrees/BetterInstincts",
       "entrypoint": "betterinstincts",
-      "status": "RULE_ONLY_NOT_LOCAL_HOST_VERIFIED"
+      "status": "RULE_ONLY_NOT_LOCAL_HOST_VERIFIED",
+      "locks": "${XDG_DATA_HOME:-$HOME/.local/share}/betterinstincts/runtime/locks"
     }
   },
   "resolution": "bootstrap.paths derives platform-native runtime home and use environment; there is no silent fallback when LOCALAPPDATA/XDG home is invalid.",
   "roles": {
     "development": "canonical writable checkout, never mutate active use path",
     "use": "separate user-scoped managed launcher and manifest; no game Mods install or daemon",
-    "worktrees": "agent isolation only, not second mutable canonical clone"
+    "worktrees": "agent isolation only, not second mutable canonical clone",
+    "locks": "User-scoped shared UI-input mutex, not inside any clone/worktree. 0700 directory on POSIX; stale locks fail closed."
   },
   "installation": "bootstrap.py install clones only if canonical checkout absent and writes only manifest-owned launcher+manifest",
-  "uninstallation": "bootstrap.py uninstall removes only verified launcher+manifest; removes exact checkout only if this installer created it and it has no tracked modifications, untracked or ignored data",
+  "uninstallation": "bootstrap.py uninstall removes only verified launcher+manifest; removes exact checkout only if this installer created it and it has no tracked modifications, untracked or ignored data Empty owned lock directory is pruned; active/stale lock files block removal and are never force-deleted.",
   "forbidden": [
     "HARDCODE_USERNAME",
     "SILENT_SECOND_CLONE",

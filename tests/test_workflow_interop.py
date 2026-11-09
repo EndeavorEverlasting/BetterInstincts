@@ -134,5 +134,23 @@ class WaiterTests(unittest.IsolatedAsyncioTestCase):
                     self.fail("must not grab game's desktop")
 
 
+
+class CanonicalScreenLockTests(unittest.TestCase):
+    def test_default_lock_location_is_shared_outside_repository_checkouts(self):
+        import bootstrap
+        from betterinstincts.control_handoff import LOCK_ROOT
+        expected = bootstrap.paths()["locks"]
+        self.assertEqual(LOCK_ROOT, expected)
+        self.assertEqual(LOCK_ROOT.parent.name, "runtime")
+        self.assertNotIn("dist/host-listener", str(LOCK_ROOT).replace("\\\\", "/"))
+
+    def test_15_seconds_is_non_negotiable_even_for_explicit_override(self):
+        with self.assertRaisesRegex(ValueError, "IDLE_THRESHOLD_OUT_OF_RANGE"):
+            CooperativeScreenQueue(
+                lambda: PresenceProbe(False, False, last_input_age_ms=100000),
+                lambda: True, idle_ms=14999,
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -51,7 +51,8 @@ def paths(*, home: Path | None = None, platform: str | None = None,
         use = root / "betterinstincts" / "app"
     else:
         raise BootstrapError("UNSUPPORTED_OS")
-    return {"development": dev, "use": use, "worktrees": worktrees}
+    return {"development": dev, "use": use, "worktrees": worktrees,
+            "locks": use.parent / "runtime" / "locks"}
 
 
 def _run(*args: str, cwd: Path | None = None) -> str:

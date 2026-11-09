@@ -86,9 +86,9 @@ class ControlHandoffTests(unittest.TestCase):
             self.assertEqual(decide(suspect, session_active=True)["reason"], "PLAYER_OVERRIDE")
 
     def test_idle_threshold_is_per_use_case_but_bounded(self):
-        self.assertTrue(decide(probe(3500), session_active=True, idle_ms=3000)["screen_control_allowed"])
-        self.assertFalse(decide(probe(3500), session_active=True, idle_ms=5000)["screen_control_allowed"])
-        for threshold in (0, 999, 120001, True):
+        self.assertTrue(decide(probe(18000), session_active=True, idle_ms=15000)["screen_control_allowed"])
+        self.assertFalse(decide(probe(18000), session_active=True, idle_ms=20000)["screen_control_allowed"])
+        for threshold in (0, 1000, 14999, 120001, True):
             with self.assertRaises(HandoffError):
                 decide(probe(100000), session_active=True, idle_ms=threshold)
 

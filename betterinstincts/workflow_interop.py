@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from betterinstincts.control_handoff import (
-    HandoffError, decide, exclusive_desktop_owner,
+    HandoffError, MIN_IDLE_MS, decide, exclusive_desktop_owner,
 )
 from betterinstincts.player_presence import PresenceProbe
 
@@ -58,7 +58,7 @@ class CooperativeScreenQueue:
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
         lock_root: Path | None = None,
     ):
-        if isinstance(idle_ms, bool) or type(idle_ms) is not int or not 1000 <= idle_ms <= 120000:
+        if isinstance(idle_ms, bool) or type(idle_ms) is not int or not MIN_IDLE_MS <= idle_ms <= 120000:
             raise ValueError("IDLE_THRESHOLD_OUT_OF_RANGE")
         if isinstance(poll_seconds, bool) or not isinstance(poll_seconds, (int, float)) or not 0.1 <= poll_seconds <= 5:
             raise ValueError("POLL_INTERVAL_OUT_OF_RANGE")

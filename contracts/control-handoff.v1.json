@@ -9,7 +9,7 @@
     "HOST_READY"
   ],
   "default_idle_ms": 15000,
-  "min_idle_ms": 1000,
+  "min_idle_ms": 15000,
   "max_idle_ms": 120000,
   "policy": [
     "No screen-control grant without explicit session ACTIVE",
@@ -19,7 +19,8 @@
     "Cursor on game canvas alone is not permanent human activity if desktop idle is independently confirmed",
     "Two fresh probes before each action; no reusable batch lease",
     "Execute at most one UI step per admission; subsequent steps require new grant and independent scene check",
-    "All scripts that click/focus the Sims UI must adopt gate before shared-control claims"
+    "All scripts that click/focus the Sims UI must adopt gate before shared-control claims",
+    "15,000 ms is a hard minimum; no CLI/API override may shorten the operator grace period"
   ],
   "forbidden": [
     "GLOBAL_BACKGROUND_HOOK",
@@ -36,10 +37,11 @@
   "next_parent_gate": "BI-002_HUNGER_LIVE_CERTIFICATION",
   "single_writer": {
     "lock_owner": "betterinstincts.control_handoff.exclusive_screen_owner",
-    "scope": "per actual game process ID under ignored dist/host-listener/",
+    "scope": "One canonical user-profile desktop lock shared across repository clones/worktrees, plus per-PID child lock; resolved from bootstrap.paths().locks",
     "acquire": "before focus and until one action receipt finishes",
     "contention": "SCREEN_OWNER_BUSY fails closed",
     "stale": "no automatic age-based takeover; deliberate cleanup only after checking no active owner",
-    "coverage": "needs_force action boundary now; other direct UI adapters not yet migrated"
+    "coverage": "needs_force action boundary now; other direct UI adapters not yet migrated",
+    "lock_path_owner": "bootstrap.paths().locks"
   }
 }
