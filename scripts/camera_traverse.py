@@ -105,7 +105,11 @@ def _execute_plan(
     must restore the Sim under the SAME admitted control lease in finally.
     """
     from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
-    from scripts.win32_input import right_drag, send_wheel, send_key_chord
+    from scripts.win32_input import (
+        right_drag, send_wheel, send_key_chord, send_right_click,
+        park_safe_cursor_rest,
+    )
+    from betterinstincts.screen_atlas import _native_owner
     from betterinstincts.active_sim_camera_lock import evaluate_active_sim_camera_lock
     from betterinstincts.sim_camera import CENTER_SIM, plan_sim_camera
     from betterinstincts.portrait_follow import plan_portrait_follow
@@ -195,6 +199,23 @@ def _execute_plan(
                         ensure_ready()
                         if portrait_follow(portrait) is not True:
                             raise CameraTraverseError("PORTRAIT_FOLLOW_PORT_NOT_ACKNOWLEDGED")
+                        restoration = "PORTRAIT_FOLLOW_DISPATCHED_REOBSERVE_REQUIRED"
+                    elif (portrait["state"] == "PORTRAIT_FOLLOW_READY_FOR_ADMISSION"
+                          and _native_owner(after, process_id, session_id)):
+                        # Default native host path: prefer the attested active
+                        # portrait without requiring an optional external
+                        # callback. Exact PID/focus/session and the same
+                        # admitted screen lease remain mandatory.
+                        ensure_ready()
+                        x, y = portrait["effect"]["client"]
+                        origin = (after["client_origin_x"], after["client_origin_y"])
+                        send_right_click(origin[0] + x, origin[1] + y, safe_rest_after=False)
+                        ensure_ready()
+                        park_safe_cursor_rest(
+                            origin_x=origin[0], origin_y=origin[1],
+                            client_width=portrait["client_width"],
+                            client_height=portrait["client_height"],
+                        )
                         restoration = "PORTRAIT_FOLLOW_DISPATCHED_REOBSERVE_REQUIRED"
                     elif center["state"] == "SIM_CAMERA_READY_FOR_ADMISSION":
                         # One-shot center is merely a fallback, never follow.
