@@ -10,7 +10,7 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
-from betterinstincts.ui_chrome import hotkeys_for_mode, load_contract as ui_contract
+from betterinstincts.ui_chrome import load_contract as ui_contract
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = re.compile(r"[^a-z0-9]+")
