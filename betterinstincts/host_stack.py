@@ -80,7 +80,9 @@ from betterinstincts.teen_homework import (
     evaluate_teen_homework_turn,
     should_attach_teen_homework,
 )
-from betterinstincts.camera_traverse import CameraTraverseError, evaluate_cursor_risk
+from betterinstincts.camera_traverse import (
+    CameraTraverseError, assess_world_target, evaluate_cursor_risk,
+)
 from betterinstincts.viewport import ViewportError, predict_risk
 
 
@@ -165,6 +167,7 @@ def evaluate_turn(
     edge_band_px: Optional[int] = None,
     camera_scan_needed: bool = False,
     camera_pan_directions: Sequence[str] = (),
+    world_target: Optional[Mapping[str, object]] = None,
     prior_career_state: Optional[Mapping[str, object]] = None,
     aspiration_prompt_active: bool = False,
     aspiration_prompt_id: Optional[str] = None,
@@ -589,6 +592,22 @@ def evaluate_turn(
         except (BuildIntegrityError, BuildSpatialError, BuildLibraryCheckpointError) as exc:
             raise HostStackError(str(exc)) from exc
 
+    target_framing = None
+    if world_target is not None:
+        if not isinstance(world_target, Mapping):
+            raise HostStackError("WORLD_TARGET_REQUEST_INVALID")
+        try:
+            target_framing = assess_world_target(
+                target_id=world_target.get("target_id"),
+                capture_ref=capture_ref,
+                observation=world_target.get("observation"),
+                client_width=client_width,
+                client_height=client_height,
+                reframe_directions=world_target.get("reframe_directions", ()),
+            )
+        except (CameraTraverseError, TypeError) as exc:
+            raise HostStackError(str(exc)) from exc
+
     camera_traverse = None
     try:
         camera_traverse = evaluate_cursor_risk(
@@ -670,6 +689,18 @@ def evaluate_turn(
         }
     elif player_directed or already_busy:
         next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
+    elif target_framing is not None:
+        # A named world target must be framed *before* any host click route.
+        # Ready means only that fresh, independent screen admission may begin.
+        next_gate = target_framing["gate"]
+        fallback = {
+            "mechanism": "CAMERA_FIRST_WORLD_TARGET",
+            "owner": "betterinstincts/camera_traverse.py",
+            "contract": "contracts/camera-traverse.v1.json",
+            "target_framing": target_framing,
+            "execute_allowed": False,
+            "forbidden": ["BLIND_WORLD_CLICK", "AUTO_RECLICK", "REUSE_PRE_PAN_TARGET_COORDINATES"],
+        }
     elif social_opportunity is not None and social_opportunity["gate"] == "SOCIAL_LOOKUP_REQUIRED":
         next_gate = "SOCIAL_LOOKUP_REQUIRED"
         fallback = {
@@ -1215,6 +1246,7 @@ def evaluate_turn(
         "build_spatial": build_spatial,
         "build_library": build_library,
         "camera_traverse": camera_traverse,
+        "world_target_framing": target_framing,
         "instincts": instincts,
         "decision": decision,
         "influence": influence,
