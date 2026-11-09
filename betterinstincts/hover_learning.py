@@ -16,7 +16,8 @@ MAX_EVENTS = 256
 MAX_BYTES = 64000
 TOKEN = re.compile(r"^[a-z][a-z0-9_:-]{1,63}$")
 EVENT_ID = re.compile(r"^[A-Za-z0-9_-]{3,48}$")
-KINDS = {"hover", "tooltip_visible", "tooltip_hidden", "action", "outcome"}
+KINDS = {"hover", "tooltip_visible", "tooltip_hidden", "action", "hotkey_action", "cheat_action", "outcome"}
+ACTION_KINDS = frozenset({"action", "hotkey_action", "cheat_action"})
 
 
 class HoverLearningError(ValueError):
@@ -34,7 +35,7 @@ def _event(value: Mapping) -> dict:
         raise HoverLearningError("BAD_HOVER_EVENT_SCHEMA")
     allowed = {"schema", "id", "at_ms", "kind", "target_ref", "tooltip_ref",
                "interaction_ref", "action_ref", "outcome", "evidence_ref",
-               "operator_reviewed", "source"}
+               "operator_reviewed", "source", "mode", "hotkey_id", "cheat_id"}
     if set(value) - allowed:
         raise HoverLearningError("UNEXPECTED_HOVER_EVENT_FIELDS")
     if not isinstance(value.get("id"), str) or not EVENT_ID.fullmatch(value["id"]):
@@ -54,6 +55,8 @@ def _event(value: Mapping) -> dict:
         "tooltip_visible": ("target_ref", "tooltip_ref"),
         "tooltip_hidden": ("target_ref",),
         "action": ("target_ref", "interaction_ref", "action_ref"),
+        "hotkey_action": ("mode", "hotkey_id", "interaction_ref"),
+        "cheat_action": ("cheat_id", "interaction_ref"),
         "outcome": ("interaction_ref", "outcome", "evidence_ref",
                     "operator_reviewed"),
     }[kind]
@@ -68,12 +71,27 @@ def _event(value: Mapping) -> dict:
             if value[key] not in {"helpful", "harmful", "unknown"}:
                 raise HoverLearningError("INVALID_OUTCOME")
             result[key] = value[key]
+        elif key in {"mode", "hotkey_id"}:
+            if not isinstance(value[key], str) or not re.fullmatch(r"[A-Z0-9_]{2,64}", value[key]):
+                raise HoverLearningError("INVALID_" + key.upper())
+            result[key] = value[key]
         else:
             result[key] = _token(value[key], key)
     if "operator_reviewed" in required and result["operator_reviewed"] and result["outcome"] == "unknown":
         raise HoverLearningError("CANNOT_REVIEW_UNKNOWN_OUTCOME")
     if set(value) != {"schema", "id", "at_ms", "kind", "source", *required}:
         raise HoverLearningError("EVENT_FIELDS_NOT_KIND_SCOPED")
+    if kind in {"hotkey_action", "cheat_action"}:
+        from betterinstincts.behavior_input_catalog import (
+            BehaviorInputCatalogError, resolve_hotkey, resolve_cheat,
+        )
+        try:
+            result["action_ref"] = (
+                resolve_hotkey(result["mode"], result["hotkey_id"])
+                if kind == "hotkey_action" else resolve_cheat(result["cheat_id"])
+            )
+        except (BehaviorInputCatalogError, KeyError, ValueError) as exc:
+            raise HoverLearningError("UNRECOGNIZED_INPUT_CHANNEL:" + str(exc)) from exc
     return result
 
 
@@ -107,6 +125,8 @@ def _validated_state(state: Mapping) -> dict:
         if item.get("kind") == "action":
             raw.pop("tooltip_ref", None)  # Derived only from matched visible tooltip.
             _token(item.get("tooltip_ref"), "tooltip_ref")
+        elif item.get("kind") in {"hotkey_action", "cheat_action"}:
+            raw.pop("action_ref", None)  # Derived solely from canonical catalog.
         item_valid = _event(raw)
         if item.get("kind") == "action":
             item_valid["tooltip_ref"] = item["tooltip_ref"]
@@ -126,7 +146,7 @@ def observe(state: Mapping, supplied_event: Mapping) -> tuple[dict, dict]:
     events = [e for e in previous["events"] if e["at_ms"] >= cutoff]
     if any(e["id"] == event["id"] for e in previous["events"]):
         raise HoverLearningError("DUPLICATE_HOVER_EVENT_ID")
-    if events and event["at_ms"] < events[-1]["at_ms"]:
+    if previous["events"] and event["at_ms"] < previous["events"][-1]["at_ms"]:
         raise HoverLearningError("HOVER_TIME_REGRESSION")
     active = previous["active_tooltip"] if events else None
     next_active = active
@@ -145,15 +165,20 @@ def observe(state: Mapping, supplied_event: Mapping) -> tuple[dict, dict]:
         if active["target_ref"] != event["target_ref"]:
             raise HoverLearningError("HIDDEN_TARGET_MISMATCH")
         next_active = None
-    elif kind == "action":
-        if active is None or active["target_ref"] != event["target_ref"]:
-            raise HoverLearningError("ACTION_WITHOUT_MATCHED_TOOLTIP")
-        if any(e["kind"] == "action" and
+    elif kind in ACTION_KINDS:
+        if kind == "action":
+            if active is None or active["target_ref"] != event["target_ref"]:
+                raise HoverLearningError("ACTION_WITHOUT_MATCHED_TOOLTIP")
+            event["tooltip_ref"] = active["tooltip_ref"]
+        else:
+            # A keyboard/console pathway may change focus or scene; a prior
+            # tooltip is no longer reliable evidence for the next mouse action.
+            next_active = None
+        if any(e["kind"] in ACTION_KINDS and
                e["interaction_ref"] == event["interaction_ref"] for e in events):
             raise HoverLearningError("DUPLICATE_INTERACTION_REF")
-        event["tooltip_ref"] = active["tooltip_ref"]
     elif kind == "outcome":
-        actions = [e for e in events if e["kind"] == "action" and
+        actions = [e for e in events if e["kind"] in ACTION_KINDS and
                    e["interaction_ref"] == event["interaction_ref"]]
         if len(actions) != 1:
             raise HoverLearningError("OUTCOME_WITHOUT_MATCHED_ACTION")
@@ -185,12 +210,19 @@ def evaluate(state: Mapping, *, now_ms: int) -> dict:
     for seconds in WINDOWS:
         cutoff = now_ms - seconds * 1000
         within = [e for e in events if cutoff <= e["at_ms"] <= now_ms]
-        actions = [e for e in within if e["kind"] == "action"]
+        actions = [e for e in within if e["kind"] in ACTION_KINDS]
         groups = {}
         for action in actions:
-            key = (action["target_ref"], action["tooltip_ref"], action["action_ref"])
-            g = groups.setdefault(key, {"target_ref": key[0], "tooltip_ref": key[1],
-                                        "action_ref": key[2], "attempts": 0,
+            channel = {"action": "tooltip", "hotkey_action": "hotkey",
+                       "cheat_action": "cheat"}[action["kind"]]
+            trigger_ref = (action.get("tooltip_ref") if channel == "tooltip"
+                           else action["action_ref"])
+            key = (channel, action.get("target_ref") or "", trigger_ref, action["action_ref"])
+            g = groups.setdefault(key, {"channel": channel,
+                                        "trigger_ref": trigger_ref,
+                                        "target_ref": action.get("target_ref"),
+                                        "tooltip_ref": action.get("tooltip_ref"),
+                                        "action_ref": action["action_ref"], "attempts": 0,
                                         "reviewed_helpful": 0, "reviewed_harmful": 0,
                                         "pending_review_or_outcome": 0})
             g["attempts"] += 1
@@ -215,6 +247,8 @@ def evaluate(state: Mapping, *, now_ms: int) -> dict:
             "tooltip_appearances": sum(e["kind"] == "tooltip_visible" for e in within),
             "hover_observations": sum(e["kind"] == "hover" for e in within),
             "action_observations": len(actions),
+            "hotkey_action_observations": sum(e["kind"] == "hotkey_action" for e in actions),
+            "cheat_action_observations": sum(e["kind"] == "cheat_action" for e in actions),
             "patterns": rows,
         }
     return {"schema": "betterinstincts.hover-evaluation/v1",

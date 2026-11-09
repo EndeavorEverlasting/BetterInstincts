@@ -26,22 +26,65 @@
       "sensor_supplied",
       "operator_supplied"
     ],
-    "tokenized_refs_only": true
+    "tokenized_refs_only": true,
+    "allow_raw_key_sequences": false,
+    "allow_raw_cheat_console_text": false,
+    "allow_cheat_arguments": false
   },
   "events": [
     "hover",
     "tooltip_visible",
     "tooltip_hidden",
     "action",
+    "hotkey_action",
+    "cheat_action",
     "outcome"
   ],
   "semantics": {
     "tooltip_detection": "supplied visible/hidden transitions; repeated visible samples collapse to one appearance",
-    "association": "explicit interaction_ref linked to preceding action and visible tooltip target",
+    "association": "All channels share one interaction_ref -> independently reviewed outcome association. Tooltip channel additionally requires a live matching tooltip. Hotkeys and cheats require their canonical owner catalog identities.",
     "outcome": "operator_reviewed true and evidence_ref required for reviewed successes; not proof of causal efficacy",
     "learning": "no automatic training; at least 3 reviewed outcomes, 3 helpful, 75 percent helpful for eligibility only",
-    "action_permission": "NONE"
+    "action_permission": "NONE",
+    "input_channel_action_not_success": "A recorded hotkey or cheat invocation never establishes requested mode, in-game command ACK, inventory change or outcome.",
+    "window_projection": "3/5/10/30/60-minute windows include tooltip, hotkey and cheat per-channel action totals, review outcomes and pending results; no double counting."
   },
   "output_root": "dist/host-listener/<session_id>/hover-learning.json",
-  "proof_ceiling": "OFFLINE_PROVIDER_SUPPLIED_EVENTS_NOT_CALIBRATED_SIMS_SENSOR_OR_PLAYABLE_MOD"
+  "proof_ceiling": "OFFLINE_CATALOG_QUALIFIED_MULTI_CHANNEL_EVENTS_NOT_LIVE_SIMS_SENSING_OR_PLAYABLE_MOD",
+  "catalog_qualified_input_channels": {
+    "hotkey": {
+      "kind": "hotkey_action",
+      "required": [
+        "mode",
+        "hotkey_id",
+        "interaction_ref"
+      ],
+      "resolver": "betterinstincts.behavior_input_catalog.resolve_hotkey",
+      "authority": "contracts/ui-chrome.v1.json",
+      "semantics": "Verified canonical identity of supplied hotkey trigger in stated mode, not proof that requested mode or UI effect occurred."
+    },
+    "cheat": {
+      "kind": "cheat_action",
+      "required": [
+        "cheat_id",
+        "interaction_ref"
+      ],
+      "resolver": "betterinstincts.behavior_input_catalog.resolve_cheat",
+      "authority": [
+        "contracts/hidden-object-discovery.v1.json",
+        "contracts/household-object-force.v1.json",
+        "contracts/host-funds.v1.json"
+      ],
+      "semantics": "Identifies catalog-approved cheat family/template. Does not store typed command, arguments, funds amount or claim cheat effect."
+    },
+    "existing_tooltip": {
+      "kind": "action",
+      "required": [
+        "target_ref",
+        "interaction_ref",
+        "action_ref"
+      ],
+      "semantics": "Still requires matching currently visible tooltip and continues unchanged."
+    }
+  }
 }

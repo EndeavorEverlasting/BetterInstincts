@@ -45,10 +45,12 @@ def main(argv: list[str] | None = None) -> int:
     tk.add_argument("--learning-query", type=Path, help="Explicit sanitized query under dist/judgment-learning")
     tk.add_argument("--observation", type=Path, required=True,
                     help="JSON observation (needs, queue, location_kind, capture_ref)")
-    hv = sub.add_parser("hover", help="Ingest a sanitized semantic tooltip event; no hooks")
-    hv.add_argument("--session-id", required=True)
-    hv.add_argument("--event", type=Path, required=True)
-    hv.add_argument("--explicit-opt-in", action="store_true")
+    for command in ("hover", "behavior"):
+        hv = sub.add_parser(command, help="Ingest sanitized semantic tooltip, hotkey or cheat action events; no hooks")
+        hv.add_argument("--session-id", required=True)
+        hv.add_argument("--event", type=Path, required=True)
+        hv.add_argument("--explicit-opt-in", action="store_true")
+    sub.add_parser("behavior-catalog", help="Show canonical safe hotkey and cheat IDs")
     args = p.parse_args(argv)
     try:
         if args.command == "activate":
@@ -57,9 +59,12 @@ def main(argv: list[str] | None = None) -> int:
             result = status(args.session_id)
         elif args.command == "deactivate":
             result = deactivate(args.session_id)
-        elif args.command == "hover":
+        elif args.command == "behavior-catalog":
+            from betterinstincts.behavior_input_catalog import catalog
+            result = catalog()
+        elif args.command in {"hover", "behavior"}:
             if args.event.is_symlink() or not args.event.is_file() or args.event.stat().st_size > 4096:
-                raise HostListenerError("HOVER_EVENT_FILE_UNSAFE")
+                raise HostListenerError("BEHAVIOR_EVENT_FILE_UNSAFE")
             event = json.loads(args.event.read_text(encoding="utf-8"))
             result = observe_hover(args.session_id, event, explicit_opt_in=args.explicit_opt_in)
         else:
