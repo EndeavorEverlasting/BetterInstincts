@@ -495,6 +495,44 @@
         "contracts/build-optimize.v1.json"
       ]
     },
+    "CATEGORY_ITEM_HIERARCHY": {
+      "definition": "Ordered best-item dictionary for one Build/Buy category under a yield objective (Env / Green / bills); expands CATEGORY_BEST_POOL into a ranked list.",
+      "owners": [
+        "betterinstincts/build_optimize.py",
+        "contracts/build-optimize.v1.json",
+        "docs/BUILD_OPTIMIZE.md"
+      ]
+    },
+    "COUNTERTOP_PLACEMENT": {
+      "definition": "Machine-readable Sims 4 countertop rules: standard vs island kinds, Auto-Counters gear shapes/corners, Env cap 2, and barstool-only seating snap on island overhangs.",
+      "owners": [
+        "contracts/build-optimize.v1.json",
+        "betterinstincts/build_optimize.py",
+        "docs/BUILD_OPTIMIZE.md"
+      ]
+    },
+    "ISLAND_COUNTER": {
+      "definition": "Counter surface with overhang that admits barstool seating snap; selected via catalog island piece or Auto-Counters gear shapes.",
+      "owners": [
+        "contracts/build-optimize.v1.json",
+        "docs/BUILD_OPTIMIZE.md"
+      ]
+    },
+    "STANDARD_COUNTER": {
+      "definition": "Counter surface without overhang; affords food prep/sinks/appliances but never seating snap.",
+      "owners": [
+        "contracts/build-optimize.v1.json",
+        "docs/BUILD_OPTIMIZE.md"
+      ]
+    },
+    "BARSTOOL_SEATING_SNAP": {
+      "definition": "Only barstools snap to island-counter overhangs; dining chairs never snap to any counter kind.",
+      "owners": [
+        "contracts/build-optimize.v1.json",
+        "betterinstincts/build_optimize.py",
+        "docs/BUILD_OPTIMIZE.md"
+      ]
+    },
     "BILL_POWER": {
       "definition": "Catalog power-draw axis; lower is better for household utility bills. Null means axis not declared for that item.",
       "owners": ["contracts/build-optimize.v1.json", "docs/BUILD_OPTIMIZE.md"]

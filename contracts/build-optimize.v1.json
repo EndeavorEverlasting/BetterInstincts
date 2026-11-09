@@ -1,14 +1,14 @@
 {
   "schema": "betterinstincts.build-optimize/v1",
-  "version": 2,
+  "version": 3,
   "authority": "docs/BUILD_OPTIMIZE.md",
-  "proof_ceiling": "OFFLINE_BUILD_YIELD_POOLS_NOT_LIVE_PAINT_NOT_BILL_METER_CERT",
+  "proof_ceiling": "OFFLINE_COUNTERTOP_MECHANICS_AND_YIELD_POOLS_NOT_LIVE_PLACE_NOT_BILL_METER_CERT",
   "microsystem": "BUILD_YIELD",
   "design_brief": {
-    "subject": "Build/Buy yield microsystem — per-category best-value pools for environment, neighborhood, and bills",
+    "subject": "Build/Buy yield microsystem — per-category best-value pools, countertop placement mechanics, and Env-max surface hierarchies",
     "audience": "local host agent and disposable-lab builder automation",
-    "job": "Maintain a deterministic pool of best attested items in each Build/Buy category so host plans maximize moodlet/return yield (not aesthetics)",
-    "architecture": "Single evaluate-only owner (build_optimize). P124: expand axes/pools in place — no second catalog daemon.",
+    "job": "Maintain a deterministic pool of best attested items in each Build/Buy category and machine-readable countertop seating/shape rules so host plans maximize moodlet/return yield (not aesthetics)",
+    "architecture": "Single evaluate-only owner (build_optimize). P124: expand axes/pools/mechanics in place — no second catalog daemon.",
     "upstreams": [
       {"id": "impeccable", "mechanism": "purpose clarity before catalog UI"},
       {"id": "UP-A85AD9DC3", "mechanism": "call-stack storytelling for optimize journeys"},
@@ -40,7 +40,107 @@
         "capture_ref": "operator:wall-covering-tooltip-20261107"
       }
     ],
-    "note": "Operator-attested dual max 2/2 is the current Env+Green yield floor; aesthetics are not a ranking factor. Bill axes expand with attested appliance/plumbing rows."
+    "note": "Operator-attested dual max 2/2 is the current Env+Green yield floor; aesthetics are not a ranking factor. Bill axes expand with attested appliance/plumbing rows.",
+    "countertops": {
+      "date": "2026-11-08",
+      "patch": "1.121.361.1020",
+      "capture_ref": "operator:countertop-island-barstool-20261108",
+      "findings": [
+        "Standard counters lack overhang — seating never snaps",
+        "Island counters expose overhang — barstools snap to that edge only",
+        "Dining chairs never snap to any counter kind",
+        "Auto-Counters gear on the color palette reveals set shapes including island and corner pieces",
+        "Adjacent island pieces snap into L/U corner shapes on the grid",
+        "Observed Environment score cap for counters/islands is 2",
+        "Corporate Chic Countertop / Counter Island hit Env 2 but lock behind Culinary career level 2",
+        "Harbinger / Real Flat / Immemorial Counter Islands also hit Env 2 and are default-available"
+      ]
+    }
+  },
+  "placement_mechanics": {
+    "countertops": {
+      "id": "COUNTERTOP_PLACEMENT",
+      "catalog_tray": {
+        "build_mode_path": ["Surfaces", "Cabinets and Counters"],
+        "comfort_barstools_path": ["Comfort", "Barstools"]
+      },
+      "kinds": {
+        "standard_counter": {
+          "overhang": false,
+          "seating_snap": false,
+          "affords": ["food_prep", "sink", "small_appliance"],
+          "forbidden": ["barstool_snap", "dining_chair_snap"]
+        },
+        "island_counter": {
+          "overhang": true,
+          "seating_snap": true,
+          "seating_type_required": "barstool",
+          "snap_edge": "overhang",
+          "affords": ["food_prep", "cooktop_integration", "barstool_seating"],
+          "forbidden": ["dining_chair_snap"]
+        }
+      },
+      "shape_tools": {
+        "auto_counters_gear": {
+          "ui": "Gear icon (Auto-Counters) on the left of the color palette after selecting a counter swatch",
+          "job": "Opens custom shapes for that counter set, including island pieces and corner pieces"
+        },
+        "corner_snap": {
+          "job": "Adjacent island/counter tiles snap into L/U configurations when corners meet on the grid"
+        }
+      },
+      "seating_rules": [
+        {
+          "id": "BARSTOOL_ONLY_ON_ISLAND",
+          "when": {"counter_kind": "island_counter", "seating_kind": "barstool"},
+          "verdict": "ALLOW_SNAP",
+          "reason": "Barstools snap to the island overhang edge"
+        },
+        {
+          "id": "BARSTOOL_ON_STANDARD_DENIED",
+          "when": {"counter_kind": "standard_counter", "seating_kind": "barstool"},
+          "verdict": "DENY_SNAP",
+          "reason": "Standard counters have no overhang for legroom"
+        },
+        {
+          "id": "DINING_CHAIR_NEVER_SNAPS",
+          "when": {"seating_kind": "dining_chair"},
+          "verdict": "DENY_SNAP",
+          "reason": "Only barstools attach to counters; dining chairs never snap"
+        },
+        {
+          "id": "UNKNOWN_KIND_FAIL_CLOSED",
+          "when": {"counter_kind": "unknown"},
+          "verdict": "DENY_SNAP",
+          "reason": "Unknown counter kind fails closed"
+        }
+      ],
+      "env_cap": 2,
+      "unlock_cheats": {
+        "requires_testingcheats": true,
+        "activate_testingcheats": "testingcheats true",
+        "ignore_gameplay_unlocks": "bb.ignoregameplayunlocksentitlement",
+        "note": "Removes Culinary career padlocks so Corporate Chic island can be placed without career progress"
+      },
+      "setup_call_stack": [
+        "ENTER_BUILD_OR_BUY",
+        "OPEN_SURFACES_CABINETS_AND_COUNTERS",
+        "SELECT_ISLAND_COUNTER_OR_GEAR_SHAPE",
+        "PLACE_ISLAND_ON_GRID",
+        "OPEN_COMFORT_BARSTOOLS",
+        "DRAG_BARSTOOL_TO_OVERHANG_UNTIL_SNAP",
+        "CAPTURE_PROOF"
+      ],
+      "yield_default_islands_without_cheat": [
+        "counter_island.harbinger",
+        "counter_island.real_flat",
+        "counter_island.immemorial"
+      ],
+      "career_locked_env_max": [
+        "counter.corporate_chic",
+        "counter_island.corporate_chic"
+      ]
+    }
   },
   "value_axes": {
     "lot_environment_gain": {
@@ -130,6 +230,8 @@
       "bill_power",
       "bill_water"
     ],
+    "observed_max_counter_env": 2,
+    "default_ignore_gameplay_unlocks": false,
     "player_first": true,
     "never_mutate_saves": true,
     "never_auto_discover_install": true,
@@ -187,6 +289,24 @@
     "buy_object": {
       "stack_unit": "placed_instance",
       "build_mode_tray": "Buy (legacy seed)",
+      "primary_axes": ["lot_environment_gain"]
+    },
+    "counter": {
+      "stack_unit": "placed_instance",
+      "build_mode_tray": "Surfaces / Cabinets and Counters",
+      "surface_kind": "standard_counter",
+      "primary_axes": ["lot_environment_gain", "combined_env_green"]
+    },
+    "counter_island": {
+      "stack_unit": "placed_instance",
+      "build_mode_tray": "Surfaces / Cabinets and Counters (Island)",
+      "surface_kind": "island_counter",
+      "primary_axes": ["lot_environment_gain", "combined_env_green"]
+    },
+    "barstool": {
+      "stack_unit": "placed_instance",
+      "build_mode_tray": "Comfort / Barstools",
+      "seating_kind": "barstool",
       "primary_axes": ["lot_environment_gain"]
     }
   },
@@ -522,14 +642,157 @@
       "evidence_state": "SYNTHETIC_FLOOR",
       "capture_ref": "synthetic:buy-env1",
       "aliases": ["placeholder decor"]
+    },
+    {
+      "id": "counter.corporate_chic",
+      "name": "Corporate Chic Countertop",
+      "category": "counter",
+      "surface_kind": "standard_counter",
+      "seating_snap": false,
+      "pack": "base",
+      "cost": null,
+      "lot_environment_gain": 2,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "OPERATOR_ATTESTED",
+      "capture_ref": "operator:corporate-chic-counter-env2-20261108",
+      "aliases": ["corporate chic countertop", "corporate chic counter"],
+      "unlock": {
+        "default_available": false,
+        "career": "Culinary",
+        "level": 2,
+        "cheat": "bb.ignoregameplayunlocksentitlement"
+      },
+      "note": "Env max 2 standard counter; matching island is adjacent in catalog (padlock until Culinary 2 or unlock cheat)"
+    },
+    {
+      "id": "counter_island.corporate_chic",
+      "name": "Corporate Chic Counter Island",
+      "category": "counter_island",
+      "surface_kind": "island_counter",
+      "seating_snap": true,
+      "pack": "base",
+      "cost": null,
+      "lot_environment_gain": 2,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "OPERATOR_ATTESTED",
+      "capture_ref": "operator:corporate-chic-island-env2-20261108",
+      "aliases": ["corporate chic counter island", "corporate chic island"],
+      "unlock": {
+        "default_available": false,
+        "career": "Culinary",
+        "level": 2,
+        "cheat": "bb.ignoregameplayunlocksentitlement"
+      },
+      "note": "Env max 2 island with overhang for barstools; career-locked unless unlock cheat"
+    },
+    {
+      "id": "counter_island.harbinger",
+      "name": "Harbinger Counter Island",
+      "category": "counter_island",
+      "surface_kind": "island_counter",
+      "seating_snap": true,
+      "pack": "base",
+      "cost": null,
+      "lot_environment_gain": 2,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "OPERATOR_ATTESTED",
+      "capture_ref": "operator:harbinger-island-env2-20261108",
+      "aliases": ["harbinger counter island", "harbinger island"],
+      "unlock": {"default_available": true},
+      "note": "Default-available Env max 2 island — preferred when Culinary unlock is unavailable"
+    },
+    {
+      "id": "counter_island.real_flat",
+      "name": "Real Flat Counter Island",
+      "category": "counter_island",
+      "surface_kind": "island_counter",
+      "seating_snap": true,
+      "pack": "base",
+      "cost": null,
+      "lot_environment_gain": 2,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "OPERATOR_ATTESTED",
+      "capture_ref": "operator:real-flat-island-env2-20261108",
+      "aliases": ["real flat counter island", "real flat island"],
+      "unlock": {"default_available": true},
+      "note": "Default-available Env max 2 island"
+    },
+    {
+      "id": "counter_island.immemorial",
+      "name": "Immemorial Counter Island",
+      "category": "counter_island",
+      "surface_kind": "island_counter",
+      "seating_snap": true,
+      "pack": "base",
+      "cost": null,
+      "lot_environment_gain": 2,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "OPERATOR_ATTESTED",
+      "capture_ref": "operator:immemorial-island-env2-20261108",
+      "aliases": ["immemorial counter island", "immemorial island"],
+      "unlock": {"default_available": true},
+      "note": "Default-available Env max 2 island"
+    },
+    {
+      "id": "counter.generic_env1",
+      "name": "Generic Counter Environment +1",
+      "category": "counter",
+      "surface_kind": "standard_counter",
+      "seating_snap": false,
+      "pack": "base",
+      "cost": 100,
+      "lot_environment_gain": 1,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:counter-env1",
+      "aliases": ["generic counter env1"],
+      "unlock": {"default_available": true},
+      "note": "Comparator floor so Env-2 counters outrank Env-1 in hierarchy"
+    },
+    {
+      "id": "barstool.generic",
+      "name": "Generic Barstool",
+      "category": "barstool",
+      "seating_kind": "barstool",
+      "pack": "base",
+      "cost": 80,
+      "lot_environment_gain": 0,
+      "eco_footprint_green": 0,
+      "eco_footprint_industrial": 0,
+      "bill_power": null,
+      "bill_water": null,
+      "evidence_state": "SYNTHETIC_FLOOR",
+      "capture_ref": "synthetic:barstool-generic",
+      "aliases": ["generic barstool", "barstool"],
+      "unlock": {"default_available": true},
+      "note": "Seating type required for island snap; Env ranking secondary to counter choice"
     }
   ],
   "call_stack": {
     "evaluate_only": [
       "OPERATOR_OR_HOST_QUERY",
       "LOAD_BUILD_OPTIMIZE_CONTRACT",
-      "FILTER_OWNED_PACKS_AND_BUDGET",
+      "FILTER_OWNED_PACKS_BUDGET_AND_UNLOCKS",
       "BUILD_CATEGORY_BEST_POOLS",
+      "RESOLVE_COUNTERTOP_SEATING_RULES",
       "RANK_BY_OBJECTIVE",
       "EMIT_PLAN_RECEIPT"
     ],
@@ -538,6 +801,7 @@
       "DISPOSABLE_LAB_CONFIRMED",
       "BUILD_OR_BUY_MODE_ACTIVE",
       "SELECT_FROM_CATEGORY_POOL",
+      "PLACE_ISLAND_THEN_SNAP_BARSTOOL",
       "APPLY_WITH_SHIFT_WHOLE_ROOM",
       "CAPTURE_PROOF"
     ],
@@ -547,7 +811,9 @@
       "UNKNOWN_OBJECTIVE": "FAIL_CLOSED",
       "UNKNOWN_AXIS": "FAIL_CLOSED",
       "INDUSTRIAL_IN_GREEN_OBJECTIVE": "EXCLUDE",
-      "NULL_AXIS_SKIPS_POOL": "SKIP_ITEM_FOR_AXIS"
+      "NULL_AXIS_SKIPS_POOL": "SKIP_ITEM_FOR_AXIS",
+      "CAREER_LOCKED_WITHOUT_CHEAT": "EXCLUDE",
+      "SEATING_SNAP_DENIED": "ABSTAIN_WRONG_COUNTER_OR_SEATING"
     }
   }
 }

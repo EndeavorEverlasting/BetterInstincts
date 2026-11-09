@@ -54,7 +54,8 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **LOT_ENVIRONMENT_GAIN** | Wall/Buy décor stat → room Environment Score / Decorated Happy moodlets; stacks per panel. |
 | **ECO_FOOTPRINT_GREEN** / **ECO_FOOTPRINT_INDUSTRIAL** | Eco Lifestyle neighborhood Clean Air vs Gross Air contributions; maximize objectives are mutually exclusive. |
 | **BILL_POWER** / **BILL_WATER** | Catalog utility axes; lower is better for household bills; null = axis not declared. |
-| **BUILD_YIELD_MICROSYSTEM** / **CATEGORY_BEST_POOL** | Per-category best-value pools (Env / neighborhood / bills); yield over aesthetics. |
+| **BUILD_YIELD_MICROSYSTEM** / **CATEGORY_BEST_POOL** / **CATEGORY_ITEM_HIERARCHY** | Per-category best-value pools and ordered Env/yield hierarchies; yield over aesthetics. |
+| **COUNTERTOP_PLACEMENT** / **ISLAND_COUNTER** / **STANDARD_COUNTER** / **BARSTOOL_SEATING_SNAP** | Counter kinds, Auto-Counters shapes, Env cap 2, barstool-only island snap — see `docs/BUILD_OPTIMIZE.md`. |
 | **BUILD_OPTIMIZE_PLAN** | Evaluate-only ranked catalog receipt (`build_optimize`); no live paint until P08 disposable Build proof. |
 | **LOT_ENVIRONMENT_MODEL** / **RECURSIVE_LOT_MODEL** | Durable revisioned lot understanding that accumulates as we observe and move; see `docs/HOUSE_STATE.md`. |
 | **BLANK_SLATE_REASSESS** | Forbidden: discard understanding after an action and reassess the lot from scratch. |

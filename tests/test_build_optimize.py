@@ -6,12 +6,16 @@ from pathlib import Path
 from betterinstincts.build_optimize import (
     BuildOptimizeError,
     best_pools,
+    category_hierarchy,
+    countertop_mechanics,
     evaluate_build_optimize,
     evaluate_category_pools,
+    evaluate_countertop_plan,
     load_contract,
     project_stack,
     rank_items,
     resolve_item,
+    seating_snap_verdict,
 )
 from betterinstincts.host_stack import evaluate_turn
 
@@ -248,10 +252,97 @@ class BuildOptimizeTests(unittest.TestCase):
 
     def test_contract_has_value_axes_and_categories(self):
         cfg = load_contract()
-        self.assertEqual(cfg["version"], 2)
+        self.assertEqual(cfg["version"], 3)
         self.assertIn("bill_power", cfg["value_axes"])
         self.assertIn("plumbing", cfg["categories"])
+        self.assertIn("counter_island", cfg["categories"])
         self.assertEqual(cfg["microsystem"], "BUILD_YIELD")
+        self.assertIn("countertops", cfg["placement_mechanics"])
+
+    def test_seating_snap_island_barstool_allow(self):
+        snap = seating_snap_verdict(
+            counter_kind="island_counter", seating_kind="barstool"
+        )
+        self.assertEqual(snap["verdict"], "ALLOW_SNAP")
+        self.assertEqual(snap["rule_id"], "BARSTOOL_ONLY_ON_ISLAND")
+
+    def test_seating_snap_standard_barstool_deny(self):
+        snap = seating_snap_verdict(
+            counter_kind="standard_counter", seating_kind="barstool"
+        )
+        self.assertEqual(snap["verdict"], "DENY_SNAP")
+        self.assertEqual(snap["rule_id"], "BARSTOOL_ON_STANDARD_DENIED")
+
+    def test_seating_snap_dining_chair_deny(self):
+        snap = seating_snap_verdict(
+            counter_kind="island_counter", seating_kind="dining_chair"
+        )
+        self.assertEqual(snap["verdict"], "DENY_SNAP")
+        self.assertEqual(snap["rule_id"], "DINING_CHAIR_NEVER_SNAPS")
+
+    def test_default_island_hierarchy_excludes_career_lock(self):
+        hier = category_hierarchy(
+            "counter_island",
+            "MAXIMIZE_ENV",
+            owned_packs=["base"],
+            ignore_gameplay_unlocks=False,
+        )
+        ids = [row["id"] for row in hier["hierarchy"]]
+        self.assertTrue(ids)
+        self.assertNotIn("counter_island.corporate_chic", ids)
+        self.assertIn(ids[0], {
+            "counter_island.harbinger",
+            "counter_island.real_flat",
+            "counter_island.immemorial",
+        })
+        self.assertEqual(hier["hierarchy"][0]["lot_environment_gain"], 2)
+
+    def test_ignore_unlocks_includes_corporate_chic(self):
+        ranked = rank_items(
+            "MAXIMIZE_ENV",
+            category="counter_island",
+            owned_packs=["base"],
+            ignore_gameplay_unlocks=True,
+            limit=10,
+        )
+        ids = {r["id"] for r in ranked}
+        self.assertIn("counter_island.corporate_chic", ids)
+        self.assertTrue(all(r["lot_environment_gain"] == 2 for r in ranked[:3]))
+
+    def test_counter_env_hierarchy_prefers_env2(self):
+        ranked = rank_items(
+            "MAXIMIZE_ENV",
+            category="counter",
+            owned_packs=["base"],
+            ignore_gameplay_unlocks=True,
+            limit=3,
+        )
+        self.assertEqual(ranked[0]["id"], "counter.corporate_chic")
+        self.assertEqual(ranked[0]["lot_environment_gain"], 2)
+
+    def test_evaluate_countertop_plan_ready(self):
+        result = evaluate_countertop_plan(owned_packs=["base"])
+        self.assertEqual(result["state"], "COUNTERTOP_PLAN_READY")
+        self.assertFalse(result["plan"]["execute_allowed"])
+        self.assertEqual(result["seating"]["verdict"], "ALLOW_SNAP")
+        self.assertEqual(
+            result["best_island"]["lot_environment_gain"], 2
+        )
+        self.assertNotEqual(
+            result["best_island"]["id"], "counter_island.corporate_chic"
+        )
+
+    def test_evaluate_countertop_plan_dining_chair_abstains(self):
+        result = evaluate_countertop_plan(
+            owned_packs=["base"], seating_kind="dining_chair"
+        )
+        self.assertEqual(result["state"], "ABSTAIN_WRONG_COUNTER_OR_SEATING")
+        self.assertIsNone(result["plan"])
+
+    def test_countertop_mechanics_env_cap(self):
+        mech = countertop_mechanics()
+        self.assertEqual(mech["env_cap"], 2)
+        self.assertIn("harbinger", mech["yield_default_islands_without_cheat"][0])
 
 
 if __name__ == "__main__":
