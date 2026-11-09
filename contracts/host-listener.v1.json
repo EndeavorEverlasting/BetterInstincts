@@ -16,8 +16,8 @@
     "max_observation_bytes": 32000,
     "max_ticks_per_session": 64,
     "max_queue_items": 16,
-    "min_tick_interval_sec": 1.0,
-    "max_tick_interval_sec": 120.0,
+    "min_tick_interval_sec": 1,
+    "max_tick_interval_sec": 120,
     "receipt_root": "dist/host-listener"
   },
   "async_session": {
@@ -29,10 +29,16 @@
     "observation_timeout_max_seconds": 30,
     "action_timeout_default_seconds": 120,
     "action_timeout_max_seconds": 600,
-    "ports": ["observe", "execute_until_observed_outcome", "interrupt_only_verified_host_action", "presence_probe"],
+    "ports": [
+      "observe",
+      "execute_until_observed_outcome",
+      "interrupt_only_verified_host_action",
+      "presence_probe"
+    ],
     "preemption": "Fresh actor and host_activity_ref/owner binding plus independent screen admission; never cancel player-owned or unknown activity",
     "callback_cancellation": "Stop callback control/observation, never send Sim cancellation input; adapters must cooperate with coroutine cancellation",
-    "completion": "Observed action outcome is distinct from ACK; session exhaustion is not mission completion"
+    "completion": "Observed action outcome is distinct from ACK; session exhaustion is not mission completion",
+    "mode_gate": "Explicit scene-backed non-Live/Unknown mode ends the current bounded coordinator without new host action; never cancel the player queue"
   },
   "inputs": {
     "observation_schema": "betterinstincts.host-listener.observation/v1",
@@ -96,14 +102,29 @@
       "stories_touched",
       "floor_items"
     ],
-    "optional_gardening_fields": ["gardening"],
-    "optional_tandem_binding_fields": ["actor_ref", "host_activity_ref", "host_activity_owner"]
+    "optional_gardening_fields": [
+      "gardening"
+    ],
+    "optional_tandem_binding_fields": [
+      "actor_ref",
+      "host_activity_ref",
+      "host_activity_owner"
+    ],
+    "optional_mode_context_fields": [
+      "game_version",
+      "mode_observations",
+      "panel_observations",
+      "shortcut_hint"
+    ],
+    "mode_context_contract": "contracts/ui-mode.v1.json"
   },
   "pipeline": [
     "load_session",
     "validate_observation",
+    "classify_optional_mode_context_from_two_distinct_scene_cues",
     "player_presence_classify",
     "yield_if_player_playing",
+    "hold_live_planning_for_buy_build_unknown_mode",
     "behavior_eval",
     "instincts_plan",
     "host_stack_evaluate_turn",
