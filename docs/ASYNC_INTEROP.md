@@ -80,9 +80,10 @@ These are **tracked rules, not proof** of where a particular user's pre-existing
 ### Install and uninstall from the repository home page
 
 1. Download and inspect [bootstrap.py](../bootstrap.py) from the trusted repo, outside any checkout being installed.
-2. Run `python bootstrap.py doctor` to print the derived locations.
-3. Run `python bootstrap.py install`. It clones the exact GitHub origin into the canonical development directory **only if absent**, then creates the use-path launcher and manifest.
-4. Run `python bootstrap.py uninstall` to remove the manifest-owned launcher and manifest. If this bootstrapper created the checkout and Git reports **no tracked, untracked or ignored changes**, it removes that clean clone too. Otherwise it preserves the checkout and reports the reason for manual review.
+2. Double-click the trusted script using Python, or run `python bootstrap.py gui` for a local window with **Inspect paths**, **Install** and **Uninstall** buttons. Opening it has no installation side effects. **Uninstall** always asks for confirmation; cancel is a no-op. If Tkinter or a graphical desktop is unavailable, use the CLI below.
+3. Run `python bootstrap.py doctor` to print the derived locations.
+4. Run `python bootstrap.py install`. It clones the exact GitHub origin into the canonical development directory **only if absent**, then creates the use-path launcher and manifest.
+5. Run `python bootstrap.py uninstall` to remove the manifest-owned launcher and manifest. If this bootstrapper created the checkout and Git reports **no tracked, untracked or ignored changes**, it removes that clean clone too. Otherwise it preserves the checkout and reports the reason for manual review.
 
 No unsafe forced directory removal, no deletion of user saves, mods, local experiments, or untracked files. A mutated launcher, unexpected installation file, symlink, or tampered manifest blocks deletion. A user-provided checkout is never adopted as disposable. For a complete removal of a modified installer-created clone, reconcile/export the unique work first, then rerun uninstall from a trusted external bootstrapper.
 
