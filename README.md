@@ -7,9 +7,10 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 
 ## Install / uninstall the offline toolkit (Windows and Linux Mint)
 
-This is **still pre-alpha, not a playable Sims 4 mod**. The repository home page provides [bootstrap.py](bootstrap.py), a user-scoped installer with no third-party dependencies. Download that file to a location **outside** the checkout, inspect it, then run:
+This is **still pre-alpha, not a playable Sims 4 mod**. The repository home page provides [bootstrap.py](bootstrap.py), a user-scoped installer with no third-party dependencies. Download that file to a location **outside** the checkout, inspect it, then **open it with Python** to show a local window with **Inspect paths**, **Install**, and **Uninstall** buttons (the latter asks for confirmation). Or run the equivalent CLI commands:
 
 ```sh
+python bootstrap.py gui
 python bootstrap.py doctor
 python bootstrap.py install
 python bootstrap.py uninstall
