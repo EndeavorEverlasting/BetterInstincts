@@ -3,7 +3,7 @@
   "id": "BI-SEMANTIC-SCENE-PORTRAIT-FOLLOW-20261109",
   "ontology": "contracts/ontology.v1.json",
   "ontology_blob_sha": "eda1b4664714ca21a3caa659e40cbd6061ac36c8",
-  "proposed_capability": "P95 design + P124 integration + Trifecta: treat right-click of independently verified active Sim portrait as primary follow-camera control, distinguish Enter one-time center and Shift+Enter lot center, resolve overlays/events, active bottom-right panels and preserved action queues, and codify wrong-scene observations into bounded reusable scene knowledge without granting blind navigation or permissions.",
+  "proposed_capability": "P95 design + P124 integration + Trifecta: treat right-click of independently verified active Sim portrait as primary follow-camera control, distinguish Enter one-time center and Shift+Enter lot center, resolve overlays/events, active bottom-right panels and preserved action queues, and codify wrong-scene observations into bounded reusable scene knowledge without granting blind navigation or permissions. Canonical ontology revision introduces VIEW_SCENE, SIM_PORTRAIT, CAMERA_FOLLOW, HUD_PANEL, EVENT_OVERLAY and SCENE_MEMORY concepts with independent ownership and relations; older consultations remain pinned to historical ontology blob.",
   "affected_concepts": [
     "GAME_BUILD",
     "HOST_SESSION",
@@ -115,7 +115,10 @@
     "scripts/sim_camera.py",
     "tests/test_sim_camera.py",
     "betterinstincts/host_automate.py",
-    "tests/test_host_semantic_automation.py"
+    "tests/test_host_semantic_automation.py",
+    "contracts/ontology.v1.json",
+    "tests/test_ontology_gate.py",
+    "docs/ONTOLOGY.md"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
