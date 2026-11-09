@@ -29,8 +29,8 @@
   "coordinate_space": {
     "kind": "NORMALIZED_CLIENT_FRACTION",
     "origin": "top_left",
-    "x": "[0,1] left\u2192right of game client",
-    "y": "[0,1] top\u2192bottom of game client",
+    "x": "[0,1] left→right of game client",
+    "y": "[0,1] top→bottom of game client",
     "note": "Adapters multiply by live client width/height. Maps are keyed by resolution profile until P08 remeasures."
   },
   "resolution_profiles": {
@@ -78,6 +78,35 @@
           ],
           "effect": "Toggle Sim phone (localization may vary)",
           "status": "UNVERIFIED_CANDIDATE"
+        },
+        {
+          "id": "CENTER_ACTIVE_SIM",
+          "chord": [
+            "ENTER"
+          ],
+          "effect": "Center camera once on the already active Sim",
+          "status": "EA_DOCUMENTED_NATIVE",
+          "proves_mode": false
+        },
+        {
+          "id": "CENTER_CURRENT_LOT",
+          "chord": [
+            "SHIFT",
+            "ENTER"
+          ],
+          "effect": "Center camera once on current lot (not on a Sim)",
+          "status": "COMMUNITY_DOCUMENTED_NATIVE",
+          "proves_mode": false
+        },
+        {
+          "id": "SELECT_NEXT_HOUSEHOLD_SIM",
+          "chord": [
+            "SPACE"
+          ],
+          "effect": "Select next household Sim; changes active selection",
+          "status": "EA_DOCUMENTED_NATIVE",
+          "proves_mode": false,
+          "risk": "EXPLICIT_SIM_SELECTION_ONLY"
         }
       ],
       "panels": {
@@ -444,7 +473,7 @@
         "meat wall planter",
         "cruelty free meat planter"
       ],
-      "synonym_note": "Operator coveted-item language: wall shelf means this Bloomer \u2014 never invent a separate wall-shelf catalog product",
+      "synonym_note": "Operator coveted-item language: wall shelf means this Bloomer — never invent a separate wall-shelf catalog product",
       "pack": "Eco Lifestyle",
       "recipe": "catalog_to_household_inventory",
       "why": "Civil Designer L5 unlocks Grow Cruelty-Free Meat on this planter; item itself is ordinary Buy/Build catalog purchase into Household Inventory",
@@ -461,7 +490,9 @@
     "No second screen daemon; adapters consume plans after independent admission",
     "Extensible: add Live phone/app maps and panel cells without replacing ui_mode",
     "Plans prefer HOTKEY/KEY over CLICK_TARGET whenever a catalogued equivalent exists",
-    "Mouse clicks remain annotated MOUSE_FALLBACK when no hotkey equivalent exists"
+    "Mouse clicks remain annotated MOUSE_FALLBACK when no hotkey equivalent exists",
+    "Enter only centers active Sim; Shift+Enter centers lot; neither enables continuous follow",
+    "Following active Sim requires game-runtime camera API; app-scoped hotkey is not a native Sims or global OS binding"
   ],
   "input_preference": {
     "selected": "HOTKEY_FIRST_WHEN_EQUIVALENT",
@@ -479,5 +510,25 @@
       "HOTKEY_PROVES_MODE",
       "HOTKEY_GRANTS_EXECUTE"
     ]
+  },
+  "app_hotkeys": {
+    "follow_active_sim": {
+      "id": "BI_FOLLOW_ACTIVE_SIM",
+      "chord": [
+        "CTRL",
+        "ALT",
+        "SHIFT",
+        "F"
+      ],
+      "command": "FOLLOW_ACTIVE_SIM",
+      "scope": "APP_SCOPED_OPT_IN_HOTKEY_EVENT",
+      "in_game_native": false,
+      "registered_with_os": false,
+      "auto_install": false,
+      "no_keyboard_hook": true,
+      "input_route": "INJECTED_LOCAL_OPT_IN_HOTKEY_EVENT_ONLY",
+      "effect_channel": "GAME_RUNTIME_CAMERA_API_NOT_WIN32_KEYSTROKE",
+      "description": "Future local installed/opt-in app hotkey for camera-follow; the OS or Sims does not recognize this combination from this contract alone."
+    }
   }
 }
