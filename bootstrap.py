@@ -81,6 +81,64 @@ def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _clone_signature(checkout: Path) -> dict[str, str]:
+    """Identity of installer-created checkout, including independent Git work.
+
+    Status --porcelain alone misses clean local commits, branches and stashes.
+    Store this immediately after clone, and require exact equality at removal.
+    A later fetch or local Git metadata change safely prevents auto-removal.
+    """
+    git_dir = checkout / ".git"
+    config = git_dir / "config"
+    if git_dir.is_symlink() or not git_dir.is_dir() or config.is_symlink() or not config.is_file():
+        raise BootstrapError("CLONE_GIT_IDENTITY_UNSAFE")
+    return {
+        "head": _run("git", "rev-parse", "--verify", "HEAD", cwd=checkout),
+        "branch": _run("git", "symbolic-ref", "--quiet", "--short", "HEAD", cwd=checkout),
+        "refs_sha256": _sha(_run("git", "show-ref", "--head", cwd=checkout)),
+        "reflog_sha256": _sha(_run(
+            "git", "reflog", "show", "--all", "--format=%H %gD", cwd=checkout
+        )),
+        "git_config_sha256": hashlib.sha256(config.read_bytes()).hexdigest(),
+    }
+
+
+def _clone_still_original(checkout: Path, signature: object) -> bool:
+    """Legacy manifests and unverifiable copies are NEVER deletion grants."""
+    if not isinstance(signature, dict) or set(signature) != {
+        "head", "branch", "refs_sha256", "reflog_sha256", "git_config_sha256"
+    } or not all(isinstance(value, str) and value for value in signature.values()):
+        return False
+    try:
+        return _clone_signature(checkout) == signature
+    except (BootstrapError, OSError, subprocess.CalledProcessError):
+        return False
+
+
+def _check_runtime_locks(location: dict[str, Path]) -> None:
+    """Refuse uninstall while a cooperating host still owns desktop control."""
+    lock = location["locks"]
+    for directory in (location["use"].parent, lock.parent, lock):
+        if directory.is_symlink() or (directory.exists() and not directory.is_dir()):
+            raise BootstrapError("RUNTIME_LOCK_PATH_UNSAFE")
+    if lock.is_dir() and any(lock.iterdir()):
+        raise BootstrapError("RUNTIME_LOCK_BUSY_OR_STALE_PRESERVE")
+
+
+def _prune_empty_runtime_paths(location: dict[str, Path]) -> str:
+    """Remove only empty BetterInstincts runtime dirs; never unlink lockfiles."""
+    for directory in (location["locks"], location["locks"].parent, location["use"].parent):
+        if directory.is_symlink():
+            raise BootstrapError("RUNTIME_LOCK_PATH_UNSAFE")
+        if directory.is_dir():
+            try:
+                directory.rmdir()
+            except OSError:
+                return "RUNTIME_PATH_NONEMPTY_PRESERVED"
+    return "EMPTY_RUNTIME_PATHS_REMOVED"
+
+
+
 def _launcher(checkout: Path, *, platform: str) -> tuple[str, str]:
     if platform == "win32":
         # Use cmd quote escaping only for platform-derived canonical paths.
@@ -143,6 +201,7 @@ def install(location: dict[str, Path], *, platform: str | None = None) -> dict:
         created = True
         if not _origin_ok(dev):
             raise BootstrapError("CLONE_ORIGIN_UNVERIFIED")
+    signature = _clone_signature(dev) if created else None
     launcher_name, content = _launcher(dev, platform=platform)
     use.mkdir(parents=True, exist_ok=True)
     target = use / launcher_name
@@ -154,7 +213,7 @@ def install(location: dict[str, Path], *, platform: str | None = None) -> dict:
     data = {
         "schema": SCHEMA, "repository": REPOSITORY, "checkout": str(dev),
         "use": str(use), "launcher": launcher_name, "launcher_sha256": _sha(content),
-        "created_checkout": created, "profile": platform,
+        "created_checkout": created, "profile": platform, "clone_signature": signature,
     }
     (use / MANIFEST).write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     return {"state": "INSTALLED", "checkout": str(dev), "use": str(use),
@@ -166,7 +225,9 @@ def uninstall(location: dict[str, Path], *, platform: str | None = None) -> dict
     dev, use = location["development"], location["use"]
     existing = _validated_manifest(use, dev, platform)
     if existing is None:
-        return {"state": "NOT_INSTALLED", "checkout": str(dev)}
+        _check_runtime_locks(location)
+        cleanup = _prune_empty_runtime_paths(location)
+        return {"state": "NOT_INSTALLED", "checkout": str(dev), "runtime_cleanup": cleanup}
     manifest_file, data = existing
     target = use / data["launcher"]
     if target.is_symlink() or not target.is_file() or _sha(target.read_text(encoding="utf-8")) != data["launcher_sha256"]:
@@ -174,17 +235,24 @@ def uninstall(location: dict[str, Path], *, platform: str | None = None) -> dict
     # First validate the exact managed files; avoid partial cleanup on extras.
     if {p.name for p in use.iterdir()} != {MANIFEST, data["launcher"]}:
         raise BootstrapError("UNOWNED_INSTALL_FILES_PRESERVE")
-    can_remove_clone = data["created_checkout"] and _pristine(dev)
+    _check_runtime_locks(location)
+    # The manifest's created_checkout flag is insufficient: clean Git trees may
+    # contain unique unpublished commits/branches/stashes or modified Git config.
+    can_remove_clone = bool(
+        data["created_checkout"] and _pristine(dev)
+        and _clone_still_original(dev, data.get("clone_signature"))
+    )
     target.unlink()
     manifest_file.unlink()
     use.rmdir()
     if can_remove_clone:
-        # This is an exact canonical checkout created by THIS installer, and
-        # pristine including ignored/untracked data; never delete another clone.
         shutil.rmtree(dev)
+    cleanup = _prune_empty_runtime_paths(location)
     return {"state": "UNINSTALLED", "managed_files_removed": 2,
-            "checkout_removed": can_remove_clone,
-            "checkout_preserved_reason": None if can_remove_clone else "PREEXISTING_OR_MODIFIED_CHECKOUT"}
+            "checkout_removed": can_remove_clone, "runtime_cleanup": cleanup,
+            "checkout_preserved_reason": None if can_remove_clone else
+            ("PREEXISTING_CHECKOUT" if not data["created_checkout"] else
+             "MODIFIED_OR_UNVERIFIED_GIT_HISTORY")}
 
 
 
