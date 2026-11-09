@@ -432,3 +432,7 @@ Offline coroutine tests prove this sequencing, not live dispatch. The earlier
 Natural Living Sleep Here interaction visibly started, but the later paused
 scene showed Charlee awake with low Energy; recovery remains unproved. That
 pause was preserved. No bed was bought or placed. BI-002 remains ACTIVE.
+
+## 2026-11-09 — Room-census glossary diet (P78 correction)
+
+The operator corrected a voice-transcription error: the intended sequence was **P95, P124, P78, Trifecta**, not P178. The existing read-only room census remains the implemented and merged foundation. P78 keeps room semantics in the code/contract, non-exclusive vocabulary in `contracts/glossary.v1.json`, a small operational `docs/ROOM_CENSUS.md` runbook and compact pointers from floor-activity docs. P82 guards term ownership, glossary table placement, corrected invocation identity and existing room behavior; P07 owns CI/main integration. P08 exact-game-build household/room sensors and live gameplay are still unproven; BI-002 remains ACTIVE.
