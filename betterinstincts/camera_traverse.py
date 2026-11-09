@@ -557,6 +557,22 @@ def assess_drift_recovery(
     revision = observation.get("camera_revision")
     if not isinstance(revision, str) or not 1 <= len(revision) <= 80:
         return hold("CAMERA_RECOVERY_REOBSERVE", "CAMERA_REVISION_UNVERIFIED")
+    from betterinstincts.scenes import load_catalog
+    modes = {"LIVE": "live_mode", "BUY": "buy_mode", "BUILD": "build_mode"}
+    mode = observation.get("mode")
+    if (observation.get("game_version") != load_catalog()["game_version"]
+            or observation.get("capture_quality") != "CONTENT_PRESENT"
+            or observation.get("viewport_state") != "NORMAL"
+            or mode not in modes
+            or observation.get("scene_id") != modes.get(mode)
+            or (target_kind != "WORLD_OBJECT" and mode != "LIVE")):
+        return hold("CAMERA_RECOVERY_REOBSERVE", "EXACT_BUILD_OR_SCENE_UNVERIFIED")
+    cues = observation.get("independent_cues")
+    if (not isinstance(cues, list) or len(cues) != 2
+            or {c.get("source") for c in cues if isinstance(c, Mapping)} != {"visual", "operator"}
+            or not all(isinstance(c, Mapping) and isinstance(c.get("token"), str)
+                       and 1 <= len(c["token"]) <= 80 for c in cues)):
+        return hold("CAMERA_RECOVERY_REOBSERVE", "INDEPENDENT_SCENE_CUES_MISSING")
     if any(observation.get(key) is not value for key, value in (
         ("player_camera_owned", False), ("text_entry_active", False),
         ("modal_open", False), ("player_queue_owned", False),
@@ -583,9 +599,11 @@ def assess_drift_recovery(
     if displaced:
         if attempts >= max_attempts:
             return hold("CAMERA_RECOVERY_MANUAL_REVIEW", "REANCHOR_BUDGET_EXHAUSTED")
-        if attempts and target_kind == "WORLD_OBJECT" and reframe_directions:
-            # The lot reanchor already happened. Only host-observed directions
-            # can guide a bounded traverse; do not repeat Shift+Enter endlessly.
+        if attempts and target_kind == "WORLD_OBJECT":
+            # After one lot reanchor, no further guessed keyboard recenter.
+            # Either traverse by observed direction or capture for guidance.
+            if not reframe_directions:
+                return hold("CAMERA_RECOVERY_REOBSERVE", "OBSERVED_PAN_DIRECTION_REQUIRED")
             camera = plan_traverse(reframe_directions, client_width=w, client_height=h, cfg=cfg)
             return hold(
                 "CAMERA_RECOVERY_TRAVERSE", "LOT_REANCHORED_TARGET_STILL_OUT_OF_FRAME",
