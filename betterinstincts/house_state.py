@@ -174,6 +174,24 @@ def _validate_entity(entity_id: str, claim: Mapping[str, Any], kinds: set[str]) 
     if story is not None:
         out["story"] = str(story).upper()[:40]
         out["floor_level"] = out["story"]
+    # Room-composition evidence stays on the existing revisioned entity owner.
+    # Tags describe attested classifications; they do not grant game authority.
+    category = claim.get("category")
+    if category is not None:
+        if not isinstance(category, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,49}", category):
+            raise HouseStateError("INVALID_ROOM_CATEGORY")
+        out["category"] = category.lower()
+    for key in ("style_tags", "function_tags"):
+        raw = claim.get(key)
+        if raw is not None:
+            if not isinstance(raw, list) or len(raw) > 12 or any(
+                not isinstance(v, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_ -]{0,39}", v)
+                for v in raw
+            ):
+                raise HouseStateError("INVALID_ROOM_TAGS")
+            out[key] = list(dict.fromkeys(
+                tag.strip().lower().replace(" ", "_").replace("-", "_") for tag in raw
+            ))
     for key in ("notes", "pose", "region"):
         if key in claim and claim[key] is not None:
             out[key] = claim[key]
@@ -222,6 +240,9 @@ def observe(
             if prior.get("story") and not merged.get("story"):
                 merged["story"] = prior["story"]
                 merged["floor_level"] = prior.get("floor_level") or prior["story"]
+            for key in ("category", "style_tags", "function_tags"):
+                if key not in merged and key in prior:
+                    merged[key] = prior[key]
         entity_map[entity_id] = merged
     out["entities"] = entity_map
     if relations:
