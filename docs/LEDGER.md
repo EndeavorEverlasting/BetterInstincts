@@ -523,3 +523,8 @@ Sims input events or command effects without a local game host. See
 ### 2026-11-09 — Active-Sim camera focus/follow (pre-alpha host lane)
 
 P95/P124 camera-intent seam added: native Enter centers active Sim; Shift+Enter centers lot; real follow requires opt-in in-game camera API, with an app-scoped shortcut mapping that is not installed as an OS/Sims keybinding. Owners: betterinstincts/sim_camera.py, betterinstincts/ui_chrome.py, scripts/sim_camera.py; tests: tests/test_sim_camera.py. Offline/injected-port effects do not establish in-game tracking or BI-002 gameplay certification. The local agent still needs an installed mod, exact active Sim/Live mode, player consent and 15-second idle gating before live proof; the parent hunger/autonomy objective remains unchanged.
+
+
+### 2026-11-09 — Repair recurring camera drift before pixel targets
+
+A host intent previously planned edge-safe rest and target framing separately, but native world pixels were not checked against the current camera revision at the final action boundary. Camera drift during an agent's screenshot/pixel target analysis can therefore invalidate its measurements. Added a canonical recovery decision, host/listener routing and separate camera-revision-bound native world-click adapter that refuses stale pixels. Stable operator-calibrated HUD buttons remain unaffected. Stop-click when user resumes play, avoid blind portrait right-click, use one-shot native center controls and opt-in in-game follow only with independent admission. Exact-build live game certification remains P08; BI-002 hunger/needs status unchanged.
