@@ -1,0 +1,265 @@
+{
+  "schema": "betterinstincts.ui-microsystems/v1",
+  "version": 1,
+  "authority": {
+    "mode": "contracts/ui-mode.v1.json",
+    "scene": "contracts/game-scenes.v1.json",
+    "chrome": "contracts/ui-chrome.v1.json",
+    "calibrated_execution": "betterinstincts/screen_atlas.py",
+    "desktop_owner": "betterinstincts/workflow_interop.py"
+  },
+  "coordinate_space": "CLIENT_PIXELS_EXACT_PROFILE",
+  "policy": "PER_PANEL_SEMANTIC_TARGET_AND_HITBOX_CENTER_ONLY",
+  "proof_ceiling": "OFFLINE_PANEL_SEMANTICS_NOT_LIVE_GAME_VERIFIED",
+  "panels": {
+    "aspirations": {
+      "family": "LIVE_PANEL",
+      "modes": [
+        "LIVE"
+      ],
+      "status": "UNCALIBRATED_CANDIDATE",
+      "cues": {
+        "visual": "panel:live_aspirations",
+        "operator": "aspirations_visible"
+      },
+      "actions": {
+        "inspect_current_aspiration": {
+          "intent": "inspect_current_aspiration",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "inspect_milestone": {
+          "intent": "inspect_milestone",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "inspect_rewards": {
+          "intent": "inspect_rewards",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "select_aspiration": {
+          "intent": "select_aspiration",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        }
+      }
+    },
+    "career": {
+      "family": "LIVE_PANEL",
+      "modes": [
+        "LIVE"
+      ],
+      "status": "UNCALIBRATED_CANDIDATE",
+      "cues": {
+        "visual": "panel:live_career",
+        "operator": "career_visible"
+      },
+      "actions": {
+        "inspect_job": {
+          "intent": "inspect_job",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "inspect_schedule": {
+          "intent": "inspect_schedule",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "inspect_performance": {
+          "intent": "inspect_performance",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "inspect_daily_tasks": {
+          "intent": "inspect_daily_tasks",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        }
+      }
+    },
+    "skills": {
+      "family": "LIVE_PANEL",
+      "modes": [
+        "LIVE"
+      ],
+      "status": "UNCALIBRATED_CANDIDATE",
+      "cues": {
+        "visual": "panel:live_skills",
+        "operator": "skills_visible"
+      },
+      "actions": {
+        "inspect_skill": {
+          "intent": "inspect_skill",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "inspect_progress": {
+          "intent": "inspect_progress",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        }
+      }
+    },
+    "simology": {
+      "family": "LIVE_PANEL",
+      "modes": [
+        "LIVE"
+      ],
+      "status": "UNCALIBRATED_CANDIDATE",
+      "cues": {
+        "visual": "panel:live_simology",
+        "operator": "simology_visible"
+      },
+      "actions": {
+        "inspect_traits": {
+          "intent": "inspect_traits",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "inspect_preferences": {
+          "intent": "inspect_preferences",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        }
+      }
+    },
+    "personal_inventory": {
+      "family": "LIVE_PANEL",
+      "modes": [
+        "LIVE"
+      ],
+      "status": "UNCALIBRATED_CANDIDATE",
+      "cues": {
+        "visual": "panel:live_personal_inventory",
+        "operator": "personal_inventory_visible"
+      },
+      "actions": {
+        "inspect_item": {
+          "intent": "inspect_item",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "select_item": {
+          "intent": "select_item",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "filter_items": {
+          "intent": "filter_items",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        }
+      }
+    },
+    "needs": {
+      "family": "LIVE_PANEL",
+      "modes": [
+        "LIVE"
+      ],
+      "status": "UNCALIBRATED_CANDIDATE",
+      "cues": {
+        "visual": "panel:live_needs",
+        "operator": "live_needs_visible"
+      },
+      "actions": {
+        "inspect_motive": {
+          "intent": "inspect_motive",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "inspect_motive_state": {
+          "intent": "inspect_motive_state",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        }
+      }
+    },
+    "household_inventory": {
+      "family": "BUILDBUY_PANEL",
+      "modes": [
+        "BUY",
+        "BUILD"
+      ],
+      "status": "UNCALIBRATED_CANDIDATE",
+      "cues": {
+        "visual": "panel:household_inventory",
+        "operator": "household_inventory_visible"
+      },
+      "actions": {
+        "open_inventory": {
+          "intent": "open_inventory",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "inspect_item": {
+          "intent": "inspect_item",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "select_item": {
+          "intent": "select_item",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        }
+      },
+      "canonical_open_target": "catalog.household_inventory_tab"
+    },
+    "small_business": {
+      "family": "PACK_GATED_PANEL",
+      "modes": [
+        "LIVE"
+      ],
+      "status": "UNCALIBRATED_CANDIDATE",
+      "cues": {
+        "visual": "panel:live_small_business",
+        "operator": "small_business_visible"
+      },
+      "actions": {
+        "inspect_business": {
+          "intent": "inspect_business",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "inspect_staff": {
+          "intent": "inspect_staff",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "inspect_tasks": {
+          "intent": "inspect_tasks",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        }
+      },
+      "requires_entitlement_attestation": true
+    },
+    "skills_and_needs": {
+      "family": "COMPOSITE_READ_ONLY",
+      "modes": [
+        "LIVE"
+      ],
+      "status": "COMPOSITE_NOT_A_CLICK_SURFACE",
+      "components": [
+        "skills",
+        "needs"
+      ],
+      "actions": {},
+      "cues": null
+    },
+    "skit": {
+      "family": "UNRESOLVED_LABEL",
+      "modes": [
+        "LIVE"
+      ],
+      "status": "UNRESOLVED_OPERATOR_TERM",
+      "notes": "Literal user term 'skit': no game-panel identity inferred until evidence resolves it",
+      "actions": {},
+      "cues": null
+    }
+  },
+  "calibration": {
+    "required": [
+      "panel_id",
+      "target_id",
+      "hitbox",
+      "ui_layout_revision",
+      "selected_sim_revision"
+    ],
+    "hitbox_format": "[left,top,right,bottom] including boundary, target rectangle in client pixels",
+    "click_rule": "INTEGER_RECTANGLE_CENTER",
+    "min_hitbox_size_px": 8,
+    "requires_fresh_panel_observation": true,
+    "requires_two_panel_cues": true,
+    "requires_unobscured_stable_enabled": true
+  },
+  "execution": {
+    "default_allowed": false,
+    "force_click": false,
+    "auto_reclick": false,
+    "queue_owner": "betterinstincts.workflow_interop.CooperativeScreenQueue",
+    "native_click_owner": "betterinstincts.screen_atlas.enqueue_native_game_click"
+  },
+  "limits": {
+    "max_bytes": 48000,
+    "max_panels": 32,
+    "max_actions_per_panel": 24
+  }
+}

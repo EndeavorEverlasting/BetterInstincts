@@ -14,6 +14,10 @@ from typing import Any, Awaitable, Callable, Mapping
 from betterinstincts.camera_traverse import assess_drift_recovery, classify_cursor, safe_rest_point
 from betterinstincts.scenes import load_catalog
 from betterinstincts.ui_chrome import glossary_snapshot, load_contract as load_chrome, resolve_target
+from betterinstincts.ui_microsystems import (
+    inventory as microsystem_inventory, panel_observation_matches,
+    validate_hitbox_calibration,
+)
 from betterinstincts.workflow_interop import CooperativeScreenQueue, QueuedStep
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,6 +66,7 @@ def inventory(*, atlas: dict | None = None) -> dict:
     if console.get("schema") != "betterinstincts.hidden-object-discovery/v1":
         raise ScreenAtlasError("CONSOLE_OWNER_SCHEMA_UNKNOWN")
     modes = glossary_snapshot(chrome)["modes"]
+    microsystems = microsystem_inventory()["panels"]
     menu = _bounded_json(HOST_MENU, 180_000)
     if menu.get("schema") != "betterinstincts.host-menu/v1" or menu.get("game_version") != scene["game_version"]:
         raise ScreenAtlasError("HOST_MENU_VERSION_OR_SCHEMA_DRIFT")
@@ -83,6 +88,7 @@ def inventory(*, atlas: dict | None = None) -> dict:
             "scene_id": row["id"], "mode": mode,
             "required_cues": row["required_cues"],
             "target_ids": targets,
+            "microsystem_ids": sorted(p for p, meta in microsystems.items() if mode in meta["modes"]) if mode else [],
             "menu_clicks": transitions,
             "unmapped": not bool(targets or transitions),
             "execute_allowed": False,
@@ -91,6 +97,7 @@ def inventory(*, atlas: dict | None = None) -> dict:
         "schema": "betterinstincts.screen-atlas.inventory/v1",
         "exact_game_version": scene["game_version"],
         "modes": modes,
+        "microsystems": microsystems,
         "scenes": [s["id"] for s in scene["scenes"]],
         "screen_maps": screens,
         "console": {
@@ -141,8 +148,16 @@ def resolved_calibration(
     size = chrome["resolution_profiles"][profile]
     if width != size["width"] or height != size["height"]:
         raise ScreenAtlasError("PROFILE_GEOMETRY_MISMATCH")
-    # Existing target/mode owner rejects missing target, cross-mode or stub.
-    candidate = resolve_target(calibration["target_id"], mode=mode, profile=profile, client_width=width, client_height=height, cfg=chrome)
+    # P95: panel-specific targets have their own namespace and require an
+    # independently attested rectangle. Keep existing Build/Buy target owner.
+    panel_resolution = {}
+    if "panel_id" in calibration:
+        panel_resolution = validate_hitbox_calibration(calibration, mode=mode, width=width, height=height)
+        target_id = panel_resolution["target_id"]
+    else:
+        candidate = resolve_target(calibration["target_id"], mode=mode, profile=profile,
+                                   client_width=width, client_height=height, cfg=chrome)
+        target_id = candidate["target_id"]
     x, y = calibration["x"], calibration["y"]
     if not (_valid_int(x, 0, width - 1) and _valid_int(y, 0, height - 1)):
         raise ScreenAtlasError("TARGET_PIXEL_OUT_OF_BOUNDS")
@@ -151,13 +166,14 @@ def resolved_calibration(
     if classify_cursor(cx, cy, client_width=width, client_height=height)["in_edge_band"]:
         raise ScreenAtlasError("NO_SAFE_CURSOR_REST")
     return {
-        "target_id": candidate["target_id"], "mode": mode,
+        "target_id": target_id, "mode": mode,
         "scene_id": atlas["mode_scenes"][mode],
         "game_version": scene["game_version"], "profile": profile,
         "client_width": width, "client_height": height,
         "click": [x, y], "safe_rest": [cx, cy],
         "evidence_ref": calibration["evidence_ref"], "execute_allowed": False,
         "proof_ceiling": atlas["proof_ceiling"],
+        **panel_resolution,
     }
 
 
@@ -178,7 +194,8 @@ def _observation_matches(observation: Mapping[str, Any], resolved: Mapping[str, 
     cues = observation.get("independent_cues")
     return (isinstance(cues, list) and len(cues) == 2
             and {c.get("source") for c in cues if isinstance(c, dict)} == {"visual", "operator"}
-            and all(isinstance(c.get("token"), str) and 1 <= len(c["token"]) <= 80 for c in cues if isinstance(c, dict)))
+            and all(isinstance(c.get("token"), str) and 1 <= len(c["token"]) <= 80 for c in cues if isinstance(c, dict))
+            and ("panel_id" not in resolved or panel_observation_matches(observation, resolved)))
 
 
 def enqueue_game_click(
