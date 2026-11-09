@@ -192,6 +192,36 @@
     ],
     "chrome_exemption": "FIXED_HUD_UI_CHROME_NO_CAMERA_REVISION_REQUIRED_BUT_PLAYER_SCREEN_GATES_UNCHANGED",
     "no_auto_execute": true,
-    "note": "Recovery is a host decision, not a new global mouse hook. Every physical action still needs the existing exact-PID/session/15-second idle admission and a fresh host observation. No physical game follow proof in cloud."
+    "note": "Recovery is a host decision, not a new global mouse hook. Every physical action still needs the existing exact-PID/session/15-second idle admission and a fresh host observation. No physical game follow proof in cloud.",
+    "gameplay_pause": {
+      "pause_before_live_pixel_targeting": true,
+      "toggle_key": [
+        "P"
+      ],
+      "keyboard_command_owner": "scripts/win32_input.py",
+      "evaluator": "betterinstincts/camera_traverse.py:assess_game_pause",
+      "host_port": "scripts/camera_traverse.py:pause_game_on_admitted_host",
+      "effective_modes": [
+        "LIVE"
+      ],
+      "playing_precondition": "HOST_GAME_CLOCK_AND_HUD_CORROBORATE_PLAYING_ONLY",
+      "paused_precondition": "HOST_GAME_CLOCK_AND_HUD_CORROBORATE_PAUSED_ONLY",
+      "required_clock_fields": [
+        "source",
+        "capture_ref",
+        "camera_revision",
+        "game_version",
+        "clock_revision",
+        "speed_state",
+        "pause_indicator_active",
+        "clock_still_during_sample"
+      ],
+      "never_toggle_if_already_paused": true,
+      "auto_resume": false,
+      "invalidate_pixels_after_pause": true,
+      "gameplay_clock_pause_does_not_freeze_camera": true,
+      "paused_live_panel_can_be_stale": true,
+      "note": "One-shot P is a toggle; no key on PAUSED/UNKNOWN, never resume automatically. Local host must reobserve speed, exact scene and target after pausing. Skills panel retains separate short-play/re-pause proof owner."
+    }
   }
 }
