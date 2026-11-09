@@ -14,7 +14,7 @@ This is **not** permission to run unattended, overwrite a player's command, or e
 | --- | --- | --- |
 | Governance | `AGENTS.md`, `docs/DOCTRINE.md` | Human input is authoritative; never interrupt or delete player activity |
 | Harness | contracts, `tests/test_workflow_interop.py`, `tests/test_bootstrap.py` | Regression checks and machine-readable policy precede live deployment |
-| OS screen admission | `control_handoff.py` and `screen_admit.py` | Default 15 seconds; two fresh probes before each UI effect; one desktop lock |
+| OS screen admission | `control_handoff.py` and `screen_admit.py` | **Minimum** 15 seconds; two fresh probes before each UI effect; one user-scoped desktop lock across worktrees |
 | Cross-agent waiter | `workflow_interop.py` | Bounded ordered intents and silent wake/retry while the active agent stays alive |
 | Browser adapter | `playwright_interop.py` | Reuse an injected existing Playwright page; one click/fill; never spawn a new context |
 | Game adapter | existing `scripts/*` host admission | Session/PID, scene, protected-save and player-queue checks still required |
@@ -74,6 +74,9 @@ Existing `host_listener` / `host_tandem` own game observations and Live/Buy/Buil
 | Development checkout | `%USERPROFILE%\\dev\\BetterInstincts` | `$HOME/dev/BetterInstincts` |
 | Use/launcher | `%LOCALAPPDATA%\\BetterInstincts\\app` | `${XDG_DATA_HOME:-$HOME/.local/share}/betterinstincts/app` |
 | Worktrees | `%USERPROFILE%\\dev\\.worktrees\\BetterInstincts` | `$HOME/dev/.worktrees/BetterInstincts` |
+| Input locks | `%LOCALAPPDATA%\\BetterInstincts\\runtime\\locks` | `${XDG_DATA_HOME:-$HOME/.local/share}/betterinstincts/runtime/locks` |
+
+The shared lock path is resolved from the user profile by `bootstrap.paths().locks`, **not** from the current source checkout. Independent worktrees can no longer create independent desktop-control locks. A non-private lock directory or unresolvable profile fails closed; read-only presence policy remains usable because lock-path resolution is lazy.
 
 These are **tracked rules, not proof** of where a particular user's pre-existing clone is located. Bootstrapper refuses a conflicting noncanonical checkout; reconcile a pre-existing checkout before cloning again. Use path contains one managed launcher and one identity+SHA-validated manifest. Entry point runs the existing **offline opt-in host-listener CLI** only. It does not claim a playable Sims mod.
 
@@ -83,9 +86,17 @@ These are **tracked rules, not proof** of where a particular user's pre-existing
 2. Double-click the trusted script using Python, or run `python bootstrap.py gui` for a local window with **Inspect paths**, **Install** and **Uninstall** buttons. Opening it has no installation side effects. **Uninstall** always asks for confirmation; cancel is a no-op. If Tkinter or a graphical desktop is unavailable, use the CLI below.
 3. Run `python bootstrap.py doctor` to print the derived locations.
 4. Run `python bootstrap.py install`. It clones the exact GitHub origin into the canonical development directory **only if absent**, then creates the use-path launcher and manifest.
-5. Run `python bootstrap.py uninstall` to remove the manifest-owned launcher and manifest. If this bootstrapper created the checkout and Git reports **no tracked, untracked or ignored changes**, it removes that clean clone too. Otherwise it preserves the checkout and reports the reason for manual review.
+5. Run `python bootstrap.py uninstall` to remove the manifest-owned launcher and manifest. A clone created by the bootstrapper is removed only when the worktree is clean **and** the recorded install-time HEAD, branch, Git refs, reflogs, Git config and custom Git-private metadata still match exactly. Clean-looking but unpublished commits or local branches are preserved. A legacy manifest without this provenance cannot authorize checkout deletion. Otherwise it preserves the checkout and reports the reason for manual review.
 
 No unsafe forced directory removal, no deletion of user saves, mods, local experiments, or untracked files. A mutated launcher, unexpected installation file, symlink, or tampered manifest blocks deletion. A user-provided checkout is never adopted as disposable. For a complete removal of a modified installer-created clone, reconcile/export the unique work first, then rerun uninstall from a trusted external bootstrapper.
+
+## P83 independent review — 2026-11-09
+
+P83 resolved as Moonwake's **Agent Work Verifier & Iterative Advancer** from the canonical prompt catalog (owner `repository-work-ledger-prompts.v1.json`, source blob `e1d571b5490a68292c1953dd7b1ecf6ee28fe96c`). The prior #86/#88 tests were green but did not falsify two material hazards: a clean checkout may still have unpublished Git work, and separate checkout-local lock roots allowed cooperating agents to race. The correction also makes 15,000 ms the **hard admission minimum**, not a default that a script can override with 1,000 ms.
+
+- **Git deletion gate:** `bootstrap._clone_signature` records exact install-time refs, reflogs, head/branch, config and extra Git hooks/info. `uninstall` removes only an installer-owned pristine clone with matching provenance. A pre-existing/modified/legacy clone is preserved. Active or stale runtime lock files block uninstall before any managed file is removed; only empty app-owned lock directories are pruned.
+- **Computer-control gate:** `control_handoff.canonical_lock_root` resolves a stable user-profile location across independent repository/worktree copies, with private POSIX permissions. Pure read-only presence decisions do not need working host paths; input mutation still does.
+- **Proof:** isolated Git-repository fixtures exercise unpublished commits, local branches, changed Git config and hooks, legacy manifests and busy locks; existing listener/Playwright tests preserve 15s operator priority. Repository CI is offline validation, **not** live two-agent/game certification. Uncooperative external Playwright instances must still adopt the adapter.
 
 ## Trifecta proof (P08 / P82 / P07)
 
@@ -94,3 +105,8 @@ No unsafe forced directory removal, no deletion of user saves, mods, local exper
 - **P08 live certification remains OPEN:** on the actual Windows host, verify inactive and actively typing humans, agent Playwright and game executors, 15-second resumption, no focus theft, process restart behavior, clean install/uninstall, and production/use launcher readback. BI-002 live hunger remains independent.
 
 **Proof dimensions:** remote main integration; canonical development checkout current; production/use path installed; real launcher observed; browser/game action observed are separate fields. Do not infer one from another. Existing `host_tandem` and any unmodified Playwright instance are not universally covered merely because this protocol exists.
+
+
+## 2026-11-09 — screen atlas and camera-safe game pointer
+
+The bounded screen-action extension is [SCREEN_ATLAS.md](SCREEN_ATLAS.md), `contracts/screen-atlas.v1.json` and `betterinstincts/screen_atlas.py`. It **composes**, not replaces, the existing `ui_chrome` target map, `scenes`, `camera_traverse.safe_rest_point`, hidden-object console glossary and this cooperative queue. Use `python -m scripts.screen_atlas inventory` to inspect available screen/action names. Exact-build target calibration, independent scene cues, an already-owned Playwright-hosted game page and fresh 15s idle are mandatory before a click. A second admitted effect parks the cursor in the interior; after human interruption, no cursor fight or blind replay. The additional injected `enqueue_native_game_click` port accepts exact native PID/session, foreground PID and window origin while reusing the same queue. It does not bypass `screen_admit` or dispatch Win32 on its own. Live Win32 caller adoption and observed no-pan game proof remain P08/local-agent work. Do not assume that Playwright automatically sees a native Sims game.
