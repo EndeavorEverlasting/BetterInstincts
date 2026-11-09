@@ -2,6 +2,9 @@
 
 Peer to ui_mode (mode classification) and household_object_force (useful-item
 plans). Normalized client fractions only; never SendInput; execute_allowed=false.
+
+Plans prefer catalogued hotkeys/KEY chords over mouse CLICK_TARGET whenever an
+equivalent exists (HOTKEY_FIRST_WHEN_EQUIVALENT) for cooperative interop.
 """
 from __future__ import annotations
 
@@ -13,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "ui-chrome.v1.json"
 MAX_BYTES = 96_000
 ALLOWED_MODES = frozenset({"LIVE", "BUY", "BUILD"})
+INPUT_PREFERENCE = "HOTKEY_FIRST_WHEN_EQUIVALENT"
 
 
 class UIChromeError(ValueError):
@@ -34,6 +38,12 @@ def load_contract(path: Path = CONTRACT) -> dict:
         raise UIChromeError("COORDINATE_SPACE_MUST_BE_NORMALIZED")
     if cfg.get("architecture", {}).get("selected") != "UI_CHROME_PEER_MAP":
         raise UIChromeError("UI_CHROME_ARCHITECTURE_DRIFT")
+    pref = cfg.get("input_preference") or {}
+    if pref.get("selected") != INPUT_PREFERENCE:
+        raise UIChromeError("INPUT_PREFERENCE_MUST_BE_HOTKEY_FIRST")
+    order = list(pref.get("order") or [])
+    if order[:2] != ["HOTKEY", "KEY"]:
+        raise UIChromeError("INPUT_PREFERENCE_ORDER_DRIFT")
     recipes = cfg.get("recipes") or {}
     deposit = recipes.get("catalog_to_household_inventory") or {}
     if deposit.get("execute_allowed_default") is not False:
@@ -41,7 +51,7 @@ def load_contract(path: Path = CONTRACT) -> dict:
     if "LOT_PLACEMENT" not in set(deposit.get("forbidden") or []):
         raise UIChromeError("CATALOG_DEPOSIT_MUST_FORBID_LOT_PLACEMENT")
     item = (cfg.get("catalog_items") or {}).get("a_ok_bloomer") or {}
-    if item.get("search_term") != "AOK":
+    if item.get("search_term") != "A-OK":
         raise UIChromeError("AOK_SEARCH_TERM_REQUIRED")
     synonyms = {_normalize_alias(s) for s in (item.get("synonyms") or [])}
     if "wall shelf" not in synonyms:
@@ -73,6 +83,83 @@ def _resolve_shared(target_ref: str, cfg: dict) -> dict:
     if target_ref not in shared:
         raise UIChromeError("UNKNOWN_SHARED_TARGET:" + target_ref)
     return shared[target_ref]
+
+
+def _hotkey_row(mode: str, hotkey_id: str, *, cfg: dict) -> dict:
+    for row in cfg["modes"][mode]["hotkeys"]:
+        if row.get("id") == hotkey_id:
+            return dict(row)
+    raise UIChromeError("UNKNOWN_HOTKEY_ID:" + hotkey_id)
+
+
+def prefer_hotkey_step(step: Mapping, *, mode: str, cfg: Optional[dict] = None) -> dict:
+    """Annotate or rewrite one plan step under HOTKEY_FIRST_WHEN_EQUIVALENT.
+
+    KEY steps with a catalogued hotkey_id become channel HOTKEY. CLICK_TARGET
+    steps with a preferred_hotkey rewrite to KEY. Otherwise clicks stay
+    MOUSE_FALLBACK with an explicit reason — never silently dropped.
+    """
+    cfg = cfg or load_contract()
+    if mode not in ALLOWED_MODES:
+        raise UIChromeError("UNKNOWN_MODE")
+    out = dict(step)
+    op = out.get("op")
+    if op == "KEY":
+        hotkey_id = out.get("hotkey_id")
+        if hotkey_id:
+            row = _hotkey_row(mode, str(hotkey_id), cfg=cfg)
+            out["chord"] = list(row.get("chord") or out.get("chord") or [])
+            out["channel"] = "HOTKEY"
+            out["hotkey_id"] = hotkey_id
+        else:
+            out["channel"] = "KEY"
+        return out
+    if op == "TYPE_TEXT":
+        out["channel"] = "TYPE_TEXT"
+        return out
+    if op == "CLICK_TARGET":
+        target_id = out.get("target")
+        mode_targets = (cfg["modes"][mode].get("targets") or {})
+        meta = mode_targets.get(str(target_id)) or {}
+        preferred_hotkey = out.get("preferred_hotkey") or meta.get("preferred_hotkey")
+        if preferred_hotkey:
+            row = _hotkey_row(mode, str(preferred_hotkey), cfg=cfg)
+            return {
+                "op": "KEY",
+                "chord": list(row.get("chord") or []),
+                "hotkey_id": preferred_hotkey,
+                "channel": "HOTKEY",
+                "rewritten_from": "CLICK_TARGET",
+                "target": target_id,
+                "note": out.get("note") or "Hotkey preferred over mouse click",
+            }
+        out["channel"] = "MOUSE_FALLBACK"
+        out["mouse_fallback_reason"] = (
+            out.get("mouse_fallback_reason")
+            or meta.get("mouse_fallback_reason")
+            or "NO_CATALOGUED_HOTKEY_EQUIVALENT"
+        )
+        return out
+    out["channel"] = out.get("channel") or "CONTROL"
+    return out
+
+
+def prefer_hotkey_steps(
+    steps: Sequence[Mapping],
+    *,
+    mode: str,
+    cfg: Optional[dict] = None,
+) -> list[dict]:
+    """Apply hotkey-first preference across a recipe step list for one mode."""
+    cfg = cfg or load_contract()
+    preferred: list[dict] = []
+    for raw in steps:
+        step = dict(raw)
+        when_mode = step.get("when_mode")
+        if when_mode is not None and when_mode != mode:
+            continue
+        preferred.append(prefer_hotkey_step(step, mode=mode, cfg=cfg))
+    return preferred
 
 
 def resolve_target(
@@ -184,12 +271,11 @@ def plan_catalog_to_inventory(
         raise UIChromeError("UNKNOWN_RECIPE")
     if mode not in set(recipe.get("required_modes") or []):
         raise UIChromeError("RECIPE_MODE_FORBIDDEN")
-    if item.get("search_term") != "AOK" and item_id == "a_ok_bloomer":
+    if item.get("search_term") != "A-OK" and item_id == "a_ok_bloomer":
         raise UIChromeError("AOK_SEARCH_TERM_REQUIRED")
     profile = profile or cfg["default_profile"]
     steps_out: list[dict] = []
-    for raw in recipe["steps"]:
-        step = dict(raw)
+    for step in prefer_hotkey_steps(recipe["steps"], mode=mode, cfg=cfg):
         if step.get("op") == "TYPE_TEXT" and step.get("from_recipe_field") == "search_term":
             step["text"] = item["search_term"]
         if step.get("op") == "CLICK_TARGET":
@@ -221,6 +307,7 @@ def plan_catalog_to_inventory(
         "forbidden": list(recipe.get("forbidden") or []),
         "mutating_action": recipe.get("mutating_action"),
         "funds_delta_simoleons": item.get("funds_delta_simoleons"),
+        "input_preference": INPUT_PREFERENCE,
         "steps": steps_out,
         "execute_allowed": False,
         "proof_ceiling": cfg["proof_ceiling"],
@@ -242,6 +329,7 @@ def glossary_snapshot(cfg: Optional[dict] = None) -> dict:
         "schema": "betterinstincts.ui-chrome.glossary/v1",
         "coordinate_space": cfg["coordinate_space"],
         "default_profile": cfg["default_profile"],
+        "input_preference": cfg.get("input_preference"),
         "modes": modes,
         "catalog_items": {
             k: {

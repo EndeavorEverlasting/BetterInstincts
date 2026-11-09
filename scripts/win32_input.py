@@ -1,18 +1,45 @@
 #!/usr/bin/env python3
-"""Shared Win32 mouse SendInput primitives for host UI scripts.
+"""Shared Win32 mouse + keyboard SendInput primitives for host UI scripts.
 
-One ownership surface for left-click / wheel / right-drag / cursor park.
+One ownership surface for left-click / wheel / right-drag / cursor park /
+key chords / unicode typing. Prefer catalogued hotkeys over mouse clicks when
+an equivalent exists (see contracts/ui-chrome.v1.json input_preference).
 Callers still own session gates, scene checks, and --execute policy. Does not
 probe player presence, take focus, or touch saves. Windows-only at call time.
+No global keyhook or keylogger.
 """
 from __future__ import annotations
 
 import sys
 import time
+from typing import Sequence
 
 
 class Win32InputError(RuntimeError):
     pass
+
+
+# Virtual-key aliases used by ui-chrome / funds / viewport hotkey plans.
+_VK_ALIASES: dict[str, int] = {
+    "BACKSPACE": 0x08,
+    "TAB": 0x09,
+    "ENTER": 0x0D,
+    "RETURN": 0x0D,
+    "SHIFT": 0x10,
+    "CTRL": 0x11,
+    "CONTROL": 0x11,
+    "ALT": 0x12,
+    "ESC": 0x1B,
+    "ESCAPE": 0x1B,
+    "SPACE": 0x20,
+    "PAGEUP": 0x21,
+    "PAGEDOWN": 0x22,
+    "F1": 0x70,
+    "F2": 0x71,
+    "F3": 0x72,
+    "F4": 0x73,
+    "F5": 0x74,
+}
 
 
 def _require_win32() -> None:
@@ -42,6 +69,111 @@ def _mouse_input_types():
         _fields_ = [("type", wintypes.DWORD), ("i", _I)]
 
     return ctypes, MOUSEINPUT, INPUT
+
+
+def _keyboard_input_types():
+    import ctypes
+    from ctypes import wintypes
+
+    class KEYBDINPUT(ctypes.Structure):
+        _fields_ = [
+            ("wVk", wintypes.WORD),
+            ("wScan", wintypes.WORD),
+            ("dwFlags", wintypes.DWORD),
+            ("time", wintypes.DWORD),
+            ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
+        ]
+
+    class INPUT(ctypes.Structure):
+        class _I(ctypes.Union):
+            _fields_ = [("ki", KEYBDINPUT)]
+
+        _anonymous_ = ("i",)
+        _fields_ = [("type", wintypes.DWORD), ("i", _I)]
+
+    return ctypes, KEYBDINPUT, INPUT
+
+
+def resolve_vk(token: str | int) -> int:
+    """Map a chord token or raw VK integer to a virtual-key code."""
+    if isinstance(token, int):
+        if not (1 <= token <= 0xFE):
+            raise Win32InputError("VK_OUT_OF_RANGE")
+        return token
+    name = str(token).strip().upper()
+    if not name:
+        raise Win32InputError("EMPTY_VK_TOKEN")
+    if name in _VK_ALIASES:
+        return _VK_ALIASES[name]
+    if len(name) == 1 and "A" <= name <= "Z":
+        return ord(name)
+    if len(name) == 1 and "0" <= name <= "9":
+        return ord(name)
+    raise Win32InputError("UNKNOWN_VK_TOKEN:" + name)
+
+
+def send_vk(vk: int, *, up: bool = False) -> None:
+    """Press or release one virtual key via SendInput (no hooks)."""
+    _require_win32()
+    ctypes, KEYBDINPUT, INPUT = _keyboard_input_types()
+    user32 = ctypes.windll.user32
+    KEYEVENTF_KEYUP = 0x0002
+    flags = KEYEVENTF_KEYUP if up else 0
+    inp = INPUT(type=1)
+    inp.ki = KEYBDINPUT(int(vk) & 0xFFFF, 0, flags, 0, None)
+    user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+
+
+def tap_vk(vk: int, *, down_sec: float = 0.04, after_sec: float = 0.05) -> None:
+    """Tap one virtual key (down then up)."""
+    send_vk(int(vk), up=False)
+    time.sleep(down_sec)
+    send_vk(int(vk), up=True)
+    time.sleep(after_sec)
+
+
+def send_key_chord(
+    chord: Sequence[str | int],
+    *,
+    down_sec: float = 0.04,
+    after_sec: float = 0.05,
+) -> None:
+    """Send a modifier+key chord without moving the mouse.
+
+    Preferred cooperative channel when a catalogued hotkey exists. Still
+    requires caller-owned idle/session admission before invocation.
+    """
+    _require_win32()
+    tokens = [resolve_vk(part) for part in chord]
+    if not tokens:
+        raise Win32InputError("EMPTY_KEY_CHORD")
+    for vk in tokens:
+        send_vk(vk, up=False)
+        time.sleep(0.01)
+    time.sleep(down_sec)
+    for vk in reversed(tokens):
+        send_vk(vk, up=True)
+        time.sleep(0.01)
+    time.sleep(after_sec)
+
+
+def type_unicode(text: str, *, per_char_sec: float = 0.015) -> None:
+    """Type unicode text via KEYEVENTF_UNICODE (no clipboard)."""
+    _require_win32()
+    if not isinstance(text, str):
+        raise Win32InputError("TYPE_TEXT_MUST_BE_STR")
+    ctypes, KEYBDINPUT, INPUT = _keyboard_input_types()
+    user32 = ctypes.windll.user32
+    KEYEVENTF_KEYUP = 0x0002
+    KEYEVENTF_UNICODE = 0x0004
+    for ch in text:
+        down = INPUT(type=1)
+        down.ki = KEYBDINPUT(0, ord(ch), KEYEVENTF_UNICODE, 0, None)
+        user32.SendInput(1, ctypes.byref(down), ctypes.sizeof(INPUT))
+        up = INPUT(type=1)
+        up.ki = KEYBDINPUT(0, ord(ch), KEYEVENTF_UNICODE | KEYEVENTF_KEYUP, 0, None)
+        user32.SendInput(1, ctypes.byref(up), ctypes.sizeof(INPUT))
+        time.sleep(per_char_sec)
 
 
 def move_cursor(x: int, y: int, *, settle_sec: float = 0.05) -> None:

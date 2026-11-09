@@ -33,5 +33,7 @@
     "PLAYWRIGHT_BYPASS_OF_CHECKPOINT"
   ],
   "evidence_ceiling": "OFFLINE_COOPERATIVE_ADAPTER_NOT_LIVE_DESKTOP_OR_GAME_CERT",
-  "idle_ms_minimum": 15000
+  "idle_ms_minimum": 15000,
+  "preferred_effect_channel": "HOTKEY_THEN_MOUSE_FALLBACK",
+  "effect_channel_rule": "Prefer catalogued hotkeys and KEY chords over mouse clicks whenever an equivalent exists. Keyboard effects still require the same dual idle checkpoints and session gates, but avoid relocating the cursor into chrome/lot contention with the operator. Mouse remains only for effects with no catalogued hotkey equivalent."
 }

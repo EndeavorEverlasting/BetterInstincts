@@ -4,6 +4,10 @@
 
 Offline `click_error_eval` scores intended ui_chrome targets vs observed client pixels (HIT/NEAR_MISS/MISS, ABOVE_TARGET, LOT_PUNCH_THROUGH_RISK). Non-HIT → `ESCAPE_CANCEL` via `CANCEL_HOLD`; recipe must not continue into the lot. Remapped `catalog.search_field` 1920×1080 to client ≈(140,864). Proof ceiling: offline metrics + recovery plan only — not live click certification.
 
+## 2026-11-09 — Hotkey-first input preference for cooperative interop (P95 + P124 + Trifecta)
+
+**Operator:** Prefer hotkeys over mouse clicks whenever possible for the ASYNC_INTEROP contract. **P95** selects `HOTKEY_FIRST_WHEN_EQUIVALENT` — catalogued KEY/hotkey chords before `CLICK_TARGET`; mouse remains annotated `MOUSE_FALLBACK` only when no equivalent exists (catalog search/result/inventory tab). **P124** expands `ui_chrome` planner rewrite in place and extracts shared `send_key_chord` / `type_unicode` into `scripts/win32_input.py`; `viewport_recover` Build/Live unstick prefers F3/F1; `funds_inject` delegates keyboard. Consultation `BI-HOTKEY-FIRST-INTEROP-20261109.v1.json`. Workflow contract adds `preferred_effect_channel`. **P82** offline falsifiers in `tests/test_ui_chrome.py` and `tests/test_win32_input.py`. **P08** live F3/F1 vs HUD-click parity remains OPEN. Does not close BI-002.
+
 ## 2026-11-09 — Wall shelf synonym → A-OK-Bloomer (operator correction + Trifecta)
 
 **Operator correction:** “wall shelf” means the coveted **A-OK-Bloomer Vertical Garden** (`a_ok_bloomer`), not a newly invented shelf. Synonyms live on `contracts/ui-chrome.v1.json#catalog_items.a_ok_bloomer`; `resolve_catalog_item` / `plan --item-id "wall shelf"` / `resolve-item` fail closed without that alias. Consultation `BI-AOK-WALL-SHELF-SYNONYM-20261109.v1.json`. Live Household Inventory deposit remains P08 OPEN and still blocks the rest of the coveted list. Does not close BI-002.

@@ -3,15 +3,19 @@
 **Owner:** `contracts/ui-chrome.v1.json` and `betterinstincts/ui_chrome.py`.
 **CLI:** `python -m scripts.ui_chrome`.
 **Peers:** `docs/UI_MODE.md` (mode classification), `docs/HOUSEHOLD_OBJECT_FORCE.md` (useful-item catalog), `docs/HOUSE_STATE.md` (`BACKSPACE_TO_INVENTORY`).
-**Proof ceiling:** normalized maps + hotkey glossary offline only — not live click certification, not BI-002 closure.
+**Proof ceiling:** normalized maps + hotkey glossary offline only — not live click or key certification, not BI-002 closure.
 
 ## Why this exists
 
 Agentic screenshot clicking keeps missing Build/Buy chrome (search field vs lot-name banner, inventory tab vs category icons). Operators need **named targets by definition**, a **hotkey glossary per mode**, and **recipes** (AOK Bloomer → Household Inventory) that host logic can execute after independent admission — not vision guesswork.
 
+## Input preference (interop)
+
+**HOTKEY_FIRST_WHEN_EQUIVALENT:** prefer catalogued hotkeys / `KEY` chords over `CLICK_TARGET` whenever an equivalent exists. Keyboard effects still require the cooperative 15s idle gate, but they do not relocate the cursor into chrome/lot fights with the operator. Mouse remains `MOUSE_FALLBACK` only when no catalogued hotkey exists (search focus, first result, inventory tab today). Hotkeys never prove mode or grant `execute_allowed`.
+
 ## P95 call stack
 
-`ui_mode.evaluate_mode` → require BUY/BUILD → `ui_chrome.resolve_target` / `plan_catalog_to_inventory` → adapter maps normalized fractions to client pixels → (future) admitted SendInput. Live phone / needs / career / skills panels are **declared stubs** so the map can extend without a second daemon.
+`ui_mode.evaluate_mode` → require BUY/BUILD → `ui_chrome.plan_catalog_to_inventory` (hotkey-first rewrite) / `resolve_target` → adapter prefers `send_key_chord` then mouse fallback → (future) admitted SendInput. Live phone / needs / career / skills panels are **declared stubs** so the map can extend without a second daemon.
 
 ## Coordinate space
 
@@ -34,7 +38,7 @@ Search field candidate (1920×1080) is client **(140, 864)** (`nx=0.0729`, `ny=0
 
 ## AOK Bloomer recipe
 
-Preferred catalog search term is **`AOK`**. Operator phrases **`wall shelf`**, **`vertical garden`**, and **`bloomer`** are synonyms of `a_ok_bloomer` — never a separate wall-shelf product.
+Preferred catalog search term is **`A-OK`** (hyphenated; bare `AOK` returns no results). Operator phrases **`wall shelf`**, **`vertical garden`**, and **`bloomer`** are synonyms of `a_ok_bloomer` — never a separate wall-shelf product.
 
 ```sh
 python -m scripts.ui_chrome resolve-item --query "wall shelf"

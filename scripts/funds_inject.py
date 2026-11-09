@@ -82,69 +82,21 @@ def _focus(process_id: int | None, *, click_client: bool = False) -> dict:
 
 
 def _send_vk(vk: int, *, up: bool = False) -> None:
-    import ctypes
-    from ctypes import wintypes
+    from scripts.win32_input import send_vk
 
-    user32 = ctypes.windll.user32
-    KEYEVENTF_KEYUP = 0x0002
-
-    class KEYBDINPUT(ctypes.Structure):
-        _fields_ = [
-            ("wVk", wintypes.WORD), ("wScan", wintypes.WORD),
-            ("dwFlags", wintypes.DWORD), ("time", wintypes.DWORD),
-            ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
-        ]
-
-    class INPUT(ctypes.Structure):
-        class _I(ctypes.Union):
-            _fields_ = [("ki", KEYBDINPUT)]
-
-        _anonymous_ = ("i",)
-        _fields_ = [("type", wintypes.DWORD), ("i", _I)]
-
-    flags = KEYEVENTF_KEYUP if up else 0
-    inp = INPUT(type=1)
-    inp.ki = KEYBDINPUT(vk, 0, flags, 0, None)
-    user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+    send_vk(vk, up=up)
 
 
 def _tap(vk: int) -> None:
-    _send_vk(vk, up=False)
-    time.sleep(0.04)
-    _send_vk(vk, up=True)
-    time.sleep(0.05)
+    from scripts.win32_input import tap_vk
+
+    tap_vk(vk)
 
 
 def _type_text(text: str) -> None:
-    import ctypes
-    from ctypes import wintypes
+    from scripts.win32_input import type_unicode
 
-    user32 = ctypes.windll.user32
-    KEYEVENTF_KEYUP = 0x0002
-    KEYEVENTF_UNICODE = 0x0004
-
-    class KEYBDINPUT(ctypes.Structure):
-        _fields_ = [
-            ("wVk", wintypes.WORD), ("wScan", wintypes.WORD),
-            ("dwFlags", wintypes.DWORD), ("time", wintypes.DWORD),
-            ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
-        ]
-
-    class INPUT(ctypes.Structure):
-        class _I(ctypes.Union):
-            _fields_ = [("ki", KEYBDINPUT)]
-
-        _anonymous_ = ("i",)
-        _fields_ = [("type", wintypes.DWORD), ("i", _I)]
-
-    for ch in text:
-        down = INPUT(type=1)
-        down.ki = KEYBDINPUT(0, ord(ch), KEYEVENTF_UNICODE, 0, None)
-        user32.SendInput(1, ctypes.byref(down), ctypes.sizeof(INPUT))
-        up = INPUT(type=1)
-        up.ki = KEYBDINPUT(0, ord(ch), KEYEVENTF_UNICODE | KEYEVENTF_KEYUP, 0, None)
-        user32.SendInput(1, ctypes.byref(up), ctypes.sizeof(INPUT))
-        time.sleep(0.015)
+    type_unicode(text)
 
 
 def _click(x: int, y: int) -> None:
