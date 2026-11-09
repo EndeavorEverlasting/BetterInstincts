@@ -1,5 +1,10 @@
 # Canonical project ledger
 
+## 2026-11-09 — Hydroponic fertilizer pocket inventory and queue continuity
+
+**Objective:** keep an explicit gardening/each-plant fertilization goal intact despite autonomous distractions. Real prerequisite: move enough eligible fertilizer from ground/household storage into the selected Sim's *personal* inventory before queuing fertilization, with genuine readback. **Implementation:** opt-in `fertilizer_workflow` in the existing gardening peer, no second scheduler; per-plant proof, exact observed transfer action, opt-in transfer authorization, native `FERTILIZE_ALL` only when actually enabled and stocked, otherwise single-plant `FERTILIZE`; existing `task_continuity` prevents queue duplication and observes interruptions. Semantic terms added to the existing glossary. Ontology consultation committed before behavior source changes. Scope: offline planner/tests only; no game input, purchases, saves, inventory mutation, active daemon or live P08 verification. BI-002 remains independently ACTIVE.
+
+
 ## 2026-11-09 — CRITICAL: FLOOR_2 / stairs thrash without library save (regression harden)
 
 **Failure:** Agents deleted Bargain Bend **FLOOR_2 / stairs** while thrashing around a **Medicine Craftidink** stuck on a Servo, without saving the house to My Library first. Operator restored by reloading a previous save. Chat reminders to “save the house to the lot” did not bind.
