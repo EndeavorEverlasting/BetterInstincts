@@ -2,6 +2,7 @@
 
 ## 2026-11-09 — Semantic scene intelligence, portrait follow and event overlays (P95/P124/Trifecta)
 
+**Extension:** New option-choice scoring reuses `decision_eval.score_option` on current independent overlay-option cues with a unique positive-score gate. A bounded session-authorized native choice queue (one click) is separate from event dismissal and downstream goal/queue revalidation. No arbitrary or unobserved decision is selected.\n
 **Operator correction:** Right-click the selected active Sim portrait to follow; Enter centers once, Shift+Enter centers the current lot. This refines the earlier camera-lock rule, not its narrow map-goal exception. Owners: `portrait_follow` (exact selected Sim and native admitted right-click), `scene_ui_semantics` (bottom-right active panel, career/random-event overlays, queued goal continuity, resolved-event dismissal), and `scenery_memory` (independent viewpoint scene identities and reviewed discovery registry). Reuse existing host stack, cooperative queue, input owner, game-scene classifier and ontology. Consultation `BI-SEMANTIC-SCENE-PORTRAIT-FOLLOW-20261109` was recorded before mutation; registry remains empty until genuine host sightings. No game saves or EA Connect. Live Windows UI verification and local agent adoption remain separate from CI.
 
 
