@@ -158,6 +158,38 @@ class EdgeInteractionSemanticsTests(unittest.TestCase):
                 with self.assertRaises(CameraTraverseError):
                     assess_edge_interaction(4, 300, **extra)
 
+    def test_host_stack_preserves_edge_click_admission_not_needs_dispatch(self):
+        turn = evaluate_turn(
+            SIX, cursor_client_x=800, cursor_client_y=20,
+            camera_pointer_context={
+                "phase": "TARGETED_CLICK",
+                "target_kind": "UI_CHROME",
+                "target_verified": True,
+            },
+        )
+        self.assertEqual(turn["next_gate"], "EDGE_UI_CLICK_HOST_ADMISSION")
+        self.assertEqual(turn["fallback"]["mechanism"], "CAMERA_EDGE_INTERACTION")
+        self.assertFalse(turn["fallback"]["execute_allowed"])
+        self.assertEqual(turn["camera_traverse"]["cursor"]["practice"], "EDGE_UI_CLICK_TRANSIENT")
+
+    def test_player_directed_pointer_at_edge_never_forces_agent_rest(self):
+        turn = evaluate_turn(
+            SIX, player_directed=True, cursor_client_x=1,
+            cursor_client_y=500,
+        )
+        self.assertEqual(turn["next_gate"], "RESPECT_PLAYER_OR_BUSY_STATE")
+        self.assertEqual(turn["camera_traverse"]["gate"], "YIELD_TO_PLAYER")
+        self.assertIsNone(turn["fallback"])
+
+    def test_host_stack_refuses_spoofed_pointer_context(self):
+        with self.assertRaisesRegex(Exception, "CAMERA_POINTER_CONTEXT_REQUIRES_CURSOR"):
+            evaluate_turn(SIX, camera_pointer_context={"phase": "TARGETED_CLICK"})
+        with self.assertRaisesRegex(Exception, "CAMERA_POINTER_CONTEXT_UNKNOWN_FIELD"):
+            evaluate_turn(
+                SIX, cursor_client_x=5, cursor_client_y=4,
+                camera_pointer_context={"phase": "REST", "unsafe_grant": True},
+            )
+
     def test_host_risk_evaluation_disambiguates_click_vs_dwell(self):
         kw = dict(cursor_client_x=12, cursor_client_y=1050, client_width=1920, client_height=1080)
         dwell = evaluate_cursor_risk(**kw)
