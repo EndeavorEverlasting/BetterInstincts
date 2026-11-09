@@ -351,6 +351,12 @@ def _load_observation(raw: Mapping) -> dict:
     gardening = raw.get("gardening")
     if gardening is not None and not isinstance(gardening, Mapping):
         raise HostListenerError("OBSERVATION_GARDENING_INVALID")
+    household_upkeep = raw.get("household_upkeep")
+    if household_upkeep is not None and (
+        not isinstance(household_upkeep, Mapping)
+        or len(json.dumps(dict(household_upkeep)).encode("utf-8")) > 8192
+    ):
+        raise HostListenerError("OBSERVATION_HOUSEHOLD_UPKEEP_INVALID")
     discovery_hud = raw.get("discovery_hud")
     if discovery_hud is not None and (
         not isinstance(discovery_hud, Mapping)
@@ -421,6 +427,9 @@ def _load_observation(raw: Mapping) -> dict:
         "preference_game_build_confirmed": raw.get("preference_game_build_confirmed") is True,
         "needs": {k: float(needs[k]) for k in SIX},
         "gardening": dict(gardening) if gardening is not None else None,
+        "household_upkeep": (
+            dict(household_upkeep) if household_upkeep is not None else None
+        ),
         "discovery_hud": dict(discovery_hud) if discovery_hud is not None else None,
         "autonomy_observation": (
             dict(autonomy_observation) if autonomy_observation is not None else None
@@ -782,6 +791,7 @@ def tick(
             traits=obs["traits"],
             whims=obs["whims"] or obs["pinned_whims"],
             gardening=obs["gardening"],
+            household_upkeep=obs["household_upkeep"],
             discovery_hud=obs["discovery_hud"],
             autonomy_observation=obs["autonomy_observation"],
             behavior_model=session_behavior_model,
