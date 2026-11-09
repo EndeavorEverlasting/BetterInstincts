@@ -33,3 +33,7 @@ Plan only (no game input): python -m scripts.diy_skill_force household --members
 Local opt-in example: python -m scripts.diy_skill_force household --members 3 --skill handiness --execute --roster-key SIM_A --roster-key SIM_B --roster-key SERVO_C --first-portrait-attested --process-id PID --session-id SESSION
 
 Report CHANGED | PROVED | NEXT, separating planner, typed cheat, panel observation, merge and local installed state.
+
+## P83 review and P04 Windows install / P08 live gate (2026-11-09)
+
+The latest [local handoff](handoff/BI-HOUSEHOLD-SKILL-LOCAL-P04-2026-11-09.md) and [dispatch manifest](../plans/active/BI-HOUSEHOLD-SKILL-LOCAL-P04.dispatch.v1.json) supersede copy-and-run bulk examples as **operator guidance** until the real per-cell selected portrait/roster observer and per-effect player-input gate are proven on a disposable Windows save. The prior command-line `--roster-key` comparison only checks typed roster values against themselves. `DISPATCHED` ledger skip receipts are not panel proof; with no dispatch remaining the result is `HOUSEHOLD_SKILL_FORCE_NO_PENDING_DISPATCH_UNVERIFIED` and the executor performs **zero** game input. The default bootstrap recipe is a plan only. Do not alter existing user saves, the roster, account settings or online mode. This remote repo change does not install or run anything on the local game host.
