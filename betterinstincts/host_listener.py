@@ -252,6 +252,10 @@ def _load_observation(raw: Mapping) -> dict:
     pan_dirs = raw.get("camera_pan_directions") or ()
     if not isinstance(pan_dirs, (list, tuple)):
         raise HostListenerError("OBSERVATION_CAMERA_PAN_DIRS_INVALID")
+    world_target = raw.get("world_target")
+    if world_target is not None:
+        if not isinstance(world_target, Mapping) or len(json.dumps(dict(world_target))) > 8192:
+            raise HostListenerError("OBSERVATION_WORLD_TARGET_INVALID")
     stories_touched = raw.get("stories_touched") or ()
     if not isinstance(stories_touched, (list, tuple)):
         raise HostListenerError("OBSERVATION_STORIES_TOUCHED_INVALID")
@@ -375,6 +379,7 @@ def _load_observation(raw: Mapping) -> dict:
         ),
         "camera_scan_needed": bool(raw.get("camera_scan_needed", False)),
         "camera_pan_directions": [str(x) for x in pan_dirs],
+        "world_target": dict(world_target) if world_target is not None else None,
     }
 
 
@@ -574,6 +579,7 @@ def tick(
             edge_band_px=obs["edge_band_px"],
             camera_scan_needed=obs["camera_scan_needed"],
             camera_pan_directions=obs["camera_pan_directions"],
+            world_target=obs["world_target"],
             emotion=obs["emotion"],
             moodlets=obs["moodlets"],
             traits=obs["traits"],
