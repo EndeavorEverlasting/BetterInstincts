@@ -37,3 +37,7 @@ P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`; ontology: `docs/hand
 Interop: `docs/ASYNC_INTEROP.md` (15s idle).
 
 Likes/dislikes: `docs/PREFERENCE_PROMPTS.md`.
+
+## Camera ownership — binding agent rule
+
+The agent-controlled Sims 4 camera **must rest on the active Sim**. No discretionary street/lot/sky views, exploratory zooming or edge-pan. `Enter` centers active Sim; `Shift+Enter` centers the lot and is not a substitute. The sole exception is an observed, named current task target requiring bounded map traversal: first acquire a fresh, expiring host goal lease through `betterinstincts.active_sim_camera_lock`. Then restore the active Sim in the admitted `finally` path and reobserve before any subsequent action. No generic "scan needed" permit. On human input, changed Sim, modal or unverified Live mode, yield without seizing the player's camera; record restore-pending for next admitted turn. `scripts.camera_traverse plan --execute` cannot pan/zoom without a trusted injected sensor. Follow `docs/CAMERA_TRAVERSE.md` and `tests/test_active_sim_camera_lock.py`.
