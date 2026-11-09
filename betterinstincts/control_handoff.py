@@ -12,7 +12,7 @@ import os
 import time
 
 from betterinstincts.player_presence import PresenceProbe
-from bootstrap import BootstrapError, paths as workstation_paths
+from bootstrap import BootstrapError, DESKTOP_LOCK_FILENAME, paths as workstation_paths
 
 DEFAULT_IDLE_MS = 15000
 MIN_IDLE_MS = 15000
@@ -172,12 +172,12 @@ def exclusive_desktop_owner(*, lock_root: Path | None = None) -> Iterator[None]:
 
     Stale/foreign locks fail closed. No age expiry or automatic lock theft.
     """
-    with _named_screen_lock("desktop-shared.lock", lock_root=lock_root):
+    with _named_screen_lock(DESKTOP_LOCK_FILENAME, lock_root=lock_root):
         yield
 
 
 def desktop_owner_busy(*, lock_root: Path | None = None) -> bool:
-    lock = _lock_dir(lock_root) / "desktop-shared.lock"
+    lock = _lock_dir(lock_root) / DESKTOP_LOCK_FILENAME
     return lock.exists() or lock.is_symlink()
 
 
