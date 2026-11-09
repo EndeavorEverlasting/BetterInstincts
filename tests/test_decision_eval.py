@@ -45,6 +45,14 @@ class DecisionEvalTests(unittest.TestCase):
         self.assertEqual(flagged.recommended_option_id, "send_alone")
         self.assertIn("host_work_active", get_prompt("school.attend.join_or_send_alone")["force_send_alone_when"])
 
+    def test_send_alone_recommendation_is_intent_only_legacy_click_point_is_forbidden(self):
+        # 2026-11-09 RCA: recommending Send Alone is not a click; (960,600) hit JOIN.
+        targets = get_prompt("school.attend.join_or_send_alone")["hit_targets"]
+        self.assertEqual(targets["legacy"]["send_alone_screen_xy"], [960, 600])
+        self.assertEqual(targets["legacy"]["status"], "SUPERSEDED / FORBIDDEN")
+        self.assertEqual(targets["post_click"]["fail_state"], "JOIN_MISCLICK_CONFIRMED")
+        self.assertIn("computer_use_overlay", targets["executor_policy"]["forbidden"])
+
     def test_cas_continue_needs_consent_otherwise_escape_cancel(self):
         pid = "cas.servo.create_continue_vs_escape_cancel"
         self.assertEqual(recommend(pid, SIX).recommended_option_id, "escape_cancel")

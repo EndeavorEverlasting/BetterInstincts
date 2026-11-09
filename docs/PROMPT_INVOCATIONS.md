@@ -311,3 +311,7 @@ Resolved using Moonwake main `AGENTS.md` and `harness/exports/prompt-invocation-
 ## 2026-11-09 Servo Evil / Escape / laundry regression (P95 + P124 + P62 + P83 + Trifecta P82)
 
 Exact P-number intents only; prompt bodies are not reproduced here (TokenCorridor owns them). **P95** designs the guard call stack inside `diy_skill_force` / `household_upkeep` / `decision_eval`; **P124** keeps those the single owners (no second trait daemon); **P62** adds the offline regression falsifiers; **P83** records the remaining live gaps. Consultation first: `BI-SERVO-EVIL-ESCAPE-LAUNDRY-P62-20261109.v1.json`. Offline gates: `tests/test_diy_skill_force.py`, `tests/test_household_upkeep.py`, `tests/test_decision_eval.py`. Details `docs/DIY_SKILL_FORCE.md`, `docs/HOUSEHOLD_UPKEEP.md`.
+
+## 2026-11-09 Send Alone -> JOIN misclick regression (P95 + P124 + P62 + P94)
+
+Exact P-number intents only; prompt bodies are not reproduced here (TokenCorridor owns them). **P95** designs the relative Join/Send Alone hit-target model and post-click verify seam; **P124** keeps `decision_eval` / `decision-prompts` and `click_error_eval` as owners and reuses the `cas_quiz_okay` SendInput helper (no throwaway `_tmp` clicker); **P62** adds falsifiers in `tests/test_school_attend_click.py`; **P94** repairs the failure instance (stale `(960,600)` struck in `docs/GAME_HOST.md`) and its recurrence guard (`JOIN_MISCLICK_CONFIRMED` fail-closed, computer-use overlay executor forbidden). Consultation first: `BI-SEND-ALONE-CLICK-VERIFY-20261109.v1.json`. Offline only; no live PASS.
