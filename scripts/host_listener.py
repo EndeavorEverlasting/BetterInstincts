@@ -78,9 +78,15 @@ def main(argv: list[str] | None = None) -> int:
                            else "learning.cheat_observations" if kind == "cheat_action"
                            else "learning.hover_observations")
                 opt_in = view()["settings"][setting]
+            scope = {}
+            if args.game_version is not None:
+                scope["game_version"] = args.game_version
+            if args.lot_id is not None:
+                scope["lot_id"] = args.lot_id
+            # Retain the public opt-in call signature for prior adapters and
+            # mocked profile tests that have no patch/lot sensor configured.
             result = observe_hover(
-                args.session_id, event, explicit_opt_in=opt_in,
-                game_version=args.game_version, lot_id=args.lot_id,
+                args.session_id, event, explicit_opt_in=opt_in, **scope,
             )
         else:
             path = args.observation
