@@ -139,6 +139,10 @@ class RoomCensusTests(unittest.TestCase):
             "kind": "PLANTER", "story": "FLOOR_3", "zone": "YARD",
             "enclosure": "OUTSIDE", "confidence": "UNKNOWN", "status": "PRESENT",
         }
+        model["entities"]["fake-certified-bed"] = {
+            "kind": "BED", "story": "BASEMENT_3", "zone": "UNVERIFIED",
+            "enclosure": "INSIDE", "confidence": "GAME_CERTIFIED", "status": "PRESENT",
+        }
         receipt = scan_lot_model(model)
         self.assertEqual(list(receipt["floors"]), ["FLOOR_1"])
         self.assertEqual(set(receipt["rooms"]), {"FLOOR_1:HOME"})
@@ -148,10 +152,10 @@ class RoomCensusTests(unittest.TestCase):
         self.assertEqual(room["style_labels"], ["modern"])
         self.assertEqual(room["enclosure"], "INSIDE")
         self.assertFalse(room["enclosure_conflict"])
-        self.assertEqual(receipt["unverified_claim_count"], 3)
+        self.assertEqual(receipt["unverified_claim_count"], 4)
         self.assertFalse(receipt["execute_allowed"])
         advisory = evaluate_floor_activity(build_or_buy_mode=True, lot_model=model)
-        self.assertEqual(advisory["room_census"]["unverified_claim_count"], 3)
+        self.assertEqual(advisory["room_census"]["unverified_claim_count"], 4)
         self.assertEqual(advisory["room_census"]["observed_story_count"], 1)
 
     def test_p83_floor_activity_uses_all_attested_stories(self):
