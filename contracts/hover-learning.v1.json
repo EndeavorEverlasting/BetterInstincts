@@ -86,5 +86,22 @@
       ],
       "semantics": "Still requires matching currently visible tooltip and continues unchanged."
     }
+  },
+  "cross_session_memory": {
+    "schema": "betterinstincts.affordance-memory/v1",
+    "path": "dist/host-listener/affordance-memory.v1.json",
+    "owner": "betterinstincts/affordance_memory.py",
+    "bounds": {
+      "max_entries": 128,
+      "max_event_ids": 512,
+      "max_pending_actions": 64,
+      "max_bytes": 128000
+    },
+    "on_opt_in_hover": "Each accepted tooltip/action/outcome event projects into bounded patch and lot qualified index; duplicate tooltip visible edges produce no second count",
+    "scope": "Exact game patch and active lot, or UNKNOWN_PATCH/UNKNOWN_LOT candidate only",
+    "review": "Three or more favorable reviewed outcomes and >=75% among reviewed -> REVIEWED_ASSOCIATION_NOT_GAME_PROOF",
+    "privacy": "No raw text/screenshots/typed commands, no global hooks, no model promotion or game click",
+    "repair": "A failed shared index write reports AFFORDANCE_INDEX_REPAIR_REQUIRED without falsely claiming durable memory; original session event persists",
+    "canonical_terms": "contracts/glossary.v1.json remains reviewed taxonomy, not automatically dirtied during user gameplay"
   }
 }

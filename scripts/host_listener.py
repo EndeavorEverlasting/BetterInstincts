@@ -50,6 +50,8 @@ def main(argv: list[str] | None = None) -> int:
         hv.add_argument("--session-id", required=True)
         hv.add_argument("--event", type=Path, required=True)
         hv.add_argument("--explicit-opt-in", action="store_true")
+        hv.add_argument("--game-version", default=None, help="Exact observed Sims patch for cross-session affordance scope")
+        hv.add_argument("--lot-id", default=None, help="Current observed lot ID, not a guessed world name")
         hv.add_argument("--use-active-profile", action="store_true",
                         help="Use this channel's active local profile preference")
     sub.add_parser("behavior-catalog", help="Show canonical safe hotkey and cheat IDs")
@@ -76,7 +78,16 @@ def main(argv: list[str] | None = None) -> int:
                            else "learning.cheat_observations" if kind == "cheat_action"
                            else "learning.hover_observations")
                 opt_in = view()["settings"][setting]
-            result = observe_hover(args.session_id, event, explicit_opt_in=opt_in)
+            scope = {}
+            if args.game_version is not None:
+                scope["game_version"] = args.game_version
+            if args.lot_id is not None:
+                scope["lot_id"] = args.lot_id
+            # Retain the public opt-in call signature for prior adapters and
+            # mocked profile tests that have no patch/lot sensor configured.
+            result = observe_hover(
+                args.session_id, event, explicit_opt_in=opt_in, **scope,
+            )
         else:
             path = args.observation
             if not path.is_file() or path.stat().st_size > 32_000:

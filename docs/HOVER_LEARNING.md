@@ -120,3 +120,11 @@ plus protected `tests/test_hover_learning.py`, full CI, ontology chronology,
 then exact-head merge. **P08 runtime:** actual game-host hotkey/cheat sensing,
 exact version/scene/playback, cheat response and independent after-state are
 not available from this GitHub execution surface and cannot be claimed live.
+
+## 2026-11-09 — cross-session patch/lot affordance memory (P95 + P124 + Trifecta)
+
+The opt-in `host_listener.observe_hover` port now maintains the existing per-session temporal evaluator **and** a bounded, token-only `affordance_memory` index under `dist/host-listener/affordance-memory.v1.json`. Use `--game-version` and `--lot-id` to bind evidence to the exact local patch and lot. Matching targets discovered on earlier active sessions can be excluded from the next survey's hover discovery queue. Unknown versions/lots are retained as candidates but never treated as certified across another patch or household.
+
+A tooltip appearance records only what was visibly **observed**. An `action` requires the existing matched tooltip; an `outcome` is connected to a recorded action and counts toward usefulness only after independent operator review. Three helpful reviews at >=75% become `REVIEWED_ASSOCIATION_NOT_GAME_PROOF`. The index never stores raw tooltip text, screenshots, personal input, simulated clicks, or game-saves, and never grants a `CONTROL_PERMIT`. A failed index update reports an explicit repair state while leaving the original hover event session retained.
+
+See `docs/OPPORTUNITY_SURVEY.md` and `tests/test_affordance_memory.py`.

@@ -1,0 +1,79 @@
+{
+  "schema": "betterinstincts.opportunity-survey-contract/v1",
+  "version": 1,
+  "authority": "betterinstincts/opportunity_survey.py",
+  "integration": "betterinstincts/host_listener.py",
+  "async_owner": "betterinstincts/host_tandem.py",
+  "object_owner": "betterinstincts/house_state.py",
+  "room_projection": "betterinstincts/room_census.py",
+  "queue_owner": "betterinstincts/queue_capacity.py",
+  "hover_event_owner": "betterinstincts/hover_learning.py",
+  "hover_memory_owner": "betterinstincts/affordance_memory.py",
+  "screen_admission": "betterinstincts/workflow_interop.py",
+  "glossary": "contracts/glossary.v1.json",
+  "activation": {
+    "require_explicit_active_session": true,
+    "asynchronous_observation_while_player_active": true,
+    "no_automatic_startup": true,
+    "no_background_daemon": true,
+    "no_unreviewed_game_input": true,
+    "no_global_os_hooks": true,
+    "no_raw_tooltips": true
+  },
+  "bounded": {
+    "max_candidate_rows": 32,
+    "max_exploration_targets": 4,
+    "max_supplied_goal_threads": 16,
+    "max_memory_entries": 128,
+    "max_memory_events": 512,
+    "max_memory_bytes": 128000,
+    "max_async_ticks_per_active_session": 64,
+    "minimum_poll_interval_seconds": 1
+  },
+  "priority": "Player commands and urgent survival gates outrank exploration and any predicted queued activity. Observing is independent of queue space; enqueuing is not.",
+  "call_stack": [
+    "explicit_active_listener",
+    "sanitized_fresh_observation",
+    "independent_mode_and_presence_classification",
+    "read_revisioned_house_state_via_room_census",
+    "match_patch_and_lot_qualified_hover_memory",
+    "score_needs_and_career_candidates_without_input",
+    "check_queue_slots_conservatively",
+    "emit_advisory_even_on_player_yield",
+    "when_idle_and_verified_queue_one_target_via_cooperative_screen_queue",
+    "double_probe_presence_and_revalidate_current_lot_patch_scene_actor_camera",
+    "adapter_may_hover_only_after_checkpoint_and_follow_camera_restore",
+    "record_token_tooltip_edges_and_reviewed_outcomes_into_bounded_index"
+  ],
+  "spatial_assertions": {
+    "observed_rooms_only": true,
+    "coverage": "ATTESTED_ONLY_NOT_EXHAUSTIVE_MAP",
+    "multiple_room_labels_allowed": true,
+    "unverified_hypotheses_ignored": true,
+    "missing_geometry": "SURVEY_WAITING_FOR_LOT",
+    "unseen_object": "HOVER_DISCOVERY_CANDIDATE_NOT_CERTIFIED_AFFORDANCE",
+    "occupied_targets": "DO_NOT_PROPOSE_AS_FREE"
+  },
+  "learned_semantics": {
+    "runtime_index": "dist/host-listener/affordance-memory.v1.json",
+    "persistence": "ATOMIC_TOKEN_ONLY_CROSS_SESSION_PATCH_AND_LOT_SCOPED",
+    "tracked_taxonomy": "contracts/glossary.v1.json",
+    "tracked_semantic_promotion": "Explicit review and validated repository change; no uncontrolled source commits from gameplay",
+    "reviewed_success_requirement": "Matched interaction, independently reviewed helpful outcome; minimum three favorable and at least 75% to mark REVIEWED_ASSOCIATION_NOT_GAME_PROOF",
+    "inference": "Do not infer an item can satisfy a need merely because a tooltip appeared",
+    "rediscovery": "Omit previously observed tooltip targets only on matching exact patch and lot",
+    "raw_text": "never stored"
+  },
+  "idle_exploration": {
+    "require": "Named actor, active lot ID, current exact patch, attested camera follow, scene-backed Live mode and reliable double-sampled idle plus exclusive desktop lease",
+    "queue_work": "CooperativeScreenQueue.QueuedStep with pre-effect checkpoint",
+    "scene_revalidation": "Fresh capture and unchanged actor/lot/patch/revision/room/target",
+    "camera_lease": "Bounded existing camera traversal/restore contract; no unscoped pan",
+    "operator_activity": "WAITING_FOR_USER without dropping queued in-memory step",
+    "admission": "Advisory cannot issue control permit; target-specific adapter separately verifies effect",
+    "dedup": "One work ID per patch+lot+revision+actor+target",
+    "no_new_process": true
+  },
+  "proof_ceiling": "OFFLINE_EVENT_DRIVEN_SURVEY_AND_INDEX_NOT_AUTO_GAME_SCAN_OR_PLAYABLE_MOD_CERTIFIED",
+  "live_gate": "P08 exact patch and disposable-save tests with screenshots of hover, map traversal, queue outcomes, user interruption and camera restoration"
+}
