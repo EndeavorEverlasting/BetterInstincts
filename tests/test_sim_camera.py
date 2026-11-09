@@ -113,9 +113,10 @@ class SimCameraPolicyTests(unittest.TestCase):
             self.assertEqual(plan(FOLLOW_SIM, observed(**c))["state"], "SIM_CAMERA_NOT_READY")
 
     def test_already_following_is_no_op(self):
-        p = plan(FOLLOW_SIM, observed(camera_follow_sim_id=492))
-        self.assertEqual(p["state"], "ALREADY_FOLLOWING_SIM")
-        self.assertIsNone(p["effect"])
+        for command in (FOLLOW_SIM, CENTER_SIM):
+            p = plan(command, observed(camera_follow_sim_id=492))
+            self.assertEqual(p["state"], "ALREADY_FOLLOWING_SIM")
+            self.assertIsNone(p["effect"])
 
     def test_host_stack_keeps_viewport_and_player_priority(self):
         turn = evaluate_turn(
@@ -316,6 +317,11 @@ class SimCameraHostPortTests(unittest.TestCase):
             )
             self.assertEqual(invoked, [True])
             self.assertFalse(result["camera_follow_observed"])
+            with self.assertRaisesRegex(SimCameraError, "IN_GAME_ADMISSION_NOT_GRANTED"):
+                follow_active_sim_in_game(
+                    492, admit=lambda: False, observe=lambda: observed(),
+                )
+            self.assertEqual(invoked, [True])
             with self.assertRaisesRegex(SimCameraError, "ACTIVE_SIM_FOLLOW_NOT_READY"):
                 follow_active_sim_in_game(
                     493, admit=lambda: True, observe=lambda: observed(),
