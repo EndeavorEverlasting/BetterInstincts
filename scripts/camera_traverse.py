@@ -29,6 +29,65 @@ from betterinstincts.camera_traverse import (
 )
 
 
+
+def pause_game_on_admitted_host(*, process_id: int, session_id: str, observe) -> dict:
+    """One guarded P key for proven PLAYING Sims. Never toggle from PAUSED.
+
+    observe must be an injected fresh HOST_CAPTURE + HOST_GAME_CLOCK sensor.
+    An exact local host must own process/session admission and 15s user-idle
+    proof; this method does not start a listener, move a cursor, or auto-resume.
+    """
+    from betterinstincts.camera_traverse import assess_game_pause
+    from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
+    from scripts.win32_input import send_key_chord
+
+    if not callable(observe):
+        raise CameraTraverseError("FRESH_GAME_CLOCK_SENSOR_REQUIRED")
+    require_execute_session(session_id, process_id)
+    with admitted_screen_lease(process_id, session_id) as ensure_ready:
+        ensure_ready()
+        before = observe()
+        if not isinstance(before, dict):
+            raise CameraTraverseError("FRESH_GAME_CLOCK_SENSOR_REQUIRED")
+        capture = before.get("capture_ref")
+        plan = assess_game_pause(capture_ref=capture, observation=before)
+        if plan["gate"] == "GAME_PAUSED_FOR_TARGETING":
+            return {
+                "state": "GAME_ALREADY_PAUSED_NO_INPUT",
+                "key_dispatched": False, "pause_verified": True,
+                "auto_resume": False,
+            }
+        if plan["gate"] != "GAME_PAUSE_REQUIRED":
+            raise CameraTraverseError("GAME_PAUSE_STATE_NOT_VERIFIED")
+        ensure_ready()
+        latest = assess_game_pause(capture_ref=capture, observation=observe())
+        if (latest["gate"] != "GAME_PAUSE_REQUIRED"
+                or latest["clock_revision"] != plan["clock_revision"]
+                or latest["camera_revision"] != plan["camera_revision"]):
+            raise CameraTraverseError("PAUSE_SOURCE_CHANGED_BEFORE_KEY")
+        # P / 0 toggle. Exactly ONE keypress; never retry if acknowledgment
+        # is unknown, because a second keypress may unpause the player's game.
+        send_key_chord(["P"])
+        after = observe()  # New capture expected; never assume successful pause.
+        if not isinstance(after, dict) or not isinstance(after.get("capture_ref"), str):
+            return {
+                "state": "PAUSE_KEY_DISPATCHED_UNVERIFIED",
+                "key_dispatched": True, "pause_verified": False,
+                "auto_resume": False,
+            }
+        verified = assess_game_pause(
+            capture_ref=after["capture_ref"], observation=after,
+        )
+        return {
+            "state": "PAUSE_VERIFIED" if verified["gate"] == "GAME_PAUSED_FOR_TARGETING" else "PAUSE_KEY_DISPATCHED_UNVERIFIED",
+            "key_dispatched": True,
+            "pause_verified": verified["paused_verified"] is True,
+            "auto_resume": False,
+            "new_capture_required_for_target": True,
+        }
+
+
+
 def _park_cursor(x: int, y: int) -> None:
     from scripts.win32_input import move_cursor
 
