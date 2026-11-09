@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.diy-skill-force/v1",
-  "version": 7,
+  "version": 8,
   "authority": "docs/DIY_SKILL_FORCE.md",
   "proof_ceiling": "HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT",
   "design_brief": {
@@ -8,7 +8,7 @@
     "audience": "operators and Windows host agents who need DIY and other skill unlocks immediately usable",
     "job": "Reusable catalog + mode-agnostic cheat planner: soft-focus → Ctrl+Shift+C → testingcheats enabled true → stats.set_skill_level lines → bounded ACCEPT_OFFERED_REWARD_TRAIT. full_unlock defaults to level 10. Household mode counts any N members, Space-traverses each, and may --detach so agents are not blocked for hours. Required residuals Cooking/Fitness/Natural Living always re-dispatched at end. Not BI-005.",
     "architecture": "Sibling to funds_inject / household_object_force. Distinct from read-only sim_profile and aspiration life-state OK. No second skill/trait daemon. Typing owner: scripts/win32_input.type_text (keybd_event). P100 cohesive household traverse lives in this same owner.",
-    "operator_correction": "Do not stop at one Sim. Count household portraits (any N), traverse every member (Space), level all the way including Cooking/Fitness/Natural Living, and run asynchronously with --detach when serial wait would waste hours. Keep Live paused during precious-time dispatch; verify with PLAY_BRIEF → Skills panel LOCAL_OBSERVED → REPAUSE. Console text and LEVEL UP toasts are not PASS."
+    "operator_correction": "Do not stop at one Sim. N is the observed Live household portrait count — whatever that household is — not an invented ceiling. Traverse every member (Space), level all the way including Cooking/Fitness/Natural Living with correct internal ids (Major_HomestyleCooking, Skill_Fitness, Skill_NLS), and run asynchronously with --detach so another agent can reuse this owner without reinventing it. Keep Live paused during precious-time dispatch; verify with PLAY_BRIEF → Skills panel LOCAL_OBSERVED → REPAUSE. Console text and LEVEL UP toasts are not PASS."
   },
   "activation": {
     "require_explicit_activate": true,
@@ -29,9 +29,10 @@
     "next_member_chord": ["SPACE"],
     "ui_chrome_hotkey_id": "SELECT_NEXT_HOUSEHOLD_SIM",
     "min_members": 1,
-    "max_members": 8,
+    "sanity_max_members": 100,
+    "max_members": 100,
     "member_count_source": "operator_or_agent_observed_portrait_count",
-    "member_count_note": "Pass exact observed Live household portrait count as --members N. Host accepts any N in 1..8; it does not invent or auto-discover saves.",
+    "member_count_note": "Pass exact observed Live household portrait count as --members N. N is whatever that household is. Host does not invent size and does not treat 8 or 10 as the product ceiling — sanity_max_members is anti-runaway only. Another agent reuses --detach + Space-traverse; do not reinvent.",
     "select_before_dispatch": true,
     "close_console_before_space": true
   },
@@ -138,13 +139,13 @@
     {"id": "programming", "display_name": "Programming", "skill_stat": "Major_Programming", "pack_hint": "Discover University", "diy_role": "tech_diy_support", "useful_at": "Apps, viruses, tech DIY"},
     {"id": "logic", "display_name": "Logic", "skill_stat": "Major_Logic", "pack_hint": "base", "diy_role": "research_unlocks", "useful_at": "Chess, research, rocket science prep"},
     {"id": "rocket_science", "display_name": "Rocket Science", "skill_stat": "Major_RocketScience", "pack_hint": "base", "diy_role": "rocket_unlocks", "useful_at": "Rocket build/upgrade"},
-    {"id": "cooking", "display_name": "Cooking", "skill_stat": "Major_Cooking", "pack_hint": "base", "diy_role": "food_unlocks", "useful_at": "Homestyle recipes"},
+    {"id": "cooking", "display_name": "Cooking", "skill_stat": "Major_HomestyleCooking", "pack_hint": "base", "diy_role": "food_unlocks", "useful_at": "Homestyle recipes", "skill_stat_note": "NOT Major_Cooking — panel Cooking maps to HomestyleCooking"},
     {"id": "gourmet_cooking", "display_name": "Gourmet Cooking", "skill_stat": "Major_GourmetCooking", "pack_hint": "base", "diy_role": "gourmet_unlocks", "useful_at": "Gourmet recipes"},
     {"id": "baking", "display_name": "Baking", "skill_stat": "Major_Baking", "pack_hint": "Get to Work / bake packs", "diy_role": "bake_unlocks", "useful_at": "Bake recipes"},
     {"id": "mixology", "display_name": "Mixology", "skill_stat": "Major_Bartending", "pack_hint": "base", "diy_role": "drink_unlocks", "useful_at": "Bar drinks"},
     {"id": "gardening", "display_name": "Gardening", "skill_stat": "Major_Gardening", "pack_hint": "base", "diy_role": "garden_unlocks", "useful_at": "Grafting, rare plants"},
     {"id": "fishing", "display_name": "Fishing", "skill_stat": "Major_Fishing", "pack_hint": "base", "diy_role": "fish_unlocks", "useful_at": "Bait and rare fish"},
-    {"id": "fitness", "display_name": "Fitness", "skill_stat": "Major_Fitness", "pack_hint": "base", "diy_role": "athletic_unlocks", "useful_at": "Workout interactions"},
+    {"id": "fitness", "display_name": "Fitness", "skill_stat": "Skill_Fitness", "pack_hint": "base", "diy_role": "athletic_unlocks", "useful_at": "Workout interactions", "skill_stat_note": "NOT Major_Fitness — Fitness is the only 10-level major using Skill_ prefix"},
     {"id": "charisma", "display_name": "Charisma", "skill_stat": "Major_Charisma", "pack_hint": "base", "diy_role": "social_unlocks", "useful_at": "Friendly/romance socials"},
     {"id": "comedy", "display_name": "Comedy", "skill_stat": "Major_Comedy", "pack_hint": "base", "diy_role": "comedy_unlocks", "useful_at": "Jokes and routines"},
     {"id": "mischief", "display_name": "Mischief", "skill_stat": "Major_Mischief", "pack_hint": "base", "diy_role": "mischief_unlocks", "useful_at": "Prank interactions"},
@@ -177,7 +178,7 @@
     {"id": "nectar_making", "display_name": "Nectar Making", "skill_stat": "Major_NectarMaking", "pack_hint": "Horse Ranch", "diy_role": "nectar_unlocks", "useful_at": "Nectar recipes"},
     {"id": "equestrian", "display_name": "Equestrian", "skill_stat": "Major_EquestrianSkill", "pack_hint": "Horse Ranch", "diy_role": "horse_unlocks", "useful_at": "Horse care / riding"},
     {"id": "apothecary", "display_name": "Apothecary", "skill_stat": "Major_Apothecary", "pack_hint": "Enchanted by Nature", "diy_role": "cure_unlocks", "useful_at": "Holistic cures / remedies"},
-    {"id": "natural_living", "display_name": "Natural Living", "skill_stat": "Major_NaturalLiving", "pack_hint": "Enchanted by Nature", "diy_role": "nature_unlocks", "useful_at": "Nature living interactions"}
+    {"id": "natural_living", "display_name": "Natural Living", "skill_stat": "Skill_NLS", "pack_hint": "Enchanted by Nature", "diy_role": "nature_unlocks", "useful_at": "Nature living interactions", "skill_stat_note": "EA official cheat id is Skill_NLS, not Major_NaturalLiving"}
   ],
   "bundles": {
     "diy_maker": {
@@ -236,7 +237,7 @@
   "call_stack": {
     "success": [
       "PLAYER_FIRST / yield if player_directed",
-      "OBSERVE household portrait count N (any 1..8) → --members N",
+      "OBSERVE household portrait count N (whatever the household is) → --members N",
       "RESOLVE skill ids or bundle (full_unlock + mandatory residual_core tail)",
       "FOR each member index 0..N-1:",
       "  if index>0: CLOSE console → SPACE (SELECT_NEXT_HOUSEHOLD_SIM)",
@@ -253,7 +254,7 @@
       "player_directed -> YIELD_TO_PLAYER",
       "unknown skill/bundle -> UNKNOWN_DIY_SKILL / UNKNOWN_DIY_BUNDLE",
       "level outside 1..10 -> INVALID_SKILL_LEVEL",
-      "members outside 1..8 -> INVALID_HOUSEHOLD_MEMBER_COUNT",
+      "members < 1 or above sanity_max_members -> INVALID_HOUSEHOLD_MEMBER_COUNT",
       "missing required residual skill in full_unlock -> REQUIRED_RESIDUAL_SKILL_MISSING",
       "no foreground Sims -> SIMS_FOREGROUND_REQUIRED",
       "skip Ctrl+Shift+C -> console never opens",

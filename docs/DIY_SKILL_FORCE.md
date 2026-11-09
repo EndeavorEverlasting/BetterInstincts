@@ -60,7 +60,7 @@ python -m scripts.diy_skill_force household --members 3 --bundle full_unlock
 python -m scripts.diy_skill_force household --members 3 --execute --detach --process-id PID --session-id ID --receipt dist/game-host/household-skill-force-async-receipt.json
 ```
 
-**Household:** observe Live portrait count → `--members N` (any 1..8). Member 0 keeps current selection; members 1..N-1 close console with **Ctrl+Shift+C** (never Esc — opens MENU) then **Space** (`SELECT_NEXT_HOUSEHOLD_SIM`). Each cheat line: re-click console strip → `type_text` → Enter (`keybd_event`). `computer_type` newlines do **not** submit. `--detach` starts an opt-in worker; poll the receipt. Idle floor is **15000ms**. Missing packs may no-op individual lines.
+**Household:** observe Live portrait count → `--members N` where **N is whatever that household is** (not an invented 8/10 ceiling). Member 0 keeps current selection; members 1..N-1 close console with **Ctrl+Shift+C** (never Esc — opens MENU) then **Space** (`SELECT_NEXT_HOUSEHOLD_SIM`). Each cheat line: re-click console strip → `type_text(cmd+"\n")`. `computer_type` newlines do **not** submit. `--detach` starts an opt-in worker another agent can poll via receipt — do not reinvent traverse. Idle floor is **15000ms**. Residual ids: `Major_HomestyleCooking`, `Skill_Fitness`, `Skill_NLS` (not Major_Cooking / Major_Fitness / Major_NaturalLiving). Missing packs may no-op individual lines.
 
 ## Proof ceiling
 

@@ -444,7 +444,9 @@ def plan_household_skill_force(
     cfg = cfg or load_contract()
     ht = cfg.get("household_traverse") or {}
     min_m = int(ht.get("min_members") or 1)
-    max_m = int(ht.get("max_members") or 8)
+    # N = observed household size. sanity_max is anti-runaway only — not a
+    # preferred Sims household ceiling (8/10 pedantry rejected).
+    max_m = int(ht.get("sanity_max_members") or ht.get("max_members") or 100)
     count = int(members)
     if isinstance(members, bool) or count < min_m or count > max_m:
         raise DiySkillForceError("INVALID_HOUSEHOLD_MEMBER_COUNT")
@@ -491,7 +493,9 @@ def plan_household_skill_force(
         "household_traverse": {
             "next_member_key": ht.get("next_member_key", "SPACE"),
             "min_members": min_m,
-            "max_members": max_m,
+            "sanity_max_members": max_m,
+            "observed_n": count,
+            "note": "N is observed portrait count; sanity_max is anti-runaway only",
         },
         "bundle": member_plan.get("bundle"),
         "level": member_plan.get("level"),
