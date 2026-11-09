@@ -157,6 +157,7 @@ class NativeMicrosystemClickTests(unittest.IsolatedAsyncioTestCase):
         self.age = 0
         self.current = panel_observation()
         self.effects = []
+        self.job_number = 0
 
         async def no_delay(seconds):
             pass
@@ -178,9 +179,10 @@ class NativeMicrosystemClickTests(unittest.IsolatedAsyncioTestCase):
         self.effects.append(("rest", x, y))
 
     def enqueue(self):
+        self.job_number += 1
         return enqueue_native_game_click(
             self.queue,
-            work_id="career-intent-1",
+            work_id=f"career-intent-{self.job_number}",
             calibration=panel_calibration(),
             observe=self.observe,
             process_id=4321,
