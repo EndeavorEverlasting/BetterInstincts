@@ -3,6 +3,7 @@ import asyncio
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from betterinstincts.control_handoff import (
     HandoffError, exclusive_desktop_owner, exclusive_screen_owner,
@@ -138,11 +139,28 @@ class WaiterTests(unittest.IsolatedAsyncioTestCase):
 class CanonicalScreenLockTests(unittest.TestCase):
     def test_default_lock_location_is_shared_outside_repository_checkouts(self):
         import bootstrap
-        from betterinstincts.control_handoff import LOCK_ROOT
+        from betterinstincts.control_handoff import canonical_lock_root
+        root = canonical_lock_root()
         expected = bootstrap.paths()["locks"]
-        self.assertEqual(LOCK_ROOT, expected)
-        self.assertEqual(LOCK_ROOT.parent.name, "runtime")
-        self.assertNotIn("dist/host-listener", str(LOCK_ROOT).replace("\\\\", "/"))
+        self.assertEqual(root, expected)
+        self.assertEqual(root.parent.name, "runtime")
+        self.assertNotIn("dist/host-listener", str(root).replace("\\\\", "/"))
+
+    def test_presence_policy_stays_pure_when_profile_is_unavailable(self):
+        from bootstrap import BootstrapError
+        from betterinstincts.control_handoff import decide
+        with patch(
+            "betterinstincts.control_handoff.workstation_paths",
+            side_effect=BootstrapError("no profile"),
+        ):
+            verdict = decide(
+                PresenceProbe(False, False, last_input_age_ms=20000),
+                session_active=True,
+            )
+            self.assertTrue(verdict["screen_control_allowed"])
+            with self.assertRaisesRegex(HandoffError, "SCREEN_LOCK_PROFILE_UNRESOLVED"):
+                with exclusive_desktop_owner():
+                    self.fail("no input without canonical profile")
 
     def test_15_seconds_is_non_negotiable_even_for_explicit_override(self):
         with self.assertRaisesRegex(ValueError, "IDLE_THRESHOLD_OUT_OF_RANGE"):
