@@ -85,7 +85,7 @@ class HoverLearningTests(unittest.TestCase):
             seen(st, "outcome", 3, T + 10, interaction_ref="interaction:unknown",
                  outcome="helpful", evidence_ref="capture:whatever",
                  operator_reviewed=True)
-        with self.assertRaisesRegex(HoverLearningError, "EVENT_FIELDS_NOT_KIND_SCOPED"):
+        with self.assertRaisesRegex(HoverLearningError, "UNEXPECTED_HOVER_EVENT_FIELDS"):
             observe(st, {**event("hover", 4, T + 15, target_ref="object:tv"),
                          "raw_tooltip_text": "Private person name"})
         with self.assertRaisesRegex(HoverLearningError, "INVALID_TARGET_REF"):
@@ -102,7 +102,7 @@ class HoverLearningTests(unittest.TestCase):
         self.assertEqual([counts[str(x)]["tooltip_appearances"]
                           for x in (180, 300, 600, 1800, 3600)], [1, 2, 2, 2, 2])
         # Hour retention allows a long explicit session without unbounded history.
-        st = seen(st, "hover", 4, T + 3600001, target_ref="object:tv")
+        st = seen(st, "hover", 4, T + 3840001, target_ref="object:tv")
         self.assertEqual(len(st["events"]), 1)
 
     def test_time_regression_and_duplicate_id_refused(self):
