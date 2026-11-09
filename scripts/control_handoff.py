@@ -19,7 +19,7 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--session-id", required=True)
     p.add_argument("--process-id", type=int, required=True)
-    p.add_argument("--idle-ms", type=int, default=8000)
+    p.add_argument("--idle-ms", type=int, default=15000)
     p.add_argument("--confirm", action="store_true", help="Two distinct input observations for next one-step admission")
     args = p.parse_args(argv)
     try:

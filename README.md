@@ -5,6 +5,22 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 
 > **Status: pre-alpha, not a playable mod.** The current Python decision-policy prototype is an offline experiment; it is **not connected to the game**, and no `.package` or `.ts4script` release has been validated.
 
+## Install / uninstall the offline toolkit (Windows and Linux Mint)
+
+This is **still pre-alpha, not a playable Sims 4 mod**. The repository home page provides [bootstrap.py](bootstrap.py), a user-scoped installer with no third-party dependencies. Download that file to a location **outside** the checkout, inspect it, then run:
+
+```sh
+python bootstrap.py doctor
+python bootstrap.py install
+python bootstrap.py uninstall
+```
+
+`install` clones the repository into the [canonical profile-aware development path](contracts/workstation-paths.v1.json) if it is absent, and adds an offline host-listener launcher plus ownership manifest in a separate use path. `uninstall` deletes only verified installer-owned files and a pristine checkout that this bootstrapper itself created; it **preserves existing or modified checkouts and Sims saves**. It does not install a game mod, service, browser, cron job, global package, registry entry or PATH change. Full procedure and platform rules: [Async interoperability and lifecycle](docs/ASYNC_INTEROP.md).
+
+## Cooperative async computer control
+
+The [15-second human-idle waiter](betterinstincts/workflow_interop.py) retains queued agent intent without cancelling it while the operator types or moves the mouse. [Playwright adapters](betterinstincts/playwright_interop.py) reuse an existing browser page rather than launching competing browsers; cooperating Sims executors share a desktop lock. A fresh safety checkpoint is required before each UI effect. Unknown input, stale scene or ambiguous outcomes fail closed. This is **opt-in offline infrastructure**; live browser and Sims behavior are not certified. [Machine-readable interoperability contract](contracts/workflow-interoperability.v1.json) and [full guide](docs/ASYNC_INTEROP.md).
+
 ## Start here
 - [Agent instructions](AGENTS.md) — short, mandatory operating entrypoint.
 - [Doctrine](docs/DOCTRINE.md) — product and safety boundaries.

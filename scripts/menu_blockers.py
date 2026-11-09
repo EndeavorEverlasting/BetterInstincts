@@ -46,7 +46,7 @@ def _send_click(x: int, y: int) -> None:
 
 
 def dismiss(*, process_id: int | None, execute: bool, blocker_ids: list[str] | None,
-            receipt: Path | None, session_id: str | None = None, idle_ms: int = 8000) -> dict:
+            receipt: Path | None, session_id: str | None = None, idle_ms: int = 15000) -> dict:
     plan = plan_dismiss(blocker_ids)
     out: dict = {
         "plan": plan,
@@ -118,7 +118,7 @@ def main(argv: list[str] | None = None) -> int:
     d = sub.add_parser("dismiss")
     d.add_argument("--process-id", type=int, default=None)
     d.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
-    d.add_argument("--idle-ms", type=int, default=8000)
+    d.add_argument("--idle-ms", type=int, default=15000)
     d.add_argument("--execute", action="store_true")
     d.add_argument("--blocker", action="append", default=None,
                    help="Optional blocker id; repeatable. Default: all known blockers.")

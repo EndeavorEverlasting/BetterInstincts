@@ -59,7 +59,7 @@ class ControlHandoffTests(unittest.TestCase):
         self.assertEqual(as_presence(result)["host"], "YIELD_TO_PLAYER")
 
     def test_stationary_cursor_does_not_lock_host_forever(self):
-        result = decide(probe(10000), session_active=True)
+        result = decide(probe(20000), session_active=True)
         self.assertTrue(result["screen_control_allowed"])
         self.assertEqual(result["state"], "HOST_READY")
 
@@ -93,13 +93,13 @@ class ControlHandoffTests(unittest.TestCase):
                 decide(probe(100000), session_active=True, idle_ms=threshold)
 
     def test_confirm_two_fresh_probes(self):
-        samples = iter([probe(9000), probe(9500)])
+        samples = iter([probe(19000), probe(19500)])
         result = confirm(lambda: next(samples), session_active=True, sleep_fn=lambda _: None)
         self.assertTrue(result["screen_control_allowed"])
         self.assertEqual(result["samples_checked"], 2)
 
     def test_confirm_second_probe_player_interrupt_cancels(self):
-        samples = iter([probe(9000), probe(0)])
+        samples = iter([probe(19000), probe(0)])
         result = confirm(lambda: next(samples), session_active=True, sleep_fn=lambda _: None)
         self.assertFalse(result["screen_control_allowed"])
         self.assertEqual(result["samples_checked"], 2)
@@ -117,14 +117,14 @@ class ControlHandoffTests(unittest.TestCase):
         self.assertFalse(result["execute_clicks"])
 
     def test_planner_resumes_after_idle_but_only_plans(self):
-        result = plan_automation(OBS, probe(9000), session_active=True)
+        result = plan_automation(OBS, probe(19000), session_active=True)
         self.assertEqual(result["state"], "HOST_AUTOMATION_PLANNED")
         self.assertEqual(result["needs_force_plan"]["route"], "MAP_TRAVEL")
         self.assertFalse(result["execute_clicks"])
 
     def test_observation_player_direction_overrides_idle_probe(self):
         obs = {**OBS, "player_directed": True}
-        result = plan_automation(obs, probe(9000), session_active=True)
+        result = plan_automation(obs, probe(19000), session_active=True)
         self.assertEqual(result["state"], "YIELD_TO_PLAYER")
 
     def test_same_game_process_has_only_one_agent_screen_owner(self):
@@ -143,7 +143,7 @@ class ControlHandoffTests(unittest.TestCase):
         with (
             patch.object(handoff_cli.sys, "platform", "win32"),
             patch("scripts.control_handoff.status", return_value={"state": "ACTIVE"}),
-            patch("scripts.control_handoff.probe_windows", return_value=probe(10000)),
+            patch("scripts.control_handoff.probe_windows", return_value=probe(20000)),
             patch("scripts.control_handoff.screen_owner_busy", return_value=True),
             redirect_stdout(io.StringIO()) as output,
         ):
@@ -163,7 +163,7 @@ class ControlHandoffTests(unittest.TestCase):
     def test_live_click_executor_never_batches_steps(self):
         with patch.object(needs_force.sys, "platform", "win32"), \
              patch("betterinstincts.host_listener.status", return_value={"state": "ACTIVE"}), \
-             patch("betterinstincts.player_presence.probe_windows", return_value=probe(10000)), \
+             patch("betterinstincts.player_presence.probe_windows", return_value=probe(20000)), \
              patch("scripts.game_host.focus"), \
              patch("scripts.needs_force._send_click") as click, \
              patch("scripts.needs_force.time.sleep"), \
@@ -179,7 +179,7 @@ class ControlHandoffTests(unittest.TestCase):
         click.assert_called_once()
 
     def test_live_click_executor_stops_after_probe_changes(self):
-        samples = iter([probe(10000), probe(10000), probe(0)])
+        samples = iter([probe(20000), probe(20000), probe(0)])
         with patch.object(needs_force.sys, "platform", "win32"), \
              patch("betterinstincts.host_listener.status", return_value={"state": "ACTIVE"}), \
              patch("betterinstincts.player_presence.probe_windows", side_effect=lambda *_: next(samples)), \
@@ -201,7 +201,7 @@ class ControlHandoffTests(unittest.TestCase):
         with (
             patch.object(needs_force.sys, "platform", "win32"),
             patch("betterinstincts.host_listener.status", side_effect=lambda _: next(states)),
-            patch("betterinstincts.player_presence.probe_windows", return_value=probe(10000)),
+            patch("betterinstincts.player_presence.probe_windows", return_value=probe(20000)),
             patch("scripts.game_host.focus"),
             patch("scripts.needs_force._send_click") as click,
             patch("scripts.needs_force.time.sleep"),

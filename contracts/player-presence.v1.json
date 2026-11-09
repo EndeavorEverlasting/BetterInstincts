@@ -32,7 +32,7 @@
       "host": "YIELD_TO_PLAYER"
     }
   },
-  "grace_ms_default": 8000,
+  "grace_ms_default": 15000,
   "forbidden": [
     "GLOBAL_MOUSE_HOOK_WITHOUT_OPT_IN",
     "BACKGROUND_DAEMON_DEFAULT",

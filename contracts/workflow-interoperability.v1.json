@@ -1,0 +1,36 @@
+{
+  "schema": "betterinstincts.workflow-interoperability/v1",
+  "version": 1,
+  "authority": "betterinstincts/workflow_interop.py",
+  "admission": "betterinstincts/control_handoff.py",
+  "participant_rule": "Every agent Playwright/Sims/UI adapter must enqueue instead of cancelling on human activity; await checkpoint before each side effect, maintain one cross-process desktop owner, and revalidate target before retry.",
+  "idle_ms_default": 15000,
+  "waiter_poll_seconds_default": 0.5,
+  "max_queued_steps": 32,
+  "max_event_receipts": 128,
+  "states": [
+    "ENQUEUED",
+    "WAITING_FOR_USER",
+    "WAITING_FOR_AGENT",
+    "NEEDS_REVALIDATION",
+    "NEEDS_RECONCILIATION",
+    "COMPLETED",
+    "WAIT_BUDGET_REACHED"
+  ],
+  "priority": "Human input in any app, explicit operator override, or player-directed queue always blocks; absent/stale probe blocks; idle alone never overrides app-specific scene/save/consent or locks.",
+  "interruption": "Do not cancel a queued task; no new UI effects until two fresh trusted idle probes >=15s. An active callback must cooperatively checkpoint between side effects. A result after human interruption requires reconciliation to avoid blind replay.",
+  "persistence": "While caller session/process lives only; receipts contain IDs and states, never entered text or arbitrary URL; process restart requires rehydrating and revalidating intent. No background service installed.",
+  "lock": "Global desktop file lock shared with per-Sims-PID host executors under ignored dist/host-listener; stale locks fail closed, never auto-stolen.",
+  "forbidden": [
+    "CANCEL_WORK_ON_HUMAN_INPUT",
+    "BACKGROUND_KEYLOGGER",
+    "UNBOUNDED_POLLING",
+    "AGENT_SCREEN_TAKEOVER_WITHOUT_ACTIVE_SESSION",
+    "FOCUS_BEFORE_IDLE_PROOF",
+    "AUTOMATIC_REPLAY_AFTER_UNKNOWN_OUTCOME",
+    "AUTO_CLEAN_USER_DATA",
+    "START_DAEMON_OR_CRON",
+    "PLAYWRIGHT_BYPASS_OF_CHECKPOINT"
+  ],
+  "evidence_ceiling": "OFFLINE_COOPERATIVE_ADAPTER_NOT_LIVE_DESKTOP_OR_GAME_CERT"
+}

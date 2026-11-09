@@ -107,7 +107,7 @@ def main(argv=None) -> int:
     plan_p.add_argument("--execute", action="store_true")
     plan_p.add_argument("--session-id", default="")
     plan_p.add_argument("--process-id", type=int, default=None)
-    plan_p.add_argument("--idle-ms", type=int, default=8000)
+    plan_p.add_argument("--idle-ms", type=int, default=15000)
     plan_p.set_defaults(handler="plan")
 
     rest = sub.add_parser("rest", help="Park cursor at SAFE_CURSOR_REST")
@@ -119,7 +119,7 @@ def main(argv=None) -> int:
     rest.add_argument("--execute", action="store_true")
     rest.add_argument("--session-id", default="")
     rest.add_argument("--process-id", type=int, default=None)
-    rest.add_argument("--idle-ms", type=int, default=8000)
+    rest.add_argument("--idle-ms", type=int, default=15000)
     rest.set_defaults(handler="rest")
 
     risk = sub.add_parser("evaluate", help="Evaluate cursor risk / optional scan plan")
