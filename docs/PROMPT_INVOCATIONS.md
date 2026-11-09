@@ -19,6 +19,13 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
 | P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools + countertop mechanics (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
 
+## 2026-11-09 full skill unlock ladder (extend diy_skill_force)
+
+**P95/P124** expand the existing skill-force owner with `full_unlock` (adult
+Major_* at level 10) so Sims are not blocked from activities/unlockables.
+Preserves `diy_maker`. Consultation:
+`contracts/consultations/BI-SKILL-FORCE-FULL-UNLOCK-20261109.v1.json`.
+
 ## 2026-11-09 DIY skill-force for Servos / Handiness / Robotics (P95 + P124 + Trifecta)
 
 Resolved **P95 — Program Design & Call-Stack Prototype Architect** and

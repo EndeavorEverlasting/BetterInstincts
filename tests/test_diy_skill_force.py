@@ -23,31 +23,64 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(seq["open_console_chord"], ["CTRL", "SHIFT", "C"])
         self.assertEqual(seq["default_level"], 10)
         self.assertIn("diy_maker", cfg["bundles"])
+        self.assertIn("full_unlock", cfg["bundles"])
+        self.assertEqual(cfg["version"], 2)
 
-    def test_catalog_includes_diy_core(self):
+    def test_catalog_includes_diy_and_unlock_cores(self):
         snap = catalog_snapshot()
         ids = {row["id"] for row in snap["skills"]}
-        self.assertEqual(ids, {"handiness", "robotics", "fabrication", "programming"})
+        for required in (
+            "handiness",
+            "robotics",
+            "fabrication",
+            "programming",
+            "cooking",
+            "logic",
+            "charisma",
+            "fitness",
+            "gardening",
+        ):
+            self.assertIn(required, ids)
         self.assertIn("practice_skill", snap["forbidden"])
         self.assertIn("claim_BI005", snap["forbidden"])
+        self.assertIn("full_unlock", snap["bundles"])
 
-    def test_default_bundle_plan_super_useful(self):
+    def test_diy_maker_bundle_unchanged(self):
         plan = plan_skill_force(bundle="diy_maker", game_mode="live")
         self.assertEqual(plan["state"], "DIY_SKILL_FORCE_PLAN_READY")
         self.assertEqual(plan["level"], 10)
         self.assertFalse(plan["execute_allowed"])
         self.assertTrue(plan["not_bi005"])
-        self.assertTrue(plan["not_practice_skill"])
-        steps = [s["step"] for s in plan["steps"]]
-        self.assertNotIn("ENSURE_LIVE_MODE", steps)
-        self.assertIn("REQUIRE_ACTIVE_SIM_SELECTION", steps)
-        self.assertIn("PRESERVE_OPERATOR_MODE", steps)
         cmds = steps_to_commands(plan)
         self.assertEqual(cmds[0], "testingcheats enabled true")
+        self.assertEqual(
+            [c for c in cmds if c.startswith("stats.set_skill_level ")],
+            [
+                "stats.set_skill_level Major_Handiness 10",
+                "stats.set_skill_level Major_Robotics 10",
+                "stats.set_skill_level Major_Fabrication 10",
+                "stats.set_skill_level Major_Programming 10",
+            ],
+        )
+
+    def test_full_unlock_all_the_way(self):
+        plan = plan_skill_force(bundle="full_unlock", level=10, game_mode="live")
+        self.assertGreaterEqual(len(plan["skills"]), 30)
+        cmds = steps_to_commands(plan)
         self.assertIn("stats.set_skill_level Major_Handiness 10", cmds)
-        self.assertIn("stats.set_skill_level Major_Robotics 10", cmds)
-        self.assertIn("stats.set_skill_level Major_Fabrication 10", cmds)
-        self.assertIn("stats.set_skill_level Major_Programming 10", cmds)
+        self.assertIn("stats.set_skill_level Major_Cooking 10", cmds)
+        self.assertIn("stats.set_skill_level Major_Logic 10", cmds)
+        self.assertIn("stats.set_skill_level Major_Charisma 10", cmds)
+        self.assertIn("stats.set_skill_level Major_Fitness 10", cmds)
+        self.assertTrue(plan["not_bi005"])
+        self.assertFalse(plan["execute_allowed"])
+
+    def test_default_empty_resolves_full_unlock(self):
+        rows = resolve_skills()
+        ids = [r["id"] for r in rows]
+        self.assertIn("handiness", ids)
+        self.assertIn("cooking", ids)
+        self.assertGreaterEqual(len(ids), 30)
 
     def test_servo_core_bundle_omits_fabrication(self):
         plan = plan_skill_force(bundle="servo_core", level=10, game_mode="build")
@@ -61,7 +94,7 @@ class DiySkillForceTests(unittest.TestCase):
 
     def test_unknown_skill_fails_closed(self):
         with self.assertRaises(DiySkillForceError) as ctx:
-            plan_skill_force(skill_ids=["cooking"], bundle=None)
+            plan_skill_force(skill_ids=["not_a_real_skill"], bundle=None)
         self.assertIn("UNKNOWN_DIY_SKILL", str(ctx.exception))
 
     def test_unknown_bundle_fails_closed(self):
@@ -76,7 +109,7 @@ class DiySkillForceTests(unittest.TestCase):
             plan_skill_force(bundle="diy_maker", level=11)
 
     def test_player_directed_yields(self):
-        plan = plan_skill_force(bundle="diy_maker", player_directed=True)
+        plan = plan_skill_force(bundle="full_unlock", player_directed=True)
         self.assertEqual(plan["state"], "YIELD_TO_PLAYER")
         self.assertEqual(plan["steps"], [])
         self.assertFalse(plan["execute_allowed"])
@@ -91,8 +124,8 @@ class DiySkillForceTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(raw["version"], 1)
-        self.assertEqual(raw["bundles"]["diy_maker"]["default_level"], 10)
+        self.assertEqual(raw["version"], 2)
+        self.assertEqual(raw["bundles"]["full_unlock"]["default_level"], 10)
 
 
 if __name__ == "__main__":

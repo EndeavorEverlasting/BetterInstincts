@@ -10,9 +10,10 @@ Disposable lab only; never edits saves. Not BI-005 skill-growth certification.
 
 Examples:
   python -m scripts.diy_skill_force catalog
-  python -m scripts.diy_skill_force plan --bundle diy_maker
-  python -m scripts.diy_skill_force level --bundle diy_maker --level 10
-  python -m scripts.diy_skill_force level --bundle diy_maker --execute --process-id PID --session-id ID
+  python -m scripts.diy_skill_force plan --bundle full_unlock
+  python -m scripts.diy_skill_force level --bundle full_unlock --level 10
+  python -m scripts.diy_skill_force level --bundle diy_maker
+  python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID
 """
 from __future__ import annotations
 
@@ -166,13 +167,13 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("catalog")
 
     pl = sub.add_parser("plan")
-    pl.add_argument("--bundle", default=None, help="Named bundle (default diy_maker when no --skill)")
+    pl.add_argument("--bundle", default=None, help="Named bundle (default full_unlock when no --skill)")
     pl.add_argument("--skill", action="append", default=[], help="Repeatable skill id")
     pl.add_argument("--level", type=int, default=None)
     pl.add_argument("--game-mode", default="unknown")
 
     lv = sub.add_parser("level")
-    lv.add_argument("--bundle", default=None, help="Named bundle (default diy_maker when no --skill)")
+    lv.add_argument("--bundle", default=None, help="Named bundle (default full_unlock when no --skill)")
     lv.add_argument("--skill", action="append", default=[], help="Repeatable skill id")
     lv.add_argument("--level", type=int, default=None)
     lv.add_argument("--game-mode", default="unknown")
@@ -193,7 +194,7 @@ def main(argv: list[str] | None = None) -> int:
             if isinstance(bundle, str) and not bundle.strip():
                 bundle = None
             if bundle is None and not skill_ids:
-                bundle = "diy_maker"
+                bundle = "full_unlock"
             plan = plan_skill_force(
                 skill_ids=skill_ids,
                 bundle=bundle,
