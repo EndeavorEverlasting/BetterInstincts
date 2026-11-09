@@ -66,15 +66,16 @@
     "Actual host adapter enforcement beyond explicit preview settings requires independent code and local game admission"
   ],
   "files_expected": [
+    "betterinstincts/installation_profiles.py",
+    "bootstrap.py",
     "contracts/consultations/BI-INSTALLATION-PROFILES-20261109.v1.json",
     "contracts/installation-profiles.v1.json",
-    "betterinstincts/installation_profiles.py",
-    "scripts/instance_settings.py",
-    "tests/test_installation_profiles.py",
     "docs/INSTALLATION_PROFILES.md",
     "docs/LEDGER.md",
     "docs/PROMPT_INVOCATIONS.md",
-    "bootstrap.py"
+    "scripts/host_listener.py",
+    "scripts/instance_settings.py",
+    "tests/test_installation_profiles.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
