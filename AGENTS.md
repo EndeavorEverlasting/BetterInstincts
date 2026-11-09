@@ -9,14 +9,14 @@ Build a community-native Sims 4 autonomy mod for needs, income, careers and pers
 Refresh HEAD/branch, PRs, status, game/version; declare host, scopes, collisions, tests, proof and parent gate. Resolve P-numbers via Moonwake catalog.
 
 ## P04 hidden-object discovery
-Read `plans/active/BI-HIDDEN-OBJECTS.P04.md` and `docs/HIDDEN_OBJECT_SCOUT.md`. Respect dispatch/scene/save/consent; no autorun. Guide/audit: `scripts.hidden_object_discovery`; scout: `scripts.hidden_object_scout goal`.
+Read `plans/active/BI-HIDDEN-OBJECTS.P04.md` and `docs/HIDDEN_OBJECT_SCOUT.md`. Respect dispatch/scene/save/consent; no autorun. Guide/audit: `scripts.hidden_object_discovery`; scout: `hidden_object_scout goal`.
 
 Useful-item force: `python -m scripts.household_object_force`. DIY parts: `python -m scripts.upgrade_parts_force`.
 
 ## Invariants
 - **Player first:** no interrupt of explicit player commands; no uncontrolled autonomy loops.
 - **Save-safe:** never edit/delete/migrate/overwrite user saves/game files. Unknown/user saves protected.
-- **Build structure / FLOOR_2 / all purchases:** No agent Build/Buy mutation until ALL floors/rooms are observed, classified, and backed up by a pre-edit My Library building save plus persisted model readback. Unknowns, stale saves, incomplete FLOOR_2 = DENY. Keep stairs/Craftidink CANCEL_UI and `admit_live_structure_effect`; offline leases are NOT live input permits. `docs/BUILD_LIBRARY_CHECKPOINT.md`.
+- **Build structure / FLOOR_2 / all purchases:** No agent Build/Buy edits/purchases until ALL floors/rooms are scanned, classified, backed up to My Library pre-edit and model readback verified. Unknowns, stale saves, incomplete FLOOR_2 = DENY. Keep stairs/Craftidink CANCEL_UI and `admit_live_structure_effect`; offline leases are NOT live input permits. `docs/BUILD_LIBRARY_CHECKPOINT.md`.
 - **Offline install:** never EA Connect; Stay Offline only; play as installed.
 - **Storage:** no arbitrary profile writes, auto-discovery, asset copy, daemons, telemetry, unbounded logs.
 - **Community-native:** review prior art/licensing; favor tuning before script hooks where justified.
@@ -35,5 +35,5 @@ Read `docs/HORIZON.md`, `plans/horizon.v1.json`, `plans/active/BI-003.execution.
 ## Completion contract
 Report CHANGED | PROVED | NEXT with checks, SHA, push/PR/merge, patch, live status. A plan is not implementation; a green CI check is not playable-mod proof.
 
-P04 & ontology handoffs: see `docs/handoff/`; hidden objects: `plans/active/BI-HIDDEN-OBJECTS.P04.md`.
+P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`; ontology: `docs/handoff/BI-SEMANTIC-ONTOLOGY-P04-2026-11-07.md`.
 Interop: `docs/ASYNC_INTEROP.md` (15s idle). Likes: `docs/PREFERENCE_PROMPTS.md`.
