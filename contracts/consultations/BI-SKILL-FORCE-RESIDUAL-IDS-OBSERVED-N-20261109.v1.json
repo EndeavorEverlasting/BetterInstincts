@@ -1,0 +1,28 @@
+{
+  "schema": "betterinstincts.consultation/v1",
+  "id": "BI-SKILL-FORCE-RESIDUAL-IDS-OBSERVED-N-20261109",
+  "title": "Correct residual skill_stat IDs + observed-N household for async reuse",
+  "status": "ACCEPTED",
+  "date": "2026-11-09",
+  "prompt_kit": ["P08", "P82", "P07", "P83", "P95", "P124"],
+  "observation": [
+    "Operator Skills panel: Servo still Comedy/Fishing/Mischief/Painting/Natural Living at 1, Robotics 3, Video Gaming 2 after prior force claims.",
+    "Operator Skills panel: Charlee has many skills at 10 but Cooking 2, Fitness 1, Natural Living 1 — residuals failed.",
+    "Major_Cooking, Major_Fitness, and Major_NaturalLiving are wrong internal ids (silent no-ops).",
+    "EA/community truth: Cooking=Major_HomestyleCooking, Fitness=Skill_Fitness, Natural Living=Skill_NLS.",
+    "Operator goal: another agent must async-update every household member for whatever N the household is, without reinventing diy_skill_force."
+  ],
+  "decision": [
+    "Fix residual skill_stat fields in diy-skill-force catalog to HomestyleCooking / Skill_Fitness / Skill_NLS.",
+    "N = observed portrait count (whatever the household is); sanity_max_members anti-runaway only; keep --detach receipt worker as the shared async mechanism.",
+    "PASS still requires Skills-panel LOCAL_OBSERVED after PLAY_BRIEF; console/toasts are not PASS.",
+    "Live: residual_core on Charlee; full_unlock on each Servo via household Space-traverse."
+  ],
+  "owners": [
+    "contracts/diy-skill-force.v1.json",
+    "betterinstincts/diy_skill_force.py",
+    "scripts/diy_skill_force.py",
+    "docs/DIY_SKILL_FORCE.md"
+  ],
+  "not": ["BI-005", "save edit", "autorun", "second household skill owner"]
+}

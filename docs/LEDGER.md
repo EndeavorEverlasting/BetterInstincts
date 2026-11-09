@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-09 — Residual skill_stat IDs + observed-N household async reuse (P83/P95/P124)
+
+**Operator Skills-panel proof:** Servo still L1–L3 after claimed force; Charlee mostly L10 but Cooking/Fitness/Natural Living stuck — wrong internal ids (`Major_Cooking`/`Major_Fitness`/`Major_NaturalLiving` no-ops). **Fix:** catalog → `Major_HomestyleCooking`, `Skill_Fitness`, `Skill_NLS`. **N = observed portrait count** (whatever the household is); do not invent 8/10 ceilings — `sanity_max_members` is anti-runaway only. `--detach` remains the shared async mechanism. Consultation `BI-SKILL-FORCE-RESIDUAL-IDS-OBSERVED-N-20261109.v1.json`. `diy-skill-force` v8. Not BI-005.
+
 ## 2026-11-09 — P83 false-PASS correction: Skills panel only + chord/typing harden
 
 **Operator:** Servo Skills panel still showed L1–L3 after a claimed skill-force PASS — console text / toasts were treated as proof (lie). **P83/P95/P124 + Trifecta:** admit false PASS; durable path is `send_key_chord(CTRL+SHIFT+C)` + `type_text(cmd+"\\n")`; receipt forbids PASS until Skills-panel `LOCAL_OBSERVED` after `PLAY_BRIEF_OBSERVE_REPAUSE`. Live recovery on LabLab Servo: cascading level-ups + Fitness MAXED toast after win32 embedded-newline dispatch (panel full-list read still required). `diy-skill-force` v7. Consultation `BI-SKILL-FORCE-PANEL-PROOF-P83-20261109.v1.json`. Not BI-005.

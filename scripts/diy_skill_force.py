@@ -489,7 +489,7 @@ def main(argv: list[str] | None = None) -> int:
         "--members",
         type=int,
         required=True,
-        help="Exact observed Live household portrait count (1..8)",
+        help="Exact observed Live household portrait count (N = whatever the household is)",
     )
     _add_common_execute_flags(hh)
     hh.add_argument(

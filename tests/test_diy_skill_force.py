@@ -27,7 +27,21 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(seq["default_level"], 10)
         self.assertIn("diy_maker", cfg["bundles"])
         self.assertIn("full_unlock", cfg["bundles"])
-        self.assertEqual(cfg["version"], 7)
+        self.assertEqual(cfg["version"], 8)
+        self.assertEqual(cfg["household_traverse"]["min_members"], 1)
+        self.assertGreaterEqual(int(cfg["household_traverse"]["sanity_max_members"]), 100)
+        self.assertEqual(
+            next(s for s in cfg["skill_catalog"] if s["id"] == "cooking")["skill_stat"],
+            "Major_HomestyleCooking",
+        )
+        self.assertEqual(
+            next(s for s in cfg["skill_catalog"] if s["id"] == "fitness")["skill_stat"],
+            "Skill_Fitness",
+        )
+        self.assertEqual(
+            next(s for s in cfg["skill_catalog"] if s["id"] == "natural_living")["skill_stat"],
+            "Skill_NLS",
+        )
         self.assertTrue(seq["pass_requires_skills_panel_local_observed"])
         self.assertTrue(seq["console_text_is_not_pass"])
         self.assertTrue(seq["level_up_toast_is_not_pass"])
@@ -94,17 +108,17 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertGreaterEqual(len(plan["skills"]), 30)
         cmds = steps_to_commands(plan)
         self.assertIn("stats.set_skill_level Major_Handiness 10", cmds)
-        self.assertIn("stats.set_skill_level Major_Cooking 10", cmds)
+        self.assertIn("stats.set_skill_level Major_HomestyleCooking 10", cmds)
         self.assertIn("stats.set_skill_level Major_Logic 10", cmds)
         self.assertIn("stats.set_skill_level Major_Charisma 10", cmds)
-        self.assertIn("stats.set_skill_level Major_Fitness 10", cmds)
-        self.assertIn("stats.set_skill_level Major_NaturalLiving 10", cmds)
+        self.assertIn("stats.set_skill_level Skill_Fitness 10", cmds)
+        self.assertIn("stats.set_skill_level Skill_NLS 10", cmds)
         # Residuals are re-applied at the tail so mid-batch truncation cannot drop them.
         tail = cmds[-6:]
-        self.assertGreaterEqual(tail.count("stats.set_skill_level Major_Cooking 10"), 1)
-        self.assertGreaterEqual(tail.count("stats.set_skill_level Major_Fitness 10"), 1)
-        self.assertGreaterEqual(tail.count("stats.set_skill_level Major_NaturalLiving 10"), 1)
-        self.assertGreaterEqual(cmds.count("stats.set_skill_level Major_Cooking 10"), 2)
+        self.assertGreaterEqual(tail.count("stats.set_skill_level Major_HomestyleCooking 10"), 1)
+        self.assertGreaterEqual(tail.count("stats.set_skill_level Skill_Fitness 10"), 1)
+        self.assertGreaterEqual(tail.count("stats.set_skill_level Skill_NLS 10"), 1)
+        self.assertGreaterEqual(cmds.count("stats.set_skill_level Major_HomestyleCooking 10"), 2)
         self.assertTrue(plan["not_bi005"])
         self.assertFalse(plan["execute_allowed"])
         self.assertTrue(plan["accept_reward_dialogs"])
@@ -174,7 +188,7 @@ class DiySkillForceTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(raw["version"], 7)
+        self.assertEqual(raw["version"], 8)
         self.assertEqual(raw["bundles"]["full_unlock"]["default_level"], 10)
         self.assertEqual(raw["required_residual_skills"], ["cooking", "fitness", "natural_living"])
         self.assertTrue(raw["inject_sequence"]["reward_dialog_accept"]["never_press_cancel"])
@@ -228,10 +242,11 @@ class DiySkillForceTests(unittest.TestCase):
             plan_household_skill_force(members=0)
         self.assertIn("INVALID_HOUSEHOLD_MEMBER_COUNT", str(ctx.exception))
         with self.assertRaises(DiySkillForceError):
-            plan_household_skill_force(members=9)
+            plan_household_skill_force(members=101)
 
-    def test_household_accepts_any_n_in_range(self):
-        for n in (1, 2, 4, 8):
+    def test_household_accepts_observed_n_whatever_size(self):
+        # N is observed household size — including large households (e.g. 10).
+        for n in (1, 2, 3, 8, 10, 24):
             plan = plan_household_skill_force(members=n, bundle="residual_core")
             self.assertEqual(plan["household_members"], n)
             self.assertEqual(len(plan["member_plans"]), n)
