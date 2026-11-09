@@ -89,6 +89,7 @@ from betterinstincts.camera_traverse import (
 )
 from betterinstincts.viewport import ViewportError, predict_risk
 from betterinstincts.sim_camera import SimCameraError, plan_sim_camera
+from betterinstincts.active_sim_camera_lock import evaluate_active_sim_camera_lock
 
 
 class HostStackError(ValueError):
@@ -179,6 +180,8 @@ def evaluate_turn(
     camera_recovery: Optional[Mapping[str, object]] = None,
     sim_camera_command: Optional[str] = None,
     sim_camera_observation: Optional[Mapping[str, object]] = None,
+    camera_map_goal: Optional[Mapping[str, object]] = None,
+    camera_clock_ms: Optional[int] = None,
     prior_career_state: Optional[Mapping[str, object]] = None,
     aspiration_prompt_active: bool = False,
     aspiration_prompt_id: Optional[str] = None,
@@ -716,6 +719,29 @@ def evaluate_turn(
         except (CameraTraverseError, TypeError) as exc:
             raise HostStackError(str(exc)) from exc
 
+    # Bind all agent camera movements to active-Sim ownership. A generic
+    # camera scan is NOT an exception without a named, fresh goal lease.
+    camera_lock = None
+    camera_navigation_requested = bool(
+        camera_scan_needed or camera_pan_directions or
+        (world_target is not None and world_target.get("reframe_directions"))
+    )
+    if camera_navigation_requested or (
+        sim_camera_observation is not None and sim_camera_command is None
+    ):
+        camera_directions = camera_pan_directions or (
+            world_target.get("reframe_directions", ()) if world_target else ()
+        )
+        try:
+            camera_lock = evaluate_active_sim_camera_lock(
+                capture_ref=capture_ref, observation=sim_camera_observation,
+                map_requested=camera_navigation_requested,
+                map_goal=camera_map_goal, directions=camera_directions,
+                now_ms=camera_clock_ms,
+            )
+        except (SimCameraError, CameraTraverseError, TypeError) as exc:
+            raise HostStackError(str(exc)) from exc
+
     camera_traverse = None
     try:
         camera_traverse = evaluate_cursor_risk(
@@ -794,6 +820,20 @@ def evaluate_turn(
                 "BLIND_WORLD_CLICK", "REUSE_PRE_PAN_TARGET_COORDINATES",
                 "UNCALIBRATED_PORTRAIT_RIGHT_CLICK", "AUTO_RECLICK",
             ],
+        }
+    elif camera_lock is not None and camera_lock["gate"] != "CAMERA_ACTIVE_SIM_LOCKED":
+        # No discretionary camera placement. Restoring the active Sim outranks
+        # exploration and ordinary game actions; the only map exception is a
+        # fresh named-goal lease with a mandatory admitted return to Enter.
+        next_gate = camera_lock["gate"]
+        fallback = {
+            "mechanism": "ACTIVE_SIM_CAMERA_LOCK",
+            "owner": "betterinstincts/active_sim_camera_lock.py",
+            "contract": "contracts/camera-traverse.v1.json",
+            "camera_lock": camera_lock,
+            "execute_allowed": False,
+            "forbidden": ["UNBOUNDED_CAMERA_PAN", "AGENT_CHOOSES_CAMERA_VIEW",
+                          "MAP_TRAVERSE_WITHOUT_GOAL", "LEAVE_CAMERA_ON_STREET"],
         }
     elif camera_traverse is not None and camera_traverse.get("gate") in {
         "CAMERA_SAFE_TRAVERSE",
@@ -1399,6 +1439,7 @@ def evaluate_turn(
         "build_spatial": build_spatial,
         "build_library": build_library,
         "camera_traverse": camera_traverse,
+        "active_sim_camera_lock": camera_lock,
         "camera_recovery": drift_recovery,
         "world_target_framing": target_framing,
         "sim_camera": sim_camera_intent,
