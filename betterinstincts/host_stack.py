@@ -736,6 +736,8 @@ def evaluate_turn(
                 requested_panel=requested_hud_panel,
                 requested_target=requested_hud_target,
                 needs=needs,
+                chance_event_observation=live_hud_observation.get("chance_event_observation"),
+                chance_event_memo=live_hud_observation.get("chance_event_memo"),
             )
         except (SceneUISemanticsError, TypeError) as exc:
             raise HostStackError(str(exc)) from exc
