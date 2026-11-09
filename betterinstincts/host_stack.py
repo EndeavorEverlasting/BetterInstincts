@@ -22,6 +22,10 @@ from betterinstincts.fun_service import (
     should_attach_fun_service,
 )
 from betterinstincts.gardening_service import GardeningServiceError, evaluate_gardening_turn
+from betterinstincts.household_upkeep import (
+    HouseholdUpkeepError, evaluate_household_upkeep,
+)
+from betterinstincts.need_service_base import threshold_pair
 from betterinstincts.need_services import (
     NeedServicesError,
     compact_need_services,
@@ -174,6 +178,7 @@ def evaluate_turn(
     navigating_needs_incomplete: Sequence[str] = (),
     navigating_needs_profile: str = "navigating_needs",
     gardening: Optional[Mapping[str, object]] = None,
+    household_upkeep: Optional[Mapping[str, object]] = None,
     discovery_hud: Optional[Mapping[str, object]] = None,
     autonomy_observation: Optional[Mapping[str, object]] = None,
     behavior_model: Optional[Mapping[str, object]] = None,
@@ -289,6 +294,7 @@ def evaluate_turn(
     fun_service = None
     need_services = None
     gardening_report = None
+    household_upkeep_report = None
     discovery_report = None
     autonomy_report = None
     valence_report = None
@@ -647,6 +653,15 @@ def evaluate_turn(
                 school_day_active=school_day_active,
                 homework_pending=homework_pending,
             )
+        if household_upkeep is not None:
+            _, needs_floor = threshold_pair()
+            household_upkeep_report = evaluate_household_upkeep(
+                household_upkeep, capture_ref=capture_ref,
+                player_directed=player_directed,
+                already_busy=already_busy or sim_absent or sim_at_school is True,
+                build_or_buy_mode=build_or_buy_mode,
+                human_survival_hold=any(v < needs_floor for v in needs.values()),
+            )
     except (
         InstinctsHostError,
         DecisionEvalError,
@@ -667,6 +682,7 @@ def evaluate_turn(
         NeedServicesError,
         NavigatingNeedsError,
         GardeningServiceError,
+        HouseholdUpkeepError,
         DiscoveryHudError,
         AutonomyModerationError,
         BehaviorValenceError,
@@ -1486,6 +1502,22 @@ def evaluate_turn(
                 "RESUME",
             ],
         }
+    elif (
+        household_upkeep_report is not None
+        and household_upkeep_report["gate"] == "UPKEEP_ACTION_READY"
+        and (
+            gardening_report is None
+            or gardening_report["gate"] != "GARDEN_ACTION_READY"
+            or household_upkeep_report["next_actions"][0]["priority"] <= 3
+        )
+    ):
+        # Preserve cross-domain priorities: live/player/need/career/aspiration
+        # gates above; emergency household upkeep before optional garden work.
+        next_gate = "UPKEEP_ACTION_READY"
+        fallback = {
+            "owner": "betterinstincts/household_upkeep.py",
+            **household_upkeep_report,
+        }
     elif gardening_report is not None:
         next_gate = gardening_report["gate"]
         fallback = {"owner": "betterinstincts/gardening_service.py", **gardening_report}
@@ -1543,6 +1575,7 @@ def evaluate_turn(
         ),
         "build_optimize": build_optimize,
         "gardening": gardening_report,
+        "household_upkeep": household_upkeep_report,
         "discovery_hud": discovery_report,
         "autonomy_moderation": autonomy_report,
         "behavior_valence": valence_report,
