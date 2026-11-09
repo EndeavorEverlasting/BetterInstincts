@@ -9,6 +9,7 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from betterinstincts.decision_eval import score_option, SAFE_TAGS, RISK_TAGS
 from betterinstincts.ui_microsystems import (
     load_contract as load_ui_contract, resolve_action, panel_observation_matches,
     UIMicrosystemError,
@@ -39,9 +40,77 @@ def _cues(value: object, expected: Mapping[str, str]) -> bool:
     )
 
 
+def _score_observed_overlay_choices(
+    overlay: Mapping[str, Any], *, capture_ref: str,
+    needs: Mapping[str, float] | None, layout_revision: str,
+    selected_sim_revision: str, client_width: Any, client_height: Any,
+) -> dict:
+    """Conservative existing decision-score microservice over observed choices.
+
+    A model-generated label or unverified option is never an actual choice.
+    A unique top score is a *recommendation* requiring an admitted mouse port.
+    """
+    base = {"state": "OVERLAY_OPTIONS_NOT_ATTESTED", "execute_allowed": False}
+    if (
+        overlay.get("choices_capture_ref") != capture_ref
+        or overlay.get("choices_ui_layout_revision") != layout_revision
+        or overlay.get("choices_selected_sim_revision") != selected_sim_revision
+        or not _cues(overlay.get("choice_cues"), {
+            "visual": "overlay_options_visible",
+            "operator": "overlay_options_confirmed",
+        })
+    ):
+        return base
+    choices = overlay.get("choices")
+    if (not isinstance(choices, list) or not 2 <= len(choices) <= 6
+            or type(client_width) is not int or type(client_height) is not int
+            or client_width < 640 or client_height < 480
+            or not isinstance(needs, Mapping)
+            or set(needs) != {"hunger","bladder","energy","hygiene","fun","social"}
+            or any(type(n) not in {float,int} or not 0 <= n <= 1 for n in needs.values())):
+        return base
+    seen = set()
+    scores = []
+    for choice in choices:
+        if not isinstance(choice, Mapping):
+            return base
+        identifier, tags, rect = choice.get("option_id"), choice.get("tags"), choice.get("hitbox")
+        if (not _token(identifier) or identifier in seen
+                or choice.get("source") != "HOST_CAPTURE"
+                or not isinstance(tags, list) or len(tags) > 12
+                or any(t not in SAFE_TAGS | RISK_TAGS for t in tags)
+                or not isinstance(rect, list) or len(rect) != 4
+                or any(type(n) is not int for n in rect)):
+            return base
+        left, top, right, bottom = rect
+        if (not 0 <= left < right < client_width
+                or not 0 <= top < bottom < client_height
+                or min(right-left,bottom-top) < 8):
+            return base
+        seen.add(identifier)
+        scores.append(score_option(
+            {"option_id": identifier, "label": identifier, "tags": tags},
+            needs_critical=min(needs.values()) < 0.35,
+            prefer_home_control=False,
+        ))
+    ranks = sorted(scores, key=lambda x: (-x.score, x.option_id))
+    if ranks[0].score <= 0 or ranks[0].score == ranks[1].score:
+        return {**base, "state": "OVERLAY_CHOICE_TIE_OR_UNSAFE_REVIEW",
+                "ranked_ids": [x.option_id for x in ranks]}
+    best = ranks[0]
+    return {**base, "state": "OVERLAY_CHOICE_RECOMMENDED",
+            "recommended_option_id": best.option_id,
+            "score": best.score,
+            "rationale": list(best.rationale),
+            "option_hitbox": list(next(x["hitbox"] for x in choices if x["option_id"] == best.option_id)),
+            "ranked_ids": [x.option_id for x in ranks],
+            "next": "EXACT_HOST_AND_PLAYER_ADMISSION_REQUIRED_NO_AUTO_ACCEPT"}
+
+
 def assess_live_hud(
     *, capture_ref: str, observation: Mapping[str, Any] | None,
     requested_panel: str | None = None, requested_target: str | None = None,
+    needs: Mapping[str, float] | None = None,
 ) -> dict:
     """Evaluate overlay before panel actions, preserve pending goal/queue refs."""
     base = {"execute_allowed": False, "proof_ceiling": PROOF, "capture_ref": capture_ref,
@@ -84,10 +153,17 @@ def assess_live_hud(
             return hold("OVERLAY_REOBSERVE", "OVERLAY_IDENTITY_UNVERIFIED")
         overlay_id = overlay["overlay_id"]
         if overlay.get("decision_state") != "RESOLVED":
+            advice = _score_observed_overlay_choices(
+                overlay, capture_ref=capture_ref, needs=needs,
+                layout_revision=observation["ui_layout_revision"],
+                selected_sim_revision=observation["selected_sim_revision"],
+                client_width=observation.get("client_width"),
+                client_height=observation.get("client_height"),
+            )
             return {**base, "state": "OVERLAY_DECISION_PENDING", "gate": "OVERLAY_DECISION_REQUIRED",
                     "overlay": {"overlay_id": overlay_id, "kind": overlay["kind"],
                                 "decision_owner": "EXISTING_EVENT_OR_CAREER_MICROSYSTEM",
-                                "dismiss_action": None},
+                                "choice_advisory": advice, "dismiss_action": None},
                     "next": "EVALUATE_DECISION_THEN_REOBSERVE;DO_NOT_CANCEL_PLAYER_QUEUE"}
         if overlay.get("decision_accepted") is not True:
             return {**base, "state": "OVERLAY_RESOLUTION_UNVERIFIED", "gate": "OVERLAY_REOBSERVE",
