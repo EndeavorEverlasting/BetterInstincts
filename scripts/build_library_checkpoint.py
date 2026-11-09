@@ -21,7 +21,7 @@ from betterinstincts.house_state import HouseStateError, load_or_create
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="CLI: require Sims My Library building save before room mutation."
+        description="CLI: deny all lot purchases and mutations without complete all-floor backup."
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("show-contract", help="Print the library checkpoint contract")
