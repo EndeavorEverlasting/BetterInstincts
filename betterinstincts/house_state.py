@@ -394,7 +394,7 @@ def plan_next(model: Mapping[str, Any]) -> dict:
         return {
             "state": "MODEL_ACTIVE",
             "gate": library_plan.get("gate") or "LIBRARY_CHECKPOINT_REQUIRED",
-            "action": "SAVE_TO_LIBRARY",
+            "action": library_plan.get("action") or "SCAN_ALL_FLOORS_AND_ROOMS",
             "reason": library_plan.get("reason") or "SAVE_BUILDING_TO_LIBRARY_BEFORE_ROOM_MUTATE",
             "model_revision": revision,
             "targets": list(library_plan.get("targets") or []),
