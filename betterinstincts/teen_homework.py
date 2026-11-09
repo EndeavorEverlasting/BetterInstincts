@@ -10,6 +10,9 @@ import re
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
+from betterinstincts.queue_capacity import evaluate_queue_capacity
+from betterinstincts.study_space import evaluate_study_space
+
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "teen-homework.v1.json"
 SIX = frozenset({"hunger", "bladder", "energy", "hygiene", "fun", "social"})
@@ -179,6 +182,11 @@ def _pick_gate(
     inventory_has_homework: Optional[bool],
     homework_on_lot: Optional[bool],
     queue: Sequence[str],
+    study_space: Mapping,
+    queue_budget: Mapping,
+    sim_room_id: Optional[str],
+    sim_seated: Optional[bool],
+    sim_seat_id: Optional[str],
 ) -> tuple[str, str, list[dict], list[str]]:
     cfg = load_contract()
     gates = cfg["call_stack"]["gates"]
@@ -232,8 +240,36 @@ def _pick_gate(
         and inventory_has_homework is True
         and not survival
     ):
+        if _queue_has_homework(queue):
+            row = gates["HOMEWORK_ALREADY_QUEUED"]
+            findings.append("DO_NOT_DUPLICATE_HOMEWORK")
+            return "HOMEWORK_ALREADY_QUEUED", row["action"], [], findings
+        if study_space["state"] != "STUDY_LOCATION_CANDIDATE":
+            row = gates["HOMEWORK_STUDY_SCAN_REQUIRED"]
+            findings.append("NO_ATTESTED_SEATED_STUDY_OPPORTUNITY")
+            return "HOMEWORK_STUDY_SCAN_REQUIRED", row["action"], [], findings
+        if not queue_budget["enqueue_allowed"]:
+            row = gates["HOMEWORK_QUEUE_CAPACITY_HOLD"]
+            findings.append("QUEUE_HAS_NO_VERIFIED_BUDGET")
+            return "HOMEWORK_QUEUE_CAPACITY_HOLD", row["action"], [], findings
+        if (sim_room_id != study_space["room_id"]
+                or sim_seated is not True
+                or sim_seat_id != study_space["seat_id"]):
+            row = gates["PREPARE_STUDY_LOCATION"]
+            next_actions = [{
+                "id": "MOVE_TO_STUDY_SEAT",
+                "steps": ["OBSERVE_CURRENT_SIM_POSITION", "SELECT_OBSERVED_STUDY_SEAT",
+                          "REOBSERVE_SEATED_IN_TARGET_ROOM"],
+                "room_id": study_space["room_id"],
+                "surface_id": study_space["surface_id"],
+                "seat_id": study_space["seat_id"],
+                "confidence": "HOST_HEURISTIC_NO_CONTROL_PERMIT",
+            }]
+            findings.append("STUDY_SEAT_BEFORE_HOMEWORK")
+            return "PREPARE_STUDY_LOCATION", row["action"], next_actions, findings
         row = gates["QUEUE_TEEN_HOMEWORK"]
         next_actions = queue_homework_actions(cfg)
+        findings.append("STUDY_SEAT_ATTESTED_BEFORE_HOMEWORK")
         return "QUEUE_TEEN_HOMEWORK", row["action"], next_actions, findings
 
     row = gates["LEISURE_OR_IDLE"]
@@ -254,6 +290,13 @@ def evaluate_teen_homework_turn(
     player_directed: bool = False,
     already_busy: bool = False,
     life_stage: str = "teen",
+    lot_model: Optional[Mapping] = None,
+    multitasking: Optional[bool] = None,
+    sim_room_id: Optional[str] = None,
+    sim_seated: Optional[bool] = None,
+    sim_seat_id: Optional[str] = None,
+    emotion: Optional[str] = None,
+    lot_traits: Sequence[str] = (),
     capture_ref: str = "capture:teen-homework-turn",
 ) -> dict:
     """Return the highest-priority teen homework call-stack gate for one turn."""
@@ -270,6 +313,12 @@ def evaluate_teen_homework_turn(
         available_objects=available_objects,
         cfg=cfg,
     )
+    queue_budget = evaluate_queue_capacity(
+        queue, multitasking=multitasking, player_directed=player_directed
+    )
+    study_space = evaluate_study_space(
+        lot_model, emotion=emotion, lot_traits=lot_traits
+    )
     gate, action, next_actions, findings = _pick_gate(
         player_directed=player_directed,
         already_busy=already_busy,
@@ -280,6 +329,11 @@ def evaluate_teen_homework_turn(
         inventory_has_homework=inventory_has_homework,
         homework_on_lot=resolved_on_lot,
         queue=queue,
+        study_space=study_space,
+        queue_budget=queue_budget,
+        sim_room_id=sim_room_id,
+        sim_seated=sim_seated,
+        sim_seat_id=sim_seat_id,
     )
     owns_home = life_stage == "teen" or inventory_has_homework is not None
     preferred_routes = [str(a["id"]) for a in next_actions]
@@ -299,6 +353,11 @@ def evaluate_teen_homework_turn(
         "inventory_has_homework": inventory_has_homework,
         "homework_on_lot": resolved_on_lot,
         "lot_homework_hits": lot_hits,
+        "queue_budget": queue_budget,
+        "study_space": study_space,
+        "sim_room_id": sim_room_id,
+        "sim_seated": sim_seated,
+        "sim_seat_id": sim_seat_id,
         "life_stage": life_stage,
         "location_kind": location_kind,
         "school_day_active": school_day_active,
