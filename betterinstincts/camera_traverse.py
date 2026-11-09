@@ -166,6 +166,14 @@ def assess_edge_interaction(
             **base, "state": "CURSOR_SAFE_INTERIOR", "gate": None,
             "action": "NO_CAMERA_ACTION",
         }
+    # Any host-owned edge phase needs a terminal interior rest, including
+    # a refused click whose unverified target left the mouse near the edge.
+    base = {
+        **base,
+        "safe_rest": safe_rest_point(
+            client_width=w, client_height=h, edge_band_px=band, cfg=cfg,
+        ),
+    }
     if phase == "TARGETED_CLICK":
         if target_kind == "UI_CHROME" and target_verified:
             return {
@@ -180,6 +188,7 @@ def assess_edge_interaction(
             **base, "state": "EDGE_CLICK_NOT_ATTESTED",
             "gate": "EDGE_TARGET_REOBSERVE_OR_REFRAME",
             "action": "DO_NOT_CLICK_UNVERIFIED_EDGE_TARGET",
+            "post_input_safe_rest_required": True,
         }
     if phase == "TRANSIT":
         return {
