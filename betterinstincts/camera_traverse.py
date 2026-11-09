@@ -268,6 +268,130 @@ def plan_traverse(
     }
 
 
+
+def assess_world_target(
+    *,
+    target_id: str,
+    capture_ref: str,
+    observation: Optional[Mapping[str, object]],
+    client_width: int,
+    client_height: int,
+    reframe_directions: Sequence[str] = (),
+    cfg: Optional[Mapping[str, object]] = None,
+) -> dict:
+    """Camera-first world-target gate; no mouse input or automatic pan.
+
+    World targets must be comfortably framed before *proposing* a click.
+    Screen-chrome targets are a separate, fixed-coordinate responsibility.
+    Every camera move invalidates the old capture and requires a new frame.
+    """
+    cfg = cfg or load_contract()
+    if not isinstance(target_id, str) or not (1 <= len(target_id) <= 96) or not all(
+        c.isalnum() or c in " _.:+-" for c in target_id
+    ):
+        raise CameraTraverseError("WORLD_TARGET_ID_INVALID")
+    if not isinstance(capture_ref, str) or not capture_ref or len(capture_ref) > 128:
+        raise CameraTraverseError("WORLD_CAPTURE_REF_REQUIRED")
+    if type(client_width) is not int or type(client_height) is not int:
+        raise CameraTraverseError("WORLD_CLIENT_GEOMETRY_REQUIRED")
+    w, h, band = _geom(
+        client_width=client_width, client_height=client_height,
+        edge_band_px=None, cfg=cfg,
+    )
+    framing = cfg.get("world_target_framing") or {}
+    if not isinstance(framing, dict) or framing.get("camera_before_world_click") is not True:
+        raise CameraTraverseError("WORLD_CAMERA_FIRST_CONTRACT_MISSING")
+    margin = max(band + 24, int(framing["interior_margin_px"]))
+    min_size = int(framing["min_target_extent_px"])
+    max_attempts = int(framing["max_reframe_attempts"])
+    if margin < band + 1 or margin * 2 >= min(w, h) or min_size < 1 or max_attempts < 1:
+        raise CameraTraverseError("WORLD_FRAMING_POLICY_INVALID")
+
+    def block(gate: str, reason: str, *, attempt: int = 0, plan: Optional[dict] = None) -> dict:
+        return {
+            "state": "WORLD_TARGET_NOT_CLICK_READY",
+            "gate": gate,
+            "reason": reason,
+            "target_id": target_id,
+            "capture_ref": capture_ref,
+            "framing_attempts": attempt,
+            "camera_plan": plan,
+            "reobserve_after_camera_change": True,
+            "click_candidate": None,
+            "click_ready": False,
+            "execute_allowed": False,
+            "forbidden": [
+                "BLIND_WORLD_CLICK", "AUTO_RECLICK",
+                "REUSE_PRE_PAN_TARGET_COORDINATES", "EDGE_MOUSE_PARK",
+            ],
+            "proof_ceiling": PROOF_CEILING,
+        }
+
+    if not isinstance(observation, Mapping):
+        return block("CAMERA_TARGET_REOBSERVE_REQUIRED", "HOST_TARGET_OBSERVATION_MISSING")
+    if len(str(dict(observation))) > 8192:
+        raise CameraTraverseError("WORLD_TARGET_OBSERVATION_TOO_LARGE")
+    if (
+        observation.get("source") != "HOST_CAPTURE"
+        or observation.get("target_id") != target_id
+        or observation.get("capture_ref") != capture_ref
+        or not isinstance(observation.get("camera_revision"), str)
+        or not observation["camera_revision"]
+    ):
+        return block("CAMERA_TARGET_REOBSERVE_REQUIRED", "STALE_OR_UNTRUSTED_TARGET_FRAME")
+
+    attempt = observation.get("framing_attempts", 0)
+    if type(attempt) is not int or attempt < 0:
+        raise CameraTraverseError("WORLD_FRAMING_ATTEMPTS_INVALID")
+    if attempt > max_attempts:
+        return block("CAMERA_TARGET_MANUAL_REVIEW", "REFRAME_BUDGET_EXCEEDED", attempt=attempt)
+    visible, occluded = observation.get("target_visible"), observation.get("occluded")
+    if type(visible) is not bool or type(occluded) is not bool:
+        return block("CAMERA_TARGET_REOBSERVE_REQUIRED", "TARGET_VISIBILITY_UNKNOWN", attempt=attempt)
+
+    box = observation.get("bbox_client")
+    reason = "TARGET_NOT_VISIBLE" if not visible else "TARGET_OCCLUDED" if occluded else None
+    point = None
+    if reason is None:
+        if not isinstance(box, (list, tuple)) or len(box) != 4 or any(type(v) is not int for v in box):
+            return block("CAMERA_TARGET_REOBSERVE_REQUIRED", "TARGET_BOUNDS_UNVERIFIED", attempt=attempt)
+        left, top, right, bottom = box
+        if not (0 <= left < right <= w and 0 <= top < bottom <= h):
+            reason = "TARGET_CLIPPED_OR_OFFSCREEN"
+        elif right - left < min_size or bottom - top < min_size:
+            reason = "TARGET_TOO_SMALL_TO_CLICK_RELIABLY"
+        elif left < margin or top < margin or right > w - margin or bottom > h - margin:
+            reason = "TARGET_TOO_CLOSE_TO_VIEWPORT_EDGE"
+        else:
+            point = [(left + right) // 2, (top + bottom) // 2]
+
+    if reason is None:
+        return {
+            "state": "WORLD_TARGET_FRAMED",
+            "gate": "WORLD_TARGET_AWAIT_HOST_ADMISSION",
+            "reason": "TARGET_VISIBLE_CLEAR_AND_IN_INTERIOR",
+            "target_id": target_id,
+            "capture_ref": capture_ref,
+            "camera_revision": observation["camera_revision"],
+            "framing_attempts": attempt,
+            "click_candidate": point,
+            "click_ready": True,
+            "execute_allowed": False,
+            "camera_plan": None,
+            "reobserve_after_camera_change": False,
+            "proof_ceiling": PROOF_CEILING,
+        }
+    if attempt >= max_attempts:
+        return block("CAMERA_TARGET_MANUAL_REVIEW", "REFRAME_BUDGET_EXHAUSTED", attempt=attempt)
+    # Directions must come from an observed host strategy. No pixel guessed
+    # pan loops; if no direction is known, observe again and request guidance.
+    plan = plan_traverse(
+        reframe_directions,
+        client_width=w, client_height=h,
+        cfg=cfg,
+    )
+    return block("CAMERA_TARGET_REFRAME_REQUIRED", reason, attempt=attempt, plan=plan)
+
 def evaluate_cursor_risk(
     *,
     cursor_client_x: Optional[int] = None,
