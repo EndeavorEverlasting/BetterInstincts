@@ -84,6 +84,7 @@ from betterinstincts.camera_traverse import (
     CameraTraverseError, assess_world_target, evaluate_cursor_risk,
 )
 from betterinstincts.viewport import ViewportError, predict_risk
+from betterinstincts.sim_camera import SimCameraError, plan_sim_camera
 
 
 class HostStackError(ValueError):
@@ -168,6 +169,8 @@ def evaluate_turn(
     camera_scan_needed: bool = False,
     camera_pan_directions: Sequence[str] = (),
     world_target: Optional[Mapping[str, object]] = None,
+    sim_camera_command: Optional[str] = None,
+    sim_camera_observation: Optional[Mapping[str, object]] = None,
     prior_career_state: Optional[Mapping[str, object]] = None,
     aspiration_prompt_active: bool = False,
     aspiration_prompt_id: Optional[str] = None,
@@ -592,6 +595,17 @@ def evaluate_turn(
         except (BuildIntegrityError, BuildSpatialError, BuildLibraryCheckpointError) as exc:
             raise HostStackError(str(exc)) from exc
 
+    sim_camera_intent = None
+    if sim_camera_command is not None:
+        try:
+            sim_camera_intent = plan_sim_camera(
+                sim_camera_command,
+                capture_ref=capture_ref,
+                observation=sim_camera_observation,
+            )
+        except (SimCameraError, TypeError) as exc:
+            raise HostStackError(str(exc)) from exc
+
     target_framing = None
     if world_target is not None:
         if not isinstance(world_target, Mapping):
@@ -700,6 +714,16 @@ def evaluate_turn(
             "target_framing": target_framing,
             "execute_allowed": False,
             "forbidden": ["BLIND_WORLD_CLICK", "AUTO_RECLICK", "REUSE_PRE_PAN_TARGET_COORDINATES"],
+        }
+    elif sim_camera_intent is not None:
+        next_gate = sim_camera_intent["gate"]
+        fallback = {
+            "mechanism": "SIM_CAMERA_FOCUS_OR_FOLLOW",
+            "owner": "betterinstincts/sim_camera.py",
+            "input_owner": "contracts/ui-chrome.v1.json",
+            "sim_camera": sim_camera_intent,
+            "execute_allowed": False,
+            "forbidden": ["MOUSE_PORTRAIT_FALLBACK", "REPEAT_CAMERA_FOCUS_LOOP", "FOLLOW_WITH_ENTER"],
         }
     elif social_opportunity is not None and social_opportunity["gate"] == "SOCIAL_LOOKUP_REQUIRED":
         next_gate = "SOCIAL_LOOKUP_REQUIRED"
@@ -1247,6 +1271,7 @@ def evaluate_turn(
         "build_library": build_library,
         "camera_traverse": camera_traverse,
         "world_target_framing": target_framing,
+        "sim_camera": sim_camera_intent,
         "instincts": instincts,
         "decision": decision,
         "influence": influence,

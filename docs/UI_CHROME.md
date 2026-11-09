@@ -66,3 +66,10 @@ Add Live bottom-right panel cells and phone-app chrome as new targets under `mod
 ## Live local-game execution handoff
 
 The [A-OK Bloomer Household Inventory P04 handoff](handoff/BI-AOK-BLOOMER-INVENTORY-P04-2026-11-09.md) binds this evaluate-only recipe to exact-build calibration, player-safe host admission, one-at-a-time inputs and independent in-game inventory verification. A plan or GitHub merge cannot count as the deposit succeeding. The local agent, not this GitHub provider, performs the live transaction on an explicitly authorized disposable LAB save.
+
+
+## Live camera keyboard and app-only follow event (P95/P124)
+
+The sole native hotkey registry remains contracts/ui-chrome.v1.json: CENTER_ACTIVE_SIM = Enter (native one-shot); CENTER_CURRENT_LOT = Shift+Enter (native lot); SELECT_NEXT_HOUSEHOLD_SIM = Space (changes Sim selection, never invoked implicitly). The app-scoped BI_FOLLOW_ACTIVE_SIM = Ctrl+Alt+Shift+F is a **proposed local shortcut event** for FOLLOW_ACTIVE_SIM. It is **not** registered in Windows or The Sims 4. betterinstincts.ui_chrome.resolve_app_hotkey accepts only an injected, explicitly opted-in APP_SCOPED_HOST_HOTKEY event; it never monitors, intercepts or registers keys.
+
+betterinstincts.sim_camera owns camera semantics and single-effect queueing; scripts.sim_camera owns injected code ports and optional Sims4CommunityLib compatibility. Existing screen_admit and workflow_interop own player idle/desktop arbitration. No fallback portrait right-click, no global keyhook or automatic camera lock. See CAMERA_TRAVERSE.md, Active-Sim camera section.

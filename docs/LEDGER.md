@@ -518,3 +518,8 @@ deduplication and evidence; P07 owns GitHub CI/merge. P08 cannot certify actual
 Sims input events or command effects without a local game host. See
 `docs/HOVER_LEARNING.md`, `betterinstincts/behavior_input_catalog.py`,
 `tests/test_behavior_input_channels.py`. BI-002 remains ACTIVE.
+
+
+### 2026-11-09 — Active-Sim camera focus/follow (pre-alpha host lane)
+
+P95/P124 camera-intent seam added: native Enter centers active Sim; Shift+Enter centers lot; real follow requires opt-in in-game camera API, with an app-scoped shortcut mapping that is not installed as an OS/Sims keybinding. Owners: betterinstincts/sim_camera.py, betterinstincts/ui_chrome.py, scripts/sim_camera.py; tests: tests/test_sim_camera.py. Offline/injected-port effects do not establish in-game tracking or BI-002 gameplay certification. The local agent still needs an installed mod, exact active Sim/Live mode, player consent and 15-second idle gating before live proof; the parent hunger/autonomy objective remains unchanged.
