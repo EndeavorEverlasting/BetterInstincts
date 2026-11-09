@@ -483,3 +483,159 @@ def evaluate_cursor_risk(
         "practice": classify_practice("SAFE_CURSOR_REST", cfg=cfg),
         "proof_ceiling": PROOF_CEILING,
     }
+
+
+def assess_drift_recovery(
+    *,
+    target_kind: str,
+    capture_ref: str,
+    observation: Optional[Mapping[str, object]],
+    client_width: int,
+    client_height: int,
+    target_id: Optional[str] = None,
+    world_target_observation: Optional[Mapping[str, object]] = None,
+    reframe_directions: Sequence[str] = (),
+    sim_camera_observation: Optional[Mapping[str, object]] = None,
+    continuous_follow: bool = False,
+    cfg: Optional[Mapping[str, object]] = None,
+) -> dict:
+    """P95: recover a stable camera *before* inspecting pixels or issuing clicks.
+
+    Only returns advice. A new capture after rest/centering/traversal is
+    mandatory. Actual input remains the responsibility of the admitted host.
+    """
+    cfg = cfg or load_contract()
+    policy = cfg.get("drift_recovery")
+    if not isinstance(policy, dict) or policy.get("safe_rest_before_pixel_targeting") is not True:
+        raise CameraTraverseError("DRIFT_RECOVERY_CONTRACT_MISSING")
+    if target_kind not in {"SIM", "LOT", "WORLD_OBJECT"}:
+        raise CameraTraverseError("UNKNOWN_RECOVERY_TARGET_KIND")
+    if type(continuous_follow) is not bool:
+        raise CameraTraverseError("INVALID_CONTINUOUS_FOLLOW_REQUEST")
+    if continuous_follow and target_kind != "SIM":
+        raise CameraTraverseError("FOLLOW_ONLY_FOR_SIM")
+    if not isinstance(capture_ref, str) or not 1 <= len(capture_ref) <= 128:
+        raise CameraTraverseError("RECOVERY_CAPTURE_REF_INVALID")
+    if type(client_width) is not int or type(client_height) is not int:
+        raise CameraTraverseError("RECOVERY_DIMENSIONS_REQUIRED")
+    w, h, band = _geom(client_width=client_width, client_height=client_height, edge_band_px=None, cfg=cfg)
+    rest = safe_rest_point(client_width=w, client_height=h, cfg=cfg)
+    max_attempts = policy.get("max_camera_reanchor_attempts")
+    if type(max_attempts) is not int or not 1 <= max_attempts <= 3:
+        raise CameraTraverseError("RECOVERY_REANCHOR_BUDGET_UNSAFE")
+    if target_kind == "WORLD_OBJECT" and (
+        not isinstance(target_id, str) or not 1 <= len(target_id) <= 96
+    ):
+        raise CameraTraverseError("RECOVERY_WORLD_TARGET_REQUIRED")
+
+    base = {
+        "state": "CAMERA_RECOVERY_BLOCKED",
+        "gate": "CAMERA_RECOVERY_REOBSERVE",
+        "target_kind": target_kind,
+        "capture_ref": capture_ref,
+        "safe_rest": rest,
+        "execute_allowed": False,
+        "world_click_ready": False,
+        "invalidate_prior_pixels": True,
+        "proof_ceiling": PROOF_CEILING,
+        "forbidden": [
+            "BLIND_WORLD_CLICK", "REUSE_PRE_PAN_TARGET_COORDINATES",
+            "AUTO_RECLICK", "UNBOUNDED_TARGET_REFRAME",
+            "UNCALIBRATED_PORTRAIT_RIGHT_CLICK",
+        ],
+    }
+
+    def hold(gate: str, reason: str, **extra: object) -> dict:
+        return {**base, "gate": gate, "reason": reason, **extra}
+
+    if not isinstance(observation, Mapping):
+        return hold("CAMERA_RECOVERY_REOBSERVE", "RECOVERY_HOST_CAPTURE_MISSING")
+    if len(str(dict(observation))) > 8192:
+        raise CameraTraverseError("RECOVERY_OBSERVATION_TOO_LARGE")
+    if observation.get("source") != "HOST_CAPTURE" or observation.get("capture_ref") != capture_ref:
+        return hold("CAMERA_RECOVERY_REOBSERVE", "STALE_OR_UNTRUSTED_RECOVERY_CAPTURE")
+    revision = observation.get("camera_revision")
+    if not isinstance(revision, str) or not 1 <= len(revision) <= 80:
+        return hold("CAMERA_RECOVERY_REOBSERVE", "CAMERA_REVISION_UNVERIFIED")
+    if any(observation.get(key) is not value for key, value in (
+        ("player_camera_owned", False), ("text_entry_active", False),
+        ("modal_open", False), ("player_queue_owned", False),
+        ("save_authorized", True),
+    )):
+        return hold("CAMERA_RECOVERY_YIELD_TO_PLAYER", "PLAYER_OR_SCENE_AUTHORITY_UNVERIFIED")
+    displaced = observation.get("camera_displaced")
+    if type(displaced) is not bool:
+        return hold("CAMERA_RECOVERY_REOBSERVE", "CAMERA_DRIFT_STATE_UNKNOWN")
+    attempts = observation.get("camera_reanchor_attempts")
+    if type(attempts) is not int or attempts < 0:
+        return hold("CAMERA_RECOVERY_REOBSERVE", "CAMERA_REANCHOR_COUNT_UNKNOWN")
+    cursor = observation.get("cursor_client")
+    if not isinstance(cursor, (list, tuple)) or len(cursor) != 2 or any(type(n) is not int for n in cursor):
+        return hold("CAMERA_RECOVERY_REOBSERVE", "CURSOR_POSITION_UNKNOWN")
+    if not (0 <= cursor[0] < w and 0 <= cursor[1] < h):
+        return hold("CAMERA_RECOVERY_REOBSERVE", "CURSOR_OUTSIDE_CLIENT")
+    if classify_cursor(cursor[0], cursor[1], client_width=w, client_height=h, cfg=cfg)["in_edge_band"]:
+        return hold(
+            "CAMERA_SAFE_REST", "CURSOR_EDGE_PANNING",
+            recovery_step={"kind": "SAFE_REST", "client": rest["client"]},
+            next_step="CAPTURE_NEW_FRAME_AFTER_CURSOR_REST",
+        )
+    if displaced:
+        if attempts >= max_attempts:
+            return hold("CAMERA_RECOVERY_MANUAL_REVIEW", "REANCHOR_BUDGET_EXHAUSTED")
+        if attempts and target_kind == "WORLD_OBJECT" and reframe_directions:
+            # The lot reanchor already happened. Only host-observed directions
+            # can guide a bounded traverse; do not repeat Shift+Enter endlessly.
+            camera = plan_traverse(reframe_directions, client_width=w, client_height=h, cfg=cfg)
+            return hold(
+                "CAMERA_RECOVERY_TRAVERSE", "LOT_REANCHORED_TARGET_STILL_OUT_OF_FRAME",
+                recovery_step={"kind": "BOUNDED_TRAVERSE", "plan": camera},
+                next_step="CAPTURE_NEW_FRAME_AND_REDETECT_OBJECT",
+            )
+        from betterinstincts.sim_camera import CENTER_LOT, CENTER_SIM, FOLLOW_SIM, plan_sim_camera
+        command = CENTER_LOT if target_kind != "SIM" else FOLLOW_SIM if continuous_follow else CENTER_SIM
+        sim_plan = plan_sim_camera(
+            command, capture_ref=capture_ref, observation=sim_camera_observation,
+        )
+        if sim_plan["state"] == "ALREADY_FOLLOWING_SIM":
+            return hold("CAMERA_RECOVERY_REOBSERVE", "ALREADY_FOLLOWING_SIM_REOBSERVE")
+        if sim_plan["state"] != "SIM_CAMERA_READY_FOR_ADMISSION":
+            return hold("CAMERA_RECOVERY_REOBSERVE", "NATIVE_CAMERA_REANCHOR_NOT_READY", camera_intent=sim_plan)
+        return hold(
+            "CAMERA_RECOVERY_REANCHOR", "CAMERA_DISPLACED",
+            recovery_step={"kind": "SIM_CAMERA_INTENT", "command": command, "intent": sim_plan},
+            next_step="CAPTURE_NEW_FRAME_AFTER_REANCHOR",
+        )
+    if target_kind != "WORLD_OBJECT":
+        return {
+            **base, "state": "CAMERA_STABLE",
+            "gate": "CAMERA_RECOVERY_STABLE",
+            "reason": "INTERIOR_CURSOR_AND_STABLE_CAMERA",
+            "invalidate_prior_pixels": False,
+            "camera_revision": revision,
+        }
+    if not isinstance(world_target_observation, Mapping):
+        return hold("CAMERA_RECOVERY_REOBSERVE", "WORLD_TARGET_CAPTURE_MISSING")
+    if world_target_observation.get("camera_revision") != revision:
+        return hold("CAMERA_RECOVERY_REOBSERVE", "WORLD_TARGET_FROM_DIFFERENT_CAMERA")
+    framed = assess_world_target(
+        target_id=target_id, capture_ref=capture_ref,
+        observation=world_target_observation, client_width=w, client_height=h,
+        reframe_directions=reframe_directions, cfg=cfg,
+    )
+    if not framed["click_ready"]:
+        return hold(
+            framed["gate"], framed["reason"], target_framing=framed,
+            recovery_step={"kind": "BOUNDED_TRAVERSE", "plan": framed["camera_plan"]}
+            if framed.get("camera_plan") else None,
+            next_step="CAPTURE_NEW_FRAME_AND_REDETECT_OBJECT",
+        )
+    return {
+        **base, "state": "CAMERA_STABLE_TARGET_FRAMED",
+        "gate": "WORLD_TARGET_AWAIT_HOST_ADMISSION",
+        "reason": "CURSOR_SAFE_CURRENT_CAMERA_AND_TARGET_FRAMED",
+        "world_click_ready": True,
+        "invalidate_prior_pixels": False,
+        "camera_revision": revision,
+        "target_framing": framed,
+    }
