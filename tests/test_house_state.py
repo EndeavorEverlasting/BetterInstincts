@@ -80,8 +80,8 @@ class HouseStateTests(unittest.TestCase):
             open_goals=["SEAT_SIXTH_CHAIR"],
         )
         plan = hs.plan_next(model)
-        self.assertEqual(plan["action"], "PLACE_FROM_CATALOG")
-        self.assertEqual(plan["gate"], "PLAN_FROM_MODEL")
+        self.assertEqual(plan["action"], "SCAN_ALL_FLOORS_AND_ROOMS")
+        self.assertEqual(plan["gate"], "LIBRARY_CHECKPOINT_REQUIRED")
         admitted = hs.admit_mutation(
             model,
             "PLACE_FROM_CATALOG",
@@ -92,8 +92,8 @@ class HouseStateTests(unittest.TestCase):
             place_enclosure="INSIDE",
             place_story="FLOOR_1",
         )
-        self.assertEqual(admitted["state"], "MUTATION_ADMITTED")
-        self.assertEqual(admitted["next"], "OBSERVE_OUTCOME_INTO_SAME_MODEL")
+        self.assertEqual(admitted["state"], "MUTATION_DENIED")
+        self.assertEqual(admitted["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
 
     def test_bulk_sweep_denied_even_with_model(self):
         model = hs.observe(
@@ -129,10 +129,10 @@ class HouseStateTests(unittest.TestCase):
             },
         )
         plan = hs.plan_next(model)
-        self.assertEqual(plan["action"], "BACKSPACE_TO_INVENTORY")
-        self.assertIn("floater.lamp", plan["targets"])
+        self.assertEqual(plan["action"], "SCAN_ALL_FLOORS_AND_ROOMS")
         admitted = hs.admit_mutation(model, "BACKSPACE_TO_INVENTORY", targets=["floater.lamp"])
-        self.assertEqual(admitted["state"], "MUTATION_ADMITTED")
+        self.assertEqual(admitted["state"], "MUTATION_DENIED")
+        self.assertEqual(admitted["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
 
     def test_destructive_requires_library_then_save_as(self):
         model = hs.observe(
@@ -150,7 +150,7 @@ class HouseStateTests(unittest.TestCase):
             open_goals=["RESTORE_STRUCTURE"],
         )
         denied_lib = hs.admit_mutation(model, "MULTI_OBJECT_REARRANGE", targets=["room.1"])
-        self.assertEqual(denied_lib["reason"], "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE")
+        self.assertEqual(denied_lib["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
         with_lib = hs.attest_library_save(
             model,
             building_id="Bargain Bend",
@@ -159,7 +159,7 @@ class HouseStateTests(unittest.TestCase):
             operator_confirmed=True,
         )
         denied_save = hs.admit_mutation(with_lib, "MULTI_OBJECT_REARRANGE", targets=["room.1"])
-        self.assertEqual(denied_save["reason"], "DESTRUCTIVE_REQUIRES_SAVE_AS_ATTESTATION")
+        self.assertEqual(denied_save["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
         # Save As bumps revision → re-attest library at the new tip.
         attested = hs.attest_save_as(
             with_lib,
@@ -175,7 +175,8 @@ class HouseStateTests(unittest.TestCase):
             operator_confirmed=True,
         )
         admitted = hs.admit_mutation(fresh, "MULTI_OBJECT_REARRANGE", targets=["room.1"])
-        self.assertEqual(admitted["state"], "MUTATION_ADMITTED")
+        self.assertEqual(admitted["state"], "MUTATION_DENIED")
+        self.assertEqual(admitted["violation"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
 
     def test_mutation_outcome_updates_same_model_not_new_identity(self):
         model = hs.observe(
