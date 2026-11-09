@@ -1,0 +1,101 @@
+{
+  "schema": "betterinstincts.p05-ordered-sprint-pack/v1",
+  "id": "BI-P05-FIFTH-GEAR-SEND-ALONE-PACK-20261109",
+  "prompt_resolution": {
+    "P95": {
+      "name": "Program Design & Call-Stack Prototype Architect",
+      "source_blob": "5926a198a14567de55110ed19e922fc444b4dec7",
+      "role": "Send Alone click-verify call stack (plan → score → post-click verify)"
+    },
+    "P05": {
+      "name": "[SERIALIZED] Ordered Sprint Plan Pack Generator",
+      "source_blob": "848728632c1243ebba023fa0012292a2ad33cada",
+      "role": "This ordered pack; Moonwake fifth-gear alias routes here + P83 local cert handoff"
+    },
+    "P83_fifth_gear": {
+      "consultation": "contracts/consultations/BI-P83-FIFTH-GEAR-LOCAL-SKILL-CERT-20261109.v1.json",
+      "merged_main_pr": 148,
+      "handoff": "docs/handoff/BI-HOUSEHOLD-SKILL-LOCAL-P04-2026-11-09.md",
+      "dispatch": "plans/active/BI-HOUSEHOLD-SKILL-LOCAL-P04.dispatch.v1.json"
+    },
+    "P62_P94": {
+      "role": "Join misclick regression: (960,600) SUPERSEDED; JOIN_MISCLICK_CONFIRMED fail-closed"
+    }
+  },
+  "operator_screen": {
+    "owner": "OPERATOR",
+    "agent_input": "FORBIDDEN_WHILE_OPERATOR_CONTROLS",
+    "computer_use": "FORBIDDEN_FOR_SCHOOL_DIALOG",
+    "note": "2026-11-09: operator took screen after Join false-positive; agent continues repo/CI only until screen released"
+  },
+  "parent_outcome": "Home-lot control restored by operator; durable Join/Send Alone click-verify on main; then Fifth Gear local household skill cert without claiming DISPATCHED as Skills-panel PASS",
+  "ordered_sprints": [
+    {
+      "id": "S0",
+      "title": "Operator recovers home lot",
+      "owner": "OPERATOR",
+      "status": "IN_PROGRESS_OPERATOR",
+      "action": "Travel Charlee home / leave school lot without agent Join/Send Alone clicks",
+      "done_when": "Live on Bargain Bend (or approved home) with School Day HUD absent"
+    },
+    {
+      "id": "S1",
+      "title": "Land Send Alone click-verify + Evil/laundry guards",
+      "owner": "REPO_AGENT",
+      "status": "PR_OPEN",
+      "pr": 147,
+      "head": "ceee1ed22b1a5956e4b5c3492e630256e045b9a8",
+      "base": "ab69a4c17ef54bcb477cfdd537bf3d065e78d388",
+      "artifacts": [
+        "betterinstincts/school_attend_click.py",
+        "scripts/school_attend_click.py",
+        "contracts/decision-prompts.v1.json#school.attend.join_or_send_alone.hit_targets",
+        "betterinstincts/diy_skill_force.py trait_repair"
+      ],
+      "done_when": "PR #147 merged to main; CI green; (960,600) remains SUPERSEDED"
+    },
+    {
+      "id": "S2",
+      "title": "Fifth Gear local install floor (P83 already on main)",
+      "owner": "LOCAL_AGENT",
+      "status": "READY_AFTER_S0_AND_S1",
+      "follow": "plans/active/BI-HOUSEHOLD-SKILL-LOCAL-P04.dispatch.v1.json",
+      "done_when": "LOCAL-00..LOCAL-02 receipts; exact patch + disposable save + fixed roster N observed"
+    },
+    {
+      "id": "S3",
+      "title": "Calibrate Send Alone Join pill (PrintWindow)",
+      "owner": "LOCAL_AGENT_AFTER_OPERATOR_RELEASE",
+      "status": "BLOCKED_ON_S0",
+      "command": "python -m scripts.school_attend_click plan --measured-join-y Y --calibration-source PRINTWINDOW_MEASURED --dialog-observed",
+      "forbidden": ["computer_use_overlay", "legacy_960_600", "claim_send_alone_from_intent"],
+      "done_when": "ready_to_execute true only with measured layout + dialog observed + native executor"
+    },
+    {
+      "id": "S4",
+      "title": "Evil Servo trait-repair (selected Sim)",
+      "owner": "LOCAL_AGENT",
+      "status": "BLOCKED_ON_S0",
+      "command": "python -m scripts.diy_skill_force trait-repair",
+      "live_execute": "gated --execute + ACTIVE session + screen_admit; Traits panel LOCAL_OBSERVED after",
+      "done_when": "Evil absent on selected Servo; no auto-equip Good unless operator requested"
+    },
+    {
+      "id": "S5",
+      "title": "P08 household skill canary then round-robin",
+      "owner": "LOCAL_AGENT",
+      "status": "BLOCKED_ON_S2",
+      "follow": "docs/handoff/BI-HOUSEHOLD-SKILL-LOCAL-P04-2026-11-09.md LOCAL-04..LOCAL-05",
+      "done_when": "Skills-panel LOCAL_OBSERVED per cell; DISPATCHED ledger never treated as PASS"
+    }
+  ],
+  "invariants": [
+    "PLAYER_FIRST",
+    "ONE_SCREEN_OWNER",
+    "NO_NEW_SERVO_WITHOUT_CONSENT",
+    "NO_CLAIM_SEND_ALONE_WITHOUT_HOME_LOT_PROOF",
+    "NO_CLAIM_SKILL_PASS_FROM_CONSOLE_OR_LEDGER",
+    "BI002_BI005_REMAIN_OPEN"
+  ],
+  "proof_ceiling": "ORDERED_PACK_AND_OFFLINE_TESTS_NOT_LIVE_SEND_ALONE_OR_SKILL_CERT"
+}
