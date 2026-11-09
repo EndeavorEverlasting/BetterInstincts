@@ -23,7 +23,7 @@ LIVE = [{"source": "visual", "token": "live:sim_portraits_and_needs"},
 
 
 def lot(*, unverified=False):
-    model = create_model("opportunity_lot", "Survey Lab")
+    model = create_model("survey_run", "opportunity_lot")
     return observe(model, entities={
         "office-zone": {"kind": "ROOM_ZONE", "story": "FLOOR_2", "zone": "OFFICE",
                         "enclosure": "INSIDE"},
