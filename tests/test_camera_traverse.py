@@ -7,6 +7,7 @@ from pathlib import Path
 
 from betterinstincts.camera_traverse import (
     CameraTraverseError,
+    assess_edge_interaction,
     assess_drift_recovery,
     assess_world_target,
     classify_cursor,
@@ -65,6 +66,123 @@ class CursorZoneTests(unittest.TestCase):
         cx, cy = rest["client"]
         again = classify_cursor(cx, cy, client_width=1920, client_height=1080, edge_band_px=12)
         self.assertFalse(again["in_edge_band"])
+
+
+
+class EdgeInteractionSemanticsTests(unittest.TestCase):
+    """P82 falsifiers: location alone cannot condemn legitimate HUD clicks."""
+
+    def test_client_relative_guard_and_exact_boundary(self):
+        cfg = load_contract()
+        self.assertEqual(
+            cfg["edge_interaction"]["meaning"],
+            "CLIENT_RELATIVE_CAMERA_PAN_GUARD_NOT_MONITOR_BEZEL",
+        )
+        for x, expected in ((0, True), (47, True), (48, False), (1871, False), (1872, True), (1919, True)):
+            with self.subTest(x=x):
+                result = assess_edge_interaction(x, 540, client_width=1920, client_height=1080)
+                self.assertEqual(result["cursor"]["in_edge_band"], expected)
+        self.assertTrue(assess_edge_interaction(960, 0)["cursor"]["in_edge_band"])
+        self.assertTrue(assess_edge_interaction(960, 1079)["cursor"]["in_edge_band"])
+
+    def test_idle_host_dwell_is_forbidden_and_requires_interior_rest(self):
+        result = assess_edge_interaction(4, 500, phase="REST")
+        self.assertEqual(result["gate"], "CAMERA_SAFE_REST")
+        self.assertEqual(result["state"], "CAMERA_EDGE_DWELL_FORBIDDEN")
+        self.assertTrue(result["post_input_safe_rest_required"])
+        self.assertEqual(result["safe_rest"]["client"], [960, 540])
+        self.assertFalse(result["execute_allowed"])
+
+    def test_attested_hud_edge_click_is_not_idle_parking(self):
+        for x, y in ((6, 500), (800, 20), (1900, 100), (800, 1060), (1, 1)):
+            with self.subTest(x=x, y=y):
+                result = assess_edge_interaction(
+                    x, y, phase="TARGETED_CLICK",
+                    target_kind="UI_CHROME", target_verified=True,
+                )
+                self.assertEqual(result["state"], "EDGE_UI_CLICK_TRANSIENT")
+                self.assertEqual(result["gate"], "EDGE_UI_CLICK_HOST_ADMISSION")
+                self.assertTrue(result["click_geometry_candidate"])
+                self.assertTrue(result["post_input_safe_rest_required"])
+                self.assertFalse(result["execute_allowed"])
+
+    def test_unknown_or_world_edge_click_stays_unadmitted(self):
+        for kind, attested in (("UI_CHROME", False), ("WORLD_OBJECT", True), (None, True)):
+            with self.subTest(kind=kind, attested=attested):
+                result = assess_edge_interaction(
+                    1, 400, phase="TARGETED_CLICK",
+                    target_kind=kind, target_verified=attested,
+                )
+                self.assertEqual(result["gate"], "EDGE_TARGET_REOBSERVE_OR_REFRAME")
+                self.assertFalse(result["click_geometry_candidate"])
+                self.assertFalse(result["execute_allowed"])
+
+    def test_transit_and_navigation_do_not_authorize_idle_edge_hold(self):
+        for phase, gate in (
+            ("TRANSIT", "TRANSIT_MUST_END_AT_SAFE_REST"),
+            ("CAMERA_NAVIGATION", "CAMERA_SAFE_TRAVERSE"),
+        ):
+            with self.subTest(phase=phase):
+                result = assess_edge_interaction(10, 540, phase=phase)
+                self.assertEqual(result["gate"], gate)
+                self.assertTrue(result["post_input_safe_rest_required"])
+                self.assertFalse(result["execute_allowed"])
+
+    def test_player_owned_pointer_is_never_moved_by_policy(self):
+        result = assess_edge_interaction(
+            2, 540, phase="REST", player_owned=True,
+        )
+        self.assertEqual(result["gate"], "YIELD_TO_PLAYER")
+        self.assertEqual(result["action"], "NO_AGENT_POINTER_MOVEMENT")
+        self.assertFalse(result["post_input_safe_rest_required"])
+
+    def test_interior_pointer_is_not_a_pan_risk(self):
+        result = assess_edge_interaction(960, 540, phase="REST")
+        self.assertEqual(result["state"], "CURSOR_SAFE_INTERIOR")
+        self.assertIsNone(result["gate"])
+
+    def test_invalid_or_off_client_input_fails_closed(self):
+        for xy in ((-1, 200), (1920, 200), (200, 1080), (True, 4)):
+            with self.subTest(xy=xy):
+                with self.assertRaises(CameraTraverseError):
+                    assess_edge_interaction(*xy)
+        for extra in (
+            {"phase": "CLICK_UNVERIFIED"},
+            {"phase": None},
+            {"target_verified": 1},
+            {"player_owned": 1},
+        ):
+            with self.subTest(extra=extra):
+                with self.assertRaises(CameraTraverseError):
+                    assess_edge_interaction(4, 300, **extra)
+
+    def test_host_risk_evaluation_disambiguates_click_vs_dwell(self):
+        kw = dict(cursor_client_x=12, cursor_client_y=1050, client_width=1920, client_height=1080)
+        dwell = evaluate_cursor_risk(**kw)
+        self.assertEqual(dwell["gate"], "CAMERA_SAFE_REST")
+        click = evaluate_cursor_risk(
+            **kw, interaction_phase="TARGETED_CLICK",
+            target_kind="UI_CHROME", target_verified=True,
+        )
+        self.assertEqual(click["gate"], "EDGE_UI_CLICK_HOST_ADMISSION")
+        self.assertFalse(click["execute_allowed"])
+        player = evaluate_cursor_risk(**kw, player_owned=True)
+        self.assertEqual(player["gate"], "YIELD_TO_PLAYER")
+
+    def test_cli_explicit_click_intent_requires_post_click_rest(self):
+        from io import StringIO
+        from unittest.mock import patch
+        buf = StringIO()
+        with patch("sys.stdout", buf):
+            code = camera_cli.main([
+                "evaluate", "--x", "800", "--y", "20",
+                "--phase", "TARGETED_CLICK", "--target-kind", "UI_CHROME",
+                "--target-verified",
+            ])
+        self.assertEqual(code, 0)
+        payload = json.loads(buf.getvalue())
+        self.assertTrue(payload["post_input_safe_rest_required"])
+        self.assertFalse(payload["execute_allowed"])
 
 
 class PracticeAndPlanTests(unittest.TestCase):
