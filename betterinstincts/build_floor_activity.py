@@ -12,12 +12,12 @@ from collections import Counter
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
-from betterinstincts.build_spatial import normalize_story
+from betterinstincts.room_census import normalize_attested_story
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "build-floor-activity.v1.json"
 MAX_BYTES = 96_000
-KNOWN_STORIES = frozenset({"FLOOR_1", "FLOOR_2"})
+# Accept every *attested* story in the existing room census, not only F1/F2.
 
 
 class BuildFloorActivityError(ValueError):
@@ -44,9 +44,7 @@ def load_contract(path: Path = CONTRACT) -> dict:
 
 
 def _story(raw: object) -> str:
-    if raw is None or raw == "":
-        return "UNKNOWN_STORY"
-    return normalize_story(raw)
+    return normalize_attested_story(raw)
 
 
 def _theme_for_category(category: str, cfg: dict) -> str:
@@ -152,9 +150,9 @@ def evaluate_floor_activity(
     touched = {_story(s) for s in (stories_touched or [])}
     touched.discard("UNKNOWN_STORY")
     for item in items:
-        if item["story"] in KNOWN_STORIES:
+        if item["story"] != "UNKNOWN_STORY":
             touched.add(item["story"])
-    if active in KNOWN_STORIES:
+    if active != "UNKNOWN_STORY":
         touched.add(active)
 
     if len(touched) >= 2:
@@ -165,7 +163,7 @@ def evaluate_floor_activity(
         span = "UNKNOWN_SPAN"
 
     floors: dict[str, dict] = {}
-    for story in sorted(touched | ({active} if active in KNOWN_STORIES else set())):
+    for story in sorted(touched | ({active} if active != "UNKNOWN_STORY" else set())):
         cats = [i["category"] for i in items if i["story"] == story]
         theme_row = theme_from_categories(cats, cfg)
         hints = list((cfg.get("theme_optimize_hints") or {}).get(theme_row["theme"]) or [])
