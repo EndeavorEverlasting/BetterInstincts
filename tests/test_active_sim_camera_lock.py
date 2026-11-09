@@ -74,13 +74,14 @@ class ActiveSimCameraLockTests(unittest.TestCase):
         self.assertFalse(out["execute_allowed"])
         self.assertNotIn("SHIFT", out["center"]["effect"]["chord"])
 
-    def test_follow_or_verified_center_is_a_stable_lock(self):
-        for obs in (
-            observed(camera_follow_sim_id=492),
-            observed(camera_centered_sim_id=492, camera_displaced=False),
-        ):
-            with self.subTest(obs=obs.get("camera_follow_sim_id")):
-                self.assertEqual(lock(obs)["gate"], "CAMERA_ACTIVE_SIM_LOCKED")
+    def test_enter_center_is_not_a_continuous_follow_lock(self):
+        self.assertEqual(
+            lock(observed(camera_follow_sim_id=492))["gate"],
+            "CAMERA_ACTIVE_SIM_LOCKED",
+        )
+        once = lock(observed(camera_centered_sim_id=492, camera_displaced=False))
+        self.assertEqual(once["gate"], "CAMERA_PORTRAIT_ATTESTATION_REQUIRED")
+        self.assertFalse(once["execute_allowed"])
 
     def test_never_pan_for_a_generic_scan_or_missing_target(self):
         anchored = observed(camera_centered_sim_id=492, camera_displaced=False)
@@ -96,6 +97,7 @@ class ActiveSimCameraLockTests(unittest.TestCase):
         )
         self.assertEqual(candidate["gate"], "CAMERA_MAP_LEASE_READY")
         self.assertEqual(candidate["restore"]["chord"], ["ENTER"])
+        self.assertEqual(candidate["restore"]["preferred_control"], "RIGHT_CLICK_ACTIVE_SIM_PORTRAIT")
         self.assertTrue(candidate["restore"]["required_in_finally"])
         self.assertEqual(candidate["map_plan"]["steps"][-1]["kind"], "SAFE_REST")
         self.assertFalse(candidate["execute_allowed"])
