@@ -236,11 +236,14 @@ def record_event(
         lock.unlink(missing_ok=True)
 
 
-def known_targets(index: Mapping, *, game_version: str | None) -> set[str]:
-    """Patch-specific observed tooltips, excluding unscoped/other-patch claims."""
+def known_targets(
+    index: Mapping, *, game_version: str | None, lot_id: str | None = None
+) -> set[str]:
+    """Only matching patch AND matching lot observations suppress rediscovery."""
     _validate(index)
-    if game_version is None:
+    if game_version is None or lot_id is None:
         return set()
-    _scope(game_version, None)
+    _scope(game_version, lot_id)
     return {row["target_ref"] for row in index["entries"].values()
-            if row["game_version"] == game_version and row["seen_count"] > 0}
+            if (row["game_version"] == game_version and lot_id in row["lots"]
+                and row["seen_count"] > 0)}
