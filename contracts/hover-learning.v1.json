@@ -1,0 +1,47 @@
+{
+  "schema": "betterinstincts.hover-learning/v1",
+  "activation": "EXPLICIT_ACTIVE_HOST_LISTENER_SESSION_AND_PER_CALL_OPT_IN",
+  "input_schema": "betterinstincts.hover-event/v1",
+  "state_schema": "betterinstincts.hover-session/v1",
+  "evaluation_schema": "betterinstincts.hover-evaluation/v1",
+  "windows_seconds": [
+    180,
+    300,
+    600,
+    1800,
+    3600
+  ],
+  "max_events_per_session": 256,
+  "max_state_bytes": 64000,
+  "owner": "betterinstincts/hover_learning.py",
+  "session_owner": "betterinstincts/host_listener.py",
+  "privacy": {
+    "allow_raw_tooltip_text": false,
+    "allow_global_input_hooks": false,
+    "allow_background_polling": false,
+    "allow_personal_identifiers": false,
+    "allow_save_file_reads": false,
+    "allow_screenshots": false,
+    "source_only": [
+      "sensor_supplied",
+      "operator_supplied"
+    ],
+    "tokenized_refs_only": true
+  },
+  "events": [
+    "hover",
+    "tooltip_visible",
+    "tooltip_hidden",
+    "action",
+    "outcome"
+  ],
+  "semantics": {
+    "tooltip_detection": "supplied visible/hidden transitions; repeated visible samples collapse to one appearance",
+    "association": "explicit interaction_ref linked to preceding action and visible tooltip target",
+    "outcome": "operator_reviewed true and evidence_ref required for reviewed successes; not proof of causal efficacy",
+    "learning": "no automatic training; at least 3 reviewed outcomes, 3 helpful, 75 percent helpful for eligibility only",
+    "action_permission": "NONE"
+  },
+  "output_root": "dist/host-listener/<session_id>/hover-learning.json",
+  "proof_ceiling": "OFFLINE_PROVIDER_SUPPLIED_EVENTS_NOT_CALIBRATED_SIMS_SENSOR_OR_PLAYABLE_MOD"
+}
