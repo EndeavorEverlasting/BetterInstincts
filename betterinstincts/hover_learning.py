@@ -104,7 +104,12 @@ def _validated_state(state: Mapping) -> dict:
             raise HoverLearningError("BAD_STORED_HOVER_EVENT")
         # Stored events use the normalized schema, no additional state.
         raw = {**item, "schema": EVENT_SCHEMA}
+        if item.get("kind") == "action":
+            raw.pop("tooltip_ref", None)  # Derived only from matched visible tooltip.
+            _token(item.get("tooltip_ref"), "tooltip_ref")
         item_valid = _event(raw)
+        if item.get("kind") == "action":
+            item_valid["tooltip_ref"] = item["tooltip_ref"]
         if item_valid != item or item["id"] in ids or item["at_ms"] < last:
             raise HoverLearningError("CORRUPT_HOVER_HISTORY")
         ids.add(item["id"])
@@ -116,12 +121,14 @@ def observe(state: Mapping, supplied_event: Mapping) -> tuple[dict, dict]:
     """Pure state transition; repeated visible polls are edge-deduplicated."""
     previous = _validated_state(state)
     event = _event(supplied_event)
-    events = previous["events"]
-    if any(e["id"] == event["id"] for e in events):
+    # Retain only the last hour of semantic events; do not grow with session age.
+    cutoff = event["at_ms"] - WINDOWS[-1] * 1000
+    events = [e for e in previous["events"] if e["at_ms"] >= cutoff]
+    if any(e["id"] == event["id"] for e in previous["events"]):
         raise HoverLearningError("DUPLICATE_HOVER_EVENT_ID")
     if events and event["at_ms"] < events[-1]["at_ms"]:
         raise HoverLearningError("HOVER_TIME_REGRESSION")
-    active = previous["active_tooltip"]
+    active = previous["active_tooltip"] if events else None
     next_active = active
     kind = event["kind"]
     if kind == "tooltip_visible":
