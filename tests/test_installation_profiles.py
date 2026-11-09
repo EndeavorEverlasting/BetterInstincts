@@ -1,0 +1,137 @@
+"""Configuration persistence and profile toggles, isolated from Sims saves/host."""
+from __future__ import annotations
+
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from betterinstincts.installation_profiles import (
+    DEFAULTS, InstallationProfileError, choose_profile, create_profile,
+    read_document, reset_toggle, set_toggle, settings_path, view,
+)
+from scripts import instance_settings
+
+
+class InstallationProfilesTests(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.path = self.root / "betterinstincts" / "settings.v1.json"
+
+    def test_read_only_defaults_do_not_write_anything(self):
+        initial = view(self.path)
+        self.assertEqual(initial["profile_id"], "default")
+        self.assertEqual(initial["settings"], DEFAULTS)
+        self.assertIsNone(initial["game_control_permit"])
+        self.assertFalse(self.path.parent.exists())
+
+    def test_named_profiles_isolate_and_persist_toggles(self):
+        create_profile("gamer", self.path)
+        choose_profile("gamer", self.path)
+        out = set_toggle("learning.hover_observations", True, self.path)
+        self.assertTrue(out["settings"]["learning.hover_observations"])
+        self.assertEqual(out["overrides"], {"learning.hover_observations": True})
+        self.assertFalse(view(self.path, profile_id="default")["settings"]["learning.hover_observations"])
+        self.assertTrue(view(self.path)["settings"]["learning.hover_observations"])
+        reset_toggle("learning.hover_observations", self.path)
+        self.assertFalse(view(self.path)["settings"]["learning.hover_observations"])
+        self.assertEqual(view(self.path)["overrides"], {})
+        self.assertGreater(read_document(self.path)["revision"], 0)
+
+    def test_idempotent_default_does_not_create_file(self):
+        set_toggle("learning.hotkey_observations", False, self.path)
+        self.assertFalse(self.path.exists())
+
+    def test_unknown_ids_keys_and_bool_coercion_refused(self):
+        for item in ("../other", "", "UPPER", "a" * 33):
+            with self.assertRaises(InstallationProfileError):
+                create_profile(item, self.path)
+        with self.assertRaisesRegex(InstallationProfileError, "SETTING_UNKNOWN_OR_TYPE_INVALID"):
+            set_toggle("learning.unknown", True, self.path)
+        with self.assertRaisesRegex(InstallationProfileError, "SETTING_UNKNOWN_OR_TYPE_INVALID"):
+            set_toggle("learning.hover_observations", 1, self.path)
+        with self.assertRaisesRegex(InstallationProfileError, "PROFILE_NOT_FOUND"):
+            choose_profile("missing", self.path)
+
+    def test_invalid_schema_is_not_overwritten(self):
+        self.path.parent.mkdir(parents=True)
+        raw = '{"schema":"unexpected","revision":3}'
+        self.path.write_text(raw)
+        with self.assertRaisesRegex(InstallationProfileError, "SETTINGS_SCHEMA_INVALID"):
+            set_toggle("ui.show_evidence_details", False, self.path)
+        self.assertEqual(self.path.read_text(), raw)
+
+    def test_unknown_future_key_and_wrong_type_fail_closed(self):
+        self.path.parent.mkdir(parents=True)
+        data = {"schema": "betterinstincts.installation-profiles/v1",
+                "revision": 0, "active_profile": "default",
+                "profiles": {"default": {"automations.nonexistent": True}}}
+        self.path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(InstallationProfileError, "SETTING_UNKNOWN_OR_TYPE_INVALID"):
+            read_document(self.path)
+        data["profiles"]["default"] = {"ui.show_evidence_details": "false"}
+        self.path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(InstallationProfileError, "SETTING_UNKNOWN_OR_TYPE_INVALID"):
+            read_document(self.path)
+
+    def test_bounded_malformed_and_symlink_data_rejected(self):
+        self.path.parent.mkdir(parents=True)
+        self.path.write_text("!" * 33000)
+        with self.assertRaisesRegex(InstallationProfileError, "SETTINGS_FILE_UNSAFE"):
+            read_document(self.path)
+        self.path.write_text("not json")
+        with self.assertRaisesRegex(InstallationProfileError, "SETTINGS_CONTENT_INVALID"):
+            read_document(self.path)
+        self.path.unlink()
+        target = self.root / "original.json"
+        target.write_text("{}")
+        self.path.symlink_to(target)
+        with self.assertRaisesRegex(InstallationProfileError, "SYMLINK_SETTINGS_PATH_FORBIDDEN"):
+            read_document(self.path)
+        self.assertEqual(target.read_text(), "{}")
+
+    def test_atomic_replace_failure_preserves_original(self):
+        set_toggle("ui.show_advanced_settings", True, self.path)
+        old = self.path.read_bytes()
+        with patch("betterinstincts.installation_profiles.os.replace", side_effect=OSError("disk-full")):
+            with self.assertRaisesRegex(OSError, "disk-full"):
+                set_toggle("ui.show_advanced_settings", False, self.path)
+        self.assertEqual(self.path.read_bytes(), old)
+        self.assertEqual(list(self.path.parent.glob(".settings-*.tmp")), [])
+
+    def test_busy_writer_refuses_without_modification(self):
+        set_toggle("ui.show_advanced_settings", True, self.path)
+        locked = self.path.with_suffix(".lock")
+        locked.write_text("other writer")
+        with self.assertRaisesRegex(InstallationProfileError, "SETTINGS_WRITER_BUSY"):
+            choose_profile("default", self.path)
+        self.assertTrue(locked.exists())
+
+    def test_paths_distinct_from_install_manifests(self):
+        win = settings_path(home=self.root, platform="win32",
+                            environment={"LOCALAPPDATA": str(self.root / "Local")})
+        lin = settings_path(home=self.root, platform="linux", environment={})
+        self.assertEqual(win, self.root / "Local" / "BetterInstincts" / "settings.v1.json")
+        self.assertEqual(lin, self.root / ".config" / "betterinstincts" / "settings.v1.json")
+        self.assertNotIn("/app/", win.as_posix())
+        self.assertNotIn("/dev/", lin.as_posix())
+
+    def test_cli_set_and_show_readback(self):
+        from io import StringIO
+        from contextlib import redirect_stdout
+        with patch.object(instance_settings, "view", side_effect=lambda **kw: view(self.path, **kw)), \
+             patch.object(instance_settings, "set_toggle",
+                          side_effect=lambda key, enabled, **kw: set_toggle(key, enabled, self.path, **kw)):
+            with redirect_stdout(StringIO()) as output:
+                self.assertEqual(instance_settings.main(["set", "ui.show_advanced_settings", "true"]), 0)
+            self.assertTrue(json.loads(output.getvalue())["settings"]["ui.show_advanced_settings"])
+            with redirect_stdout(StringIO()) as output:
+                self.assertEqual(instance_settings.main(["show"]), 0)
+            self.assertTrue(json.loads(output.getvalue())["settings"]["ui.show_advanced_settings"])
+
+
+if __name__ == "__main__":
+    unittest.main()
