@@ -18,6 +18,7 @@ This is **not** permission to run unattended, overwrite a player's command, or e
 | Cross-agent waiter | `workflow_interop.py` | Bounded ordered intents and silent wake/retry while the active agent stays alive |
 | Browser adapter | `playwright_interop.py` | Reuse an injected existing Playwright page; one click/fill; never spawn a new context |
 | Game adapter | existing `scripts/*` host admission | Session/PID, scene, protected-save and player-queue checks still required |
+| Effect channel | `ui_chrome` input_preference + `win32_input` | **Prefer hotkeys/KEY over mouse** when equivalent; mouse is fallback only; no global keyhook |
 | Machine paths | `bootstrap.py:paths` | Canonical dev/use/worktree roles, no arbitrary duplicate clones |
 
 ### States and control transitions
@@ -30,12 +31,12 @@ Agent: ENQUEUE work_id + typed callback
   -> acquire desktop-shared.lock
   -> double-check idle -> revalidate exact page/scene/save/queue/target
   -> before EVERY UI effect: double-check idle again
-  -> one click/fill/host step
+  -> one preferred effect (hotkey/KEY when catalogued; else one click/fill/host step)
   -> recorded outcome: COMPLETED
   -> partial/unknown effect, stale target: NEEDS_RECONCILIATION/NEEDS_REVALIDATION
 ```
 
-A fresh mouse/keyboard event while waiting does not call `Task.cancel()`; it simply leaves the next intent queued. An action with any approved effect checkpoint is **not** blindly replayed after interruption: it is quarantined for outcome reconciliation because a click may already have happened. Callbacks must split longer tasks into short, idempotent, re-observable UI steps. A long, uncooperative Playwright operation or a separate process that ignores this contract **cannot** be preempted by these Python modules.
+Prefer catalogued hotkeys over mouse clicks whenever equivalent (`preferred_effect_channel: HOTKEY_THEN_MOUSE_FALLBACK`). Keyboard chords still need dual idle probes, but they avoid relocating the cursor into a fight with the operator. A fresh mouse/keyboard event while waiting does not call `Task.cancel()`; it simply leaves the next intent queued. An action with any approved effect checkpoint is **not** blindly replayed after interruption: it is quarantined for outcome reconciliation because a click or key may already have happened. Callbacks must split longer tasks into short, idempotent, re-observable UI steps. A long, uncooperative Playwright operation or a separate process that ignores this contract **cannot** be preempted by these Python modules.
 
 ### Playwright adaptation example
 

@@ -154,6 +154,19 @@ integration. P08 live command/shortcut proof remains an independently
 unproved local-host gate. Early ontology receipt:
 `contracts/consultations/BI-INPUT-CHANNELS-20261109.v1.json`.
 
+## 2026-11-09 — Hotkey-first cooperative interop (P95 + P124 + Trifecta)
+
+Resolved **P95 — Program Design & Call-Stack Prototype Architect** and
+**P124 — Repository Code Readability & Structural Refactorer** (Moonwake
+catalog owner `spec-architecture-prompts.v1.json`, blob
+`5926a198a14567de55110ed19e922fc444b4dec7`). P95 selects
+`HOTKEY_FIRST_WHEN_EQUIVALENT` for ui-chrome plans and workflow effect
+channeling; P124 keeps ownership in `ui_chrome` + shared `win32_input`
+keyboard peer (no second input daemon / no global keyhook). Trifecta:
+**P82** offline preference/rewrite falsifiers; **P07** bounded integration;
+**P08** live F3/F1 vs HUD click remains OPEN. Consultation:
+`contracts/consultations/BI-HOTKEY-FIRST-INTEROP-20261109.v1.json`.
+
 ## 2026-11-09 — Installation profiles settings (P141 + P124 + P95 + Trifecta)
 
 Resolved against Moonwake main catalog: P141 = Repository Strategic Opportunity Scout; P124 = Repository Code Readability & Structural Refactorer; P95 = Program Design & Call-Stack Prototype Architect. Trifecta here is P82 = Prototype-Measure-Refine Delivery Loop, P07 = Repo Sprint Executor, P08 = Live Runtime Proof Executor. P141 compares and falsifies architectures rather than implementing; the selected scoped profile owner is implemented through P95/P124 and P82/P07. Local workstation/GPU/Sims P08 remains pending. See docs/INSTALLATION_PROFILES.md for path ownership, runtime status and proof boundary.
