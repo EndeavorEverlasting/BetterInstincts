@@ -1,9 +1,9 @@
 # Upgrade-parts force — spam-buy Robot Salvage Parts
 
-**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect  
-**P124:** sibling owner beside `diy_skill_force` / `funds_inject` / `household_object_force` / `ui_chrome`  
-**Machine owner:** [`contracts/upgrade-parts-force.v1.json`](../contracts/upgrade-parts-force.v1.json)  
-**Planner:** `betterinstincts.upgrade_parts_force`  
+**Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
+**P124:** sibling owner beside `diy_skill_force` / `funds_inject` / `household_object_force` / `ui_chrome`
+**Machine owner:** [`contracts/upgrade-parts-force.v1.json`](../contracts/upgrade-parts-force.v1.json)
+**Planner:** `betterinstincts.upgrade_parts_force`
 **CLI:** `python -m scripts.upgrade_parts_force`
 
 ## Why this exists
