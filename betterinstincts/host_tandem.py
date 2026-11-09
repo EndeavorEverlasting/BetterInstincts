@@ -326,3 +326,190 @@ async def run_tandem_session(
         "dispatch_authorized": False,
         "proof_ceiling": "BOUNDED_CALLBACK_SESSION_NOT_GAMEPLAY_CERTIFICATION",
     }
+
+# Opportunity surveying is the same opt-in asynchronous host lifecycle as the
+# gardening/needs coordinator, but it never substitutes its goal ownership.
+# A player-active observation remains useful; only screen effects yield.
+async def run_opportunity_survey_session(
+    session_id: str,
+    actor_ref: str,
+    *,
+    observe: Observe,
+    probe: Probe,
+    max_turns: int = 16,
+    interval_seconds: float = 1.0,
+    observation_timeout_seconds: float = 15.0,
+    on_receipt: Callable[[dict], Awaitable[None]] | None = None,
+    exploration_queue: object | None = None,
+    navigate: Callable[[dict, Callable[[], Awaitable[None]]], Awaitable[None]] | None = None,
+    observe_fresh: Observe | None = None,
+) -> dict:
+    """Bounded asynchronous survey, including ticks when the human is playing.
+
+    Existing host_listener.tick owns all census/presence/receipt work. Optional
+    navigation uses a caller-owned CooperativeScreenQueue and double-probed
+    checkpoint, never a raw cursor loop. No callback ports means no game input.
+    """
+    from betterinstincts.workflow_interop import CooperativeScreenQueue
+
+    cfg = load_contract()
+    bounds = cfg["bounds"]
+    if not _ref(actor_ref) or type(max_turns) is not int or not 1 <= max_turns <= bounds["max_ticks_per_session"]:
+        raise HostTandemError("SURVEY_ACTOR_OR_TURNS_INVALID")
+    if not _bounded(interval_seconds, bounds["min_tick_interval_sec"], bounds["max_tick_interval_sec"]):
+        raise HostTandemError("SURVEY_POLL_INTERVAL_INVALID")
+    if not _bounded(observation_timeout_seconds, 1, cfg["async_session"]["observation_timeout_max_seconds"]):
+        raise HostTandemError("SURVEY_OBSERVATION_TIMEOUT_INVALID")
+    if (exploration_queue is None) != (navigate is None) or (
+        exploration_queue is not None and (
+            not isinstance(exploration_queue, CooperativeScreenQueue)
+            or not callable(observe_fresh)
+        )
+    ):
+        raise HostTandemError("SURVEY_EXPLORATION_PORTS_MUST_BE_COMPLETE")
+    meta = status(session_id)
+    if meta["state"] != "ACTIVE":
+        raise HostTandemError("EXPLICIT_ACTIVE_SESSION_REQUIRED")
+    remaining = int(meta["max_ticks"]) - int(meta["ticks"])
+    if remaining <= 0:
+        raise HostTandemError("SURVEY_SESSION_EXHAUSTED")
+    events: deque[dict] = deque(maxlen=cfg["async_session"]["max_events_in_memory"])
+    seen_capture = set()
+    turns = 0
+    receipts = 0
+    for turn in range(1, min(max_turns, remaining) + 1):
+        turns = turn
+        if turn > 1:
+            await asyncio.sleep(interval_seconds)
+        try:
+            raw = await asyncio.wait_for(observe(), observation_timeout_seconds)
+        except asyncio.TimeoutError:
+            events.append({"event": "OBSERVATION_TIMEOUT", "turn": turn})
+            break
+        if not isinstance(raw, Mapping) or raw.get("actor_ref") != actor_ref:
+            events.append({"event": "ACTOR_CHANGED_OR_UNKNOWN", "turn": turn})
+            break
+        snapshot = dict(raw)
+        capture = snapshot.get("capture_ref")
+        if not _ref(capture) or capture in seen_capture:
+            events.append({"event": "REOBSERVE_CAPTURE_REQUIRED", "turn": turn})
+            continue
+        seen_capture.add(capture)
+        result = tick(session_id, snapshot, presence_probe=probe(raw))
+        receipts += 1
+        survey = result["opportunity_survey"]
+        events.append({
+            "event": "PASSIVE_SURVEY_RECORDED", "turn": turn,
+            "capture_ref": capture, "room_count": survey["room_count"],
+            "opportunities": len(survey["candidates"]),
+            "player_yield": result["listener_action"] == "YIELD_TO_PLAYER",
+            "exploration_gate": survey["exploration_gate"],
+        })
+        if on_receipt is not None:
+            await on_receipt(result)
+        # Input is possible only when the operator deliberately supplies a
+        # validated adapter *and* a screen-owned queue. Never auto-create one.
+        if exploration_queue is not None:
+            if survey["exploration_gate"] == "IDLE_EXPLORATION_CANDIDATE":
+                enqueued = queue_idle_exploration(
+                    survey, actor_ref=actor_ref,
+                    screen_queue=exploration_queue,
+                    observe_fresh=observe_fresh,
+                    navigate=navigate,
+                )
+                events.append({"event": enqueued["state"], "turn": turn,
+                               "work_id": enqueued.get("work_id")})
+            if exploration_queue.pending:
+                outcome = await exploration_queue.run_once()
+                events.append({"event": "IDLE_EXPLORATION_" + str(outcome["state"]),
+                               "turn": turn})
+    return {
+        "state": "BOUNDED_SURVEY_COMPLETED",
+        "actor_ref": actor_ref, "turns": turns,
+        "survey_receipts": receipts, "events": list(events),
+        "pending_exploration": (
+            len(exploration_queue.pending) if exploration_queue is not None else 0
+        ),
+        "control_permit": None, "execute_allowed": False,
+        "proof_ceiling": "ASYNC_SURVEY_CALLBACK_TEST_NOT_LIVE_GAME_CERTIFICATION",
+    }
+
+
+def queue_idle_exploration(
+    survey: Mapping,
+    *,
+    actor_ref: str,
+    screen_queue: object,
+    observe_fresh: Observe,
+    navigate: Callable[[dict, Callable[[], Awaitable[None]]], Awaitable[None]],
+) -> dict:
+    """Stage one targeted hover/traverse via the existing cooperative screen gate.
+
+    A fresh capture, unchanged patch/lot/revision/actor and scene-backed Live
+    mode are required immediately before a real adapter is called.
+    """
+    import hashlib
+    from betterinstincts.workflow_interop import CooperativeScreenQueue, QueuedStep
+    from betterinstincts.ui_mode import evaluate_mode, UIModeError
+    from betterinstincts.room_census import scan_lot_model, RoomCensusError
+
+    if not isinstance(screen_queue, CooperativeScreenQueue) or not callable(observe_fresh) or not callable(navigate):
+        raise HostTandemError("IDLE_EXPLORATION_ADAPTER_INVALID")
+    if survey.get("exploration_gate") != "IDLE_EXPLORATION_CANDIDATE":
+        return {"state": "IDLE_EXPLORATION_DEFERRED", "execute_allowed": False}
+    targets = survey.get("exploration_targets") or []
+    if not targets:
+        return {"state": "NOTHING_TO_EXPLORE", "execute_allowed": False}
+    target = dict(targets[0])
+    patch, lot, revision = survey.get("game_version"), survey.get("lot_id"), survey.get("lot_revision")
+    if not patch or not lot or type(revision) is not int or not _ref(actor_ref):
+        return {"state": "EXPLORATION_PROVENANCE_MISSING", "execute_allowed": False}
+    identity = "|".join((patch, lot, str(revision), actor_ref, target["target_ref"]))
+    work_id = "survey-" + hashlib.sha256(identity.encode("utf-8")).hexdigest()[:20]
+    if work_id in screen_queue.completed or work_id in screen_queue.needs_review or any(
+        item.work_id == work_id for item in screen_queue.pending
+    ):
+        return {"state": "EXPLORATION_ALREADY_KNOWN_OR_PENDING",
+                "work_id": work_id, "execute_allowed": False}
+
+    async def validate() -> bool:
+        try:
+            snapshot = await observe_fresh()
+            if not isinstance(snapshot, Mapping) or any((
+                snapshot.get("actor_ref") != actor_ref,
+                snapshot.get("active_lot_id") != lot,
+                snapshot.get("game_version") != patch,
+                snapshot.get("capture_ref") == survey.get("capture_ref"),
+                snapshot.get("camera_follow_attested") is not True,
+                snapshot.get("operator_declared_playing") is True,
+                snapshot.get("player_directed") is True,
+                snapshot.get("event_active") is True,
+            )):
+                return False
+            mode = evaluate_mode(
+                game_version=patch,
+                mode_observations=snapshot.get("mode_observations", []),
+                panel_observations=snapshot.get("panel_observations"),
+                shortcut_hint=snapshot.get("shortcut_hint"),
+            )
+            if mode["mode"] != "LIVE" or not mode["mode_autonomy_allowed"]:
+                return False
+            census = scan_lot_model(snapshot["lot_model"])
+            if census["lot_id"] != lot or census["model_revision"] != revision:
+                return False
+            room = census["rooms"].get(target["room_id"])
+            return bool(
+                room and room["room_evidence"] == "STRUCTURE_ATTESTED"
+                and any("object:" + item["id"] == target["target_ref"]
+                        for item in room["items"])
+            )
+        except (KeyError, TypeError, ValueError, RoomCensusError, UIModeError):
+            return False
+
+    async def action(checkpoint: Callable[[], Awaitable[None]]) -> None:
+        await checkpoint()
+        await navigate(target, checkpoint)
+
+    screen_queue.enqueue(QueuedStep(work_id=work_id, validate=validate, action=action))
+    return {"state": "IDLE_EXPLORATION_QUEUED", "work_id": work_id,
+            "target_ref": target["target_ref"], "execute_allowed": False}
