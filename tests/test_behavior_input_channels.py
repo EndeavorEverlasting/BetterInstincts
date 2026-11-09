@@ -109,6 +109,28 @@ class MultiChannelBehaviorTests(unittest.TestCase):
         self.assertEqual(sum(p["reviewed_harmful"] for p in w["patterns"]), 1)
         self.assertEqual(sum(p["attempts"] for p in w["patterns"]), 3)
 
+    def test_hotkey_and_cheat_invalidate_stale_tooltip_focus(self):
+        state = ingest(empty_state(), "tooltip_visible", "tip_001", T,
+                       target_ref="object:tv", tooltip_ref="tip:watch")
+        state = ingest(state, "hotkey_action", "key_001", T + 1,
+                       mode="LIVE", hotkey_id="CHEAT_CONSOLE",
+                       interaction_ref="interaction:console")
+        self.assertIsNone(state["active_tooltip"])
+        with self.assertRaisesRegex(HoverLearningError, "ACTION_WITHOUT_MATCHED_TOOLTIP"):
+            ingest(state, "action", "action_001", T + 2,
+                   target_ref="object:tv", action_ref="action:watch",
+                   interaction_ref="interaction:stale")
+        state = ingest(state, "tooltip_visible", "tip_002", T + 3,
+                       target_ref="object:tv", tooltip_ref="tip:watch")
+        state = ingest(state, "cheat_action", "cheat_001", T + 4,
+                       cheat_id="bb_showhiddenobjects",
+                       interaction_ref="interaction:debug")
+        self.assertIsNone(state["active_tooltip"])
+        with self.assertRaisesRegex(HoverLearningError, "ACTION_WITHOUT_MATCHED_TOOLTIP"):
+            ingest(state, "action", "action_002", T + 5,
+                   target_ref="object:tv", action_ref="action:watch",
+                   interaction_ref="interaction:stale2")
+
     def test_long_window_and_review_eligibility_are_shared_by_cheat(self):
         st = empty_state()
         for i in range(3):
