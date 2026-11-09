@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from betterinstincts.host_automate import HostAutomateError, plan_automation
+from betterinstincts.control_handoff import DEFAULT_IDLE_MS
 from betterinstincts.player_presence import PresenceProbe, probe_windows
 
 
@@ -29,7 +30,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--probe-json", type=Path, default=None,
                    help="Inject PresenceProbe JSON instead of Win32 probe")
     p.add_argument("--declared-playing", action="store_true")
-    p.add_argument("--idle-ms", type=int, default=8000, help="Minimum desktop idle before host planning")
+    p.add_argument("--idle-ms", type=int, default=DEFAULT_IDLE_MS, help="Minimum desktop idle before host planning")
     args = p.parse_args(argv)
     try:
         if not args.observation.is_file() or args.observation.stat().st_size > 32_000:
