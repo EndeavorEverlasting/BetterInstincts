@@ -9,6 +9,7 @@ pristine canonical checkout created by this bootstrapper.
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -23,6 +24,7 @@ ALLOWED_ORIGINS = {REPOSITORY, "git@github.com:EndeavorEverlasting/BetterInstinc
 SCHEMA = "betterinstincts.install-manifest/v1"
 LAUNCHER_HEADER = "# BetterInstincts managed launcher"
 MANIFEST = "install-manifest.json"
+DESKTOP_LOCK_FILENAME = "desktop-shared.lock"
 
 
 class BootstrapError(ValueError):
@@ -131,6 +133,7 @@ def _clone_signature(checkout: Path) -> dict[str, str]:
         )),
         "git_config_sha256": hashlib.sha256(config.read_bytes()).hexdigest(),
         "git_auxiliary_sha256": _git_auxiliary_sha256(git_dir),
+        "worktrees_sha256": _sha(_run("git", "worktree", "list", "--porcelain", cwd=checkout)),
     }
 
 
@@ -138,13 +141,59 @@ def _clone_still_original(checkout: Path, signature: object) -> bool:
     """Legacy manifests and unverifiable copies are NEVER deletion grants."""
     if not isinstance(signature, dict) or set(signature) != {
         "head", "branch", "refs_sha256", "reflog_sha256", "git_config_sha256",
-        "git_auxiliary_sha256"
+        "git_auxiliary_sha256", "worktrees_sha256"
     } or not all(isinstance(value, str) and value for value in signature.values()):
         return False
     try:
         return _clone_signature(checkout) == signature
     except (BootstrapError, OSError, subprocess.CalledProcessError):
         return False
+
+
+def _sole_linked_worktree(checkout: Path) -> bool:
+    """Never remove main Git metadata while another linked worktree uses it."""
+    try:
+        rows = _run("git", "worktree", "list", "--porcelain", cwd=checkout)
+        return sum(line.startswith("worktree ") for line in rows.splitlines()) == 1
+    except (OSError, subprocess.CalledProcessError):
+        return False
+
+
+@contextmanager
+def _exclusive_uninstall_lease(location: dict[str, Path]):
+    """Reserve the very same desktop lock as every cooperating UI executor.
+
+    Check-then-delete without an O_EXCL reservation races a newly started
+    Playwright or Sims host. Hold this lock through checkout removal.
+    """
+    _check_runtime_locks(location)
+    root = location["locks"]
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    _check_runtime_locks(location)
+    if os.name != "nt":
+        info = root.stat()
+        if info.st_uid != os.getuid() or (info.st_mode & 0o077):
+            raise BootstrapError("RUNTIME_LOCK_ROOT_UNSAFE")
+    lock = root / DESKTOP_LOCK_FILENAME
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        fd = os.open(lock, flags, 0o600)
+    except FileExistsError as exc:
+        raise BootstrapError("RUNTIME_LOCK_BUSY_OR_STALE_PRESERVE") from exc
+    try:
+        inode = os.fstat(fd).st_ino
+        yield
+    finally:
+        try:
+            os.close(fd)
+        finally:
+            try:
+                if lock.is_file() and not lock.is_symlink() and lock.stat().st_ino == inode:
+                    lock.unlink()
+            except OSError:
+                pass
 
 
 def _check_runtime_locks(location: dict[str, Path]) -> None:
@@ -267,30 +316,32 @@ def uninstall(location: dict[str, Path], *, platform: str | None = None) -> dict
     target = use / data["launcher"]
     if target.is_symlink() or not target.is_file() or _sha(target.read_text(encoding="utf-8")) != data["launcher_sha256"]:
         raise BootstrapError("LAUNCHER_CHANGED_PRESERVE")
-    # First validate the exact managed files; avoid partial cleanup on extras.
     if {p.name for p in use.iterdir()} != {MANIFEST, data["launcher"]}:
         raise BootstrapError("UNOWNED_INSTALL_FILES_PRESERVE")
-    _check_runtime_locks(location)
-    # The manifest's created_checkout flag is insufficient: clean Git trees may
-    # contain unique unpublished commits/branches/stashes or modified Git config.
-    can_remove_clone = bool(
-        data["created_checkout"] and _pristine(dev)
-        and _clone_still_original(dev, data.get("clone_signature"))
-    )
-    target.unlink()
-    manifest_file.unlink()
-    use.rmdir()
-    dev_parent_removed = False
-    if can_remove_clone:
-        shutil.rmtree(dev)
-        # Remove an empty development parent only when this installer created
-        # that parent. Never touch a pre-existing or nonempty ~/dev directory.
-        if data.get("created_dev_parent") is True and not dev.parent.is_symlink():
-            try:
-                dev.parent.rmdir()
-                dev_parent_removed = True
-            except OSError:
-                pass
+
+    # Reservation is acquired atomically against all participating agents.
+    # The entire destructive section runs while new screen actions are denied.
+    with _exclusive_uninstall_lease(location):
+        can_remove_clone = bool(
+            data["created_checkout"] and _pristine(dev)
+            and _sole_linked_worktree(dev)
+            and _clone_still_original(dev, data.get("clone_signature"))
+        )
+        target.unlink()
+        manifest_file.unlink()
+        use.rmdir()
+        dev_parent_removed = False
+        if can_remove_clone:
+            shutil.rmtree(dev)
+            if data.get("created_dev_parent") is True and not dev.parent.is_symlink():
+                try:
+                    dev.parent.rmdir()
+                    dev_parent_removed = True
+                except OSError:
+                    pass
+
+    # Release our lease before removing its now-empty runtime directory.
+    # A new agent's intervening lock makes rmdir fail rather than erase it.
     cleanup = _prune_empty_runtime_paths(location)
     return {"state": "UNINSTALLED", "managed_files_removed": 2,
             "checkout_removed": can_remove_clone, "dev_parent_removed": dev_parent_removed,
