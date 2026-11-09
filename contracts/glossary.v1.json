@@ -535,11 +535,17 @@
     },
     "BILL_POWER": {
       "definition": "Catalog power-draw axis; lower is better for household utility bills. Null means axis not declared for that item.",
-      "owners": ["contracts/build-optimize.v1.json", "docs/BUILD_OPTIMIZE.md"]
+      "owners": [
+        "contracts/build-optimize.v1.json",
+        "docs/BUILD_OPTIMIZE.md"
+      ]
     },
     "BILL_WATER": {
       "definition": "Catalog water-use axis; lower is better for household utility bills. Null means axis not declared for that item.",
-      "owners": ["contracts/build-optimize.v1.json", "docs/BUILD_OPTIMIZE.md"]
+      "owners": [
+        "contracts/build-optimize.v1.json",
+        "docs/BUILD_OPTIMIZE.md"
+      ]
     },
     "LOT_ENVIRONMENT_MODEL": {
       "definition": "Durable, revisioned structured understanding of a lab lot (entities, relations, goals, captures) that accumulates across observations and mutation outcomes.",
@@ -983,6 +989,45 @@
       "definition": "Bounded join over existing domain poll receipts and shared constraints, returning suggestions only.",
       "owners": [
         "contracts/ontology.v1.json"
+      ]
+    },
+    "ROOM_CENSUS": {
+      "definition": "Read-only whole-lot projection of attested floor/zone/entity observations; never a second owner or autonomous scan.",
+      "owners": [
+        "contracts/room-census.v1.json",
+        "docs/ROOM_CENSUS.md"
+      ]
+    },
+    "ROOM_ZONE_ATTESTED": {
+      "definition": "Room grouping supported by an explicitly observed ROOM_ZONE structural claim; no implication that vision-only geometry was certified.",
+      "owners": [
+        "betterinstincts/room_census.py",
+        "docs/ROOM_CENSUS.md"
+      ]
+    },
+    "ROOM_ZONE_CANDIDATE": {
+      "definition": "Item co-location grouped by an attested zone without structural room verification; no authority for wall changes.",
+      "owners": [
+        "betterinstincts/room_census.py"
+      ]
+    },
+    "MULTI_LABEL_ROOM_FUNCTION": {
+      "definition": "Non-exclusive, scored-from-items functional room classifications such as living+dining+office.",
+      "owners": [
+        "contracts/room-census.v1.json"
+      ]
+    },
+    "ROOM_STYLE_EVIDENCE": {
+      "definition": "Multiple room aesthetics aggregated solely from attested object style_tags; an object label alone cannot prove a style.",
+      "owners": [
+        "betterinstincts/house_state.py",
+        "contracts/room-census.v1.json"
+      ]
+    },
+    "ROOM_CENSUS_COVERAGE": {
+      "definition": "Every floor represented in current model, never assertion that every actual game floor was inspected or a room discovered from raw pixels.",
+      "owners": [
+        "docs/ROOM_CENSUS.md"
       ]
     }
   }
