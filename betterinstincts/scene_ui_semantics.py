@@ -1,0 +1,159 @@
+"""Live HUD semantic state: overlay resolution, bottom-right active panel, queue continuity.
+
+No side effects. Every overlay action is a proposal requiring independently
+admitted native action; a random event is NOT equivalent to a generic close.
+"""
+from __future__ import annotations
+
+import re
+from collections.abc import Mapping, Sequence
+from typing import Any
+
+from betterinstincts.ui_microsystems import (
+    load_contract as load_ui_contract, resolve_action, panel_observation_matches,
+    UIMicrosystemError,
+)
+
+TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$")
+BOTTOM_RIGHT = frozenset({
+    "aspirations", "career", "skills", "relationships", "simology",
+    "personal_inventory", "needs",
+})
+OVERLAY_TYPES = frozenset({"CAREER_EVENT", "RANDOM_EVENT", "OPPORTUNITY", "SIM_NOTIFICATION", "DECISION_MODAL"})
+PROOF = "OFFLINE_HUD_CONTEXT_NOT_LIVE_GAME_CERTIFIED"
+
+
+class SceneUISemanticsError(ValueError):
+    pass
+
+
+def _token(value: object) -> bool:
+    return isinstance(value, str) and bool(TOKEN.fullmatch(value))
+
+
+def _cues(value: object, expected: Mapping[str, str]) -> bool:
+    return (
+        isinstance(value, list) and len(value) == 2
+        and all(isinstance(x, Mapping) and set(x) == {"source", "token"} for x in value)
+        and {x.get("source"): x.get("token") for x in value} == dict(expected)
+    )
+
+
+def assess_live_hud(
+    *, capture_ref: str, observation: Mapping[str, Any] | None,
+    requested_panel: str | None = None, requested_target: str | None = None,
+) -> dict:
+    """Evaluate overlay before panel actions, preserve pending goal/queue refs."""
+    base = {"execute_allowed": False, "proof_ceiling": PROOF, "capture_ref": capture_ref,
+            "panel": None, "overlay": None, "continuation": None}
+    def hold(gate: str, reason: str) -> dict:
+        return {**base, "state": "LIVE_HUD_REOBSERVE_REQUIRED", "gate": gate, "reason": reason}
+    if not _token(capture_ref) or not isinstance(observation, Mapping):
+        return hold("LIVE_HUD_REOBSERVE", "FRESH_OBSERVATION_REQUIRED")
+    if (observation.get("source") != "HOST_CAPTURE" or observation.get("capture_ref") != capture_ref
+            or observation.get("mode") != "LIVE" or observation.get("scene_id") != "live_mode"
+            or not _token(observation.get("ui_layout_revision"))
+            or not _token(observation.get("selected_sim_revision"))
+            or type(observation.get("active_sim_id")) is not int or observation["active_sim_id"] <= 0):
+        return hold("LIVE_HUD_REOBSERVE", "LIVE_UI_IDENTITY_OR_REVISION_UNVERIFIED")
+    goal = observation.get("active_goal_id")
+    if goal is not None and not _token(goal):
+        return hold("LIVE_HUD_REOBSERVE", "GOAL_ID_UNVERIFIED")
+    queue = observation.get("pending_action_queue_refs", [])
+    if (not isinstance(queue, list) or len(queue) > 32 or
+            any(not _token(ref) for ref in queue) or len(set(queue)) != len(queue)):
+        return hold("LIVE_HUD_REOBSERVE", "QUEUE_REFS_INVALID")
+    continuation = {
+        "active_goal_id": goal, "queue_refs": list(queue),
+        "selected_sim_id": observation["active_sim_id"],
+        "selected_sim_revision": observation["selected_sim_revision"],
+        "resume_condition": "FRESH_REVALIDATION_AFTER_OVERLAY",
+        "resume_without_replaying_unverified_actions": True,
+    }
+    base["continuation"] = continuation
+    overlay = observation.get("overlay")
+    if overlay is not None:
+        if (not isinstance(overlay, Mapping) or not _token(overlay.get("overlay_id"))
+                or overlay.get("kind") not in OVERLAY_TYPES
+                or overlay.get("capture_ref") != capture_ref
+                or overlay.get("ui_layout_revision") != observation["ui_layout_revision"]
+                or overlay.get("visible") is not True or not _cues(
+                    overlay.get("cues"),
+                    {"visual": "visible_overlay_identity", "operator": "overlay_identity_confirmed"},
+                )):
+            return hold("OVERLAY_REOBSERVE", "OVERLAY_IDENTITY_UNVERIFIED")
+        overlay_id = overlay["overlay_id"]
+        if overlay.get("decision_state") != "RESOLVED":
+            return {**base, "state": "OVERLAY_DECISION_PENDING", "gate": "OVERLAY_DECISION_REQUIRED",
+                    "overlay": {"overlay_id": overlay_id, "kind": overlay["kind"],
+                                "decision_owner": "EXISTING_EVENT_OR_CAREER_MICROSYSTEM",
+                                "dismiss_action": None},
+                    "next": "EVALUATE_DECISION_THEN_REOBSERVE;DO_NOT_CANCEL_PLAYER_QUEUE"}
+        if overlay.get("decision_accepted") is not True:
+            return {**base, "state": "OVERLAY_RESOLUTION_UNVERIFIED", "gate": "OVERLAY_REOBSERVE",
+                    "overlay": {"overlay_id": overlay_id, "kind": overlay["kind"]}}
+        close = overlay.get("dismiss_target")
+        if (not isinstance(close, Mapping)
+                or close.get("kind") not in {"ACKNOWLEDGE_RESOLVED", "CLOSE_RESOLVED"}
+                or close.get("overlay_id") != overlay_id
+                or close.get("capture_ref") != capture_ref
+                or close.get("ui_layout_revision") != observation["ui_layout_revision"]
+                or close.get("visible") is not True or close.get("obscured") is not False
+                or close.get("enabled") is not True
+                or not _cues(close.get("cues"), {
+                    "visual": "resolved_overlay_dismiss_button",
+                    "operator": "dismiss_button_confirmed",
+                })):
+            return {**base, "state": "OVERLAY_DISMISS_UNVERIFIED", "gate": "OVERLAY_REOBSERVE",
+                    "overlay": {"overlay_id": overlay_id, "kind": overlay["kind"]}}
+        rect = close.get("hitbox")
+        w, h = observation.get("client_width"), observation.get("client_height")
+        if (type(w) is not int or type(h) is not int or w < 640 or h < 480
+                or not isinstance(rect, list) or len(rect) != 4
+                or any(type(v) is not int for v in rect)):
+            return hold("OVERLAY_REOBSERVE", "DISMISS_HITBOX_UNVERIFIED")
+        left, top, right, bottom = rect
+        if not (0 <= left < right < w and 0 <= top < bottom < h
+                and min(right-left, bottom-top) >= 8):
+            return hold("OVERLAY_REOBSERVE", "DISMISS_HITBOX_OUT_OF_BOUNDS")
+        return {**base, "state": "OVERLAY_DISMISS_AWAIT_NATIVE_ADMISSION",
+                "gate": "OVERLAY_DISMISS_READY",
+                "overlay": {"overlay_id": overlay_id, "kind": overlay["kind"],
+                            "button": "LEFT", "client": [(left+right)//2, (top+bottom)//2],
+                            "hitbox": list(rect), "client_width": w, "client_height": h,
+                            "ui_layout_revision": observation["ui_layout_revision"],
+                            "resume_only_after_overlay_absent": True}}
+    panel_id = observation.get("active_right_panel_id")
+    if panel_id is None:
+        return {**base, "state": "HUD_NO_RIGHT_PANEL", "gate": "HUD_CONTEXT_READY",
+                "active_panel_id": None}
+    cfg = load_ui_contract()
+    if panel_id not in BOTTOM_RIGHT or panel_id not in cfg["panels"]:
+        return hold("RIGHT_PANEL_REOBSERVE", "ACTIVE_PANEL_ID_UNVERIFIED")
+    panel = cfg["panels"][panel_id]
+    if (observation.get("right_panel_visible") is not True or
+            observation.get("right_panel_obscured") is not False or
+            not _cues(observation.get("right_panel_cues"), panel["cues"])):
+        return hold("RIGHT_PANEL_REOBSERVE", "ACTIVE_PANEL_CUES_INVALID")
+    resolved = {
+        "panel_id": panel_id, "family": panel["family"],
+        "ui_layout_revision": observation["ui_layout_revision"],
+        "selected_sim_revision": observation["selected_sim_revision"],
+        "cues": panel["cues"], "status": "OBSERVED_PANEL_CONTEXT",
+    }
+    if requested_panel is not None:
+        if requested_panel != panel_id:
+            return {**base, "state": "RIGHT_PANEL_SWITCH_REQUIRED", "gate": "RIGHT_PANEL_SWITCH_OR_REOBSERVE",
+                    "panel": resolved, "requested_panel": requested_panel}
+        if not _token(requested_target):
+            return hold("RIGHT_PANEL_REOBSERVE", "TARGET_ID_REQUIRED")
+        try:
+            action = resolve_action(panel_id, requested_target, mode="LIVE", cfg=cfg)
+        except (UIMicrosystemError, ValueError) as exc:
+            return hold("RIGHT_PANEL_REOBSERVE", str(exc))
+        # Fresh exact hitbox attestation is owned by ui_microsystems; no
+        # model-selected point or slot is given merely because panel is active.
+        resolved["action"] = action
+        resolved["hitbox_attestation_required"] = True
+    return {**base, "state": "RIGHT_PANEL_OBSERVED", "gate": "HUD_CONTEXT_READY",
+            "active_panel_id": panel_id, "panel": resolved}
