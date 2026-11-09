@@ -90,6 +90,33 @@ class AutonomyModerationTests(unittest.TestCase):
         self.assertIsNone(self.call(sample(
             goal_pending=False,whims=[whim(benefit_proof_ref=None)]))["positive_whim_candidate"])
 
+    def test_harm_already_occurred_has_distinct_repair_proposal(self):
+        outcome = dict(effect="RELATIONSHIP_HARM",origin="SIM_AUTONOMY",
+                       outcome_ref="outcome:insult",target_ref="sim:alex",
+                       effect_proof_ref="proof:relationship",origin_proof_ref="proof:auto",
+                       sim_ref="sim:tim",capture_ref=CAP)
+        repair = dict(effect="RELATIONSHIP_HARM",action_id="APOLOGIZE",
+                      target_ref="sim:alex",menu_observation_ref="menu:apology",
+                      sim_ref="sim:tim",capture_ref=CAP,available=True)
+        r = self.call(sample(observed_harm_outcomes=[outcome],
+                             observed_repair_actions=[repair],repair_policy_opt_in=True))
+        self.assertEqual(r["state"], "NEGATIVE_EFFECT_REPAIR_CANDIDATE")
+        self.assertEqual(r["repair_candidate"]["action_id"], "APOLOGIZE")
+        self.assertTrue(r["repair_candidate"]["outcome_not_reversed_by_proposal"])
+        self.assertFalse(r["execute_allowed"])
+        self.assertFalse(r["cancel_allowed"])
+        self.assertIsNone(r["cancel_candidate"])
+        r = self.call(sample(observed_harm_outcomes=[outcome],
+                             observed_repair_actions=[repair],repair_policy_opt_in=False))
+        self.assertEqual(r["state"], "HARM_REPAIR_REVIEW_OPT_IN_REQUIRED")
+        for change in [dict(effect_proof_ref=None), dict(origin="PLAYER"),
+                       dict(target_ref="sim:someone-else")]:
+            with self.subTest(change=change):
+                self.assertIsNone(self.call(sample(
+                    observed_harm_outcomes=[{**outcome,**change}],
+                    observed_repair_actions=[repair],
+                    repair_policy_opt_in=True))["repair_candidate"])
+
     def test_wrong_sim_old_capture_and_bad_input(self):
         r=self.call(sample(queue=[action(sim_ref="sim:alex")]))
         self.assertEqual(r["state"],"REOBSERVE_QUEUE")

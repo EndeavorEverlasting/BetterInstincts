@@ -137,6 +137,12 @@ def evaluate_gardening_turn(
     if player_directed:
         return finish("GARDEN_PLAYER_FIRST", "YIELD_WITH_GOAL_PRESERVED")
     if selected_report is not None and selected_report["gate"] != "SELECTED_SIM_GOAL_EVALUATED":
+        if selected_report["gate"] == "PLAYER_GOAL_SUPERSEDED":
+            result["goal_state"] = "SUPERSEDED"
+            return finish("GARDEN_PLAYER_FIRST", "YIELD_TO_PLAYER_CANCELED_GOAL")
+        if selected_report["gate"] == "TASK_VERIFIED_COMPLETE":
+            result["goal_state"] = "VERIFIED_COMPLETE"
+            return finish("GARDEN_TASK_VERIFIED_COMPLETE", "NO_FURTHER_QUEUE")
         return finish(
             "GARDEN_SIM_NOT_SELECTED" if selected_report["gate"] == "SIM_NOT_SELECTED"
             else "GARDEN_REOBSERVE_SELECTED_SIM",

@@ -81,6 +81,28 @@ class SelectedSimTests(unittest.TestCase):
         self.assertEqual(evaluate_gardening_turn(NEEDS,report,ctx,capture_ref=CAP,now=NOW)["gate"],
                          "GARDEN_ACTION_READY")
 
+    def test_explicit_cancel_or_verified_completion_survives_portrait_switch(self):
+        canceled = task(player_override={
+            "kind": "CANCEL_GOAL", "proof_ref": "proof:player-cancel"})
+        self.assertEqual(self.call(canceled, selection(selected_sim_ref="sim:alex"))["gate"],
+                         "PLAYER_GOAL_SUPERSEDED")
+        done = task(targets=[{
+            "target_ref": "plant:1", "state": "VERIFIED_DONE",
+            "outcome_ref": "proof:completed", "outcome_capture_ref": "capture:verified"}])
+        self.assertEqual(self.call(done, selection(selected_sim_ref="sim:alex"))["gate"],
+                         "TASK_VERIFIED_COMPLETE")
+        ctx = dict(
+            capture_ref=CAP, observed_at_unix=NOW, scene_verified=True,
+            queue_verified=True, responsibilities_checked=True,
+            no_upcoming_obligation=True, observed_actions=[],
+            task_continuity=canceled,
+            selected_sim_observation=selection(selected_sim_ref="sim:alex"))
+        report = evaluate_need_services(NEEDS, capture_ref=CAP)
+        r = evaluate_gardening_turn(NEEDS, report, ctx, capture_ref=CAP, now=NOW)
+        self.assertEqual(r["goal_state"], "SUPERSEDED")
+        self.assertEqual(r["next_actions"], [])
+        self.assertEqual(r["gate"], "GARDEN_PLAYER_FIRST")
+
     def test_invalid_selection_is_rejected(self):
         with self.assertRaises(SelectedSimContinuityError):
             self.call(s={"schema":"wrong"})

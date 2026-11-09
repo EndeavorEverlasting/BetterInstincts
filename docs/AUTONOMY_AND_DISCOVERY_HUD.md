@@ -50,3 +50,7 @@ This is **Discovery Quest** provenance; don't confuse it with a social event, sc
 ## P95 / P124 / Trifecta gates
 
 P95: the call stacks and explicit absence-of-evidence states above. P124: isolate pure components and reuse old owners. P82: unit/falsifier tests for cross-Sim corruption, provenance, positive whims, goals and stale capture. P07: CI, ontology consulted before source mutation, branch integration. P08 remains **open**: exact game build, disposable approved lab save, live player/queue observation, verified queue cancel/goal resolution, reversible rollout and no regression to hunger BI-002. Offline PASS is not a playable mod or an installed options UI.
+
+### Already-realized harm is a different recovery lane
+
+If independent evidence shows an autonomous action **already** caused a relationship/environment cost, a queue cancel cannot reverse it. The moderation evaluator can instead propose one currently observed, target-matched, enabled repair/apology/cleanup affordance with an opt-in policy, current actor/capture evidence and no input permit. Even a successful attempt requires independent proof of the resulting relationship or environmental state; never claim harm was erased merely because an apology/repair was queued. A player-authored harmful act is never silently undone.

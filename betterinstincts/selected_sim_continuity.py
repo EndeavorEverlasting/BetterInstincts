@@ -60,6 +60,17 @@ def evaluate_selected_sim_goal(
         "cancel_allowed": False,
         "proof_ceiling": "SELECTED_SIM_OFFLINE_ONLY_NOT_GAME_QUEUE_PROOF",
     }
+    # An explicit player cancellation or independently verified completion
+    # supersedes any off-screen suspension. Never revive a canceled task.
+    if task_report["state"] in {"SUPERSEDED", "VERIFIED_COMPLETE"}:
+        out.update(
+            gate=("PLAYER_GOAL_SUPERSEDED" if task_report["state"] == "SUPERSEDED"
+                  else "TASK_VERIFIED_COMPLETE"),
+            action=("YIELD_TO_PLAYER" if task_report["state"] == "SUPERSEDED"
+                    else "NO_FURTHER_QUEUE"),
+            state=task_report["state"],
+        )
+        return out
     now_value = time.time() if now is None else now
     stamp = selection.get("observed_at_unix")
     if (type(stamp) not in (int, float) or not math.isfinite(stamp)

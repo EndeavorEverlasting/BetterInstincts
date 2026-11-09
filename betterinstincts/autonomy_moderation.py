@@ -14,6 +14,7 @@ EFFECTS = {"RELATIONSHIP_HARM", "ENVIRONMENT_HARM", "BENEFICIAL", "NEUTRAL", "UN
 ORIGINS = {"PLAYER", "HOST", "SIM_AUTONOMY", "UNKNOWN"}
 SETTINGS = {"FULL", "OFF", "UNKNOWN"}
 MAX_QUEUE, MAX_WHIMS, MAX_AGE = 24, 12, 180
+MAX_OUTCOMES, MAX_REPAIRS = 12, 24
 
 
 class AutonomyModerationError(ValueError):
@@ -45,12 +46,19 @@ def evaluate_autonomy_moderation(
         raise AutonomyModerationError("AUTONOMY_QUEUE_INVALID")
     if not isinstance(whims, list) or len(whims) > MAX_WHIMS:
         raise AutonomyModerationError("AUTONOMY_WHIMS_INVALID")
+    outcomes = observation.get("observed_harm_outcomes", [])
+    repairs = observation.get("observed_repair_actions", [])
+    if not isinstance(outcomes, list) or len(outcomes) > MAX_OUTCOMES:
+        raise AutonomyModerationError("AUTONOMY_HARM_OUTCOMES_INVALID")
+    if not isinstance(repairs, list) or len(repairs) > MAX_REPAIRS:
+        raise AutonomyModerationError("AUTONOMY_REPAIRS_INVALID")
     result = {
         "schema": "betterinstincts.autonomy-moderation-result/v1",
         "sim_ref": observation["sim_ref"], "capture_ref": capture_ref,
         "observed_autonomy_setting": setting,
         "state": "INSPECT_AUTONOMY_EVIDENCE", "cancel_candidate": None,
-        "positive_whim_candidate": None, "execute_allowed": False,
+        "repair_candidate": None, "positive_whim_candidate": None,
+        "execute_allowed": False,
         "cancel_allowed": False, "settings_change_allowed": False,
         "proof_ceiling": "HOST_AUTONOMY_POLICY_ONLY_NOT_GAME_CANCELLATION",
     }
@@ -134,6 +142,48 @@ def evaluate_autonomy_moderation(
                              "INDEPENDENT_SCREEN_ADMIT", "OBSERVE_OUTCOME_BEFORE_RETRY"],
             }
             return finish("HARMFUL_AUTONOMOUS_ACTION_CANDIDATE")
+    # A completed harmful effect cannot be undone by canceling a vanished
+    # queue entry. Propose one evidence-matched relationship/environment
+    # mitigation, without claiming it restores the previous state.
+    for outcome in outcomes:
+        if not isinstance(outcome, Mapping):
+            raise AutonomyModerationError("HARM_OUTCOME_ROW_INVALID")
+        if (outcome.get("capture_ref") != capture_ref
+                or outcome.get("sim_ref") != observation["sim_ref"]):
+            return finish("REOBSERVE_HARM_OUTCOME")
+        effect = outcome.get("effect")
+        if effect not in {"RELATIONSHIP_HARM", "ENVIRONMENT_HARM"}:
+            continue
+        if (outcome.get("origin") != "SIM_AUTONOMY"
+                or not all(_ref(outcome.get(k)) for k in (
+                    "origin_proof_ref", "effect_proof_ref", "outcome_ref", "target_ref"
+                ))):
+            continue
+        for repair in repairs:
+            if not isinstance(repair, Mapping):
+                raise AutonomyModerationError("REPAIR_ROW_INVALID")
+            if (repair.get("capture_ref") != capture_ref
+                    or repair.get("sim_ref") != observation["sim_ref"]):
+                return finish("REOBSERVE_REPAIR_AFFORDANCES")
+            if (repair.get("available") is True
+                    and repair.get("effect") == effect
+                    and repair.get("target_ref") == outcome["target_ref"]
+                    and _ref(repair.get("action_id"))
+                    and _ref(repair.get("menu_observation_ref"))):
+                if observation.get("repair_policy_opt_in") is not True:
+                    return finish("HARM_REPAIR_REVIEW_OPT_IN_REQUIRED")
+                result["repair_candidate"] = {
+                    "outcome_ref": outcome["outcome_ref"],
+                    "effect": effect, "target_ref": outcome["target_ref"],
+                    "action_id": repair["action_id"],
+                    "menu_observation_ref": repair["menu_observation_ref"],
+                    "requires": ["EXACT_ACTOR_AND_TARGET", "FRESH_MENU",
+                                 "PLAYER_IDLE_LEASE", "INDEPENDENT_SCREEN_ADMIT",
+                                 "OBSERVE_RESULT_NO_AUTOMATIC_RETRY"],
+                    "outcome_not_reversed_by_proposal": True,
+                }
+                return finish("NEGATIVE_EFFECT_REPAIR_CANDIDATE")
+
     # Optional positive wants are *non-preemptive*: never append to a busy
     # or player-directed queue, and never outrank a still-active goal.
     if positive is not None and not classified and observation.get("goal_pending") is False:
