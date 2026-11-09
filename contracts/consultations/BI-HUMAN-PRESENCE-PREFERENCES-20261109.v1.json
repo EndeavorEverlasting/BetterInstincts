@@ -32,7 +32,8 @@
     "betterinstincts/aspiration_service.py",
     "betterinstincts/installation_profiles.py",
     "contracts/sim-profile.v1.json",
-    "contracts/player-presence.v1.json"
+    "contracts/player-presence.v1.json",
+    "betterinstincts/host_listener.py"
   ],
   "invariants_checked": [
     "BI-ONT-001",
@@ -90,7 +91,8 @@
     "tests/test_preference_prompts.py",
     "docs/ASYNC_INTEROP.md",
     "docs/PREFERENCE_PROMPTS.md",
-    "docs/LEDGER.md"
+    "docs/LEDGER.md",
+    "betterinstincts/host_listener.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "decided_at": "2026-11-09"
