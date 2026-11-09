@@ -201,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--out", type=Path, default=OUTPUT / "viewport-check.png")
     p.add_argument("--execute", action="store_true")
     p.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
-    p.add_argument("--idle-ms", type=int, default=8000)
+    p.add_argument("--idle-ms", type=int, default=15000)
     p.add_argument("--authorize-restart", action="store_true",
                    help="Permit WM_CLOSE restart gate after camera ladder fails")
     p.add_argument("--run-id", default=None, help="Host run id for restart relaunch notes")
