@@ -184,9 +184,12 @@ def _execute_plan(
         raise GateError("TESTINGCHEATS_ENABLED_TRUE_REQUIRED")
     if any(s.get("step") == "ENSURE_LIVE_MODE" and s.get("required") for s in (plan.get("steps") or [])):
         raise GateError("ENSURE_LIVE_MODE_FORBIDDEN_IN_MODE_AGNOSTIC_STACK")
-    from betterinstincts.control_handoff import HandoffError
+    from betterinstincts.control_handoff import DEFAULT_IDLE_MS, HandoffError, MIN_IDLE_MS
     from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
-    from scripts.win32_input import send_click, send_vk, tap_vk, type_text
+
+    if isinstance(idle_ms, bool) or not isinstance(idle_ms, int) or idle_ms < MIN_IDLE_MS:
+        raise GateError("IDLE_THRESHOLD_OUT_OF_RANGE")
+    idle_ms = int(idle_ms if idle_ms else DEFAULT_IDLE_MS)
 
     try:
         require_execute_session(session_id, process_id)
@@ -206,14 +209,9 @@ def _execute_plan(
         hwnd = int(focus_report["hwnd"])
         time.sleep(0.2)
         # Durable console open in whatever mode the operator is in: Ctrl+Shift+C
-        send_vk(0x11)  # CTRL
-        send_vk(0x10)  # SHIFT
-        tap_vk(0x43)   # C
-        send_vk(0x10, up=True)
-        send_vk(0x11, up=True)
-        time.sleep(0.55)
-        send_click(250, 16, between_sec=0.04)
-        time.sleep(0.2)
+        _toggle_cheat_console()
+        time.sleep(0.15)
+        _refocus_cheat_console()
         dispatched: list[str] = []
         reward_accepts: list[dict] = []
         testing_alias_sent = False
@@ -221,15 +219,11 @@ def _execute_plan(
             name = str(step.get("step") or "")
             if name == "ACTIVATE_TESTING_CHEATS":
                 cmd = str(step.get("command") or "")
-                type_text(cmd)
-                tap_vk(0x0D)
-                time.sleep(0.45)
+                _type_cheat_line(cmd)
                 dispatched.append(cmd)
                 alias = step.get("alias")
                 if isinstance(alias, str) and alias.strip() and not testing_alias_sent:
-                    type_text(alias.strip())
-                    tap_vk(0x0D)
-                    time.sleep(0.35)
+                    _type_cheat_line(alias.strip())
                     dispatched.append(alias.strip())
                     testing_alias_sent = True
                 continue
@@ -237,21 +231,18 @@ def _execute_plan(
                 cmd = str(step.get("command") or "")
                 if not cmd:
                     continue
-                type_text(cmd)
-                tap_vk(0x0D)
-                time.sleep(0.45)
+                _type_cheat_line(cmd)
                 dispatched.append(cmd)
                 continue
             if name == "ACCEPT_OFFERED_REWARD_TRAIT" and step.get("required"):
                 reward_accepts.append(_accept_offered_reward_trait(step, hwnd=hwnd))
                 # Re-focus cheat console after OK clicks.
-                send_click(250, 16, between_sec=0.04)
-                time.sleep(0.15)
+                _refocus_cheat_console()
                 continue
         if close_console or verify_skills_panel:
-            # Console must be closed before speed keys; Esc once only.
-            tap_vk(0x1B)
-            time.sleep(0.35)
+            # Never Esc-close: Esc opens pause MENU and breaks household traverse.
+            _toggle_cheat_console()
+            time.sleep(0.25)
         panel_verify = None
         if verify_skills_panel:
             panel_verify = _play_brief_observe_repause(play_seconds=verify_play_seconds)
@@ -282,6 +273,46 @@ def _execute_plan(
     }
 
 
+def _toggle_cheat_console() -> dict:
+    """Open/close cheat console via Ctrl+Shift+C.
+
+    Prefer this over Escape: Esc while Live often opens the pause MENU and
+    blocks household Space-traverse / skill typing.
+    """
+    from scripts.win32_input import send_vk, tap_vk
+
+    send_vk(0x11)  # CTRL
+    send_vk(0x10)  # SHIFT
+    tap_vk(0x43)   # C
+    send_vk(0x10, up=True)
+    send_vk(0x11, up=True)
+    time.sleep(0.45)
+    return {"step": "TOGGLE_CHEAT_CONSOLE", "chord": "Ctrl+Shift+C"}
+
+
+def _refocus_cheat_console() -> None:
+    """Click the top console strip so Enter submits the cheat line."""
+    from scripts.win32_input import send_click
+
+    send_click(250, 16, between_sec=0.04)
+    time.sleep(0.12)
+
+
+def _type_cheat_line(cmd: str) -> None:
+    """Type one cheat and submit with Enter (keybd_event), then pause.
+
+    Live cert (P83): computer_type newlines do not submit Sims console lines;
+    durable host must use type_text + Enter (or type_text with embedded \\n).
+    """
+    from scripts.win32_input import tap_vk, type_text
+
+    _refocus_cheat_console()
+    type_text(str(cmd))
+    time.sleep(0.08)
+    tap_vk(0x0D)
+    time.sleep(0.45)
+
+
 def _select_next_household_member() -> dict:
     """EA Space = next household Sim. Console must already be closed."""
     from scripts.win32_input import tap_vk
@@ -307,11 +338,9 @@ def _execute_household(
         index = int(slot.get("member_index") or 0)
         select = slot.get("select")
         if isinstance(select, dict) and select.get("required"):
-            from scripts.win32_input import tap_vk
-
-            # Close console before Space so the chord selects the next Sim.
-            tap_vk(0x1B)
-            time.sleep(0.35)
+            # Close console with Ctrl+Shift+C — never Esc (MENU collision).
+            _toggle_cheat_console()
+            time.sleep(0.25)
             select_report = _select_next_household_member()
         else:
             select_report = {"step": "KEEP_CURRENT_SELECTION", "member_index": index}
@@ -336,6 +365,7 @@ def _execute_household(
         "household_members": household_plan.get("household_members"),
         "required_residual_skills": household_plan.get("required_residual_skills"),
         "members": member_results,
+        "close_console_before_space": "CTRL_SHIFT_C_TOGGLE",
         "proof_ceiling": household_plan.get("proof_ceiling"),
         "not_bi005": True,
     }
@@ -407,7 +437,12 @@ def _add_common_execute_flags(ap: argparse.ArgumentParser) -> None:
     )
     ap.add_argument("--process-id", type=int, default=None)
     ap.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
-    ap.add_argument("--idle-ms", type=int, default=15000)
+    ap.add_argument(
+        "--idle-ms",
+        type=int,
+        default=15000,
+        help="Player-idle gate ms (contract floor 15000; below raises IDLE_THRESHOLD_OUT_OF_RANGE)",
+    )
     ap.add_argument("--receipt", type=Path, default=None)
 
 

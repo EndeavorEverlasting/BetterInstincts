@@ -27,7 +27,7 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(seq["default_level"], 10)
         self.assertIn("diy_maker", cfg["bundles"])
         self.assertIn("full_unlock", cfg["bundles"])
-        self.assertEqual(cfg["version"], 5)
+        self.assertEqual(cfg["version"], 6)
         self.assertEqual(required_residual_skills(cfg), ["cooking", "fitness", "natural_living"])
         self.assertIn("residual_core", cfg["bundles"])
         self.assertEqual(cfg["household_traverse"]["next_member_key"], "SPACE")
@@ -167,7 +167,7 @@ class DiySkillForceTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(raw["version"], 5)
+        self.assertEqual(raw["version"], 6)
         self.assertEqual(raw["bundles"]["full_unlock"]["default_level"], 10)
         self.assertEqual(raw["required_residual_skills"], ["cooking", "fitness", "natural_living"])
         self.assertTrue(raw["inject_sequence"]["reward_dialog_accept"]["never_press_cancel"])
@@ -211,6 +211,7 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertIsNone(plan["member_plans"][0]["select"])
         self.assertEqual(plan["member_plans"][1]["select"]["key"], "SPACE")
         self.assertEqual(plan["member_plans"][2]["select"]["key"], "SPACE")
+        self.assertTrue(plan["member_plans"][1]["select"]["close_console_before"])
         self.assertEqual(plan["required_residual_skills"], ["cooking", "fitness", "natural_living"])
         self.assertTrue(plan["async_detach_supported"])
         self.assertFalse(plan["execute_allowed"])
@@ -222,11 +223,21 @@ class DiySkillForceTests(unittest.TestCase):
         with self.assertRaises(DiySkillForceError):
             plan_household_skill_force(members=9)
 
+    def test_household_accepts_any_n_in_range(self):
+        for n in (1, 2, 4, 8):
+            plan = plan_household_skill_force(members=n, bundle="residual_core")
+            self.assertEqual(plan["household_members"], n)
+            self.assertEqual(len(plan["member_plans"]), n)
+
     def test_catalog_exposes_household_and_residuals(self):
         snap = catalog_snapshot()
         self.assertEqual(snap["required_residual_skills"], ["cooking", "fitness", "natural_living"])
         self.assertEqual(snap["household_traverse"]["next_member_key"], "SPACE")
         self.assertIn("residual_core", snap["bundles"])
+        self.assertEqual(snap.get("close_console_key"), "CTRL_SHIFT_C_TOGGLE")
+        self.assertIn("ENTER", str(snap.get("cheat_line_submit") or "").upper())
+        seq = snap.get("inject_sequence") or {}
+        self.assertEqual(seq.get("close_console_key"), "CTRL_SHIFT_C_TOGGLE")
 
 
 if __name__ == "__main__":

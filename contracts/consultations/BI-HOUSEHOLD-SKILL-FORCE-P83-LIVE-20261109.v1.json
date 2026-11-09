@@ -1,0 +1,26 @@
+{
+  "schema": "betterinstincts.consultation/v1",
+  "id": "BI-HOUSEHOLD-SKILL-FORCE-P83-LIVE-20261109",
+  "title": "P83 live household skill-force — Enter submit + no Esc MENU",
+  "status": "ACCEPTED",
+  "date": "2026-11-09",
+  "prompt_kit": ["P08", "P82", "P07", "P83"],
+  "observation": [
+    "computer_type batch newlines left concatenated cheat text in the Sims console (Enter not submitted).",
+    "Esc to close console before Space opened pause MENU and blocked household traverse.",
+    "CLI --idle-ms 3000 reached the worker then failed closed with IDLE_THRESHOLD_OUT_OF_RANGE.",
+    "LabLab household observed Live portrait count N=3 (Charlee + 2 Servos); transient map/travel miscounts must not invent size."
+  ],
+  "decision": [
+    "Durable diy_skill_force closes console with Ctrl+Shift+C toggle, never Esc.",
+    "Each cheat line: re-click console strip → type_text → keybd_event Enter.",
+    "Execute path rejects idle_ms below MIN_IDLE_MS=15000 before screen admit.",
+    "Household --members N remains operator/agent observed portrait count (1..8)."
+  ],
+  "owners": [
+    "contracts/diy-skill-force.v1.json",
+    "scripts/diy_skill_force.py",
+    "betterinstincts/diy_skill_force.py"
+  ],
+  "not": ["BI-005 skill growth cert", "save edit", "autorun"]
+}

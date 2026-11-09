@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.diy-skill-force/v1",
-  "version": 5,
+  "version": 6,
   "authority": "docs/DIY_SKILL_FORCE.md",
   "proof_ceiling": "HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT",
   "design_brief": {
@@ -50,8 +50,12 @@
     "default_level": 10,
     "min_level": 1,
     "max_level": 10,
-    "close_console_key": "ESCAPE",
+    "close_console_key": "CTRL_SHIFT_C_TOGGLE",
+    "close_console_key_legacy_escape": "ESCAPE",
+    "close_console_note": "Prefer Ctrl+Shift+C toggle. Escape while Live often opens pause MENU and breaks Space household traverse.",
     "close_console_optional": true,
+    "cheat_line_submit": "type_text_then_ENTER_keybd_event",
+    "cheat_line_submit_note": "computer_type newlines do not submit Sims cheat lines; durable host must keybd_event Enter after each command and re-click the console strip.",
     "selection_note": "Commands apply to the currently selected Sim/Servo only.",
     "typing_owner": "scripts/win32_input.type_text",
     "typing_note": "Prefer keybd_event VkKeyScan typing; KEYEVENTF_UNICODE alone is a silent miss on some TS4 DirectInput hosts.",
