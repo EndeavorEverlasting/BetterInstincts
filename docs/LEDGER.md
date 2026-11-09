@@ -7,6 +7,7 @@
 Sources: contracts/installation-profiles.v1.json; consultation BI-INSTALLATION-PROFILES-20261109.v1.json; docs/INSTALLATION_PROFILES.md. Profile preferences are local user state, never committed. Other setting toggles remain preferences pending individual integration.
 
 
+
 ## 2026-11-09 — P83 independently hardened async input and reversible uninstall
 
 **Inherited claims tested:** PR #86 15s idle, shared cooperative lock, queued Playwright and safe installer; PR #88 clickable install/uninstall. Offline CI was green but did **not** prove unique Git work survival or cross-worktree lock location. The earlier default remained overrideable to 1s, and cleanup only checked the Git working tree.
@@ -480,3 +481,16 @@ The repeated missed-click and camera-pan operator report is now represented by t
 ## 2026-11-09 — P95 hover-tooltip observational learning
 
 The operator wants BetterInstincts to learn which user behaviors actually help, starting with hover-triggered tooltips and 3/5/10/30/60-minute windows. Added an explicit ACTIVE-session, per-call opt-in semantic-event port, the bounded pure hover reducer, and reviewed-outcome association evaluations. Tooltip sightings are deduplicated; actions link through interaction_ref to independently evidenced outcomes. Unreviewed associations are pending and recommendations cannot grant input. See [HOVER_LEARNING.md](HOVER_LEARNING.md), contracts/hover-learning.v1.json and tests/test_hover_learning.py. Real tooltip sensor calibration, passive scene capture, actual user-game observations and learned benefit remain unverified; no hook/daemon installed. P95 offline proof only; BI-002 remains ACTIVE.
+
+## 2026-11-09 — P95 + Trifecta input-channel behavior learning
+
+Extended the existing bounded hover learner so catalog-qualified hotkeys and
+cheat invocations enter the same opt-in action/outcome ledger and the same
+3/5/10/30/60-minute projections. Identity resolution reads the existing
+`ui-chrome`, hidden-object, household-object-force and host-funds contracts
+rather than copying command strings or logging raw user input. The session
+remains read-only/advisory. P95 owns the program seam; P82 tests mixed-channel
+deduplication and evidence; P07 owns GitHub CI/merge. P08 cannot certify actual
+Sims input events or command effects without a local game host. See
+`docs/HOVER_LEARNING.md`, `betterinstincts/behavior_input_catalog.py`,
+`tests/test_behavior_input_channels.py`. BI-002 remains ACTIVE.

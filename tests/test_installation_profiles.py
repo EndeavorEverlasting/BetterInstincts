@@ -174,5 +174,34 @@ class InstallationProfilesTests(unittest.TestCase):
                     "--explicit-opt-in"]), 0)
         self.assertEqual(captured[-1], True)
 
+
+    def test_behavior_channel_preferences_separate_and_event_qualified(self):
+        from io import StringIO
+        from contextlib import redirect_stdout
+        from scripts import host_listener
+        event_path = self.root / "event.json"
+        received = []
+        def fake_observe(_sid, _event, *, explicit_opt_in=False):
+            received.append(explicit_opt_in)
+            return {"state": "ADVISORY_ONLY"}
+        for kind, profile, expected in [
+            ("hotkey_action", {"learning.hover_observations": True,
+                               "learning.hotkey_observations": False,
+                               "learning.cheat_observations": True}, False),
+            ("hotkey_action", {"learning.hotkey_observations": True}, True),
+            ("cheat_action", {"learning.cheat_observations": False,
+                              "learning.hotkey_observations": True}, False),
+            ("cheat_action", {"learning.cheat_observations": True}, True),
+        ]:
+            event_path.write_text(json.dumps({"kind": kind}))
+            with patch.object(host_listener, "observe_hover", side_effect=fake_observe), \
+                 patch("betterinstincts.installation_profiles.view",
+                       return_value={"settings": profile}), \
+                 redirect_stdout(StringIO()):
+                self.assertEqual(host_listener.main([
+                    "behavior", "--session-id", "manual", "--event", str(event_path),
+                    "--use-active-profile"]), 0)
+            self.assertIs(received[-1], expected)
+
 if __name__ == "__main__":
     unittest.main()
