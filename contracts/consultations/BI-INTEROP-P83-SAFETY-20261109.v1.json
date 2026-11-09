@@ -65,7 +65,8 @@
     "Lock files released normally; clean empty runtime lock directory cleanup is bounded",
     "Unknown player presence never authorizes computer input",
     "No game/save/mod files modified",
-    "Any --idle-ms or API override below 15,000ms raises IDLE_THRESHOLD_OUT_OF_RANGE before focus/action"
+    "Any --idle-ms or API override below 15,000ms raises IDLE_THRESHOLD_OUT_OF_RANGE before focus/action",
+    "Legacy room/floor listener fixtures must use >=15s while preserving read-only output; no 1-second override bypass."
   ],
   "rollback_path": "Revert PR; install and use path retain prior behavior. Uninstall safe cleanup remains in installed bootstrapper only after operator explicitly clicks or invokes uninstall; rollback must never delete unique work.",
   "unresolved_unknowns": [
@@ -84,8 +85,10 @@
     "docs/LEDGER.md",
     "docs/PROMPT_INVOCATIONS.md",
     "tests/test_bootstrap.py",
+    "tests/test_build_floor_activity.py",
     "tests/test_control_handoff.py",
     "tests/test_playwright_interop.py",
+    "tests/test_room_census.py",
     "tests/test_workflow_interop.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
