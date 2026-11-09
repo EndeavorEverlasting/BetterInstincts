@@ -22,7 +22,12 @@
     "skip_member_when": "no remaining skills for the requested bundle after ledger filter",
     "space_to_next_needing": true,
     "redo_flag": "--redo ignores ledger for this run",
-    "not": ["skills_panel_pass", "save_mutation", "autorun", "second_skill_owner"]
+    "not": [
+      "skills_panel_pass",
+      "save_mutation",
+      "autorun",
+      "second_skill_owner"
+    ]
   },
   "activation": {
     "require_explicit_activate": true,
@@ -37,10 +42,16 @@
       "household": "python -m scripts.diy_skill_force household --members N --bundle full_unlock --execute --detach --process-id PID --session-id ID"
     }
   },
-  "required_residual_skills": ["cooking", "fitness", "natural_living"],
+  "required_residual_skills": [
+    "cooking",
+    "fitness",
+    "natural_living"
+  ],
   "household_traverse": {
     "next_member_key": "SPACE",
-    "next_member_chord": ["SPACE"],
+    "next_member_chord": [
+      "SPACE"
+    ],
     "ui_chrome_hotkey_id": "SELECT_NEXT_HOUSEHOLD_SIM",
     "min_members": 1,
     "sanity_max_members": 100,
@@ -52,10 +63,19 @@
   },
   "inject_sequence": {
     "mode_agnostic": true,
-    "allowed_modes": ["live", "build", "buy", "unknown"],
+    "allowed_modes": [
+      "live",
+      "build",
+      "buy",
+      "unknown"
+    ],
     "require_live_mode": false,
     "never_force_mode_switch": true,
-    "open_console_chord": ["CTRL", "SHIFT", "C"],
+    "open_console_chord": [
+      "CTRL",
+      "SHIFT",
+      "C"
+    ],
     "open_console_chord_label": "Ctrl+Shift+C",
     "require_foreground_sims": true,
     "soft_focus_only": true,
@@ -87,13 +107,25 @@
       "never_press_cancel": true,
       "interleave_every_n_skill_commands": 5,
       "max_accept_rounds_per_batch": 3,
-      "ok_click_client_fractions": [[0.50, 0.72], [0.55, 0.78]],
+      "ok_click_client_fractions": [
+        [
+          0.5,
+          0.72
+        ],
+        [
+          0.55,
+          0.78
+        ]
+      ],
       "not": [
         "aspiration_life_state_completion",
         "invite_over_OK",
         "CAS_quiz_Okay",
         "purchase_confirmation"
-      ]
+      ],
+      "dialog_identity_required_before_input": true,
+      "uncategorized_default": "NEEDS_DIALOG_IDENTIFICATION",
+      "legacy_blind_enter_and_coordinate_clicks": "FORBIDDEN"
     },
     "skills_panel_observation": {
       "step": "PLAY_BRIEF_OBSERVE_REPAUSE",
@@ -147,102 +179,503 @@
     ]
   },
   "skill_catalog": [
-    {"id": "handiness", "display_name": "Handiness", "skill_stat": "Major_Handiness", "pack_hint": "base", "diy_role": "upgrade_repair_objects", "useful_at": "Upgrades, repair, DIY object mastery"},
-    {"id": "robotics", "display_name": "Robotics", "skill_stat": "Major_Robotics", "pack_hint": "Discover University", "diy_role": "servo_build_upgrade", "useful_at": "Servos, utili-bots, robotics workstation"},
-    {"id": "fabrication", "display_name": "Fabrication", "skill_stat": "Major_Fabrication", "pack_hint": "Eco Lifestyle", "diy_role": "fabricator_recipes", "useful_at": "Fabricator DIY recipes"},
-    {"id": "programming", "display_name": "Programming", "skill_stat": "Major_Programming", "pack_hint": "Discover University", "diy_role": "tech_diy_support", "useful_at": "Apps, viruses, tech DIY"},
-    {"id": "logic", "display_name": "Logic", "skill_stat": "Major_Logic", "pack_hint": "base", "diy_role": "research_unlocks", "useful_at": "Chess, research, rocket science prep"},
-    {"id": "rocket_science", "display_name": "Rocket Science", "skill_stat": "Major_RocketScience", "pack_hint": "base", "diy_role": "rocket_unlocks", "useful_at": "Rocket build/upgrade"},
-    {"id": "cooking", "display_name": "Cooking", "skill_stat": "Major_HomestyleCooking", "pack_hint": "base", "diy_role": "food_unlocks", "useful_at": "Homestyle recipes", "skill_stat_note": "NOT Major_Cooking — panel Cooking maps to HomestyleCooking"},
-    {"id": "gourmet_cooking", "display_name": "Gourmet Cooking", "skill_stat": "Major_GourmetCooking", "pack_hint": "base", "diy_role": "gourmet_unlocks", "useful_at": "Gourmet recipes"},
-    {"id": "baking", "display_name": "Baking", "skill_stat": "Major_Baking", "pack_hint": "Get to Work / bake packs", "diy_role": "bake_unlocks", "useful_at": "Bake recipes"},
-    {"id": "mixology", "display_name": "Mixology", "skill_stat": "Major_Bartending", "pack_hint": "base", "diy_role": "drink_unlocks", "useful_at": "Bar drinks"},
-    {"id": "gardening", "display_name": "Gardening", "skill_stat": "Major_Gardening", "pack_hint": "base", "diy_role": "garden_unlocks", "useful_at": "Grafting, rare plants"},
-    {"id": "fishing", "display_name": "Fishing", "skill_stat": "Major_Fishing", "pack_hint": "base", "diy_role": "fish_unlocks", "useful_at": "Bait and rare fish"},
-    {"id": "fitness", "display_name": "Fitness", "skill_stat": "Skill_Fitness", "pack_hint": "base", "diy_role": "athletic_unlocks", "useful_at": "Workout interactions", "skill_stat_note": "NOT Major_Fitness — Fitness is the only 10-level major using Skill_ prefix"},
-    {"id": "charisma", "display_name": "Charisma", "skill_stat": "Major_Charisma", "pack_hint": "base", "diy_role": "social_unlocks", "useful_at": "Friendly/romance socials"},
-    {"id": "comedy", "display_name": "Comedy", "skill_stat": "Major_Comedy", "pack_hint": "base", "diy_role": "comedy_unlocks", "useful_at": "Jokes and routines"},
-    {"id": "mischief", "display_name": "Mischief", "skill_stat": "Major_Mischief", "pack_hint": "base", "diy_role": "mischief_unlocks", "useful_at": "Prank interactions"},
-    {"id": "painting", "display_name": "Painting", "skill_stat": "Major_Painting", "pack_hint": "base", "diy_role": "art_unlocks", "useful_at": "Easel styles/sizes"},
-    {"id": "writing", "display_name": "Writing", "skill_stat": "Major_Writing", "pack_hint": "base", "diy_role": "book_unlocks", "useful_at": "Book genres"},
-    {"id": "piano", "display_name": "Piano", "skill_stat": "Major_Piano", "pack_hint": "base", "diy_role": "music_unlocks", "useful_at": "Piano songs"},
-    {"id": "guitar", "display_name": "Guitar", "skill_stat": "Major_Guitar", "pack_hint": "base", "diy_role": "music_unlocks", "useful_at": "Guitar songs"},
-    {"id": "violin", "display_name": "Violin", "skill_stat": "Major_Violin", "pack_hint": "base", "diy_role": "music_unlocks", "useful_at": "Violin songs"},
-    {"id": "pipe_organ", "display_name": "Pipe Organ", "skill_stat": "Major_PipeOrgan", "pack_hint": "Vampires", "diy_role": "music_unlocks", "useful_at": "Organ songs"},
-    {"id": "singing", "display_name": "Singing", "skill_stat": "Major_Singing", "pack_hint": "City Living", "diy_role": "music_unlocks", "useful_at": "Karaoke / songs"},
-    {"id": "dj_mixing", "display_name": "DJ Mixing", "skill_stat": "Major_DJMixing", "pack_hint": "Get Together", "diy_role": "music_unlocks", "useful_at": "DJ booth sets"},
-    {"id": "dancing", "display_name": "Dancing", "skill_stat": "Major_Dancing", "pack_hint": "Get Together", "diy_role": "dance_unlocks", "useful_at": "Dance styles"},
-    {"id": "video_gaming", "display_name": "Video Gaming", "skill_stat": "Major_VideoGaming", "pack_hint": "base", "diy_role": "gaming_unlocks", "useful_at": "Console / PC games"},
-    {"id": "photography", "display_name": "Photography", "skill_stat": "Major_Photography", "pack_hint": "base / City Living", "diy_role": "photo_unlocks", "useful_at": "Photo modes"},
-    {"id": "wellness", "display_name": "Wellness", "skill_stat": "Major_Wellness", "pack_hint": "Spa Day", "diy_role": "wellness_unlocks", "useful_at": "Yoga / massage"},
-    {"id": "herbalism", "display_name": "Herbalism", "skill_stat": "Major_Herbalism", "pack_hint": "Outdoor Retreat", "diy_role": "herb_unlocks", "useful_at": "Remedies"},
-    {"id": "vampire_lore", "display_name": "Vampire Lore", "skill_stat": "Major_VampireLore", "pack_hint": "Vampires", "diy_role": "occult_unlocks", "useful_at": "Vampire research"},
-    {"id": "archaeology", "display_name": "Archaeology", "skill_stat": "Major_Archaeology", "pack_hint": "Jungle Adventure", "diy_role": "dig_unlocks", "useful_at": "Excavation / artifacts"},
-    {"id": "selvadoradian_culture", "display_name": "Selvadoradian Culture", "skill_stat": "Major_SelvadoradianCulture", "pack_hint": "Jungle Adventure", "diy_role": "culture_unlocks", "useful_at": "Local interactions"},
-    {"id": "acting", "display_name": "Acting", "skill_stat": "Major_Acting", "pack_hint": "Get Famous", "diy_role": "fame_unlocks", "useful_at": "Acting gigs"},
-    {"id": "media_production", "display_name": "Media Production", "skill_stat": "Major_MediaProduction", "pack_hint": "Get Famous", "diy_role": "media_unlocks", "useful_at": "Video production"},
-    {"id": "parenting", "display_name": "Parenting", "skill_stat": "Major_Parenting", "pack_hint": "Parenthood", "diy_role": "parent_unlocks", "useful_at": "Parenting interactions"},
-    {"id": "veterinary", "display_name": "Veterinary", "skill_stat": "Major_Veterinarian", "pack_hint": "Cats & Dogs", "diy_role": "vet_unlocks", "useful_at": "Pet treatments"},
-    {"id": "pet_training", "display_name": "Pet Training", "skill_stat": "Skill_Dog", "pack_hint": "Cats & Dogs", "diy_role": "pet_unlocks", "useful_at": "Dog training commands"},
-    {"id": "flower_arranging", "display_name": "Flower Arranging", "skill_stat": "Major_FlowerArranging", "pack_hint": "Seasons", "diy_role": "flower_unlocks", "useful_at": "Arrangements"},
-    {"id": "research_debate", "display_name": "Research & Debate", "skill_stat": "Major_ResearchDebate", "pack_hint": "Discover University", "diy_role": "debate_unlocks", "useful_at": "Debate / research"},
-    {"id": "rock_climbing", "display_name": "Rock Climbing", "skill_stat": "Major_RockClimbing", "pack_hint": "Snowy Escape", "diy_role": "climb_unlocks", "useful_at": "Climbing routes"},
-    {"id": "skiing", "display_name": "Skiing", "skill_stat": "Major_Skiing", "pack_hint": "Snowy Escape", "diy_role": "ski_unlocks", "useful_at": "Ski slopes"},
-    {"id": "snowboarding", "display_name": "Snowboarding", "skill_stat": "Major_Snowboarding", "pack_hint": "Snowy Escape", "diy_role": "board_unlocks", "useful_at": "Snowboard slopes"},
-    {"id": "nectar_making", "display_name": "Nectar Making", "skill_stat": "Major_NectarMaking", "pack_hint": "Horse Ranch", "diy_role": "nectar_unlocks", "useful_at": "Nectar recipes"},
-    {"id": "equestrian", "display_name": "Equestrian", "skill_stat": "Major_EquestrianSkill", "pack_hint": "Horse Ranch", "diy_role": "horse_unlocks", "useful_at": "Horse care / riding"},
-    {"id": "apothecary", "display_name": "Apothecary", "skill_stat": "Major_Apothecary", "pack_hint": "Enchanted by Nature", "diy_role": "cure_unlocks", "useful_at": "Holistic cures / remedies"},
-    {"id": "natural_living", "display_name": "Natural Living", "skill_stat": "Skill_NLS", "pack_hint": "Enchanted by Nature", "diy_role": "nature_unlocks", "useful_at": "Nature living interactions", "skill_stat_note": "EA official cheat id is Skill_NLS, not Major_NaturalLiving"}
+    {
+      "id": "handiness",
+      "display_name": "Handiness",
+      "skill_stat": "Major_Handiness",
+      "pack_hint": "base",
+      "diy_role": "upgrade_repair_objects",
+      "useful_at": "Upgrades, repair, DIY object mastery"
+    },
+    {
+      "id": "robotics",
+      "display_name": "Robotics",
+      "skill_stat": "Major_Robotics",
+      "pack_hint": "Discover University",
+      "diy_role": "servo_build_upgrade",
+      "useful_at": "Servos, utili-bots, robotics workstation"
+    },
+    {
+      "id": "fabrication",
+      "display_name": "Fabrication",
+      "skill_stat": "Major_Fabrication",
+      "pack_hint": "Eco Lifestyle",
+      "diy_role": "fabricator_recipes",
+      "useful_at": "Fabricator DIY recipes"
+    },
+    {
+      "id": "programming",
+      "display_name": "Programming",
+      "skill_stat": "Major_Programming",
+      "pack_hint": "Discover University",
+      "diy_role": "tech_diy_support",
+      "useful_at": "Apps, viruses, tech DIY"
+    },
+    {
+      "id": "logic",
+      "display_name": "Logic",
+      "skill_stat": "Major_Logic",
+      "pack_hint": "base",
+      "diy_role": "research_unlocks",
+      "useful_at": "Chess, research, rocket science prep"
+    },
+    {
+      "id": "rocket_science",
+      "display_name": "Rocket Science",
+      "skill_stat": "Major_RocketScience",
+      "pack_hint": "base",
+      "diy_role": "rocket_unlocks",
+      "useful_at": "Rocket build/upgrade"
+    },
+    {
+      "id": "cooking",
+      "display_name": "Cooking",
+      "skill_stat": "Major_HomestyleCooking",
+      "pack_hint": "base",
+      "diy_role": "food_unlocks",
+      "useful_at": "Homestyle recipes",
+      "skill_stat_note": "NOT Major_Cooking — panel Cooking maps to HomestyleCooking"
+    },
+    {
+      "id": "gourmet_cooking",
+      "display_name": "Gourmet Cooking",
+      "skill_stat": "Major_GourmetCooking",
+      "pack_hint": "base",
+      "diy_role": "gourmet_unlocks",
+      "useful_at": "Gourmet recipes"
+    },
+    {
+      "id": "baking",
+      "display_name": "Baking",
+      "skill_stat": "Major_Baking",
+      "pack_hint": "Get to Work / bake packs",
+      "diy_role": "bake_unlocks",
+      "useful_at": "Bake recipes"
+    },
+    {
+      "id": "mixology",
+      "display_name": "Mixology",
+      "skill_stat": "Major_Bartending",
+      "pack_hint": "base",
+      "diy_role": "drink_unlocks",
+      "useful_at": "Bar drinks"
+    },
+    {
+      "id": "gardening",
+      "display_name": "Gardening",
+      "skill_stat": "Major_Gardening",
+      "pack_hint": "base",
+      "diy_role": "garden_unlocks",
+      "useful_at": "Grafting, rare plants"
+    },
+    {
+      "id": "fishing",
+      "display_name": "Fishing",
+      "skill_stat": "Major_Fishing",
+      "pack_hint": "base",
+      "diy_role": "fish_unlocks",
+      "useful_at": "Bait and rare fish"
+    },
+    {
+      "id": "fitness",
+      "display_name": "Fitness",
+      "skill_stat": "Skill_Fitness",
+      "pack_hint": "base",
+      "diy_role": "athletic_unlocks",
+      "useful_at": "Workout interactions",
+      "skill_stat_note": "NOT Major_Fitness — Fitness is the only 10-level major using Skill_ prefix"
+    },
+    {
+      "id": "charisma",
+      "display_name": "Charisma",
+      "skill_stat": "Major_Charisma",
+      "pack_hint": "base",
+      "diy_role": "social_unlocks",
+      "useful_at": "Friendly/romance socials"
+    },
+    {
+      "id": "comedy",
+      "display_name": "Comedy",
+      "skill_stat": "Major_Comedy",
+      "pack_hint": "base",
+      "diy_role": "comedy_unlocks",
+      "useful_at": "Jokes and routines"
+    },
+    {
+      "id": "mischief",
+      "display_name": "Mischief",
+      "skill_stat": "Major_Mischief",
+      "pack_hint": "base",
+      "diy_role": "mischief_unlocks",
+      "useful_at": "Prank interactions"
+    },
+    {
+      "id": "painting",
+      "display_name": "Painting",
+      "skill_stat": "Major_Painting",
+      "pack_hint": "base",
+      "diy_role": "art_unlocks",
+      "useful_at": "Easel styles/sizes"
+    },
+    {
+      "id": "writing",
+      "display_name": "Writing",
+      "skill_stat": "Major_Writing",
+      "pack_hint": "base",
+      "diy_role": "book_unlocks",
+      "useful_at": "Book genres"
+    },
+    {
+      "id": "piano",
+      "display_name": "Piano",
+      "skill_stat": "Major_Piano",
+      "pack_hint": "base",
+      "diy_role": "music_unlocks",
+      "useful_at": "Piano songs"
+    },
+    {
+      "id": "guitar",
+      "display_name": "Guitar",
+      "skill_stat": "Major_Guitar",
+      "pack_hint": "base",
+      "diy_role": "music_unlocks",
+      "useful_at": "Guitar songs"
+    },
+    {
+      "id": "violin",
+      "display_name": "Violin",
+      "skill_stat": "Major_Violin",
+      "pack_hint": "base",
+      "diy_role": "music_unlocks",
+      "useful_at": "Violin songs"
+    },
+    {
+      "id": "pipe_organ",
+      "display_name": "Pipe Organ",
+      "skill_stat": "Major_PipeOrgan",
+      "pack_hint": "Vampires",
+      "diy_role": "music_unlocks",
+      "useful_at": "Organ songs"
+    },
+    {
+      "id": "singing",
+      "display_name": "Singing",
+      "skill_stat": "Major_Singing",
+      "pack_hint": "City Living",
+      "diy_role": "music_unlocks",
+      "useful_at": "Karaoke / songs"
+    },
+    {
+      "id": "dj_mixing",
+      "display_name": "DJ Mixing",
+      "skill_stat": "Major_DJMixing",
+      "pack_hint": "Get Together",
+      "diy_role": "music_unlocks",
+      "useful_at": "DJ booth sets"
+    },
+    {
+      "id": "dancing",
+      "display_name": "Dancing",
+      "skill_stat": "Major_Dancing",
+      "pack_hint": "Get Together",
+      "diy_role": "dance_unlocks",
+      "useful_at": "Dance styles"
+    },
+    {
+      "id": "video_gaming",
+      "display_name": "Video Gaming",
+      "skill_stat": "Major_VideoGaming",
+      "pack_hint": "base",
+      "diy_role": "gaming_unlocks",
+      "useful_at": "Console / PC games"
+    },
+    {
+      "id": "photography",
+      "display_name": "Photography",
+      "skill_stat": "Major_Photography",
+      "pack_hint": "base / City Living",
+      "diy_role": "photo_unlocks",
+      "useful_at": "Photo modes"
+    },
+    {
+      "id": "wellness",
+      "display_name": "Wellness",
+      "skill_stat": "Major_Wellness",
+      "pack_hint": "Spa Day",
+      "diy_role": "wellness_unlocks",
+      "useful_at": "Yoga / massage"
+    },
+    {
+      "id": "herbalism",
+      "display_name": "Herbalism",
+      "skill_stat": "Major_Herbalism",
+      "pack_hint": "Outdoor Retreat",
+      "diy_role": "herb_unlocks",
+      "useful_at": "Remedies"
+    },
+    {
+      "id": "vampire_lore",
+      "display_name": "Vampire Lore",
+      "skill_stat": "Major_VampireLore",
+      "pack_hint": "Vampires",
+      "diy_role": "occult_unlocks",
+      "useful_at": "Vampire research"
+    },
+    {
+      "id": "archaeology",
+      "display_name": "Archaeology",
+      "skill_stat": "Major_Archaeology",
+      "pack_hint": "Jungle Adventure",
+      "diy_role": "dig_unlocks",
+      "useful_at": "Excavation / artifacts"
+    },
+    {
+      "id": "selvadoradian_culture",
+      "display_name": "Selvadoradian Culture",
+      "skill_stat": "Major_SelvadoradianCulture",
+      "pack_hint": "Jungle Adventure",
+      "diy_role": "culture_unlocks",
+      "useful_at": "Local interactions"
+    },
+    {
+      "id": "acting",
+      "display_name": "Acting",
+      "skill_stat": "Major_Acting",
+      "pack_hint": "Get Famous",
+      "diy_role": "fame_unlocks",
+      "useful_at": "Acting gigs"
+    },
+    {
+      "id": "media_production",
+      "display_name": "Media Production",
+      "skill_stat": "Major_MediaProduction",
+      "pack_hint": "Get Famous",
+      "diy_role": "media_unlocks",
+      "useful_at": "Video production"
+    },
+    {
+      "id": "parenting",
+      "display_name": "Parenting",
+      "skill_stat": "Major_Parenting",
+      "pack_hint": "Parenthood",
+      "diy_role": "parent_unlocks",
+      "useful_at": "Parenting interactions"
+    },
+    {
+      "id": "veterinary",
+      "display_name": "Veterinary",
+      "skill_stat": "Major_Veterinarian",
+      "pack_hint": "Cats & Dogs",
+      "diy_role": "vet_unlocks",
+      "useful_at": "Pet treatments"
+    },
+    {
+      "id": "pet_training",
+      "display_name": "Pet Training",
+      "skill_stat": "Skill_Dog",
+      "pack_hint": "Cats & Dogs",
+      "diy_role": "pet_unlocks",
+      "useful_at": "Dog training commands"
+    },
+    {
+      "id": "flower_arranging",
+      "display_name": "Flower Arranging",
+      "skill_stat": "Major_FlowerArranging",
+      "pack_hint": "Seasons",
+      "diy_role": "flower_unlocks",
+      "useful_at": "Arrangements"
+    },
+    {
+      "id": "research_debate",
+      "display_name": "Research & Debate",
+      "skill_stat": "Major_ResearchDebate",
+      "pack_hint": "Discover University",
+      "diy_role": "debate_unlocks",
+      "useful_at": "Debate / research"
+    },
+    {
+      "id": "rock_climbing",
+      "display_name": "Rock Climbing",
+      "skill_stat": "Major_RockClimbing",
+      "pack_hint": "Snowy Escape",
+      "diy_role": "climb_unlocks",
+      "useful_at": "Climbing routes"
+    },
+    {
+      "id": "skiing",
+      "display_name": "Skiing",
+      "skill_stat": "Major_Skiing",
+      "pack_hint": "Snowy Escape",
+      "diy_role": "ski_unlocks",
+      "useful_at": "Ski slopes"
+    },
+    {
+      "id": "snowboarding",
+      "display_name": "Snowboarding",
+      "skill_stat": "Major_Snowboarding",
+      "pack_hint": "Snowy Escape",
+      "diy_role": "board_unlocks",
+      "useful_at": "Snowboard slopes"
+    },
+    {
+      "id": "nectar_making",
+      "display_name": "Nectar Making",
+      "skill_stat": "Major_NectarMaking",
+      "pack_hint": "Horse Ranch",
+      "diy_role": "nectar_unlocks",
+      "useful_at": "Nectar recipes"
+    },
+    {
+      "id": "equestrian",
+      "display_name": "Equestrian",
+      "skill_stat": "Major_EquestrianSkill",
+      "pack_hint": "Horse Ranch",
+      "diy_role": "horse_unlocks",
+      "useful_at": "Horse care / riding"
+    },
+    {
+      "id": "apothecary",
+      "display_name": "Apothecary",
+      "skill_stat": "Major_Apothecary",
+      "pack_hint": "Enchanted by Nature",
+      "diy_role": "cure_unlocks",
+      "useful_at": "Holistic cures / remedies"
+    },
+    {
+      "id": "natural_living",
+      "display_name": "Natural Living",
+      "skill_stat": "Skill_NLS",
+      "pack_hint": "Enchanted by Nature",
+      "diy_role": "nature_unlocks",
+      "useful_at": "Nature living interactions",
+      "skill_stat_note": "EA official cheat id is Skill_NLS, not Major_NaturalLiving"
+    }
   ],
   "bundles": {
     "diy_maker": {
       "display_name": "DIY maker",
-      "skill_ids": ["handiness", "robotics", "fabrication", "programming"],
+      "skill_ids": [
+        "handiness",
+        "robotics",
+        "fabrication",
+        "programming"
+      ],
       "default_level": 10,
       "notes": "Original DIY-only maker set."
     },
     "servo_core": {
       "display_name": "Servo core DIY",
-      "skill_ids": ["handiness", "robotics", "programming"],
+      "skill_ids": [
+        "handiness",
+        "robotics",
+        "programming"
+      ],
       "default_level": 10,
       "notes": "Lean Servo path without Fabrication pack."
     },
     "creative": {
       "display_name": "Creative unlocks",
-      "skill_ids": ["painting", "writing", "piano", "guitar", "violin", "pipe_organ", "singing", "dj_mixing", "dancing", "photography", "media_production", "acting", "flower_arranging"],
+      "skill_ids": [
+        "painting",
+        "writing",
+        "piano",
+        "guitar",
+        "violin",
+        "pipe_organ",
+        "singing",
+        "dj_mixing",
+        "dancing",
+        "photography",
+        "media_production",
+        "acting",
+        "flower_arranging"
+      ],
       "default_level": 10,
       "notes": "Creative activity unlocks."
     },
     "social": {
       "display_name": "Social unlocks",
-      "skill_ids": ["charisma", "comedy", "mischief", "parenting"],
+      "skill_ids": [
+        "charisma",
+        "comedy",
+        "mischief",
+        "parenting"
+      ],
       "default_level": 10,
       "notes": "Social interaction unlocks."
     },
     "athletic": {
       "display_name": "Athletic unlocks",
-      "skill_ids": ["fitness", "wellness", "rock_climbing", "skiing", "snowboarding", "equestrian"],
+      "skill_ids": [
+        "fitness",
+        "wellness",
+        "rock_climbing",
+        "skiing",
+        "snowboarding",
+        "equestrian"
+      ],
       "default_level": 10,
       "notes": "Athletic / outdoor unlocks."
     },
     "residual_core": {
       "display_name": "Required residual core",
-      "skill_ids": ["cooking", "fitness", "natural_living"],
+      "skill_ids": [
+        "cooking",
+        "fitness",
+        "natural_living"
+      ],
       "default_level": 10,
       "notes": "Operator-observed miss set — always re-applied at end of full_unlock so mid-batch truncation cannot drop them."
     },
     "full_unlock": {
       "display_name": "Full adult unlock (all the way)",
       "skill_ids": [
-        "handiness", "robotics", "fabrication", "programming", "logic", "rocket_science",
-        "cooking", "gourmet_cooking", "baking", "mixology", "gardening", "fishing",
-        "fitness", "charisma", "comedy", "mischief", "painting", "writing",
-        "piano", "guitar", "violin", "pipe_organ", "singing", "dj_mixing", "dancing",
-        "video_gaming", "photography", "wellness", "herbalism", "vampire_lore",
-        "archaeology", "selvadoradian_culture", "acting", "media_production", "parenting",
-        "veterinary", "pet_training", "flower_arranging", "research_debate",
-        "rock_climbing", "skiing", "snowboarding", "nectar_making", "equestrian",
-        "apothecary", "natural_living"
+        "handiness",
+        "robotics",
+        "fabrication",
+        "programming",
+        "logic",
+        "rocket_science",
+        "cooking",
+        "gourmet_cooking",
+        "baking",
+        "mixology",
+        "gardening",
+        "fishing",
+        "fitness",
+        "charisma",
+        "comedy",
+        "mischief",
+        "painting",
+        "writing",
+        "piano",
+        "guitar",
+        "violin",
+        "pipe_organ",
+        "singing",
+        "dj_mixing",
+        "dancing",
+        "video_gaming",
+        "photography",
+        "wellness",
+        "herbalism",
+        "vampire_lore",
+        "archaeology",
+        "selvadoradian_culture",
+        "acting",
+        "media_production",
+        "parenting",
+        "veterinary",
+        "pet_training",
+        "flower_arranging",
+        "research_debate",
+        "rock_climbing",
+        "skiing",
+        "snowboarding",
+        "nectar_making",
+        "equestrian",
+        "apothecary",
+        "natural_living"
       ],
       "default_level": 10,
       "notes": "Operator all-the-way unlock set. Missing pack stats may no-op; child skills excluded."
@@ -329,6 +762,7 @@
     "console_text_is_not_pass",
     "level_up_toast_is_not_pass",
     "send_key_chord_for_ctrl_shift_c",
-    "detach_is_opt_in_never_autorun"
+    "detach_is_opt_in_never_autorun",
+    "never_accept_skill_reward_dialog_without_fresh_verified_classification"
   ]
 }
