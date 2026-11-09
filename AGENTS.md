@@ -14,7 +14,7 @@ Inventory `plans/active/BI-HIDDEN-OBJECTS.P04.md`; `python -m scripts.hidden_obj
 Useful-item force (not chat): `contracts/household-object-force.v1.json`; `python -m scripts.household_object_force`. `bb.showhiddenobjects` elementary for catalog/hidden rows; BBB never substitutes; no hallucinated `gsi_create_obj`. `docs/HOUSEHOLD_OBJECT_FORCE.md`.
 
 ## Invariants
-- **Camera-first world targets:** Before planning a click on a Sim/lot object, call the existing `camera_traverse.assess_world_target` through `host_stack` with an exact current host capture. Reframe/zoom from an observed plan if the object is obscured, small or edge-clipped, then park safely, capture again and re-evaluate before independent screen admission. Never blind-click, auto-reclick or let old coordinates survive a camera change. Fixed UI-chrome targets use their separate calibrated atlas.
+- **World-target clicks:** camera-first framing/re-observation via `docs/CAMERA_TRAVERSE.md`; no blind click or stale point.
 - **Player first:** no interruption of explicit player commands; no uncontrolled repeated autonomy loops.
 - **Save-safe:** never edit, delete, migrate or overwrite user saves/game files. Unknown/user saves protected; names never prove disposability.
 - **Storage:** no arbitrary user-profile writes, auto-discovery, asset copying, daemons, scheduled scans, telemetry or unbounded logs.
