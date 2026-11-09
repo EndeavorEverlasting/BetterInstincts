@@ -43,3 +43,7 @@ python -m scripts.build_floor_activity evaluate --observation dist/game-host/bui
 ## Evolution path
 
 Theme → optimize hints is the seed for host suggestions (e.g. kitchen → appliance/counter pools). Live placement and meter confirmation remain separate P08 gates. Does not close BI-002.
+
+## Whole-house, multi-label room inventory peer (2026-11-09)
+
+When an explicit revisioned `house_state` `lot_model` is supplied on a Build/Buy observation, the floor listener attaches a **compact** `room_census` summary. The complete per-item, per-room inventory is available through `betterinstincts.room_census.scan_lot_model` / `python -m scripts.room_census evaluate --model ...`. This keeps the 64 KB listener receipt guard while still covering observed `FLOOR_3+` and basement levels. Mixed-use room functions and styles are **non-exclusive**; unassigned items, uncertain enclosure and unknown coverage remain explicit. No automatic screenshots, clicks, save accesses, or always-on scans.
