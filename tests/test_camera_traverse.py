@@ -7,6 +7,7 @@ from pathlib import Path
 
 from betterinstincts.camera_traverse import (
     CameraTraverseError,
+    assess_drift_recovery,
     assess_world_target,
     classify_cursor,
     classify_practice,
@@ -259,6 +260,166 @@ class CliAndPrimitiveTests(unittest.TestCase):
         with patch.object(win32_input.sys, "platform", "linux"):
             with self.assertRaises(win32_input.Win32InputError):
                 win32_input.move_cursor(10, 10)
+
+
+
+class CameraDriftRecoveryRegressionTests(unittest.TestCase):
+    """Regression: camera can drift while an agent measures pixel targets."""
+
+    def host(self, **overrides):
+        from betterinstincts.scenes import load_catalog
+        frame = {
+            "source": "HOST_CAPTURE", "capture_ref": "capture:recover-1",
+            "camera_revision": "camera:9", "camera_displaced": True,
+            "camera_reanchor_attempts": 0, "cursor_client": [1917, 400],
+            "game_version": load_catalog()["game_version"],
+            "capture_quality": "CONTENT_PRESENT", "viewport_state": "NORMAL",
+            "mode": "LIVE", "scene_id": "live_mode",
+            "player_camera_owned": False, "text_entry_active": False,
+            "modal_open": False, "player_queue_owned": False,
+            "save_authorized": True,
+            "independent_cues": [
+                {"source": "visual", "token": "live_hud"},
+                {"source": "operator", "token": "live_confirmed"},
+            ],
+        }
+        frame.update(overrides)
+        return frame
+
+    def sim(self):
+        from tests.test_sim_camera import observed
+        return observed(capture_ref="capture:recover-1", camera_revision="camera:9")
+
+    def assess(self, kind="WORLD_OBJECT", **opts):
+        return assess_drift_recovery(
+            target_kind=kind, capture_ref="capture:recover-1",
+            observation=self.host(**opts.pop("host_changes", {})),
+            client_width=1920, client_height=1080,
+            target_id="A-OK Bloomer" if kind == "WORLD_OBJECT" else None,
+            **opts,
+        )
+
+    def world(self, **changes):
+        frame = {
+            "source": "HOST_CAPTURE", "target_id": "A-OK Bloomer",
+            "capture_ref": "capture:recover-1", "camera_revision": "camera:9",
+            "target_visible": True, "occluded": False,
+            "bbox_client": [840, 420, 1020, 600], "framing_attempts": 0,
+        }
+        frame.update(changes)
+        return frame
+
+    def test_edge_cursor_requires_safe_rest_before_any_target_sampling(self):
+        result = self.assess(world_target_observation=self.world())
+        self.assertEqual(result["gate"], "CAMERA_SAFE_REST")
+        self.assertEqual(result["recovery_step"]["kind"], "SAFE_REST")
+        self.assertEqual(result["safe_rest"]["client"], [960, 540])
+        self.assertFalse(result["world_click_ready"])
+        self.assertTrue(result["invalidate_prior_pixels"])
+
+    def test_recenter_active_sim_only_after_cursor_is_safe(self):
+        result = self.assess(
+            "SIM", sim_camera_observation=self.sim(),
+            host_changes={"cursor_client": [960, 540]},
+        )
+        self.assertEqual(result["gate"], "CAMERA_RECOVERY_REANCHOR")
+        self.assertEqual(result["recovery_step"]["command"], "CENTER_ACTIVE_SIM")
+        self.assertEqual(result["recovery_step"]["intent"]["effect"]["chord"], ["ENTER"])
+        self.assertFalse(result["execute_allowed"])
+
+    def test_recenter_lot_not_sim_for_lost_world_object(self):
+        result = self.assess(
+            sim_camera_observation=self.sim(),
+            host_changes={"cursor_client": [960, 540]},
+        )
+        self.assertEqual(result["recovery_step"]["command"], "CENTER_CURRENT_LOT")
+        self.assertEqual(result["recovery_step"]["intent"]["effect"]["chord"], ["SHIFT", "ENTER"])
+        self.assertEqual(result["next_step"], "CAPTURE_NEW_FRAME_AFTER_REANCHOR")
+
+    def test_follow_is_opt_in_game_api_not_unverified_portrait_click(self):
+        result = self.assess(
+            "SIM", sim_camera_observation=self.sim(), continuous_follow=True,
+            host_changes={"cursor_client": [960, 540]},
+        )
+        self.assertEqual(result["recovery_step"]["command"], "FOLLOW_ACTIVE_SIM")
+        self.assertEqual(result["recovery_step"]["intent"]["effect"]["kind"], "GAME_CAMERA_API")
+        self.assertIn("UNCALIBRATED_PORTRAIT_RIGHT_CLICK", result["forbidden"])
+
+    def test_world_target_must_match_camera_revision_and_capture(self):
+        safe = {"cursor_client": [960, 540], "camera_displaced": False}
+        wrong = self.assess(world_target_observation=self.world(camera_revision="camera:old"), host_changes=safe)
+        self.assertEqual(wrong["gate"], "CAMERA_RECOVERY_REOBSERVE")
+        self.assertFalse(wrong["world_click_ready"])
+        ready = self.assess(world_target_observation=self.world(), host_changes=safe)
+        self.assertEqual(ready["gate"], "WORLD_TARGET_AWAIT_HOST_ADMISSION")
+        self.assertEqual(ready["target_framing"]["click_candidate"], [930, 510])
+        self.assertTrue(ready["world_click_ready"])
+        self.assertFalse(ready["execute_allowed"])
+
+    def test_post_recenter_missing_direction_never_reanchors_forever(self):
+        safe = {"cursor_client": [960, 540], "camera_reanchor_attempts": 1}
+        unknown = self.assess(host_changes=safe, sim_camera_observation=self.sim())
+        self.assertEqual(unknown["gate"], "CAMERA_RECOVERY_REOBSERVE")
+        self.assertEqual(unknown["reason"], "OBSERVED_PAN_DIRECTION_REQUIRED")
+        measured = self.assess(host_changes=safe, reframe_directions=("W",))
+        self.assertEqual(measured["gate"], "CAMERA_RECOVERY_TRAVERSE")
+        self.assertEqual(measured["recovery_step"]["plan"]["steps"][-1]["kind"], "SAFE_REST")
+        refused = self.assess(host_changes={**safe, "camera_reanchor_attempts": 2})
+        self.assertEqual(refused["gate"], "CAMERA_RECOVERY_MANUAL_REVIEW")
+
+    def test_player_modal_unknown_cursor_and_scene_abstain(self):
+        for bad in [
+            {"player_camera_owned": True}, {"text_entry_active": True},
+            {"modal_open": True}, {"player_queue_owned": True},
+            {"save_authorized": False}, {"cursor_client": None},
+            {"camera_revision": ""}, {"camera_displaced": None},
+            {"scene_id": "main_menu"}, {"game_version": "unknown"},
+        ]:
+            with self.subTest(change=bad):
+                result = self.assess(host_changes=bad, sim_camera_observation=self.sim())
+                self.assertNotIn(result["gate"], ("CAMERA_RECOVERY_REANCHOR", "WORLD_TARGET_AWAIT_HOST_ADMISSION"))
+                self.assertFalse(result["execute_allowed"])
+
+    def test_host_stack_recovery_outranks_pixel_framing_and_pan(self):
+        world = {
+            "target_id": "A-OK Bloomer", "observation": self.world(),
+            "reframe_directions": ("E",),
+        }
+        request = {
+            "target_kind": "WORLD_OBJECT", "target_id": "A-OK Bloomer",
+            "observation": self.host(cursor_client=[960, 540]),
+            "world_target_observation": self.world(),
+        }
+        turn = evaluate_turn(
+            SIX, capture_ref="capture:recover-1", client_width=1920,
+            client_height=1080, camera_pan_directions=("E",),
+            world_target=world, camera_recovery=request,
+            sim_camera_observation=self.sim(),
+        )
+        self.assertEqual(turn["next_gate"], "CAMERA_RECOVERY_REANCHOR")
+        self.assertFalse(turn["fallback"]["execute_allowed"])
+        self.assertTrue(turn["camera_recovery"]["invalidate_prior_pixels"])
+
+    def test_player_directed_never_dispatches_recovery(self):
+        turn = evaluate_turn(
+            SIX, capture_ref="capture:recover-1", player_directed=True,
+            client_width=1920, client_height=1080,
+            camera_recovery={
+                "target_kind": "LOT",
+                "observation": self.host(cursor_client=[960, 540]),
+            },
+            sim_camera_observation=self.sim(),
+        )
+        self.assertEqual(turn["next_gate"], "RESPECT_PLAYER_OR_BUSY_STATE")
+        self.assertFalse(turn["fallback"]["execute_allowed"])
+
+    def test_unknown_evidence_never_mints_camera_action(self):
+        result = assess_drift_recovery(
+            target_kind="SIM", capture_ref="capture:recover-1",
+            observation=None, client_width=1920, client_height=1080,
+        )
+        self.assertEqual(result["gate"], "CAMERA_RECOVERY_REOBSERVE")
+        self.assertIsNone(result.get("recovery_step"))
 
 
 if __name__ == "__main__":
