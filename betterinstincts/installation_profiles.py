@@ -18,20 +18,27 @@ SCHEMA = "betterinstincts.installation-profiles/v1"
 MAX_BYTES = 32_768
 MAX_PROFILES = 16
 PROFILE_ID = re.compile(r"^[a-z][a-z0-9_-]{0,31}$")
-DEFAULTS = {
-    "ui.show_advanced_settings": False,
-    "ui.show_evidence_details": True,
-    "learning.hover_observations": False,
-    "learning.hotkey_observations": False,
-    "learning.cheat_observations": False,
-    "automation.cooperative_screen_queue": False,
-    "automation.host_suggestions": False,
-    "privacy.local_evaluation_receipts": False,
-}
-
-
 class InstallationProfileError(ValueError):
     pass
+
+
+CATALOG_PATH = Path(__file__).resolve().parents[1] / "contracts" / "installation-profiles.v1.json"
+
+
+def _catalog_defaults() -> dict[str, bool]:
+    # The versioned catalog is the sole default value owner (P124).
+    if CATALOG_PATH.is_symlink() or not CATALOG_PATH.is_file() or CATALOG_PATH.stat().st_size > MAX_BYTES:
+        raise InstallationProfileError("SETTINGS_CATALOG_UNSAFE")
+    data = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    values = data.get("defaults")
+    if data.get("schema") != "betterinstincts.installation-profiles-catalog/v1" or not isinstance(values, dict):
+        raise InstallationProfileError("SETTINGS_CATALOG_INVALID")
+    if not values or len(values) > 64 or any(not isinstance(k, str) or not k or type(v) is not bool for k, v in values.items()):
+        raise InstallationProfileError("SETTINGS_CATALOG_INVALID")
+    return values
+
+
+DEFAULTS = _catalog_defaults()
 
 
 def settings_path(*, home: Path | None = None, platform: str | None = None,
