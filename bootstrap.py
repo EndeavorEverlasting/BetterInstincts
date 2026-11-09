@@ -464,18 +464,18 @@ def household_skills_recipe(*, members: str = "N") -> dict[str, object]:
         "note": (
             "Observe Live portrait count N, then max skills fairly: one skill for "
             "every household member, then the next skill, until level 10. Never "
-            "autorun from install/doctor/gui open."
+            "autorun from install/doctor/gui open. The execution requires a fixed observed portrait roster and a single foreground input owner; online features and household expansion are forbidden."
         ),
         "owner": "contracts/diy-skill-force.v1.json",
         "cli": (
             "python -m scripts.diy_skill_force household --members "
             + str(members)
-            + " --bundle full_unlock --execute --detach --process-id PID --session-id ID"
+            + " --bundle full_unlock --execute --roster-key PORTRAIT_ID ... --first-portrait-attested --process-id PID --session-id ID"
         ),
         "bootstrap_forward": (
             "python bootstrap.py household-skills -- --members "
             + str(members)
-            + " --bundle full_unlock --execute --detach --process-id PID --session-id ID"
+            + " --bundle full_unlock --execute --roster-key PORTRAIT_ID ... --first-portrait-attested --process-id PID --session-id ID"
         ),
     }
 
