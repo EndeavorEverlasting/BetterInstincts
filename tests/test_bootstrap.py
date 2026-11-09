@@ -1,5 +1,7 @@
 """P92 canonical path, reversible clone lifecycle, and uninstall safety."""
 import json
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -47,7 +49,11 @@ class BootstrapTests(unittest.TestCase):
             return ""
         with patch.object(bootstrap, "_run", side_effect=fake_run), \
              patch.object(bootstrap, "_origin_ok", return_value=True), \
-             patch.object(bootstrap, "_pristine", return_value=True):
+             patch.object(bootstrap, "_pristine", return_value=True), \
+             patch.object(bootstrap, "_clone_signature", return_value={
+                 "head": "a" * 40, "branch": "main", "refs_sha256": "b" * 64,
+                 "reflog_sha256": "c" * 64, "git_config_sha256": "d" * 64,
+             }):
             installed = bootstrap.install(self.location, platform="linux")
             self.assertTrue(installed["created_checkout"])
             launcher = Path(installed["launcher"])
@@ -65,7 +71,8 @@ class BootstrapTests(unittest.TestCase):
             return ""
         with patch.object(bootstrap, "_run", side_effect=fake_run), \
              patch.object(bootstrap, "_origin_ok", return_value=True), \
-             patch.object(bootstrap, "_pristine", return_value=False):
+             patch.object(bootstrap, "_pristine", return_value=False), \
+             patch.object(bootstrap, "_clone_signature", return_value={"head": "a" * 40}):
             bootstrap.install(self.location, platform="linux")
             removed = bootstrap.uninstall(self.location, platform="linux")
         self.assertFalse(removed["checkout_removed"])
@@ -157,6 +164,127 @@ class BootstrapTests(unittest.TestCase):
              patch.object(bootstrap, "paths", side_effect=AssertionError("NO_PATH_LOOKUP")):
             self.assertEqual(bootstrap._gui(), 0)
         self.assertEqual(len(approvals), 1)
+
+
+    def _git(self, *args, cwd=None):
+        return subprocess.run(
+            ["git", *args], cwd=cwd, check=True, capture_output=True, text=True
+        ).stdout.strip()
+
+    @unittest.skipUnless(shutil.which("git"), "Git CLI required")
+    def _make_local_remote(self):
+        bare = self.home / "fixture-remote.git"
+        seed = self.home / "fixture-seed"
+        self._git("init", "--bare", "--initial-branch=main", str(bare))
+        self._git("init", "--initial-branch=main", str(seed))
+        (seed / "README.md").write_text("seed\\n", encoding="utf-8")
+        self._git("add", "README.md", cwd=seed)
+        self._git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                  "commit", "-m", "seed", cwd=seed)
+        self._git("remote", "add", "origin", str(bare), cwd=seed)
+        self._git("push", "-u", "origin", "main", cwd=seed)
+        return bare
+
+    def test_profile_shared_lock_root_is_not_inside_clone(self):
+        for loc in (
+            self.location,
+            bootstrap.paths(home=self.home, platform="win32", environment={
+                "LOCALAPPDATA": str(self.home / "LocalAppData")
+            }),
+        ):
+            self.assertEqual(loc["locks"], loc["use"].parent / "runtime" / "locks")
+            self.assertNotIn(str(loc["development"]), str(loc["locks"]))
+
+    @unittest.skipUnless(shutil.which("git"), "Git CLI required")
+    def test_actual_clean_clone_is_removed_and_empty_runtime_paths_pruned(self):
+        bare = self._make_local_remote()
+        with patch.object(bootstrap, "REPOSITORY", str(bare)), \
+             patch.object(bootstrap, "ALLOWED_ORIGINS", {str(bare)}):
+            receipt = bootstrap.install(self.location, platform="linux")
+            self.assertTrue(receipt["created_checkout"])
+            self.assertTrue(bootstrap._pristine(self.location["development"]))
+            self.location["locks"].mkdir(parents=True, mode=0o700)
+            removed = bootstrap.uninstall(self.location, platform="linux")
+        self.assertTrue(removed["checkout_removed"])
+        self.assertFalse(self.location["development"].exists())
+        self.assertFalse(self.location["locks"].exists())
+        self.assertFalse(self.location["use"].exists())
+
+    @unittest.skipUnless(shutil.which("git"), "Git CLI required")
+    def test_clean_checkout_with_unpushed_commit_is_never_deleted(self):
+        bare = self._make_local_remote()
+        dev = self.location["development"]
+        with patch.object(bootstrap, "REPOSITORY", str(bare)), \
+             patch.object(bootstrap, "ALLOWED_ORIGINS", {str(bare)}):
+            bootstrap.install(self.location, platform="linux")
+            (dev / "README.md").write_text("new local commit\\n", encoding="utf-8")
+            self._git("add", "README.md", cwd=dev)
+            self._git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                      "commit", "-m", "unpublished work", cwd=dev)
+            self.assertTrue(bootstrap._pristine(dev))
+            removed = bootstrap.uninstall(self.location, platform="linux")
+        self.assertFalse(removed["checkout_removed"])
+        self.assertEqual(removed["checkout_preserved_reason"], "MODIFIED_OR_UNVERIFIED_GIT_HISTORY")
+        self.assertTrue((dev / ".git").exists())
+        self.assertFalse(self.location["use"].exists())
+
+    @unittest.skipUnless(shutil.which("git"), "Git CLI required")
+    def test_clean_main_with_extra_local_branch_is_preserved(self):
+        bare = self._make_local_remote()
+        dev = self.location["development"]
+        with patch.object(bootstrap, "REPOSITORY", str(bare)), \
+             patch.object(bootstrap, "ALLOWED_ORIGINS", {str(bare)}):
+            bootstrap.install(self.location, platform="linux")
+            self._git("branch", "operator-branch", cwd=dev)
+            self.assertTrue(bootstrap._pristine(dev))
+            removed = bootstrap.uninstall(self.location, platform="linux")
+        self.assertFalse(removed["checkout_removed"])
+        self.assertTrue(dev.is_dir())
+
+    @unittest.skipUnless(shutil.which("git"), "Git CLI required")
+    def test_git_config_mutation_is_preserved_even_if_worktree_clean(self):
+        bare = self._make_local_remote()
+        dev = self.location["development"]
+        with patch.object(bootstrap, "REPOSITORY", str(bare)), \
+             patch.object(bootstrap, "ALLOWED_ORIGINS", {str(bare)}):
+            bootstrap.install(self.location, platform="linux")
+            self._git("config", "--local", "user.name", "Operator", cwd=dev)
+            self.assertTrue(bootstrap._pristine(dev))
+            removed = bootstrap.uninstall(self.location, platform="linux")
+        self.assertFalse(removed["checkout_removed"])
+        self.assertTrue(dev.is_dir())
+
+    @unittest.skipUnless(shutil.which("git"), "Git CLI required")
+    def test_legacy_manifest_lacks_delete_permission(self):
+        bare = self._make_local_remote()
+        dev = self.location["development"]
+        with patch.object(bootstrap, "REPOSITORY", str(bare)), \
+             patch.object(bootstrap, "ALLOWED_ORIGINS", {str(bare)}):
+            bootstrap.install(self.location, platform="linux")
+            manifest = self.location["use"] / bootstrap.MANIFEST
+            data = json.loads(manifest.read_text())
+            data.pop("clone_signature")
+            manifest.write_text(json.dumps(data), encoding="utf-8")
+            removed = bootstrap.uninstall(self.location, platform="linux")
+        self.assertFalse(removed["checkout_removed"])
+        self.assertTrue(dev.is_dir())
+
+    @unittest.skipUnless(shutil.which("git"), "Git CLI required")
+    def test_runtime_lock_blocks_uninstall_without_partial_deletion(self):
+        bare = self._make_local_remote()
+        with patch.object(bootstrap, "REPOSITORY", str(bare)), \
+             patch.object(bootstrap, "ALLOWED_ORIGINS", {str(bare)}):
+            bootstrap.install(self.location, platform="linux")
+            lock = self.location["locks"] / "desktop-shared.lock"
+            lock.parent.mkdir(parents=True, mode=0o700)
+            lock.write_text("busy", encoding="utf-8")
+            with self.assertRaisesRegex(bootstrap.BootstrapError, "RUNTIME_LOCK_BUSY"):
+                bootstrap.uninstall(self.location, platform="linux")
+            self.assertTrue((self.location["use"] / bootstrap.MANIFEST).exists())
+            lock.unlink()
+            removed = bootstrap.uninstall(self.location, platform="linux")
+        self.assertTrue(removed["checkout_removed"])
+        self.assertFalse(lock.parent.exists())
 
 
 if __name__ == "__main__":
