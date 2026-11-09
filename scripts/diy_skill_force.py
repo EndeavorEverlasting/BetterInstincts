@@ -1,26 +1,30 @@
 #!/usr/bin/env python3
-"""Deterministic DIY skill-force via Sims cheat console.
+"""Deterministic DIY / household skill-force via Sims cheat console.
 
 Order (durable — do not skip):
   soft-focus → Ctrl+Shift+C → testingcheats enabled true →
-  stats.set_skill_level <stat> <N> × skills →
+  stats.set_skill_level <stat> <N> × skills (Cooking/Fitness/NaturalLiving last) →
   ACCEPT_OFFERED_REWARD_TRAIT (Enter + OK hotspot; never Cancel)
 
-Typing owner: scripts.win32_input.type_text (keybd_event). Applies to the
-currently selected Sim/Servo. Evaluate-only unless --execute. Disposable lab
-only; never edits saves. Not BI-005 skill-growth certification.
+Household: --members N (observed portrait count) → for each member Space-select →
+dispatch. --detach returns immediately with a worker receipt (opt-in, never autorun).
+
+Typing owner: scripts.win32_input.type_text (keybd_event). Evaluate-only unless
+--execute. Disposable lab only; never edits saves. Not BI-005.
 
 Examples:
   python -m scripts.diy_skill_force catalog
   python -m scripts.diy_skill_force plan --bundle full_unlock
-  python -m scripts.diy_skill_force level --bundle full_unlock --level 10
-  python -m scripts.diy_skill_force level --bundle diy_maker
   python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID
+  python -m scripts.diy_skill_force household --members 3 --bundle full_unlock
+  python -m scripts.diy_skill_force household --members 3 --execute --detach --process-id PID --session-id ID
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -32,6 +36,7 @@ if str(ROOT) not in sys.path:
 from betterinstincts.diy_skill_force import (
     DiySkillForceError,
     catalog_snapshot,
+    plan_household_skill_force,
     plan_skill_force,
     skills_panel_observation_policy,
     steps_to_commands,
@@ -277,6 +282,135 @@ def _execute_plan(
     }
 
 
+def _select_next_household_member() -> dict:
+    """EA Space = next household Sim. Console must already be closed."""
+    from scripts.win32_input import tap_vk
+
+    # VK_SPACE
+    tap_vk(0x20)
+    time.sleep(0.55)
+    return {"step": "SELECT_NEXT_HOUSEHOLD_SIM", "key": "SPACE"}
+
+
+def _execute_household(
+    household_plan: dict,
+    *,
+    process_id: int | None,
+    session_id: str | None = None,
+    idle_ms: int = 15000,
+    verify_skills_panel: bool = False,
+    verify_play_seconds: int | None = None,
+) -> dict:
+    """Traverse every member and dispatch the same skill plan on each."""
+    member_results: list[dict] = []
+    for slot in household_plan.get("member_plans") or []:
+        index = int(slot.get("member_index") or 0)
+        select = slot.get("select")
+        if isinstance(select, dict) and select.get("required"):
+            from scripts.win32_input import tap_vk
+
+            # Close console before Space so the chord selects the next Sim.
+            tap_vk(0x1B)
+            time.sleep(0.35)
+            select_report = _select_next_household_member()
+        else:
+            select_report = {"step": "KEEP_CURRENT_SELECTION", "member_index": index}
+        live = _execute_plan(
+            slot["plan"],
+            process_id=process_id,
+            close_console=True,
+            session_id=session_id,
+            idle_ms=idle_ms,
+            verify_skills_panel=verify_skills_panel,
+            verify_play_seconds=verify_play_seconds,
+        )
+        member_results.append(
+            {
+                "member_index": index,
+                "select": select_report,
+                "live": live,
+            }
+        )
+    return {
+        "state": "HOUSEHOLD_SKILL_FORCE_DISPATCHED",
+        "household_members": household_plan.get("household_members"),
+        "required_residual_skills": household_plan.get("required_residual_skills"),
+        "members": member_results,
+        "proof_ceiling": household_plan.get("proof_ceiling"),
+        "not_bi005": True,
+    }
+
+
+def _detach_household_worker(argv_tail: list[str], *, receipt: Path) -> dict:
+    """Opt-in async worker: return immediately; progress lands in receipt."""
+    receipt = receipt.resolve()
+    if not receipt.is_relative_to(OUTPUT.resolve()):
+        raise GateError("RECEIPT_OUTSIDE_DIST_GAME_HOST")
+    receipt.parent.mkdir(parents=True, exist_ok=True)
+    log_path = receipt.with_suffix(receipt.suffix + ".log")
+    cmd = [sys.executable, "-m", "scripts.diy_skill_force", *argv_tail, "--receipt", str(receipt)]
+    creationflags = 0
+    close_fds = True
+    if sys.platform == "win32":
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | getattr(
+            subprocess, "DETACHED_PROCESS", 0x00000008
+        )
+        close_fds = False
+    log_fh = open(log_path, "w", encoding="utf-8")
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(ROOT),
+            stdin=subprocess.DEVNULL,
+            stdout=log_fh,
+            stderr=subprocess.STDOUT,
+            creationflags=creationflags,
+            close_fds=close_fds,
+            env={**os.environ, "PYTHONUNBUFFERED": "1"},
+        )
+    finally:
+        log_fh.close()
+    meta = {
+        "state": "HOUSEHOLD_SKILL_FORCE_DETACHED",
+        "worker_pid": int(proc.pid),
+        "receipt": str(receipt.relative_to(ROOT)),
+        "log": str(log_path.relative_to(ROOT)),
+        "command": cmd,
+        "note": "Opt-in worker — not autorun. Poll receipt for member progress.",
+    }
+    receipt.write_text(json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return meta
+
+
+def _add_common_execute_flags(ap: argparse.ArgumentParser) -> None:
+    ap.add_argument("--bundle", default=None, help="Named bundle (default full_unlock when no --skill)")
+    ap.add_argument("--skill", action="append", default=[], help="Repeatable skill id")
+    ap.add_argument("--level", type=int, default=None)
+    ap.add_argument("--game-mode", default="unknown")
+    ap.add_argument("--execute", action="store_true")
+    ap.add_argument("--close-console", action="store_true")
+    ap.add_argument(
+        "--no-accept-reward-dialogs",
+        action="store_true",
+        help="Skip Enter/OK accept of offered mastery/reward traits",
+    )
+    ap.add_argument(
+        "--verify-skills-panel",
+        action="store_true",
+        help="After dispatch: play 5–10s @ 1x, then pause (Skills panel refresh)",
+    )
+    ap.add_argument(
+        "--verify-play-seconds",
+        type=int,
+        default=None,
+        help="Bounded play seconds for --verify-skills-panel (5–10)",
+    )
+    ap.add_argument("--process-id", type=int, default=None)
+    ap.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
+    ap.add_argument("--idle-ms", type=int, default=15000)
+    ap.add_argument("--receipt", type=Path, default=None)
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest="command", required=True)
@@ -295,37 +429,95 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     lv = sub.add_parser("level")
-    lv.add_argument("--bundle", default=None, help="Named bundle (default full_unlock when no --skill)")
-    lv.add_argument("--skill", action="append", default=[], help="Repeatable skill id")
-    lv.add_argument("--level", type=int, default=None)
-    lv.add_argument("--game-mode", default="unknown")
-    lv.add_argument("--execute", action="store_true")
-    lv.add_argument("--close-console", action="store_true")
-    lv.add_argument(
-        "--no-accept-reward-dialogs",
-        action="store_true",
-        help="Skip Enter/OK accept of offered mastery/reward traits",
-    )
-    lv.add_argument(
-        "--verify-skills-panel",
-        action="store_true",
-        help="After dispatch: play 5–10s @ 1x, then pause (Skills panel refresh)",
-    )
-    lv.add_argument(
-        "--verify-play-seconds",
+    _add_common_execute_flags(lv)
+
+    hh = sub.add_parser("household", help="Traverse all household members and skill-force each")
+    hh.add_argument(
+        "--members",
         type=int,
-        default=None,
-        help="Bounded play seconds for --verify-skills-panel (5–10)",
+        required=True,
+        help="Exact observed Live household portrait count (1..8)",
     )
-    lv.add_argument("--process-id", type=int, default=None)
-    lv.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
-    lv.add_argument("--idle-ms", type=int, default=15000)
-    lv.add_argument("--receipt", type=Path, default=None)
+    _add_common_execute_flags(hh)
+    hh.add_argument(
+        "--detach",
+        action="store_true",
+        help="Opt-in async worker: return immediately; write progress under dist/game-host",
+    )
 
     args = p.parse_args(argv)
     try:
         if args.command == "catalog":
             result = catalog_snapshot()
+        elif args.command == "household":
+            skill_ids = list(args.skill) or None
+            bundle = args.bundle
+            if isinstance(bundle, str) and not bundle.strip():
+                bundle = None
+            if bundle is None and not skill_ids:
+                bundle = "full_unlock"
+            accept = None if not getattr(args, "no_accept_reward_dialogs", False) else False
+            plan = plan_household_skill_force(
+                members=int(args.members),
+                skill_ids=skill_ids,
+                bundle=bundle,
+                level=args.level,
+                game_mode=args.game_mode,
+                accept_reward_dialogs=accept,
+            )
+            result = {"plan": plan, "execute": False, "detached": False}
+            if args.execute and args.detach:
+                receipt = args.receipt
+                if receipt is None:
+                    receipt = OUTPUT / "household-skill-force-async-receipt.json"
+                elif not receipt.is_absolute():
+                    receipt = ROOT / receipt
+                # Child must not detach again.
+                child_argv = [
+                    "household",
+                    "--members",
+                    str(int(args.members)),
+                    "--bundle",
+                    str(bundle or "full_unlock"),
+                    "--execute",
+                    "--close-console",
+                ]
+                if args.level is not None:
+                    child_argv.extend(["--level", str(args.level)])
+                if skill_ids:
+                    for sid in skill_ids:
+                        child_argv.extend(["--skill", sid])
+                if args.no_accept_reward_dialogs:
+                    child_argv.append("--no-accept-reward-dialogs")
+                if args.verify_skills_panel:
+                    child_argv.append("--verify-skills-panel")
+                if args.verify_play_seconds is not None:
+                    child_argv.extend(["--verify-play-seconds", str(args.verify_play_seconds)])
+                if args.process_id is not None:
+                    child_argv.extend(["--process-id", str(args.process_id)])
+                if args.session_id:
+                    child_argv.extend(["--session-id", str(args.session_id)])
+                if args.idle_ms:
+                    child_argv.extend(["--idle-ms", str(int(args.idle_ms))])
+                result = _detach_household_worker(child_argv, receipt=Path(receipt))
+                result["plan"] = {
+                    "state": plan["state"],
+                    "household_members": plan["household_members"],
+                    "required_residual_skills": plan.get("required_residual_skills"),
+                    "bundle": plan.get("bundle"),
+                }
+                result["detached"] = True
+                result["execute"] = True
+            elif args.execute:
+                result["live"] = _execute_household(
+                    plan,
+                    process_id=args.process_id,
+                    session_id=args.session_id,
+                    idle_ms=int(args.idle_ms),
+                    verify_skills_panel=bool(args.verify_skills_panel),
+                    verify_play_seconds=args.verify_play_seconds,
+                )
+                result["execute"] = True
         else:
             skill_ids = list(args.skill) or None
             bundle = args.bundle
@@ -355,7 +547,7 @@ def main(argv: list[str] | None = None) -> int:
                 result["execute"] = True
 
         receipt = getattr(args, "receipt", None)
-        if receipt is not None:
+        if receipt is not None and not (args.command == "household" and getattr(args, "detach", False)):
             path = receipt if receipt.is_absolute() else ROOT / receipt
             path = path.resolve()
             if not path.is_relative_to(OUTPUT.resolve()):

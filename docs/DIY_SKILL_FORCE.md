@@ -2,23 +2,24 @@
 
 **Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
 **P124:** sibling owner beside `funds_inject` / `household_object_force`; distinct from read-only `sim_profile`
-**Machine owner:** [`contracts/diy-skill-force.v1.json`](../contracts/diy-skill-force.v1.json) (v4)
+**Machine owner:** [`contracts/diy-skill-force.v1.json`](../contracts/diy-skill-force.v1.json) (v5)
 **Evaluator / planner:** `betterinstincts.diy_skill_force`
 **Execute adapter:** `python -m scripts.diy_skill_force`
 **Typing owner:** `scripts.win32_input.type_text` (keybd_event — UNICODE-only is a silent miss on some TS4 hosts)
 
 ## Design brief
 
-- **Subject:** Adult `Major_*` skills on the **currently selected** Sim or Servo.
+- **Subject:** Adult `Major_*` skills on **every** household Sim/Servo (count N → Space-traverse → dispatch).
 - **Audience:** operators who need activities and unlockables ungated (DIY and beyond).
-- **Job:** Mode-agnostic cheat planner. Default **`full_unlock`** maxes the adult catalog at level **10**, then confirms offered mastery/reward-trait **OK** dialogs (e.g. Perfectionist-style) so unlockables are not left modal-blocked.
-- **Not:** BI-005 purposeful skill-growth certification; `practice_skill` queueing; a second skill/trait daemon; aspiration life-state completion; invite OK; save edits.
+- **Job:** Mode-agnostic cheat planner. Default **`full_unlock`** maxes the adult catalog at level **10**, re-applies required residuals **Cooking / Fitness / Natural Living** at the end, confirms offered mastery/reward-trait **OK** dialogs, and supports **`household --members N --detach`** so agents are not blocked for hours.
+- **Not:** BI-005 purposeful skill-growth certification; `practice_skill` queueing; an autorun skill daemon; aspiration life-state completion; invite OK; save edits.
 
 ## Bundles
 
 | Bundle | Purpose |
 | --- | --- |
-| `full_unlock` | **All the way** — adult majors for activities/unlockables (default) |
+| `full_unlock` | **All the way** — adult majors for activities/unlockables (default); residuals re-applied at end |
+| `residual_core` | Cooking + Fitness + Natural Living (mandatory miss set) |
 | `diy_maker` | Handiness + Robotics + Fabrication + Programming |
 | `servo_core` | Lean Servo DIY without Fabrication |
 | `creative` / `social` / `athletic` | Focused unlock subsets |
@@ -53,9 +54,11 @@ python -m scripts.diy_skill_force level --bundle full_unlock --level 10
 python -m scripts.diy_skill_force level --bundle diy_maker
 python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID
 python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID --verify-skills-panel --verify-play-seconds 7
+python -m scripts.diy_skill_force household --members 3 --bundle full_unlock
+python -m scripts.diy_skill_force household --members 3 --execute --detach --process-id PID --session-id ID --receipt dist/game-host/household-skill-force-async-receipt.json
 ```
 
-Select each household Sim/Servo in Live before `--execute`. Re-run per member. Missing packs may no-op individual lines.
+**Household:** observe Live portrait count → `--members N` (any 1..8). Member 0 keeps current selection; members 1..N-1 use **Space** (`SELECT_NEXT_HOUSEHOLD_SIM`). `--detach` starts an opt-in worker and returns immediately; poll the receipt. Missing packs may no-op individual lines.
 
 ## Proof ceiling
 

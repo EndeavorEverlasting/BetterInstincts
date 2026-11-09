@@ -1,13 +1,15 @@
 """Skill-force planner: DIY maker set plus full adult unlock catalog.
 
-P95 stack: soft-focus Sims → Ctrl+Shift+C → testingcheats enabled true →
+P95/P100 stack: soft-focus Sims → Ctrl+Shift+C → testingcheats enabled true →
 stats.set_skill_level <stat> <N> for each resolved skill → bounded
 ACCEPT_OFFERED_REWARD_TRAIT (OK on offered mastery/reward traits).
+Household: count N members → Space-traverse each → dispatch (opt-in --detach).
+Required residuals Cooking/Fitness/Natural Living always re-applied at end.
 Mode-agnostic; never force F1 while the operator builds.
 
-Bundles: diy_maker / servo_core / creative / social / athletic / full_unlock.
-Library plans only; scripts/diy_skill_force.py owns keybd_event typing + OK
-accept. Never edits saves. Never authorizes practice_skill or BI-005.
+Bundles: diy_maker / servo_core / creative / social / athletic / residual_core /
+full_unlock. Library plans only; scripts/diy_skill_force.py owns typing + OK
+accept + household async worker. Never edits saves. Never practice_skill / BI-005.
 """
 from __future__ import annotations
 
@@ -18,6 +20,7 @@ from typing import Mapping, Optional, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "diy-skill-force.v1.json"
 MAX_BYTES = 96_000
+DEFAULT_REQUIRED_RESIDUALS = ("cooking", "fitness", "natural_living")
 
 
 class DiySkillForceError(ValueError):
@@ -111,10 +114,28 @@ def load_contract(path: Path = CONTRACT) -> dict:
         raise DiySkillForceError("DIY_MAKER_BUNDLE_REQUIRED")
     if "full_unlock" not in bundles:
         raise DiySkillForceError("FULL_UNLOCK_BUNDLE_REQUIRED")
+    if "residual_core" not in bundles:
+        raise DiySkillForceError("RESIDUAL_CORE_BUNDLE_REQUIRED")
     full_ids = list((bundles["full_unlock"] or {}).get("skill_ids") or [])
     if "handiness" not in full_ids or "cooking" not in full_ids or "logic" not in full_ids:
         raise DiySkillForceError("FULL_UNLOCK_CORE_SKILLS_REQUIRED")
+    residuals = list(cfg.get("required_residual_skills") or DEFAULT_REQUIRED_RESIDUALS)
+    if not residuals:
+        raise DiySkillForceError("REQUIRED_RESIDUAL_SKILLS_REQUIRED")
+    for sid in residuals:
+        if sid not in full_ids:
+            raise DiySkillForceError("REQUIRED_RESIDUAL_SKILL_MISSING:" + str(sid))
+        if sid not in list((bundles["residual_core"] or {}).get("skill_ids") or []):
+            raise DiySkillForceError("RESIDUAL_CORE_MISSING:" + str(sid))
+    ht = cfg.get("household_traverse") or {}
+    if not isinstance(ht, Mapping) or ht.get("next_member_key") != "SPACE":
+        raise DiySkillForceError("HOUSEHOLD_TRAVERSE_SPACE_REQUIRED")
     return cfg
+
+
+def required_residual_skills(cfg: Optional[dict] = None) -> list[str]:
+    cfg = cfg or load_contract()
+    return [str(s) for s in (cfg.get("required_residual_skills") or DEFAULT_REQUIRED_RESIDUALS)]
 
 
 def catalog_snapshot(cfg: Optional[dict] = None) -> dict:
@@ -122,6 +143,8 @@ def catalog_snapshot(cfg: Optional[dict] = None) -> dict:
     return {
         "skills": list(cfg["skill_catalog"]),
         "bundles": dict(cfg["bundles"]),
+        "required_residual_skills": required_residual_skills(cfg),
+        "household_traverse": dict(cfg.get("household_traverse") or {}),
         "default_level": int(cfg["inject_sequence"]["default_level"]),
         "proof_ceiling": cfg["proof_ceiling"],
         "forbidden": list(cfg["inject_sequence"].get("forbidden") or []),
@@ -176,6 +199,16 @@ def resolve_skills(
         default_bundle = "full_unlock" if "full_unlock" in cfg["bundles"] else "diy_maker"
         for sid in (cfg["bundles"][default_bundle].get("skill_ids") or []):
             _add(str(sid))
+    # Operator miss set: always re-queue residuals at the end of full_unlock so
+    # mid-batch console truncation cannot leave Cooking/Fitness/Natural Living at 1.
+    if bundle == "full_unlock" or (bundle is None and not skill_ids):
+        for sid in required_residual_skills(cfg):
+            key = str(sid).strip().lower()
+            if key in index and key in seen:
+                # Force a second dispatch pass for residuals already in the set.
+                ordered.append(key)
+            else:
+                _add(key)
     return [index[sid] for sid in ordered]
 
 
@@ -374,6 +407,96 @@ def plan_skill_force(
         "proof_ceiling": cfg["proof_ceiling"],
         "not_bi005": True,
         "not_practice_skill": True,
+        "required_residual_skills": required_residual_skills(cfg),
+    }
+
+
+def plan_household_skill_force(
+    *,
+    members: int,
+    skill_ids: Optional[Sequence[str]] = None,
+    bundle: Optional[str] = None,
+    level: Optional[int] = None,
+    player_directed: bool = False,
+    game_mode: str = "unknown",
+    accept_reward_dialogs: Optional[bool] = None,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Plan skill-force across every observed household member.
+
+    ``members`` is the exact Live portrait count (any N in contract min..max).
+    Traverse uses SPACE between members. Does not invent household size.
+    """
+    cfg = cfg or load_contract()
+    ht = cfg.get("household_traverse") or {}
+    min_m = int(ht.get("min_members") or 1)
+    max_m = int(ht.get("max_members") or 8)
+    count = int(members)
+    if isinstance(members, bool) or count < min_m or count > max_m:
+        raise DiySkillForceError("INVALID_HOUSEHOLD_MEMBER_COUNT")
+    if bundle is None and not skill_ids:
+        bundle = "full_unlock"
+    member_plan = plan_skill_force(
+        skill_ids=skill_ids,
+        bundle=bundle,
+        level=level,
+        player_directed=player_directed,
+        game_mode=game_mode,
+        accept_reward_dialogs=accept_reward_dialogs,
+        cfg=cfg,
+    )
+    if member_plan.get("state") == "YIELD_TO_PLAYER":
+        return {
+            **member_plan,
+            "household_members": count,
+            "member_plans": [],
+        }
+    slots: list[dict] = []
+    for index in range(count):
+        slots.append(
+            {
+                "member_index": index,
+                "select": (
+                    None
+                    if index == 0
+                    else {
+                        "step": "SELECT_NEXT_HOUSEHOLD_SIM",
+                        "key": ht.get("next_member_key", "SPACE"),
+                        "chord": list(ht.get("next_member_chord") or ["SPACE"]),
+                        "close_console_before": bool(ht.get("close_console_before_space", True)),
+                        "required": True,
+                    }
+                ),
+                "plan": member_plan,
+            }
+        )
+    return {
+        "state": "HOUSEHOLD_SKILL_FORCE_PLAN_READY",
+        "next_gate": "EXECUTE_HOUSEHOLD_SKILL_FORCE",
+        "household_members": count,
+        "household_traverse": {
+            "next_member_key": ht.get("next_member_key", "SPACE"),
+            "min_members": min_m,
+            "max_members": max_m,
+        },
+        "bundle": member_plan.get("bundle"),
+        "level": member_plan.get("level"),
+        "skills": member_plan.get("skills"),
+        "required_residual_skills": required_residual_skills(cfg),
+        "member_plans": slots,
+        "game_mode": member_plan.get("game_mode"),
+        "mode_agnostic": True,
+        "accept_reward_dialogs": member_plan.get("accept_reward_dialogs"),
+        "typing_owner": member_plan.get("typing_owner"),
+        "skills_panel_observation": member_plan.get("skills_panel_observation"),
+        "keep_paused_default": True,
+        "forbidden": member_plan.get("forbidden"),
+        "invariants": member_plan.get("invariants"),
+        "execute_allowed": False,
+        "proof_ceiling": member_plan.get("proof_ceiling"),
+        "not_bi005": True,
+        "not_practice_skill": True,
+        "async_detach_supported": True,
     }
 
 

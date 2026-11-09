@@ -2,6 +2,10 @@
 
 ## 2026-11-09 — Skill-force trait OK + durable keybd typing (P95 + Trifecta)
 
+**Operator:** Count any household (N portraits), Space-traverse every member, level all skills including mandatory Cooking/Fitness/Natural Living, and do it asynchronously so agents are not blocked for hours. **P95/P100** extend `diy-skill-force` v5 with `household --members N`, `residual_core` tail re-dispatch, and opt-in `--detach` worker. Consultation `BI-HOUSEHOLD-SKILL-FORCE-ASYNC-20261109.v1.json`. Not BI-005.
+
+## 2026-11-09 — Skills panel play-brief then re-pause
+
 **Operator:** Skills panel is stale while paused; keep Live paused during precious-time / unfinished main-goal work, but confirm panel data with a bounded **play 5–10s → observe → re-pause** loop (never leave the clock running). **P95/P124** extend `diy-skill-force` v4 with `PLAY_BRIEF_OBSERVE_REPAUSE` + `KEEP_PAUSED` dispatch default; CLI `--verify-skills-panel`. Consultation `BI-SKILL-FORCE-KEEP-PAUSED-VERIFY-20261109.v1.json`. Not BI-005.
 
 ## 2026-11-09 — Skill-force reward-trait OK + keybd_event typing

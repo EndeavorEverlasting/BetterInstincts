@@ -1,0 +1,35 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-HOUSEHOLD-SKILL-FORCE-ASYNC-20261109",
+  "ontology": "contracts/ontology.v1.json",
+  "proposed_capability": "P95/P100 holistic extension of diy_skill_force: count any household size N, traverse every member (EA Space = next Sim), dispatch full_unlock including mandatory residual Cooking/Fitness/Natural Living (re-applied at end so mid-batch truncation cannot drop them), and opt-in --detach async worker so agents do not block for multi-hour serial waits. One diy_skill_force owner — not a second skill daemon.",
+  "operator_correction": "Agents forgot other household members and residual Cooking/Fitness/Natural Living. Host must count any household, traverse all members, level skills asynchronously, and lock residuals into the cohesive repository system so no agent rediscovers this.",
+  "affected_concepts": [
+    "HOUSEHOLD",
+    "SIM",
+    "HOST_SESSION",
+    "HOST_ACTION",
+    "OBSERVATION",
+    "PROOF_RECEIPT",
+    "DOMAIN_CAPABILITY",
+    "PLAYER_FIRST"
+  ],
+  "relevant_canonical_owners": [
+    "docs/DIY_SKILL_FORCE.md",
+    "contracts/diy-skill-force.v1.json",
+    "betterinstincts/diy_skill_force.py",
+    "scripts/diy_skill_force.py",
+    "contracts/ui-chrome.v1.json",
+    "docs/GLOSSARY.md",
+    "docs/LEDGER.md"
+  ],
+  "invariants_checked": [
+    "PLAYER_FIRST",
+    "active_sim_selection_required",
+    "yield_screen_to_concurrent_live_cert",
+    "never_autorun",
+    "required_residual_skills_always_dispatched"
+  ],
+  "decision": "APPROVE_BOUNDED",
+  "notes": "Member count is an explicit input from observed portrait count (any N in 1..8). Traverse uses SPACE. Detach is opt-in subprocess with receipt under dist/game-host — not autorun."
+}
