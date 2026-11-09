@@ -8,6 +8,7 @@ model attestation — no SendInput, no Documents-folder writes.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -162,6 +163,11 @@ def is_room_mutation(
         return False
     if act == "SAVE_TO_LIBRARY":
         return False
+    # P00/P01: every Buy/Build change requires the whole-lot pre-edit backup.
+    # Keep live FLOOR_2 and held-object safety checks below unchanged.
+    from betterinstincts.house_state import load_contract as load_house_contract
+    if act in {str(x).upper() for x in load_house_contract()["mutating_actions"]}:
+        return True
     if act in room_mutating_actions(cfg):
         return True
     kinds = room_mutating_target_kinds(cfg)
@@ -184,6 +190,97 @@ def is_room_mutation(
         }:
             return True
     return False
+
+
+def validate_full_lot_manifest(model: Mapping[str, Any], manifest: Mapping[str, Any]) -> dict:
+    """Validate an operator-attested, every-story/room scan against current observations.
+
+    This can verify *declared* coverage, not discover a physically unseen floor.
+    A capture ref is provenance, not proof a live Gallery save occurred.
+    """
+    from betterinstincts.room_census import load_contract as census_contract, scan_lot_model
+
+    if not isinstance(manifest, Mapping) or manifest.get("operator_confirmed") is not True:
+        raise BuildLibraryCheckpointError("FULL_LOT_MANIFEST_CONFIRMATION_REQUIRED")
+    if manifest.get("all_stories_inspected") is not True:
+        raise BuildLibraryCheckpointError("ALL_STORIES_NOT_ATTESTED")
+    if str(manifest.get("lot_id")) != str(model.get("lot_id")):
+        raise BuildLibraryCheckpointError("LOT_MANIFEST_SCOPE_MISMATCH")
+    if type(manifest.get("model_revision")) is not int or manifest["model_revision"] != model.get("revision"):
+        raise BuildLibraryCheckpointError("LOT_MANIFEST_REVISION_STALE")
+    census = scan_lot_model(model)
+    if census["unassigned_items"] or census["unverified_claim_count"] or model.get("unknowns"):
+        raise BuildLibraryCheckpointError("LOT_MANIFEST_UNCLASSIFIED_OBSERVATIONS")
+    floors = manifest.get("floors")
+    rooms = manifest.get("rooms")
+    if not isinstance(floors, Mapping) or not isinstance(rooms, Mapping) or not floors or not rooms:
+        raise BuildLibraryCheckpointError("LOT_MANIFEST_FLOORS_AND_ROOMS_REQUIRED")
+    if set(floors) != set(census["floors"]) or set(rooms) != set(census["rooms"]):
+        raise BuildLibraryCheckpointError("LOT_MANIFEST_FLOOR_ROOM_COVERAGE_MISMATCH")
+    captures = set(model.get("captures") or [])
+    taxonomy = census_contract()
+    allowed_functions = set(taxonomy["functional_labels"])
+    allowed_styles = set(taxonomy["style_labels"])
+    for story, floor in floors.items():
+        if not isinstance(floor, Mapping) or floor.get("rooms") != census["floors"][story]["rooms"]:
+            raise BuildLibraryCheckpointError("LOT_MANIFEST_FLOOR_ROOMS_MISMATCH")
+        ref = floor.get("capture_ref")
+        if not isinstance(ref, str) or not CAPTURE_RE.fullmatch(ref) or ref not in captures:
+            raise BuildLibraryCheckpointError("LOT_MANIFEST_FLOOR_CAPTURE_MISSING")
+    for room_id, classification in rooms.items():
+        observed = census["rooms"][room_id]
+        if observed["room_evidence"] != "STRUCTURE_ATTESTED" or observed["enclosure"] == "UNKNOWN_ENCLOSURE" or observed["enclosure_conflict"]:
+            raise BuildLibraryCheckpointError("LOT_MANIFEST_ROOM_STRUCTURE_UNVERIFIED")
+        if not isinstance(classification, Mapping):
+            raise BuildLibraryCheckpointError("LOT_MANIFEST_ROOM_CLASSIFICATION_MISSING")
+        if classification.get("capture_ref") not in captures:
+            raise BuildLibraryCheckpointError("LOT_MANIFEST_ROOM_CAPTURE_MISSING")
+        functions = classification.get("function_labels")
+        styles = classification.get("style_labels")
+        if not isinstance(functions, list) or not functions or not set(functions) <= allowed_functions:
+            raise BuildLibraryCheckpointError("LOT_MANIFEST_ROOM_FUNCTION_MISSING")
+        if not isinstance(styles, list) or not styles or not set(styles) <= allowed_styles:
+            raise BuildLibraryCheckpointError("LOT_MANIFEST_ROOM_STYLE_MISSING")
+    canonical = {
+        "lot_id": model["lot_id"],
+        "model_revision": model["revision"],
+        "floors": {key: dict(val) for key, val in sorted(floors.items())},
+        "rooms": {key: dict(val) for key, val in sorted(rooms.items())},
+        "entity_count": len(model.get("entities") or {}),
+        "observed_story_count": census["observed_story_count"],
+    }
+    digest = hashlib.sha256(json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    return {"fingerprint": digest, "floor_count": len(floors), "room_count": len(rooms),
+            "model_revision": model["revision"], "manifest": dict(manifest),
+            "coverage": "OPERATOR_ATTESTED_ALL_STORIES_AND_ROOMS"}
+
+
+def _verified_saved_lot_inventory(model: Mapping[str, Any], att: Mapping[str, Any]) -> dict:
+    snapshot = att.get("lot_inventory")
+    if not isinstance(snapshot, dict):
+        return {"fresh": False, "reason": "FULL_LOT_MANIFEST_REQUIRED",
+                "violation": "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP"}
+    try:
+        verified = validate_full_lot_manifest(model, snapshot.get("manifest"))
+    except (BuildLibraryCheckpointError, ValueError, TypeError) as exc:
+        return {"fresh": False, "reason": str(exc),
+                "violation": "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP"}
+    if verified["fingerprint"] != snapshot.get("fingerprint"):
+        return {"fresh": False, "reason": "LOT_INVENTORY_FINGERPRINT_MISMATCH",
+                "violation": "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP"}
+    # The host must have *written* the model before admitting a purchase or edit.
+    # This is only the host's metadata backup; the My Library save is separately
+    # operator-attested, not fabricated by this filesystem readback.
+    try:
+        from betterinstincts.house_state import load_model, model_path
+        path = model_path(str(model["run_id"]), str(model["lot_id"]))
+        stored = load_model(path)
+        if stored.get("revision") != model.get("revision") or stored.get("entities") != model.get("entities") or stored.get("library_checkpoint") != att:
+            raise BuildLibraryCheckpointError("LOT_METADATA_BACKUP_STALE")
+    except (OSError, ValueError, KeyError) as exc:
+        return {"fresh": False, "reason": str(exc) or "LOT_METADATA_BACKUP_MISSING",
+                "violation": "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP"}
+    return {"fresh": True, "inventory": verified}
 
 
 def library_checkpoint_fresh(
@@ -224,6 +321,10 @@ def library_checkpoint_fresh(
                 "attested_building_id": att.get("building_id"),
                 "requested_building_id": building_id,
             }
+    inventory = _verified_saved_lot_inventory(model, att)
+    if not inventory["fresh"]:
+        return {"fresh": False, "reason": inventory["reason"],
+                "violation": inventory["violation"], "model_revision": revision}
     # Save As attestation must never be treated as library checkpoint.
     if att.get("source") == "GAME_SAVE_AS" or att.get("treated_as_save_as"):
         return {
@@ -234,7 +335,8 @@ def library_checkpoint_fresh(
         }
     return {
         "fresh": True,
-        "reason": "FRESH_LIBRARY_CHECKPOINT",
+        "reason": "FRESH_LIBRARY_AND_COMPLETE_LOT_BACKUP",
+        "lot_inventory": inventory["inventory"],
         "model_revision": revision,
         "building_id": att.get("building_id"),
         "library_item_name": att.get("library_item_name"),
@@ -416,14 +518,15 @@ def plan_library_save_if_required(model: Mapping[str, Any]) -> Optional[dict]:
         g.startswith("RESTORE_") or g in {"FLOOR_2", "STAIRS", "STAIR"}
         for g in goals
     )
-    if not structure_targets and not restore_goals:
+    if not entities:
         return None
+    # P01 host planning: no catalog/inventory purchase or edit before full-lot census.
     building_id = str(model.get("lot_id") or "building.unknown")
     return {
         "state": "LIBRARY_SAVE_REQUIRED",
         "gate": "LIBRARY_CHECKPOINT_REQUIRED",
-        "action": "SAVE_TO_LIBRARY",
-        "reason": "SAVE_BUILDING_TO_LIBRARY_BEFORE_ROOM_MUTATE",
+        "action": "SCAN_ALL_FLOORS_AND_ROOMS" if not isinstance((model.get("library_checkpoint") or {}).get("lot_inventory"), dict) else "SAVE_TO_LIBRARY",
+        "reason": "COMPLETE_LOT_INVENTORY_AND_LIBRARY_SAVE_REQUIRED",
         "building_id": building_id,
         "targets": structure_targets[:8],
         "execute_allowed": False,
