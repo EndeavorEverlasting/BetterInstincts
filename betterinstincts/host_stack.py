@@ -1028,7 +1028,7 @@ def evaluate_turn(
             "mechanism": "BUILD_LIBRARY_CHECKPOINT",
             "owner": "betterinstincts/build_library_checkpoint.py",
             "contract": "contracts/build-library-checkpoint.v1.json",
-            "action": "SAVE_TO_LIBRARY",
+            "action": build_library.get("action") or "SCAN_ALL_FLOORS_AND_ROOMS",
             "building_id": build_library.get("building_id"),
             "targets": build_library.get("targets") or [],
             "execute_allowed": False,
