@@ -84,12 +84,16 @@ def _validate(visit: Mapping) -> tuple[list[dict], list[dict], list[dict], Mappi
             raise HouseholdUpkeepError("UPKEEP_DUPLICATE_SERVO")
         ids.add(ref)
         needs = row.get("needs")
-        if not isinstance(needs, Mapping) or set(needs) != SERVO_NEEDS:
-            raise HouseholdUpkeepError("UPKEEP_SERVO_NEEDS_INVALID")
-        if not all(_num(v, upper=1) for v in needs.values()):
-            raise HouseholdUpkeepError("UPKEEP_SERVO_MOTIVE_RANGE_INVALID")
         if not _bool(row.get("needs_verified")) or not _bool(row.get("broken")):
             raise HouseholdUpkeepError("UPKEEP_SERVO_PROOF_INVALID")
+        if row["needs_verified"]:
+            if not isinstance(needs, Mapping) or set(needs) != SERVO_NEEDS:
+                raise HouseholdUpkeepError("UPKEEP_SERVO_NEEDS_INVALID")
+            if not all(_num(v, upper=1) for v in needs.values()):
+                raise HouseholdUpkeepError("UPKEEP_SERVO_MOTIVE_RANGE_INVALID")
+        elif needs is not None:
+            # No pretend four-need readings when a Servo is off-screen.
+            raise HouseholdUpkeepError("UPKEEP_UNVERIFIED_SERVO_MOTIVES_MUST_BE_NULL")
         if row.get("water_exposure", "NONE") not in {"NONE", "RISK", "WET"}:
             raise HouseholdUpkeepError("UPKEEP_SERVO_WATER_INVALID")
         if row.get("maintenance_attempt", "NONE") not in ATTEMPTS:
@@ -197,7 +201,7 @@ def evaluate_household_upkeep(
     # Health is always surveyed, even while another domain owns screen input.
     candidates: list[dict] = []
     for servo in servos:
-        vals = servo["needs"]
+        vals = servo.get("needs") or {}
         health = {
             "servo_ref": servo["sim_ref"],
             "needs": dict(vals),
