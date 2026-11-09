@@ -1,5 +1,10 @@
 # Canonical project ledger
 
+## 2026-11-09 — Semantic scene intelligence, portrait follow and event overlays (P95/P124/Trifecta)
+
+**Operator correction:** Right-click the selected active Sim portrait to follow; Enter centers once, Shift+Enter centers the current lot. This refines the earlier camera-lock rule, not its narrow map-goal exception. Owners: `portrait_follow` (exact selected Sim and native admitted right-click), `scene_ui_semantics` (bottom-right active panel, career/random-event overlays, queued goal continuity, resolved-event dismissal), and `scenery_memory` (independent viewpoint scene identities and reviewed discovery registry). Reuse existing host stack, cooperative queue, input owner, game-scene classifier and ontology. Consultation `BI-SEMANTIC-SCENE-PORTRAIT-FOLLOW-20261109` was recorded before mutation; registry remains empty until genuine host sightings. No game saves or EA Connect. Live Windows UI verification and local agent adoption remain separate from CI.
+
+
 ## 2026-11-09 — Camera lock for agents (P00/P01/P95/P141/P124 + Trifecta)
 
 **Operator correction:** Agents repeatedly leave the camera on a top-down street. During admitted agent control the camera defaults to active Sim. A named, verified current host target/goal may permit <=30 seconds of map traversal with restored active Sim, not unbounded camera discretion. Code: `betterinstincts/active_sim_camera_lock.py`, `betterinstincts/host_stack.py`, `scripts/camera_traverse.py`. Contract: `contracts/camera-traverse.v1.json`. Consultation: `contracts/consultations/BI-ACTIVE-SIM-LOCK-20261109.v1.json`. Regression: `tests/test_active_sim_camera_lock.py`. Human camera ownership first; no save modifications. Offline injected-port tests do not certify physical gameplay.
