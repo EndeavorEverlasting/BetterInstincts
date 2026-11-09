@@ -266,7 +266,7 @@ def enqueue_native_game_click(
             raise ScreenAtlasError("NATIVE_TARGET_STALE")
         await checkpoint()
         obs = await observe()
-        if not native_owner(obs) or not _observation_matches(obs, resolved):
+        if not _native_owner(obs, process_id, session_id) or not _observation_matches(obs, resolved):
             raise ScreenAtlasError("NATIVE_TARGET_CHANGED_AT_EFFECT")
         origin = (obs["client_origin_x"], obs["client_origin_y"])
         point = (origin[0] + resolved["click"][0], origin[1] + resolved["click"][1])
