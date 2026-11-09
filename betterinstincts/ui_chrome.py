@@ -56,7 +56,35 @@ def load_contract(path: Path = CONTRACT) -> dict:
     synonyms = {_normalize_alias(s) for s in (item.get("synonyms") or [])}
     if "wall shelf" not in synonyms:
         raise UIChromeError("AOK_WALL_SHELF_SYNONYM_REQUIRED")
+    # Sims-native one-shot focus keys are distinct from the app-only follow
+    # trigger. Never allow a custom follow chord to become a Win32 key action.
+    native = {row.get("id"): row for row in cfg["modes"]["LIVE"]["hotkeys"]}
+    if (native.get("CENTER_ACTIVE_SIM", {}).get("chord") != ["ENTER"]
+            or native.get("CENTER_CURRENT_LOT", {}).get("chord") != ["SHIFT", "ENTER"]):
+        raise UIChromeError("SIM_CAMERA_NATIVE_FOCUS_KEYS_DRIFT")
+    follow = (cfg.get("app_hotkeys") or {}).get("follow_active_sim") or {}
+    if (follow.get("command") != "FOLLOW_ACTIVE_SIM"
+            or follow.get("in_game_native") is not False
+            or follow.get("registered_with_os") is not False
+            or follow.get("no_keyboard_hook") is not True
+            or follow.get("input_route") != "INJECTED_LOCAL_OPT_IN_HOTKEY_EVENT_ONLY"
+            or follow.get("id") in native):
+        raise UIChromeError("SIM_CAMERA_APP_FOLLOW_HOTKEY_UNSAFE")
     return cfg
+
+
+def resolve_app_hotkey(event: Mapping, *, cfg: Optional[dict] = None) -> str:
+    """Decode an injected, opt-in app event; never register a system keyhook."""
+    cfg = cfg or load_contract()
+    if not isinstance(event, Mapping):
+        raise UIChromeError("APP_HOTKEY_EVENT_REQUIRED")
+    follow = cfg["app_hotkeys"]["follow_active_sim"]
+    if (event.get("source") != "APP_SCOPED_HOST_HOTKEY"
+            or event.get("listener_opt_in") is not True
+            or event.get("mode") != "LIVE"
+            or event.get("chord") != follow["chord"]):
+        raise UIChromeError("HOTKEY_NOT_ADMITTED_OR_NOT_REGISTERED")
+    return str(follow["command"])
 
 
 def list_modes(cfg: Optional[dict] = None) -> list[str]:
