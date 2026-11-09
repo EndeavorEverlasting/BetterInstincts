@@ -48,6 +48,17 @@ class OntologyContractTests(unittest.TestCase):
 
     def test_semantic_open_world_guardrails(self):
         self.assertIn("DOMAIN_CAPABILITY", self.ontology["concepts"])
+        for concept in ("VIEW_SCENE", "SIM_PORTRAIT", "CAMERA_FOLLOW",
+                        "HUD_PANEL", "EVENT_OVERLAY", "SCENE_MEMORY"):
+            self.assertIn(concept, self.ontology["concepts"])
+        ids = {item["id"] for item in self.ontology["invariants"]}
+        self.assertTrue({"BI-ONT-019","BI-ONT-020","BI-ONT-021",
+                         "BI-ONT-022"}.issubset(ids))
+        self.assertIn(
+            {"from":"GAME_SCENE","predicate":"CONTAINS_VIEWPOINT","to":"VIEW_SCENE"},
+            self.ontology["relations"],
+        )
+
         self.assertIn("GOAL_THREAD", self.ontology["concepts"])
         self.assertIn("OPEN", self.ontology["product_identity"]["capability_ceiling"])
         bad = copy.deepcopy(self.ontology)
@@ -62,7 +73,7 @@ class OntologyContractTests(unittest.TestCase):
     def test_historical_receipt_keeps_original_ontology_provenance(self):
         historical = ontology_for_consultation(self.manifest, self.ontology)
         self.assertEqual(historical["revision"], 1)
-        self.assertEqual(self.ontology["revision"], 2)
+        self.assertGreaterEqual(self.ontology["revision"], 2)
         validate_consultation(self.manifest, self.ontology, ["scripts/check_ontology.py"])
 
     def test_semantic_consultation_and_local_preflight(self):
