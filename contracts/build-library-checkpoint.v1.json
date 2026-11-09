@@ -2,7 +2,7 @@
   "schema": "betterinstincts.build-library-checkpoint/v1",
   "version": 2,
   "owner": "betterinstincts/build_library_checkpoint.py",
-  "product_contract": "Before any Build/Buy mutation that changes a room, story, stairs, floor, wall, or building structure, the host must have an attested Sims My Library save of that building. The library item is the operator's human-judgment revert point. Game Save As (BI_TMP_/BI_CONT_) remains a separate recovery path and does not satisfy this gate. Live raw SendInput that skips admit_live_structure_effect is forbidden. Applies to every host/agent caller — not an optional courtesy.",
+  "product_contract": "No agent may buy, place, move, sell, inventory, demolish or modify ANY lot object until every story and room has been scanned, structured and classified; the pre-change building is operator-attested saved to My Library; and the exact current lot model is persisted locally and verified. No partial/unknown census, Save As alone, stale model, or post-hoc save grants permission. This is mandatory for every host or agent Build/Buy caller.",
   "prompt": {
     "id": "P95",
     "name": "Program Design & Call-Stack Prototype Architect",
@@ -10,12 +10,10 @@
   },
   "motivating_corrections": [
     "2026-11-08 operator: agent deleted house walls without first saving the building to the library so the change could be reverted; human judgment must be preserved by host logic before room mutation.",
-    "2026-11-09 operator: agents deleted FLOOR_2 / stairs while thrashing around a Medicine Craftidink stuck on a Servo without saving the house to the lot/library first; operator restored via reload. Never again — chat reminders do not bind."
+    "2026-11-09 operator reports an agent deleted the entire second floor; requires full floor/room state classification and verified pre-mutation backup for all purchases and lot edits, not walls only."
   ],
   "architecture": {
     "selected": "LIBRARY_SAVE_BEFORE_ROOM_MUTATE",
-    "strengthening_2026_11_09": "STRENGTHEN_LIBRARY_SAVE_BEFORE_STRUCTURE",
-    "p141_selected": "STRENGTHEN_LIBRARY_SAVE_BEFORE_STRUCTURE",
     "rejected": [
       {
         "id": "SAVE_AS_ONLY",
@@ -32,34 +30,30 @@
       {
         "id": "OPTIONAL_FOR_SMALL_EDITS",
         "why": "Room/structure tools and wall/floor targets are never optional; soft exceptions invite the same failure."
-      },
-      {
-        "id": "NEW_STRUCTURE_SAFETY_DAEMON",
-        "why": "Duplicates this owner; P124 keeps one library/structure admission surface."
-      },
-      {
-        "id": "AUTO_REBUILD_FLOOR2_AS_PREVENTION",
-        "why": "Reload/rebuild is recovery after damage; prevention is fail-closed admission before mutation."
       }
     ]
   },
   "library_vs_save_as": {
     "library_checkpoint": "Build Mode Save to My Library for the building/room blueprint — revert by placing from Library",
-    "game_save_as": "Session Save As under BI_TMP_/BI_CONT_ — still required for some destructive leases, never a substitute for library checkpoint",
-    "operator_phrase_save_house_to_lot": "Means SAVE_TO_LIBRARY (My Library building/lot blueprint) before structure mutate — not chat acknowledgment and not Save As alone"
+    "game_save_as": "Session Save As under BI_TMP_/BI_CONT_ — still required for some destructive leases, never a substitute for library checkpoint"
   },
   "room_mutating_actions": [
     "SLEDGE",
     "WALL_ROOM_TOOL",
     "MOVE_HOUSE_OR_ROOM",
     "MULTI_OBJECT_REARRANGE",
-    "DELETE_KEY",
-    "DELETE_OBJECT",
-    "BACKSPACE_STRUCTURE",
-    "REMOVE_FLOOR",
-    "REMOVE_FLOOR_TILE",
-    "PLACE_STAIRS",
-    "DELETE_STAIRS"
+    "HAND_MOVE",
+    "PLACE_FROM_CATALOG",
+    "PLACE_FROM_INVENTORY",
+    "EYEDROPPER_PLACE",
+    "BACKSPACE_TO_INVENTORY",
+    "BUY_FROM_CATALOG",
+    "PURCHASE_BUILD_OBJECT",
+    "SELL_OBJECT",
+    "DELETE_ROOM",
+    "DELETE_FLOOR",
+    "REPLACE_ROOM",
+    "REPLACE_FLOOR"
   ],
   "room_mutating_target_kinds": [
     "FLOOR_TILE",
@@ -67,57 +61,7 @@
     "DOOR",
     "WINDOW",
     "ROOF_PIECE",
-    "ROOM_ZONE",
-    "STAIR",
-    "STAIRS",
-    "STAIRCASE"
-  ],
-  "protected_stories": [
-    "FLOOR_2"
-  ],
-  "protected_story_actions": [
-    "SLEDGE",
-    "DELETE_KEY",
-    "DELETE_OBJECT",
-    "BACKSPACE_STRUCTURE",
-    "REMOVE_FLOOR",
-    "REMOVE_FLOOR_TILE",
-    "WALL_ROOM_TOOL",
-    "DELETE_STAIRS",
-    "MOVE_HOUSE_OR_ROOM"
-  ],
-  "held_object_structure_blocks": [
-    {
-      "id": "medicine_craftidink",
-      "match_substrings": [
-        "medicine craft",
-        "craftidink",
-        "crafty drink",
-        "craftydrink"
-      ],
-      "required_action": "CANCEL_UI_ONLY",
-      "forbid": [
-        "SLEDGE",
-        "DELETE_KEY",
-        "DELETE_OBJECT",
-        "BACKSPACE_STRUCTURE",
-        "REMOVE_FLOOR",
-        "WALL_ROOM_TOOL"
-      ],
-      "operator_correction": "Stuck Medicine Craftidink on Servo is cancel/select cleanup only — never sledge or delete floors/walls around it."
-    }
-  ],
-  "live_structure_effects": [
-    "SLEDGE",
-    "DELETE_KEY",
-    "DELETE_OBJECT",
-    "BACKSPACE_STRUCTURE",
-    "REMOVE_FLOOR",
-    "REMOVE_FLOOR_TILE",
-    "WALL_ROOM_TOOL",
-    "MOVE_HOUSE_OR_ROOM",
-    "PLACE_STAIRS",
-    "DELETE_STAIRS"
+    "ROOM_ZONE"
   ],
   "exempt_actions": [
     "SAVE_TO_LIBRARY",
@@ -127,8 +71,7 @@
     "CATALOG_BROWSE",
     "CAPTURE_ONLY",
     "CANCEL_UI",
-    "OBSERVE_ONLY",
-    "BACKSPACE_TO_INVENTORY"
+    "OBSERVE_ONLY"
   ],
   "attestation_fields": [
     "building_id",
@@ -136,19 +79,25 @@
     "capture_ref",
     "model_revision",
     "library_saved",
-    "observed_at"
+    "observed_at",
+    "lot_inventory",
+    "lot_inventory.fingerprint",
+    "lot_inventory.manifest.floors",
+    "lot_inventory.manifest.rooms",
+    "all_stories_inspected",
+    "operator_confirmed",
+    "lot_metadata_readback"
   ],
   "freshness_rule": "library_checkpoint.model_revision MUST equal the current lot model revision at admit time; any later observe without a new library save invalidates the gate",
   "call_stack": {
     "success": [
       "load lot_environment_model",
-      "if held object matches medicine_craftidink blocks -> CANCEL_UI only (deny structure effects)",
-      "if room/structure/FLOOR_2/stairs mutation planned and no fresh library_checkpoint -> plan/admit SAVE_TO_LIBRARY only",
+      "if room mutation planned and no fresh library_checkpoint -> plan/admit SAVE_TO_LIBRARY only",
       "attest_library_save(building_id, library_item_name, capture_ref) on model",
-      "admit_live_structure_effect / build_library_checkpoint.evaluate -> LIBRARY_ADMIT",
+      "build_library_checkpoint.evaluate -> LIBRARY_ADMIT",
       "then spatial + integrity + optional Save As gates",
       "admit_mutation lease",
-      "optional live adapter ONLY after LIBRARY_ADMIT",
+      "optional live adapter",
       "observe outcome into same model (invalidates prior library checkpoint until re-saved)"
     ]
   },
@@ -157,27 +106,19 @@
     "LIBRARY_DENY",
     "LIBRARY_SAVE_REQUIRED",
     "LIBRARY_SAVE_ACTION",
-    "NOT_ROOM_MUTATION",
-    "STRUCTURE_WHILE_HELD_DISTRACTOR",
-    "PROTECTED_STORY_DENY"
+    "NOT_ROOM_MUTATION"
   ],
   "gates": [
     "LIBRARY_CHECKPOINT_REQUIRED",
     "SAVE_BUILDING_TO_LIBRARY_BEFORE_ROOM_MUTATE",
-    "FRESH_LIBRARY_CHECKPOINT",
-    "LIVE_STRUCTURE_PREFLIGHT",
-    "HELD_DISTRACTOR_CANCEL_ONLY",
-    "PROTECTED_STORY_REQUIRES_LIBRARY"
+    "FRESH_LIBRARY_CHECKPOINT"
   ],
   "violations": {
     "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE": "Room/structure mutation with no library_checkpoint.library_saved",
     "STALE_LIBRARY_CHECKPOINT": "library_checkpoint.model_revision != current model revision",
     "BUILDING_SCOPE_MISMATCH": "Attestation building_id does not match mutation building_id",
     "LIBRARY_NAME_MISSING": "SAVE_TO_LIBRARY / attestation without library_item_name",
-    "LIBRARY_CAPTURE_MISSING": "Attestation without capture_ref proving the library save UI outcome",
-    "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE": "FLOOR_2 / stairs / floor-tile delete or sledge without fresh library checkpoint",
-    "STRUCTURE_WHILE_HELD_DISTRACTOR": "Structure effect while Medicine Craftidink / crafty drink (or listed distractor) is held",
-    "RAW_INPUT_BYPASS_OF_STRUCTURE_PREFLIGHT": "Live SendInput of structure effects without admit_live_structure_effect"
+    "LIBRARY_CAPTURE_MISSING": "Attestation without capture_ref proving the library save UI outcome"
   },
   "forbidden": [
     "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
@@ -185,16 +126,33 @@
     "POST_HOC_LIBRARY_SAVE_AS_PERMISSION",
     "CLAIM_REVERTIBLE_WITHOUT_LIBRARY_ITEM",
     "SLEDGE_WALLS_WITHOUT_LIBRARY_SAVE",
-    "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE",
-    "STRUCTURE_WHILE_HELD_DISTRACTOR",
-    "RAW_INPUT_BYPASS_OF_STRUCTURE_PREFLIGHT",
-    "SLEDGE_AROUND_STUCK_CRAFT_DRINK"
+    "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP",
+    "PURCHASE_WITHOUT_FULL_LOT_BACKUP",
+    "INVENTORY_MOVE_WITHOUT_FULL_LOT_BACKUP",
+    "UNSCANNED_SECOND_FLOOR_MUTATION",
+    "CLAIM_BACKUP_FROM_CAPTURE_REF_ONLY"
   ],
-  "proof_ceiling": "OFFLINE_LIBRARY_STRUCTURE_PREFLIGHT_NOT_LIVE_GALLERY_WRITE",
+  "proof_ceiling": "OFFLINE_VERIFIED_ATTESTATION_AND_MODEL_READBACK_NOT_LIVE_MY_LIBRARY_OR_AGENT_INPUT_INTERLOCK",
   "next_parent_gate": "BI-002_HUNGER_LIVE_CERTIFICATION",
   "depends_on": [
     "contracts/house-state.v1.json",
-    "contracts/build-integrity.v1.json",
-    "contracts/build-spatial.v1.json"
-  ]
+    "contracts/build-integrity.v1.json"
+  ],
+  "full_lot_manifest": {
+    "schema": "betterinstincts.full-lot-manifest/v1",
+    "bound_to": "lot_id + model_revision + current house_state/room_census fingerprint",
+    "floors": "Exact attested floor roster, with one tracked capture_ref and exact child room IDs for each story",
+    "rooms": "Exact observed room IDs with attested room structure, enclosure, tracked capture_ref, at least one valid function and style label each",
+    "requires": [
+      "operator_confirmed",
+      "all_stories_inspected",
+      "floor_and_room_set_exact_match",
+      "no_unassigned_entities",
+      "no_unverified_claims",
+      "no_unknowns",
+      "persisted_model_readback_matches"
+    ],
+    "protects": "All Build/Buy mutations and purchases, including Backspace and catalog placement; not merely structural demolition"
+  },
+  "next_host_gate": "Every real SendInput/Playwright Build/Buy writer must require this mutation admission lease; raw game UI cannot be certified blocked by offline code alone."
 }

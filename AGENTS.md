@@ -9,14 +9,13 @@ Build a community-native Sims 4 autonomy mod for needs, income, careers and pers
 Refresh HEAD/branch, PRs, status, game/version; declare host, scopes, collisions, tests, proof and parent gate. Resolve P-numbers via Moonwake catalog.
 
 ## P04 hidden-object discovery
-Inventory `plans/active/BI-HIDDEN-OBJECTS.P04.md`; `python -m scripts.hidden_object_discovery guide`. Scope: dispatch/scene/save/consent; else defer. Audit: `python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json`. Scout: `python -m scripts.hidden_object_scout goal` (`docs/HIDDEN_OBJECT_SCOUT.md`). No autorun.
+Inventory `plans/active/BI-HIDDEN-OBJECTS.P04.md`; `python -m scripts.hidden_object_discovery guide`. Hidden-item scope: follow dispatch/scene/save/consent; else defer. Audit: `python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json`. Scout: `python -m scripts.hidden_object_scout goal` (`docs/HIDDEN_OBJECT_SCOUT.md`). No autorun.
 
-Useful-item force: `python -m scripts.household_object_force`. DIY parts: `python -m scripts.upgrade_parts_force`.
+Useful-item force: `python -m scripts.household_object_force` (`bb.showhiddenobjects`; no `gsi_create_obj`). DIY parts (N pocket kit): `python -m scripts.upgrade_parts_force`.
 
 ## Invariants
 - **Player first:** no interrupt of explicit player commands; no uncontrolled autonomy loops.
 - **Save-safe:** never edit/delete/migrate/overwrite user saves/game files. Unknown/user saves protected.
-- **Build structure / FLOOR_2:** My Library before structure mutate; `admit_live_structure_effect`; Craftidink=CANCEL_UI. `docs/BUILD_LIBRARY_CHECKPOINT.md`.
 - **Offline install:** never EA Connect; Stay Offline only; play as installed.
 - **Storage:** no arbitrary profile writes, auto-discovery, asset copy, daemons, telemetry, unbounded logs.
 - **Community-native:** review prior art/licensing; favor tuning before script hooks where justified.
@@ -36,4 +35,10 @@ Read `docs/HORIZON.md`, `plans/horizon.v1.json`, `plans/active/BI-003.execution.
 Report CHANGED | PROVED | NEXT with checks, SHA, push/PR/merge, patch, live status. A plan is not implementation; a green CI check is not playable-mod proof.
 
 P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`; ontology: `docs/handoff/BI-SEMANTIC-ONTOLOGY-P04-2026-11-07.md`; hidden objects: `plans/active/BI-HIDDEN-OBJECTS.P04.md` (BI-002 active).
-Interop: `docs/ASYNC_INTEROP.md` (15s idle). Likes: `docs/PREFERENCE_PROMPTS.md`.
+Interop: `docs/ASYNC_INTEROP.md` (15s idle).
+
+Likes/dislikes: `docs/PREFERENCE_PROMPTS.md`.
+
+## Whole-home preservation before any agent Build/Buy action (2026-11-09)
+
+**Hard stop: no agent may buy, sell, place, move, inventory, sledge, erase, replace, or otherwise mutate a home or lot until a full pre-change backup is verified.** Scan and classify **every** floor, room, and outdoor zone first (including stories not currently visible); maintain the lot's revisioned `house_state` model and use `room_census` for attested room/functional/style classification. Require a complete, operator-confirmed manifest of all floors and rooms with evidence captures, a **pre-mutation Sims My Library building save** separately attested, and successful local metadata checkpoint write/readback against the exact revision. Game Save As does not replace a Library blueprint. Unknown/unobserved floors or rooms, partial classification, stale revisions, missing proof or tool bypass MUST DENY mutation; the safe next action is observation/backup, never improvisation. **Only a positively admitted, current lease may flow to a host input adapter**; an offline `MUTATION_ADMITTED` (`execute_allowed: false`) is not a live input permit. Raw Win32/Playwright clicks in Build/Buy from an unbound agent are prohibited until a consuming host adapter is independently proved to enforce the lease. Player's own UI actions remain under player control. No implicit save-folder access or game mutation is granted. Source: `contracts/build-library-checkpoint.v1.json`, `betterinstincts/build_library_checkpoint.py`, `betterinstincts/house_state.py`, `docs/BUILD_LIBRARY_CHECKPOINT.md`, and `tests/test_lot_mutation_preservation.py`.

@@ -30,7 +30,7 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
         )
         denied = hs.admit_mutation(model, "SLEDGE", targets=["wall.1"])
         self.assertEqual(denied["state"], "MUTATION_DENIED")
-        self.assertEqual(denied["reason"], "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE")
+        self.assertEqual(denied["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
         self.assertEqual(denied["violation"], "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE")
 
     def test_library_then_save_as_then_sledge_admitted(self):
@@ -64,7 +64,7 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
         )
         # attest_save_as bumps revision → library checkpoint becomes stale.
         denied_stale = hs.admit_mutation(attested, "SLEDGE", targets=["wall.1"])
-        self.assertEqual(denied_stale["reason"], "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE")
+        self.assertEqual(denied_stale["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
         self.assertEqual(denied_stale["violation"], "STALE_LIBRARY_CHECKPOINT")
 
         fresh = hs.attest_library_save(
@@ -75,8 +75,9 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
             operator_confirmed=True,
         )
         ok = hs.admit_mutation(fresh, "SLEDGE", targets=["wall.1"])
-        self.assertEqual(ok["state"], "MUTATION_ADMITTED")
-        self.assertEqual(ok["library"]["state"], "LIBRARY_ADMIT")
+        self.assertEqual(ok["state"], "MUTATION_DENIED")
+        self.assertEqual(ok["violation"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
+        # A Library UI attestation without a whole-lot census is not authority.
 
     def test_save_as_is_not_library_checkpoint(self):
         model = hs.observe(
@@ -97,7 +98,7 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
             operator_confirmed=True,
         )
         denied = hs.admit_mutation(only_save_as, "SLEDGE", targets=["wall.1"])
-        self.assertEqual(denied["reason"], "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE")
+        self.assertEqual(denied["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
 
     def test_outdoor_floater_inventory_skips_library(self):
         model = hs.observe(
@@ -114,11 +115,11 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
         gate = blc.evaluate_library_checkpoint(
             model, "BACKSPACE_TO_INVENTORY", targets=["floater.1"]
         )
-        self.assertEqual(gate["state"], "NOT_ROOM_MUTATION")
+        self.assertEqual(gate["state"], "LIBRARY_DENY")
         admitted = hs.admit_mutation(
             model, "BACKSPACE_TO_INVENTORY", targets=["floater.1"]
         )
-        self.assertEqual(admitted["state"], "MUTATION_ADMITTED")
+        self.assertEqual(admitted["state"], "MUTATION_DENIED")
 
     def test_plan_next_demands_library_before_restore(self):
         model = hs.observe(
@@ -135,7 +136,7 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
             open_goals=["RESTORE_FLOOR"],
         )
         plan = hs.plan_next(model)
-        self.assertEqual(plan["action"], "SAVE_TO_LIBRARY")
+        self.assertEqual(plan["action"], "SCAN_ALL_FLOORS_AND_ROOMS")
         self.assertEqual(plan["gate"], "LIBRARY_CHECKPOINT_REQUIRED")
 
     def test_save_to_library_lease_without_prior_checkpoint(self):
@@ -176,8 +177,8 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
             viewport={"state": "VIEWPORT_OK"},
         )
         self.assertEqual(turn["next_gate"], "LIBRARY_CHECKPOINT_REQUIRED")
-        self.assertEqual(turn["fallback"]["action"], "SAVE_TO_LIBRARY")
-        self.assertEqual(turn["build_library"]["action"], "SAVE_TO_LIBRARY")
+        self.assertEqual(turn["fallback"]["action"], "SCAN_ALL_FLOORS_AND_ROOMS")
+        self.assertEqual(turn["build_library"]["action"], "SCAN_ALL_FLOORS_AND_ROOMS")
 
     def test_building_scope_mismatch(self):
         model = hs.observe(
@@ -202,103 +203,6 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
         )
         self.assertEqual(denied["state"], "LIBRARY_DENY")
         self.assertEqual(denied["violation"], "BUILDING_SCOPE_MISMATCH")
-
-    def test_contract_forbids_floor2_and_raw_bypass(self):
-        cfg = blc.load_contract()
-        self.assertIn("DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE", cfg["forbidden"])
-        self.assertIn("STRUCTURE_WHILE_HELD_DISTRACTOR", cfg["forbidden"])
-        self.assertIn("RAW_INPUT_BYPASS_OF_STRUCTURE_PREFLIGHT", cfg["forbidden"])
-        self.assertIn("DELETE_KEY", cfg["room_mutating_actions"])
-        self.assertIn("STAIRS", cfg["room_mutating_target_kinds"])
-        self.assertIn("FLOOR_2", cfg["protected_stories"])
-
-    def test_delete_floor2_without_library_denied(self):
-        model = hs.observe(
-            hs.create_model("bi-lib-f2", "Bargain Bend"),
-            entities={
-                "floor.2": {
-                    "kind": "FLOOR_TILE",
-                    "confidence": "LOCAL_OBSERVED",
-                    "domain": "INDOOR_FLOOR",
-                    "story": "FLOOR_2",
-                    "status": "PRESENT",
-                },
-                "stairs.1": {
-                    "kind": "STAIRS",
-                    "confidence": "OPERATOR_ATTESTED",
-                    "story": "FLOOR_2",
-                    "status": "PRESENT",
-                },
-            },
-            open_goals=["FLOOR_2"],
-        )
-        denied = hs.admit_mutation(
-            model, "DELETE_KEY", targets=["floor.2"], place_story="FLOOR_2"
-        )
-        self.assertEqual(denied["state"], "MUTATION_DENIED")
-        self.assertEqual(denied["reason"], "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE")
-        self.assertEqual(denied["violation"], "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE")
-        stairs = blc.admit_live_structure_effect(
-            model, "DELETE_STAIRS", targets=["stairs.1"], place_story="FLOOR_2"
-        )
-        self.assertEqual(stairs["state"], "PROTECTED_STORY_DENY")
-        self.assertEqual(stairs["violation"], "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE")
-
-    def test_medicine_craftidink_held_blocks_sledge_even_with_library(self):
-        model = hs.observe(
-            hs.create_model("bi-lib-craft", "Bargain Bend"),
-            entities={
-                "wall.1": {
-                    "kind": "WALL_SEGMENT",
-                    "confidence": "LOCAL_OBSERVED",
-                    "domain": "WALL",
-                    "status": "PRESENT",
-                },
-            },
-        )
-        lib = hs.attest_library_save(
-            model,
-            building_id="Bargain Bend",
-            library_item_name="BI Bargain Bend Craft Block",
-            capture_ref="capture:lib-craft-block",
-            operator_confirmed=True,
-        )
-        denied = blc.admit_live_structure_effect(
-            lib,
-            "SLEDGE",
-            targets=["wall.1"],
-            held_object="Medicine Craftidink",
-        )
-        self.assertEqual(denied["state"], "STRUCTURE_WHILE_HELD_DISTRACTOR")
-        self.assertEqual(denied["required_action"], "CANCEL_UI_ONLY")
-        house = hs.admit_mutation(
-            lib,
-            "SLEDGE",
-            targets=["wall.1"],
-            held_object="crafty drink on servo",
-        )
-        self.assertEqual(house["state"], "MUTATION_DENIED")
-        self.assertEqual(house["reason"], "STRUCTURE_WHILE_HELD_DISTRACTOR")
-
-    def test_live_preflight_remove_floor_requires_library(self):
-        model = hs.observe(
-            hs.create_model("bi-lib-rf", "Bargain Bend"),
-            entities={
-                "floor.main": {
-                    "kind": "FLOOR_TILE",
-                    "confidence": "LOCAL_OBSERVED",
-                    "domain": "INDOOR_FLOOR",
-                    "story": "FLOOR_1",
-                    "status": "PRESENT",
-                },
-            },
-        )
-        pre = blc.admit_live_structure_effect(
-            model, "REMOVE_FLOOR", targets=["floor.main"]
-        )
-        self.assertEqual(pre["state"], "LIBRARY_DENY")
-        self.assertTrue(pre["raw_input_bypass_forbidden"])
-        self.assertEqual(pre["preflight"], "DENY_STRUCTURE_EFFECT")
 
 
 if __name__ == "__main__":

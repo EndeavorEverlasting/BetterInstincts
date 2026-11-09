@@ -317,6 +317,7 @@ def attest_library_save(
     library_item_name: str,
     capture_ref: str,
     operator_confirmed: bool,
+    lot_manifest: Mapping[str, Any] | None = None,
 ) -> dict:
     """Record Build Mode Save-to-My-Library attestation (not game Save As).
 
@@ -326,6 +327,7 @@ def attest_library_save(
     from betterinstincts.build_library_checkpoint import (
         BuildLibraryCheckpointError,
         validate_attestation_payload,
+        validate_full_lot_manifest,
     )
 
     if not operator_confirmed:
@@ -338,7 +340,16 @@ def attest_library_save(
         )
     except BuildLibraryCheckpointError as exc:
         raise HouseStateError(str(exc)) from exc
+    # Capture and classification must precede the claimed pre-change save.
+    # Legacy attestation is retained only as evidence, never an edit permit.
+    if lot_manifest is not None:
+        validate_full_lot_manifest(model, lot_manifest)
     out = observe(model, note="library_checkpoint_attestation")
+    lot_inventory = None
+    if lot_manifest is not None:
+        current = dict(lot_manifest)
+        current["model_revision"] = out["revision"]
+        lot_inventory = validate_full_lot_manifest(out, current)
     out["library_checkpoint"] = {
         "building_id": building_id,
         "library_item_name": library_item_name,
@@ -348,7 +359,11 @@ def attest_library_save(
         "source": "SIMS_MY_LIBRARY",
         "model_revision": out["revision"],
         "observed_at": "operator_attested",
+        "lot_inventory": lot_inventory,
     }
+    if lot_inventory is not None:
+        # Fail rather than claim a backup if its local metadata cannot be saved.
+        persist_checkpoint(out, label="pre-build-whole-lot")
     return out
 
 
@@ -379,7 +394,7 @@ def plan_next(model: Mapping[str, Any]) -> dict:
         return {
             "state": "MODEL_ACTIVE",
             "gate": library_plan.get("gate") or "LIBRARY_CHECKPOINT_REQUIRED",
-            "action": "SAVE_TO_LIBRARY",
+            "action": library_plan.get("action") or "SCAN_ALL_FLOORS_AND_ROOMS",
             "reason": library_plan.get("reason") or "SAVE_BUILDING_TO_LIBRARY_BEFORE_ROOM_MUTATE",
             "model_revision": revision,
             "targets": list(library_plan.get("targets") or []),
@@ -509,13 +524,11 @@ def admit_mutation(
     nest_risk: bool = False,
     strips_zone: str | None = None,
     building_id: str | None = None,
-    held_object: str | None = None,
 ) -> dict:
     """Admit one mutation only against the current accumulated model revision.
 
-    Order: model revision → library checkpoint (room/structure/FLOOR_2/stairs)
-    → held-distractor cancel → Save As (destructive) → spatial axes →
-    build integrity → lease.
+    Order: model revision → library checkpoint (room/structure) → Save As
+    (destructive) → spatial axes → build integrity → lease.
     """
     cfg = load_contract()
     mutating = set(cfg["mutating_actions"])
@@ -566,18 +579,7 @@ def admit_mutation(
             "execute_allowed": False,
         }
     target_list = [str(t) for t in (targets or []) if str(t).strip()]
-    if action in {
-        "BACKSPACE_TO_INVENTORY",
-        "HAND_MOVE",
-        "SLEDGE",
-        "EYEDROPPER_PLACE",
-        "DELETE_KEY",
-        "DELETE_OBJECT",
-        "BACKSPACE_STRUCTURE",
-        "REMOVE_FLOOR",
-        "REMOVE_FLOOR_TILE",
-        "DELETE_STAIRS",
-    } and not target_list:
+    if action in {"BACKSPACE_TO_INVENTORY", "HAND_MOVE", "SLEDGE", "EYEDROPPER_PLACE"} and not target_list:
         return {
             "state": "MUTATION_DENIED",
             "gate": "PLAN_FROM_MODEL",
@@ -615,9 +617,7 @@ def admit_mutation(
         action,
         targets=target_list,
         place_kind=place_kind,
-        place_story=place_story,
         building_id=building_id or str(model.get("lot_id") or ""),
-        held_object=held_object,
     )
     if action == "SAVE_TO_LIBRARY":
         return {
@@ -645,24 +645,13 @@ def admit_mutation(
                 "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
             ],
         }
-    if library.get("state") in {
-        "LIBRARY_DENY",
-        "PROTECTED_STORY_DENY",
-        "STRUCTURE_WHILE_HELD_DISTRACTOR",
-    }:
-        reason = "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE"
-        if library.get("state") == "STRUCTURE_WHILE_HELD_DISTRACTOR":
-            reason = "STRUCTURE_WHILE_HELD_DISTRACTOR"
-        elif library.get("violation") == "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE":
-            reason = "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE"
+    if library.get("state") == "LIBRARY_DENY":
         return {
             "state": "MUTATION_DENIED",
             "gate": library.get("gate") or "LIBRARY_CHECKPOINT_REQUIRED",
-            "reason": reason,
+            "reason": "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP",
             "violation": library.get("violation"),
             "detail": library.get("detail"),
-            "held_block": library.get("held_block"),
-            "required_action": library.get("required_action"),
             "library": library,
             "action": action,
             "model_revision": revision,
@@ -671,9 +660,6 @@ def admit_mutation(
                 "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
                 "SLEDGE_WALLS_WITHOUT_LIBRARY_SAVE",
                 "TREAT_SAVE_AS_AS_LIBRARY_CHECKPOINT",
-                "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE",
-                "STRUCTURE_WHILE_HELD_DISTRACTOR",
-                "RAW_INPUT_BYPASS_OF_STRUCTURE_PREFLIGHT",
             ],
             "hint": library.get("hint"),
         }

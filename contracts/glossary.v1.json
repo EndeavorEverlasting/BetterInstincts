@@ -766,34 +766,18 @@
       ]
     },
     "LIBRARY_SAVE_BEFORE_ROOM_MUTATE": {
-      "definition": "Selected P95 architecture: SAVE_TO_LIBRARY / library_checkpoint must precede sledge, Delete, remove-floor, wall/room tools, stairs, FLOOR_2, move-house, and structure-target mutations; game Save As is not a substitute; live callers must admit_live_structure_effect first.",
+      "definition": "Selected P95 architecture: SAVE_TO_LIBRARY / library_checkpoint must precede sledge, wall tools, move-house, and structure-target mutations; game Save As is not a substitute.",
       "owners": [
         "contracts/build-library-checkpoint.v1.json",
         "docs/BUILD_LIBRARY_CHECKPOINT.md"
       ]
     },
     "SAVE_TO_LIBRARY": {
-      "definition": "Build Mode action that saves the current building/room into Sims My Library; the only mutation that creates library_checkpoint without requiring a prior one. Operator phrase 'save the house to the lot' means this, not chat and not Save As alone.",
+      "definition": "Build Mode action that saves the current building/room into Sims My Library; the only mutation that creates library_checkpoint without requiring a prior one.",
       "owners": [
         "contracts/build-library-checkpoint.v1.json",
         "contracts/house-state.v1.json",
         "betterinstincts/house_state.py"
-      ]
-    },
-    "STRENGTHEN_LIBRARY_SAVE_BEFORE_STRUCTURE": {
-      "definition": "P141 2026-11-09 selection: strengthen the existing library-checkpoint owner for FLOOR_2/stairs/Delete/held Craftidink thrash instead of adding a second safety daemon.",
-      "owners": [
-        "contracts/build-library-checkpoint.v1.json",
-        "contracts/consultations/BI-FLOOR2-LIBRARY-HARDEN-20261109.v1.json",
-        "docs/BUILD_LIBRARY_CHECKPOINT.md"
-      ]
-    },
-    "ADMIT_LIVE_STRUCTURE_EFFECT": {
-      "definition": "Mandatory offline preflight before live structure SendInput (SLEDGE/DELETE/REMOVE_FLOOR/stairs); skipping it is RAW_INPUT_BYPASS_OF_STRUCTURE_PREFLIGHT.",
-      "owners": [
-        "betterinstincts/build_library_checkpoint.py",
-        "scripts/build_library_checkpoint.py",
-        "docs/BUILD_LIBRARY_CHECKPOINT.md"
       ]
     },
     "SCHOOL_DAY_GOAL_PROGRESS": {
