@@ -64,7 +64,8 @@ class HomeworkStudyTests(unittest.TestCase):
         r = homework()
         self.assertEqual(r["gate"], "HOMEWORK_STUDY_SCAN_REQUIRED")
         self.assertIn("HOMEWORK_ON_SIDEWALK", r["study_space"]["forbidden"])
-        self.assertIsNone(r["primary_route"])
+        self.assertEqual(r["primary_route"], "SCAN_LOT_FOR_STUDY_STATION")
+        self.assertNotIn("DO_HOMEWORK", r["preferred_routes"])
 
     def test_outdoor_unseated_and_unverified_areas_not_promoted(self):
         for m in (study_lot(outdoor=True), study_lot(with_seat=False), study_lot(unverified=True)):
