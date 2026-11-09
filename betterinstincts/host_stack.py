@@ -47,6 +47,7 @@ from betterinstincts.navigating_needs import (
 )
 from betterinstincts.scenario_goals import evaluate_scenario_turn
 from betterinstincts.discovery_hud import DiscoveryHudError, evaluate_discovery_hud
+from betterinstincts.autonomy_moderation import AutonomyModerationError, evaluate_autonomy_moderation
 from betterinstincts.school_day import (
     SchoolDayError,
     evaluate_school_day_turn,
@@ -164,6 +165,7 @@ def evaluate_turn(
     navigating_needs_profile: str = "navigating_needs",
     gardening: Optional[Mapping[str, object]] = None,
     discovery_hud: Optional[Mapping[str, object]] = None,
+    autonomy_observation: Optional[Mapping[str, object]] = None,
     cursor_client_x: Optional[int] = None,
     cursor_client_y: Optional[int] = None,
     client_width: Optional[int] = None,
@@ -270,7 +272,20 @@ def evaluate_turn(
     need_services = None
     gardening_report = None
     discovery_report = None
+    autonomy_report = None
     try:
+        if autonomy_observation is not None:
+            # This peer is read-only for every domain, not just gardening.
+            # Caller-reported "idle" cannot override actual player activity
+            # or the active actor's absence.
+            auto_input = dict(autonomy_observation)
+            if player_directed:
+                auto_input["player_active"] = True
+            if sim_absent or sim_at_school is True:
+                auto_input["selected_sim_ref"] = None
+            autonomy_report = evaluate_autonomy_moderation(
+                auto_input, capture_ref=capture_ref,
+            )
         if discovery_hud is not None:
             # A verified top-left quest is a typed advisor, not a new UI/input
             # owner. Do not let a stale Build/Buy flag silently become Live.
@@ -610,6 +625,7 @@ def evaluate_turn(
         NavigatingNeedsError,
         GardeningServiceError,
         DiscoveryHudError,
+        AutonomyModerationError,
     ) as exc:
         raise HostStackError(str(exc)) from exc
 
@@ -1367,6 +1383,7 @@ def evaluate_turn(
         "build_optimize": build_optimize,
         "gardening": gardening_report,
         "discovery_hud": discovery_report,
+        "autonomy_moderation": autonomy_report,
         "build_integrity": build_integrity,
         "build_spatial": build_spatial,
         "build_library": build_library,

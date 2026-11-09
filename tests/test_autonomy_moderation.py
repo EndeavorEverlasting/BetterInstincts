@@ -128,4 +128,52 @@ class AutonomyModerationTests(unittest.TestCase):
                 self.call(obs)
 
 
+class AutonomyHostIntegrationTests(unittest.TestCase):
+    def setUp(self):
+        self.needs = dict(hunger=.9,bladder=.9,energy=.9,hygiene=.9,fun=.9,social=.9)
+
+    def test_general_host_exposes_harmful_action_candidate_without_cancel(self):
+        from betterinstincts.host_stack import evaluate_turn
+        r = evaluate_turn(self.needs,autonomy_observation=sample(queue=[action()]),
+                          capture_ref=CAP,location_kind="home",queue=[],
+                          viewport={"state":"VIEWPORT_OK"})
+        self.assertEqual(r["autonomy_moderation"]["state"],
+                         "HARMFUL_AUTONOMOUS_ACTION_CANDIDATE")
+        self.assertFalse(r["autonomy_moderation"]["cancel_allowed"])
+        self.assertFalse(r["autonomy_moderation"]["execute_allowed"])
+        p = evaluate_turn(self.needs,autonomy_observation=sample(queue=[action()]),
+                          capture_ref=CAP,location_kind="home",queue=[],
+                          player_directed=True,viewport={"state":"VIEWPORT_OK"})
+        self.assertEqual(p["autonomy_moderation"]["state"],"PLAYER_FIRST")
+        self.assertEqual(p["next_gate"],"RESPECT_PLAYER_OR_BUSY_STATE")
+        off = evaluate_turn(self.needs,autonomy_observation=sample(queue=[action()]),
+                           capture_ref=CAP,location_kind="home",queue=[],
+                           sim_absent=True,viewport={"state":"VIEWPORT_OK"})
+        self.assertEqual(off["autonomy_moderation"]["state"],"SIM_NOT_VERIFIED_SELECTED")
+        self.assertIsNone(evaluate_turn(self.needs)["autonomy_moderation"])
+
+    def test_one_existing_listener_ticks_global_policy_without_game_effect(self):
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        from betterinstincts.host_listener import activate,tick,HostListenerError
+        from betterinstincts.player_presence import PresenceProbe
+        with tempfile.TemporaryDirectory() as temp, patch(
+            "betterinstincts.host_listener.ROOT",Path(temp).resolve()
+        ),patch("betterinstincts.host_listener.OUTPUT",
+                 Path(temp).resolve()/"dist/host-listener"):
+            activate("autonomy-policy-test")
+            obs=dict(schema="betterinstincts.host-listener.observation/v1",
+                     needs=self.needs,queue=[],location_kind="home",
+                     capture_ref=CAP,viewport={"state":"VIEWPORT_OK"},
+                     autonomy_observation=sample(queue=[action()]))
+            r=tick("autonomy-policy-test",obs,presence_probe=PresenceProbe(
+                False,False,last_input_age_ms=20000,probe_ok=True))
+            self.assertEqual(r["host_stack"]["autonomy_moderation"]["state"],
+                             "HARMFUL_AUTONOMOUS_ACTION_CANDIDATE")
+            self.assertFalse(r["execute_clicks"])
+            with self.assertRaisesRegex(HostListenerError,"OBSERVATION_AUTONOMY_POLICY_INVALID"):
+                tick("autonomy-policy-test",{**obs,"autonomy_observation":[]})
+
+
 if __name__=="__main__": unittest.main()

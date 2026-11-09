@@ -585,3 +585,7 @@ Added a guarded, machine-readable preference prompt microsystem to the existing 
 ## 2026-11-09 — Top-left Discovery Quest listener → host integration
 
 Second-pass cohesion after `BI-AUTONOMY-HUD-OFFSCREEN-20261109`: `BI-DISCOVERY-HUD-HOST-COMPOSITION-20261109` consults ontology before shared host changes. `host_listener` transports a bounded optional `discovery_hud` snapshot, `host_stack` reuses existing scoring and Navigating Needs evaluators, refuses conflicting legacy goal feeds, and exposes a phone review gate **only** after higher-priority safety/needs/obligation work. No new daemon, game setting mutation, screen-input permission, or live quest completion claim; legacy path absent observation unchanged. Dedicated integration negatives in `tests/test_discovery_hud.py`; P08 game-host truth still pending.
+
+## 2026-11-09 — Global autonomy moderation host bridge (separate preconsultation)
+
+`BI-GLOBAL-AUTONOMY-HOST-20261109` records a second semantic preflight before enhancing the same optional listener path: global `autonomy_observation` now provides the existing per-Sim, proven-origin harm/benefit moderation receipt independently of gardening. Host presence/absent-Sim guards are stronger than supplied policy assertions. No input authority, cancellation effect, settings mutation, new daemon or live-game proof. Regression tests cover generic host, listener tick, manual override and offscreen guard. Source contract `contracts/autonomy-moderation.v1.json` remains the single policy owner.

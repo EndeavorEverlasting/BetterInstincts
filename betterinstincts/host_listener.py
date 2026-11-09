@@ -246,6 +246,12 @@ def _load_observation(raw: Mapping) -> dict:
         or len(json.dumps(dict(discovery_hud)).encode("utf-8")) > 8192
     ):
         raise HostListenerError("OBSERVATION_DISCOVERY_HUD_INVALID")
+    autonomy_observation = raw.get("autonomy_observation")
+    if autonomy_observation is not None and (
+        not isinstance(autonomy_observation, Mapping)
+        or len(json.dumps(dict(autonomy_observation)).encode("utf-8")) > 8192
+    ):
+        raise HostListenerError("OBSERVATION_AUTONOMY_POLICY_INVALID")
     cursor_x = raw.get("cursor_client_x")
     cursor_y = raw.get("cursor_client_y")
     for label, val in (("cursor_client_x", cursor_x), ("cursor_client_y", cursor_y)):
@@ -305,6 +311,9 @@ def _load_observation(raw: Mapping) -> dict:
         "needs": {k: float(needs[k]) for k in SIX},
         "gardening": dict(gardening) if gardening is not None else None,
         "discovery_hud": dict(discovery_hud) if discovery_hud is not None else None,
+        "autonomy_observation": (
+            dict(autonomy_observation) if autonomy_observation is not None else None
+        ),
         "queue": [str(x) for x in queue],
         "location_kind": location,
         "objects_on_current_lot": bool(raw.get("objects_on_current_lot", location == "home")),
@@ -628,6 +637,7 @@ def tick(
             whims=obs["whims"] or obs["pinned_whims"],
             gardening=obs["gardening"],
             discovery_hud=obs["discovery_hud"],
+            autonomy_observation=obs["autonomy_observation"],
             prior_career_state=obs.get("prior_career_state"),
             aspiration_prompt_active=obs.get("aspiration_prompt_active", False),
             aspiration_prompt_id=obs.get("aspiration_prompt_id"),
