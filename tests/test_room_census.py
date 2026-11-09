@@ -118,11 +118,74 @@ class RoomCensusTests(unittest.TestCase):
             if path.exists():
                 shutil.rmtree(path)
 
+    def test_p83_hypothesis_never_promoted_to_attested_room_or_style(self):
+        model = create_model("room_lab_run", "Hypothesis Lab")
+        model = observe(model, entities={
+            "room": {"kind": "ROOM_ZONE", "story": "FLOOR_1", "zone": "HOME",
+                     "enclosure": "INSIDE", "confidence": "LOCAL_OBSERVED"},
+            "sofa": {"kind": "SOFA", "story": "FLOOR_1", "zone": "HOME",
+                     "enclosure": "INSIDE", "style_tags": ["modern"],
+                     "confidence": "LOCAL_OBSERVED"},
+            "hypothetical-desk": {"kind": "DESK", "story": "FLOOR_1", "zone": "HOME",
+                                  "enclosure": "OUTSIDE", "style_tags": ["industrial"],
+                                  "confidence": "HYPOTHESIS"},
+            "hypothetical-room": {"kind": "ROOM_ZONE", "story": "BASEMENT_9",
+                                  "zone": "CAVE", "enclosure": "INSIDE",
+                                  "confidence": "HYPOTHESIS"},
+        })
+        # Direct JSON models may lack validated house_state provenance;
+        # an UNKNOWN claim must not silently become observed.
+        model["entities"]["unknown-plant"] = {
+            "kind": "PLANTER", "story": "FLOOR_3", "zone": "YARD",
+            "enclosure": "OUTSIDE", "confidence": "UNKNOWN", "status": "PRESENT",
+        }
+        model["entities"]["fake-certified-bed"] = {
+            "kind": "BED", "story": "BASEMENT_3", "zone": "UNVERIFIED",
+            "enclosure": "INSIDE", "confidence": "GAME_CERTIFIED", "status": "PRESENT",
+        }
+        receipt = scan_lot_model(model)
+        self.assertEqual(list(receipt["floors"]), ["FLOOR_1"])
+        self.assertEqual(set(receipt["rooms"]), {"FLOOR_1:HOME"})
+        room = receipt["rooms"]["FLOOR_1:HOME"]
+        self.assertEqual(room["item_count"], 1)
+        self.assertEqual(room["function_labels"], ["living"])
+        self.assertEqual(room["style_labels"], ["modern"])
+        self.assertEqual(room["enclosure"], "INSIDE")
+        self.assertFalse(room["enclosure_conflict"])
+        self.assertEqual(receipt["unverified_claim_count"], 4)
+        self.assertFalse(receipt["execute_allowed"])
+        advisory = evaluate_floor_activity(build_or_buy_mode=True, lot_model=model)
+        self.assertEqual(advisory["room_census"]["unverified_claim_count"], 4)
+        self.assertEqual(advisory["room_census"]["observed_story_count"], 1)
+
+    def test_p83_floor_activity_uses_all_attested_stories(self):
+        observation = evaluate_floor_activity(
+            build_or_buy_mode=True, active_story="FLOOR_3",
+            stories_touched=["BASEMENT_1"],
+            floor_items=[
+                {"id": "desk-on-third", "category": "desk", "story": "FLOOR_3"},
+                {"id": "storage-below", "category": "storage", "story": "BASEMENT_1"},
+            ],
+            lot_model=sample_model(),
+        )
+        self.assertEqual(observation["activity_span"], "MULTI_FLOOR")
+        self.assertEqual(observation["active_story"], "FLOOR_3")
+        self.assertEqual(set(observation["floors"]), {"FLOOR_3", "BASEMENT_1"})
+        self.assertEqual(observation["floors"]["FLOOR_3"]["item_ids"], ["desk-on-third"])
+        self.assertEqual(observation["room_census"]["room_count_total"], 3)
+        self.assertFalse(observation["execute_allowed"])
+        self.assertEqual(
+            evaluate_floor_activity(build_or_buy_mode=True,
+                                    active_story="UNVERIFIED_LEVEL")["active_story"],
+            "UNKNOWN_STORY",
+        )
+
     def test_p78_glossary_and_documentation_single_authority(self):
         root = Path(__file__).resolve().parents[1]
         contract = load_contract()
         self.assertEqual(contract["authority"], "betterinstincts/room_census.py")
         glossary_contract = json.loads((root / "contracts/glossary.v1.json").read_text(encoding="utf-8"))
+        self.assertEqual(glossary_contract["authority"], "contracts/glossary.v1.json")
         doc = (root / "docs/GLOSSARY.md").read_text(encoding="utf-8")
         # P78 keeps human-facing glossary rows inside the existing table.
         self.assertEqual(doc.count("| **ROOM_CENSUS** / **ROOM_CENSUS_COVERAGE** |"), 1)
@@ -139,6 +202,10 @@ class RoomCensusTests(unittest.TestCase):
         provenance = (root / "docs/PROMPT_INVOCATIONS.md").read_text(encoding="utf-8")
         self.assertIn("python -m scripts.room_census evaluate", runbook)
         self.assertIn("P08 live-game gate", runbook)
+        self.assertEqual(glossary_contract["terms"]["ROOM_CENSUS_COVERAGE"]["owners"],
+                         ["betterinstincts/room_census.py"])
+        self.assertEqual(glossary_contract["terms"]["ROOM_CENSUS"]["owners"][0],
+                         "betterinstincts/room_census.py")
         self.assertIn("P78 — Repository Glossary & Documentation Diet", provenance)
         self.assertNotIn("P95/P124/P178/Trifecta", provenance)
         self.assertLess(len(runbook), 2000)
