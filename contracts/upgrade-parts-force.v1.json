@@ -1,0 +1,185 @@
+{
+  "schema": "betterinstincts.upgrade-parts-force/v1",
+  "version": 1,
+  "authority": "docs/UPGRADE_PARTS_FORCE.md",
+  "proof_ceiling": "HOST_UPGRADE_PARTS_PLAN_NOT_LIVE_INVENTORY_CERT",
+  "architecture": {
+    "selected": "UPGRADE_PARTS_FORCE",
+    "rejected": [
+      "HALLUCINATED_GSI_CREATE_OBJ_HEX",
+      "SECOND_COMMERCE_DAEMON",
+      "BUILD_BUY_CATALOG_FOR_POCKET_PARTS",
+      "CLAIM_BI002_FROM_PARTS_PLAN"
+    ],
+    "peers": [
+      "diy_skill_force",
+      "funds_inject",
+      "household_object_force",
+      "ui_chrome"
+    ]
+  },
+  "design_brief": {
+    "subject": "Upgrade / robotics parts spam-buy — Robot Salvage Parts for Gardener-Bot Tune Up and crafts",
+    "audience": "operators and Windows host agents who forgot Computer → Order → Purchase Upgrade Parts",
+    "job": "Reusable catalog + planner: spam-buy named upgrade parts via computer Order path, or lab bulk via workstation Spawn Crafting Supplies after testingcheats",
+    "operator_correction": "Tune Up on Gardener-Bot needs Robot Salvage Parts (observed miss: 4). Host must spam-buy so the operator does not rediscover the Order menu."
+  },
+  "activation": {
+    "require_explicit_activate": true,
+    "never_on_startup": true,
+    "never_autorun": true,
+    "never_touch_game_speed": true,
+    "cli": {
+      "catalog": "python -m scripts.upgrade_parts_force catalog",
+      "how_to_buy": "python -m scripts.upgrade_parts_force how-to-buy --part robot_salvage_parts",
+      "plan": "python -m scripts.upgrade_parts_force plan --part robot_salvage_parts --quantity 20 --path computer"
+    },
+    "interop": {
+      "require_screen_admit": true,
+      "forbid_computer_use_fallback": true,
+      "note": "Library plans stay evaluate-only. Live SendInput for pie menus / Shift+click remains P08-gated."
+    }
+  },
+  "quantity": {
+    "default": 20,
+    "min": 1,
+    "max": 99,
+    "tune_up_observed_minimum": 4,
+    "gardener_bot_craft_hint": 20,
+    "spawn_bulk_hint": 50
+  },
+  "how_to_buy": {
+    "robot_salvage_parts": {
+      "summary": "Any computer → Order → Purchase Upgrade Parts → Robot Salvage Parts (delivers to Sim pocket inventory).",
+      "steps": [
+        "Select the Sim who needs the parts (Charlee in the observed Tune Up miss).",
+        "Click any household computer.",
+        "Choose Order.",
+        "Choose Purchase Upgrade Parts.",
+        "Select Robot Salvage Parts and confirm purchase.",
+        "Repeat for each additional unit (spam-buy); parts land in personal inventory immediately."
+      ],
+      "lab_bulk_alternative": "With testingcheats enabled, Shift+click Dr. F's Official Robotics Workstation → Spawn Crafting Supplies (~50 of each robotics material).",
+      "not_this": [
+        "Build/Buy catalog search for salvage parts",
+        "Hallucinated objects.gsi_create_obj hex",
+        "Household Inventory deposit (these are pocket crafting materials)"
+      ]
+    }
+  },
+  "paths": {
+    "computer": {
+      "id": "computer_purchase_spam",
+      "display_name": "Computer Order → Purchase Upgrade Parts (spam)",
+      "required_mode": "LIVE",
+      "destination": "sim_pocket_inventory",
+      "mutating_action": "PURCHASE_UPGRADE_PART",
+      "requires_testingcheats": false,
+      "funds_note": "Each purchase spends Simoleons; ensure funds or run funds_inject first on disposable lab.",
+      "steps_template": [
+        {"op": "REQUIRE_MODE", "mode": "LIVE", "fail": "COMPUTER_PURCHASE_REQUIRES_LIVE"},
+        {"op": "REQUIRE_ACTIVE_SIM_SELECTION"},
+        {"op": "OBSERVE", "cue": "computer_on_lot", "fail": "COMPUTER_NOT_OBSERVED"},
+        {"op": "CLICK_OBJECT", "target": "computer", "preferred_channel": "MOUSE_FALLBACK"},
+        {"op": "PIE_MENU", "choice": "Order", "fail": "ORDER_MENU_MISSING"},
+        {"op": "PIE_MENU", "choice": "Purchase Upgrade Parts", "fail": "PURCHASE_UPGRADE_PARTS_MISSING"},
+        {"op": "SELECT_PART", "from_recipe_field": "display_name", "fail": "PART_ROW_MISSING"},
+        {"op": "CONFIRM_PURCHASE"},
+        {"op": "OBSERVE", "cue": "part_in_sim_inventory", "fail": "PART_NOT_IN_INVENTORY"},
+        {"op": "REPEAT_PURCHASE", "times_from": "quantity_remaining_after_first"}
+      ]
+    },
+    "spawn": {
+      "id": "workstation_spawn_crafting_supplies",
+      "display_name": "Shift+click robotics workstation → Spawn Crafting Supplies",
+      "required_mode": "LIVE",
+      "destination": "sim_pocket_inventory",
+      "mutating_action": "SPAWN_CRAFTING_SUPPLIES",
+      "requires_testingcheats": true,
+      "quantity_note": "Game grants a bulk stack (~50 each); requested --quantity is a planning hint, not a precise spawn count.",
+      "steps_template": [
+        {"op": "REQUIRE_MODE", "mode": "LIVE", "fail": "SPAWN_REQUIRES_LIVE"},
+        {"op": "REQUIRE_ACTIVE_SIM_SELECTION"},
+        {"op": "OPEN_CONSOLE", "chord": ["CTRL", "SHIFT", "C"]},
+        {"op": "TYPE_COMMAND", "command": "testingcheats enabled true"},
+        {"op": "OPTIONAL_CLOSE_CONSOLE", "key": "ESCAPE"},
+        {"op": "OBSERVE", "cue": "robotics_workstation_on_lot", "fail": "WORKSTATION_NOT_OBSERVED"},
+        {"op": "SHIFT_CLICK_OBJECT", "target": "robotics_workstation", "fail": "WORKSTATION_SHIFT_CLICK_MISS"},
+        {"op": "PIE_MENU", "choice": "Spawn Crafting Supplies", "fail": "SPAWN_SUPPLIES_MISSING"},
+        {"op": "OBSERVE", "cue": "crafting_supplies_in_sim_inventory", "fail": "SUPPLIES_NOT_IN_INVENTORY"}
+      ]
+    }
+  },
+  "part_catalog": [
+    {
+      "id": "robot_salvage_parts",
+      "display_name": "Robot Salvage Parts",
+      "pack_hint": "Discover University",
+      "synonyms": [
+        "robot salvage",
+        "salvage parts",
+        "robotics salvage",
+        "robot parts",
+        "gardener bot parts",
+        "tune up parts"
+      ],
+      "used_for": [
+        "Tune Up Gardener-Bot / Utili-Bots",
+        "Craft Mechanisms / Computer Chips / bots at robotics workstation"
+      ],
+      "default_path": "computer",
+      "allowed_paths": ["computer", "spawn"],
+      "tune_up_units_observed": 4,
+      "funds_delta_simoleons_per_unit_research": null,
+      "note": "Observed 2026-11-09: Charlee missing 4 Robot Salvage Parts to Tune Up Gardener-Bot."
+    },
+    {
+      "id": "common_upgrade_parts",
+      "display_name": "Common Upgrade Parts",
+      "pack_hint": "base",
+      "synonyms": ["common parts", "upgrade parts common"],
+      "used_for": ["Object upgrades", "Some Utili-Bot crafts"],
+      "default_path": "computer",
+      "allowed_paths": ["computer", "spawn"]
+    },
+    {
+      "id": "electronic_upgrade_parts",
+      "display_name": "Electronic Upgrade Parts",
+      "pack_hint": "base",
+      "synonyms": ["electronics parts", "electronic parts"],
+      "used_for": ["Electronics upgrades", "Robotics crafts"],
+      "default_path": "computer",
+      "allowed_paths": ["computer", "spawn"]
+    },
+    {
+      "id": "plumbing_upgrade_parts",
+      "display_name": "Plumbing Upgrade Parts",
+      "pack_hint": "base",
+      "synonyms": ["plumbing parts"],
+      "used_for": ["Plumbing upgrades", "Gardener-Bot / Fixer-Bot crafts"],
+      "default_path": "computer",
+      "allowed_paths": ["computer", "spawn"]
+    }
+  ],
+  "forbidden": [
+    "gsi_create_obj",
+    "objects.gsi_create_obj",
+    "hallucinated_instance_hex",
+    "build_buy_catalog_search_for_pocket_parts",
+    "household_inventory_deposit",
+    "autorun_on_host_boot",
+    "edit_save_file",
+    "Resume",
+    "force_F1_while_building",
+    "COMPUTER_USE_BYPASS_OF_SCREEN_ADMIT",
+    "claim_BI002"
+  ],
+  "guarantees": [
+    "Library plans default execute_allowed=false",
+    "Computer spam-buy requires LIVE mode in the plan",
+    "Spawn path always opens with testingcheats enabled true",
+    "No hallucinated object instance hex",
+    "Parts destination is Sim pocket inventory, not Household Inventory",
+    "Player-directed observations yield without steps"
+  ]
+}

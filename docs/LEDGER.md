@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-09 — Upgrade-parts spam-buy for Gardener-Bot Tune Up (P95 + P124 + Trifecta)
+
+**Operator:** Forgot how to buy parts while Gardener-Bot Tune Up required **Robot Salvage Parts** (observed miss: 4). Host must spam-buy so the Order path is not rediscovered each time. **P95** selects `UPGRADE_PARTS_FORCE`: computer Order → Purchase Upgrade Parts × quantity (default 20), plus lab Shift+click workstation → Spawn Crafting Supplies after testingcheats. **P124** peers beside `diy_skill_force` / `funds_inject` / `ui_chrome` (W24 unresolved in TokenCorridor catalog — factoring role carried here). Consultation `BI-UPGRADE-PARTS-SPAM-BUY-20261109.v1.json`. CLI: `python -m scripts.upgrade_parts_force catalog|how-to-buy|plan`. Proof ceiling offline plan only; live P08 OPEN. Does not close BI-002.
+
 ## 2026-11-09 — Skill-force trait OK + durable keybd typing (P95 + Trifecta)
 
 **Operator:** Count any household (N portraits), Space-traverse every member, level all skills including mandatory Cooking/Fitness/Natural Living, and do it asynchronously so agents are not blocked for hours. **P95/P100** extend `diy-skill-force` v5 with `household --members N`, `residual_core` tail re-dispatch, and opt-in `--detach` worker. Consultation `BI-HOUSEHOLD-SKILL-FORCE-ASYNC-20261109.v1.json`. Not BI-005.
