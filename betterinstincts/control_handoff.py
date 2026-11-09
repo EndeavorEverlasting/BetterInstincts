@@ -125,23 +125,10 @@ def _lock_dir(lock_root: Path | None = None) -> Path:
 
 
 @contextmanager
-def exclusive_screen_owner(
-    process_id: int,
-    *,
-    lock_root: Path | None = None,
-) -> Iterator[None]:
-    """Cross-process exclusive admission for one selected Sims process.
-
-    Only host-side UI scripts that use this interface participate. A stale
-    lock after process death fails closed; it must not be auto-stolen by age.
-    No process monitoring, daemon, global input hook or user-dir write.
-    Tests may inject an isolated lock_root; production keeps dist/host-listener.
-    """
-    if isinstance(process_id, bool) or not isinstance(process_id, int) or process_id <= 0:
-        raise HandoffError("EXACT_GAME_PROCESS_ID_REQUIRED")
+def _named_screen_lock(filename: str, *, lock_root: Path | None = None) -> Iterator[None]:
     root = _lock_dir(lock_root)
     root.mkdir(parents=True, exist_ok=True)
-    lock = root / ("screen-" + str(process_id) + ".lock")
+    lock = root / filename
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
     if hasattr(os, "O_NOFOLLOW"):
         flags |= os.O_NOFOLLOW
@@ -153,7 +140,6 @@ def exclusive_screen_owner(
         owner_inode = os.fstat(fd).st_ino
         yield
     finally:
-        # Windows cannot unlink while the handle is open — close first.
         try:
             os.close(fd)
         finally:
@@ -164,10 +150,43 @@ def exclusive_screen_owner(
                 pass
 
 
+@contextmanager
+def exclusive_desktop_owner(*, lock_root: Path | None = None) -> Iterator[None]:
+    """One desktop input writer shared by Playwright and all adopted Sims scripts.
+
+    Stale/foreign locks fail closed. No age expiry or automatic lock theft.
+    """
+    with _named_screen_lock("desktop-shared.lock", lock_root=lock_root):
+        yield
+
+
+def desktop_owner_busy(*, lock_root: Path | None = None) -> bool:
+    lock = _lock_dir(lock_root) / "desktop-shared.lock"
+    return lock.exists() or lock.is_symlink()
+
+
+@contextmanager
+def exclusive_screen_owner(
+    process_id: int,
+    *,
+    lock_root: Path | None = None,
+) -> Iterator[None]:
+    """The per-game-process mutex also participates in desktop-wide input.
+
+    The desktop lock must be acquired first to avoid opposing lock ordering
+    between cooperating Sims executors and Playwright agents.
+    """
+    if isinstance(process_id, bool) or not isinstance(process_id, int) or process_id <= 0:
+        raise HandoffError("EXACT_GAME_PROCESS_ID_REQUIRED")
+    with exclusive_desktop_owner(lock_root=lock_root):
+        with _named_screen_lock("screen-" + str(process_id) + ".lock", lock_root=lock_root):
+            yield
+
+
 def screen_owner_busy(process_id: int, *, lock_root: Path | None = None) -> bool:
     """Advisory status for read-only agents; exclusive_screen_owner is authority."""
     if isinstance(process_id, bool) or not isinstance(process_id, int) or process_id <= 0:
         raise HandoffError("EXACT_GAME_PROCESS_ID_REQUIRED")
     root = _lock_dir(lock_root)
     lock = root / ("screen-" + str(process_id) + ".lock")
-    return lock.exists() or lock.is_symlink()
+    return desktop_owner_busy(lock_root=lock_root) or lock.exists() or lock.is_symlink()
