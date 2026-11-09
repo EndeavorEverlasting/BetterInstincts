@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Mapping, Optional, Sequence
 
 from betterinstincts.behavior_eval import BehaviorEvalError, evaluate_queue
+from betterinstincts.queue_capacity import QueueCapacityError, evaluate_queue_capacity
 from betterinstincts.decision_eval import (
     DecisionEvalError,
     measure_need_deltas,
@@ -115,6 +116,11 @@ def evaluate_turn(
     location_kind: str = "unknown",
     objects_on_current_lot: Optional[bool] = None,
     queue: Optional[Sequence[str]] = None,
+    multitasking: Optional[bool] = None,
+    sim_room_id: Optional[str] = None,
+    sim_seated: Optional[bool] = None,
+    sim_seat_id: Optional[str] = None,
+    lot_traits: Sequence[str] = (),
     event_active: bool = False,
     event_goals_incomplete: Sequence[str] = (),
     event_profile: str = "lounge_party",
@@ -378,6 +384,9 @@ def evaluate_turn(
             needs=needs,
             capture_ref=capture_ref,
         )
+        queue_capacity = evaluate_queue_capacity(
+            tuple(queue or ()), multitasking=multitasking, player_directed=player_directed
+        )
         if queue is not None:
             on_lot = (
                 bool(objects_on_current_lot)
@@ -499,6 +508,13 @@ def evaluate_turn(
                 player_directed=player_directed,
                 already_busy=already_busy,
                 life_stage=life_stage or "teen",
+                lot_model=lot_model,
+                multitasking=multitasking,
+                sim_room_id=sim_room_id,
+                sim_seated=sim_seated,
+                sim_seat_id=sim_seat_id,
+                emotion=emotion,
+                lot_traits=lot_traits,
                 capture_ref=capture_ref,
             )
         if school_day_active or school_goals_incomplete or (
@@ -634,6 +650,7 @@ def evaluate_turn(
         SimProfileError,
         BuildOptimizeError,
         TeenHomeworkError,
+        QueueCapacityError,
         CareerServiceError,
         AspirationServiceError,
         BalanceServiceError,
@@ -1204,6 +1221,25 @@ def evaluate_turn(
                 "RESUME",
             ],
         }
+    elif teen_homework is not None and teen_homework["gate"] in {
+        "HOMEWORK_ALREADY_QUEUED", "HOMEWORK_STUDY_SCAN_REQUIRED",
+        "HOMEWORK_QUEUE_CAPACITY_HOLD", "PREPARE_STUDY_LOCATION",
+    }:
+        next_gate = teen_homework["gate"]
+        fallback = {
+            "mechanism": teen_homework["action"],
+            "owner": "betterinstincts/teen_homework.py",
+            "contract": "contracts/teen-homework.v1.json",
+            "next_actions": teen_homework.get("next_actions") or [],
+            "primary_route": teen_homework.get("primary_route"),
+            "study_space": teen_homework.get("study_space"),
+            "queue_budget": teen_homework.get("queue_budget"),
+            "execute_allowed": False,
+            "forbidden": [
+                "BLIND_FILL_QUEUE", "QUEUE_HOMEWORK_ON_SIDEWALK",
+                "QUEUE_HOMEWORK_WITHOUT_SEAT_PROOF", "RESUME",
+            ],
+        }
     elif teen_homework is not None and teen_homework["gate"] == "QUEUE_TEEN_HOMEWORK":
         next_gate = "QUEUE_TEEN_HOMEWORK"
         fallback = {
@@ -1472,6 +1508,7 @@ def evaluate_turn(
         "next_gate": next_gate,
         "fallback": fallback,
         "behavior": behavior,
+        "queue_capacity": queue_capacity,
         "moodlets": moodlet_eval,
         "sim_profile": sim_profile,
         "school_day": school_day,
