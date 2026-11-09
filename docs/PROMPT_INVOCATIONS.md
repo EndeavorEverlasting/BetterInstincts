@@ -19,6 +19,17 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
 | P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools + countertop mechanics (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
 
+## 2026-11-09 host UI chrome map + AOK inventory recipe trifecta
+
+**P95** designed `UI_CHROME_PEER_MAP`: normalized Build/Buy chrome targets,
+per-mode hotkey glossary, Live panel stubs (needs/career/skills/phone), and
+`catalog_to_household_inventory` with preferred search **AOK**. **P124** peer
+`ui_chrome` beside `ui_mode` / `household_object_force` (no vision clicker
+daemon). **P82** measured AOK term, Buy/Build-only deposit, profile fail-closed,
+and Backspace hotkey glossary in `tests/test_ui_chrome.py`. **P08** live click
+calibration remains OPEN. Consultation:
+`contracts/consultations/BI-UI-CHROME-MAP-20261109.v1.json`.
+
 ## 2026-11-09 build floor activity listener trifecta
 
 **P95** designed `FLOOR_ACTIVITY_CENSUS`: active story, SINGLE vs MULTI floor

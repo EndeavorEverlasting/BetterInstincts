@@ -15,7 +15,7 @@ Chat recipes for “force these objects into any household” must not stay trap
 | id | Item | Delivery |
 | --- | --- | --- |
 | `out_of_this_world_desktop` | Out of This World Desktop | `careers.promote techguru` → L10 eSports |
-| `cruelty_free_meat_wall` | Cruelty-Free Meat Wall | `careers.promote careers_Adult_CivilDesigner` → L5 Green Technician |
+| `cruelty_free_meat_wall` | Cruelty-Free Meat Wall (Grow unlock) | `careers.promote careers_Adult_CivilDesigner` → L5 unlocks Grow on **A-OK-Bloomer**; buy Bloomer with catalog search **AOK** via `ui-chrome` recipe into Household Inventory |
 | `ufo_bed` | UFO Bed (Retro Rocket Bed) | `careers.promote astronaut` → L10 Smuggler |
 | `captain_sigma_statue` | Captain Sigma Statue | `careers.promote astronaut` → L8 Space Ranger |
 | `positronic_pro` | Positronic Pro (Magnetic Knife Rack) | `careers.promote culinary` → L6 Chef (optional) |
