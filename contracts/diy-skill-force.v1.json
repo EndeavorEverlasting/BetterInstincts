@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.diy-skill-force/v1",
-  "version": 3,
+  "version": 4,
   "authority": "docs/DIY_SKILL_FORCE.md",
   "proof_ceiling": "HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT",
   "design_brief": {
@@ -8,13 +8,14 @@
     "audience": "operators and Windows host agents who need DIY and other skill unlocks immediately usable",
     "job": "Reusable catalog + mode-agnostic cheat planner: soft-focus → Ctrl+Shift+C → testingcheats enabled true → stats.set_skill_level lines → bounded ACCEPT_OFFERED_REWARD_TRAIT (OK on offered mastery/reward traits). full_unlock defaults to level 10 across adult majors. Not BI-005 practice_skill growth certification.",
     "architecture": "Sibling to funds_inject / household_object_force. Distinct from read-only sim_profile and aspiration life-state OK. No second skill/trait daemon. Typing owner: scripts/win32_input.type_text (keybd_event).",
-    "operator_correction": "Skill cheats apply to the currently selected Sim; select each household member before execute. Level them all the way (10) so activities/unlockables are not blocked. Press OK on offered cool new traits (e.g. Perfectionist-style) during leveling — durable host logic, not chat-only. Missing packs may no-op."
+    "operator_correction": "Skill cheats apply to the currently selected Sim; select each household member before execute. Level them all the way (10) so activities/unlockables are not blocked. Press OK on offered cool new traits (e.g. Perfectionist-style) during leveling — durable host logic, not chat-only. Missing packs may no-op. Skills panel while PAUSED is stale. Keep Live paused during precious-time dispatch; to confirm panel data use PLAY_BRIEF (5–10s) → OBSERVE → REPAUSE — never leave the clock running."
   },
   "activation": {
     "require_explicit_activate": true,
     "never_on_startup": true,
     "never_autorun": true,
-    "never_touch_game_speed": true,
+    "never_leave_sim_speed_running_after_verify": true,
+    "never_touch_game_speed_except_bounded_panel_verify": true,
     "cli": {
       "catalog": "python -m scripts.diy_skill_force catalog",
       "plan": "python -m scripts.diy_skill_force plan --bundle full_unlock",
@@ -57,6 +58,39 @@
         "purchase_confirmation"
       ]
     },
+    "skills_panel_observation": {
+      "step": "PLAY_BRIEF_OBSERVE_REPAUSE",
+      "paused_panel_status": "UNPROVEN_STALE",
+      "paused_panel_note": "Skills UI does not reliably refresh while Live is PAUSED; do not treat a paused-only screenshot as residual-skill failure or as max-level proof.",
+      "dispatch_default": "KEEP_PAUSED",
+      "verify_default": "PLAY_BRIEF_OBSERVE_REPAUSE",
+      "precious_time_triggers": [
+        "concurrent_live_cert",
+        "main_goal_unfinished",
+        "operator_holds_pause",
+        "time_is_precious"
+      ],
+      "keep_paused_policy": "During precious-time / unfinished main-goal work, keep Live paused for skill cheat dispatch and long idle. Do not leave 1x/2x/3x running.",
+      "play_brief_for_fresh_panel": {
+        "enabled_by_default_for_verify": true,
+        "requires_skills_panel_open": true,
+        "min_play_seconds": 5,
+        "max_play_seconds": 10,
+        "default_play_seconds": 7,
+        "play_key": "1",
+        "pause_key": "0",
+        "purpose": "Bounded Live tick so Skills panel refreshes; capture/analyze; immediately re-pause",
+        "always_repause": true,
+        "not": [
+          "leave_sim_running",
+          "main_menu_Resume",
+          "permanent_speed_change",
+          "live_cert_proof",
+          "unbounded_unpause"
+        ]
+      },
+      "dispatch_while_paused_allowed": true
+    },
     "forbidden": [
       "Resume",
       "Delete",
@@ -67,7 +101,9 @@
       "claim_BI005",
       "autorun_on_host_boot",
       "press_Cancel_on_reward_trait",
-      "auto_accept_invite_dialogs"
+      "auto_accept_invite_dialogs",
+      "leave_sim_speed_running_after_panel_verify",
+      "treat_paused_skills_panel_as_fresh_proof"
     ]
   },
   "skill_catalog": [
@@ -176,6 +212,8 @@
       "SET_SKILL_LEVEL: stats.set_skill_level <stat> <N> per resolved skill",
       "ACCEPT_OFFERED_REWARD_TRAIT: Enter + primary OK hotspot (interleaved + final)",
       "optional CLOSE_CHEAT_CONSOLE",
+      "KEEP_PAUSED during precious-time skill dispatch / long idle",
+      "PLAY_BRIEF_OBSERVE_REPAUSE (5–10s @ 1x) to refresh Skills panel, capture, then pause again",
       "Emit receipt; execute_allowed=false until independent screen_admit"
     ],
     "failure": [
@@ -189,7 +227,9 @@
       "force F1 while operator builds -> HOST_CRISIS_ANTI_PATTERN",
       "claim BI-005 from this owner -> FORBIDDEN",
       "press Cancel on reward trait -> FORBIDDEN",
-      "concurrent live-cert screen owner -> YIELD"
+      "concurrent live-cert screen owner -> YIELD",
+      "leave_sim_speed_running_after_panel_verify -> FORBIDDEN",
+      "treat_paused_skills_panel_as_fresh_proof -> FORBIDDEN"
     ]
   },
   "composition": {
@@ -217,6 +257,10 @@
     "never_queue_practice_skill",
     "yield_screen_to_concurrent_live_cert",
     "type_text_keybd_event_for_cheat_console",
-    "accept_offered_reward_traits_never_cancel"
+    "accept_offered_reward_traits_never_cancel",
+    "keep_paused_during_precious_time_dispatch",
+    "paused_skills_panel_is_unproven_stale",
+    "verify_via_play_brief_observe_repause",
+    "never_leave_sim_speed_running_after_panel_verify"
   ]
 }

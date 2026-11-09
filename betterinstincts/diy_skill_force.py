@@ -24,6 +24,64 @@ class DiySkillForceError(ValueError):
     pass
 
 
+def skills_panel_observation_policy(
+    *,
+    purpose: str = "verify",
+    live_paused: bool = True,
+    precious_time: bool = True,
+    concurrent_live_cert: bool = False,
+    main_goal_unfinished: bool = False,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Skills-panel proof policy for skill-force.
+
+    Dispatch under precious time: KEEP_PAUSED.
+    Verify: PLAY_BRIEF (5–10s) → OBSERVE → REPAUSE. Paused-only UI is STALE.
+    Never leave sim speed running after verify. Not main-menu Resume.
+    """
+    cfg = cfg or load_contract()
+    obs = (cfg.get("inject_sequence") or {}).get("skills_panel_observation") or {}
+    play_cfg = obs.get("play_brief_for_fresh_panel") or {}
+    purpose_l = str(purpose or "verify").lower()
+    precious = bool(precious_time or concurrent_live_cert or main_goal_unfinished)
+    min_s = int(play_cfg.get("min_play_seconds") or 5)
+    max_s = int(play_cfg.get("max_play_seconds") or 10)
+    default_s = int(play_cfg.get("default_play_seconds") or 7)
+    play_seconds = max(min_s, min(max_s, default_s))
+    if purpose_l == "dispatch":
+        action = "KEEP_PAUSED"
+        panel_status = str(obs.get("paused_panel_status") or "UNPROVEN_STALE")
+    elif purpose_l == "verify":
+        action = "PLAY_BRIEF_OBSERVE_REPAUSE"
+        panel_status = "FRESH_PANEL_AFTER_PLAY_BRIEF"
+    else:
+        raise DiySkillForceError("UNKNOWN_SKILLS_PANEL_PURPOSE")
+    if purpose_l == "verify" and not live_paused:
+        panel_status = "LIVE_ALREADY_PLAYING_CAPTURE_THEN_REPAUSE"
+    return {
+        "step": str(obs.get("step") or "PLAY_BRIEF_OBSERVE_REPAUSE"),
+        "purpose": purpose_l,
+        "action": action,
+        "panel_status": panel_status,
+        "live_paused": bool(live_paused),
+        "precious_time": precious,
+        "concurrent_live_cert": bool(concurrent_live_cert),
+        "main_goal_unfinished": bool(main_goal_unfinished),
+        "play_seconds": play_seconds,
+        "min_play_seconds": min_s,
+        "max_play_seconds": max_s,
+        "play_key": str(play_cfg.get("play_key") or "1"),
+        "pause_key": str(play_cfg.get("pause_key") or "0"),
+        "always_repause": bool(play_cfg.get("always_repause", True)),
+        "dispatch_while_paused_allowed": bool(obs.get("dispatch_while_paused_allowed", True)),
+        "note": (
+            obs.get("keep_paused_policy")
+            if purpose_l == "dispatch"
+            else "Play 5–10s at 1x, capture Skills panel, pause again."
+        ),
+    }
+
+
 def load_contract(path: Path = CONTRACT) -> dict:
     path = Path(path)
     if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_BYTES:
@@ -254,6 +312,45 @@ def plan_skill_force(
                 "note": "Optional — avoid Esc spam that opens pause MENU while building",
             }
         )
+    dispatch_policy = skills_panel_observation_policy(
+        purpose="dispatch",
+        live_paused=True,
+        precious_time=True,
+        concurrent_live_cert=True,
+        main_goal_unfinished=True,
+        cfg=cfg,
+    )
+    verify_policy = skills_panel_observation_policy(
+        purpose="verify",
+        live_paused=True,
+        precious_time=True,
+        concurrent_live_cert=True,
+        main_goal_unfinished=True,
+        cfg=cfg,
+    )
+    steps.append(
+        {
+            "step": "KEEP_PAUSED",
+            "required": True,
+            "action": dispatch_policy["action"],
+            "purpose": "dispatch",
+            "note": dispatch_policy["note"],
+        }
+    )
+    steps.append(
+        {
+            "step": "PLAY_BRIEF_OBSERVE_REPAUSE",
+            "required": False,
+            "action": verify_policy["action"],
+            "purpose": "verify",
+            "play_seconds": verify_policy["play_seconds"],
+            "play_key": verify_policy["play_key"],
+            "pause_key": verify_policy["pause_key"],
+            "always_repause": True,
+            "panel_status_if_skipped": "UNPROVEN_STALE",
+            "note": verify_policy["note"],
+        }
+    )
     return {
         "state": "DIY_SKILL_FORCE_PLAN_READY",
         "next_gate": "EXECUTE_DIY_SKILL_FORCE",
@@ -265,6 +362,11 @@ def plan_skill_force(
         "accept_reward_dialogs": accept,
         "open_console": seq.get("open_console_chord_label", "Ctrl+Shift+C"),
         "typing_owner": seq.get("typing_owner", "scripts/win32_input.type_text"),
+        "skills_panel_observation": {
+            "dispatch": dispatch_policy,
+            "verify": verify_policy,
+        },
+        "keep_paused_default": True,
         "steps": steps,
         "forbidden": list(seq.get("forbidden") or []),
         "invariants": list(cfg.get("invariants") or []),

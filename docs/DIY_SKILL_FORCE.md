@@ -2,7 +2,7 @@
 
 **Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
 **P124:** sibling owner beside `funds_inject` / `household_object_force`; distinct from read-only `sim_profile`
-**Machine owner:** [`contracts/diy-skill-force.v1.json`](../contracts/diy-skill-force.v1.json) (v3)
+**Machine owner:** [`contracts/diy-skill-force.v1.json`](../contracts/diy-skill-force.v1.json) (v4)
 **Evaluator / planner:** `betterinstincts.diy_skill_force`
 **Execute adapter:** `python -m scripts.diy_skill_force`
 **Typing owner:** `scripts.win32_input.type_text` (keybd_event — UNICODE-only is a silent miss on some TS4 hosts)
@@ -36,9 +36,13 @@ CLI plan/level (bundle full_unlock | skill ids)
   -> stats.set_skill_level <Major_*> 10  (× resolved skills)
   -> ACCEPT_OFFERED_REWARD_TRAIT (Enter + OK hotspot; interleaved + final; never Cancel)
   -> optional Esc
+  -> KEEP_PAUSED during precious-time dispatch / long idle
+  -> PLAY_BRIEF_OBSERVE_REPAUSE (5–10s @ 1x → capture Skills panel → pause again)
 ```
 
 Library plans keep `execute_allowed=false`. Live execute requires an ACTIVE `host_listener` session, exact PID, and `screen_admit`. Yield the screen when another agent owns live certification. Pass `--no-accept-reward-dialogs` to skip trait OK accepts.
+
+**Skills panel proof:** a paused-only Skills screenshot is `UNPROVEN_STALE`. Keep Live paused while time is precious and the main goal is unfinished, but to confirm residual levels run the bounded verify loop (`--verify-skills-panel`): play 5–10 seconds at 1x, read the panel, immediately pause again. Never leave sim speed running; never main-menu Resume.
 
 ## CLI
 
@@ -48,6 +52,7 @@ python -m scripts.diy_skill_force plan --bundle full_unlock
 python -m scripts.diy_skill_force level --bundle full_unlock --level 10
 python -m scripts.diy_skill_force level --bundle diy_maker
 python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID
+python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID --verify-skills-panel --verify-play-seconds 7
 ```
 
 Select each household Sim/Servo in Live before `--execute`. Re-run per member. Missing packs may no-op individual lines.
