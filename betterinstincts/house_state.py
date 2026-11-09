@@ -317,6 +317,7 @@ def attest_library_save(
     library_item_name: str,
     capture_ref: str,
     operator_confirmed: bool,
+    lot_manifest: Mapping[str, Any] | None = None,
 ) -> dict:
     """Record Build Mode Save-to-My-Library attestation (not game Save As).
 
@@ -326,6 +327,7 @@ def attest_library_save(
     from betterinstincts.build_library_checkpoint import (
         BuildLibraryCheckpointError,
         validate_attestation_payload,
+        validate_full_lot_manifest,
     )
 
     if not operator_confirmed:
@@ -338,7 +340,16 @@ def attest_library_save(
         )
     except BuildLibraryCheckpointError as exc:
         raise HouseStateError(str(exc)) from exc
+    # Capture and classification must precede the claimed pre-change save.
+    # Legacy attestation is retained only as evidence, never an edit permit.
+    if lot_manifest is not None:
+        validate_full_lot_manifest(model, lot_manifest)
     out = observe(model, note="library_checkpoint_attestation")
+    lot_inventory = None
+    if lot_manifest is not None:
+        current = dict(lot_manifest)
+        current["model_revision"] = out["revision"]
+        lot_inventory = validate_full_lot_manifest(out, current)
     out["library_checkpoint"] = {
         "building_id": building_id,
         "library_item_name": library_item_name,
@@ -348,7 +359,11 @@ def attest_library_save(
         "source": "SIMS_MY_LIBRARY",
         "model_revision": out["revision"],
         "observed_at": "operator_attested",
+        "lot_inventory": lot_inventory,
     }
+    if lot_inventory is not None:
+        # Fail rather than claim a backup if its local metadata cannot be saved.
+        persist_checkpoint(out, label="pre-build-whole-lot")
     return out
 
 
@@ -634,7 +649,7 @@ def admit_mutation(
         return {
             "state": "MUTATION_DENIED",
             "gate": library.get("gate") or "LIBRARY_CHECKPOINT_REQUIRED",
-            "reason": "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE",
+            "reason": "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP",
             "violation": library.get("violation"),
             "detail": library.get("detail"),
             "library": library,
