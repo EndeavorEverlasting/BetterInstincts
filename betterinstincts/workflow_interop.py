@@ -113,6 +113,7 @@ class CooperativeScreenQueue:
             return {"state": "EMPTY", "pending": 0}
         self._running = True
         item = self.pending[0]
+        effect_started = False
         try:
             # No focus or browser launch before this check; fail-closed probe.
             await self.checkpoint()
@@ -130,8 +131,14 @@ class CooperativeScreenQueue:
                     await self.checkpoint()
                     # Action is expected to await checkpoint before each
                     # click/type/navigate. Deferral must not consume the job.
-                    await item.action(self.checkpoint)
-                    await self.checkpoint()
+                    # A callback may have made an effect. Do not blindly replay
+                    # when human activity interrupts a partially run callback.
+                    async def effect_checkpoint() -> None:
+                        nonlocal effect_started
+                        await self.checkpoint()
+                        effect_started = True
+
+                    await item.action(effect_checkpoint)
             except HandoffError as exc:
                 if str(exc) == "SCREEN_OWNER_BUSY":
                     self._event("WAITING_FOR_AGENT", item.work_id)
@@ -142,6 +149,11 @@ class CooperativeScreenQueue:
             self._event("COMPLETED", item.work_id)
             return {"state": "COMPLETED", "pending": len(self.pending)}
         except DeferredForHuman:
+            if effect_started:
+                self.needs_review.add(item.work_id)
+                self.pending.popleft()
+                self._event("NEEDS_RECONCILIATION", item.work_id)
+                return {"state": "NEEDS_RECONCILIATION", "pending": len(self.pending)}
             self._event("WAITING_FOR_USER", item.work_id)
             return {"state": "WAITING_FOR_USER", "pending": len(self.pending)}
         except Exception as exc:
