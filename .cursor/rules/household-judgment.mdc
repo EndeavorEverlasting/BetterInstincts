@@ -1,0 +1,17 @@
+---
+description: Fixed-roster household skill progression, Sims 4 offline-only and player-first judgment when editing skill host adapters.
+globs:
+  - "scripts/diy_skill_force.py"
+  - "betterinstincts/diy_skill_force.py"
+  - "contracts/diy-skill-force.v1.json"
+  - "bootstrap.py"
+alwaysApply: false
+---
+
+# BetterInstincts task judgment: read canonical owners before edits
+
+For a request to level household skills, freeze the original locally observed household roster and its ordered N portraits. One requested skill across portraits 0..N-1 to target 10, then next skill. Preserve member IDs and completion ledger. Never add/create Sims or Servos, alter household membership, buy Build/Buy objects, or open online features as a means to level a skill. EA Connect / online Gallery / Store forbidden; if truly blocked by a game connection modal choose Stay Offline only.
+
+Use canonical owners docs/HOUSEHOLD_JUDGMENT.md, docs/DIY_SKILL_FORCE.md, contracts/household-judgment.v1.json, contracts/diy-skill-force.v1.json, betterinstincts/household_judgment.py, scripts/diy_skill_force.py. Do not add another skill scheduler. In foreground serial execution do not toggle console before Space when per-cell execution already closed it. Reject --detach game screen-input workers. Existing player-first screen admission, save safety and camera safe-rest contracts still apply.
+
+An observed roster change, missing identity, popup, or loss of desktop control requires stop/reconcile; do not improvise new characters. Local selected-portrait observation is necessary for P08 proof; supplied --roster-key/--first-portrait-attested are operator assertions, not visual proof. Only Skills panel after bounded play-and-repause proves actual level. Cursor rules are repo files: preserve and archive any active user settings before separately installing them.
