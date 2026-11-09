@@ -140,3 +140,16 @@ Current Moonwake catalog `harness/exports/prompt-invocation-catalog.v1.json` (bl
 ## 2026-11-09 P95 hover tooltip temporal learning
 
 Resolved P95 exactly from Moonwake current main prompt-invocation catalog: Program Design & Call-Stack Prototype Architect (owner spec-architecture-prompts.v1.json, source blob 5926a198a14567de55110ed19e922fc444b4dec7). The prototyped program seam is an ACTIVE host_listener session -> opt-in semantic tooltip event -> pure hover_learning reducer -> bounded 3/5/10/30/60-minute reviewed association projection. No new mouse hook, daemon, duplicate trainer or SendInput permit. Ontology consultation precedes behavior source commits: contracts/consultations/BI-HOVER-TEMPORAL-20261109.v1.json. Tests: tests/test_hover_learning.py. Remaining game sensor and human-reviewed outcomes require local-host evidence. See docs/HOVER_LEARNING.md.
+
+## 2026-11-09 — P95 + Trifecta hotkey/cheat behavior observations
+
+Current Moonwake catalog resolves **P95 — Program Design & Call-Stack
+Prototype Architect**, **P08 — Live Runtime Proof Executor**,
+**P82 — Prototype-Measure-Refine Delivery Loop**,
+**P07 — Repo Sprint Executor**. P95 chose an opt-in action-channel seam
+within the existing `hover_learning` owner and derived action identifiers
+from the existing UI/cheat catalog owners; P82 supplied cross-channel,
+negative, review and temporal regression cases; P07 owns branch/CI/main
+integration. P08 live command/shortcut proof remains an independently
+unproved local-host gate. Early ontology receipt:
+`contracts/consultations/BI-INPUT-CHANNELS-20261109.v1.json`.
