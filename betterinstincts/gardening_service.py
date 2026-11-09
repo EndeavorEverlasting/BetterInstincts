@@ -12,6 +12,9 @@ from pathlib import Path
 from typing import Mapping
 
 from betterinstincts.need_service_base import normalize_needs, threshold_pair
+from betterinstincts.fertilizer_workflow import (
+    FertilizerWorkflowError, evaluate_fertilizer_workflow,
+)
 from betterinstincts.task_continuity import TaskContinuityError, evaluate_task_continuity
 from betterinstincts.selected_sim_continuity import (
     SelectedSimContinuityError, evaluate_selected_sim_goal,
@@ -175,6 +178,27 @@ def evaluate_gardening_turn(
             "LIVE_SCENE", "NEEDS_PANEL", "PLAYER_QUEUE", "PLANT_INTERACTIONS"
         ))
     actions = _observed_actions(context, capture_ref, bounds["max_observed_actions"])
+    def fertilizer_step(*, exact_target=None, required_action=None, expected_sim_ref=None) -> dict:
+        try:
+            plan = evaluate_fertilizer_workflow(
+                context["fertilizer_workflow"], actions, capture_ref=capture_ref,
+                now=now, exact_target=exact_target, required_action=required_action,
+                expected_sim_ref=expected_sim_ref,
+            )
+        except FertilizerWorkflowError as exc:
+            raise GardeningServiceError(str(exc)) from exc
+        result["fertilizer_workflow"] = plan
+        if plan["next_actions"]:
+            result["next_actions"] = plan["next_actions"]
+            result["goal_state"] = "READY_FOR_ONE_OBSERVED_INTERACTION"
+            return finish("GARDEN_ACTION_READY", plan["action"])
+        if plan["gate"] == "FERTILIZER_VERIFIED_COMPLETE":
+            result["goal_state"] = "VERIFIED_COMPLETE"
+        return finish("GARDEN_" + plan["gate"], plan["action"], inspections=(
+            "SIM_PERSONAL_INVENTORY", "HYDROPONIC_PLANT_AFFORDANCES",
+            "CURRENT_GARDENING_QUEUE",
+        ))
+
     low = [need for need, value in snap.items() if value < floor]
     if low:
         result["needs_below_floor"] = sorted(low)
@@ -219,6 +243,12 @@ def evaluate_gardening_turn(
             return finish("GARDEN_AUTONOMOUS_INTERRUPTION", "WAIT_REOBSERVE_UNSOLICITED_ACTIVITY")
         if gate != "TASK_RESUME_CANDIDATE":
             return finish("GARDEN_REOBSERVE_TASK", "INSPECT_CURRENT_QUEUE_AND_ACTOR")
+        if "fertilizer_workflow" in context:
+            return fertilizer_step(
+                exact_target=continuity["next_target_ref"],
+                required_action=continuity["action_id"],
+                expected_sim_ref=continuity["sim_ref"],
+            )
         target = continuity["next_target_ref"]
         selected = next((row for row in actions if
                          row["action_id"] == continuity["action_id"] and
@@ -228,6 +258,8 @@ def evaluate_gardening_turn(
         result["next_actions"] = [selected]
         result["goal_state"] = "READY_FOR_ONE_OBSERVED_INTERACTION"
         return finish("GARDEN_ACTION_READY", "GARDEN_ONE_INTERACTION_THEN_REOBSERVE")
+    if "fertilizer_workflow" in context:
+        return fertilizer_step()
     for action_id in cfg["action_order"]:
         selected = next((row for row in actions if row["action_id"] == action_id), None)
         if selected is not None:
