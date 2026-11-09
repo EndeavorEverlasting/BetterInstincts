@@ -138,7 +138,7 @@ class SchoolDayTests(unittest.TestCase):
                     "traits": ["Clumsy"],
                     "whims": ["Not Stumble"],
                 },
-                presence_probe=PresenceProbe(False, False, last_input_age_ms=9000),
+                presence_probe=PresenceProbe(False, False, last_input_age_ms=19000),
             )
             stack = receipt["host_stack"]
             self.assertEqual(stack["next_gate"], "SCHOOL_DAY_GOAL_PROGRESS")
