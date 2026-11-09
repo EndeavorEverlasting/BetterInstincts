@@ -112,4 +112,3 @@ P04 remains the canonical Moonwake **[PARALLEL] Repo-Aware Sprint + Harness Fact
 ## 2026-11-09 — game mode and menu context microsystem
 
 Current Moonwake catalog verified at `harness/exports/prompt-invocation-catalog.v1.json` blob `8c281379ba7ccc871947391233b1db72f4a108ef`. **P95** selects a thin scene-backed F1/F2/F3 evaluator, reusing `scenes.classify` and honest declared cue status. **P124** factors a separate read-only `ui_mode` projection without a second screen detector, daemon or host listener. Trifecta: **P08** remains a local exact-build screenshot/overlay calibration gate, **P82** implements offline candidate/negative tests, and **P07** owns bounded source integration and CI. Ontology consultation `contracts/consultations/BI-UI-MODE-CONTEXT-20261109.v1.json` was committed before code. Detailed call flow: `docs/UI_MODE.md`. Passing offline tests cannot certify real Live/Buy/Build recognition.
-
