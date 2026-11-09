@@ -1,7 +1,7 @@
 {
   "schema": "betterinstincts.room-census/v1",
   "version": 1,
-  "authority": "docs/ROOM_CENSUS.md",
+  "authority": "betterinstincts/room_census.py",
   "owner": "betterinstincts/room_census.py",
   "source_model": "betterinstincts.lot-environment-model/v1",
   "architecture": "READ_ONLY_REVISIONED_ROOM_PROJECTION",
