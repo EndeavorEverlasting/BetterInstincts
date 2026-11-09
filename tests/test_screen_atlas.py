@@ -7,7 +7,7 @@ from pathlib import Path
 
 from betterinstincts.player_presence import PresenceProbe
 from betterinstincts.screen_atlas import (
-    ScreenAtlasError, enqueue_game_click, enqueue_native_game_click, inventory, load_atlas,
+    ScreenAtlasError, enqueue_game_click, enqueue_native_game_click, enqueue_world_game_click, inventory, load_atlas,
     resolved_calibration,
 )
 from betterinstincts.workflow_interop import CooperativeScreenQueue
@@ -268,6 +268,139 @@ class NativeGameScreenAtlasTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual((await self.queue.run_once())["state"], "NEEDS_RECONCILIATION")
         self.assertEqual(self.effects, [("click", 225, 916)])
+
+
+
+class CameraBoundWorldClickTests(unittest.IsolatedAsyncioTestCase):
+    """A captured world-object pixel is invalid after any camera movement."""
+
+    async def asyncSetUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.age = 16000
+        self.effects = []
+        self.current = self.frame()
+
+        async def fast_sleep(_):
+            return None
+
+        self.queue = CooperativeScreenQueue(
+            lambda: PresenceProbe(False, False, last_input_age_ms=self.age),
+            lambda: True, lock_root=Path(self.tmp.name), sleep=fast_sleep,
+        )
+
+    @staticmethod
+    def frame(**changes):
+        out = observation(
+            source="HOST_CAPTURE", capture_ref="capture:world-1",
+            camera_revision="camera:9", camera_displaced=False,
+            camera_reanchor_attempts=0, cursor_client=[960, 540],
+            text_entry_active=False, modal_open=False,
+            player_camera_owned=False,
+            process_id=4521, focused_process_id=4521,
+            session_id="lab-session", host_admitted=True,
+            client_origin_x=100, client_origin_y=50,
+            mode="LIVE", scene_id="live_mode",
+        )
+        out["world_target"] = {
+            "source": "HOST_CAPTURE", "target_id": "A-OK Bloomer",
+            "capture_ref": "capture:world-1", "camera_revision": "camera:9",
+            "target_visible": True, "occluded": False,
+            "bbox_client": [840, 420, 1020, 600], "framing_attempts": 0,
+        }
+        out.update(changes)
+        return out
+
+    async def observed(self):
+        return self.current
+
+    async def click(self, x, y):
+        self.effects.append(("click", x, y))
+
+    async def rest(self, x, y):
+        self.effects.append(("rest", x, y))
+
+    def enqueue(self, work_id="world-action", observe=None, click=None):
+        return enqueue_world_game_click(
+            self.queue, work_id=work_id, target_id="A-OK Bloomer",
+            capture_ref="capture:world-1", client_width=1920,
+            client_height=1080, observe=observe or self.observed,
+            process_id=4521, session_id="lab-session",
+            click_screen=click or self.click, move_screen=self.rest,
+        )
+
+    async def test_stable_current_camera_one_click_then_safe_rest(self):
+        response = self.enqueue()
+        self.assertFalse(response["execute_allowed"])
+        self.assertEqual((await self.queue.run_once())["state"], "COMPLETED")
+        self.assertEqual(self.effects, [("click", 1030, 560), ("rest", 1060, 590)])
+
+    async def test_edge_cursor_stops_click_even_if_target_pixels_look_valid(self):
+        self.current = self.frame(cursor_client=[1918, 540])
+        self.enqueue()
+        self.assertEqual((await self.queue.run_once())["state"], "NEEDS_REVALIDATION")
+        self.assertEqual(self.effects, [])
+
+    async def test_camera_drift_blocks_pixel_click_before_action(self):
+        self.current = self.frame(camera_displaced=True)
+        self.enqueue()
+        self.assertEqual((await self.queue.run_once())["state"], "NEEDS_REVALIDATION")
+        self.assertEqual(self.effects, [])
+
+    async def test_revision_changed_between_checks_quarantines(self):
+        count = 0
+        async def switched_frame():
+            nonlocal count
+            count += 1
+            if count == 1:
+                return self.frame()
+            return self.frame(
+                camera_revision="camera:10",
+                world_target={
+                    **self.frame()["world_target"],
+                    "camera_revision": "camera:10",
+                },
+            )
+        self.enqueue(observe=switched_frame)
+        self.assertEqual((await self.queue.run_once())["state"], "NEEDS_RECONCILIATION")
+        self.assertEqual(self.effects, [])
+
+    async def test_stale_target_and_lost_window_never_click(self):
+        for changed in (
+            {"world_target": {**self.frame()["world_target"], "camera_revision": "camera:old"}},
+            {"capture_ref": "capture:other"},
+            {"focused_process_id": 999},
+            {"host_admitted": False},
+            {"player_camera_owned": True},
+            {"text_entry_active": True},
+            {"modal_open": True},
+            {"save_authorized": False},
+            {"game_version": "unverified"},
+        ):
+            with self.subTest(changed=changed):
+                self.queue.pending.clear()
+                self.queue.needs_review.clear()
+                self.current = self.frame(**changed)
+                self.enqueue()
+                self.assertEqual((await self.queue.run_once())["state"], "NEEDS_REVALIDATION")
+                self.assertEqual(self.effects, [])
+
+    async def test_human_takeover_after_click_never_auto_reclicks_or_rests(self):
+        async def interrupted_click(x, y):
+            self.effects.append(("click", x, y))
+            self.age = 0
+        self.enqueue(click=interrupted_click)
+        self.assertEqual((await self.queue.run_once())["state"], "NEEDS_RECONCILIATION")
+        self.assertEqual(self.effects, [("click", 1030, 560)])
+
+    async def test_unknown_cursor_blocks_world_only_but_preserves_ui_chrome(self):
+        self.current = self.frame(cursor_client=None)
+        self.enqueue()
+        self.assertEqual((await self.queue.run_once())["state"], "NEEDS_REVALIDATION")
+        self.assertEqual(self.effects, [])
+        # The old UI chrome calibration remains static and independent of
+        # world camera revision; its existing tests protect that contract.
+        self.assertEqual(resolved_calibration(calibration())["click"], [125, 866])
 
 
 if __name__ == "__main__":

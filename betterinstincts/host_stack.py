@@ -81,7 +81,7 @@ from betterinstincts.teen_homework import (
     should_attach_teen_homework,
 )
 from betterinstincts.camera_traverse import (
-    CameraTraverseError, assess_world_target, evaluate_cursor_risk,
+    CameraTraverseError, assess_drift_recovery, assess_world_target, evaluate_cursor_risk,
 )
 from betterinstincts.viewport import ViewportError, predict_risk
 from betterinstincts.sim_camera import SimCameraError, plan_sim_camera
@@ -169,6 +169,7 @@ def evaluate_turn(
     camera_scan_needed: bool = False,
     camera_pan_directions: Sequence[str] = (),
     world_target: Optional[Mapping[str, object]] = None,
+    camera_recovery: Optional[Mapping[str, object]] = None,
     sim_camera_command: Optional[str] = None,
     sim_camera_observation: Optional[Mapping[str, object]] = None,
     prior_career_state: Optional[Mapping[str, object]] = None,
@@ -595,6 +596,26 @@ def evaluate_turn(
         except (BuildIntegrityError, BuildSpatialError, BuildLibraryCheckpointError) as exc:
             raise HostStackError(str(exc)) from exc
 
+    drift_recovery = None
+    if camera_recovery is not None:
+        if not isinstance(camera_recovery, Mapping):
+            raise HostStackError("CAMERA_RECOVERY_REQUEST_INVALID")
+        try:
+            drift_recovery = assess_drift_recovery(
+                target_kind=camera_recovery.get("target_kind"),
+                capture_ref=capture_ref,
+                observation=camera_recovery.get("observation"),
+                client_width=client_width,
+                client_height=client_height,
+                target_id=camera_recovery.get("target_id"),
+                world_target_observation=camera_recovery.get("world_target_observation"),
+                reframe_directions=camera_recovery.get("reframe_directions", ()),
+                sim_camera_observation=sim_camera_observation,
+                continuous_follow=camera_recovery.get("continuous_follow", False),
+            )
+        except (CameraTraverseError, TypeError) as exc:
+            raise HostStackError(str(exc)) from exc
+
     sim_camera_intent = None
     if sim_camera_command is not None:
         try:
@@ -683,6 +704,22 @@ def evaluate_turn(
                 "EDGE_MOUSE_PARK",
                 "NEEDS_OBJECT_CLICK",
                 "RESUME",
+            ],
+        }
+    elif drift_recovery is not None:
+        # Recovery outranks generic scan/target clicks. Physical actions still
+        # pass exact-session + human-idle screen_admit at the native boundary.
+        next_gate = "RESPECT_PLAYER_OR_BUSY_STATE" if (player_directed or already_busy) else drift_recovery["gate"]
+        fallback = {
+            "mechanism": "CAMERA_DRIFT_RECOVERY",
+            "owner": "betterinstincts/camera_traverse.py",
+            "contract": "contracts/camera-traverse.v1.json",
+            "recovery": drift_recovery,
+            "execute_allowed": False,
+            "next": drift_recovery.get("next_step"),
+            "forbidden": [
+                "BLIND_WORLD_CLICK", "REUSE_PRE_PAN_TARGET_COORDINATES",
+                "UNCALIBRATED_PORTRAIT_RIGHT_CLICK", "AUTO_RECLICK",
             ],
         }
     elif camera_traverse is not None and camera_traverse.get("gate") in {
@@ -1270,6 +1307,7 @@ def evaluate_turn(
         "build_spatial": build_spatial,
         "build_library": build_library,
         "camera_traverse": camera_traverse,
+        "camera_recovery": drift_recovery,
         "world_target_framing": target_framing,
         "sim_camera": sim_camera_intent,
         "instincts": instincts,

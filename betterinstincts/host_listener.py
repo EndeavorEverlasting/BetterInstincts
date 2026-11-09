@@ -268,6 +268,10 @@ def _load_observation(raw: Mapping) -> dict:
     if sim_camera_observation is not None:
         if not isinstance(sim_camera_observation, Mapping) or len(json.dumps(dict(sim_camera_observation))) > 8192:
             raise HostListenerError("SIM_CAMERA_OBSERVATION_INVALID")
+    camera_recovery = raw.get("camera_recovery")
+    if camera_recovery is not None:
+        if not isinstance(camera_recovery, Mapping) or len(json.dumps(dict(camera_recovery))) > 8192:
+            raise HostListenerError("OBSERVATION_CAMERA_RECOVERY_INVALID")
     world_target = raw.get("world_target")
     if world_target is not None:
         if not isinstance(world_target, Mapping) or len(json.dumps(dict(world_target))) > 8192:
@@ -396,6 +400,7 @@ def _load_observation(raw: Mapping) -> dict:
         "camera_scan_needed": bool(raw.get("camera_scan_needed", False)),
         "camera_pan_directions": [str(x) for x in pan_dirs],
         "world_target": dict(world_target) if world_target is not None else None,
+        "camera_recovery": dict(camera_recovery) if camera_recovery is not None else None,
         "sim_camera_command": sim_camera_command,
         "sim_camera_observation": dict(sim_camera_observation) if sim_camera_observation is not None else None,
     }
@@ -598,6 +603,7 @@ def tick(
             camera_scan_needed=obs["camera_scan_needed"],
             camera_pan_directions=obs["camera_pan_directions"],
             world_target=obs["world_target"],
+            camera_recovery=obs["camera_recovery"],
             sim_camera_command=obs["sim_camera_command"],
             sim_camera_observation=obs["sim_camera_observation"],
             emotion=obs["emotion"],

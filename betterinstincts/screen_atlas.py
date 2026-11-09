@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Mapping
 
-from betterinstincts.camera_traverse import classify_cursor, safe_rest_point
+from betterinstincts.camera_traverse import assess_drift_recovery, classify_cursor, safe_rest_point
 from betterinstincts.scenes import load_catalog
 from betterinstincts.ui_chrome import glossary_snapshot, load_contract as load_chrome, resolve_target
 from betterinstincts.workflow_interop import CooperativeScreenQueue, QueuedStep
@@ -223,6 +223,19 @@ def enqueue_game_click(
             "execute_allowed": False, "proof_ceiling": resolved["proof_ceiling"]}
 
 
+def _native_owner(obs: Mapping[str, Any], process_id: int, session_id: str) -> bool:
+    """Single exact-window, exact-session provenance gate for native clicks."""
+    return (isinstance(obs, Mapping)
+            and type(obs.get("process_id")) is int
+            and obs.get("process_id") == process_id
+            and type(obs.get("focused_process_id")) is int
+            and obs.get("focused_process_id") == process_id
+            and obs.get("session_id") == session_id
+            and obs.get("host_admitted") is True
+            and _valid_int(obs.get("client_origin_x"), -20_000, 20_000)
+            and _valid_int(obs.get("client_origin_y"), -20_000, 20_000))
+
+
 def enqueue_native_game_click(
     queue: CooperativeScreenQueue, *, work_id: str,
     calibration: Mapping[str, Any],
@@ -243,25 +256,17 @@ def enqueue_native_game_click(
             or not callable(observe) or not callable(click_screen) or not callable(move_screen)):
         raise ScreenAtlasError("EXACT_NATIVE_HOST_PORT_REQUIRED")
 
-    def native_owner(obs: Mapping[str, Any]) -> bool:
-        return (isinstance(obs, Mapping) and
-                obs.get("process_id") == process_id and
-                obs.get("focused_process_id") == process_id and
-                obs.get("session_id") == session_id and
-                obs.get("host_admitted") is True and
-                _valid_int(obs.get("client_origin_x"), -20_000, 20_000) and
-                _valid_int(obs.get("client_origin_y"), -20_000, 20_000))
 
     async def validate() -> bool:
         obs = await observe()
-        return native_owner(obs) and _observation_matches(obs, resolved)
+        return _native_owner(obs, process_id, session_id) and _observation_matches(obs, resolved)
 
     async def action(checkpoint) -> None:
         if not await validate():
             raise ScreenAtlasError("NATIVE_TARGET_STALE")
         await checkpoint()
         obs = await observe()
-        if not native_owner(obs) or not _observation_matches(obs, resolved):
+        if not _native_owner(obs, process_id, session_id) or not _observation_matches(obs, resolved):
             raise ScreenAtlasError("NATIVE_TARGET_CHANGED_AT_EFFECT")
         origin = (obs["client_origin_x"], obs["client_origin_y"])
         point = (origin[0] + resolved["click"][0], origin[1] + resolved["click"][1])
@@ -272,7 +277,7 @@ def enqueue_native_game_click(
             # and stable window geometry, not the clicked target's visibility.
             await checkpoint()
             after = await observe()
-            if (not native_owner(after) or
+            if (not _native_owner(after, process_id, session_id) or
                     (after["client_origin_x"], after["client_origin_y"]) != origin or
                     (after.get("client_width"), after.get("client_height")) !=
                     (resolved["client_width"], resolved["client_height"])):
@@ -287,3 +292,106 @@ def enqueue_native_game_click(
             "work_id": work_id, "target_id": resolved["target_id"],
             "safe_rest_client": resolved["safe_rest"],
             "execute_allowed": False, "proof_ceiling": resolved["proof_ceiling"]}
+
+
+
+def enqueue_world_game_click(
+    queue: CooperativeScreenQueue, *, work_id: str, target_id: str,
+    capture_ref: str, client_width: int, client_height: int,
+    observe: Callable[[], Awaitable[Mapping[str, Any]]],
+    process_id: int, session_id: str,
+    click_screen: Callable[[int, int], Awaitable[None]],
+    move_screen: Callable[[int, int], Awaitable[None]],
+) -> dict:
+    """Native world-object click at *current camera* pixels only.
+
+    Unlike fixed HUD chrome, a world object's click point changes after any
+    pan, recenter, zoom, or drift. The canonical camera recovery owner must
+    declare STABLE+FRAMED on every observation, and the camera revision must
+    remain identical through the final effect checkpoint. Never retry a click.
+    """
+    if not isinstance(queue, CooperativeScreenQueue) or not (
+        _valid_int(process_id, 1, 2_147_483_647)
+        and isinstance(session_id, str) and EVIDENCE_ID.fullmatch(session_id)
+        and callable(observe) and callable(click_screen) and callable(move_screen)
+    ):
+        raise ScreenAtlasError("WORLD_CLICK_HOST_PORT_INVALID")
+    if not isinstance(target_id, str) or not 1 <= len(target_id) <= 96:
+        raise ScreenAtlasError("WORLD_CLICK_TARGET_INVALID")
+    if not isinstance(capture_ref, str) or not EVIDENCE_ID.fullmatch(capture_ref):
+        raise ScreenAtlasError("WORLD_CLICK_CAPTURE_REF_INVALID")
+    anchor: dict[str, Any] = {}
+
+    async def fresh_world_frame() -> dict | None:
+        obs = await observe()
+        if not _native_owner(obs, process_id, session_id):
+            return None
+        if obs.get("game_version") != load_catalog()["game_version"] or obs.get("capture_quality") != "CONTENT_PRESENT":
+            return None
+        if obs.get("mode") not in ("LIVE", "BUY", "BUILD") or obs.get("viewport_state") != "NORMAL":
+            return None
+        cues = obs.get("independent_cues")
+        if not isinstance(cues, list) or len(cues) != 2 or (
+            {c.get("source") for c in cues if isinstance(c, Mapping)} != {"visual", "operator"}
+        ) or not all(isinstance(c, Mapping) and isinstance(c.get("token"), str) and c.get("token") for c in cues):
+            return None
+        try:
+            candidate = assess_drift_recovery(
+                target_kind="WORLD_OBJECT", capture_ref=capture_ref,
+                observation=obs, client_width=client_width,
+                client_height=client_height, target_id=target_id,
+                world_target_observation=obs.get("world_target"),
+            )
+        except (ValueError, TypeError):
+            return None
+        if candidate["state"] != "CAMERA_STABLE_TARGET_FRAMED" or candidate["world_click_ready"] is not True:
+            return None
+        if (obs.get("client_width"), obs.get("client_height")) != (client_width, client_height):
+            return None
+        return {
+            "revision": candidate["camera_revision"],
+            "click": tuple(candidate["target_framing"]["click_candidate"]),
+            "origin": (obs["client_origin_x"], obs["client_origin_y"]),
+            "safe_rest": tuple(candidate["safe_rest"]["client"]),
+        }
+
+    async def validate() -> bool:
+        frame = await fresh_world_frame()
+        if frame is None:
+            return False
+        if anchor:
+            return frame == anchor
+        anchor.update(frame)
+        return True
+
+    async def action(checkpoint) -> None:
+        await checkpoint()
+        if not await validate():
+            raise ScreenAtlasError("WORLD_CLICK_STALE_CAMERA_OR_CURSOR")
+        # One admitted action from a camera-bound, verified position.
+        x = anchor["origin"][0] + anchor["click"][0]
+        y = anchor["origin"][1] + anchor["click"][1]
+        try:
+            await click_screen(x, y)
+        finally:
+            # No blind replay after effect or human interruption.
+            await checkpoint()
+            after = await observe()
+            if not _native_owner(after, process_id, session_id) or (
+                after.get("client_origin_x"), after.get("client_origin_y")
+            ) != anchor["origin"] or (
+                after.get("client_width"), after.get("client_height")
+            ) != (client_width, client_height):
+                raise ScreenAtlasError("WORLD_CLICK_REST_OWNER_CHANGED")
+            await move_screen(
+                anchor["origin"][0] + anchor["safe_rest"][0],
+                anchor["origin"][1] + anchor["safe_rest"][1],
+            )
+
+    queue.enqueue(QueuedStep(work_id=work_id, validate=validate, action=action))
+    return {
+        "state": "QUEUED_WORLD_CLICK_REQUIRES_STABLE_CAMERA",
+        "work_id": work_id, "target_id": target_id,
+        "capture_ref": capture_ref, "execute_allowed": False,
+        "proof_ceiling": "OFFLINE_CAMERA_REVISION_GUARD_NOT_LIVE_CLICK_CERTIFIED",
+    }
