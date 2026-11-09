@@ -188,3 +188,15 @@ daemon. A cooled-down plant is revisited only after new evidence of
 eligibility. The service emits offline plans; the live Windows Sims 4
 input adapter, true inventory movement, Fertilize All eligibility and
 actual gameplay results still require local P08 proof.
+
+
+### Useful gardening while fertilizer is unavailable
+
+Fertilizer is a *sticky* work objective, not a global pause switch. If plants
+are in cooldown, personal stock is missing, or the observed picker is absent,
+the enrolled gardening service may still suggest **one observed** WATER, WEED,
+SPRAY_BUGS, EVOLVE, HARVEST or PLANT action, in that priority order. The
+fertilization target ledger remains PENDING. Unrelated chats/side quests are
+never substituted. An exact player-authored task-continuity resumption never
+falls back to other gardening work; it waits for the original prerequisite.
+This is still an offline observed-action proposal, not a live input permission.
