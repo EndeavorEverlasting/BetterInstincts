@@ -125,4 +125,97 @@ class OverlayQueueTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(queued["receipt"]["overlay_cleared_observed"])
             self.assertFalse(queued["receipt"]["resume_queued_game_actions"])
 
+
+
+def choice_overlay(**changes):
+    base = overlay(
+        resolved=False,
+        choices_capture_ref=CAP,
+        choices_ui_layout_revision="hud:1",
+        choices_selected_sim_revision="sel:1",
+        choice_cues=[
+            {"source":"visual","token":"overlay_options_visible"},
+            {"source":"operator","token":"overlay_options_confirmed"},
+        ],
+        choices=[
+            {"source":"HOST_CAPTURE","option_id":"choice:ethical",
+             "tags":["ethical","preserve_performance"],"hitbox":[500,600,600,640]},
+            {"source":"HOST_CAPTURE","option_id":"choice:risky",
+             "tags":["risk_reputation"],"hitbox":[800,600,900,640]},
+        ],
+        auto_choice_authorized=True,
+    )
+    base.update(changes)
+    return base
+
+
+class OverlayChoiceTests(unittest.TestCase):
+    def test_known_choice_uses_existing_scorer_but_is_only_advisory(self):
+        s=assess_live_hud(
+            capture_ref=CAP,observation=frame(overlay=choice_overlay()),
+            needs=SIX,
+        )
+        advice=s["overlay"]["choice_advisory"]
+        self.assertEqual(advice["state"],"OVERLAY_CHOICE_RECOMMENDED")
+        self.assertEqual(advice["recommended_option_id"],"choice:ethical")
+        self.assertFalse(advice["execute_allowed"])
+
+    def test_unknown_labels_or_missing_option_cues_do_not_autoselect(self):
+        unknown=choice_overlay(choice_cues=[])
+        s=assess_live_hud(capture_ref=CAP,observation=frame(overlay=unknown),needs=SIX)
+        self.assertEqual(s["overlay"]["choice_advisory"]["state"],"OVERLAY_OPTIONS_NOT_ATTESTED")
+        invalid=choice_overlay(choices=[
+            {"source":"HOST_CAPTURE","option_id":"choice:unknown",
+             "tags":["invented_risky_tag"],"hitbox":[500,600,600,640]},
+            {"source":"HOST_CAPTURE","option_id":"choice:other",
+             "tags":[],"hitbox":[800,600,900,640]},
+        ])
+        s=assess_live_hud(capture_ref=CAP,observation=frame(overlay=invalid),needs=SIX)
+        self.assertEqual(s["overlay"]["choice_advisory"]["state"],"OVERLAY_OPTIONS_NOT_ATTESTED")
+
+
+class OverlayChoiceQueueTests(unittest.IsolatedAsyncioTestCase):
+    async def test_admitted_choice_click_requires_authorized_observed_options(self):
+        from betterinstincts.scene_ui_semantics import enqueue_native_overlay_choice
+        with tempfile.TemporaryDirectory() as root:
+            current=[frame(overlay=choice_overlay(),needs=SIX)]
+            actions=[]
+            async def observe():return current[0]
+            async def click(x,y):
+                actions.append(("choice",x,y))
+                current[0]=frame(overlay=overlay(resolved=True),needs=SIX)
+            async def move(x,y):actions.append(("rest",x,y))
+            async def sleep(_):pass
+            queue=CooperativeScreenQueue(
+                lambda:PresenceProbe(False,False,last_input_age_ms=18000),
+                lambda:True,lock_root=Path(root),sleep=sleep)
+            outcome=enqueue_native_overlay_choice(
+                queue,work_id="event-choice-1",capture_ref=CAP,
+                observe=observe,process_id=303,session_id="demo",
+                click_screen=click,move_screen=move)
+            self.assertEqual((await queue.run_once())["state"],"COMPLETED")
+            self.assertEqual(actions[0],("choice",550,620))
+            self.assertTrue(outcome["receipt"]["choice_acknowledged"])
+            self.assertFalse(outcome["receipt"]["resume_queued_game_actions"])
+
+    async def test_no_auto_choice_without_explicit_session_authority(self):
+        from betterinstincts.scene_ui_semantics import enqueue_native_overlay_choice
+        with tempfile.TemporaryDirectory() as root:
+            current=frame(overlay=choice_overlay(auto_choice_authorized=False),needs=SIX)
+            actions=[]
+            async def observe():return current
+            async def click(x,y):actions.append((x,y))
+            async def move(x,y):actions.append((x,y))
+            async def sleep(_):pass
+            queue=CooperativeScreenQueue(
+                lambda:PresenceProbe(False,False,last_input_age_ms=18000),
+                lambda:True,lock_root=Path(root),sleep=sleep)
+            enqueue_native_overlay_choice(
+                queue,work_id="event-choice-2",capture_ref=CAP,
+                observe=observe,process_id=303,session_id="demo",
+                click_screen=click,move_screen=move)
+            self.assertEqual((await queue.run_once())["state"],"NEEDS_REVALIDATION")
+            self.assertEqual(actions,[])
+
+
 if __name__=="__main__":unittest.main()
