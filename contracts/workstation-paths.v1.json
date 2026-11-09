@@ -1,0 +1,39 @@
+{
+  "schema": "betterinstincts.workstation-paths/v1",
+  "version": 1,
+  "owner": "bootstrap.py:paths",
+  "repository": "EndeavorEverlasting/BetterInstincts",
+  "profiles": {
+    "windows": {
+      "development": "%USERPROFILE%/dev/BetterInstincts",
+      "use": "%LOCALAPPDATA%/BetterInstincts/app",
+      "worktrees": "%USERPROFILE%/dev/.worktrees/BetterInstincts",
+      "entrypoint": "betterinstincts.cmd",
+      "status": "RULE_ONLY_NOT_LOCAL_HOST_VERIFIED"
+    },
+    "linux": {
+      "development": "$HOME/dev/BetterInstincts",
+      "use": "${XDG_DATA_HOME:-$HOME/.local/share}/betterinstincts/app",
+      "worktrees": "$HOME/dev/.worktrees/BetterInstincts",
+      "entrypoint": "betterinstincts",
+      "status": "RULE_ONLY_NOT_LOCAL_HOST_VERIFIED"
+    }
+  },
+  "resolution": "bootstrap.paths derives platform-native runtime home and use environment; there is no silent fallback when LOCALAPPDATA/XDG home is invalid.",
+  "roles": {
+    "development": "canonical writable checkout, never mutate active use path",
+    "use": "separate user-scoped managed launcher and manifest; no game Mods install or daemon",
+    "worktrees": "agent isolation only, not second mutable canonical clone"
+  },
+  "installation": "bootstrap.py install clones only if canonical checkout absent and writes only manifest-owned launcher+manifest",
+  "uninstallation": "bootstrap.py uninstall removes only verified launcher+manifest; removes exact checkout only if this installer created it and it has no tracked modifications, untracked or ignored data",
+  "forbidden": [
+    "HARDCODE_USERNAME",
+    "SILENT_SECOND_CLONE",
+    "DELETE_DIRTY_OR_EXISTING_REPOSITORY",
+    "DELETE_USER_SAVE_OR_MODS",
+    "AUTORUN_TASK",
+    "CHANGE_PATH_OR_REGISTRY"
+  ],
+  "proof": "REMOTE_INTEGRATION_SEPARATE_FROM_DEV_CHECKOUT_AND_USE_PATH_AND_ENTRYPOINT"
+}
