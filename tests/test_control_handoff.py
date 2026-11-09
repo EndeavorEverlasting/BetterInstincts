@@ -158,11 +158,27 @@ class ControlHandoffTests(unittest.TestCase):
         with exclusive_screen_owner(process_id):
             pass
 
+    def test_cli_explicit_busy_pauses_with_dormant_cursor(self):
+        with (
+            patch.object(handoff_cli.sys, "platform", "win32"),
+            patch("scripts.control_handoff.status", return_value={"state": "ACTIVE"}),
+            patch("scripts.control_handoff.probe_windows", return_value=probe(120000)),
+            redirect_stdout(io.StringIO()) as output,
+        ):
+            exit_code = handoff_cli.main([
+                "--session-id", "unit-test", "--process-id", "42",
+                "--operator-busy",
+            ])
+        self.assertEqual(exit_code, 3)
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["reason"], "PLAYER_OVERRIDE")
+        self.assertFalse(result["screen_control_allowed"])
+
     def test_cli_reports_other_agent_as_distinct_owner(self):
         with (
             patch.object(handoff_cli.sys, "platform", "win32"),
             patch("scripts.control_handoff.status", return_value={"state": "ACTIVE"}),
-            patch("scripts.control_handoff.probe_windows", return_value=probe(20000)),
+            patch("scripts.control_handoff.probe_windows", return_value=probe(40000)),
             patch("scripts.control_handoff.screen_owner_busy", return_value=True),
             redirect_stdout(io.StringIO()) as output,
         ):
