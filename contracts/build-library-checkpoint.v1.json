@@ -1,8 +1,8 @@
 {
   "schema": "betterinstincts.build-library-checkpoint/v1",
-  "version": 2,
+  "version": 3,
   "owner": "betterinstincts/build_library_checkpoint.py",
-  "product_contract": "Before any Build/Buy mutation that changes a room, story, stairs, floor, wall, or building structure, the host must have an attested Sims My Library save of that building. The library item is the operator's human-judgment revert point. Game Save As (BI_TMP_/BI_CONT_) remains a separate recovery path and does not satisfy this gate. Live raw SendInput that skips admit_live_structure_effect is forbidden. Applies to every host/agent caller — not an optional courtesy.",
+  "product_contract": "ALL agent Build/Buy purchases, placements, moves, inventory transfers, replacements and structural mutations require pre-change complete, classified, operator-attested floor/room inventory, verified My Library building save and persisted exact lot model readback. Existing protected-story, held-object distractor, live-structure and raw-input gates remain mandatory, never bypassed.",
   "prompt": {
     "id": "P95",
     "name": "Program Design & Call-Stack Prototype Architect",
@@ -10,7 +10,8 @@
   },
   "motivating_corrections": [
     "2026-11-08 operator: agent deleted house walls without first saving the building to the library so the change could be reverted; human judgment must be preserved by host logic before room mutation.",
-    "2026-11-09 operator: agents deleted FLOOR_2 / stairs while thrashing around a Medicine Craftidink stuck on a Servo without saving the house to the lot/library first; operator restored via reload. Never again — chat reminders do not bind."
+    "2026-11-09 operator: agents deleted FLOOR_2 / stairs while thrashing around a Medicine Craftidink stuck on a Servo without saving the house to the lot/library first; operator restored via reload. Never again — chat reminders do not bind.",
+    "2026-11-09 incident extension: enforce pre-edit backup across EVERY floor/room for every purchase/mutation, not only structural changes; unknown coverage denies."
   ],
   "architecture": {
     "selected": "LIBRARY_SAVE_BEFORE_ROOM_MUTATE",
@@ -59,7 +60,19 @@
     "REMOVE_FLOOR",
     "REMOVE_FLOOR_TILE",
     "PLACE_STAIRS",
-    "DELETE_STAIRS"
+    "DELETE_STAIRS",
+    "HAND_MOVE",
+    "PLACE_FROM_CATALOG",
+    "PLACE_FROM_INVENTORY",
+    "EYEDROPPER_PLACE",
+    "BACKSPACE_TO_INVENTORY",
+    "BUY_FROM_CATALOG",
+    "PURCHASE_BUILD_OBJECT",
+    "SELL_OBJECT",
+    "DELETE_ROOM",
+    "DELETE_FLOOR",
+    "REPLACE_ROOM",
+    "REPLACE_FLOOR"
   ],
   "room_mutating_target_kinds": [
     "FLOOR_TILE",
@@ -127,8 +140,7 @@
     "CATALOG_BROWSE",
     "CAPTURE_ONLY",
     "CANCEL_UI",
-    "OBSERVE_ONLY",
-    "BACKSPACE_TO_INVENTORY"
+    "OBSERVE_ONLY"
   ],
   "attestation_fields": [
     "building_id",
@@ -136,7 +148,14 @@
     "capture_ref",
     "model_revision",
     "library_saved",
-    "observed_at"
+    "observed_at",
+    "lot_inventory",
+    "lot_inventory.fingerprint",
+    "lot_inventory.manifest.floors",
+    "lot_inventory.manifest.rooms",
+    "all_stories_inspected",
+    "operator_confirmed",
+    "lot_metadata_readback"
   ],
   "freshness_rule": "library_checkpoint.model_revision MUST equal the current lot model revision at admit time; any later observe without a new library save invalidates the gate",
   "call_stack": {
@@ -188,13 +207,35 @@
     "DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE",
     "STRUCTURE_WHILE_HELD_DISTRACTOR",
     "RAW_INPUT_BYPASS_OF_STRUCTURE_PREFLIGHT",
-    "SLEDGE_AROUND_STUCK_CRAFT_DRINK"
+    "SLEDGE_AROUND_STUCK_CRAFT_DRINK",
+    "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP",
+    "PURCHASE_WITHOUT_FULL_LOT_BACKUP",
+    "INVENTORY_MOVE_WITHOUT_FULL_LOT_BACKUP",
+    "UNSCANNED_SECOND_FLOOR_MUTATION",
+    "CLAIM_BACKUP_FROM_CAPTURE_REF_ONLY"
   ],
-  "proof_ceiling": "OFFLINE_LIBRARY_STRUCTURE_PREFLIGHT_NOT_LIVE_GALLERY_WRITE",
+  "proof_ceiling": "OFFLINE_LOT_INVENTORY_READBACK_NOT_LIVE_MY_LIBRARY_OR_INPUT_INTERLOCK",
   "next_parent_gate": "BI-002_HUNGER_LIVE_CERTIFICATION",
   "depends_on": [
     "contracts/house-state.v1.json",
     "contracts/build-integrity.v1.json",
     "contracts/build-spatial.v1.json"
-  ]
+  ],
+  "full_lot_manifest": {
+    "schema": "betterinstincts.full-lot-manifest/v1",
+    "bound_to": "lot_id + model_revision + house_state/room_census fingerprint",
+    "floors": "Complete operator-attested floor/story roster; each floor with tracked capture_ref and exact room IDs",
+    "rooms": "All observed room IDs with attested structure, enclosure, tracked capture_ref, valid function and style labels",
+    "requires": [
+      "operator_confirmed",
+      "all_stories_inspected",
+      "floor_and_room_set_exact_match",
+      "no_unassigned_entities",
+      "no_unverified_claims",
+      "no_unknowns",
+      "persisted_model_readback_matches"
+    ],
+    "unknown_coverage_policy": "DENY"
+  },
+  "next_host_gate": "Every real Build/Buy input adapter must consume a current preflight lease (including existing FLOOR_2 and held object guards)."
 }
