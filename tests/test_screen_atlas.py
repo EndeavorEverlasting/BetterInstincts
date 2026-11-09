@@ -301,6 +301,13 @@ class CameraBoundWorldClickTests(unittest.IsolatedAsyncioTestCase):
             session_id="lab-session", host_admitted=True,
             client_origin_x=100, client_origin_y=50,
             mode="LIVE", scene_id="live_mode",
+            game_clock={
+                "source": "HOST_GAME_CLOCK", "capture_ref": "capture:world-1",
+                "camera_revision": "camera:9", "game_version": PATCH,
+                "clock_revision": "clock:21", "speed_state": "PAUSED",
+                "pause_indicator_active": True,
+                "clock_still_during_sample": True, "pause_origin": "PLAYER",
+            },
         )
         out["world_target"] = {
             "source": "HOST_CAPTURE", "target_id": "A-OK Bloomer",
