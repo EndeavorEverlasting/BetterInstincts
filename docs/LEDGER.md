@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-09 — Build floor activity for host listener (P95 + trifecta)
+
+**Operator:** While still in Build Mode, extend the listener so it can see activity differences across floors — one floor vs several, which floor is active, and floor theme from item types/specifics — evolving toward optimize suggestions. **P95** selects `FLOOR_ACTIVITY_CENSUS` (reuse `build_spatial` story aliases; attested `floor_items` only; no pixel invent). **P124** peer `build_floor_activity` wired into `host_listener` ticks when `build_or_buy_mode`. Consultation `BI-BUILD-FLOOR-ACTIVITY-20261109.v1.json`. CLI: `python -m scripts.build_floor_activity evaluate`. Live story chrome sensor P08 OPEN. Does not close BI-002.
+
 ## 2026-11-08 — Household useful-item force catalog (P95 + P124 + trifecta)
 
 **Operator:** Durable reusable catalog for forcing named useful objects into any Sims household on command — must not stay chat-trapped. List: Out of This World Desktop, Cruelty-Free Meat Wall, UFO Bed, Captain Sigma, Eco-Matic Smog Vacuum, Hydroponic Planter, optional Positronic Pro. **Strong correction:** `bb.showhiddenobjects` is **elementary** for unlocking hidden/catalog rows on that list; Better BuildBuy is optional UX only and never a substitute; never hallucinate `gsi_create_obj` hex IDs. Large objects → Household Inventory or lot, never pocket. **P95** call stack: elementary unlock → career.promote deposits → catalog search. **P124** factors as sibling to `funds_inject` / `curious_catalog` / `hidden_object_discovery` — one `household_object_force` owner. Consultation `BI-HOUSEHOLD-OBJECT-FORCE-20261108.v1.json`. CLI: `python -m scripts.household_object_force catalog|elementary-unlock|plan`. Proof ceiling offline plan only; live P08 OPEN. Does not close BI-002.

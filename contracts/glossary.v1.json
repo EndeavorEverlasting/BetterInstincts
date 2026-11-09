@@ -622,6 +622,28 @@
         "betterinstincts/build_spatial.py"
       ]
     },
+    "BUILD_FLOOR_ACTIVITY": {
+      "definition": "Opt-in host listener peer that classifies Build Mode work by active story, single vs multi-floor span, and attested item-census themes for later optimize hints.",
+      "owners": [
+        "contracts/build-floor-activity.v1.json",
+        "docs/BUILD_FLOOR_ACTIVITY.md",
+        "betterinstincts/build_floor_activity.py"
+      ]
+    },
+    "FLOOR_ACTIVITY_CENSUS": {
+      "definition": "Selected P95 architecture: attested active_story + stories_touched + floor_items drive activity span and per-floor themes; pixel height alone is never story proof.",
+      "owners": [
+        "contracts/build-floor-activity.v1.json",
+        "docs/BUILD_FLOOR_ACTIVITY.md"
+      ]
+    },
+    "FLOOR_THEME": {
+      "definition": "Majority theme inferred for a story from attested item categories (kitchen, bedroom, outdoor_garden, etc.); advisory seed for build_optimize hints.",
+      "owners": [
+        "contracts/build-floor-activity.v1.json",
+        "docs/BUILD_FLOOR_ACTIVITY.md"
+      ]
+    },
     "FLOOR_2": {
       "definition": "Upper / second story; indoor work is denied until FLOOR_1 indoor floor is present in the lot model.",
       "owners": [

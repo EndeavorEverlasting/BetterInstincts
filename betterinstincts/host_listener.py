@@ -11,6 +11,10 @@ from typing import Mapping, Sequence
 from dataclasses import replace
 
 from betterinstincts.behavior_eval import BehaviorEvalError, evaluate_queue
+from betterinstincts.build_floor_activity import (
+    BuildFloorActivityError,
+    evaluate_floor_activity,
+)
 from betterinstincts.host_stack import HostStackError, evaluate_turn
 from betterinstincts.instincts_host import InstinctsHostError, NeedSnapshot, plan, plan_to_dict
 from betterinstincts.needs_force import NeedsForceError, plan_force
@@ -174,6 +178,12 @@ def _load_observation(raw: Mapping) -> dict:
     pan_dirs = raw.get("camera_pan_directions") or ()
     if not isinstance(pan_dirs, (list, tuple)):
         raise HostListenerError("OBSERVATION_CAMERA_PAN_DIRS_INVALID")
+    stories_touched = raw.get("stories_touched") or ()
+    if not isinstance(stories_touched, (list, tuple)):
+        raise HostListenerError("OBSERVATION_STORIES_TOUCHED_INVALID")
+    floor_items = raw.get("floor_items") or ()
+    if not isinstance(floor_items, (list, tuple)):
+        raise HostListenerError("OBSERVATION_FLOOR_ITEMS_INVALID")
     return {
         "needs": {k: float(needs[k]) for k in SIX},
         "gardening": dict(gardening) if gardening is not None else None,
@@ -199,6 +209,9 @@ def _load_observation(raw: Mapping) -> dict:
             raw.get("navigating_needs_profile") or "navigating_needs"
         ),
         "build_or_buy_mode": bool(raw.get("build_or_buy_mode", False)),
+        "active_story": raw.get("active_story"),
+        "stories_touched": list(raw.get("stories_touched") or []),
+        "floor_items": list(raw.get("floor_items") or []),
         "school_phase": (str(raw["school_phase"]) if raw.get("school_phase") else None),
         "pinned_whims": [str(x) for x in pinned],
         "homework_pending": bool(raw.get("homework_pending", False)),
@@ -445,7 +458,20 @@ def tick(
             objects_on_current_lot=obs["objects_on_current_lot"],
             disposition=behavior["clarity"]["disposition"],
         )
-    except (BehaviorEvalError, InstinctsHostError, HostStackError, NeedsForceError) as exc:
+        floor_activity = evaluate_floor_activity(
+            build_or_buy_mode=obs["build_or_buy_mode"],
+            active_story=obs.get("active_story"),
+            stories_touched=obs.get("stories_touched") or (),
+            floor_items=obs.get("floor_items") or (),
+            player_directed=obs["player_directed"],
+        )
+    except (
+        BehaviorEvalError,
+        InstinctsHostError,
+        HostStackError,
+        NeedsForceError,
+        BuildFloorActivityError,
+    ) as exc:
         raise HostListenerError(str(exc)) from exc
 
     disposition = behavior["clarity"]["disposition"]
@@ -459,6 +485,7 @@ def tick(
         "instincts": instincts,
         "host_stack": stack,
         "needs_force_plan": force,
+        "build_floor_activity": floor_activity,
         "learning_hint": None,
         "listener_action": (
             "RECORD_EMULATION_PLAN"
