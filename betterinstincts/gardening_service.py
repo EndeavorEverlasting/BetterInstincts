@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Mapping
 
 from betterinstincts.need_service_base import normalize_needs, threshold_pair
+from betterinstincts.task_continuity import TaskContinuityError, evaluate_task_continuity
 
 CONTRACT = Path(__file__).resolve().parents[1] / "contracts/gardening-service.v1.json"
 
@@ -95,12 +96,27 @@ def evaluate_gardening_turn(
         "dispatch_authorized": False,
         "proof_ceiling": cfg["proof_ceiling"],
     }
+    continuity = None
+    if "task_continuity" in context:
+        try:
+            continuity = evaluate_task_continuity(
+                context["task_continuity"], capture_ref=capture_ref, now=now
+            )
+        except TaskContinuityError as exc:
+            raise GardeningServiceError(str(exc)) from exc
+        result["task_continuity"] = continuity
 
     def finish(gate: str, action: str, *, inspections: tuple[str, ...] = ()) -> dict:
         result.update(gate=gate, action=action, inspection_targets=list(inspections))
         return result
 
-    if player_directed or already_busy:
+    if player_directed:
+        return finish("GARDEN_PLAYER_FIRST", "YIELD_WITH_GOAL_PRESERVED")
+    if already_busy:
+        if continuity is not None and continuity["gate"] == "AUTONOMOUS_TASK_INTERRUPTION":
+            return finish("GARDEN_AUTONOMOUS_INTERRUPTION", "WAIT_REOBSERVE_UNSOLICITED_ACTIVITY")
+        if continuity is not None and continuity["gate"] == "TASK_ALREADY_QUEUED":
+            return finish("GARDEN_TASK_ALREADY_QUEUED", "DO_NOT_DUPLICATE_QUEUE")
         return finish("GARDEN_PLAYER_FIRST", "YIELD_WITH_GOAL_PRESERVED")
     if build_or_buy_mode:
         return finish("GARDEN_LIVE_MODE_REQUIRED", "RETURN_TO_OBSERVED_LIVE_CONTEXT")
@@ -150,6 +166,28 @@ def evaluate_gardening_turn(
         raise GardeningServiceError("GARDENING_OBLIGATION_TIME_INVALID")
     elif minutes <= bounds["activity_window_sim_minutes"] + bounds["responsibility_reserve_sim_minutes"]:
         return finish("GARDEN_RESPONSIBILITY_FIRST", "KEEP_TIME_FOR_NEXT_OBLIGATION")
+    if continuity is not None:
+        gate = continuity["gate"]
+        if gate in {"PLAYER_CHANGED_GOAL", "PLAYER_CHANGED_QUEUE"}:
+            return finish("GARDEN_PLAYER_FIRST", "YIELD_WITH_GOAL_PRESERVED")
+        if gate == "TASK_VERIFIED_COMPLETE":
+            result["goal_state"] = "VERIFIED_COMPLETE"
+            return finish("GARDEN_TASK_VERIFIED_COMPLETE", "NO_FURTHER_QUEUE")
+        if gate == "TASK_ALREADY_QUEUED":
+            return finish("GARDEN_TASK_ALREADY_QUEUED", "DO_NOT_DUPLICATE_QUEUE")
+        if gate == "AUTONOMOUS_TASK_INTERRUPTION":
+            return finish("GARDEN_AUTONOMOUS_INTERRUPTION", "WAIT_REOBSERVE_UNSOLICITED_ACTIVITY")
+        if gate != "TASK_RESUME_CANDIDATE":
+            return finish("GARDEN_REOBSERVE_TASK", "INSPECT_CURRENT_QUEUE_AND_ACTOR")
+        target = continuity["next_target_ref"]
+        selected = next((row for row in actions if
+                         row["action_id"] == continuity["action_id"] and
+                         row["target_ref"] == target), None)
+        if selected is None:
+            return finish("GARDEN_INSPECT_TASK_TARGET", "INSPECT_EXACT_PENDING_PLANT", inspections=(target,))
+        result["next_actions"] = [selected]
+        result["goal_state"] = "READY_FOR_ONE_OBSERVED_INTERACTION"
+        return finish("GARDEN_ACTION_READY", "GARDEN_ONE_INTERACTION_THEN_REOBSERVE")
     for action_id in cfg["action_order"]:
         selected = next((row for row in actions if row["action_id"] == action_id), None)
         if selected is not None:
