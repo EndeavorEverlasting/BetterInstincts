@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Mapping
 
 from betterinstincts.hover_learning import _event as validate_hover_event
+from betterinstincts.house_state import LOT_ID_RE
 
 SCHEMA = "betterinstincts.affordance-memory/v1"
 MAX_ENTRIES = 128
@@ -58,7 +59,7 @@ def _scope(game_version: str | None, lot_id: str | None) -> tuple[str, str]:
     if game_version is not None and (not isinstance(game_version, str) or
                                     not PATCH.fullmatch(game_version)):
         raise AffordanceMemoryError("GAME_VERSION_INVALID")
-    if lot_id is not None and (not isinstance(lot_id, str) or not SCOPE.fullmatch(lot_id)):
+    if lot_id is not None and (not isinstance(lot_id, str) or not LOT_ID_RE.fullmatch(lot_id)):
         raise AffordanceMemoryError("LOT_ID_INVALID")
     return game_version or "UNKNOWN_PATCH", lot_id or "UNKNOWN_LOT"
 
