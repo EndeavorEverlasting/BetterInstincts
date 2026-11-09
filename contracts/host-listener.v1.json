@@ -33,12 +33,23 @@
       "observe",
       "execute_until_observed_outcome",
       "interrupt_only_verified_host_action",
-      "presence_probe"
+      "presence_probe",
+      "opportunity_survey_passive_even_on_player_yield",
+      "idle_exploration_via_existing_cooperative_screen_queue"
     ],
     "preemption": "Fresh actor and host_activity_ref/owner binding plus independent screen admission; never cancel player-owned or unknown activity",
     "callback_cancellation": "Stop callback control/observation, never send Sim cancellation input; adapters must cooperate with coroutine cancellation",
     "completion": "Observed action outcome is distinct from ACK; session exhaustion is not mission completion",
-    "mode_gate": "Explicit scene-backed non-Live/Unknown mode ends the current bounded coordinator without new host action; never cancel the player queue"
+    "mode_gate": "Explicit scene-backed non-Live/Unknown mode ends the current bounded coordinator without new host action; never cancel the player queue",
+    "opportunity_survey": {
+      "owner": "betterinstincts/host_tandem.py#run_opportunity_survey_session",
+      "default": "OPT_IN_BOUNDED_ONLY",
+      "events": "One asynchronous observation callback per bounded tick, including player-active and busy queue states",
+      "idle_actions": "Only through explicit validated CooperativeScreenQueue and caller-owned native adapter",
+      "never": "No global listener, no autonomous game input or auto daemon",
+      "lifetime": "64 ticks maximum per explicitly activated session",
+      "proof_ceiling": "ASYNC_CALLBACK_TESTS_NOT_LIVE_GAME"
+    }
   },
   "inputs": {
     "observation_schema": "betterinstincts.host-listener.observation/v1",
@@ -146,6 +157,28 @@
       ],
       "on_missing": "emit advisory scan/seat/wait; do not enqueue",
       "proof_ceiling": "OFFLINE_HOST_LISTENER_NO_SENDINPUT"
+    },
+    "optional_survey_fields": [
+      "lot_model",
+      "active_lot_id",
+      "game_version",
+      "camera_follow_attested",
+      "actor_ref",
+      "survey_goals",
+      "occupied_objects",
+      "queue",
+      "multitasking",
+      "homework_pending",
+      "inventory_has_homework"
+    ],
+    "survey_goals_note": "Optional capture-bound exact target_ref/object ID; do not infer goals or resources from generic text. 16 max, all current capture.",
+    "affordance_index": {
+      "path": "dist/host-listener/affordance-memory.v1.json",
+      "owner": "betterinstincts/affordance_memory.py",
+      "source": "hover_learning normalized opt-in events",
+      "visibility": "TOKEN_ONLY_CROSS_SESSION",
+      "no_text": true,
+      "no_game_control": true
     }
   },
   "pipeline": [
@@ -154,6 +187,7 @@
     "classify_optional_mode_context_from_two_distinct_scene_cues",
     "assess_optional_supplied_chance_event_for_read_only_companion",
     "player_presence_classify",
+    "passive_opportunity_survey_using_current_lot_and_qualified_memory",
     "yield_if_player_playing",
     "hold_live_planning_for_buy_build_unknown_mode",
     "behavior_eval",
@@ -165,7 +199,8 @@
     "scenario_goal_plan_if_active",
     "build_floor_activity_if_build_buy",
     "needs_force_route_if_optimize",
-    "emit_receipt"
+    "emit_receipt",
+    "opt_in_hover_index_records_observed_edges_and_reviewed_associations"
   ],
   "player_presence": "contracts/player-presence.v1.json",
   "on_emulate": {
