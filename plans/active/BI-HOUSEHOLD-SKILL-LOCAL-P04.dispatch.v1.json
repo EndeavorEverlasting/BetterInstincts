@@ -140,7 +140,7 @@
         "betterinstincts/household_judgment.py",
         "tests/test_diy_skill_force.py"
       ],
-      "launch_action": "Inspect whether current host actually reobserves selected portrait and roster before EACH cell and yields before EACH input. Current remote code does not prove that; implement bounded fail-closed adapter under ontology consultation and run focused offline regression before allowing bulk. Do not declare gate PASS just from CLI --roster-key flags.",
+      "launch_action": "Inspect whether current host actually reobserves selected portrait and roster before EACH cell (per-cell live roster and selection recapture) and yields before EACH input. Current remote code does not prove that; implement bounded fail-closed adapter under ontology consultation and run focused offline regression before allowing bulk. Do not declare gate PASS just from CLI --roster-key flags.",
       "receipt": "dist/game-host/household-skill-cert/observer-safety.json",
       "proof_ceiling": "LOCAL_ADAPTER_TESTS_AND_GAME_INPUT_ADMISSION_GATE",
       "gate": "FRESH_PER_CELL_PORTRAIT_AND_PRESENCE_GATE"
