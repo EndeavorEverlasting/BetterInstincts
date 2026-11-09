@@ -62,3 +62,61 @@ Rejected a global mouse/keyboard recorder and second background monitor: these b
 Second-pass repair: persisted action records have an internally derived tooltip_ref, so validation must accept derived values without trusting caller-forged extras; events older than one hour rotate rather than endlessly filling long-running sessions.
 
 Proof ceiling: supplied/synthetic semantic events and reviewed associations in offline tests, not live Sims telemetry, observed gameplay efficacy, installed sensor, auto-learning or a game-certified mod. Next real-game gate: consented disposable save, exact patch and scene corroboration, measured tooltip visibility transition + action + independent after-state + operator review. BI-002 hunger verification remains open.
+
+## 2026-11-09 — P95 + Trifecta: hotkeys and cheat-console input channels
+
+The same opt-in semantic-event port now accepts **three action pathways**:
+tooltip-based action, named hotkey, and catalog-qualified cheat invocation. The
+live game sensor still has to be calibrated by the local-host P08 executor.
+This is **not** global keylogging; only already-recognized, normalized
+semantic events explicitly passed to an ACTIVE listener session qualify.
+
+**Hotkey event** (recognized only for its declared mode by the canonical
+`contracts/ui-chrome.v1.json` owner):
+
+    {"schema":"betterinstincts.hover-event/v1","id":"key_001",
+     "at_ms":1800000000000,"kind":"hotkey_action",
+     "source":"operator_supplied","mode":"BUY","hotkey_id":"UNDO",
+     "interaction_ref":"interaction:undo01"}
+
+**Cheat event** (recognized from existing hidden-object, household-object-force,
+and host-funds contracts; never submit raw cheat text or parameters):
+
+    {"schema":"betterinstincts.hover-event/v1","id":"cheat_001",
+     "at_ms":1800000000001,"kind":"cheat_action",
+     "source":"operator_supplied","cheat_id":"bb_showhiddenobjects",
+     "interaction_ref":"interaction:debug01"}
+
+The `interaction_ref` may later be used by an independently observed
+`outcome` event carrying `evidence_ref`, `outcome`, and
+`operator_reviewed`. **Invoking a hotkey does not prove a mode transition;
+submitting a cheat does not prove any effect, success or game state change.**
+Existing action and outcome records remain compatible.
+
+The CLI accepts either legacy `hover` or new `behavior` for the same
+semantic event endpoint. `python -m scripts.host_listener behavior-catalog`
+shows known hotkey IDs grouped by Live/Buy/Build and cheat IDs derived from
+their actual canonical contracts; no separate command list is forked.
+
+    python -m scripts.host_listener activate --session-id input_lab_01
+    python -m scripts.host_listener behavior --session-id input_lab_01 --event dist/sanitized-input-event.json --explicit-opt-in
+    python -m scripts.host_listener deactivate --session-id input_lab_01
+
+**P95 call-stack:** recognized UI action or cheat action from an explicitly
+consented observer → catalog identity normalization → ACTIVE listener
+`observe_hover` (legacy port) → `hover_learning.observe` → one bounded
+session-sidecar state owner → `hover_learning.evaluate` 180/300/600/1800/
+3600-second windows → reviewed/unreviewed association receipt.
+`judgment_learning` remains the only explicit-reviewed training owner.
+
+**P82 falsifiers:** unknown hotkey/mode, unsanctioned cheat ID, raw command or
+amount, forged action reference, duplicate interaction across channels,
+unmatched/duplicate outcome, and unreviewed success all fail closed or remain
+pending. Protect existing tooltip counters and historical five-window behavior.
+No keylogger, daemon or agent-control gateway has been added.
+
+**P07 integration gate:** focused `tests/test_behavior_input_channels.py`
+plus protected `tests/test_hover_learning.py`, full CI, ontology chronology,
+then exact-head merge. **P08 runtime:** actual game-host hotkey/cheat sensing,
+exact version/scene/playback, cheat response and independent after-state are
+not available from this GitHub execution surface and cannot be claimed live.
