@@ -39,7 +39,7 @@ def load_contract(path: Path = CONTRACT) -> dict:
     return cfg
 
 
-def _story(raw: object) -> str:
+def normalize_attested_story(raw: object) -> str:
     canonical = normalize_story(raw)
     if canonical != "UNKNOWN_STORY":
         return canonical
@@ -95,12 +95,19 @@ def scan_lot_model(model: Mapping, *, cfg: dict | None = None) -> dict:
     groups: dict[tuple[str, str], dict] = {}
     unassigned = []
     floor_names: set[str] = set()
+    unverified_claim_count = 0
+    attested_confidences = {"OPERATOR_ATTESTED", "LOCAL_OBSERVED", "GAME_CERTIFIED"}
     for key, entity in sorted(entities.items()):
         if not isinstance(key, str) or not isinstance(entity, Mapping):
             raise RoomCensusError("ROOM_CENSUS_ENTITY_INVALID")
         if entity.get("status", "PRESENT") not in {"PRESENT", "OBSERVED"}:
             continue
-        story = _story(entity.get("story") or entity.get("floor_level"))
+        # A hypothesis may be retained by house_state for reasoning, but it
+        # cannot attest a physical floor, room boundary, item, or aesthetic.
+        if entity.get("confidence") not in attested_confidences:
+            unverified_claim_count += 1
+            continue
+        story = normalize_attested_story(entity.get("story") or entity.get("floor_level"))
         zone = _zone(entity.get("zone"))
         enclosure = _enclosure(entity, spatial_contract)
         kind = str(entity.get("kind") or "UNKNOWN_OBJECT").upper()
@@ -161,6 +168,7 @@ def scan_lot_model(model: Mapping, *, cfg: dict | None = None) -> dict:
     return {"state": "ROOM_CENSUS_EVALUATED", "architecture": cfg["architecture"],
             "lot_id": model.get("lot_id"), "model_revision": revision,
             "floors": floors, "rooms": rooms, "unassigned_items": unassigned,
+            "unverified_claim_count": unverified_claim_count,
             "observed_story_count": len(floors), "coverage": "ATTESTED_OBSERVATIONS_ONLY_NOT_COMPLETE_FLOOR_PROOF",
             "execute_allowed": False, "proof_ceiling": cfg["proof_ceiling"]}
 
@@ -184,6 +192,7 @@ def summarize_for_listener(census: Mapping) -> dict:
         "room_count_total": len(census["rooms"]),
         "summary_truncated": len(census["rooms"]) > 100,
         "unassigned_count": len(census["unassigned_items"]),
+        "unverified_claim_count": census["unverified_claim_count"],
         "execute_allowed": False,
         "proof_ceiling": census["proof_ceiling"],
     }
