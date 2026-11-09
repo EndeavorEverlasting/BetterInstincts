@@ -322,6 +322,23 @@ def _load_observation(raw: Mapping) -> dict:
     on_lot_hw = raw.get("homework_on_lot")
     if on_lot_hw is not None and not isinstance(on_lot_hw, bool):
         raise HostListenerError("OBSERVATION_HOMEWORK_ON_LOT_INVALID")
+    multitasking = raw.get("multitasking")
+    if multitasking is not None and type(multitasking) is not bool:
+        raise HostListenerError("OBSERVATION_MULTITASKING_INVALID")
+    sim_seated = raw.get("sim_seated")
+    if sim_seated is not None and type(sim_seated) is not bool:
+        raise HostListenerError("OBSERVATION_SIM_SEATED_INVALID")
+    for key in ("sim_room_id", "sim_seat_id"):
+        value = raw.get(key)
+        if value is not None and (
+            not isinstance(value, str) or not value or len(value) > 100
+        ):
+            raise HostListenerError("OBSERVATION_STUDY_TARGET_INVALID")
+    lot_traits = raw.get("lot_traits", [])
+    if not isinstance(lot_traits, (list, tuple)) or len(lot_traits) > 16 or any(
+        not isinstance(x, str) or not x or len(x) > 80 for x in lot_traits
+    ):
+        raise HostListenerError("OBSERVATION_LOT_TRAITS_INVALID")
     sim_at_school = raw.get("sim_at_school")
     if sim_at_school is not None and not isinstance(sim_at_school, bool):
         raise HostListenerError("OBSERVATION_SIM_AT_SCHOOL_INVALID")
@@ -439,6 +456,11 @@ def _load_observation(raw: Mapping) -> dict:
         "homework_pending": bool(raw.get("homework_pending", False)),
         "inventory_has_homework": inv if isinstance(inv, bool) else None,
         "homework_on_lot": on_lot_hw if isinstance(on_lot_hw, bool) else None,
+        "multitasking": multitasking,
+        "sim_room_id": raw.get("sim_room_id"),
+        "sim_seated": sim_seated,
+        "sim_seat_id": raw.get("sim_seat_id"),
+        "lot_traits": list(lot_traits),
         "prior_career_state": (
             raw.get("prior_career_state")
             if isinstance(raw.get("prior_career_state"), Mapping)
@@ -711,6 +733,12 @@ def tick(
             location_kind=obs["location_kind"],
             objects_on_current_lot=obs["objects_on_current_lot"],
             queue=obs["queue"],
+            multitasking=obs["multitasking"],
+            sim_room_id=obs["sim_room_id"],
+            sim_seated=obs["sim_seated"],
+            sim_seat_id=obs["sim_seat_id"],
+            lot_traits=obs["lot_traits"],
+            lot_model=obs.get("lot_model"),
             school_day_active=obs["school_day_active"],
             school_goals_incomplete=obs["school_goals_incomplete"],
             school_phase=obs["school_phase"],
