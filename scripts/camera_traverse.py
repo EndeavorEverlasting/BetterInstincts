@@ -94,44 +94,110 @@ def _park_cursor(x: int, y: int) -> None:
     move_cursor(x, y)
 
 
-def _execute_plan(plan: dict, *, process_id: int, session_id: str, idle_ms: int) -> dict:
+def _execute_plan(
+    plan: dict, *, process_id: int, session_id: str, idle_ms: int,
+    map_goal=None, observe=None, now_ms=None,
+) -> dict:
+    """Execute only when a live host proves a bounded target-map lease.
+
+    The ordinary CLI cannot supply a trusted camera sensor and is intentionally
+    unable to perform map pans or zooms. The injected host port may do so, and
+    must restore the Sim under the SAME admitted control lease in finally.
+    """
     from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
-    from scripts.win32_input import right_drag, send_wheel
+    from scripts.win32_input import right_drag, send_wheel, send_key_chord
+    from betterinstincts.active_sim_camera_lock import evaluate_active_sim_camera_lock
+    from betterinstincts.sim_camera import CENTER_SIM, plan_sim_camera
+
+    camera_motion = any(s["kind"] in ("RIGHT_DRAG_PAN", "WHEEL_ZOOM")
+                        for s in plan["steps"])
+    initial_sim_id = None
+    if camera_motion:
+        if not callable(observe) or not isinstance(map_goal, dict):
+            raise CameraTraverseError("GOAL_SCOPED_MAP_LEASE_AND_LIVE_SENSOR_REQUIRED")
+        before = observe()
+        if not isinstance(before, dict):
+            raise CameraTraverseError("FRESH_CAMERA_SENSOR_REQUIRED")
+        pan_directions = [
+            s["direction"] for s in plan["steps"] if s["kind"] == "RIGHT_DRAG_PAN"
+        ]
+        zoom = sum(s.get("notches", 0) for s in plan["steps"] if s["kind"] == "WHEEL_ZOOM")
+        lock = evaluate_active_sim_camera_lock(
+            capture_ref=before.get("capture_ref"), observation=before,
+            map_requested=True, map_goal=map_goal,
+            directions=pan_directions, zoom_notches=zoom, now_ms=now_ms,
+        )
+        if lock["gate"] != "CAMERA_MAP_LEASE_READY":
+            raise CameraTraverseError("CAMERA_MAP_LEASE_REFUSED:" + lock["gate"])
+        if lock["map_plan"]["steps"] != plan["steps"]:
+            raise CameraTraverseError("CAMERA_PLAN_DIFFERS_FROM_ADMITTED_MAP_LEASE")
+        initial_sim_id = lock["sim_id"]
 
     require_execute_session(session_id, process_id)
     results = []
+    restoration = "NOT_NEEDED"
     with admitted_screen_lease(
         int(process_id),
         str(session_id),
         idle_ms=idle_ms,
     ) as ensure_ready:
-        for step in plan["steps"]:
-            ensure_ready()
-            kind = step["kind"]
-            if kind == "CAPTURE_OBSERVE":
-                results.append({"step": kind, "state": "DEFER_TO_GAME_CAPTURE"})
-                continue
-            if kind == "RIGHT_DRAG_PAN":
-                rest = plan["safe_rest"]["screen"]
-                # Drag from the safe interior rest, not from an edge.
-                right_drag(step["delta"][0], step["delta"][1], x0=rest[0], y0=rest[1])
-                results.append({"step": kind, "state": "STEP_DISPATCHED", "delta": step["delta"]})
-                continue
-            if kind == "WHEEL_ZOOM":
-                rest = plan["safe_rest"]["screen"]
-                send_wheel(step["notches"], x=rest[0], y=rest[1])
-                results.append({"step": kind, "state": "STEP_DISPATCHED", "notches": step["notches"]})
-                continue
-            if kind == "SAFE_REST":
-                sx, sy = step["screen"]
-                _park_cursor(sx, sy)
-                time.sleep(0.05)
-                results.append({"step": kind, "state": "CURSOR_PARKED", "screen": [sx, sy]})
-                continue
-            raise CameraTraverseError("UNKNOWN_STEP_KIND:" + str(kind))
+        try:
+            for step in plan["steps"]:
+                ensure_ready()
+                kind = step["kind"]
+                if kind == "CAPTURE_OBSERVE":
+                    results.append({"step": kind, "state": "DEFER_TO_GAME_CAPTURE"})
+                    continue
+                if kind == "RIGHT_DRAG_PAN":
+                    rest = plan["safe_rest"]["screen"]
+                    right_drag(step["delta"][0], step["delta"][1], x0=rest[0], y0=rest[1])
+                    results.append({"step": kind, "state": "STEP_DISPATCHED", "delta": step["delta"]})
+                    continue
+                if kind == "WHEEL_ZOOM":
+                    rest = plan["safe_rest"]["screen"]
+                    send_wheel(step["notches"], x=rest[0], y=rest[1])
+                    results.append({"step": kind, "state": "STEP_DISPATCHED", "notches": step["notches"]})
+                    continue
+                if kind == "SAFE_REST":
+                    sx, sy = step["screen"]
+                    _park_cursor(sx, sy)
+                    time.sleep(0.05)
+                    results.append({"step": kind, "state": "CURSOR_PARKED", "screen": [sx, sy]})
+                    continue
+                raise CameraTraverseError("UNKNOWN_STEP_KIND:" + str(kind))
+        finally:
+            if camera_motion:
+                # No unconditional Enter: human input, changed active Sim,
+                # modal or lost game focus must be respected even on cleanup.
+                restoration = "RESTORE_PENDING_HOST_REVALIDATION"
+                try:
+                    ensure_ready()
+                    after = observe()
+                    if not isinstance(after, dict):
+                        raise CameraTraverseError("RESTORE_SENSOR_MISSING")
+                    center = plan_sim_camera(
+                        CENTER_SIM, capture_ref=after.get("capture_ref"),
+                        observation=after,
+                    )
+                    if center.get("sim_id") != initial_sim_id:
+                        raise CameraTraverseError("ACTIVE_SIM_CHANGED_DURING_MAP_LEASE")
+                    if center["state"] == "ALREADY_FOLLOWING_SIM":
+                        restoration = "ACTIVE_SIM_FOLLOW_ALREADY_OBSERVED"
+                    elif center["state"] == "SIM_CAMERA_READY_FOR_ADMISSION":
+                        ensure_ready()
+                        send_key_chord(center["effect"]["chord"])
+                        restoration = "ENTER_DISPATCHED_REOBSERVE_REQUIRED"
+                    else:
+                        raise CameraTraverseError("RESTORE_NOT_ADMITTED")
+                except Exception:
+                    # Never seize the camera from a human to tidy up after an
+                    # aborted map action. Next admitted turn must re-anchor.
+                    restoration = "RESTORE_PENDING_HOST_REVALIDATION"
+                    raise
     return {
         "state": "CAMERA_TRAVERSE_EXECUTED",
         "results": results,
+        "restoration": restoration,
         "proof_ceiling": "LOCAL_OBSERVED_CLICK_DISPATCH_NOT_LIVE_CERT",
         "forbidden": list(plan.get("forbidden") or []),
     }

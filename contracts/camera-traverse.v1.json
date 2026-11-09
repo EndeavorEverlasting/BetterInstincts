@@ -117,7 +117,12 @@
     "BLIND_WORLD_CLICK",
     "AUTO_RECLICK",
     "REUSE_PRE_PAN_TARGET_COORDINATES",
-    "UNBOUNDED_TARGET_REFRAME"
+    "UNBOUNDED_TARGET_REFRAME",
+    "AGENT_CHOOSES_CAMERA_VIEW",
+    "UNBOUNDED_CAMERA_PAN",
+    "MAP_TRAVERSE_WITHOUT_NAMED_GOAL",
+    "LEAVE_CAMERA_ON_STREET",
+    "FORGET_RESTORE_AFTER_MAP_LEASE"
   ],
   "house_state_actions": [
     "CAMERA_PAN_ZOOM",
@@ -133,7 +138,8 @@
     "mouse_primitives": "scripts/win32_input.py",
     "capture": "scripts/game_capture.py",
     "admission": "betterinstincts/screen_admit.py",
-    "world_framing_host": "betterinstincts/host_stack.py"
+    "world_framing_host": "betterinstincts/host_stack.py",
+    "active_sim_lock": "betterinstincts/active_sim_camera_lock.py"
   },
   "prior_art": {
     "automation_visual_intelligence": "ADAPT observe≠act seam; do not clone donor CV stacks into BetterInstincts",
@@ -225,5 +231,25 @@
       "paused_live_panel_can_be_stale": true,
       "note": "One-shot P is a toggle; no key on PAUSED/UNKNOWN, never resume automatically. Local host must reobserve speed, exact scene and target after pausing. Skills panel retains separate short-play/re-pause proof owner."
     }
+  },
+  "active_sim_camera_lock": {
+    "owner": "betterinstincts/active_sim_camera_lock.py",
+    "default": "CENTER_ACTIVE_SIM",
+    "center_chord": [
+      "ENTER"
+    ],
+    "not_equivalent": [
+      "SHIFT",
+      "ENTER"
+    ],
+    "map_exception": "FRESH_HOST_TASK_GOAL_WITH_NAMED_TARGET",
+    "max_lease_ms": 30000,
+    "max_pan_steps": 8,
+    "required_initial_state": "ACTIVE_SIM_CENTERED_OR_FOLLOWING",
+    "terminal_restore": "ADMITTED_ENTER_IN_FINALLY_REOBSERVE",
+    "human_interrupt": "YIELD_AND_RESTORE_PENDING",
+    "executor": "scripts/camera_traverse.py::_execute_plan",
+    "unscoped_cli_execute": "REFUSE_CAMERA_PAN_ZOOM",
+    "proof": "OFFLINE_POLICY_AND_INJECTED_PORT_NOT_LIVE_GAMEPLAY"
   }
 }
