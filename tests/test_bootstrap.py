@@ -53,6 +53,7 @@ class BootstrapTests(unittest.TestCase):
              patch.object(bootstrap, "_clone_signature", return_value={
                  "head": "a" * 40, "branch": "main", "refs_sha256": "b" * 64,
                  "reflog_sha256": "c" * 64, "git_config_sha256": "d" * 64,
+                 "git_auxiliary_sha256": "e" * 64,
              }):
             installed = bootstrap.install(self.location, platform="linux")
             self.assertTrue(installed["created_checkout"])
@@ -253,6 +254,21 @@ class BootstrapTests(unittest.TestCase):
             removed = bootstrap.uninstall(self.location, platform="linux")
         self.assertFalse(removed["checkout_removed"])
         self.assertTrue(dev.is_dir())
+
+    @unittest.skipUnless(shutil.which("git"), "Git CLI required")
+    def test_clean_checkout_with_custom_git_hook_is_preserved(self):
+        bare = self._make_local_remote()
+        dev = self.location["development"]
+        with patch.object(bootstrap, "REPOSITORY", str(bare)), \
+             patch.object(bootstrap, "ALLOWED_ORIGINS", {str(bare)}):
+            bootstrap.install(self.location, platform="linux")
+            hooks = dev / ".git" / "hooks"
+            hooks.mkdir(exist_ok=True)
+            (hooks / "pre-commit").write_text("# operator customization\\n", encoding="utf-8")
+            self.assertTrue(bootstrap._pristine(dev))
+            removed = bootstrap.uninstall(self.location, platform="linux")
+        self.assertFalse(removed["checkout_removed"])
+        self.assertTrue((hooks / "pre-commit").exists())
 
     @unittest.skipUnless(shutil.which("git"), "Git CLI required")
     def test_legacy_manifest_lacks_delete_permission(self):
