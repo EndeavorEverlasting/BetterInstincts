@@ -67,6 +67,10 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **FLOOR_1** / **FLOOR_2** | First vs second story; F2 indoor work requires F1 indoor floor first. |
 | **BUILD_FLOOR_ACTIVITY** / **FLOOR_ACTIVITY_CENSUS** | Listener peer: which story is active, single vs multi-floor span, theme from attested items. |
 | **FLOOR_THEME** | Majority theme on a story (kitchen, bedroom, outdoor_garden, …) from item categories. |
+| **ROOM_CENSUS** / **ROOM_CENSUS_COVERAGE** | Revisioned, read-only whole-lot inventory; all *attested* stories (including upper floors and basements), but not certified full-game coverage. See `docs/ROOM_CENSUS.md`. |
+| **ROOM_ZONE_ATTESTED** / **ROOM_ZONE_CANDIDATE** | Zone has a verified `ROOM_ZONE` structural claim vs an item-only zone cluster; neither invents geometry from pixels. |
+| **MULTI_LABEL_ROOM_FUNCTION** | One room can be kitchen+dining+office, etc.; independent function item-evidence counts retained. |
+| **ROOM_STYLE_EVIDENCE** | Multiple aesthetic styles inferred only from explicitly attested per-object `style_tags`; never from label alone. |
 | **CAMERA_SAFE_TRAVERSE** | Host-owned bounded camera plan; never park the mouse in the edge pan band. |
 | **SAFE_CURSOR_REST** | Mandatory interior cursor park after any camera step so the viewport stops drifting. |
 | **EDGE_MOUSE_PARK** / **CONTINUOUS_EDGE_HOLD** | Forbidden: leave/hold cursor on screen edge while scanning or coding. |
@@ -83,8 +87,3 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **AOK_BLOOMER_SEARCH** | Preferred catalog keyword `AOK` for A-OK-Bloomer Vertical Garden. |
 
 Related matrices: `contracts/behavior-matrix.v1.json`, `contracts/player-presence.v1.json`, `contracts/needs-force.v1.json`, `contracts/host-listener.v1.json`, `contracts/host-funds.v1.json`, `contracts/build-optimize.v1.json`, `contracts/household-object-force.v1.json`, `contracts/ui-chrome.v1.json`.
-
-| **ROOM_CENSUS** / **ROOM_CENSUS_COVERAGE** | Revisioned, read-only whole-lot inventory; all *attested* stories (including upper floors and basements), but not certified full-game coverage. See `docs/ROOM_CENSUS.md`. |
-| **ROOM_ZONE_ATTESTED** / **ROOM_ZONE_CANDIDATE** | Zone has a verified `ROOM_ZONE` structural claim vs an item-only zone cluster; neither invents geometry from pixels. |
-| **MULTI_LABEL_ROOM_FUNCTION** | One room can be kitchen+dining+office, etc.; independent function item-evidence counts retained. |
-| **ROOM_STYLE_EVIDENCE** | Multiple aesthetic styles inferred only from explicitly attested per-object `style_tags`; never from label alone. |
