@@ -388,7 +388,7 @@ class DiySkillForceTests(unittest.TestCase):
                 omit_skill_ids=sorted(done),
                 game_mode="live",
             )
-            self.assertEqual(already["state"], "SKILL_FORCE_MEMBER_ALREADY_MAXED")
+            self.assertEqual(already["state"], "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED")
             self.assertTrue(already["skip_dispatch"])
             self.assertEqual(already["skills"], [])
 
