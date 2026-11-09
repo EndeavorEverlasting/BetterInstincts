@@ -120,6 +120,7 @@ def evaluate_floor_activity(
     stories_touched: Sequence[object] | None = None,
     floor_items: Sequence[Mapping] | None = None,
     player_directed: bool = False,
+    lot_model: Mapping | None = None,
     cfg: Optional[dict] = None,
 ) -> dict:
     """Classify Build Mode floor activity. Library-only; execute_allowed false."""
@@ -179,7 +180,7 @@ def evaluate_floor_activity(
     active_floor = floors.get(active) if active in floors else None
     optimize_hints = list((active_floor or {}).get("optimize_category_hints") or [])
 
-    return {
+    result = {
         "state": "BUILD_FLOOR_ACTIVITY_EVALUATED",
         "architecture": "FLOOR_ACTIVITY_CENSUS",
         "activity_span": span,
@@ -196,3 +197,14 @@ def evaluate_floor_activity(
             "do not place or mutate without separate admission."
         ),
     }
+    if lot_model is not None:
+        # P124: attach a projection of the existing house_state owner, not a new scan daemon.
+        from betterinstincts.room_census import (
+            RoomCensusError, scan_lot_model, summarize_for_listener,
+        )
+        try:
+            result["room_census"] = summarize_for_listener(scan_lot_model(lot_model))
+        except RoomCensusError as exc:
+            raise BuildFloorActivityError(str(exc)) from exc
+    return result
+
