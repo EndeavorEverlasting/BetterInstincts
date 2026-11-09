@@ -97,7 +97,7 @@ class BuildLibraryCheckpointTests(unittest.TestCase):
             operator_confirmed=True,
         )
         denied = hs.admit_mutation(only_save_as, "SLEDGE", targets=["wall.1"])
-        self.assertEqual(denied["reason"], "MUTATE_ROOM_WITHOUT_LIBRARY_SAVE")
+        self.assertEqual(denied["reason"], "LOT_MUTATION_WITHOUT_COMPLETE_BACKUP")
 
     def test_outdoor_floater_inventory_skips_library(self):
         model = hs.observe(
