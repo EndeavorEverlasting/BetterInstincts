@@ -40,7 +40,7 @@ reminders, and “auto-rebuild FLOOR_2 as prevention.”
 2. Fresh means `library_checkpoint.model_revision ==` current model revision, matching `building_id`.
 3. `SAVE_TO_LIBRARY` is the only mutation that creates the checkpoint; it does not require a prior one.
 4. Game Save As (`BI_TMP_` / `BI_CONT_`) remains a separate destructive gate and **never** counts as a library checkpoint.
-5. Outdoor floater inventory alone is not a room mutation (`BACKSPACE_TO_INVENTORY` on floaters stays exempt).
+5. **No purchase/inventory exemption:** `BACKSPACE_TO_INVENTORY` on outdoor floaters, catalog placements and every other lot edit require the same full-home backup, even when not a room/structure change.
 6. **FLOOR_2 / STAIRS** are protected: delete/sledge/remove without a fresh library checkpoint yields
    `DELETE_FLOOR2_WITHOUT_LIBRARY_SAVE`.
 7. **Held Medicine Craftidink / crafty drink** (and listed substrings) → `CANCEL_UI_ONLY`. Structure
