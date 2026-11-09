@@ -46,6 +46,8 @@ from betterinstincts.navigating_needs import (
     evaluate_navigating_needs_turn,
 )
 from betterinstincts.scenario_goals import evaluate_scenario_turn
+from betterinstincts.discovery_hud import DiscoveryHudError, evaluate_discovery_hud
+from betterinstincts.autonomy_moderation import AutonomyModerationError, evaluate_autonomy_moderation
 from betterinstincts.school_day import (
     SchoolDayError,
     evaluate_school_day_turn,
@@ -162,6 +164,8 @@ def evaluate_turn(
     navigating_needs_incomplete: Sequence[str] = (),
     navigating_needs_profile: str = "navigating_needs",
     gardening: Optional[Mapping[str, object]] = None,
+    discovery_hud: Optional[Mapping[str, object]] = None,
+    autonomy_observation: Optional[Mapping[str, object]] = None,
     cursor_client_x: Optional[int] = None,
     cursor_client_y: Optional[int] = None,
     client_width: Optional[int] = None,
@@ -267,7 +271,49 @@ def evaluate_turn(
     fun_service = None
     need_services = None
     gardening_report = None
+    discovery_report = None
+    autonomy_report = None
     try:
+        if autonomy_observation is not None:
+            # This peer is read-only for every domain, not just gardening.
+            # Caller-reported "idle" cannot override actual player activity
+            # or the active actor's absence.
+            auto_input = dict(autonomy_observation)
+            if player_directed:
+                auto_input["player_active"] = True
+            if sim_absent or sim_at_school is True:
+                auto_input["selected_sim_ref"] = None
+            autonomy_report = evaluate_autonomy_moderation(
+                auto_input, capture_ref=capture_ref,
+            )
+        if discovery_hud is not None:
+            # A verified top-left quest is a typed advisor, not a new UI/input
+            # owner. Do not let a stale Build/Buy flag silently become Live.
+            supplied = dict(discovery_hud)
+            if build_or_buy_mode:
+                supplied["mode"] = "BUILD"
+            if player_directed:
+                supplied["player_active"] = True
+            discovery_report = evaluate_discovery_hud(
+                supplied, needs=needs, capture_ref=capture_ref,
+            )
+            if not already_busy and not player_directed:
+                state = discovery_report["state"]
+                observed_goals = tuple(supplied.get("incomplete_goals") or ())
+                if state == "ROUTE_EXISTING_NAVIGATING_NEEDS":
+                    if (scenario_active or scenario_goals_incomplete
+                            or (navigating_needs_active and
+                                tuple(navigating_needs_incomplete) != observed_goals)):
+                        raise HostStackError("DISCOVERY_LEGACY_GOAL_CONFLICT")
+                    navigating_needs_active = True
+                    navigating_needs_incomplete = observed_goals
+                elif state == "ROUTE_EXISTING_SCORING_SIMOLEONS":
+                    if (navigating_needs_active or navigating_needs_incomplete
+                            or (scenario_active and
+                                tuple(scenario_goals_incomplete) != observed_goals)):
+                        raise HostStackError("DISCOVERY_LEGACY_GOAL_CONFLICT")
+                    scenario_active = True
+                    scenario_goals_incomplete = observed_goals
         snap = NeedSnapshot(
             needs=needs,
             available_objects=tuple(available_objects),
@@ -578,6 +624,8 @@ def evaluate_turn(
         NeedServicesError,
         NavigatingNeedsError,
         GardeningServiceError,
+        DiscoveryHudError,
+        AutonomyModerationError,
     ) as exc:
         raise HostStackError(str(exc)) from exc
 
@@ -1281,6 +1329,21 @@ def evaluate_turn(
     elif gardening_report is not None:
         next_gate = gardening_report["gate"]
         fallback = {"owner": "betterinstincts/gardening_service.py", **gardening_report}
+    elif discovery_report is not None and discovery_report.get("state") in {
+        "PHONE_GOAL_AFFORDANCE_CANDIDATE", "INSPECT_PHONE_AFFORDANCES",
+    }:
+        # Only after school, needs, manual commands, and existing goals.
+        # This is a read-only recommendation, not permission to send/call.
+        next_gate = "DISCOVERY_PHONE_REVIEW_ONLY"
+        fallback = {
+            "owner": "betterinstincts/discovery_hud.py",
+            "mechanism": "INSPECT_CURRENT_PHONE_QUEST",
+            "quest": discovery_report.get("quest"),
+            "next_action": discovery_report.get("next_action"),
+            "execute_allowed": False,
+            "forbidden": ["SEND_TEXT", "PLACE_CALL", "AUTO_TRAVEL",
+                          "BLIND_PHONE_CLICK", "RESUME"],
+        }
     elif instincts.get("all_needs_green"):
         next_gate = "LAB_SAVE_AS_BI_CONT_WHEN_AUTHORIZED"
     elif instincts.get("state") == "BLOCKED_MISSING_OBJECTS":
@@ -1319,6 +1382,8 @@ def evaluate_turn(
         ),
         "build_optimize": build_optimize,
         "gardening": gardening_report,
+        "discovery_hud": discovery_report,
+        "autonomy_moderation": autonomy_report,
         "build_integrity": build_integrity,
         "build_spatial": build_spatial,
         "build_library": build_library,
