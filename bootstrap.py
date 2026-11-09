@@ -81,6 +81,36 @@ def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+
+def _git_auxiliary_sha256(git_dir: Path) -> str:
+    """Guard user hooks, info/exclude and other Git-private custom files.
+
+    Object packs/refs/reflogs/index/config have separate provenance checks.
+    Reject symlinked custom Git files; never follow them during deletion proof.
+    """
+    ignored = {
+        "objects", "refs", "logs", "index", "packed-refs",
+        "FETCH_HEAD", "ORIG_HEAD", "HEAD", "config",
+    }
+    digest = hashlib.sha256()
+    for child in sorted(git_dir.iterdir(), key=lambda p: p.name):
+        if child.name in ignored:
+            continue
+        nodes = [child]
+        if child.is_dir() and not child.is_symlink():
+            nodes.extend(sorted(child.rglob("*"), key=lambda p: p.as_posix()))
+        for node in nodes:
+            if node.is_symlink():
+                raise BootstrapError("CLONE_GIT_AUXILIARY_SYMLINK_UNSAFE")
+            name = node.relative_to(git_dir).as_posix()
+            digest.update(name.encode("utf-8") + b"\\0")
+            if node.is_file():
+                with node.open("rb") as stream:
+                    for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                        digest.update(chunk)
+    return digest.hexdigest()
+
+
 def _clone_signature(checkout: Path) -> dict[str, str]:
     """Identity of installer-created checkout, including independent Git work.
 
@@ -100,13 +130,15 @@ def _clone_signature(checkout: Path) -> dict[str, str]:
             "git", "reflog", "show", "--all", "--format=%H %gD", cwd=checkout
         )),
         "git_config_sha256": hashlib.sha256(config.read_bytes()).hexdigest(),
+        "git_auxiliary_sha256": _git_auxiliary_sha256(git_dir),
     }
 
 
 def _clone_still_original(checkout: Path, signature: object) -> bool:
     """Legacy manifests and unverifiable copies are NEVER deletion grants."""
     if not isinstance(signature, dict) or set(signature) != {
-        "head", "branch", "refs_sha256", "reflog_sha256", "git_config_sha256"
+        "head", "branch", "refs_sha256", "reflog_sha256", "git_config_sha256",
+        "git_auxiliary_sha256"
     } or not all(isinstance(value, str) and value for value in signature.values()):
         return False
     try:
