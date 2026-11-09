@@ -840,6 +840,13 @@ def evaluate_turn(
         }
     elif player_directed or already_busy:
         next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
+        if drift_recovery is not None:
+            fallback = {
+                "mechanism": "CAMERA_DRIFT_RECOVERY",
+                "owner": "betterinstincts/camera_traverse.py",
+                "recovery": drift_recovery,
+                "execute_allowed": False,
+            }
     elif live_hud is not None and live_hud["gate"] != "HUD_CONTEXT_READY":
         next_gate = live_hud["gate"]
         fallback = {
