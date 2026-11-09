@@ -32,7 +32,8 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(seq["default_level"], 10)
         self.assertIn("diy_maker", cfg["bundles"])
         self.assertIn("full_unlock", cfg["bundles"])
-        self.assertEqual(cfg["version"], 9)
+        self.assertEqual(cfg["version"], 10)
+        self.assertFalse(cfg["execution_policy"]["detached_worker"])
         self.assertTrue(cfg["completion_ledger"]["space_to_next_needing"])
         self.assertIn("skip_skills_already_recorded_complete", cfg["invariants"])
         self.assertEqual(cfg["household_traverse"]["min_members"], 1)
@@ -295,7 +296,7 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(plan["member_plans"][2]["select"]["key"], "SPACE")
         self.assertTrue(plan["member_plans"][1]["select"]["close_console_before"])
         self.assertEqual(plan["required_residual_skills"], ["cooking", "fitness", "natural_living"])
-        self.assertTrue(plan["async_detach_supported"])
+        self.assertFalse(plan["async_detach_supported"])
         self.assertFalse(plan["execute_allowed"])
         # Round-robin: skill0×m0, skill0×m1, skill0×m2, skill1×m0, ...
         units = plan["dispatch_units"]
@@ -456,6 +457,52 @@ class DiySkillForceTests(unittest.TestCase):
             )
             self.assertEqual(redo["members_needing_work"], 3)
             self.assertFalse(any(s["skip_dispatch"] for s in redo["member_plans"]))
+
+    def test_household_executor_does_not_reopen_console_before_space(self):
+        """Prior regression: _execute_plan closes console, extra toggle reopened it."""
+        from unittest.mock import patch
+        from scripts import diy_skill_force as executor
+
+        roster = ["sim:first", "servo:second"]
+        plan = plan_household_skill_force(
+            members=2, skill_ids=["handiness", "robotics"],
+            session_id="test-serial", member_keys=roster,
+            completion_ledger=empty_completion_ledger(),
+        )
+        with patch.object(executor, "_execute_plan", return_value={"state": "DISPATCHED"}) as dispatch, \
+             patch.object(executor, "_select_next_household_member", return_value={"admitted": True}) as select, \
+             patch.object(executor, "_toggle_cheat_console") as toggle, \
+             patch.object(executor, "_park_safe_cursor_rest", return_value={"state": "SAFE_REST"}):
+            result = executor._execute_household(
+                plan, process_id=123, session_id="test-serial",
+                roster_keys=roster, first_portrait_attested=True, redo=True,
+            )
+        self.assertEqual(result["cells_dispatched"], 4)
+        self.assertEqual(dispatch.call_count, 4)
+        self.assertEqual(select.call_count, 3)  # only between cells
+        toggle.assert_not_called()
+        self.assertEqual([c["skill_id"] for c in result["cells"]],
+                         ["handiness", "handiness", "robotics", "robotics"])
+        self.assertEqual([c["member_index"] for c in result["cells"]], [0, 1, 0, 1])
+
+    def test_household_executor_requires_attested_first_portrait_and_roster(self):
+        from scripts import diy_skill_force as executor
+        from scripts.diy_skill_force import GateError
+        plan = plan_household_skill_force(members=2, skill_ids=["handiness"])
+        with self.assertRaisesRegex(GateError, "FIRST_PORTRAIT"):
+            executor._execute_household(plan, process_id=123)
+        with self.assertRaisesRegex(GateError, "EXACT_OBSERVED"):
+            executor._execute_household(plan, process_id=123, first_portrait_attested=True)
+
+    def test_detached_ui_command_is_denied_before_worker_launch(self):
+        import contextlib
+        import io
+        from scripts import diy_skill_force as executor
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = executor.main(["household", "--members", "2", "--execute", "--detach"])
+        self.assertEqual(rc, 2)
+        self.assertIn("DETACHED_HOUSEHOLD_UI_UNSAFE", out.getvalue())
 
 
 if __name__ == "__main__":
