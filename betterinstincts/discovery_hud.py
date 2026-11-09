@@ -24,6 +24,7 @@ QUESTS = {
 }
 MAX_GOALS = 12
 MAX_MENU = 24
+CORE_TOP_LEFT = ("Scoring Simoleons", "Navigating Needs", "You and Your Phone")
 
 
 class DiscoveryHudError(ValueError):
@@ -52,6 +53,10 @@ def evaluate_discovery_hud(
         "schema": "betterinstincts.discovery-hud-result/v1",
         "sim_ref": observation["sim_ref"], "capture_ref": capture_ref,
         "quest": quest, "state": "INSPECT_QUEST_PANEL", "domain_plan": None,
+        "top_left_modules": {
+            name: {"state":"UNVERIFIED", "active":False, "proof_ref":None}
+            for name in CORE_TOP_LEFT
+        },
         "next_action": None, "execute_allowed": False, "control_permit": None,
         "proof_ceiling": "OFFLINE_DISCOVERY_ROUTING_NOT_GAME_HUD_PROOF",
     }
@@ -69,6 +74,18 @@ def evaluate_discovery_hud(
             or any(not isinstance(x, str) or len(x) > 120 for x in queue)
             or not isinstance(phone, list) or len(phone) > MAX_MENU):
         raise DiscoveryHudError("DISCOVERY_HUD_INPUT_INVALID")
+    modules = observation.get("observed_modules", [])
+    if not isinstance(modules, list) or len(modules) > len(CORE_TOP_LEFT):
+        raise DiscoveryHudError("TOP_LEFT_MODULES_BOUNDS_INVALID")
+    seen_modules = set()
+    for row in modules:
+        if (not isinstance(row, Mapping)
+                or row.get("quest_label") not in CORE_TOP_LEFT
+                or row["quest_label"] in seen_modules
+                or row.get("state") not in {"VISIBLE","AVAILABLE","INACTIVE"}
+                or not _ref(row.get("proof_ref"))):
+            raise DiscoveryHudError("TOP_LEFT_MODULE_INVALID")
+        seen_modules.add(row["quest_label"])
     timestamp = observation.get("observed_at_unix")
     instant = time.time() if now is None else now
     if (type(timestamp) not in (int, float) or not math.isfinite(timestamp)
@@ -85,6 +102,18 @@ def evaluate_discovery_hud(
             or not _ref(observation.get("scene_proof_ref"))
             or not _ref(observation.get("selection_proof_ref"))):
         return finish("REOBSERVE_TOP_LEFT_PANEL")
+    for row in modules:
+        result["top_left_modules"][row["quest_label"]] = {
+            "state":row["state"],"active":False,"proof_ref":row["proof_ref"],
+        }
+    if raw.strip() in CORE_TOP_LEFT:
+        prior = result["top_left_modules"][raw.strip()]
+        if prior["state"] in {"INACTIVE","AVAILABLE"}:
+            return finish("TOP_LEFT_ACTIVE_PANEL_CONFLICT")
+        result["top_left_modules"][raw.strip()] = {
+            "state":"ACTIVE", "active":True,
+            "proof_ref":observation["panel_proof_ref"],
+        }
     if quest is None:
         return finish("UNRECOGNIZED_DISCOVERY_QUEST")
     if observation.get("player_active") is True:

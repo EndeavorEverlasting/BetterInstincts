@@ -254,6 +254,24 @@
           "purpose": "Inspect current incomplete goals; never invent action/coordinates"
         }
       }
+    },
+    "whims": {
+      "family": "LIVE_PANEL",
+      "modes": [
+        "LIVE"
+      ],
+      "status": "UNCALIBRATED_CANDIDATE",
+      "cues": {
+        "visual": "panel:live_whims",
+        "operator": "whims_visible"
+      },
+      "actions": {
+        "pin_whim": {
+          "intent": "pin_one_verified_positive_whim",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION",
+          "note": "Each pin requires its OWN observed whim_ref and current rectangle; never shortcut/guess"
+        }
+      }
     }
   },
   "calibration": {

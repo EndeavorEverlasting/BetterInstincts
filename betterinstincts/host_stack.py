@@ -48,6 +48,7 @@ from betterinstincts.navigating_needs import (
 from betterinstincts.scenario_goals import evaluate_scenario_turn
 from betterinstincts.discovery_hud import DiscoveryHudError, evaluate_discovery_hud
 from betterinstincts.autonomy_moderation import AutonomyModerationError, evaluate_autonomy_moderation
+from betterinstincts.behavior_valence import BehaviorValenceError, evaluate_behavior_valence
 from betterinstincts.school_day import (
     SchoolDayError,
     evaluate_school_day_turn,
@@ -166,6 +167,7 @@ def evaluate_turn(
     gardening: Optional[Mapping[str, object]] = None,
     discovery_hud: Optional[Mapping[str, object]] = None,
     autonomy_observation: Optional[Mapping[str, object]] = None,
+    behavior_model: Optional[Mapping[str, object]] = None,
     cursor_client_x: Optional[int] = None,
     cursor_client_y: Optional[int] = None,
     client_width: Optional[int] = None,
@@ -273,6 +275,7 @@ def evaluate_turn(
     gardening_report = None
     discovery_report = None
     autonomy_report = None
+    valence_report = None
     try:
         if autonomy_observation is not None:
             # This peer is read-only for every domain, not just gardening.
@@ -285,6 +288,12 @@ def evaluate_turn(
                 auto_input["selected_sim_ref"] = None
             autonomy_report = evaluate_autonomy_moderation(
                 auto_input, capture_ref=capture_ref,
+            )
+            # A passive observation is never a reviewed training example.
+            # Evidence labels and ML predictions occupy different fields.
+            auto_input.setdefault("activity_context", "other")
+            valence_report = evaluate_behavior_valence(
+                auto_input, capture_ref=capture_ref, model=behavior_model,
             )
         if discovery_hud is not None:
             # A verified top-left quest is a typed advisor, not a new UI/input
@@ -626,6 +635,7 @@ def evaluate_turn(
         GardeningServiceError,
         DiscoveryHudError,
         AutonomyModerationError,
+        BehaviorValenceError,
     ) as exc:
         raise HostStackError(str(exc)) from exc
 
@@ -1384,6 +1394,7 @@ def evaluate_turn(
         "gardening": gardening_report,
         "discovery_hud": discovery_report,
         "autonomy_moderation": autonomy_report,
+        "behavior_valence": valence_report,
         "build_integrity": build_integrity,
         "build_spatial": build_spatial,
         "build_library": build_library,
