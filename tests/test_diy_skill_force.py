@@ -8,6 +8,7 @@ from betterinstincts.diy_skill_force import (
     load_contract,
     plan_skill_force,
     resolve_skills,
+    skills_panel_observation_policy,
     steps_to_commands,
 )
 
@@ -24,12 +25,20 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(seq["default_level"], 10)
         self.assertIn("diy_maker", cfg["bundles"])
         self.assertIn("full_unlock", cfg["bundles"])
-        self.assertEqual(cfg["version"], 3)
+        self.assertEqual(cfg["version"], 4)
         reward = seq["reward_dialog_accept"]
         self.assertTrue(reward["enabled_by_default"])
         self.assertTrue(reward["never_press_cancel"])
         self.assertEqual(reward["primary_confirm_key"], "ENTER")
         self.assertEqual(seq["typing_owner"], "scripts/win32_input.type_text")
+        panel = seq["skills_panel_observation"]
+        self.assertEqual(panel["paused_panel_status"], "UNPROVEN_STALE")
+        self.assertEqual(panel["verify_default"], "PLAY_BRIEF_OBSERVE_REPAUSE")
+        play = panel["play_brief_for_fresh_panel"]
+        self.assertEqual(play["min_play_seconds"], 5)
+        self.assertEqual(play["max_play_seconds"], 10)
+        self.assertTrue(play["always_repause"])
+        self.assertIn("leave_sim_speed_running_after_panel_verify", seq["forbidden"])
 
     def test_catalog_includes_diy_and_unlock_cores(self):
         snap = catalog_snapshot()
@@ -146,9 +155,40 @@ class DiySkillForceTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(raw["version"], 3)
+        self.assertEqual(raw["version"], 4)
         self.assertEqual(raw["bundles"]["full_unlock"]["default_level"], 10)
         self.assertTrue(raw["inject_sequence"]["reward_dialog_accept"]["never_press_cancel"])
+
+    def test_skills_panel_dispatch_keeps_paused(self):
+        policy = skills_panel_observation_policy(
+            purpose="dispatch",
+            precious_time=True,
+            concurrent_live_cert=True,
+            main_goal_unfinished=True,
+        )
+        self.assertEqual(policy["action"], "KEEP_PAUSED")
+        self.assertEqual(policy["panel_status"], "UNPROVEN_STALE")
+
+    def test_skills_panel_verify_play_brief_repause(self):
+        policy = skills_panel_observation_policy(
+            purpose="verify",
+            precious_time=True,
+            concurrent_live_cert=True,
+            main_goal_unfinished=True,
+        )
+        self.assertEqual(policy["action"], "PLAY_BRIEF_OBSERVE_REPAUSE")
+        self.assertGreaterEqual(policy["play_seconds"], 5)
+        self.assertLessEqual(policy["play_seconds"], 10)
+        self.assertTrue(policy["always_repause"])
+        self.assertEqual(policy["play_key"], "1")
+        self.assertEqual(policy["pause_key"], "0")
+
+    def test_plan_includes_keep_paused_and_play_brief_steps(self):
+        plan = plan_skill_force(bundle="diy_maker", game_mode="live")
+        names = [s.get("step") for s in plan["steps"]]
+        self.assertIn("KEEP_PAUSED", names)
+        self.assertIn("PLAY_BRIEF_OBSERVE_REPAUSE", names)
+        self.assertEqual(plan["skills_panel_observation"]["verify"]["action"], "PLAY_BRIEF_OBSERVE_REPAUSE")
 
 
 if __name__ == "__main__":

@@ -33,6 +33,7 @@ from betterinstincts.diy_skill_force import (
     DiySkillForceError,
     catalog_snapshot,
     plan_skill_force,
+    skills_panel_observation_policy,
     steps_to_commands,
 )
 
@@ -86,6 +87,41 @@ def _focus(process_id: int | None, *, click_client: bool = False) -> dict:
     return report
 
 
+def _play_brief_observe_repause(
+    *,
+    play_seconds: int | None = None,
+    play_key: str = "1",
+    pause_key: str = "0",
+) -> dict:
+    """Bounded Live tick for Skills-panel refresh, then always re-pause.
+
+    Robust verify: play 5–10s @ 1x → caller captures/analyzes → pause (0).
+    Never leaves sim speed running. Not main-menu Resume.
+    """
+    from scripts.win32_input import type_text
+
+    policy = skills_panel_observation_policy(purpose="verify")
+    seconds = int(play_seconds if play_seconds is not None else policy["play_seconds"])
+    seconds = max(int(policy["min_play_seconds"]), min(int(policy["max_play_seconds"]), seconds))
+    play = str(play_key or policy["play_key"] or "1")[:1]
+    pause = str(pause_key or policy["pause_key"] or "0")[:1]
+    # Speed keys are typed into Live HUD (console must be closed).
+    type_text(play)
+    time.sleep(float(seconds))
+    type_text(pause)
+    time.sleep(0.35)
+    return {
+        "step": "PLAY_BRIEF_OBSERVE_REPAUSE",
+        "action": "PLAY_BRIEF_OBSERVE_REPAUSE",
+        "play_key": play,
+        "pause_key": pause,
+        "play_seconds": seconds,
+        "always_repause": True,
+        "panel_status": "FRESH_PANEL_AFTER_PLAY_BRIEF",
+        "note": "Capture Skills panel between play and pause; do not leave clock running.",
+    }
+
+
 def _accept_offered_reward_trait(step: dict, *, hwnd: int) -> dict:
     """Confirm offered mastery/reward-trait dialogs. Never Cancel."""
     import ctypes
@@ -132,6 +168,8 @@ def _execute_plan(
     close_console: bool = False,
     session_id: str | None = None,
     idle_ms: int = 15000,
+    verify_skills_panel: bool = False,
+    verify_play_seconds: int | None = None,
 ) -> dict:
     """Mode-agnostic skill force: no F1, no Esc spam — tandem with Build/Live/Buy."""
     if sys.platform != "win32":
@@ -205,8 +243,13 @@ def _execute_plan(
                 send_click(250, 16, between_sec=0.04)
                 time.sleep(0.15)
                 continue
-        if close_console:
+        if close_console or verify_skills_panel:
+            # Console must be closed before speed keys; Esc once only.
             tap_vk(0x1B)
+            time.sleep(0.35)
+        panel_verify = None
+        if verify_skills_panel:
+            panel_verify = _play_brief_observe_repause(play_seconds=verify_play_seconds)
     return {
         "state": "DIY_SKILL_FORCE_DISPATCHED",
         "commands": dispatched,
@@ -219,12 +262,18 @@ def _execute_plan(
         "game_mode": plan.get("game_mode", "unknown"),
         "skills": plan.get("skills"),
         "level": plan.get("level"),
+        "skills_panel_observation": plan.get("skills_panel_observation"),
+        "skills_panel_verify": panel_verify,
         "focus": focus_report,
         "handoff": handoff,
         "session_id": session_id,
         "proof_ceiling": plan.get("proof_ceiling"),
         "not_bi005": True,
-        "next": "Open Skills panel on the selected Sim/Servo; LOCAL_OBSERVED only",
+        "next": (
+            "Skills panel LOCAL_OBSERVED after PLAY_BRIEF_OBSERVE_REPAUSE"
+            if panel_verify
+            else "Dispatch done while paused; panel still UNPROVEN_STALE until play-brief verify"
+        ),
     }
 
 
@@ -256,6 +305,17 @@ def main(argv: list[str] | None = None) -> int:
         "--no-accept-reward-dialogs",
         action="store_true",
         help="Skip Enter/OK accept of offered mastery/reward traits",
+    )
+    lv.add_argument(
+        "--verify-skills-panel",
+        action="store_true",
+        help="After dispatch: play 5–10s @ 1x, then pause (Skills panel refresh)",
+    )
+    lv.add_argument(
+        "--verify-play-seconds",
+        type=int,
+        default=None,
+        help="Bounded play seconds for --verify-skills-panel (5–10)",
     )
     lv.add_argument("--process-id", type=int, default=None)
     lv.add_argument("--session-id", default=None, help="ACTIVE host_listener session for --execute")
@@ -289,6 +349,8 @@ def main(argv: list[str] | None = None) -> int:
                     close_console=bool(args.close_console),
                     session_id=args.session_id,
                     idle_ms=int(args.idle_ms),
+                    verify_skills_panel=bool(args.verify_skills_panel),
+                    verify_play_seconds=args.verify_play_seconds,
                 )
                 result["execute"] = True
 

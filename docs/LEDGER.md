@@ -2,6 +2,10 @@
 
 ## 2026-11-09 — Skill-force trait OK + durable keybd typing (P95 + Trifecta)
 
+**Operator:** Skills panel is stale while paused; keep Live paused during precious-time / unfinished main-goal work, but confirm panel data with a bounded **play 5–10s → observe → re-pause** loop (never leave the clock running). **P95/P124** extend `diy-skill-force` v4 with `PLAY_BRIEF_OBSERVE_REPAUSE` + `KEEP_PAUSED` dispatch default; CLI `--verify-skills-panel`. Consultation `BI-SKILL-FORCE-KEEP-PAUSED-VERIFY-20261109.v1.json`. Not BI-005.
+
+## 2026-11-09 — Skill-force reward-trait OK + keybd_event typing
+
 **Operator:** While leveling Sims all the way, press OK on cool new traits (e.g. Perfectionist-style); ensure host logic is built and durable, not chat-trapped. **P95** extends `diy-skill-force` v3 with `ACCEPT_OFFERED_REWARD_TRAIT` (Enter + OK hotspot; never Cancel) interleaved through full_unlock, and makes `type_text` (keybd_event) the typing owner after KEYEVENTF_UNICODE silent-miss on TS4. Consultation `BI-SKILL-FORCE-TRAIT-ACCEPT-20261109.v1.json`. Not aspiration life-state / invite OK / BI-005.
 
 ## 2026-11-09 — Full skill unlock ladder (extend diy_skill_force)
