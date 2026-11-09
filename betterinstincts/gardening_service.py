@@ -194,6 +194,21 @@ def evaluate_gardening_turn(
             return finish("GARDEN_ACTION_READY", plan["action"])
         if plan["gate"] == "FERTILIZER_VERIFIED_COMPLETE":
             result["goal_state"] = "VERIFIED_COMPLETE"
+        # A cooling-down plant or missing stock must not monopolize the
+        # existing gardening lane. Continue useful CURRENTLY OBSERVED care,
+        # while keeping the unfinished fertilization goal visible. Never
+        # replace an exact player-authored task-continuity resumption.
+        if exact_target is None and plan["gate"] in {
+            "FERTILIZER_WAIT_ELIGIBILITY", "FERTILIZER_SUPPLY_REQUIRED",
+            "INSPECT_TRANSFER_AFFORDANCE", "INSPECT_FERTILIZE_AFFORDANCE",
+        }:
+            for action_id in cfg["fertilizer_workflow"]["fallback_action_order"]:
+                observed = next((row for row in actions if row["action_id"] == action_id), None)
+                if observed is not None:
+                    result["next_actions"] = [observed]
+                    result["goal_state"] = "PENDING"
+                    return finish("GARDEN_ACTION_READY",
+                                  "GARDEN_OTHER_CARE_FERTILIZER_GOAL_PRESERVED")
         return finish("GARDEN_" + plan["gate"], plan["action"], inspections=(
             "SIM_PERSONAL_INVENTORY", "HYDROPONIC_PLANT_AFFORDANCES",
             "CURRENT_GARDENING_QUEUE",
