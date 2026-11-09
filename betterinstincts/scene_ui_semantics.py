@@ -157,3 +157,86 @@ def assess_live_hud(
         resolved["hitbox_attestation_required"] = True
     return {**base, "state": "RIGHT_PANEL_OBSERVED", "gate": "HUD_CONTEXT_READY",
             "active_panel_id": panel_id, "panel": resolved}
+
+
+def enqueue_resolved_overlay_dismiss(
+    queue, *, work_id: str, capture_ref: str, observe,
+    process_id: int, session_id: str, click_screen, move_screen,
+) -> dict:
+    """One admitted click of a *resolved* event overlay's attested close.
+
+    Queue/host validate again immediately before side effect. An unresolved
+    career or random decision has NO generic escape/cancel shortcut.
+    """
+    from betterinstincts.workflow_interop import CooperativeScreenQueue, QueuedStep
+    from betterinstincts.screen_atlas import _native_owner
+    from betterinstincts.camera_traverse import safe_rest_point
+
+    if (not isinstance(queue, CooperativeScreenQueue) or not _token(work_id)
+            or not _token(capture_ref) or type(process_id) is not int or process_id <= 0
+            or not _token(session_id) or not all(callable(x) for x in (
+                observe, click_screen, move_screen,
+            ))):
+        raise SceneUISemanticsError("OVERLAY_NATIVE_PORT_REQUIRED")
+    anchor = {}
+    receipt = {"state": "NOT_DISPATCHED", "overlay_cleared_observed": False,
+               "resume_queued_game_actions": False}
+    async def verified():
+        scene = await observe()
+        if not _native_owner(scene, process_id, session_id):
+            return None
+        plan = assess_live_hud(capture_ref=capture_ref, observation=scene)
+        if plan["gate"] != "OVERLAY_DISMISS_READY":
+            return None
+        o = plan["overlay"]
+        fingerprint = (
+            o["overlay_id"], o["kind"], tuple(o["hitbox"]),
+            o["ui_layout_revision"], tuple(o["client"]),
+            plan["continuation"]["selected_sim_revision"],
+            plan["continuation"]["active_goal_id"],
+        )
+        if anchor and anchor["fingerprint"] != fingerprint:
+            return None
+        if not anchor:
+            anchor["fingerprint"] = fingerprint
+        return plan, scene
+
+    async def validate() -> bool:
+        return await verified() is not None
+
+    async def action(checkpoint) -> None:
+        await checkpoint()
+        proof = await verified()
+        if proof is None:
+            raise SceneUISemanticsError("RESOLVED_OVERLAY_STALE_AT_EFFECT")
+        plan, obs = proof
+        o = plan["overlay"]
+        origin = (obs["client_origin_x"], obs["client_origin_y"])
+        try:
+            await click_screen(origin[0]+o["client"][0], origin[1]+o["client"][1])
+            receipt["state"] = "OVERLAY_DISMISS_DISPATCHED_UNVERIFIED"
+        finally:
+            await checkpoint()
+            after = await observe()
+            if (not _native_owner(after, process_id, session_id)
+                    or (after["client_origin_x"], after["client_origin_y"]) != origin):
+                raise SceneUISemanticsError("OVERLAY_CURSOR_REST_INTERRUPTED")
+            rest = safe_rest_point(
+                client_width=o["client_width"], client_height=o["client_height"],
+                origin_x=origin[0], origin_y=origin[1],
+            )
+            await move_screen(*rest["screen"])
+            # Fresh overlay absence is a necessary, not sufficient, condition
+            # for resuming old actions; every queued action revalidates itself.
+            receipt["overlay_cleared_observed"] = (
+                after.get("source") == "HOST_CAPTURE"
+                and after.get("overlay") is None
+                and after.get("active_sim_id") == plan["continuation"]["selected_sim_id"]
+                and after.get("selected_sim_revision") == plan["continuation"]["selected_sim_revision"]
+            )
+            if receipt["overlay_cleared_observed"]:
+                receipt["state"] = "OVERLAY_CLEARED_QUEUE_REVALIDATION_REQUIRED"
+    queue.enqueue(QueuedStep(work_id=work_id, validate=validate, action=action))
+    return {"state": "QUEUED_RESOLVED_OVERLAY_DISMISS",
+            "work_id": work_id, "receipt": receipt, "execute_allowed": False,
+            "proof_ceiling": PROOF}
