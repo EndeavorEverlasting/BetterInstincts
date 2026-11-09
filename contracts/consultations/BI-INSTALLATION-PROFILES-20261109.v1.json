@@ -1,0 +1,82 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-INSTALLATION-PROFILES-20261109",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "eda1b4664714ca21a3caa659e40cbd6061ac36c8",
+  "proposed_capability": "P141 selected instance-local profiles and typed preference registry over duplicating gameplay Sim or compatibility profiles; P95 prototype config -> effective profile -> explicit setting -> persisted readback; P124 isolate settings ownership from installer, Sim identity, UI and execution gates. Trifecta P82/P07 offline prototype and merge, P08 local UI/game proof pending.",
+  "affected_concepts": [
+    "HOST_SESSION",
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "CONTROL_PERMIT",
+    "OBSERVATION",
+    "PROOF_RECEIPT",
+    "GAME_BUILD",
+    "SIM",
+    "SAVE_SLOT",
+    "LEARNING_MODEL"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "contracts/player-presence.v1.json",
+    "contracts/host-listener.v1.json",
+    "betterinstincts/sim_profile.py",
+    "bootstrap.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "UNIT_AND_CI_VERIFIED_CONFIGURATION_NOT_DESKTOP_OR_GAME_FEATURE_CERTIFICATION",
+  "player_save_control_impact": "No installation side effects, raw input/screen collection, save/game mutation, autostart or permission escalation. Settings remain local, user-controlled, and never override player presence, scene, save safety or 15-second idle gates.",
+  "expected_outcome": "Versioned per-installation profile store with explicit active-profile selection, typed registered toggles, create/list/show/set/reset commands, read-only effective defaults, corruption/schema fail-closed behavior, safe bounded persistence and optional local settings UI. Profile data lives outside installer managed files.",
+  "negative_tests": [
+    "Read-only inspection never writes files",
+    "Profile changes isolate one profile and persist across processes",
+    "Invalid keys/types/IDs are rejected",
+    "Symlink/malformed/oversized/stale schema are rejected without overwriting",
+    "Interrupted write retains last known good file",
+    "Uninstall preserves preferences independently",
+    "Default settings grant no screen or game input authority",
+    "No real Sims gameplay proof claimed"
+  ],
+  "rollback_path": "Revert feature PR. User-owned settings.v1.json remains untouched; uninstall keeps settings independent; new module no game hooks.",
+  "unresolved_unknowns": [
+    "Operator choice of eventual game-specific toggles and real Windows desktop UI remains local P08 evidence",
+    "Actual host adapter enforcement beyond explicit preview settings requires independent code and local game admission"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-INSTALLATION-PROFILES-20261109.v1.json",
+    "contracts/installation-profiles.v1.json",
+    "betterinstincts/installation_profiles.py",
+    "scripts/instance_settings.py",
+    "tests/test_installation_profiles.py",
+    "docs/INSTALLATION_PROFILES.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "bootstrap.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
+  "source_main_sha": "a9c3718fa502350b16ab2ba592af98c9106917e1"
+}
