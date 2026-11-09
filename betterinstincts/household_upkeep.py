@@ -6,26 +6,47 @@ daemon, move assets or certify in-game outcomes.
 """
 from __future__ import annotations
 
+import json
 import math
 import time
+from pathlib import Path
 from collections.abc import Mapping
 
 from betterinstincts.queue_capacity import QueueCapacityError, evaluate_queue_capacity
 
 SCHEMA = "betterinstincts.household-upkeep/v1"
+CONTRACT = Path(__file__).resolve().parents[1] / "contracts/household-upkeep.v1.json"
 MAX_SERVOS = 16
 MAX_ACTORS = 16
 MAX_ACTIONS = 64
 MAX_CAPTURE_AGE_SECONDS = 180
 SERVO_NEEDS = frozenset({"durability", "charge", "fun", "social"})
 ACTIONS = {"TUNE_UP_SERVO", "REPAIR_SERVO", "RECHARGE_SERVO",
-           "SERVO_SELF_TUNE_UP", "PAY_BILLS"}
+           "SERVO_SELF_TUNE_UP", "SOCIALIZE_SERVO", "SERVO_FUN_ACTIVITY", "PAY_BILLS"}
 ATTEMPTS = {"NONE", "QUEUED", "DISPATCHED"}
 BILL_STATES = {"UNPAID", "PAID", "NOT_DUE", "UNKNOWN"}
 
 
 class HouseholdUpkeepError(ValueError):
     pass
+
+
+def load_contract() -> dict:
+    if CONTRACT.is_symlink() or not CONTRACT.is_file() or CONTRACT.stat().st_size > 32_000:
+        raise HouseholdUpkeepError("UPKEEP_CONTRACT_UNSAFE")
+    cfg = json.loads(CONTRACT.read_text(encoding="utf-8"))
+    if cfg.get("schema") != "betterinstincts.household-upkeep-policy/v1":
+        raise HouseholdUpkeepError("UPKEEP_CONTRACT_SCHEMA_INVALID")
+    thresholds = cfg.get("servo_thresholds") or {}
+    names = ("durability_critical", "durability_watch", "charge_critical",
+             "charge_watch", "fun_watch", "social_watch")
+    if any(not _num(thresholds.get(k), upper=1) for k in names):
+        raise HouseholdUpkeepError("UPKEEP_THRESHOLDS_INVALID")
+    if not thresholds["durability_critical"] < thresholds["durability_watch"]:
+        raise HouseholdUpkeepError("UPKEEP_DURABILITY_THRESHOLDS_INVALID")
+    if not thresholds["charge_critical"] < thresholds["charge_watch"]:
+        raise HouseholdUpkeepError("UPKEEP_CHARGE_THRESHOLDS_INVALID")
+    return cfg
 
 
 def _ref(v: object) -> bool:
@@ -148,10 +169,12 @@ def evaluate_household_upkeep(
     )):
         raise HouseholdUpkeepError("UPKEEP_CALL_INVALID")
     servos, actors, actions, bill = _validate(observation)
+    cfg = load_contract()
+    levels = cfg["servo_thresholds"]
     instant = time.time() if now is None else now
     stamp = observation.get("observed_at_unix")
     fresh = (_num(instant) and _num(stamp) and
-             0 <= instant - stamp <= MAX_CAPTURE_AGE_SECONDS and
+             0 <= instant - stamp <= cfg["bounds"]["max_capture_age_seconds"] and
              observation.get("capture_ref") == capture_ref and
              observation.get("household_verified") is True and
              observation.get("queue_verified") is True and
@@ -166,6 +189,7 @@ def evaluate_household_upkeep(
         "bill_health": None,
         "next_actions": [],
         "candidate_count": 0,
+        "next_monitor_seconds": cfg["bounds"]["next_observation_recommendation_seconds"],
         "dispatch_authorized": False,
         "cancel_allowed": False,
         "proof_ceiling": "OFFLINE_SERVO_BILLS_PLAN_NOT_GAME_QUEUE_OR_PAYMENT",
@@ -187,9 +211,9 @@ def evaluate_household_upkeep(
         if servo["needs_verified"]:
             if servo["broken"]:
                 health["health"] = "BROKEN"
-            elif vals["durability"] <= .20 or vals["charge"] <= .15:
+            elif vals["durability"] <= levels["durability_critical"] or vals["charge"] <= levels["charge_critical"] or vals["fun"] <= levels["fun_watch"] or vals["social"] <= levels["social_watch"]:
                 health["health"] = "CRITICAL"
-            elif vals["durability"] <= .50 or vals["charge"] <= .35:
+            elif vals["durability"] <= levels["durability_watch"] or vals["charge"] <= levels["charge_watch"]:
                 health["health"] = "WATCH"
             else:
                 health["health"] = "STABLE"
@@ -201,16 +225,22 @@ def evaluate_household_upkeep(
             if servo.get("maintenance_attempt", "NONE") == "NONE":
                 candidates.append(dict(rank=0, action_id="REPAIR_SERVO",
                                        target_ref=target, kind="SERVO_REPAIR"))
-        elif vals["durability"] <= .50:
+        elif vals["durability"] <= levels["durability_watch"]:
             if servo.get("maintenance_attempt", "NONE") == "NONE":
-                candidates.append(dict(rank=1 if vals["durability"] <= .20 else 5,
+                candidates.append(dict(rank=1 if vals["durability"] <= levels["durability_critical"] else 5,
                                        action_id="TUNE_UP_SERVO",
                                        target_ref=target, kind="SERVO_TUNE_UP"))
-        if vals["charge"] <= .35 and not servo["broken"]:
+        if vals["charge"] <= levels["charge_watch"] and not servo["broken"]:
             if servo.get("charge_attempt", "NONE") == "NONE":
-                candidates.append(dict(rank=2 if vals["charge"] <= .15 else 6,
+                candidates.append(dict(rank=2 if vals["charge"] <= levels["charge_critical"] else 6,
                                        action_id="RECHARGE_SERVO",
                                        target_ref=target, kind="SERVO_RECHARGE"))
+        if vals["social"] <= levels["social_watch"]:
+            candidates.append(dict(rank=9, action_id="SOCIALIZE_SERVO",
+                                   target_ref=target, kind="SERVO_SOCIAL"))
+        if vals["fun"] <= levels["fun_watch"]:
+            candidates.append(dict(rank=10, action_id="SERVO_FUN_ACTIVITY",
+                                   target_ref=target, kind="SERVO_FUN"))
     if bill is not None:
         state, attempt = bill["state"], bill.get("attempt", "NONE")
         amount, funds, due = bill.get("amount"), bill.get("household_funds"), bill.get("due_in_sim_hours")
@@ -226,7 +256,7 @@ def evaluate_household_upkeep(
         if (bill["bill_verified"] and state == "UNPAID"
                 and attempt == "NONE" and _num(amount) and amount > 0
                 and _num(funds) and funds >= amount
-                and due is not None and due <= 72
+                and due is not None and due <= cfg["bill_policy"]["pre_due_window_sim_hours"]
                 and observation.get("bill_payment_authorized") is True):
             candidates.append(dict(
                 rank=0 if due <= -24 else 3 if due <= 0 else 7,
@@ -266,9 +296,9 @@ def evaluate_household_upkeep(
             if (not actor["available"] or actor["player_reserved"]
                     or actor["urgent_needs"]):
                 continue
-            if proposal["action_id"] in {"TUNE_UP_SERVO", "REPAIR_SERVO"} and actor["kind"] != "HUMAN":
+            if proposal["action_id"] in {"TUNE_UP_SERVO", "REPAIR_SERVO", "SOCIALIZE_SERVO", "PAY_BILLS"} and actor["kind"] != "HUMAN":
                 continue
-            if proposal["action_id"] == "RECHARGE_SERVO" and (
+            if proposal["action_id"] in {"RECHARGE_SERVO", "SERVO_FUN_ACTIVITY"} and (
                 actor["kind"] != "SERVO" or actor["sim_ref"] != proposal["target_ref"]
             ):
                 continue
