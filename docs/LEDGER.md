@@ -1,5 +1,16 @@
 # Canonical project ledger
 
+## 2026-11-09 — P83 independently hardened async input and reversible uninstall
+
+**Inherited claims tested:** PR #86 15s idle, shared cooperative lock, queued Playwright and safe installer; PR #88 clickable install/uninstall. Offline CI was green but did **not** prove unique Git work survival or cross-worktree lock location. The earlier default remained overrideable to 1s, and cleanup only checked the Git working tree.
+
+**Corrective slice:** P83 `Agent Work Verifier & Iterative Advancer` (Moonwake catalog owner `repository-work-ledger-prompts.v1.json`, source `e1d571b5490a68292c1953dd7b1ecf6ee28fe96c`). New consultation `contracts/consultations/BI-INTEROP-P83-SAFETY-20261109.v1.json` predates mutations. Input admission now enforces a **hard >=15,000ms minimum**, resolves one profile-scoped desktop lock independently of checkout/worktree and lazily fails closed when path state is unavailable. Installer-created checkout deletion requires exact initial Git HEAD, branch, refs, reflogs, config and custom hooks/info unchanged, plus a clean tracked/untracked/ignored working tree. Legacy manifests, pre-existing repositories and modified/unpublished work are preserved; active/stale lock files block uninstall before partial removal. Only empty app-owned runtime lock paths are cleaned.
+
+**P83 review repair:** after an initially green suite, independent review found old 8-second defaults in `scripts/host_listener.py` and `scripts/host_automate.py`, a lock-check-to-delete race, and the possibility of deleting a checkout that owns detached linked worktrees. Both CLIs now import `DEFAULT_IDLE_MS=15000`; uninstall reserves the same exclusive desktop lock through deletion and refuses any extra linked worktree. Isolated real Git tests and CLI call-through tests enforce each fix. The earlier import-time path-resolution review issue was also corrected by a lazy lock resolver. The contract now states those protections explicitly.
+
+**Evidence:** deterministic unit and isolated real local Git test fixtures, complete GitHub CI and ontology chronology; keep mainline/CI checks distinct from real Windows/Linux desktop installation, cross-agent browser control, local Sims P08 and BI-002 hunger certification. The user does not need to coordinate routine repository integration. Exact follow-up source/limitations in `docs/ASYNC_INTEROP.md`.
+
+
 ## 2026-11-09 — Explicit-click desktop bootstrap UI (P92)
 
 Repository main page `bootstrap.py` now defaults to an opt-in local Tkinter window with Inspect paths, Install and Uninstall buttons; the uninstall action requires explicit confirmation and reuses the same manifest/checkout safety gates as the CLI. Opening the window or denying confirmation changes nothing. This is a local Python GUI (not a GitHub web execution privilege), with CLI fallback if Tkinter is unavailable. New consultation `BI-BOOTSTRAP-GUI-P92-20261109.v1.json`; offline unit tests cover command routing and cancel. Live workstation click/install proof remains open.

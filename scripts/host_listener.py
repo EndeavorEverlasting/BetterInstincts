@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from betterinstincts.control_handoff import DEFAULT_IDLE_MS
 from betterinstincts.player_presence import PresenceProbe, probe_windows
 from betterinstincts.host_listener import (
     HostListenerError,
@@ -37,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     tk = sub.add_parser("tick")
     tk.add_argument("--session-id", required=True)
     tk.add_argument("--process-id", type=int, default=None, help="Win32 presence probe, no input hooks")
-    tk.add_argument("--idle-ms", type=int, default=8000)
+    tk.add_argument("--idle-ms", type=int, default=DEFAULT_IDLE_MS)
     tk.add_argument("--declared-playing", action="store_true")
     tk.add_argument("--learning-model", type=Path, help="Explicit aggregate model under dist/judgment-learning")
     tk.add_argument("--learning-query", type=Path, help="Explicit sanitized query under dist/judgment-learning")

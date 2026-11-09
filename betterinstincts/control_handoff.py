@@ -12,9 +12,10 @@ import os
 import time
 
 from betterinstincts.player_presence import PresenceProbe
+from bootstrap import BootstrapError, DESKTOP_LOCK_FILENAME, paths as workstation_paths
 
 DEFAULT_IDLE_MS = 15000
-MIN_IDLE_MS = 1000
+MIN_IDLE_MS = 15000
 MAX_IDLE_MS = 120000
 CONFIRM_INTERVAL_SEC = 0.20
 
@@ -113,21 +114,36 @@ def as_presence(handoff: dict) -> dict:
     }
 
 
-ROOT = Path(__file__).resolve().parents[1]
-LOCK_ROOT = ROOT / "dist" / "host-listener"
+# Optional test/host override. The normal workstation path is resolved lazily,
+# so the pure presence policy can still be imported without an installation.
+LOCK_ROOT: Path | None = None
+
+
+def canonical_lock_root() -> Path:
+    """One profile-owned lock location across all development worktrees/clones."""
+    try:
+        return workstation_paths()["locks"]
+    except BootstrapError as exc:
+        raise HandoffError("SCREEN_LOCK_PROFILE_UNRESOLVED") from exc
 
 
 def _lock_dir(lock_root: Path | None = None) -> Path:
-    root = Path(lock_root) if lock_root is not None else LOCK_ROOT
-    if root.is_symlink():
+    candidate = lock_root if lock_root is not None else LOCK_ROOT
+    root = Path(candidate) if candidate is not None else canonical_lock_root()
+    if root.is_symlink() or (root.exists() and not root.is_dir()):
         raise HandoffError("SCREEN_LOCK_ROOT_UNSAFE")
+    if root.exists() and os.name != "nt":
+        info = root.stat()
+        if info.st_uid != os.getuid() or (info.st_mode & 0o077):
+            raise HandoffError("SCREEN_LOCK_ROOT_UNSAFE")
     return root
 
 
 @contextmanager
 def _named_screen_lock(filename: str, *, lock_root: Path | None = None) -> Iterator[None]:
     root = _lock_dir(lock_root)
-    root.mkdir(parents=True, exist_ok=True)
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    _lock_dir(root)  # Recheck ownership/mode after creating the shared directory.
     lock = root / filename
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
     if hasattr(os, "O_NOFOLLOW"):
@@ -156,12 +172,12 @@ def exclusive_desktop_owner(*, lock_root: Path | None = None) -> Iterator[None]:
 
     Stale/foreign locks fail closed. No age expiry or automatic lock theft.
     """
-    with _named_screen_lock("desktop-shared.lock", lock_root=lock_root):
+    with _named_screen_lock(DESKTOP_LOCK_FILENAME, lock_root=lock_root):
         yield
 
 
 def desktop_owner_busy(*, lock_root: Path | None = None) -> bool:
-    lock = _lock_dir(lock_root) / "desktop-shared.lock"
+    lock = _lock_dir(lock_root) / DESKTOP_LOCK_FILENAME
     return lock.exists() or lock.is_symlink()
 
 

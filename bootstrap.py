@@ -9,6 +9,7 @@ pristine canonical checkout created by this bootstrapper.
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -23,6 +24,7 @@ ALLOWED_ORIGINS = {REPOSITORY, "git@github.com:EndeavorEverlasting/BetterInstinc
 SCHEMA = "betterinstincts.install-manifest/v1"
 LAUNCHER_HEADER = "# BetterInstincts managed launcher"
 MANIFEST = "install-manifest.json"
+DESKTOP_LOCK_FILENAME = "desktop-shared.lock"
 
 
 class BootstrapError(ValueError):
@@ -51,7 +53,8 @@ def paths(*, home: Path | None = None, platform: str | None = None,
         use = root / "betterinstincts" / "app"
     else:
         raise BootstrapError("UNSUPPORTED_OS")
-    return {"development": dev, "use": use, "worktrees": worktrees}
+    return {"development": dev, "use": use, "worktrees": worktrees,
+            "locks": use.parent / "runtime" / "locks"}
 
 
 def _run(*args: str, cwd: Path | None = None) -> str:
@@ -78,6 +81,143 @@ def _pristine(checkout: Path) -> bool:
 
 def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+
+def _git_auxiliary_sha256(git_dir: Path) -> str:
+    """Guard user hooks, info/exclude and other Git-private custom files.
+
+    Object packs/refs/reflogs/index/config have separate provenance checks.
+    Reject symlinked custom Git files; never follow them during deletion proof.
+    """
+    ignored = {
+        "objects", "refs", "logs", "index", "packed-refs",
+        "FETCH_HEAD", "ORIG_HEAD", "HEAD", "config",
+    }
+    digest = hashlib.sha256()
+    for child in sorted(git_dir.iterdir(), key=lambda p: p.name):
+        if child.name in ignored:
+            continue
+        nodes = [child]
+        if child.is_dir() and not child.is_symlink():
+            nodes.extend(sorted(child.rglob("*"), key=lambda p: p.as_posix()))
+        for node in nodes:
+            if node.is_symlink():
+                raise BootstrapError("CLONE_GIT_AUXILIARY_SYMLINK_UNSAFE")
+            name = node.relative_to(git_dir).as_posix()
+            digest.update(name.encode("utf-8") + b"\\0")
+            if node.is_file():
+                with node.open("rb") as stream:
+                    for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                        digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _clone_signature(checkout: Path) -> dict[str, str]:
+    """Identity of installer-created checkout, including independent Git work.
+
+    Status --porcelain alone misses clean local commits, branches and stashes.
+    Store this immediately after clone, and require exact equality at removal.
+    A later fetch or local Git metadata change safely prevents auto-removal.
+    """
+    git_dir = checkout / ".git"
+    config = git_dir / "config"
+    if git_dir.is_symlink() or not git_dir.is_dir() or config.is_symlink() or not config.is_file():
+        raise BootstrapError("CLONE_GIT_IDENTITY_UNSAFE")
+    return {
+        "head": _run("git", "rev-parse", "--verify", "HEAD", cwd=checkout),
+        "branch": _run("git", "symbolic-ref", "--quiet", "--short", "HEAD", cwd=checkout),
+        "refs_sha256": _sha(_run("git", "show-ref", "--head", cwd=checkout)),
+        "reflog_sha256": _sha(_run(
+            "git", "reflog", "show", "--all", "--format=%H %gD", cwd=checkout
+        )),
+        "git_config_sha256": hashlib.sha256(config.read_bytes()).hexdigest(),
+        "git_auxiliary_sha256": _git_auxiliary_sha256(git_dir),
+        "worktrees_sha256": _sha(_run("git", "worktree", "list", "--porcelain", cwd=checkout)),
+    }
+
+
+def _clone_still_original(checkout: Path, signature: object) -> bool:
+    """Legacy manifests and unverifiable copies are NEVER deletion grants."""
+    if not isinstance(signature, dict) or set(signature) != {
+        "head", "branch", "refs_sha256", "reflog_sha256", "git_config_sha256",
+        "git_auxiliary_sha256", "worktrees_sha256"
+    } or not all(isinstance(value, str) and value for value in signature.values()):
+        return False
+    try:
+        return _clone_signature(checkout) == signature
+    except (BootstrapError, OSError, subprocess.CalledProcessError):
+        return False
+
+
+def _sole_linked_worktree(checkout: Path) -> bool:
+    """Never remove main Git metadata while another linked worktree uses it."""
+    try:
+        rows = _run("git", "worktree", "list", "--porcelain", cwd=checkout)
+        return sum(line.startswith("worktree ") for line in rows.splitlines()) == 1
+    except (OSError, subprocess.CalledProcessError):
+        return False
+
+
+@contextmanager
+def _exclusive_uninstall_lease(location: dict[str, Path]):
+    """Reserve the very same desktop lock as every cooperating UI executor.
+
+    Check-then-delete without an O_EXCL reservation races a newly started
+    Playwright or Sims host. Hold this lock through checkout removal.
+    """
+    _check_runtime_locks(location)
+    root = location["locks"]
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    _check_runtime_locks(location)
+    if os.name != "nt":
+        info = root.stat()
+        if info.st_uid != os.getuid() or (info.st_mode & 0o077):
+            raise BootstrapError("RUNTIME_LOCK_ROOT_UNSAFE")
+    lock = root / DESKTOP_LOCK_FILENAME
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        fd = os.open(lock, flags, 0o600)
+    except FileExistsError as exc:
+        raise BootstrapError("RUNTIME_LOCK_BUSY_OR_STALE_PRESERVE") from exc
+    try:
+        inode = os.fstat(fd).st_ino
+        yield
+    finally:
+        try:
+            os.close(fd)
+        finally:
+            try:
+                if lock.is_file() and not lock.is_symlink() and lock.stat().st_ino == inode:
+                    lock.unlink()
+            except OSError:
+                pass
+
+
+def _check_runtime_locks(location: dict[str, Path]) -> None:
+    """Refuse uninstall while a cooperating host still owns desktop control."""
+    lock = location["locks"]
+    for directory in (location["use"].parent, lock.parent, lock):
+        if directory.is_symlink() or (directory.exists() and not directory.is_dir()):
+            raise BootstrapError("RUNTIME_LOCK_PATH_UNSAFE")
+    if lock.is_dir() and any(lock.iterdir()):
+        raise BootstrapError("RUNTIME_LOCK_BUSY_OR_STALE_PRESERVE")
+
+
+def _prune_empty_runtime_paths(location: dict[str, Path]) -> str:
+    """Remove only empty BetterInstincts runtime dirs; never unlink lockfiles."""
+    for directory in (location["locks"], location["locks"].parent, location["use"].parent):
+        if directory.is_symlink():
+            raise BootstrapError("RUNTIME_LOCK_PATH_UNSAFE")
+        if directory.is_dir():
+            try:
+                directory.rmdir()
+            except OSError:
+                return "RUNTIME_PATH_NONEMPTY_PRESERVED"
+    return "EMPTY_RUNTIME_PATHS_REMOVED"
+
 
 
 def _launcher(checkout: Path, *, platform: str) -> tuple[str, str]:
@@ -133,15 +273,18 @@ def install(location: dict[str, Path], *, platform: str | None = None) -> dict:
     if use.exists() and any(use.iterdir()):
         raise BootstrapError("NONEMPTY_UNOWNED_INSTALL_DIRECTORY")
     created = False
+    created_dev_parent = False
     if dev.exists():
         if not _origin_ok(dev):
             raise BootstrapError("CANONICAL_CHECKOUT_CONFLICT_PRESERVE")
     else:
+        created_dev_parent = not dev.parent.exists()
         dev.parent.mkdir(parents=True, exist_ok=True)
         _run("git", "clone", "--", REPOSITORY, str(dev))
         created = True
         if not _origin_ok(dev):
             raise BootstrapError("CLONE_ORIGIN_UNVERIFIED")
+    signature = _clone_signature(dev) if created else None
     launcher_name, content = _launcher(dev, platform=platform)
     use.mkdir(parents=True, exist_ok=True)
     target = use / launcher_name
@@ -153,7 +296,8 @@ def install(location: dict[str, Path], *, platform: str | None = None) -> dict:
     data = {
         "schema": SCHEMA, "repository": REPOSITORY, "checkout": str(dev),
         "use": str(use), "launcher": launcher_name, "launcher_sha256": _sha(content),
-        "created_checkout": created, "profile": platform,
+        "created_checkout": created, "created_dev_parent": created_dev_parent,
+        "profile": platform, "clone_signature": signature,
     }
     (use / MANIFEST).write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     return {"state": "INSTALLED", "checkout": str(dev), "use": str(use),
@@ -165,25 +309,46 @@ def uninstall(location: dict[str, Path], *, platform: str | None = None) -> dict
     dev, use = location["development"], location["use"]
     existing = _validated_manifest(use, dev, platform)
     if existing is None:
-        return {"state": "NOT_INSTALLED", "checkout": str(dev)}
+        _check_runtime_locks(location)
+        cleanup = _prune_empty_runtime_paths(location)
+        return {"state": "NOT_INSTALLED", "checkout": str(dev), "runtime_cleanup": cleanup}
     manifest_file, data = existing
     target = use / data["launcher"]
     if target.is_symlink() or not target.is_file() or _sha(target.read_text(encoding="utf-8")) != data["launcher_sha256"]:
         raise BootstrapError("LAUNCHER_CHANGED_PRESERVE")
-    # First validate the exact managed files; avoid partial cleanup on extras.
     if {p.name for p in use.iterdir()} != {MANIFEST, data["launcher"]}:
         raise BootstrapError("UNOWNED_INSTALL_FILES_PRESERVE")
-    can_remove_clone = data["created_checkout"] and _pristine(dev)
-    target.unlink()
-    manifest_file.unlink()
-    use.rmdir()
-    if can_remove_clone:
-        # This is an exact canonical checkout created by THIS installer, and
-        # pristine including ignored/untracked data; never delete another clone.
-        shutil.rmtree(dev)
+
+    # Reservation is acquired atomically against all participating agents.
+    # The entire destructive section runs while new screen actions are denied.
+    with _exclusive_uninstall_lease(location):
+        can_remove_clone = bool(
+            data["created_checkout"] and _pristine(dev)
+            and _sole_linked_worktree(dev)
+            and _clone_still_original(dev, data.get("clone_signature"))
+        )
+        target.unlink()
+        manifest_file.unlink()
+        use.rmdir()
+        dev_parent_removed = False
+        if can_remove_clone:
+            shutil.rmtree(dev)
+            if data.get("created_dev_parent") is True and not dev.parent.is_symlink():
+                try:
+                    dev.parent.rmdir()
+                    dev_parent_removed = True
+                except OSError:
+                    pass
+
+    # Release our lease before removing its now-empty runtime directory.
+    # A new agent's intervening lock makes rmdir fail rather than erase it.
+    cleanup = _prune_empty_runtime_paths(location)
     return {"state": "UNINSTALLED", "managed_files_removed": 2,
-            "checkout_removed": can_remove_clone,
-            "checkout_preserved_reason": None if can_remove_clone else "PREEXISTING_OR_MODIFIED_CHECKOUT"}
+            "checkout_removed": can_remove_clone, "dev_parent_removed": dev_parent_removed,
+            "runtime_cleanup": cleanup,
+            "checkout_preserved_reason": None if can_remove_clone else
+            ("PREEXISTING_CHECKOUT" if not data["created_checkout"] else
+             "MODIFIED_OR_UNVERIFIED_GIT_HISTORY")}
 
 
 

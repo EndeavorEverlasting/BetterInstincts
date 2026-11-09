@@ -114,7 +114,7 @@ class BuildFloorActivityTests(unittest.TestCase):
                     ],
                 },
                 presence_probe=probe,
-                idle_ms=1000,
+                idle_ms=15000,
             )
             fa = receipt["build_floor_activity"]
             self.assertEqual(fa["activity_span"], "MULTI_FLOOR")

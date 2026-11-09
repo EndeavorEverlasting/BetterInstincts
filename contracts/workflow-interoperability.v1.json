@@ -20,7 +20,7 @@
   "priority": "Human input in any app, explicit operator override, or player-directed queue always blocks; absent/stale probe blocks; idle alone never overrides app-specific scene/save/consent or locks.",
   "interruption": "Do not cancel a queued task; no new UI effects until two fresh trusted idle probes >=15s. An active callback must cooperatively checkpoint between side effects. A result after human interruption requires reconciliation to avoid blind replay.",
   "persistence": "While caller session/process lives only; receipts contain IDs and states, never entered text or arbitrary URL; process restart requires rehydrating and revalidating intent. No background service installed.",
-  "lock": "Global desktop file lock shared with per-Sims-PID host executors under ignored dist/host-listener; stale locks fail closed, never auto-stolen.",
+  "lock": "Global desktop file lock shared with per-Sims-PID host executors at bootstrap.paths().locks under the canonical user profile, independent of development checkout/worktree. Existing locks fail closed and are never auto-stolen.",
   "forbidden": [
     "CANCEL_WORK_ON_HUMAN_INPUT",
     "BACKGROUND_KEYLOGGER",
@@ -32,5 +32,6 @@
     "START_DAEMON_OR_CRON",
     "PLAYWRIGHT_BYPASS_OF_CHECKPOINT"
   ],
-  "evidence_ceiling": "OFFLINE_COOPERATIVE_ADAPTER_NOT_LIVE_DESKTOP_OR_GAME_CERT"
+  "evidence_ceiling": "OFFLINE_COOPERATIVE_ADAPTER_NOT_LIVE_DESKTOP_OR_GAME_CERT",
+  "idle_ms_minimum": 15000
 }

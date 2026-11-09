@@ -51,5 +51,6 @@
     "global_input_age_trustworthy"
   ],
   "handoff_contract": "contracts/control-handoff.v1.json",
-  "evidence_note": "Foreground/cursor location informs display; only observed global input age and explicit player intent arbitrate screen control. Idle does not imply trusted scene/save."
+  "evidence_note": "Foreground/cursor location informs display; only observed global input age and explicit player intent arbitrate screen control. Idle does not imply trusted scene/save. No override below 15 seconds is valid.",
+  "grace_ms_minimum": 15000
 }
