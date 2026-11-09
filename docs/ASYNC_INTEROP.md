@@ -94,3 +94,8 @@ No unsafe forced directory removal, no deletion of user saves, mods, local exper
 - **P08 live certification remains OPEN:** on the actual Windows host, verify inactive and actively typing humans, agent Playwright and game executors, 15-second resumption, no focus theft, process restart behavior, clean install/uninstall, and production/use launcher readback. BI-002 live hunger remains independent.
 
 **Proof dimensions:** remote main integration; canonical development checkout current; production/use path installed; real launcher observed; browser/game action observed are separate fields. Do not infer one from another. Existing `host_tandem` and any unmodified Playwright instance are not universally covered merely because this protocol exists.
+
+
+## 2026-11-09 — screen atlas and camera-safe game pointer
+
+The bounded screen-action extension is [SCREEN_ATLAS.md](SCREEN_ATLAS.md), `contracts/screen-atlas.v1.json` and `betterinstincts/screen_atlas.py`. It **composes**, not replaces, the existing `ui_chrome` target map, `scenes`, `camera_traverse.safe_rest_point`, hidden-object console glossary and this cooperative queue. Use `python -m scripts.screen_atlas inventory` to inspect available screen/action names. Exact-build target calibration, independent scene cues, an already-owned Playwright-hosted game page and fresh 15s idle are mandatory before a click. A second admitted effect parks the cursor in the interior; after human interruption, no cursor fight or blind replay. Native Sims Win32 integration and observed no-pan game proof remain P08/local-agent work. Do not assume that Playwright automatically sees a native Sims game.
