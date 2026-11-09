@@ -1,0 +1,254 @@
+{
+  "schema": "betterinstincts.p04-local-runtime-handoff/v1",
+  "id": "BI-HOUSEHOLD-SKILL-LOCAL-P04-20261109",
+  "intent": "Safely install current BetterInstincts offline toolkit into its canonical local Windows checkout and obtain real disposable-save P08 household-skill proof without expanding the household or entering online features.",
+  "source": {
+    "repository": "EndeavorEverlasting/BetterInstincts",
+    "default_branch": "main",
+    "minimum_required_ancestor_sha": "5ebe8f74f6869556d947c964aa1392e92fa10259",
+    "prior_pr": 146,
+    "provider_verified_at": "2026-11-09",
+    "freshness_rule": "Re-fetch actual origin/main immediately before local work; do not treat minimum ancestor as current HEAD."
+  },
+  "handoff": "docs/handoff/BI-HOUSEHOLD-SKILL-LOCAL-P04-2026-11-09.md",
+  "status": "PREPARED_IN_GITHUB_NOT_LAUNCHED_ON_WINDOWS",
+  "runtime_partition": {
+    "host": "LOCAL_AGENT_RUNTIME",
+    "provider_routes": [
+      "GITHUB_ORIGIN"
+    ],
+    "launch_placement": "Existing local Cursor agent in canonical BetterInstincts workspace; no remote provider claims desktop execution.",
+    "parallel_execution": "NOT_APPLICABLE_SINGLE_SCREEN_OWNER_AND_STRICT_DEPENDENCIES"
+  },
+  "canonical_paths": {
+    "windows_development": "%USERPROFILE%/dev/BetterInstincts",
+    "windows_use": "%LOCALAPPDATA%/BetterInstincts/app",
+    "windows_worktrees": "%USERPROFILE%/dev/.worktrees/BetterInstincts",
+    "canonical_owner": "contracts/workstation-paths.v1.json",
+    "avoid_secondary_clones": true
+  },
+  "launch_order": [
+    "LOCAL-00-FLOOR",
+    "LOCAL-01-INSTALL",
+    "LOCAL-02-GAME-PREFLIGHT",
+    "LOCAL-03-OBSERVER-SAFETY",
+    "LOCAL-04-P08-CANARY",
+    "LOCAL-05-P08-REGRESSION",
+    "LOCAL-06-CONVERGE"
+  ],
+  "lanes": [
+    {
+      "lane_id": "LOCAL-00-FLOOR",
+      "wave": 0,
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "status": "READY_WHEN_LOCAL_AGENT_ATTACHED",
+      "dependencies": [],
+      "owner": "existing local Cursor agent",
+      "mutation_scope": "READ_ONLY_GIT_AND_PATH_INSPECTION",
+      "forbidden": [
+        "git reset --hard",
+        "git clean -fdx",
+        "overwriting dirty work",
+        "second clone"
+      ],
+      "read_first": [
+        "AGENTS.md",
+        "docs/ONTOLOGY.md",
+        "docs/DOCTRINE.md",
+        "docs/HOUSEHOLD_JUDGMENT.md",
+        "contracts/workstation-paths.v1.json"
+      ],
+      "launch_action": "Inspect canonical checkout, git status/branches/worktrees/remote HEAD and installer manifest; git fetch origin --prune; ff-only when clean/tracking main, otherwise isolate without rewriting; verify main contains minimum ancestor.",
+      "receipt": "dist/game-host/household-skill-cert/local-floor.json",
+      "proof_ceiling": "LOCAL_CHECKOUT_AND_PROVIDER_READBACK",
+      "gate": "VERIFIED_CANONICAL_CURRENT_CHECKOUT"
+    },
+    {
+      "lane_id": "LOCAL-01-INSTALL",
+      "wave": 1,
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "status": "BLOCKED_ON_LOCAL-00",
+      "dependencies": [
+        "LOCAL-00-FLOOR"
+      ],
+      "owner": "existing local Cursor agent",
+      "mutation_scope": "ONLY_BOOTSTRAP_MANAGED_USE_PATH",
+      "forbidden": [
+        "Mods folder edits",
+        "saves edits",
+        "global services/cron",
+        "overwriting installed launcher",
+        "silently moving checkout"
+      ],
+      "read_first": [
+        "bootstrap.py",
+        "docs/ASYNC_INTEROP.md",
+        "contracts/workstation-paths.v1.json"
+      ],
+      "launch_action": "From verified current canonical checkout, python bootstrap.py doctor; inspect output; python bootstrap.py install only after safety preflight; python bootstrap.py doctor and manifest/launcher readback, record canonical HEAD separately from use path.",
+      "receipt": "dist/game-host/household-skill-cert/install.json",
+      "proof_ceiling": "LOCAL_TOOLKIT_INSTALL_NOT_GAME_MOD_NOT_LIVE_CERT",
+      "gate": "MANAGED_LAUNCHER_READBACK_AND_CANONICAL_SHA"
+    },
+    {
+      "lane_id": "LOCAL-02-GAME-PREFLIGHT",
+      "wave": 2,
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "status": "BLOCKED_ON_LOCAL-01",
+      "dependencies": [
+        "LOCAL-01-INSTALL"
+      ],
+      "owner": "game-capable local agent",
+      "mutation_scope": "READ_ONLY_GAME_OBSERVATION",
+      "forbidden": [
+        "protected or unknown saves",
+        "EA Connect/Gallery/Store",
+        "create Sim/Servo",
+        "Buy/Build/room changes"
+      ],
+      "read_first": [
+        "docs/LIVE_CERT.md",
+        "docs/SCENE_INTELLIGENCE.md",
+        "docs/HOUSEHOLD_JUDGMENT.md",
+        "docs/COMPATIBILITY.md"
+      ],
+      "launch_action": "Observe exact game patch, active PID, viewport, modal/mode, 2 independent scene cues; classify disposable save; confirm opt-in host_listener, offline install, no concurrent input owner, fixed ordered original portrait roster; capture Skills baseline.",
+      "receipt": "dist/game-host/household-skill-cert/game-preflight.json",
+      "proof_ceiling": "LIVE_PREFLIGHT_OBSERVATION_NOT_SKILL_PASS",
+      "gate": "DISPOSABLE_SAVE_AND_PORTRAIT_ROSTER_ATTESTED"
+    },
+    {
+      "lane_id": "LOCAL-03-OBSERVER-SAFETY",
+      "wave": 3,
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "status": "BLOCKED_ON_LOCAL-02",
+      "dependencies": [
+        "LOCAL-02-GAME-PREFLIGHT"
+      ],
+      "owner": "game-capable local agent",
+      "mutation_scope": "BOUNDED_LOCAL_OBSERVER_ADAPTER_TESTS_IF_NEEDED",
+      "forbidden": [
+        "blind bulk --execute",
+        "parallel Playwright/Win32 screen mutation",
+        "fake roster provenance",
+        "stale ledger being counted as panel proof"
+      ],
+      "read_first": [
+        "scripts/diy_skill_force.py",
+        "betterinstincts/screen_admit.py",
+        "betterinstincts/player_presence.py",
+        "betterinstincts/household_judgment.py",
+        "tests/test_diy_skill_force.py"
+      ],
+      "launch_action": "Inspect whether current host actually reobserves selected portrait and roster before EACH cell (per-cell live roster and selection recapture) and yields before EACH input. Current remote code does not prove that; implement bounded fail-closed adapter under ontology consultation and run focused offline regression before allowing bulk. Do not declare gate PASS just from CLI --roster-key flags.",
+      "receipt": "dist/game-host/household-skill-cert/observer-safety.json",
+      "proof_ceiling": "LOCAL_ADAPTER_TESTS_AND_GAME_INPUT_ADMISSION_GATE",
+      "gate": "FRESH_PER_CELL_PORTRAIT_AND_PRESENCE_GATE"
+    },
+    {
+      "lane_id": "LOCAL-04-P08-CANARY",
+      "wave": 4,
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "status": "BLOCKED_ON_LOCAL-03",
+      "dependencies": [
+        "LOCAL-03-OBSERVER-SAFETY"
+      ],
+      "owner": "single local game-input agent",
+      "mutation_scope": "ONLY_DISPOSABLE_LAB_SKILL_CANARY",
+      "forbidden": [
+        "full household bulk before canary",
+        "add Sims/Servos",
+        "save overwrite",
+        "online dialogs",
+        "unbounded waits"
+      ],
+      "read_first": [
+        "docs/DIY_SKILL_FORCE.md",
+        "docs/HOUSEHOLD_JUDGMENT.md",
+        "contracts/diy-skill-force.v1.json"
+      ],
+      "launch_action": "Capture before-state then use bounded approved Handiness canary on first original portrait; verify selected identity, dispatch only one skill cell; after brief 1x play/repause inspect actual Skills panel; if N>=2, test Space to next portrait and verify identity and panel state before next cell. No blind repeat, stale coordinates, or re-opened cheat console.",
+      "receipt": "dist/game-host/household-skill-cert/p08-canary.json",
+      "proof_ceiling": "LOCAL_OBSERVED_ONLY_IF_REAL_SCREEN_AND_RESULT_CAPTURED",
+      "gate": "HANDINESS_10_OBSERVED_FOR_ORIGINAL_PORTRAIT_AND_SPACE_CONTROL"
+    },
+    {
+      "lane_id": "LOCAL-05-P08-REGRESSION",
+      "wave": 5,
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "status": "BLOCKED_ON_LOCAL-04",
+      "dependencies": [
+        "LOCAL-04-P08-CANARY"
+      ],
+      "owner": "single local game-input agent",
+      "mutation_scope": "BOUNDED_LAB_SKILLS_ONLY",
+      "forbidden": [
+        "protected saves",
+        "network",
+        "household expansion",
+        "parallel input writers"
+      ],
+      "read_first": [
+        "docs/ASYNC_INTEROP.md",
+        "docs/DOCTRINE.md",
+        "docs/HOUSEHOLD_JUDGMENT.md"
+      ],
+      "launch_action": "Prove player interrupts are respected, console closes before Space, roster membership/order unchanged, camera-edge safe rest, offline menu blocked; only expand from observed one-skill canary to N×skills using repeated live per-cell observation with exact proof receipts. Do not mark DISPATCHED as PANEL_OBSERVED_MAX.",
+      "receipt": "dist/game-host/household-skill-cert/p08-regressions.json",
+      "proof_ceiling": "EXACT_GAME_BUILD_REVIEW_REQUIRED",
+      "gate": "NEW_BEHAVIOR_AND_PROTECTED_CONTROL_OBSERVED"
+    },
+    {
+      "lane_id": "LOCAL-06-CONVERGE",
+      "wave": 6,
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "status": "BLOCKED_ON_LOCAL-05",
+      "dependencies": [
+        "LOCAL-05-P08-REGRESSION"
+      ],
+      "owner": "local agent / GitHub provider",
+      "mutation_scope": "SANITIZED_REPOSITORY_RECEIPTS_ONLY",
+      "forbidden": [
+        "raw Sims screenshots committed",
+        "private paths/identities",
+        "unapproved accounts/settings changes",
+        "unrelated issue closure"
+      ],
+      "read_first": [
+        "docs/LEDGER.md",
+        "docs/PROMPT_INVOCATIONS.md",
+        "docs/LIVE_CERT.md"
+      ],
+      "launch_action": "Preserve raw captures under ignored dist only; write sanitized exact-version evidence to proper tracked ledger, test/repair changed code, open PR and merge only after required checks; report CHANGED|PROVED|NEXT for install, code, game, and activation independently.",
+      "receipt": "dist/game-host/household-skill-cert/convergence.json",
+      "proof_ceiling": "ONLY_OBSERVED_AND_REVIEWED_PER_CLAIM",
+      "gate": "VERIFIED_LOCAL_INSTALL_AND_REVIEWED_LIVE_PROOF"
+    }
+  ],
+  "global_invariants": [
+    "NO_GMAIL_OR_CONTACTS",
+    "PLAYER_FIRST",
+    "DISPOSABLE_SAVE_ONLY",
+    "OFFLINE_SIMS_ONLY",
+    "NO_NEW_HOUSEHOLD_MEMBERS",
+    "NO_PARALLEL_GAME_INPUT",
+    "NO_DETACHED_SKILL_WORKER",
+    "NO_AUTO_MOD_INSTALL",
+    "NO_UNAPPROVED_CURSOR_USER_RULE_CHANGES",
+    "NO_GAME_PASS_FROM_CHEAT_TEXT",
+    "NO_SHADOW_WORKTREE_OR_DESTRUCTIVE_RESET"
+  ],
+  "proof_dimensions": [
+    "remote_main",
+    "local_checkout",
+    "local_managed_install",
+    "local_entrypoint",
+    "game_build_and_scene",
+    "skill_input_dispatched",
+    "skills_panel_level_10_observed",
+    "player_control_regression",
+    "repo_merge"
+  ],
+  "artifacts_are_local_private": "All raw screenshots, physical paths, save names, Sims identities and PID-specific logs remain in ignored dist; sanitized tracked proof only.",
+  "next_external_gate": "Attach local game-capable agent to existing canonical Windows BetterInstincts checkout; launch LOCAL-00. Current GitHub provider cannot access Windows screen or local filesystem."
+}

@@ -388,7 +388,7 @@ class DiySkillForceTests(unittest.TestCase):
                 omit_skill_ids=sorted(done),
                 game_mode="live",
             )
-            self.assertEqual(already["state"], "SKILL_FORCE_MEMBER_ALREADY_MAXED")
+            self.assertEqual(already["state"], "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED")
             self.assertTrue(already["skip_dispatch"])
             self.assertEqual(already["skills"], [])
 
@@ -443,7 +443,7 @@ class DiySkillForceTests(unittest.TestCase):
                 game_mode="live",
             )
             self.assertEqual(
-                hh_done["state"], "HOUSEHOLD_SKILL_FORCE_ALL_MEMBERS_ALREADY_MAXED"
+                hh_done["state"], "HOUSEHOLD_SKILL_FORCE_NO_PENDING_DISPATCH_UNVERIFIED"
             )
             self.assertEqual(hh_done["members_needing_work"], 0)
 
@@ -503,6 +503,81 @@ class DiySkillForceTests(unittest.TestCase):
             rc = executor.main(["household", "--members", "2", "--execute", "--detach"])
         self.assertEqual(rc, 2)
         self.assertIn("DETACHED_HOUSEHOLD_UI_UNSAFE", out.getvalue())
+
+    def test_single_skipped_member_no_longer_claims_max_or_moves_cursor(self):
+        from unittest.mock import patch
+        from scripts import diy_skill_force as executor
+
+        plan = plan_skill_force(
+            bundle="servo_core",
+            omit_skill_ids=["handiness", "robotics", "programming"],
+        )
+        self.assertEqual(
+            plan["state"], "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED"
+        )
+        self.assertTrue(plan["skip_dispatch"])
+        with patch.object(executor.sys, "platform", "win32"), \
+             patch.object(executor, "_park_safe_cursor_rest") as park:
+            result = executor._execute_plan(plan, process_id=None)
+        park.assert_not_called()
+        self.assertTrue(result["skipped"])
+        self.assertEqual(result["state"], "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED")
+        self.assertEqual(result["safe_cursor_rest"], "UNCHANGED_NO_INPUT")
+        self.assertIn("LOCAL_OBSERVED", result["pass_claim"])
+
+    def test_dispatched_ledger_never_proves_panel_max_and_all_skip_sends_no_input(self):
+        """P83: DISPATCHED means typed, not live Skills-panel verification."""
+        from unittest.mock import patch
+        from scripts import diy_skill_force as executor
+
+        ledger = empty_completion_ledger()
+        members = ["sim:original-a", "servo:original-b"]
+        for index, label in enumerate(members):
+            record_skill_dispatched(
+                ledger,
+                member_key=completion_member_key("session-p83", index, label),
+                skill_id="handiness",
+                skill_stat="Major_Handiness",
+                level=10,
+            )
+        plan = plan_household_skill_force(
+            members=2, skill_ids=["handiness"],
+            session_id="session-p83",
+            member_keys=members,
+            completion_ledger=ledger,
+        )
+        self.assertEqual(plan["cells_needing_work"], 0)
+        self.assertFalse(plan["max_level_verified_by_ledger"])
+        self.assertEqual(plan["state"], "HOUSEHOLD_SKILL_FORCE_NO_PENDING_DISPATCH_UNVERIFIED")
+        self.assertEqual(plan["next_gate"], "REVIEW_SKILLS_PANEL_BEFORE_MAX_CLAIM")
+
+        with patch.object(executor, "_execute_plan") as execute, \
+             patch.object(executor, "_select_next_household_member") as select, \
+             patch.object(executor, "_park_safe_cursor_rest") as park:
+            result = executor._execute_household(
+                plan, process_id=None, session_id="session-p83",
+                roster_keys=members, first_portrait_attested=True,
+            )
+        execute.assert_not_called()
+        select.assert_not_called()
+        park.assert_not_called()
+        self.assertEqual(result["state"], "HOUSEHOLD_SKILL_FORCE_NO_PENDING_DISPATCH_UNVERIFIED")
+        self.assertEqual(result["safe_cursor_rest"], "UNCHANGED_NO_INPUT")
+        self.assertEqual(result["cells_dispatched"], 0)
+        self.assertIn("LOCAL_OBSERVED", result["pass_claim"])
+
+    def test_ledger_skip_can_be_redone_without_claiming_panel_pass(self):
+        ledger = empty_completion_ledger()
+        member = completion_member_key("redo", 0, "original")
+        record_skill_dispatched(ledger, member_key=member, skill_id="handiness",
+                                skill_stat="Major_Handiness", level=10)
+        plan = plan_household_skill_force(
+            members=1, skill_ids=["handiness"], session_id="redo",
+            member_keys=["original"], completion_ledger=ledger, redo=True,
+        )
+        self.assertEqual(plan["state"], "HOUSEHOLD_SKILL_FORCE_PLAN_READY")
+        self.assertEqual(plan["cells_needing_work"], 1)
+        self.assertFalse(plan["max_level_verified_by_ledger"])
 
 
 if __name__ == "__main__":

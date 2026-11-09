@@ -468,7 +468,7 @@ def plan_skill_force(
     )
     if not skills:
         return {
-            "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
+            "state": "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED",
             "next_gate": "SELECT_NEXT_HOUSEHOLD_SIM_IF_ANY",
             "bundle": bundle,
             "level": target,
@@ -481,7 +481,7 @@ def plan_skill_force(
             "execute_allowed": False,
             "proof_ceiling": cfg["proof_ceiling"],
             "not_bi005": True,
-            "note": "Completion ledger shows all requested skills already at target; Space to next needing Sim.",
+            "note": "Completion ledger shows dispatched commands only, not panel-proved levels; review before PASS.",
         }
 
     template = str(seq["skill_command_template"])
@@ -729,7 +729,7 @@ def plan_household_skill_force(
             already = sid in completed_by_member[index]
             if already:
                 unit_plan = {
-                    "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
+                    "state": "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED",
                     "skip_dispatch": True,
                     "skills": [],
                     "level": target,
@@ -777,7 +777,7 @@ def plan_household_skill_force(
                 "select": None if index == 0 else dict(select_step),
                 "plan": {
                     "state": (
-                        "SKILL_FORCE_MEMBER_ALREADY_MAXED"
+                        "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED"
                         if skip
                         else "DIY_SKILL_FORCE_PLAN_READY"
                     ),
@@ -796,21 +796,24 @@ def plan_household_skill_force(
             }
         )
 
+    # DISPATCHED is a console-typing receipt, never Skills-panel max proof.
+    # Do not return an invented already-maxed observation from ledger skips.
     state = (
-        "HOUSEHOLD_SKILL_FORCE_ALL_MEMBERS_ALREADY_MAXED"
+        "HOUSEHOLD_SKILL_FORCE_NO_PENDING_DISPATCH_UNVERIFIED"
         if cells_needing == 0
         else "HOUSEHOLD_SKILL_FORCE_PLAN_READY"
     )
     return {
         "state": state,
         "next_gate": (
-            "NONE_ALL_MEMBERS_COMPLETE"
+            "REVIEW_SKILLS_PANEL_BEFORE_MAX_CLAIM"
             if cells_needing == 0
             else "EXECUTE_HOUSEHOLD_SKILL_FORCE"
         ),
         "household_members": count,
         "members_needing_work": members_needing,
         "cells_needing_work": cells_needing,
+        "max_level_verified_by_ledger": False,
         "dispatch_order": "skill_round_robin",
         "dispatch_units": units,
         "household_traverse": {

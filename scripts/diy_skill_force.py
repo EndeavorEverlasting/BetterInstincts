@@ -279,15 +279,15 @@ def _execute_plan(
     """Mode-agnostic skill force: no F1, no Esc spam — tandem with Build/Live/Buy."""
     if sys.platform != "win32":
         raise GateError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
-    if plan.get("skip_dispatch") or plan.get("state") == "SKILL_FORCE_MEMBER_ALREADY_MAXED":
+    if plan.get("skip_dispatch") or plan.get("state") == "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED":
         return {
-            "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
+            "state": "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED",
             "skipped": True,
             "member_key": member_key,
             "member_index": member_index,
             "skipped_skill_ids": list(plan.get("skipped_skill_ids") or []),
             "commands": [],
-            "safe_cursor_rest": _park_safe_cursor_rest(),
+            "safe_cursor_rest": "UNCHANGED_NO_INPUT",
             "proof_ceiling": plan.get("proof_ceiling"),
             "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
             "note": "Completion ledger: nothing left to type for this member",
@@ -573,6 +573,28 @@ def _execute_household(
                     }
                 )
 
+    # A completed dispatch ledger is not a Skills-panel certificate. Critically,
+    # when every cell is skipped, do NOT send Space, open the console, or move
+    # the pointer just to produce a misleading `already maxed` result.
+    if (
+        not redo
+        and household_plan.get("state") == "HOUSEHOLD_SKILL_FORCE_NO_PENDING_DISPATCH_UNVERIFIED"
+        and all(bool(u.get("skip_dispatch")) for u in units)
+    ):
+        return {
+            "state": "HOUSEHOLD_SKILL_FORCE_NO_PENDING_DISPATCH_UNVERIFIED",
+            "dispatch_order": "skill_round_robin",
+            "household_members": count,
+            "cells_dispatched": 0,
+            "cells_skipped_ledger_only": len(units),
+            "members_dispatched": 0,
+            "safe_cursor_rest": "UNCHANGED_NO_INPUT",
+            "completion_ledger": str(ledger_path),
+            "proof_ceiling": household_plan.get("proof_ceiling"),
+            "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
+            "next_gate": "REVIEW_SKILLS_PANEL_OR_REDO_IN_DISPOSABLE_LAB",
+        }
+
     cell_results: list[dict] = []
     dispatched_cells = 0
     skipped_cells = 0
@@ -624,9 +646,9 @@ def _execute_household(
                     "skill_id": skill_id,
                     "select": select_report,
                     "skipped": True,
-                    "reason": "SKILL_ALREADY_MAXED_FOR_MEMBER",
+                    "reason": "LEDGER_DISPATCH_RECORDED_NOT_PANEL_VERIFIED",
                     "live": {
-                        "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
+                        "state": "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED",
                         "commands": [],
                     },
                 }
@@ -641,7 +663,7 @@ def _execute_household(
             accept_reward_dialogs=household_plan.get("accept_reward_dialogs"),
         )
         if live_plan.get("skip_dispatch") or live_plan.get("state") == (
-            "SKILL_FORCE_MEMBER_ALREADY_MAXED"
+            "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED"
         ):
             skipped_cells += 1
             cell_results.append(
@@ -653,7 +675,7 @@ def _execute_household(
                     "skipped": True,
                     "reason": "SKILL_ALREADY_MAXED_FOR_MEMBER",
                     "live": {
-                        "state": "SKILL_FORCE_MEMBER_ALREADY_MAXED",
+                        "state": "SKILL_FORCE_MEMBER_NO_PENDING_DISPATCH_UNVERIFIED",
                         "commands": [],
                     },
                 }
@@ -698,7 +720,7 @@ def _execute_household(
             }
         )
     state = (
-        "HOUSEHOLD_SKILL_FORCE_ALL_MEMBERS_ALREADY_MAXED"
+        "HOUSEHOLD_SKILL_FORCE_NO_PENDING_DISPATCH_UNVERIFIED"
         if dispatched_cells == 0
         else "HOUSEHOLD_SKILL_FORCE_DISPATCHED"
     )

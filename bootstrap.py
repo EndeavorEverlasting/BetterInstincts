@@ -457,26 +457,32 @@ def _gui() -> int:
 
 
 def household_skills_recipe(*, members: str = "N") -> dict[str, object]:
-    """Durable opt-in lab skill bootstrap — never autorun on install/gui open."""
+    """Read-only skill-round-robin recipe; never imply game certification."""
     return {
         "state": "HOUSEHOLD_SKILLS_BOOTSTRAP_RECIPE",
         "dispatch_order": "skill_round_robin",
+        "proof_ceiling": "PLAN_ONLY_NOT_LOCAL_GAME_PROOF",
         "note": (
-            "Observe Live portrait count N, then max skills fairly: one skill for "
-            "every household member, then the next skill, until level 10. Never "
-            "autorun from install/doctor/gui open. The execution requires a fixed observed portrait roster and a single foreground input owner; online features and household expansion are forbidden."
+            "Inspect existing canonical checkout and update by safe fast-forward "
+            "before local install. Observe the original Live roster N. The default "
+            "recipe is plan-only; do not issue --execute or --detach from bootstrap. "
+            "P08 requires a disposable game save, exact patch, verified selected "
+            "portrait, offline-only operation and Skills-panel observation. "
+            "Adding Sims/Servos, EA Connect/Gallery/Store, unsafe saves and "
+            "concurrent game-input agents are forbidden."
         ),
-        "owner": "contracts/diy-skill-force.v1.json",
+        "owner": "docs/handoff/BI-HOUSEHOLD-SKILL-LOCAL-P04-2026-11-09.md",
         "cli": (
             "python -m scripts.diy_skill_force household --members "
             + str(members)
-            + " --bundle full_unlock --execute --roster-key PORTRAIT_ID ... --first-portrait-attested --process-id PID --session-id ID"
+            + " --skill handiness"
         ),
         "bootstrap_forward": (
             "python bootstrap.py household-skills -- --members "
             + str(members)
-            + " --bundle full_unlock --execute --roster-key PORTRAIT_ID ... --first-portrait-attested --process-id PID --session-id ID"
+            + " --skill handiness"
         ),
+        "next_gate": "P04_LOCAL_AGENT_PREFLIGHT_THEN_P08_DISPOSABLE_LIVE_CANARY",
     }
 
 
