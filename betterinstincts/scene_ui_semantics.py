@@ -10,6 +10,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from betterinstincts.decision_eval import score_option, SAFE_TAGS, RISK_TAGS
+from betterinstincts.chance_event_research import assess as assess_chance_event, ChanceEventError
 from betterinstincts.ui_microsystems import (
     load_contract as load_ui_contract, resolve_action, panel_observation_matches,
     UIMicrosystemError,
@@ -111,6 +112,8 @@ def assess_live_hud(
     *, capture_ref: str, observation: Mapping[str, Any] | None,
     requested_panel: str | None = None, requested_target: str | None = None,
     needs: Mapping[str, float] | None = None,
+    chance_event_observation: Mapping[str, Any] | None = None,
+    chance_event_memo: Mapping[str, Any] | None = None,
 ) -> dict:
     """Evaluate overlay before panel actions, preserve pending goal/queue refs."""
     base = {"execute_allowed": False, "proof_ceiling": PROOF, "capture_ref": capture_ref,
@@ -152,6 +155,19 @@ def assess_live_hud(
                 )):
             return hold("OVERLAY_REOBSERVE", "OVERLAY_IDENTITY_UNVERIFIED")
         overlay_id = overlay["overlay_id"]
+        # Reuse the current chance-event memoization owner, not a second
+        # research/certification engine. Unknown options remain player-first.
+        research = None
+        if chance_event_observation is not None:
+            if (not isinstance(chance_event_observation, Mapping)
+                    or chance_event_observation.get("capture_ref") != capture_ref):
+                return hold("OVERLAY_REOBSERVE", "CHANCE_EVENT_CAPTURE_MISMATCH")
+            try:
+                research = assess_chance_event(
+                    chance_event_observation, memo=chance_event_memo,
+                )
+            except (ChanceEventError, TypeError, ValueError):
+                return hold("OVERLAY_REOBSERVE", "CHANCE_EVENT_RESEARCH_UNVERIFIED")
         if overlay.get("decision_state") != "RESOLVED":
             advice = _score_observed_overlay_choices(
                 overlay, capture_ref=capture_ref, needs=needs,
@@ -163,6 +179,7 @@ def assess_live_hud(
             return {**base, "state": "OVERLAY_DECISION_PENDING", "gate": "OVERLAY_DECISION_REQUIRED",
                     "overlay": {"overlay_id": overlay_id, "kind": overlay["kind"],
                                 "decision_owner": "EXISTING_EVENT_OR_CAREER_MICROSYSTEM",
+                                "chance_event_research": research,
                                 "choice_advisory": advice, "dismiss_action": None},
                     "next": "EVALUATE_DECISION_THEN_REOBSERVE;DO_NOT_CANCEL_PLAYER_QUEUE"}
         if overlay.get("decision_accepted") is not True:
@@ -321,8 +338,9 @@ def enqueue_resolved_overlay_dismiss(
 def enqueue_native_overlay_choice(
     queue, *, work_id: str, capture_ref: str, observe,
     process_id: int, session_id: str, click_screen, move_screen,
+    player_choice_approval: Mapping[str, Any] | None = None,
 ) -> dict:
-    """One recommended, freshly corroborated choice; never guess a popup option.
+    """One player-approved, freshly corroborated choice; never guess a popup option.
 
     The local host must explicitly permit choice automation for this event.
     Revalidates selected Sim, event, layout, options and ranking immediately
@@ -347,14 +365,33 @@ def enqueue_native_overlay_choice(
             return None
         ui = assess_live_hud(
             capture_ref=capture_ref, observation=obs, needs=obs.get("needs"),
+            chance_event_observation=obs.get("chance_event_observation"),
+            chance_event_memo=obs.get("chance_event_memo"),
         )
         if ui["gate"] != "OVERLAY_DECISION_REQUIRED":
             return None
         overlay = obs.get("overlay")
-        if not isinstance(overlay, Mapping) or overlay.get("auto_choice_authorized") is not True:
-            return None
         advice = ui["overlay"]["choice_advisory"]
-        if advice["state"] != "OVERLAY_CHOICE_RECOMMENDED":
+        # Chance-event companion currently retains PLAYER_ONLY input authority.
+        # Even a strong heuristic recommendation is not authorization.
+        if (not isinstance(overlay, Mapping) or not isinstance(player_choice_approval, Mapping)
+                or player_choice_approval.get("source") != "PLAYER_CHOICE_APPROVAL"
+                or player_choice_approval.get("approved") is not True
+                or player_choice_approval.get("capture_ref") != capture_ref
+                or player_choice_approval.get("overlay_id") != overlay.get("overlay_id")
+                or player_choice_approval.get("selected_sim_id") != obs.get("active_sim_id")
+                or player_choice_approval.get("ui_layout_revision") != obs.get("ui_layout_revision")
+                or advice["state"] != "OVERLAY_CHOICE_RECOMMENDED"
+                or player_choice_approval.get("option_id") != advice["recommended_option_id"]
+                or not _token(player_choice_approval.get("approval_ref"))):
+            return None
+        # When the richer chance-event identity is available, respect its
+        # exact-patch reviewed-memo gate and the player's chosen option.
+        research = ui["overlay"].get("chance_event_research")
+        if research is not None and (
+            research.get("state") != "READY_FOR_PLAYER"
+            or research.get("recommended_option_id") != advice["recommended_option_id"]
+        ):
             return None
         fingerprint = (
             overlay["overlay_id"], advice["recommended_option_id"],
