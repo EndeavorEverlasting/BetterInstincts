@@ -695,6 +695,25 @@ def assess_drift_recovery(
             recovery_step={"kind": "SAFE_REST", "client": rest["client"]},
             next_step="CAPTURE_NEW_FRAME_AFTER_CURSOR_REST",
         )
+    # Freeze simulation time *after* safely moving the cursor off the edge.
+    # Pause does not freeze the camera, so the existing reanchor and target
+    # revision checks remain necessary after the fresh paused capture.
+    time_pause = None
+    if mode == "LIVE":
+        time_pause = assess_game_pause(
+            capture_ref=capture_ref, observation=observation, cfg=cfg,
+        )
+        if time_pause["paused_verified"] is not True:
+            return hold(
+                time_pause["gate"],
+                "PAUSE_BEFORE_LIVE_CAMERA_OR_PIXEL_TARGET",
+                recovery_step={
+                    "kind": "PAUSE_GAME_IF_PLAYING",
+                    "chord": time_pause.get("key"),
+                } if time_pause["gate"] == "GAME_PAUSE_REQUIRED" else None,
+                game_pause=time_pause,
+                next_step="RECAPTURE_AND_VERIFY_PAUSED_SCENE",
+            )
     if displaced:
         if attempts >= max_attempts:
             return hold("CAMERA_RECOVERY_MANUAL_REVIEW", "REANCHOR_BUDGET_EXHAUSTED")
@@ -730,6 +749,7 @@ def assess_drift_recovery(
             "reason": "INTERIOR_CURSOR_AND_STABLE_CAMERA",
             "invalidate_prior_pixels": False,
             "camera_revision": revision,
+            "game_pause": time_pause,
         }
     if not isinstance(world_target_observation, Mapping):
         return hold("CAMERA_RECOVERY_REOBSERVE", "WORLD_TARGET_CAPTURE_MISSING")
@@ -754,5 +774,7 @@ def assess_drift_recovery(
         "world_click_ready": True,
         "invalidate_prior_pixels": False,
         "camera_revision": revision,
+        "game_pause": time_pause,
+        "clock_revision": time_pause["clock_revision"] if time_pause else None,
         "target_framing": framed,
     }
