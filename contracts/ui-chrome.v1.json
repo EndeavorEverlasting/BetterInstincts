@@ -192,10 +192,25 @@
       "display_name": "A-OK-Bloomer Vertical Garden",
       "search_term": "AOK",
       "search_term_note": "Operator-preferred keyword; do not prefer a-ok or bloomer as primary",
+      "synonyms": [
+        "wall shelf",
+        "wall_shelf",
+        "wallshelf",
+        "vertical garden",
+        "vertical_garden",
+        "a-ok",
+        "a ok",
+        "aok bloomer",
+        "bloomer",
+        "meat wall planter",
+        "cruelty free meat planter"
+      ],
+      "synonym_note": "Operator coveted-item language: wall shelf means this Bloomer — never invent a separate wall-shelf catalog product",
       "pack": "Eco Lifestyle",
       "recipe": "catalog_to_household_inventory",
       "why": "Civil Designer L5 unlocks Grow Cruelty-Free Meat on this planter; item itself is ordinary Buy/Build catalog purchase into Household Inventory",
       "curious_catalog_id": "vertical_garden",
+      "household_object_force_related": "cruelty_free_meat_wall",
       "funds_delta_simoleons": 365
     }
   },

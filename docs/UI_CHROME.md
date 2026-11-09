@@ -32,15 +32,17 @@ Normalized client fractions `[0,1]×[0,1]`, origin top-left, keyed by resolution
 
 ## AOK Bloomer recipe
 
-Preferred catalog search term is **`AOK`** (not `a-ok` / `bloomer` as primary).
+Preferred catalog search term is **`AOK`**. Operator phrases **`wall shelf`**, **`vertical garden`**, and **`bloomer`** are synonyms of `a_ok_bloomer` — never a separate wall-shelf product.
 
 ```sh
+python -m scripts.ui_chrome resolve-item --query "wall shelf"
+python -m scripts.ui_chrome plan --item-id "wall shelf" --mode BUILD --client 1920 1080
 python -m scripts.ui_chrome plan --item-id a_ok_bloomer --mode BUILD --client 1920 1080
 python -m scripts.ui_chrome resolve --mode BUILD --target catalog.search_field --client 1920 1080
 python -m scripts.ui_chrome glossary
 ```
 
-Plan steps: focus search → type `AOK` → Enter → click first result → observe hold → Backspace → open Household Inventory → observe item. `execute_allowed` stays false until P08-calibrated host admission. Forbids lot placement and pocket inventory.
+Plan steps: focus search → type `AOK` (live host may need `a-ok` + Outdoor Activities autocomplete when bare `AOK` returns empty) → select A-OK-Bloomer Vertical Garden → observe hold → Backspace → open Household Inventory → observe item. `execute_allowed` stays false until P08-calibrated host admission. Forbids lot placement and pocket inventory.
 
 Civil Designer L5 unlocks **Grow Cruelty-Free Meat** on this planter; the planter itself is an ordinary Eco Lifestyle catalog purchase (~§365).
 
