@@ -287,8 +287,11 @@ class CameraDriftRecoveryRegressionTests(unittest.TestCase):
         return frame
 
     def sim(self):
-        from tests.test_sim_camera import observed
-        return observed(capture_ref="capture:recover-1", camera_revision="camera:9")
+        return {
+            **self.host(cursor_client=[960, 540]),
+            "active_sim_id": 492, "active_sim_instanced": True,
+            "camera_follow_sim_id": None,
+        }
 
     def assess(self, kind="WORLD_OBJECT", **opts):
         return assess_drift_recovery(
