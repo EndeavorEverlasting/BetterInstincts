@@ -2,7 +2,7 @@
 
 **Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
 **P124:** sibling owner beside `funds_inject` / `household_object_force`; distinct from read-only `sim_profile`
-**Machine owner:** [`contracts/diy-skill-force.v1.json`](../contracts/diy-skill-force.v1.json) (v5)
+**Machine owner:** [`contracts/diy-skill-force.v1.json`](../contracts/diy-skill-force.v1.json) (v10)
 **Evaluator / planner:** `betterinstincts.diy_skill_force`
 **Execute adapter:** `python -m scripts.diy_skill_force`
 **Typing owner:** `scripts.win32_input.type_text` (keybd_event — UNICODE-only is a silent miss on some TS4 hosts)
@@ -11,7 +11,7 @@
 
 - **Subject:** Adult `Major_*` skills on **every** household Sim/Servo (count N → skill-round-robin Space-traverse → dispatch).
 - **Audience:** operators who need activities and unlockables ungated (DIY and beyond), especially after a save reload undoes progression.
-- **Job:** Mode-agnostic cheat planner. Default **`full_unlock`** maxes the adult catalog at level **10** using **skill-round-robin**: one skill for every portrait, then the next skill, until all are 10. Re-applies required residuals **Cooking / Fitness / Natural Living** at the end (unless already recorded complete), confirms offered mastery/reward-trait **OK** dialogs, skips already-complete skill×member cells, and supports **`household --members N --detach`** / **`python bootstrap.py household-skills -- …`** so agents are not blocked for hours. Never autorun from install.
+- **Job:** Mode-agnostic cheat planner. Default **`full_unlock`** maxes the adult catalog at level **10** using **skill-round-robin**: one skill for every portrait, then the next skill, until all are 10. Re-applies required residuals **Cooking / Fitness / Natural Living** at the end (unless already recorded complete), confirms offered mastery/reward-trait **OK** dialogs, skips already-complete skill×member cells, and supports **foreground-only `household --members N --execute --roster-key ... --first-portrait-attested`** / **`python bootstrap.py household-skills -- …`** with an exact, fixed portrait roster. Never autorun from install.
 - **Not:** BI-005 purposeful skill-growth certification; `practice_skill` queueing; an autorun skill daemon; aspiration life-state completion; invite OK; save edits.
 
 ## Bundles
@@ -36,7 +36,7 @@ CLI plan/level (bundle full_unlock | skill ids)
   -> testingcheats enabled true
   -> stats.set_skill_level <Major_*> 10  (× resolved skills)
   -> ACCEPT_OFFERED_REWARD_TRAIT (Enter + OK hotspot; interleaved + final; never Cancel)
-  -> optional Esc
+  -> Ctrl+Shift+C close (never Esc)
   -> KEEP_PAUSED during precious-time dispatch / long idle
   -> PLAY_BRIEF_OBSERVE_REPAUSE (5–10s @ 1x → capture Skills panel → pause again)
 ```
@@ -57,15 +57,21 @@ python -m scripts.diy_skill_force level --bundle diy_maker
 python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID
 python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID --verify-skills-panel --verify-play-seconds 7
 python -m scripts.diy_skill_force household --members 3 --bundle full_unlock
-python -m scripts.diy_skill_force household --members 3 --execute --detach --process-id PID --session-id ID --receipt dist/game-host/household-skill-force-async-receipt.json
+python -m scripts.diy_skill_force household --members 3 --bundle full_unlock --execute --roster-key SIM_A --roster-key SIM_B --roster-key SERVO_C --first-portrait-attested --process-id PID --session-id ID
 python bootstrap.py household-skills
-python bootstrap.py household-skills -- --members 3 --bundle full_unlock --execute --detach --process-id PID --session-id ID
+python bootstrap.py household-skills -- --members 3 --bundle full_unlock --execute --roster-key SIM_A --roster-key SIM_B --roster-key SERVO_C --first-portrait-attested --process-id PID --session-id ID
 ```
 
-**Household (skill-round-robin):** observe Live portrait count → `--members N` where **N is whatever that household is** (not an invented 8/10 ceiling). Dispatch order is **one skill × every portrait, then the next skill** (not all skills on one Sim before Space). Between cells: close console with **Ctrl+Shift+C** (never Esc — opens MENU) then **Space** (`SELECT_NEXT_HOUSEHOLD_SIM`; wraps after the last portrait). Already-complete skill×member cells in the durable completion ledger (`dist/game-host/diy-skill-force-completion.json`) are **skipped** while Space still advances so selection stays aligned. Each typed cheat line is recorded `DISPATCHED` immediately (resume/skip evidence only; **not** Skills-panel PASS). `--redo` ignores the ledger for that run. Bootstrap entry `python bootstrap.py household-skills` prints the recipe; with `-- --members N …` it forwards into the verified checkout — never on install/gui open. `--detach` starts an opt-in worker another agent can poll via receipt. Before admit, the worker **waits for OS input idle ≥15000ms**. Residual ids: `Major_HomestyleCooking`, `Skill_Fitness`, `Skill_NLS`. Missing packs may no-op individual lines.
+**Household (skill-round-robin):** observe Live portrait count → `--members N` where **N is whatever that household is** (not an invented 8/10 ceiling). Dispatch order is **one skill × every portrait, then the next skill** (not all skills on one Sim before Space). Between cells, `_execute_plan(close_console=True)` has **already closed** the console with Ctrl+Shift+C; **never toggle it again** before **Space** (`SELECT_NEXT_HOUSEHOLD_SIM`; wraps after last portrait). The Space action requires a fresh `admitted_screen_lease`; another agent owning the screen must cause deferral, not blind selection. Already-complete skill×member cells in the durable completion ledger (`dist/game-host/diy-skill-force-completion.json`) are **skipped** while Space still advances so selection stays aligned. Each typed cheat line is recorded `DISPATCHED` immediately (resume/skip evidence only; **not** Skills-panel PASS). `--redo` ignores the ledger for that run. Bootstrap entry `python bootstrap.py household-skills` prints the recipe; with `-- --members N …` it forwards into the verified checkout — never on install/gui open. `--detach` is **rejected before launching any subprocess**. The foreground executor waits for trustworthy OS input idle ≥15000ms and rechecks admission. Only one screen-input owner should work on the skill job. `--roster-key` values must be the exact, stable, ordered portrait identities, not invented names; `--first-portrait-attested` is a local host/operator assertion that the initial selected portrait is the first. These arguments are not themselves visual evidence: any roster change or uncertain selection requires stopping and reobserving, never adding a household member. Residual ids: `Major_HomestyleCooking`, `Skill_Fitness`, `Skill_NLS`. Missing packs may no-op individual lines.
 
 ## Proof ceiling
 
 `HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT`
 
 Does not close BI-002 or BI-005. `sim_profile` remains read-only inspection.
+
+## Fifth Gear judgment boundary (2026-11-09)
+
+The original task is **skill across a fixed household**, not `create a Sim`, `create a Servo`, CAS/household merge, Build/Buy, Gallery, Store, EA Connect or any online feature. A separate new objective and independent authorization would be needed to add characters. `contracts/household-judgment.v1.json` + `betterinstincts/household_judgment.py` provide the reusable fail-closed advisory before permitted skill inputs; `betterinstincts/menu_blockers.py` forbids online navigation globally. Existing screen-admission and player-precedence checks are independent and still mandatory.
+
+**Important evidence limit:** the GitHub-hosted planner cannot read real-time Sims portrait IDs. The CLI receives operator/local-agent `--roster-key` attestations and does not itself recapture IDs after each Space. Local Cursor/Win32 adapters must observe the selection and roster for P08 validation. Invariant `fixed N` is guaranteed for planned target slots, **not proven against on-screen changes** until actual runtime observation. A typed cheat and completion ledger `DISPATCHED` are weaker than Skills-panel `LOCAL_OBSERVED` and never certify level 10 by themselves. No other autonomy microservice or player-directed activity is disabled by this task-specific foreground restriction.
