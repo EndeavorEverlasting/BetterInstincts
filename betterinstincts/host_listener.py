@@ -20,6 +20,10 @@ from betterinstincts.sim_camera import command_from_app_hotkey
 from betterinstincts.instincts_host import InstinctsHostError, NeedSnapshot, plan, plan_to_dict
 from betterinstincts.needs_force import NeedsForceError, plan_force
 from betterinstincts.judgment_learning import JudgmentLearningError, recommend as recommend_judgment
+from betterinstincts.behavior_valence import (
+    BehaviorValenceError, MAX_MODEL_BYTES,
+    learn_reviewed, validate_model,
+)
 from betterinstincts.player_presence import PresenceProbe
 from betterinstincts.ui_mode import UIModeError, evaluate_mode
 from betterinstincts.control_handoff import (
@@ -193,6 +197,93 @@ def observe_hover(
         }
     finally:
         lock_path.unlink(missing_ok=True)
+
+
+def observe_behavior_review(
+    session_id: str, reviews: list[Mapping], *,
+    game_version: str, platform: str,
+    explicit_opt_in: bool = False, prior_model: Mapping | None = None,
+) -> dict:
+    """Explicit supervised-learning write, bounded to one active session.
+
+    This is NOT invoked by tick. Reviewed evidence, not passive observations,
+    must drive every update. Persist only aggregates and replay refs.
+    """
+    import os
+    import tempfile
+    if explicit_opt_in is not True:
+        raise HostListenerError("EXPLICIT_BEHAVIOR_REVIEW_OPT_IN_REQUIRED")
+    path = _session_dir(session_id)
+    meta_path = path / "session.json"
+    if meta_path.is_symlink() or not meta_path.is_file():
+        raise HostListenerError("BEHAVIOR_SESSION_NOT_ACTIVE")
+    lock_path = path / ".behavior-model-writer.lock"
+    try:
+        fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError as exc:
+        raise HostListenerError("BEHAVIOR_REVIEW_WRITER_BUSY") from exc
+    try:
+        os.close(fd)
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        if meta.get("state") != "ACTIVE":
+            raise HostListenerError("BEHAVIOR_SESSION_NOT_ACTIVE")
+        state_path = path / "behavior-valence.json"
+        if state_path.is_symlink():
+            raise HostListenerError("BEHAVIOR_MODEL_SYMLINK_FORBIDDEN")
+        if state_path.exists():
+            if prior_model is not None:
+                raise HostListenerError("BEHAVIOR_PRIOR_ALREADY_INITIALIZED")
+            if not state_path.is_file() or state_path.stat().st_size > MAX_MODEL_BYTES:
+                raise HostListenerError("BEHAVIOR_MODEL_FILE_UNSAFE")
+            prior = json.loads(state_path.read_text(encoding="utf-8"))
+        else:
+            prior = prior_model
+        try:
+            model = learn_reviewed(
+                reviews,game_version=game_version,platform=platform,prior=prior)
+        except BehaviorValenceError as exc:
+            raise HostListenerError("BEHAVIOR_REVIEW_INVALID:" + str(exc)) from exc
+        raw = json.dumps(model,sort_keys=True,indent=2) + "\n"
+        if len(raw.encode("utf-8")) > MAX_MODEL_BYTES:
+            raise HostListenerError("BEHAVIOR_MODEL_TOO_LARGE")
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",encoding="utf-8",dir=path,
+                prefix=".behavior-",suffix=".tmp",delete=False,
+            ) as handle:
+                temporary = Path(handle.name)
+                handle.write(raw)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary,state_path)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+        return {
+            "schema":"betterinstincts.behavior-review-receipt/v1",
+            "session_id":session_id,"state":"REVIEWED_MODEL_UPDATED",
+            "model_cells":len(model["counts"]),
+            "reviewed_examples_total":len(model["seen_review_refs"]),
+            "state_path":str(state_path.relative_to(ROOT)),
+            "execute_clicks":False,"control_permit":None,
+        }
+    finally:
+        lock_path.unlink(missing_ok=True)
+
+
+def _session_behavior_model(path: Path) -> dict | None:
+    state_path = path / "behavior-valence.json"
+    if state_path.is_symlink():
+        raise HostListenerError("BEHAVIOR_MODEL_SYMLINK_FORBIDDEN")
+    if not state_path.exists():
+        return None
+    if not state_path.is_file() or state_path.stat().st_size > MAX_MODEL_BYTES:
+        raise HostListenerError("BEHAVIOR_MODEL_FILE_UNSAFE")
+    try:
+        return validate_model(json.loads(state_path.read_text(encoding="utf-8")))
+    except (BehaviorValenceError, ValueError, UnicodeError, TypeError, KeyError) as exc:
+        raise HostListenerError("BEHAVIOR_MODEL_INVALID:" + str(exc)) from exc
 
 
 def _load_observation(raw: Mapping) -> dict:
@@ -566,6 +657,7 @@ def tick(
         receipt["receipt"] = str(tick_path.relative_to(ROOT))
         return receipt
 
+    session_behavior_model = _session_behavior_model(path) if obs.get("autonomy_observation") is not None else None
     try:
         behavior = evaluate_queue(
             obs["needs"],
@@ -638,6 +730,7 @@ def tick(
             gardening=obs["gardening"],
             discovery_hud=obs["discovery_hud"],
             autonomy_observation=obs["autonomy_observation"],
+            behavior_model=session_behavior_model,
             prior_career_state=obs.get("prior_career_state"),
             aspiration_prompt_active=obs.get("aspiration_prompt_active", False),
             aspiration_prompt_id=obs.get("aspiration_prompt_id"),

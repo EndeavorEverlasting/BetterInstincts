@@ -1,0 +1,23 @@
+{
+  "schema": "betterinstincts.whim-pinning/v1",
+  "owner": "betterinstincts/whim_pinning.py",
+  "target_owner": "contracts/ui-microsystems.v1.json#panels.whims",
+  "click_owner": "betterinstincts/screen_atlas.py",
+  "control_owner": "betterinstincts/workflow_interop.py",
+  "target_id": "whims.pin_whim",
+  "input": "MOUSE_ONLY_NO_HOTKEY",
+  "requires": [
+    "CURRENT_SELECTED_SIM",
+    "EXACT_OBSERVED_BENEFICIAL_WHIM",
+    "EXPLICIT_PIN_POLICY_OPT_IN",
+    "FRESH_GAME_BUILD_PROFILE",
+    "ATTTESTED_EXACT_WHIM_HITBOX",
+    "VERIFIED_LIVE_SCENE_AND_TWO_INDEPENDENT_CUES",
+    "SINGLE_QUEUED_NATIVE_CLICK",
+    "PLAYER_IDLE_LEASE",
+    "CHECKPOINT_BEFORE_EFFECT",
+    "REOBSERVE_PIN_STATE_NO_BLIND_RETRY"
+  ],
+  "execute_allowed_by_policy": false,
+  "proof_ceiling": "OFFLINE_CLICK_PORT_NOT_GAME_PIN_SUCCESS"
+}

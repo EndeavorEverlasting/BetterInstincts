@@ -1,0 +1,60 @@
+{
+  "schema": "betterinstincts.behavior-valence/v1",
+  "owner": "betterinstincts/behavior_valence.py",
+  "peer_owner": "betterinstincts/judgment_learning.py",
+  "version": 1,
+  "training": "OPERATOR_REVIEWED_OPT_IN_INCREMENTAL_SUPERVISED",
+  "classifier": "CONTEXTUAL_BETA_BINOMIAL_COUNTS",
+  "kind": [
+    "QUEUE",
+    "WHIM"
+  ],
+  "labels": [
+    "POSITIVE",
+    "NEGATIVE",
+    "NEUTRAL",
+    "UNKNOWN"
+  ],
+  "context": [
+    "survival",
+    "work",
+    "social",
+    "leisure",
+    "other"
+  ],
+  "model_advice_only": true,
+  "require_exact_patch_platform": true,
+  "limits": {
+    "max_queue": 24,
+    "max_whims": 12,
+    "max_reviews_per_call": 64,
+    "max_seen_review_refs": 256,
+    "max_cells": 192,
+    "max_total_review_count": 512,
+    "max_model_bytes": 48000,
+    "min_support": 3,
+    "posterior_positive_threshold": 0.75,
+    "posterior_negative_threshold": 0.25
+  },
+  "model_storage": "opt-in active host listener dist/host-listener/session_id/behavior-valence.json",
+  "review_requires": [
+    "explicit_opt_in",
+    "operator_reviewed",
+    "independent_outcome_evidence_ref",
+    "unique_review_ref"
+  ],
+  "separate": [
+    "OBSERVED_PROOF_LABEL",
+    "LEARNED_POSTERIOR_ADVISORY"
+  ],
+  "forbidden": [
+    "automatic_labeling_from_unreviewed_clicks",
+    "player_queue_cancellation_from_ml",
+    "whim_pin_from_model_only",
+    "auto_training",
+    "background_input_hooks",
+    "private_text_or_media",
+    "unbounded_retention"
+  ],
+  "proof_ceiling": "OFFLINE_REVIEWED_BEHAVIOR_EXAMPLES_ONLY"
+}
