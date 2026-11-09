@@ -54,3 +54,7 @@ Add Live bottom-right panel cells and phone-app chrome as new targets under `mod
 - [Household Object Force](HOUSEHOLD_OBJECT_FORCE.md) — career / elementary unlock catalog
 - [Curious Catalog](CURIOUS_CATALOG.md) — gardening shelves including vertical garden
 - [House State](HOUSE_STATE.md) — `BACKSPACE_TO_INVENTORY` mutating action
+
+## Live local-game execution handoff
+
+The [A-OK Bloomer Household Inventory P04 handoff](handoff/BI-AOK-BLOOMER-INVENTORY-P04-2026-11-09.md) binds this evaluate-only recipe to exact-build calibration, player-safe host admission, one-at-a-time inputs and independent in-game inventory verification. A plan or GitHub merge cannot count as the deposit succeeding. The local agent, not this GitHub provider, performs the live transaction on an explicitly authorized disposable LAB save.
