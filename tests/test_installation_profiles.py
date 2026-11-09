@@ -133,5 +133,46 @@ class InstallationProfilesTests(unittest.TestCase):
             self.assertTrue(json.loads(output.getvalue())["settings"]["ui.show_advanced_settings"])
 
 
+
+    def test_catalog_is_the_single_default_owner(self):
+        catalog = json.loads((Path(__file__).resolve().parents[1] /
+                              "contracts" / "installation-profiles.v1.json").read_text())
+        self.assertEqual(catalog["defaults"], DEFAULTS)
+        self.assertTrue(all(type(value) is bool for value in DEFAULTS.values()))
+
+    def test_hover_cli_profile_opt_in_does_not_bypass_explicit_session_gate(self):
+        from io import StringIO
+        from contextlib import redirect_stdout
+        from scripts import host_listener
+        event_path = self.root / "event.json"
+        event_path.write_text('{"kind":"hover"}')
+        captured = []
+        def fake_observe(_sid, _event, *, explicit_opt_in=False):
+            captured.append(explicit_opt_in)
+            return {"state": "ADVISORY_ONLY", "opt_in": explicit_opt_in}
+        with patch.object(host_listener, "observe_hover", side_effect=fake_observe), \
+             patch("betterinstincts.installation_profiles.view",
+                   return_value={"settings": {"learning.hover_observations": False}}):
+            with redirect_stdout(StringIO()):
+                self.assertEqual(host_listener.main([
+                    "hover", "--session-id", "manual", "--event", str(event_path),
+                    "--use-active-profile"]), 0)
+        self.assertEqual(captured, [False])
+        with patch.object(host_listener, "observe_hover", side_effect=fake_observe), \
+             patch("betterinstincts.installation_profiles.view",
+                   return_value={"settings": {"learning.hover_observations": True}}):
+            with redirect_stdout(StringIO()):
+                self.assertEqual(host_listener.main([
+                    "hover", "--session-id", "manual", "--event", str(event_path),
+                    "--use-active-profile"]), 0)
+        self.assertEqual(captured, [False, True])
+        # Existing explicitly consenting one-off command is retained unchanged.
+        with patch.object(host_listener, "observe_hover", side_effect=fake_observe):
+            with redirect_stdout(StringIO()):
+                self.assertEqual(host_listener.main([
+                    "hover", "--session-id", "manual", "--event", str(event_path),
+                    "--explicit-opt-in"]), 0)
+        self.assertEqual(captured[-1], True)
+
 if __name__ == "__main__":
     unittest.main()
