@@ -13,8 +13,10 @@ Every household Sim (observed portrait count **N**) keeps DIY building parts in 
 ## Scalable acquisition (preferred order)
 
 1. **spawn** — `testingcheats` → Shift+click Dr. F robotics workstation → **Spawn Crafting Supplies** (~50 each; one action stocks most DIY materials).
-2. **phone** — Phone → Order → Purchase Upgrade Parts (buyable rows).
-3. **computer** — Computer/laptop → Order → Purchase Upgrade Parts.
+2. **computer** — Computer/laptop → Order → Purchase Upgrade Parts (local, offline).
+3. **phone** — Phone → Order → Purchase Upgrade Parts (buyable rows) **only if it stays offline**.
+
+**Offline install (P00/P01):** never press **Connect** on `CONNECTION IS REQUIRED`. Choose **Stay Offline** only. Prefer spawn when phone forces an online gate. The game plays as installed offline.
 
 Buy Mode debug catalog is **not** the preferred stock path.
 

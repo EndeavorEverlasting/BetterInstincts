@@ -11,15 +11,16 @@ Refresh HEAD/branch, PRs, status, game/version; declare host, scopes, collisions
 ## P04 hidden-object discovery
 Inventory `plans/active/BI-HIDDEN-OBJECTS.P04.md`; `python -m scripts.hidden_object_discovery guide`. Hidden-item scope: follow dispatch/scene/save/consent; else defer. Audit: `python -m scripts.hidden_object_discovery audit --observation dist/game-host/hidden-object-p04-receipt.json`. Scout: `python -m scripts.hidden_object_scout goal` (`docs/HIDDEN_OBJECT_SCOUT.md`). No autorun.
 
-Useful-item force: `python -m scripts.household_object_force` (`bb.showhiddenobjects` elementary; no `gsi_create_obj`). DIY parts budget (N Sims pocket kit): `python -m scripts.upgrade_parts_force household|budget|certify`.
+Useful-item force: `python -m scripts.household_object_force` (`bb.showhiddenobjects`; no `gsi_create_obj`). DIY parts (N pocket kit): `python -m scripts.upgrade_parts_force`.
 
 ## Invariants
-- **Player first:** no interruption of explicit player commands; no uncontrolled repeated autonomy loops.
-- **Save-safe:** never edit, delete, migrate or overwrite user saves/game files. Unknown/user saves protected; names never prove disposability.
-- **Storage:** no arbitrary user-profile writes, auto-discovery, asset copying, daemons, scheduled scans, telemetry or unbounded logs.
+- **Player first:** no interrupt of explicit player commands; no uncontrolled autonomy loops.
+- **Save-safe:** never edit/delete/migrate/overwrite user saves/game files. Unknown/user saves protected.
+- **Offline install:** never EA Connect; Stay Offline only; play as installed.
+- **Storage:** no arbitrary profile writes, auto-discovery, asset copy, daemons, telemetry, unbounded logs.
 - **Community-native:** review prior art/licensing; favor tuning before script hooks where justified.
 - **Performance:** bounded work; no global per-frame scans, busy-waits or unmeasured runtime hooks.
-- **Evidence:** separate tests, build, PR, merge and gameplay. Scenes need two independent cues; unknown -> no action. See docs/SCENE_INTELLIGENCE.md.
+- **Evidence:** separate tests, build, PR, merge and gameplay. See docs/SCENE_INTELLIGENCE.md; two cues; unknown -> no action.
 - **Continuity:** keep docs/LEDGER.md, docs/ROADMAP.md and sprint current; no chat-only decisions.
 
 ## Multiversion + real-game closure

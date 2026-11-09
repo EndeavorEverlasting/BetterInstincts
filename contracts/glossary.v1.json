@@ -428,7 +428,7 @@
       ]
     },
     "UPGRADE_PARTS_FORCE": {
-      "definition": "Host planner that stocks named upgrade/DIY parts via spawn bulk or phone/computer Order. Evolved into HOUSEHOLD_DIY_PARTS_BUDGET; pocket inventory only; never gsi_create_obj hex or BI-002 closure.",
+      "definition": "Host planner that stocks named upgrade/DIY parts via spawn bulk or computer/phone Order while staying offline (never EA Connect). Evolved into HOUSEHOLD_DIY_PARTS_BUDGET; pocket inventory only; never gsi_create_obj hex or BI-002 closure.",
       "owners": [
         "contracts/upgrade-parts-force.v1.json",
         "docs/UPGRADE_PARTS_FORCE.md",

@@ -1,5 +1,9 @@
 # Canonical project ledger
 
+## 2026-11-09 — Sims offline-install invariant (P00 + P01)
+
+**Operator:** NEVER connect The Sims 4 to the internet; play as installed offline. **P00** doctrine + AGENTS invariant; **P01** harness via `upgrade_parts_force` `offline_install` + forbidden `ea_online_connect`/`CONNECT_BUTTON`. Phone path: Stay Offline only; prefer spawn/computer when connection gate appears. Consultation `BI-SIMS-OFFLINE-ONLY-20261109.v1.json`. Does not close BI-002.
+
 ## 2026-11-09 — Household DIY parts budget + live cert schema (P95 + P124 + Trifecta)
 
 **Operator:** Budgeting system so every household Sim (N) always has DIY build parts in **pocket** inventory (electronics/common/plumbing/kitchen/robot salvage/chips/mechanisms) — survives member-at-work or removal. Prefer scalable spawn bulk, then phone/computer Order; not Buy Mode primary. **P95** selects `HOUSEHOLD_DIY_PARTS_BUDGET` evolving `upgrade_parts_force` v2. **P124** expands one owner; reuses Space-traverse. Machine-readable cert `betterinstincts.diy-parts-budget.cert/v1`. Consultation `BI-DIY-PARTS-HOUSEHOLD-BUDGET-20261109.v1.json`. CLI: `household --members N`, `budget`, `record`, `status`, `certify`. Does not close BI-002.

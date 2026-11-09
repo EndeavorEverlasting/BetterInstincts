@@ -62,7 +62,7 @@
     "selected": "PER_SIM_POCKET_STOCK",
     "destination": "sim_pocket_inventory",
     "forbid_household_inventory": true,
-    "preferred_acquisition_order": ["spawn", "phone", "computer"],
+    "preferred_acquisition_order": ["spawn", "computer", "phone"],
     "rejected_primary_acquisition": ["buy_mode_debug_catalog", "gsi_create_obj"],
     "diy_kit_id": "diy_builder_kit",
     "diy_kit_part_ids": [
@@ -150,11 +150,14 @@
       "mutating_action": "PURCHASE_UPGRADE_PART",
       "requires_testingcheats": false,
       "scalability_rank": 2,
+      "offline_gate": "STAY_OFFLINE_ONLY",
       "funds_note": "Each purchase spends Simoleons; ensure funds or run funds_inject first on disposable lab.",
+      "connection_note": "If CONNECTION IS REQUIRED appears, press Stay Offline only — never Connect. Prefer spawn when phone forces online.",
       "steps_template": [
         {"op": "REQUIRE_MODE", "mode": "LIVE", "fail": "PHONE_PURCHASE_REQUIRES_LIVE"},
         {"op": "REQUIRE_ACTIVE_SIM_SELECTION"},
         {"op": "OPEN_PHONE", "fail": "PHONE_NOT_AVAILABLE"},
+        {"op": "IF_CONNECTION_REQUIRED", "choice": "Stay Offline", "never": ["Connect", "CONNECT"], "fail": "EA_ONLINE_CONNECT_FORBIDDEN"},
         {"op": "PIE_MENU", "choice": "Order", "fail": "ORDER_MENU_MISSING"},
         {"op": "PIE_MENU", "choice": "Purchase Upgrade Parts", "fail": "PURCHASE_UPGRADE_PARTS_MISSING"},
         {"op": "SELECT_PART", "from_recipe_field": "display_name", "fail": "PART_ROW_MISSING"},
@@ -311,8 +314,20 @@
     "force_F1_while_building",
     "COMPUTER_USE_BYPASS_OF_SCREEN_ADMIT",
     "claim_BI002",
-    "invent_household_member_count"
+    "invent_household_member_count",
+    "ea_online_connect",
+    "CONNECT_BUTTON",
+    "CONNECT_ONLINE",
+    "force_sims_online"
   ],
+  "offline_install": {
+    "selected": "PLAY_AS_INSTALLED_OFFLINE",
+    "forbid_ea_online_connect": true,
+    "connection_required_dialog": "STAY_OFFLINE_ONLY",
+    "never_press": ["Connect", "CONNECT"],
+    "preferred_when_connection_gate": "spawn",
+    "note": "Operator P00/P01 correction 2026-11-09: never connect The Sims 4 to the internet; Stay Offline only."
+  },
   "guarantees": [
     "Library plans default execute_allowed=false",
     "Household plans require explicit observed --members N",
@@ -320,6 +335,7 @@
     "Preferred acquisition is spawn bulk before Order spam",
     "Buy Mode debug is never the preferred stock path",
     "Cert MET requires attested observed counts, never plan issuance alone",
-    "Player-directed observations yield without steps"
+    "Player-directed observations yield without steps",
+    "Never press EA Connect; Stay Offline only on CONNECTION IS REQUIRED"
   ]
 }
