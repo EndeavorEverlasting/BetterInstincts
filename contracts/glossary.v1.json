@@ -868,7 +868,7 @@
       ]
     },
     "SAFE_CURSOR_REST": {
-      "definition": "Mandatory interior cursor park outside the Sims edge-pan band after any camera step so the viewport stops drifting while agents develop.",
+      "definition": "After admitted host mouse activity, return the agent-owned cursor to the Sims client interior, outside the conservative edge-pan guard band; never reposition a player-owned cursor.",
       "owners": [
         "contracts/camera-traverse.v1.json",
         "scripts/win32_input.py",
@@ -876,7 +876,7 @@
       ]
     },
     "EDGE_MOUSE_PARK": {
-      "definition": "Bad practice: leaving the cursor in the screen-edge pan band so the camera keeps scrolling after the agent stops navigating.",
+      "definition": "Bad agent-owned idle/rest cursor dwelling in the Sims client-edge camera-pan guard band so the camera drifts. A brief verified HUD click is not an edge park; judge pointer phase/ownership, not coordinates alone.",
       "owners": [
         "contracts/camera-traverse.v1.json",
         "docs/CAMERA_TRAVERSE.md"
@@ -1241,6 +1241,22 @@
       "owners": [
         "betterinstincts/household_upkeep.py",
         "betterinstincts/queue_capacity.py"
+      ]
+    },
+    "SCREEN_EDGE_CAMERA_TRIGGER_ZONE": {
+      "definition": "Colloquial 'screen edge' means the Sims client-relative camera-pan trigger/avoidance region, NOT the monitor bezel or a blanket ban on HUD controls. The conservative default is 48px; actual engine-trigger geometry depends on game build/overlays and requires observation.",
+      "owners": [
+        "contracts/camera-traverse.v1.json",
+        "betterinstincts/camera_traverse.py",
+        "docs/CAMERA_TRAVERSE.md"
+      ]
+    },
+    "EDGE_UI_CLICK_TRANSIENT": {
+      "definition": "One fresh, verified HUD/control click may occur near/in the camera-pan guard region without being misclassified as bad idle edge parking. Host admission still applies; after click release park SAFE_CURSOR_REST. Never seize the player's cursor.",
+      "owners": [
+        "contracts/camera-traverse.v1.json",
+        "betterinstincts/camera_traverse.py",
+        "scripts/win32_input.py"
       ]
     }
   }
