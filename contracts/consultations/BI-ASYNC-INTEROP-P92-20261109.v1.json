@@ -66,7 +66,8 @@
     "Manifest tampering/symlink target prevents uninstall",
     "No background hook, daemon, crontab, service or auto-start created",
     "Linux without trusted input probe cannot claim ready",
-    "Game live certification remains open"
+    "Game live certification remains open",
+    "Existing host and browser fixtures must use the new 15-second threshold and compact AGENTS budget must remain under 3600 chars"
   ],
   "rollback_path": "Revert feature PR; remove any managed installation using bootstrap.py uninstall before deleting the manifest; BI-002 remains active.",
   "unresolved_unknowns": [
@@ -98,7 +99,14 @@
     "tests/test_bootstrap.py",
     "tests/test_control_handoff.py",
     "tests/test_host_autonomy.py",
+    "tests/test_listener_learning.py",
+    "tests/test_navigating_needs.py",
     "tests/test_playwright_interop.py",
+    "tests/test_scenario_goals.py",
+    "tests/test_school_day.py",
+    "tests/test_screen_admit.py",
+    "tests/test_social_opportunity.py",
+    "tests/test_teen_homework.py",
     "tests/test_workflow_interop.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
