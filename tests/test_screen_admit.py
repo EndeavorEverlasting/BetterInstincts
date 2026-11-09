@@ -15,7 +15,7 @@ from betterinstincts.screen_admit import admitted_screen_lease, require_execute_
 from scripts import funds_inject, menu_blockers, viewport_recover
 
 
-def probe(age=10000, **kwargs):
+def probe(age=20000, **kwargs):
     return PresenceProbe(
         foreground_is_sims=kwargs.pop("foreground_is_sims", True),
         cursor_in_client=kwargs.pop("cursor_in_client", True),
@@ -49,8 +49,8 @@ class ScreenAdmitUnitTests(unittest.TestCase):
         focus = MagicMock()
         # Each ensure_ready: 1 preflight + 2 confirm samples.
         samples = iter([
-            probe(9000), probe(9100), probe(9200),
-            probe(9300), probe(9400), probe(9500),
+            probe(19000), probe(19100), probe(19200),
+            probe(19300), probe(19400), probe(19500),
         ])
         with (
             patch("betterinstincts.screen_admit.listener_status", return_value={"state": "ACTIVE"}),
@@ -68,7 +68,7 @@ class ScreenAdmitUnitTests(unittest.TestCase):
         focus = MagicMock()
         with (
             patch("betterinstincts.screen_admit.listener_status", return_value={"state": "INACTIVE"}),
-            patch("betterinstincts.screen_admit.probe_windows", return_value=probe(10000)),
+            patch("betterinstincts.screen_admit.probe_windows", return_value=probe(20000)),
         ):
             with admitted_screen_lease(4242, "unit-test", focus_fn=focus) as ensure_ready:
                 with self.assertRaisesRegex(HandoffError, "HOST_HANDOFF_SESSION_INACTIVE"):
@@ -114,7 +114,7 @@ class AdapterBarrierTests(unittest.TestCase):
         with (
             patch.object(menu_blockers.sys, "platform", "win32"),
             patch("betterinstincts.screen_admit.listener_status", return_value={"state": "ACTIVE"}),
-            patch("betterinstincts.screen_admit.probe_windows", return_value=probe(10000)),
+            patch("betterinstincts.screen_admit.probe_windows", return_value=probe(20000)),
             patch("betterinstincts.control_handoff.time.sleep"),
             patch("scripts.menu_blockers._focus"),
             patch("scripts.menu_blockers._send_click") as click,

@@ -39,7 +39,7 @@ def main(argv: list[str] | None = None) -> int:
     run_p.add_argument("--process-id", type=int, default=None)
     run_p.add_argument("--session-id", default=None, help="Explicitly activated host-listener session")
     run_p.add_argument("--step-id", default=None, help="One verified, scene-appropriate UI step per invocation")
-    run_p.add_argument("--idle-ms", type=int, default=8000)
+    run_p.add_argument("--idle-ms", type=int, default=15000)
     run_p.add_argument("--execute", action="store_true")
     run_p.add_argument("--settle-sec", type=float, default=1.5)
     run_p.add_argument("--run-id", default=None)

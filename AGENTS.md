@@ -34,3 +34,6 @@ Read `docs/HORIZON.md`, `plans/horizon.v1.json`, `plans/active/BI-003.execution.
 Report CHANGED | PROVED | NEXT with checks, SHA, push/PR/merge, patch, live status. A plan is not implementation; a green CI check is not playable-mod proof.
 
 P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`; ontology: `docs/handoff/BI-SEMANTIC-ONTOLOGY-P04-2026-11-07.md`; hidden objects: `plans/active/BI-HIDDEN-OBJECTS.P04.md` (BI-002 active).
+
+
+Interop: `docs/ASYNC_INTEROP.md` (15s idle).

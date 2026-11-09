@@ -46,7 +46,7 @@ class ListenerLearningTests(unittest.TestCase):
 
     def test_opt_in_advisory_on_safe_observation(self):
         receipt = tick(self.sid, OBS,
-                       presence_probe=PresenceProbe(False, False, last_input_age_ms=9000),
+                       presence_probe=PresenceProbe(False, False, last_input_age_ms=19000),
                        learning_model=self.model, learning_query=QUERY)
         self.assertEqual(receipt["learning_hint"]["state"], "ADVISORY_ONLY")
         self.assertEqual(receipt["learning_hint"]["suggested_action"], "sit_and_chat_here")
@@ -63,7 +63,7 @@ class ListenerLearningTests(unittest.TestCase):
 
     def test_unverified_viewport_abstains_even_if_query_claims_safe(self):
         receipt = tick(self.sid, {**OBS, "viewport": {"state": "VIEWPORT_BLACK"}},
-                       presence_probe=PresenceProbe(False, False, last_input_age_ms=9000),
+                       presence_probe=PresenceProbe(False, False, last_input_age_ms=19000),
                        learning_model=self.model, learning_query=QUERY)
         self.assertEqual(receipt["learning_hint"]["state"], "ABSTAIN")
         self.assertEqual(receipt["learning_hint"]["reason"], "SCENE_UNVERIFIED")
@@ -71,7 +71,7 @@ class ListenerLearningTests(unittest.TestCase):
     def test_partial_explicit_learning_input_is_rejected(self):
         with self.assertRaisesRegex(HostListenerError, "LEARNING_MODEL_AND_QUERY_REQUIRED"):
             tick(self.sid, OBS,
-                 presence_probe=PresenceProbe(False, False, last_input_age_ms=9000),
+                 presence_probe=PresenceProbe(False, False, last_input_age_ms=19000),
                  learning_model=self.model)
 
 
