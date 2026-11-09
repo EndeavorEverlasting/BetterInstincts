@@ -881,6 +881,44 @@
         "docs/HOUSEHOLD_OBJECT_FORCE.md"
       ]
     },
+    "UI_CHROME": {
+      "definition": "Named Build/Buy/Live chrome targets as normalized client fractions plus per-mode hotkey glossary and catalog deposit recipes; peer to ui_mode, not a vision clicker.",
+      "owners": [
+        "contracts/ui-chrome.v1.json",
+        "docs/UI_CHROME.md",
+        "betterinstincts/ui_chrome.py"
+      ]
+    },
+    "HOST_UI_MAP": {
+      "definition": "Resolution-profile keyed map of clickable chrome (search field, catalog result, household inventory tab, extensible Live panels) resolved by definition for host adapters.",
+      "owners": [
+        "contracts/ui-chrome.v1.json",
+        "docs/UI_CHROME.md"
+      ]
+    },
+    "HOTKEY_GLOSSARY": {
+      "definition": "Per-mode keyboard chord catalog (F1/F2/F3, Backspace→Household Inventory, Esc cancel hold, cheat console). Intent hints only — never mode proof or execute authority.",
+      "owners": [
+        "contracts/ui-chrome.v1.json",
+        "docs/UI_CHROME.md"
+      ]
+    },
+    "CATALOG_TO_HOUSEHOLD_INVENTORY": {
+      "definition": "Evaluate-only recipe: search → select → Backspace deposit into Household Inventory without lot placement. AOK Bloomer is the first catalog item.",
+      "owners": [
+        "contracts/ui-chrome.v1.json",
+        "docs/UI_CHROME.md",
+        "contracts/house-state.v1.json"
+      ]
+    },
+    "AOK_BLOOMER_SEARCH": {
+      "definition": "Operator-preferred Build/Buy catalog search term AOK for the A-OK-Bloomer Vertical Garden (~§365 Eco Lifestyle).",
+      "owners": [
+        "contracts/ui-chrome.v1.json",
+        "contracts/curious-catalog.v1.json",
+        "docs/UI_CHROME.md"
+      ]
+    },
     "SITUATION": {
       "definition": "Changing bounded game context; ontology concept, not a claim that a screenshot alone establishes state.",
       "owners": [

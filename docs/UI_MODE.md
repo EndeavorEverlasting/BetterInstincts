@@ -35,3 +35,9 @@ Example evaluate-only input (not a screenshot):
 ```
 
 The remaining legacy observation fields (all six needs, queue, location and capture reference) are still required. P08 on the local game machine must gather genuine, fresh exact-build screen evidence for each mode, menu variant, overlay and focus transition before any claim of real game detection or input authority. No change to BI-002's hunger live certification status.
+
+## Related: chrome maps and hotkeys
+
+Mode classification does not know where to click. Named Build/Buy targets, the
+per-mode hotkey glossary, Live panel stubs, and the **AOK** → Household Inventory
+recipe live in [UI Chrome](UI_CHROME.md) (`contracts/ui-chrome.v1.json`).

@@ -77,5 +77,9 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **HOUSEHOLD_OBJECT_FORCE** | Durable useful-item catalog + planner to force named objects into any household; career promote and catalog paths; no hallucinated hex spawn. |
 | **ELEMENTARY_HIDDEN_UNLOCK** | Required `testingcheats true` then `bb.showhiddenobjects` before catalog/hidden force rows; BBB never substitutes. |
 | **USEFUL_ITEM_CATALOG** | Machine-owned list of forceable household objects (Desktop, Meat Wall, UFO Bed, Sigma, Smog Vacuum, Hydroponic, optional Positronic Pro). |
+| **UI_CHROME** / **HOST_UI_MAP** | Named mode chrome as normalized click targets + recipes; see `docs/UI_CHROME.md`. |
+| **HOTKEY_GLOSSARY** | Per-mode chords (F1/F2/F3, Backspace→inventory); intent only, never mode proof. |
+| **CATALOG_TO_HOUSEHOLD_INVENTORY** | Search→select→Backspace deposit recipe; forbids lot placement. |
+| **AOK_BLOOMER_SEARCH** | Preferred catalog keyword `AOK` for A-OK-Bloomer Vertical Garden. |
 
-Related matrices: `contracts/behavior-matrix.v1.json`, `contracts/player-presence.v1.json`, `contracts/needs-force.v1.json`, `contracts/host-listener.v1.json`, `contracts/host-funds.v1.json`, `contracts/build-optimize.v1.json`, `contracts/household-object-force.v1.json`.
+Related matrices: `contracts/behavior-matrix.v1.json`, `contracts/player-presence.v1.json`, `contracts/needs-force.v1.json`, `contracts/host-listener.v1.json`, `contracts/host-funds.v1.json`, `contracts/build-optimize.v1.json`, `contracts/household-object-force.v1.json`, `contracts/ui-chrome.v1.json`.

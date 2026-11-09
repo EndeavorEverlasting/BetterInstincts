@@ -168,11 +168,13 @@
     {
       "id": "vertical_garden",
       "display_name": "A-OK-Bloomer Vertical Garden",
-      "why": "Dense outdoor grow host; ordinary Buy if Eco Lifestyle owned",
-      "search": ["Vertical", "Bloomer"],
+      "why": "Dense outdoor grow host; ordinary Buy/Build catalog if Eco Lifestyle owned; preferred search AOK",
+      "search": ["AOK", "Vertical", "Bloomer"],
+      "preferred_search": "AOK",
       "pack": "Eco Lifestyle",
       "money_tier": "tool",
-      "requires_curious_catalog": false
+      "requires_curious_catalog": false,
+      "household_inventory_recipe": "contracts/ui-chrome.v1.json#catalog_items.a_ok_bloomer"
     }
   ],
   "invariants": [

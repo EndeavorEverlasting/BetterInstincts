@@ -96,7 +96,7 @@
       "pack_hint": "Eco Lifestyle",
       "large_object": true,
       "requires_elementary_unlock": false,
-      "notes": "Civil Designer career reward into Household Inventory."
+      "notes": "L5 unlocks Grow Cruelty-Free Meat on the A-OK-Bloomer Vertical Garden — not an automatic Household Inventory drop of a Meat Wall object. Buy the Bloomer via catalog search AOK (see ui-chrome a_ok_bloomer recipe) into Household Inventory, then Grow in Live."
     },
     {
       "id": "ufo_bed",
