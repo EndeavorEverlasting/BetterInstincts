@@ -162,3 +162,26 @@ def scan_lot_model(model: Mapping, *, cfg: dict | None = None) -> dict:
             "floors": floors, "rooms": rooms, "unassigned_items": unassigned,
             "observed_story_count": len(floors), "coverage": "ATTESTED_OBSERVATIONS_ONLY_NOT_COMPLETE_FLOOR_PROOF",
             "execute_allowed": False, "proof_ceiling": cfg["proof_ceiling"]}
+
+def summarize_for_listener(census: Mapping) -> dict:
+    """Compact advisory receipt; full item inventory stays in explicit scan result."""
+    return {
+        "state": census["state"],
+        "model_revision": census["model_revision"],
+        "observed_story_count": census["observed_story_count"],
+        "coverage": census["coverage"],
+        "floors": {
+            story: {"room_count": len(row["rooms"]), "item_count": row["item_count"]}
+            for story, row in census["floors"].items()
+        },
+        "rooms": [
+            {"room_id": r["room_id"], "enclosure": r["enclosure"],
+             "room_evidence": r["room_evidence"], "item_count": r["item_count"],
+             "function_labels": r["function_labels"], "style_labels": r["style_labels"]}
+            for r in census["rooms"].values()
+        ][:100],
+        "room_count_total": len(census["rooms"]),
+        "unassigned_count": len(census["unassigned_items"]),
+        "execute_allowed": False,
+        "proof_ceiling": census["proof_ceiling"],
+    }
