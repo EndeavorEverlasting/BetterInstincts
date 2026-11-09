@@ -3,7 +3,7 @@
   "id": "BI-QUEUE-STUDY-P95-20261109",
   "ontology": "contracts/ontology.v1.json",
   "ontology_blob_sha": "38feb77f2c305cfedac51c01cd58059c99c4387e",
-  "proposed_capability": "P00/P01/P141/P95 and P82/P07/P08 Trifecta: honor observed queue capacity (operator heuristic 2–3 multitasking, 6–7 not multitasking) and plan teen homework only at an attested safe indoor study surface, preferring focus opportunities. Reuse existing room_census/house_state and teen_homework/host_stack/host_listener, not a second lot model or game-input daemon.",
+  "proposed_capability": "P00/P01/P141/P95 and P82/P07/P08 Trifecta: honor observed queue capacity (operator heuristic 2–3 multitasking, 6–7 not multitasking) and plan teen homework only at an attested safe indoor study surface, preferring focus opportunities. Reuse existing room_census/house_state and teen_homework/host_stack/host_listener, not a second lot model or game-input daemon. Preserve career-service and domain-cascade read-only study preparation after survival recovery.",
   "affected_concepts": [
     "SIM",
     "PLAYER_INTENT",
@@ -34,7 +34,9 @@
     "betterinstincts/moodlets.py",
     "contracts/teen-homework.v1.json",
     "contracts/room-census.v1.json",
-    "contracts/host-listener.v1.json"
+    "contracts/host-listener.v1.json",
+    "betterinstincts/career_service.py",
+    "betterinstincts/domain_cascade.py"
   ],
   "invariants_checked": [
     "BI-ONT-001",
@@ -78,7 +80,9 @@
     "Sim seated in matching attested room and queue available -> allow one homework action",
     "Already queued homework -> no duplicate",
     "Survival and school-premises gates still outrank homework",
-    "No new live cert, no agent startup or hidden DAEMON"
+    "No new live cert, no agent startup or hidden DAEMON",
+    "Career sticky homework obligations retain a read-only study scan after survival recovery; no direct homework enqueue without seat proof",
+    "Domain cascade exposes study-scan gate rather than stale immediate-homework assumption"
   ],
   "rollback_path": "Revert the bounded feature branch; leave main, local game, saves and certified profiles untouched.",
   "unresolved_unknowns": [
@@ -97,7 +101,11 @@
     "contracts/host-listener.v1.json",
     "docs/TEEN_HOMEWORK.md",
     "tests/test_queue_study.py",
-    "tests/test_teen_homework.py"
+    "tests/test_teen_homework.py",
+    "betterinstincts/career_service.py",
+    "tests/test_career_service.py",
+    "tests/test_domain_cascade.py",
+    "betterinstincts/domain_cascade.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
