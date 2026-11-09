@@ -863,6 +863,83 @@
       ]
     },
     {
+      "id": "buy_mode",
+      "family": "build",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "mode:buy_catalog_active"
+        },
+        {
+          "source": "operator",
+          "token": "buy_tools_visible"
+        }
+      ],
+      "ux_regions": [
+        "buy_catalog",
+        "search_filters",
+        "household_inventory",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "Candidate two-source cues must be calibrated against real exact-build screenshots",
+        "F2/F3 keypress is intent only; scene classification never grants input permission",
+        "Unknown overlays, focus and UI variants require reobservation"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "build_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "build_mode",
+      "family": "build",
+      "required_cues": [
+        {
+          "source": "visual",
+          "token": "mode:build_structural_tools"
+        },
+        {
+          "source": "operator",
+          "token": "build_tools_visible"
+        }
+      ],
+      "ux_regions": [
+        "wall_tools",
+        "room_tools",
+        "floor_controls",
+        "terrain_tools",
+        "global_navigation"
+      ],
+      "assumptions": [
+        "Candidate two-source cues must be calibrated against real exact-build screenshots",
+        "F2/F3 keypress is intent only; scene classification never grants input permission",
+        "Unknown overlays, focus and UI variants require reobservation"
+      ],
+      "evidence_state": "UNVERIFIED_CANDIDATE",
+      "transitions": [
+        {
+          "target": "live_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        },
+        {
+          "target": "buy_mode",
+          "gate": "OPERATOR_CONFIRMATION",
+          "execution": "MANUAL_ONLY"
+        }
+      ]
+    },
+    {
       "id": "gallery_home",
       "family": "gallery",
       "required_cues": [
