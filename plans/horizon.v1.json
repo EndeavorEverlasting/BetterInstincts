@@ -226,5 +226,42 @@
       "excluded_from_stage_certification": true,
       "next_executable_gate": "ISSUE_171_INSPECT_LOCAL_EA_AUTONOMY_TUNING_AND_REAL_QUEUE_HOOKS"
     }
+  },
+  "next_supporting_priority": {
+    "id": "BI-WORLD-TRAVERSAL-P08-SENSOR",
+    "kind": "SUPPORTING_GAME_HOST_PROOF",
+    "title": "Real-game highlight-loss and world-object sensor calibration",
+    "priority": "NEXT_SUPPORTING_LOCAL_PROOF",
+    "current_product_gate": "BI-002",
+    "product_gate_effect": "NONE_BI002_REMAINS_ACTIVE_GAME_UNPROVEN",
+    "status": "READY_FOR_LOCAL_ADMISSION_UNPROVEN",
+    "execution_environment": "LOCAL_AGENT_RUNTIME",
+    "provider_access": [
+      "local game files after operator approval",
+      "GitHub for versioned source/reports"
+    ],
+    "scope_owner": "betterinstincts/world_traversal_learning.py",
+    "runtime_owner": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+    "dispatch": "plans/active/BI-HORIZON.dispatch.v1.json",
+    "runbook": "plans/active/BI-WORLD-TRAVERSAL-CLOSERS-P04-20261110.md",
+    "contract": "contracts/world-traversal-learning.v1.json",
+    "first_command": "python -m scripts.horizon_status",
+    "offline_preflight": [
+      "python -m scripts.check_horizon",
+      "python -m unittest tests.test_world_traversal_learning -v",
+      "python -m scripts.world_traversal_eval"
+    ],
+    "dependency_gate": "MERGED_PR_169_OFFLINE_PROOF_AND_CURRENT_EXACT_GAME_PATCH_ATTESTATION",
+    "first_real_proof": "Two independently supported real game frames on the same target/camera, followed by null-highlight identity and two ABSENT observations, must lead to HIGHLIGHT_LOST and no click candidate; prove operator takeover and off-lot refusal before any independently admitted click",
+    "proof_ceiling": "ROUTED_ONLY_NOT_REAL_PIXEL_DETECTOR_OR_LOCAL_GAME_P08",
+    "never_authorizes": [
+      "GAME_SEND_INPUT",
+      "AUTO_RECLICK",
+      "PERSONAL_SAVE_ACCESS",
+      "OS_PERIPHERAL_MUTATION",
+      "BUILD_BUY_MUTATION",
+      "BI002_CLOSE",
+      "PR159_TAKEOVER"
+    ]
   }
 }

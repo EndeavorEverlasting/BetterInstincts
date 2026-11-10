@@ -4,7 +4,7 @@ No game access, no assumption that a green PR proves a playable mod.
 """
 import json
 from pathlib import Path
-from scripts.check_horizon import validate
+from scripts.check_horizon import validate,validate_dispatch
 from betterinstincts.compatibility import load_catalog
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -12,6 +12,8 @@ ROOT=Path(__file__).resolve().parents[1]
 def status(root=ROOT):
     horizon=json.loads((root/"plans/horizon.v1.json").read_text())
     validate(horizon)
+    dispatch=json.loads((root/horizon["next_supporting_priority"]["dispatch"]).read_text(encoding="utf-8"))
+    dispatch_state=validate_dispatch(horizon,dispatch)
     catalog=load_catalog(root)
     certified={(p["module"],p["game_version"],p["platform"]) for p in catalog["profiles"]
                if p["status"]=="certified"}
@@ -20,6 +22,14 @@ def status(root=ROOT):
             "after_hunger":["BI-003A","BI-003B","BI-003C","BI-003D","BI-003E"],
             "balance_gate":"BI-003F","income_gate":"BI-004","skills_gate":"BI-005",
             "tooling_lane":"BI-MODLAB",
+            "next_supporting_priority":horizon["next_supporting_priority"]["id"],
+            "supporting_status":horizon["next_supporting_priority"]["status"],
+            "supporting_runbook":horizon["next_supporting_priority"]["runbook"],
+            "supporting_dispatch":horizon["next_supporting_priority"]["dispatch"],
+            "supporting_launch_order":dispatch["launch_order"],
+            "supporting_first_command":horizon["next_supporting_priority"]["offline_preflight"][0],
+            "supporting_local_host_state":"BLOCKED_LOCAL_GAME_ACCESS_UNTIL_AUTHORIZED",
+            "dispatch_validation":dispatch_state["state"],
             "certified_module_patch_combinations":len(certified),
             "closure":"UNPROVEN_GAME_HOST" if not certified else "REVIEW_GAME_EVIDENCE",
             "proof_ceiling":"REPO_CONTRACTS_ONLY"}
