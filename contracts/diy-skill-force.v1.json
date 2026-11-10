@@ -15,10 +15,21 @@
     "default_path": "dist/game-host/diy-skill-force-completion.json",
     "keying": "session_id + member_index (or optional member_key label)",
     "statuses": {
-      "DISPATCHED": "Host typed stats.set_skill_level at target — resume/skip only; not panel PASS",
-      "PANEL_OBSERVED_MAX": "Optional stronger mark after Skills-panel LOCAL_OBSERVED"
+      "DISPATCHED": "Host typed stats.set_skill_level at target — resume/skip only; not panel PASS; never narrate as maximized",
+      "PANEL_OBSERVED_MAX": "Optional stronger mark after Skills-panel LOCAL_OBSERVED",
+      "PANEL_FALSIFIED": "Skills-panel LOCAL_OBSERVED contradicted DISPATCHED maximize claim; clears skip until redo"
     },
-    "skip_skill_when": "DISPATCHED only means typed (resume/avoid duplicate commands), not proof of max level; reconcile stale/session/roster state before skipping. PANEL_OBSERVED_MAX requires genuine Skills panel observation.",
+    "skip_skill_when": "DISPATCHED only means typed (resume/avoid duplicate commands), not proof of max level; reconcile stale/session/roster state before skipping. PANEL_OBSERVED_MAX requires genuine Skills panel observation. PANEL_FALSIFIED never skips.",
+    "claim_language": {
+      "owner": "betterinstincts.diy_skill_force.assess_skill_force_claim",
+      "forbidden_from_dispatched": [
+        "maximized",
+        "maxed",
+        "Skills-panel PASS",
+        "Handiness maximized"
+      ],
+      "reject_state": "CLAIM_REJECTED_DISPATCHED_IS_NOT_MAXIMIZED"
+    },
     "skip_member_when": "no remaining skills for the requested bundle after ledger filter",
     "space_to_next_needing": true,
     "redo_flag": "--redo ignores ledger for this run",
