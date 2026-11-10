@@ -230,7 +230,8 @@ def evaluate_native_household_autonomy(
     """
     if not isinstance(observation, Mapping) or observation.get("schema") != NATIVE_SCHEMA:
         raise AutonomyModerationError("NATIVE_AUTONOMY_SCHEMA_INVALID")
-    if not all(_ref(observation.get(k)) for k in ("household_ref", "game_build", "capture_ref")):
+    if (not all(_ref(observation.get(k)) for k in ("household_ref", "game_build", "capture_ref"))
+            or observation["game_build"].lower() in {"unknown", "latest", "any"}):
         raise AutonomyModerationError("NATIVE_AUTONOMY_IDENTITY_INVALID")
     sims = observation.get("sims")
     if not isinstance(sims, list) or not 1 <= len(sims) <= MAX_HOUSEHOLD_SIMS:
@@ -274,6 +275,9 @@ def evaluate_native_household_autonomy(
                 or sim.get("player_owned") is not False):
             decision["state"] = "PLAYER_OR_UNKNOWN_OWNER_PROTECTED"
             continue
+        if (sim.get("urgent_need") is True or sim.get("imminent_obligation") is True):
+            decision["state"] = "URGENT_NEED_OR_OBLIGATION_PROTECTED"
+            continue
         if sim.get("queue_verified") is not True:
             decision["state"] = "QUEUE_NOT_VERIFIED"
             continue
@@ -284,8 +288,8 @@ def evaluate_native_household_autonomy(
             raise AutonomyModerationError("NATIVE_ACTION_BOUNDS_INVALID")
         # A protected player action anywhere in this Sim's queue blocks all
         # optimization of that queue. It never depends on the active portrait.
-        if any(not isinstance(a, Mapping) or a.get("origin") == "PLAYER"
-               or a.get("origin") not in ORIGINS for a in queue):
+        if any(not isinstance(a, Mapping) or a.get("origin") != "SIM_AUTONOMY"
+               or not _ref(a.get("origin_proof_ref")) for a in queue):
             decision["state"] = "PLAYER_QUEUE_PROTECTED"
             continue
         active_goal = sim.get("active_goal")
