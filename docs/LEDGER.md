@@ -1,3 +1,7 @@
+## 2026-11-10 P00/P01 arbitrary interaction and cooperative resumption
+
+Operator: accept any user interaction with game/mod/desktop; yield and wait for inactivity; prefer CLI/native APIs. Ontology revision 4 adds BI-ONT-023/024; existing queue gains a mandatory-checkpoint atomic effect entrypoint and retained partial intents requiring observed reconciliation. Native transport preferred; desktop fallback requires opt-in. Consultation BI-P00-P01-COOPERATIVE-INTERACTION-20261110 precedes mutation. Mouse recovery remains confirmed; no live game acceptance or external adapter compliance claimed.
+
 ## 2026-11-10 — Critical desktop peripheral ownership and passive capture
 
 Owner: `scripts/game_capture.py`; consultation `BI-DESKTOP-PERIPHERAL-OWNERSHIP-20261110`. Remove capture-time restore/foreground effects; minimized capture refuses with an operator-restoration gate. Tests cover refusal and forbidden desktop-control calls. Windows Bluetooth service/adapter/driver recovery belongs to SysAdminSuite, linked in `docs/PERIPHERAL_INCIDENT.md`. Print Screen restored and operator-confirmed; EM11 paired, target-associated HID healthy, movement/click acceptance confirmed. No demonstrated Cursor attribution or common Bluetooth/capture cause. Offline capture tests do not certify live game capture.

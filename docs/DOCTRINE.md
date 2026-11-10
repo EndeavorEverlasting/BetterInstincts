@@ -75,3 +75,7 @@ Operator corrections issued during live Horizon work are **not** execution autho
 ## Lot boundary / house footprint admission (2026-11-10)
 
 Agents that click street, asphalt, neighbor lots, or canal have lost the house boundary. Durable gate: `contracts/lot-boundary.v1.json` / `betterinstincts/lot_boundary.py`. Algorithm: classify zones INTERIOR|YARD vs STREET|WATER|NEIGHBOR; require `lot_focus` ON_LOT; deny Buy/Build without a Build-census lease; admit a world click only when the client XY is inside a camera-revision-bound footprint AABB **or** the click zone is INTERIOR/YARD. Cardinal semantics apply only after footprint admit. Deny → Esc(+F1)+Shift+Enter lot arm — never thrash asphalt. `host_stack` attaches `lot_boundary` / `world_click_footprint`. Chat memory of “don’t click the street” is incomplete until this contract fires.
+
+## P00/P01: interaction sovereignty and native transport
+
+The operator may combine manual game play, mod features, voice/assistive input, IDEs and other apps. Autonomous effects yield at the next cooperative boundary and wait for fresh inactivity evidence before revalidation. Never change screenshot, mouse, Bluetooth or UAC settings for automation. Prefer verified native semantic APIs; never invent an unsupported command. Desktop input is an explicit fallback under existing ownership/presence checks. Passive capture never restores/foregrounds Sims. This applies to adopted adapters, not arbitrary external agents or game-native behavior.

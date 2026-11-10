@@ -52,3 +52,7 @@ blind repetition after ineffective rest. Current stage: repository-native async
 API with offline regression proof. Next: bind genuine observation/execution ports
 and prove need recovery plus gardening continuation in the disposable session.
 No live background manager or gardening completion is claimed; BI-002 ACTIVE.
+
+## 2026-11-10 P00/P01 host interoperability floor
+
+Ontology revision 4 formalizes arbitrary user interaction and native semantic transports. Existing cooperative queue owns atomic effects and retained partial-intent reconciliation. Windows recovery remains SysAdminSuite-owned, with portable CLI preparation and explicit privilege gates. This does not reorder or close BI-002/Horizon, certify external adapters, or establish the recurrence cause of the recovered Bluetooth incident.
