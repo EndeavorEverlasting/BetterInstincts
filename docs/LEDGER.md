@@ -1,3 +1,13 @@
+## 2026-11-10 — BI-002 baseline 2/5 + Charlee portrait remesaure
+
+**Operator:** Horizon gate remains BI-002 hunger live cert.
+
+**PROVED live:** Charlee LabLab select at remesaured portrait `[450,1055]` (stale `522` hit Servos). Baseline trials **2/5** on `bi002-game1-20261107` (`live_cert` 18% observations). Trial 2: critical hunger → fed (~120s game clock); captures under `dist/game-host/horizon-exec-20261110/bi002/t8-*`. FG S2 Olga Skills LOCAL_OBSERVED earlier. Seeds modal close `[1172,227]` — 0 purchases.
+
+**NOT proved:** BI-002 close; trials 3–5 / modified / rollback; fridge click HIT (terrain pie miss).
+
+**Git:** `99003d2` Charlee portrait remesaure on main.
+
 ## 2026-11-10 — Horizon H0 new save PROVED
 
 **Operator:** Create NEW save with default name before Horizon live work; never delete/overwrite.
