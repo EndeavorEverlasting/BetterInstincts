@@ -1,0 +1,70 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-DESKTOP-PERIPHERAL-OWNERSHIP-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "a9c8fd1778b0d340fc69c72850e5c5fb1363ecbd",
+  "proposed_capability": "Make PrintWindow capture passive: never restore or foreground Sims. Record separate Windows peripheral incident ownership and preserve user screenshot preferences.",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "VIEWPORT_STATE",
+    "OBSERVATION",
+    "CLAIM",
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "HOST_ACTION",
+    "OUTCOME",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "scripts/game_capture.py",
+    "docs/ASYNC_INTEROP.md",
+    "docs/DOCTRINE.md",
+    "AGENTS.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_CAPTURE_REGRESSION_TESTS_NOT_MOUSE_REPAIR_OR_GAME_CERTIFICATION",
+  "player_save_control_impact": "No game input, save changes, Bluetooth configuration or keyboard preference writes. Minimized capture yields a gate error.",
+  "expected_outcome": "Capture no longer steals foreground; minimized window requires operator restoration. OS peripheral repair belongs to SysAdminSuite.",
+  "negative_tests": [
+    "Minimized capture refuses without restoring window",
+    "Capture path contains no foreground, synthetic key or registry mutations"
+  ],
+  "rollback_path": "Revert this bounded capture change; no OS configuration to roll back.",
+  "unresolved_unknowns": [
+    "EM11 discovery cause unresolved; no attribution to Cursor established.",
+    "Live PrintWindow quality must be verified on intended game build."
+  ],
+  "files_expected": [
+    "scripts/game_capture.py",
+    "tests/test_game_capture.py",
+    "docs/PERIPHERAL_INCIDENT.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
+  "source_main_sha": "dcfa26ac9cfe661ff5d19c0d687e7d468f06d3e9"
+}

@@ -34,35 +34,63 @@
   "gates": {
     "PAUSED_PRODUCTIVITY_REQUIRED": {
       "when": "parts_gate_open OR household_queue_incomplete",
-      "forbid": ["UNPAUSE", "PLAY", "SPEED_UP", "SPACE_AS_PLAY"]
+      "forbid": [
+        "UNPAUSE",
+        "PLAY",
+        "SPEED_UP",
+        "SPACE_AS_PLAY"
+      ]
     },
     "OFF_INTENT_VIEW_ARM_REQUIRED": {
       "when": "post_world_click_view_is_street_or_buy_catalog",
-      "recovery": ["ESC", "F1_IF_BUY", "SHIFT_ENTER"],
-      "forbid": ["EXPLORE_BUY", "HARDCODED_FIELD_XY", "STREET_ROAM"]
+      "recovery": [
+        "ESC",
+        "F1_IF_BUY",
+        "SHIFT_ENTER"
+      ],
+      "forbid": [
+        "EXPLORE_BUY",
+        "HARDCODED_FIELD_XY",
+        "STREET_ROAM"
+      ]
     },
     "EDGE_CREEK_REGRESSION": {
       "when": "cursor_in_edge_band OR scenery_creek_canal_after_edge_dwell",
-      "recovery": ["SAFE_CURSOR_REST", "SHIFT_ENTER"],
-      "forbid": ["LEAVE_CURSOR_IN_EDGE_BAND", "CONTINUE_CLICKS_ON_CREEK_VIEW"]
+      "recovery": [
+        "SAFE_CURSOR_REST",
+        "SHIFT_ENTER"
+      ],
+      "forbid": [
+        "LEAVE_CURSOR_IN_EDGE_BAND",
+        "CONTINUE_CLICKS_ON_CREEK_VIEW"
+      ]
     },
     "OPERATOR_RECLAIM": {
       "when": "mouse_move_or_wispr_flow_dictation",
       "action": "RESTORE_OPERATOR_FOREGROUND",
-      "forbid": ["FIGHT_FOR_SCREEN"]
+      "forbid": [
+        "FIGHT_FOR_SCREEN"
+      ]
     },
     "INSIDE_REQUIRED_FOR_PARTS": {
       "when": "purchase_upgrade_parts_or_workstation",
-      "forbid": ["TREE_CLICK", "STREET_CLICK", "OUTSIDE_ONLY_FRAME"]
+      "forbid": [
+        "TREE_CLICK",
+        "STREET_CLICK",
+        "OUTSIDE_ONLY_FRAME"
+      ]
     }
   },
   "world_targeting": {
     "rule": "World object clicks are camera-relative; hardcoded field XY are not durable across zoom/pan.",
-    "require": ["FRESH_PRINTWINDOW_CAPTURE", "TARGET_VISIBLE_IN_CURRENT_FRAME"],
+    "require": [
+      "FRESH_PRINTWINDOW_CAPTURE",
+      "TARGET_VISIBLE_IN_CURRENT_FRAME"
+    ],
     "on_miss": "OFF_INTENT_VIEW_ARM_REQUIRED"
   },
   "fifth_gear": {
-    "rule": "Sims PID live + N roster seeded → execute live gates; do not emit a new P05 pack as Fifth Gear completion",
+    "rule": "Sims PID live + N roster seeded \u00e2\u2020\u2019 execute live gates; do not emit a new P05 pack as Fifth Gear completion",
     "s2_skills": "LOCAL_OBSERVED is infra not BI-005"
   },
   "forbidden_always": [
@@ -72,5 +100,23 @@
     "EA_CONNECT",
     "CHAT_ONLY_RULE_WITHOUT_REPO_MUTATION"
   ],
-  "proof_ceiling": "CONTRACT_HARNESS_NOT_LIVE_PARTS_HIT_NOT_BI002_CLOSE"
+  "proof_ceiling": "CONTRACT_HARNESS_NOT_LIVE_PARTS_HIT_NOT_BI002_CLOSE",
+  "user_interaction_sovereignty": {
+    "doctrine_owner": "P00 Governance Doctrine Installer",
+    "harness_owner": "P01 Harness Infrastructure Builder",
+    "rule": "Any user-chosen game, mod, mouse, keyboard, voice, assistive or other-app interaction outranks autonomous effects. Unknown presence yields. Inactivity permits re-evaluation, never a stale action replay.",
+    "admission_owner": "betterinstincts/control_handoff.py",
+    "queue_owner": "betterinstincts/workflow_interop.py",
+    "channel_owner": "betterinstincts/live_host_ops.py#assess_interaction_channel",
+    "preferred_channel": "VERIFIED_NATIVE_SEMANTIC_API",
+    "desktop_fallback": "EXPLICIT_OPERATOR_OPT_IN_AND_FRESH_PER_EFFECT_ADMISSION",
+    "resume": "TWO_FRESH_IDLE_PROBES_AND_TARGET_REVALIDATION",
+    "partial_work": "RETAIN_INTENT_REQUIRE_OBSERVED_RECONCILIATION_AND_REMAINDER",
+    "peripheral_settings": "PRESERVE_USER_PREFERENCES_SYSADMINSUITE_OWNS_AUTHORIZED_OS_REPAIR",
+    "limits": [
+      "Cooperative adapters only; external raw input is not intercepted.",
+      "Already executing native calls cannot be forcibly preempted.",
+      "No new global hooks, UAC changes, scheduler or background service."
+    ]
+  }
 }

@@ -335,3 +335,7 @@ Exact P-number intents only; prompt bodies are not reproduced here (TokenCorrido
 ## 2026-11-09 Send Alone -> JOIN misclick regression (P95 + P124 + P62 + P94)
 
 Exact P-number intents only; prompt bodies are not reproduced here (TokenCorridor owns them). **P95** designs the relative Join/Send Alone hit-target model and post-click verify seam; **P124** keeps `decision_eval` / `decision-prompts` and `click_error_eval` as owners and reuses the `cas_quiz_okay` SendInput helper (no throwaway `_tmp` clicker); **P62** adds falsifiers in `tests/test_school_attend_click.py`; **P94** repairs the failure instance (stale `(960,600)` struck in `docs/GAME_HOST.md`) and its recurrence guard (`JOIN_MISCLICK_CONFIRMED` fail-closed, computer-use overlay executor forbidden). Consultation first: `BI-SEND-ALONE-CLICK-VERIFY-20261109.v1.json`. Offline only; no live PASS.
+
+## 2026-11-10 P00/P01 interaction sovereignty
+
+P00 Governance Doctrine Installer and P01 Harness Infrastructure Builder (canonical definition owners in the table above) extend ontology revision 4 and the existing control_handoff/workflow_interop owners. Consultation BI-P00-P01-COOPERATIVE-INTERACTION-20261110 precedes mutation. Native transport, atomic effects and observed partial-intent reconciliation preserve arbitrary user interaction. No new scheduler, peripheral setting change or live gameplay certification.

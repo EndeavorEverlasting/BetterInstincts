@@ -58,5 +58,13 @@
   ],
   "handoff_contract": "contracts/control-handoff.v1.json",
   "evidence_note": "Foreground/cursor location informs display; only observed global input age and explicit player intent arbitrate screen control. Idle does not imply trusted scene/save. No override below 15 seconds is valid. Foreground PID/name is an ephemeral diagnostic hint; OS global input age arbitrates clicks, and an explicit operator_busy signal handles voice dictation that emits no keyboard events.",
-  "grace_ms_minimum": 15000
+  "grace_ms_minimum": 15000,
+  "interaction_shapes": [
+    "GAME_MOUSE",
+    "GAME_KEYBOARD",
+    "MOD_INTERFACE",
+    "VOICE_OR_ASSISTIVE_EXPLICIT_BUSY",
+    "ANY_OTHER_DESKTOP_APP"
+  ],
+  "interaction_policy_ref": "contracts/ontology.v1.json#interaction_policy"
 }
