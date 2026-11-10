@@ -27,6 +27,9 @@ if str(ROOT) not in sys.path:
 
 from betterinstincts.upgrade_parts_force import (
     UpgradePartsForceError,
+    acquisition_source_catalog,
+    next_observed_menu_choice,
+    plan_acquisition_routes,
     budget_snapshot,
     catalog_snapshot,
     evaluate_diy_parts_cert,
@@ -50,6 +53,22 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("catalog", help="List upgrade-part catalog + path summaries")
     sub.add_parser("budget", help="Show DIY kit pocket-stock targets")
+
+    sub.add_parser("sources", help="Show observed-route domains and instant/queued source classes")
+    acquire = sub.add_parser("acquisition", help="Preview actor-safe household source acquisition (NO clicks)")
+    acquire.add_argument("--portraits", required=True, help="JSON array: {slot,portrait_id,observed:true}")
+    acquire.add_argument("--requests", required=True, help="JSON array: {item,quantity}")
+    acquire.add_argument("--selected-slots", type=int, nargs="*", default=None,
+                         help="Optional exact observed portrait slot(s); default all")
+    acquire.add_argument("--packs-observed", nargs="*", default=None,
+                         help="Actual observed installed pack names (never assumed)")
+    acquire.add_argument("--player-directed", action="store_true")
+
+    menu = sub.add_parser("menu-next", help="Resolve exactly one observed menu page (NO clicks)")
+    menu.add_argument("--options", required=True, help="JSON array of current visible labels")
+    menu.add_argument("--goal", required=True, help="Desired exact menu choice")
+    menu.add_argument("--visited", help="Optional JSON array of previously seen page signatures")
+
 
     how = sub.add_parser("how-to-buy", help="Print phone/computer Order path")
     how.add_argument("--part", default="robot_salvage_parts")
@@ -92,6 +111,27 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.cmd == "catalog":
             return _print(catalog_snapshot())
+        if args.cmd == "sources":
+            return _print(acquisition_source_catalog())
+        if args.cmd == "acquisition":
+            portraits = json.loads(Path(args.portraits).read_text(encoding="utf-8"))
+            requests = json.loads(Path(args.requests).read_text(encoding="utf-8"))
+            return _print(plan_acquisition_routes(
+                portraits=portraits,
+                requests=requests,
+                selected_slots=args.selected_slots,
+                packs_observed=args.packs_observed,
+                player_directed=bool(args.player_directed),
+            ))
+        if args.cmd == "menu-next":
+            visible = json.loads(Path(args.options).read_text(encoding="utf-8"))
+            visited = (json.loads(Path(args.visited).read_text(encoding="utf-8"))
+                       if args.visited else ())
+            return _print(next_observed_menu_choice(
+                visible_options=visible, desired_choice=args.goal,
+                visited_signatures=visited,
+            ))
+
         if args.cmd == "budget":
             return _print(budget_snapshot())
         if args.cmd == "how-to-buy":
