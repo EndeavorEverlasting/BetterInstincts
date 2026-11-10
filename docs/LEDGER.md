@@ -1,3 +1,14 @@
+## 2026-11-10 — Moonwake Fifth Gear: world-object highlight continuity and learned traversal outcomes
+
+**Parent objective:** Replace fixed-button/XY-only click evaluation with capture-bound world-object highlight tracking and actual click-outcome learning that improves over time, preserves target identity through traversal and stops when a formerly highlighted target loses its highlight. Invocation order verified against Moonwake catalog: P95 → P82 → P08 → P07 → P124. Ontology consultation: `BI-WORLD-HIGHLIGHT-TRAVERSAL-LEARNING-20261110` committed before behavior mutation.
+
+**P95 / P124 architecture:** Extend existing `host_stack.evaluate_turn(world_target=...)` with optional `highlight_frames` rather than creating an input daemon. New read-only owner `betterinstincts/world_traversal_learning.py` evaluates temporally ordered, camera-stable detections, mutually corroborated highlight cues, track continuity and capture/target identity. Missing/lost/contradictory highlights revoke a framed click candidate, never issue auto-reclick. Existing camera-first, lot-boundary, presence, save, exact-patch, input and peripheral controls remain separate mandatory admission layers.
+
+**P82 evidence:** Synthetic tests and CLI use a bounded online Beta–Bernoulli per-context success model with conservative rank bounds (8 examples minimum) and independent post-click GAME_EVENT/OPERATOR_REVIEW label admission; unknown or interrupted trials abstain. No Sim names, raw frames or desktop data enter persistent model keys. Explicit versioned snapshots only under ignored `dist/world-traversal-eval/`.
+
+**P08 proof limit:** No attached Sims process or installed CV detector. Real-game highlight segmentation calibration, off-lot/background negatives, click outcomes, user takeover and BIOS/peripheral preservation require approved Windows disposable host trials. P07 landing and mainline status must be independently verified from GitHub and CI; no offline result is gameplay certification. Other PR #159 owns spatial-perception detector lane; do not overwrite its `host_listener` work. BI-002 hunger remains ACTIVE.
+
+
 ## 2026-11-10 — Moonwake Closers: Order-first, source evidence and runbook restoration
 
 **P83:** Revalidated SysAdminSuite #562/#563 and BetterInstincts #160/#161/#162/#163/#164/#165/#166 against current default-branch truth. Identified a live-computer menu proposal defect: `MENU` preferred `Purchase Upgrade Parts` over `Order` when both labels were seen, violating the operator's explicit sequence. Also found a stale EA URL containing `/games/battlefield/`, plus a regressed v2 runbook missing the PR163 v3 spending/queue safety instructions.
