@@ -154,7 +154,9 @@ def propose_computer_purchase_step(
         if not isinstance(menu_pages_seen, int) or isinstance(menu_pages_seen, bool):
             return _hold("MENU_HOP_COUNT_INVALID")
         max_pages = int(cfg["computer_purchase_menu"]["max_menu_pages"])
-        if menu_pages_seen >= max_pages or page_signature_seen_before:
+        if menu_pages_seen < 0:
+            return _hold("MENU_HOP_COUNT_INVALID")
+        if menu_pages_seen >= max_pages or page_signature_seen_before is not False:
             return _hold("MENU_DISCOVERY_BOUNDED_OR_CYCLE_DETECTED")
         options = {_norm(label): label for label in menu_labels if isinstance(label, str)}
         seen = {_norm(label) for label in visited_labels}
