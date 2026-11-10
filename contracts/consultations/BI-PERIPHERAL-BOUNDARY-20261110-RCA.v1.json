@@ -53,7 +53,8 @@
   "negative_tests": [
     "Static hostile fixture attempts Start-Service / pnputil and is rejected",
     "Ordinary game capture and safe source remain permitted",
-    "Existing passive game capture and operator-first queue remain unchanged"
+    "Existing passive game capture and operator-first queue remain unchanged",
+    "Independent CI guard remains runnable when inherited Sims offline suite fails"
   ],
   "rollback_path": "Revert only this additive source boundary and its tests; no host mutation is performed.",
   "unresolved_unknowns": [
@@ -67,7 +68,8 @@
     "tests/test_peripheral_boundary.py",
     "docs/PERIPHERAL_INCIDENT.md",
     "docs/ONTOLOGY.md",
-    "docs/LEDGER.md"
+    "docs/LEDGER.md",
+    ".github/workflows/ci.yml"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
