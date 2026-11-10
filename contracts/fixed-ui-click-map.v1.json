@@ -1,9 +1,10 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 9,
+  "version": 10,
   "version_notes": {
     "8": "Adds camera_dependent_seeds_1920x1080 (fridge HIT/MISS). Additive only: seed_targets_1920x1080 and all certified seeds unchanged; camera-dependent rows are NOT ingested into the fixed-HUD ledger.",
-    "9": "Adds live.notebook_close_x [1338,276] (PrintWindow-measured Notebook dismiss). Additive only; prior seeds unchanged."
+    "9": "Adds live.notebook_close_x [1338,276] (PrintWindow-measured Notebook dismiss). Additive only; prior seeds unchanged.",
+    "10": "Promotes Load/Play/Exit-CAS/Residential Worlds/LabLab Play from living-subject-recovery receipt (2026-11-10). cas_cancel_x supersedes 1830,1050→1838,1048. FORBIDDEN deny ~[1883,1040] blue person+arrow (CAS, not Live). camera_dependent fridge seeds remain separate — not merged here."
   },
   "authority": "docs/UI_CHROME.md",
   "owners": {
@@ -195,6 +196,78 @@
       "status": "LIVE_MEASURED_20261110",
       "profile": "1920x1080",
       "notes": "OK on ADD NEW SAVE name modal; keep default name"
+    },
+    "host.main_menu_load_game": {
+      "role": "OPEN_LOAD_GAME_MAIN_MENU",
+      "client_xy": [220, 590],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "notes": "Main menu LOAD GAME row — never Resume"
+    },
+    "host.load_game_play_my_saved_game_6": {
+      "role": "PLAY_SELECTED_SAVE_ROW",
+      "client_xy": [1257, 353],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "save_hint": "My Saved Game 6 / Slot_00000007 / LabLab human+2 Servos",
+      "delete_avoid_y_min": 387,
+      "notes": "Play on lab save row only; clicks below y≥387 risk Delete — never Delete"
+    },
+    "host.cas_cancel_x": {
+      "role": "DISMISS_CAS_MODAL_X",
+      "client_xy": [1838, 1048],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "prior_xy_stale": [1830, 1050],
+      "notes": "CAS top-right X → LEAVING SO SOON?; never green checkmark / create household"
+    },
+    "host.exit_create_a_sim_button": {
+      "role": "EXIT_CREATE_A_SIM_CONFIRM",
+      "client_xy": [960, 567],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "body_text_miss_y": 508,
+      "notes": "Exit Create A Sim button — body text ~y508 is MISS; use button center ~567"
+    },
+    "host.forbidden_create_new_household": {
+      "role": "FORBIDDEN_DENY_LIVE_ENTRY",
+      "client_xy": [1883, 1040],
+      "status": "FORBIDDEN_DENY",
+      "profile": "1920x1080",
+      "notes": "Blue bottom-right person+arrow opens empty CAS / Create New Household — DENY for LabLab Live recovery"
+    },
+    "host.forbidden_manage_worlds_travel_person": {
+      "role": "FORBIDDEN_DENY_LIVE_ENTRY",
+      "client_xy": [1883, 1040],
+      "status": "FORBIDDEN_DENY",
+      "profile": "1920x1080",
+      "alias_of": "host.forbidden_create_new_household",
+      "notes": "Same errant control on Manage Worlds / map surfaces — opens CAS not Play"
+    },
+    "host.willow_creek_world_icon": {
+      "role": "SELECT_RESIDENTIAL_WORLD",
+      "client_xy": [120, 320],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "world_hint": "Willow Creek",
+      "notes": "Residential Worlds picker — circular world tile"
+    },
+    "host.lablab_lot_house_body": {
+      "role": "SELECT_LOT_ON_MAP",
+      "client_xy": [1456, 850],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "plumbob_xy_hint": [1456, 771],
+      "lot_hint": "LabLab",
+      "notes": "Lot house body click when green plumbob visible above"
+    },
+    "host.manage_worlds_play_household": {
+      "role": "PLAY_HOUSEHOLD_FROM_MAP",
+      "client_xy": [1811, 1033],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "precondition": "LabLab lot selected",
+      "notes": "Bottom-right Play triangle when LabLab selected — not blue CAS person"
     },
     "live.top_live_people": {
       "role": "EXIT_BUILD_BUY_TO_LIVE",
@@ -940,6 +1013,97 @@
     "not": [
       "TREAT_SAVE_AND_SAVE_AS_AS_INTERCHANGEABLE",
       "CLICK_EXISTING_SAVE_THUMBNAIL_IN_SAVE_GAME_DIALOG"
+    ]
+  },
+  "load_play_recovery_1920x1080": {
+    "capture_ref": "dist/game-host/horizon-exec-20261110/bi002/",
+    "measured_at": "2026-11-10T17:15:00+00:00",
+    "process_id": 78240,
+    "game_version": "1.121.361.1020",
+    "profile": "1920x1080",
+    "evidence": "dist/game-host/horizon-exec-20261110/bi002/living-subject-recovery-receipt.json",
+    "attestation": "dist/game-host/horizon-exec-20261110/bi002/living-subject-attestation.json",
+    "location": "Main menu → Load Game → Play My Saved Game 6 → Residential Worlds → Willow Creek → LabLab → Live",
+    "owner": "betterinstincts/fixed_ui_click_map.py",
+    "camera_dependent_note": "Fridge pie HIT/MISS coords stay in camera_dependent_seeds_1920x1080 only — not promoted or merged into this block.",
+    "journey_order": [
+      "main_menu_load_game",
+      "load_game_play_my_saved_game_6",
+      "cas_cancel_x",
+      "exit_create_a_sim",
+      "willow_creek_world",
+      "lablab_lot_house",
+      "manage_worlds_play_household"
+    ],
+    "hazards": {
+      "load_game_delete_avoid_y_min": 387,
+      "exit_cas_body_text_miss_y": 508,
+      "forbidden_blue_person_xy": [1883, 1040]
+    },
+    "targets": {
+      "main_menu_load_game": {
+        "target_id": "host.main_menu_load_game",
+        "client_xy": [220, 590],
+        "status": "LIVE_MEASURED_20261110"
+      },
+      "load_game_play_my_saved_game_6": {
+        "target_id": "host.load_game_play_my_saved_game_6",
+        "client_xy": [1257, 353],
+        "status": "LIVE_MEASURED_20261110",
+        "delete_avoid_y_min": 387
+      },
+      "cas_cancel_x": {
+        "target_id": "host.cas_cancel_x",
+        "client_xy": [1838, 1048],
+        "status": "LIVE_MEASURED_20261110",
+        "prior_xy_stale": [1830, 1050]
+      },
+      "exit_create_a_sim": {
+        "target_id": "host.exit_create_a_sim_button",
+        "client_xy": [960, 567],
+        "status": "LIVE_MEASURED_20261110",
+        "body_text_miss_y": 508
+      },
+      "willow_creek_world": {
+        "target_id": "host.willow_creek_world_icon",
+        "client_xy": [120, 320],
+        "status": "LIVE_MEASURED_20261110"
+      },
+      "lablab_lot_house": {
+        "target_id": "host.lablab_lot_house_body",
+        "client_xy": [1456, 850],
+        "plumbob_xy_hint": [1456, 771],
+        "status": "LIVE_MEASURED_20261110"
+      },
+      "manage_worlds_play_household": {
+        "target_id": "host.manage_worlds_play_household",
+        "client_xy": [1811, 1033],
+        "status": "LIVE_MEASURED_20261110"
+      }
+    },
+    "forbidden_denials": {
+      "create_new_household": {
+        "target_id": "host.forbidden_create_new_household",
+        "client_xy": [1883, 1040],
+        "policy": "DENY_FOR_LIVE_ENTRY"
+      },
+      "manage_worlds_travel_person": {
+        "target_id": "host.forbidden_manage_worlds_travel_person",
+        "client_xy": [1883, 1040],
+        "policy": "DENY_FOR_LIVE_ENTRY"
+      }
+    },
+    "forbidden": [
+      "DELETE_SAVE",
+      "SAVE_AND_EXIT_OVERWRITE_LAB",
+      "CAS_GREEN_CHECKMARK",
+      "CLICK_FORBIDDEN_BLUE_PERSON_FOR_LIVE",
+      "RESUME"
+    ],
+    "not": [
+      "MERGE_CAMERA_DEPENDENT_FRIDGE_INTO_THIS_BLOCK",
+      "CLICK_LOAD_GAME_DELETE_ROW",
+      "USE_EXIT_CAS_BODY_TEXT_Y508_AS_BUTTON"
     ]
   },
   "camera_dependent_seeds_1920x1080": {

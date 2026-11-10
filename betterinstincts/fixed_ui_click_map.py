@@ -328,6 +328,54 @@ def load_camera_dependent_fridge_seeds(*, cfg: Optional[dict] = None) -> dict:
     return out
 
 
+def load_load_play_recovery_coords(*, cfg: Optional[dict] = None) -> dict[str, tuple[int, int]]:
+    """Return Load/Play/Exit-CAS recovery client_xy tuples (1920x1080).
+
+    Camera-dependent fridge seeds are excluded; use load_camera_dependent_fridge_seeds.
+    """
+    cfg = cfg or load_contract()
+    block = cfg.get("load_play_recovery_1920x1080")
+    if not isinstance(block, Mapping):
+        raise FixedUiClickMapError("LOAD_PLAY_RECOVERY_BLOCK_REQUIRED")
+    targets = block.get("targets")
+    if not isinstance(targets, Mapping):
+        raise FixedUiClickMapError("LOAD_PLAY_RECOVERY_TARGETS_REQUIRED")
+    key_map = {
+        "main_menu_load_game": "main_menu_load_game",
+        "load_game_play_slot_6": "load_game_play_my_saved_game_6",
+        "cas_cancel_x": "cas_cancel_x",
+        "exit_create_a_sim": "exit_create_a_sim",
+        "willow_creek_world": "willow_creek_world",
+        "lablab_lot_house": "lablab_lot_house",
+        "manage_worlds_play": "manage_worlds_play_household",
+    }
+    out: dict[str, tuple[int, int]] = {}
+    for out_key, block_key in key_map.items():
+        row = targets.get(block_key)
+        if not isinstance(row, Mapping):
+            raise FixedUiClickMapError(f"LOAD_PLAY_RECOVERY_TARGET_MISSING:{block_key}")
+        xy = row.get("client_xy")
+        if not (
+            isinstance(xy, (list, tuple))
+            and len(xy) == 2
+            and all(isinstance(v, int) for v in xy)
+        ):
+            raise FixedUiClickMapError(f"LOAD_PLAY_RECOVERY_XY_REQUIRED:{block_key}")
+        out[out_key] = (int(xy[0]), int(xy[1]))
+    denials = block.get("forbidden_denials")
+    if isinstance(denials, Mapping):
+        row = denials.get("create_new_household")
+        if isinstance(row, Mapping):
+            xy = row.get("client_xy")
+            if (
+                isinstance(xy, (list, tuple))
+                and len(xy) == 2
+                and all(isinstance(v, int) for v in xy)
+            ):
+                out["forbidden_blue_person"] = (int(xy[0]), int(xy[1]))
+    return out
+
+
 def plan_escape_menu_save(*, intent: str = "SAVE_AS", cfg: Optional[dict] = None) -> dict:
     """Plan centered MENU save path; guard Save vs Save As 2px collision."""
     cfg = cfg or load_contract()

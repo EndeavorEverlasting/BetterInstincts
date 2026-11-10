@@ -2,18 +2,19 @@
   "schema": "betterinstincts.horizon-execution-wide/v1",
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
-  "updated_at": "2026-11-10T14:05:00Z",
+  "updated_at": "2026-11-10T11:55:00Z",
   "live_truth_20261110": {
     "host": {"pid": 78240, "exe": "TS4_x64_fpb", "game_version": "1.121.361.1020"},
     "live_cert_run": "bi002-game1-20261107",
     "live_cert_status": {"baseline": 2, "modified": 0, "rollback": 0, "state": "INCOMPLETE", "next_gate": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS"},
     "default_save": "My Saved Game 6 / Slot_00000007 — NEVER delete or overwrite",
     "household": {
-      "charlee_lablab": "STARVED -> Become a Playable Ghost (adverse-charlee-starvation.json); death watch is NOT an eat trial",
-      "olga": "death modal DISMISSED; playable-ghost path",
-      "living_hunger_subject": "BLOCKED — see dist/game-host/horizon-exec-20261110/bi002/living-subject-blocker.json",
-      "living_subject_gate_20261110": {"bernice": "SERVO then DIED (inventory remain with ghost; never Delete) — still NOT a living hunger subject", "charlee_olga": "playable ghosts (Ethereal Sustenance) — not hunger subjects", "need": "a living human (Evil P0 or remesaure / invite / load earlier save without deleting)", "prove_via": "Needs panel 6-bar Hunger (vs Servo Durability / ghost Ethereal)"},
-      "adverse_bernice_death": "dist/game-host/horizon-exec-20261110/bi002/adverse-bernice-death.json"
+      "charlee_lablab": "RELOADED living from My Saved Game 6 — Needs 6-bar Hunger attested (living-subject-attestation.json). Prior ghost session was not saved over Slot_00000007.",
+      "olga": "also living human on recovered LabLab load (portrait tray); death modal previously DISMISSED on ghost session",
+      "living_hunger_subject": "RECOVERED — LabLab Play via map Play [1811,1033]; never Create Household / CAS blue person+arrow [1883,1040]",
+      "living_subject_gate_20261110": {"bernice": "SERVO (Durability) — not hunger subject", "charlee_olga_recovered": "living humans with commodity Hunger after load of Slot_00000007", "prove_via": "Needs panel 6-bar Hunger (vs Servo Durability / ghost Ethereal)", "receipts": ["dist/game-host/horizon-exec-20261110/bi002/living-subject-recovery-receipt.json", "dist/game-host/horizon-exec-20261110/bi002/living-subject-attestation.json"]},
+      "adverse_bernice_death": "dist/game-host/horizon-exec-20261110/bi002/adverse-bernice-death.json",
+      "lot_focus_offlot_street": "PROVED assess_lot_focus OFF_LOT_STREET when camera/Sim on sidewalk/canal; restore Shift+Enter lot center when Enter alone leaves water/street; terrain-arm RMB [880,480] can displace to canal — avoid while OFF_LOT. Receipt: offlot-street-recognition.json"
     },
     "fridge_hit_zoomed_20261110": "HIT_PIE_MENU at client [500,560] after Z-zoom (~14) + Enter recenter; snack NOT queued; single frame; contracts/fixed-ui-click-map.v1.json camera_dependent_seeds_1920x1080",
     "fridge_hit": "WIDE [465,595] MISS (outdoor Upgrade/Possess); ZOOMED [500,560] HIT once then camera/story drift made re-HIT unstable",
@@ -198,11 +199,12 @@
         "receipt": "dist/game-host/horizon-exec-20261110/bi002/trial1-partial.json",
         "live_cert": {"run_id": "bi002-game1-20261107", "baseline": "2/5", "modified": "0/5", "rollback": 0, "state": "INCOMPLETE", "next_gate": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS"},
         "fridge_hit": {"state": "MISS", "receipt": "dist/game-host/horizon-exec-20261110/bi002/fridge-hit-receipt.json", "xy": [465, 595], "observed": "outdoor Upgrade/Possess pie (satellite/garden); camera too zoomed out", "wide_zoom_only": true, "zoomed_hit_xy": [500, 560], "zoomed_hit_state": "HIT_PIE_MENU", "zoom_precondition": "ZOOMED_IN_RECENTERED via Z/wheel (never RMB) + Enter"},
-        "living_subject_gate": "Bernice=Servo (Durability), not living human; need living human (Evil P0 or remeasure); Charlee/Olga are playable ghosts",
-        "adverse": {"event": "CHARLEE_STARVATION_DEATH -> playable ghost", "receipt": "dist/game-host/horizon-exec-20261110/bi002/adverse-charlee-starvation.json", "baseline_effect": "none; stays 2/5"},
+        "living_subject_gate": "RECOVERED living Charlee/Olga via Load My Saved Game 6 → Willow Creek → LabLab Play [1811,1033]; Bernice remains Servo",
+        "adverse": {"event": "CHARLEE_STARVATION_DEATH -> playable ghost", "receipt": "dist/game-host/horizon-exec-20261110/bi002/adverse-charlee-starvation.json", "baseline_effect": "none; stays 2/5; ghost session not saved over Slot_00000007"},
         "olga_modal": "CLEARED (followup-olga-cleared.png)",
-        "living_hunger_subject": "RECOVERY_REQUIRED",
-        "prevention": "No stats.set_stat hunger drain unless fridge/food interaction is already admitted and queued; pause after set_stat until food queued"
+        "living_hunger_subject": "ATTESTED (living-subject-attestation.json) — snack still NOT queued; fridge re-HIT open",
+        "prevention": "No stats.set_stat hunger drain unless fridge/food interaction is already admitted and queued; pause after set_stat until food queued",
+        "ui_recovery_v10": "contracts/fixed-ui-click-map.v1.json v10 Load/Play/CAS/LabLab Play seeds; FORBIDDEN Create Household ~[1883,1040]"
       }
     },
     {
@@ -248,9 +250,9 @@
     }
   ],
   "next_gates_ordered": [
-    "1. Recover a LIVING hunger subject: select a living HUMAN Sim (not Charlee/Olga ghost, not Bernice Servo; Evil P0 or remeasure); never delete My Saved Game 6 / Slot_00000007",
-    "2. Fix lot focus: arm hotkeys, Enter to recenter on active Sim, zoom in so the fridge is bbox-centered (no outdoor pie)",
-    "3. Fridge HIT: PrintWindow-confirm kitchen fridge pie (Grab/Quick Meal) before any hunger drain; promote coords only after a second camera frame; zoomed HIT [500,560] seeded as camera-dependent (stale wide [465,595]); calendar dismiss only via live.calendar_close_x [1445,255]",
+    "1. DONE — living Hunger subject attested on LabLab after Load Slot_00000007 (never delete saves)",
+    "2. Lot focus: OFF_LOT_STREET classify proved; prefer Shift+Enter when Enter centers Sim on canal/sidewalk; do not terrain-arm on water",
+    "3. Fridge/snack QUEUE still OPEN — kitchen fridge not re-acquired this session (lab/garden camera stuck); PrintWindow-confirm fridge pie then Have Breakfast/Quick Meal before any hunger drain; calendar dismiss only via live.calendar_close_x [1445,255]",
     "4. BI-002 baseline trials 3-5 (record with python -m scripts.live_cert record; no set_stat drain without queued food)",
     "5. BI-002 modified 5/5 with reversible package, rollback, maintainer review",
     "6. Only after BI-002 live cert: BI-003A-E -> BI-003F -> BI-004 -> BI-005 -> BI-006"

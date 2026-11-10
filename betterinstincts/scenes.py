@@ -6,7 +6,9 @@ The program NEVER clicks The Sims, reads save files or grants game certification
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "contracts" / "game-scenes.v1.json"
@@ -31,6 +33,37 @@ def load_catalog(path: Path = CATALOG) -> dict:
         raise SceneError("CATALOG_INVALID_JSON") from exc
     validate_catalog(catalog)
     return catalog
+
+
+def stamp_host_capture_game_version(observation: object) -> dict[str, Any] | None:
+    """Fill missing catalog game_version on a HOST_CAPTURE observation.
+
+    PrintWindow receipts and live host ticks may omit the patch; assess owners
+    fail closed without an exact version. Never overwrites a supplied version.
+    """
+    if observation is None:
+        return None
+    if not isinstance(observation, Mapping):
+        return None
+    out = dict(observation)
+    if out.get("source") == "HOST_CAPTURE" and not out.get("game_version"):
+        out["game_version"] = load_catalog()["game_version"]
+    return out
+
+
+def stamp_host_capture_branch(container: object) -> dict[str, Any] | None:
+    """Stamp HOST_CAPTURE on a leaf or nested ``observation`` field."""
+    if container is None:
+        return None
+    if not isinstance(container, Mapping):
+        return None
+    out = dict(container)
+    nested = out.get("observation")
+    if isinstance(nested, Mapping):
+        stamped = stamp_host_capture_game_version(nested)
+        if stamped is not None:
+            out["observation"] = stamped
+    return stamp_host_capture_game_version(out) or out
 
 
 def validate_catalog(catalog: dict) -> None:

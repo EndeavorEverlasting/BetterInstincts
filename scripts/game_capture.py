@@ -112,6 +112,8 @@ def capture_sims(*, process_id: int | None, out: Path) -> dict:
 
     image = Image.frombuffer("RGBX", (width, height), buf, "raw", "BGRX", 0, 1).convert("RGB")
     image.save(dest)
+    from betterinstincts.scenes import load_catalog
+
     return {
         "state": "PRINTWINDOW_CAPTURED",
         "process_id": pid,
@@ -120,6 +122,7 @@ def capture_sims(*, process_id: int | None, out: Path) -> dict:
         "height": height,
         "path": str(dest.relative_to(ROOT)) if dest.is_relative_to(ROOT) else str(dest),
         "iconic_after": bool(user32.IsIconic(hwnd)),
+        "game_version": load_catalog()["game_version"],
         "proof_ceiling": "WINDOW_BITMAP_ONLY_NOT_LIVE_MODE_OR_INPUT_PROOF",
     }
 

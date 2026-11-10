@@ -41,6 +41,7 @@ from betterinstincts.control_handoff import (
     as_presence,
     decide,
 )
+from betterinstincts.scenes import load_catalog, stamp_host_capture_branch
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "host-listener.v1.json"
@@ -426,14 +427,17 @@ def _load_observation(raw: Mapping) -> dict:
     if sim_camera_observation is not None:
         if not isinstance(sim_camera_observation, Mapping) or len(json.dumps(dict(sim_camera_observation))) > 8192:
             raise HostListenerError("SIM_CAMERA_OBSERVATION_INVALID")
+        sim_camera_observation = stamp_host_capture_branch(sim_camera_observation)
     camera_recovery = raw.get("camera_recovery")
     if camera_recovery is not None:
         if not isinstance(camera_recovery, Mapping) or len(json.dumps(dict(camera_recovery))) > 8192:
             raise HostListenerError("OBSERVATION_CAMERA_RECOVERY_INVALID")
+        camera_recovery = stamp_host_capture_branch(camera_recovery)
     world_target = raw.get("world_target")
     if world_target is not None:
         if not isinstance(world_target, Mapping) or len(json.dumps(dict(world_target))) > 8192:
             raise HostListenerError("OBSERVATION_WORLD_TARGET_INVALID")
+        world_target = stamp_host_capture_branch(world_target)
     stories_touched = raw.get("stories_touched") or ()
     if not isinstance(stories_touched, (list, tuple)):
         raise HostListenerError("OBSERVATION_STORIES_TOUCHED_INVALID")
@@ -463,6 +467,8 @@ def _load_observation(raw: Mapping) -> dict:
     game_version = raw.get("game_version")
     if game_version is not None and (not isinstance(game_version, str) or len(game_version) > 40):
         raise HostListenerError("OBSERVATION_GAME_VERSION_INVALID")
+    if game_version is None and raw.get("capture_ref"):
+        game_version = load_catalog()["game_version"]
     survey_occupied = raw.get("occupied_objects", [])
     if not isinstance(survey_occupied, (list, tuple)) or len(survey_occupied) > 128:
         raise HostListenerError("OBSERVATION_OCCUPIED_OBJECTS_INVALID")

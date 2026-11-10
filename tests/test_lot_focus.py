@@ -5,7 +5,7 @@ import unittest
 
 from betterinstincts.host_stack import evaluate_turn
 from betterinstincts.lot_focus import assess_lot_focus, should_assess_lot_focus
-from betterinstincts.scenes import load_catalog
+from betterinstincts.scenes import load_catalog, stamp_host_capture_branch, stamp_host_capture_game_version
 
 
 CAPTURE = "capture:lot-focus-1"
@@ -242,6 +242,42 @@ class LotFocusTests(unittest.TestCase):
         out = self.assess(game_version="0.0.0")
         self.assertEqual(out["classification"], "AMBIGUOUS")
         self.assertEqual(out["gate"], "LOT_FOCUS_SCENE_UNVERIFIED")
+
+    def test_off_lot_when_game_version_stamped_from_catalog(self):
+        raw = obs(
+            camera_on_active_household_lot=False,
+            scenery_tokens=["CANAL_LEFT", "NEIGHBOR_HOUSES"],
+        )
+        del raw["game_version"]
+        stamped = stamp_host_capture_game_version(raw)
+        self.assertEqual(stamped["game_version"], load_catalog()["game_version"])
+        out = assess_lot_focus(capture_ref=CAPTURE, observation=stamped)
+        self.assertEqual(out["classification"], "OFF_LOT")
+        self.assertEqual(out["state"], "OFF_LOT_STREET")
+
+    def test_host_stack_stamps_missing_game_version_for_lot_focus(self):
+        raw = obs(
+            zoom_mode_observed="TRAVEL_AFAR",
+            camera_on_active_household_lot=False,
+            camera_lot_kind="neighborhood",
+            live_hud_present=False,
+        )
+        del raw["game_version"]
+        turn = evaluate_turn(
+            SIX,
+            capture_ref=CAPTURE,
+            sim_camera_observation=raw,
+        )
+        self.assertEqual(turn["lot_focus"]["state"], "OFF_LOT_STREET")
+        self.assertEqual(turn["next_gate"], "LOT_OFF_FOCUS_RESTORE_REQUIRED")
+
+    def test_stamp_host_capture_branch_nested_recovery_observation(self):
+        inner = {"source": "HOST_CAPTURE", "capture_ref": "capture:recover-1", "camera_lot_kind": "canal"}
+        wrapped = stamp_host_capture_branch({"target_kind": "LOT", "observation": inner})
+        self.assertEqual(
+            wrapped["observation"]["game_version"],
+            load_catalog()["game_version"],
+        )
 
     def test_scenery_tokens_are_bounded_and_type_checked(self):
         out = self.assess(scenery_tokens=[None, 5, {"x": 1}] + ["KITCHEN"] * 500)

@@ -1,3 +1,15 @@
+## 2026-11-10 — Living Hunger recovered + OFF_LOT_STREET live classify
+
+**CHANGED:** Loaded `My Saved Game 6` / `Slot_00000007` (never delete) → Willow Creek → LabLab Play `[1811,1033]` (never Create Household/`[1883,1040]`). Living Charlee/Olga Needs 6-bar Hunger attested (`living-subject-attestation.json`). `assess_lot_focus` live `OFF_LOT_STREET` when Sim/camera on sidewalk/canal (`offlot-street-recognition.json`); Shift+Enter lot-center when Enter alone leaves water; avoid terrain-arm RMB on canal. Horizon plan `BI-HORIZON-EXECUTION-WIDE-20261110` gates updated. Inventory holds Faux Meat Cube + bowls — Eat queue still OPEN (multiselect/sell path avoided). Fridge kitchen re-HIT still open (lab/garden camera). BI-002 baseline still 2/5; not closed.
+
+**NEXT:** Queue Eat from inventory food or fridge pie with Multiselect OFF; then live_cert trials 3–5; never hunger-drain cheat without queue.
+
+## 2026-11-10 — Load/Play/Exit-CAS recovery coords (fixed-ui-click-map v10)
+
+**CHANGED:** `contracts/fixed-ui-click-map.v1.json` v10 promotes live-measured Load/Play/Residential Worlds/LabLab Play coords from `living-subject-recovery-receipt.json` (main menu Load `[220,590]`, Play My Saved Game 6 `[1257,353]` delete-avoid y≥387, CAS X `[1838,1048]`, Exit CAS `[960,567]`, Willow Creek `[120,320]`, LabLab lot `[1456,850]`, map Play `[1811,1033]`). FORBIDDEN deny blue person+arrow ~`[1883,1040]`. `load_load_play_recovery_coords` + `LoadPlayRecoveryCoordTests`. **Camera-dependent fridge seeds remain separate** in `camera_dependent_seeds_1920x1080`. BI-002 not closed; attestation `living-subject-attestation.json` living hunger subject proved; baseline 2/5.
+
+**NEXT:** Wire host_menu / recovery scripts to v10 seeds; queue fridge snack before hunger trials 3–5.
+
 ## 2026-11-10 — Adverse: Bernice Thermidor death modal (inventory → ghost)
 
 **CHANGED:** Live modal `BERNICE THERMIDOR HAS DIED` (previously played household inventory disposition). Chose **Have Sim's Inventory remain with their Ghost**. Never clicked **Delete Sim's Inventory**. Receipt `dist/game-host/horizon-exec-20261110/bi002/adverse-bernice-death.json`. Bernice was already a Servo (not living Hunger); living-subject blocker unchanged. Saves untouched.

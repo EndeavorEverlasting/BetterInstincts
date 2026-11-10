@@ -96,6 +96,7 @@ from betterinstincts.viewport import ViewportError, predict_risk
 from betterinstincts.sim_camera import SimCameraError, plan_sim_camera
 from betterinstincts.active_sim_camera_lock import evaluate_active_sim_camera_lock
 from betterinstincts.lot_focus import LotFocusError, assess_lot_focus, should_assess_lot_focus
+from betterinstincts.scenes import stamp_host_capture_game_version
 from betterinstincts.scene_ui_semantics import assess_live_hud, SceneUISemanticsError
 from betterinstincts.scenery_memory import record_scenery, SceneryMemoryError
 
@@ -892,6 +893,8 @@ def evaluate_turn(
         rec_obs = camera_recovery.get("observation")
         if isinstance(rec_obs, Mapping):
             lot_focus_observation = rec_obs
+    if isinstance(lot_focus_observation, Mapping):
+        lot_focus_observation = stamp_host_capture_game_version(lot_focus_observation)
     if should_assess_lot_focus(
         observation=lot_focus_observation if isinstance(lot_focus_observation, Mapping) else None,
         camera_recovery=camera_recovery if isinstance(camera_recovery, Mapping) else None,

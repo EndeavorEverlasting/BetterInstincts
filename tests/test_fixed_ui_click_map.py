@@ -11,6 +11,7 @@ from betterinstincts.fixed_ui_click_map import (
     load_contract,
     load_camera_dependent_fridge_seeds,
     load_escape_menu_coords,
+    load_load_play_recovery_coords,
     plan_arm_to_console_handoff,
     plan_escape_menu_save,
     plan_skills_burger_expand,
@@ -242,7 +243,41 @@ class CameraDependentFridgeSeedTests(unittest.TestCase):
             self.assertFalse(tid.startswith("world.fridge"), tid)
         self.assertEqual(cfg["seed_targets_1920x1080"]["live.calendar_close_x"]["client_xy"], [1445, 255])
         self.assertEqual(cfg["seed_targets_1920x1080"]["live.notebook_close_x"]["client_xy"], [1338, 276])
-        self.assertEqual(cfg["version"], 9)
+        self.assertEqual(cfg["version"], 10)
+
+
+class LoadPlayRecoveryCoordTests(unittest.TestCase):
+    def test_load_play_recovery_measured_coords(self):
+        cfg = load_contract()
+        self.assertGreaterEqual(cfg["version"], 10)
+        coords = load_load_play_recovery_coords(cfg=cfg)
+        self.assertEqual(coords["main_menu_load_game"], (220, 590))
+        self.assertEqual(coords["load_game_play_slot_6"], (1257, 353))
+        self.assertEqual(coords["cas_cancel_x"], (1838, 1048))
+        self.assertEqual(coords["exit_create_a_sim"], (960, 567))
+        self.assertEqual(coords["willow_creek_world"], (120, 320))
+        self.assertEqual(coords["lablab_lot_house"], (1456, 850))
+        self.assertEqual(coords["manage_worlds_play"], (1811, 1033))
+        self.assertEqual(coords["forbidden_blue_person"], (1883, 1040))
+        block = cfg["load_play_recovery_1920x1080"]
+        self.assertIn("camera_dependent", block["camera_dependent_note"].lower())
+        self.assertGreaterEqual(
+            block["hazards"]["load_game_delete_avoid_y_min"],
+            coords["load_game_play_slot_6"][1],
+        )
+        seeds = cfg["seed_targets_1920x1080"]
+        self.assertEqual(seeds["host.cas_cancel_x"]["prior_xy_stale"], [1830, 1050])
+        self.assertEqual(seeds["host.forbidden_create_new_household"]["status"], "FORBIDDEN_DENY")
+
+    def test_fridge_seeds_still_separate_from_load_play_block(self):
+        cfg = load_contract()
+        self.assertIn("camera_dependent_seeds_1920x1080", cfg)
+        self.assertIn("load_play_recovery_1920x1080", cfg)
+        self.assertIn(
+            "MERGE_CAMERA_DEPENDENT_FRIDGE_INTO_THIS_BLOCK",
+            cfg["load_play_recovery_1920x1080"]["not"],
+        )
+        self.assertFalse(cfg["camera_dependent_seeds_1920x1080"]["ingest_into_fixed_ledger"])
 
 
 if __name__ == "__main__":
