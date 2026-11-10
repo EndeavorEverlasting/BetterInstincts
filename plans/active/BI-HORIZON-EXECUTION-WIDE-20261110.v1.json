@@ -497,7 +497,9 @@
     "plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json",
     "docs/LIVE_CERT.md",
     "docs/COMPATIBILITY.md",
-    "AGENTS.md"
+    "AGENTS.md",
+    "plans/active/BI-HORIZON.dispatch.v1.json",
+    "plans/active/BI-WORLD-TRAVERSAL-CLOSERS-P04-20261110.md"
   ],
   "parent_objective": "Needs stability -> income -> skills -> career under Horizon; never fake-close a later stage.",
   "current_gate": "BI-002",
@@ -1265,5 +1267,26 @@
       "PROMOTE_BI_003_FROM_OFFLINE_POLICY",
       "EQUATE_MERGED_PR_WITH_GAME_LIVE_CERT"
     ]
+  },
+  "supporting_next_priority_20261110": {
+    "id": "BI-WORLD-TRAVERSAL-P08-SENSOR",
+    "classification": "SUPPORTING_INFRASTRUCTURE_NOT_HORIZON_STAGE",
+    "priority": "NEXT_SUPPORTING_LOCAL_PROOF",
+    "canonical_horizon": "plans/horizon.v1.json#next_supporting_priority",
+    "dispatch": "plans/active/BI-HORIZON.dispatch.v1.json#WORLD_SENSOR",
+    "runbook": "plans/active/BI-WORLD-TRAVERSAL-CLOSERS-P04-20261110.md",
+    "local_agent_entry": "python -m scripts.horizon_status",
+    "launch_order": [
+      "WORLD_SENSOR",
+      "WORLD_OUTCOME",
+      "WORLD_INTEGRATE"
+    ],
+    "dependency": "Merged #168/#169 offline floor; local exact-patch lab authorization + independent sensor cues required",
+    "game_host_exclusivity": "WORLD_SENSOR/WORLD_OUTCOME serial with BI-002 game input; any foreground player activity yields; do not preempt existing live hunger experiments",
+    "current_product_gate": "BI-002",
+    "current_product_gate_status": "ACTIVE_GAME_UNPROVEN",
+    "source_mainline_floor": "91bea7b05313b42662489be1b21b2c078d82d02f",
+    "independent_writer": "PR159 spatial-perception open, not part of this dispatch mutation",
+    "proof_ceiling": "TRACKED_P04_LOCAL_HOST_UNRUN"
   }
 }
