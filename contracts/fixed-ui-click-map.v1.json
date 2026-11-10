@@ -282,11 +282,12 @@
       "roster_index": 3,
       "roster_key_hint": "CHARLEE_P3",
       "display_name_hint": "Charlee",
-      "client_xy": [522, 1055],
-      "hitbox_x": [488, 560],
-      "status": "PRINTWINDOW_MEASURED_20261109",
+      "client_xy": [450, 1055],
+      "hitbox_x": [420, 480],
+      "status": "LIVE_REMEASURED_20261110",
       "profile": "1920x1080",
-      "notes": "Rightmost portrait; prove identity after click"
+      "prior_xy_stale": [522, 1055],
+      "notes": "Skin-tone PrintWindow band 2026-11-10; stale 522 missed Charlee (Servo selected). Prove via Needs 6-bar + Charlee LabLab name."
     },
     "live.panel_aspirations": {
       "role": "TOGGLE_BOTTOM_RIGHT_PANEL",
