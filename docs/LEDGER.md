@@ -1,3 +1,7 @@
+## 2026-11-10 — Operator desktop safety hardening, stacked on PR #160
+
+Added a project-scoped fail-closed Cursor pre-effect guard (`.cursor/hooks.json`, `.cursor/hooks/operator_boundary.py`) with a machine-readable contract and negative fixtures for peripheral/service/registry mutations, protected saves, destructive shell, self-modification and Windows-path escapes. Canonical ontology consultation: `BI-OPERATOR-DESKTOP-SAFETY-HOOK-20261110`; initial consultation commit precedes source changes. Exact branch is a separate stacked hardening branch based on PR #160 to preserve its independently-owned capture fix. CI and local Cursor activation are separate checks; do not infer host enforcement from checked-in hooks.
+
 ## 2026-11-10 P02/P12 moving-floor refresh
 
 Separately owned #161 advanced to 8d4d871 after cebec2d: a governance routing test and a pre-mutation consultation for game_host navigation through the existing lease/presence/foreground owners. That new seam is planned, not proven implemented or live. Its latest inspected CI failed. The canonical SAS closeout map assigns its implementation and platform fixture/runtime gates to #161 after the #160 parent floor. No child branch changes made here.

@@ -23,7 +23,8 @@ Ontology revision 4 embraces any user-chosen game/mod, mouse, keyboard, voice/as
 
 ## Existing operator/agent handoffs
 
-- Judgment P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`. Cursor shell/file hooks belong to PR #161, not the source scanner.
+- Judgment P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`.
+- Cursor pre-effect guard: `.cursor/hooks.json` → `.cursor/hooks/operator_boundary.py` (`contracts/operator-desktop-boundary.v1.json`). No agent may disable, dodge or remove the guard. Hooks must activate locally; separate tools need separate enforcement.
 
 ## Trajectory and proof
 

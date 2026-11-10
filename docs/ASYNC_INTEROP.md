@@ -169,3 +169,14 @@ The legacy skill-force cursor-stability idle bypass was revoked because a statio
 New adapters call queue.enqueue_effect(work_id, validate, effect) for one bounded semantic/API/CLI or desktop effect. The queue supplies the immediate pre-effect checkpoint; break sequences into separate steps. live_host_ops.assess_interaction_channel prefers verified native capability, permits desktop fallback only on opt-in, and never grants execution.
 
 Activity before effects retains pending work. Partial interruption retains the original intent in queue.suspended, marked NEEDS_RECONCILIATION. After observing outcome, call queue.reconcile(work_id, outcome_observed=True, completed=True), or provide an explicit QueuedStep remainder with the same ID. No original callback is automatically replayed. Remainders pass target validation, ownership and dual idle checks again. Pending and suspended work share the bounded budget. No watcher installed. Executing native calls cannot be forcibly preempted. Existing raw scripts and external agents must adopt the owners before claiming compliance. Offline tests are not live Sims certification.
+
+
+## Cursor pre-effect admission — operator desktop boundary
+
+For Cursor agents inside this repository, `.cursor/hooks.json` applies fail-closed `beforeShellExecution` and `preToolUse` gate checks through `.cursor/hooks/operator_boundary.py`. These **precede** shared desktop locking, 15-second idle confirmation and the game-specific save/scene checks; none substitutes for the others. A denied shell or file action is not a reason to disable hooks, reset Bluetooth, change screenshot preferences or invoke an alternate unguarded executor. Operator-reviewed OS maintenance belongs to a separate authorized workflow (SysAdminSuite). The guard intentionally permits only a short, measured set of read-only commands and offline checks; unknown commands fail closed and require review. See `contracts/operator-desktop-boundary.v1.json`, `tests/test_operator_boundary.py`, and `docs/PERIPHERAL_INCIDENT.md`.
+
+This project-level hook does not reach non-Cursor harnesses, uncooperative computer-use agents, or direct commands outside the trusted project. Remote repository merge and local Cursor hook activation are independent proof dimensions.
+
+### Game-host template-navigation admission
+
+The `scripts/game_host.py` PyAutoGUI navigation path is not an exception to `admitted_screen_lease`: on Windows it now validates an active session and game PID, locks the shared desktop, confirms human-idle admission and exact Sims foreground before every template scan and each click. It does not focus/restore a different window to bypass these checks. Loss of ownership aborts with a blocked receipt; do not replay partial UI flows. `tests/test_game_host.py` contains four negative cases. Live Windows certification is still required.

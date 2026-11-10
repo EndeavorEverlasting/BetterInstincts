@@ -1,4 +1,5 @@
 import json
+from contextlib import contextmanager
 from pathlib import Path
 import tempfile
 import unittest
@@ -209,6 +210,82 @@ class GameHostTests(unittest.TestCase):
                          "LIVE_REPORTED_UNREVIEWED")
         with self.assertRaisesRegex(host.GateError, "LAUNCH_DISPATCH_REQUIRED"):
             host.manual_cas_complete("bi002-game-host", True)
+
+
+    def test_windows_navigation_requires_real_handoff_before_screenshot(self):
+        cfg, digest = self.launch_fake()
+        gui = FakeGui()
+        with patch.object(host.sys, "platform", "win32"):
+            with self.assertRaisesRegex(host.GateError, "HANDOFF_SESSION_REQUIRED"):
+                host.navigate("bi002-game-host", cfg, digest, True, True, gui=gui)
+        self.assertEqual(gui.clicked, [])
+
+    def test_windows_navigation_refuses_foreign_foreground_before_screenshot(self):
+        cfg, digest = self.launch_fake()
+        class TrackedGui(FakeGui):
+            scans = 0
+            def locateAllOnScreen(self, template, grayscale=False):
+                self.scans += 1
+                return super().locateAllOnScreen(template, grayscale=grayscale)
+        gui = TrackedGui()
+        from betterinstincts.player_presence import PresenceProbe
+
+        @contextmanager
+        def leased(*args, **kwargs):
+            self.assertEqual(args[0], 987)
+            yield lambda: None
+
+        unrelated = PresenceProbe(False, False, last_input_age_ms=20000,
+                                  foreground_process_id=999, probe_ok=True)
+        with (patch.object(host.sys, "platform", "win32"),
+              patch("betterinstincts.screen_admit.admitted_screen_lease", leased),
+              patch("betterinstincts.player_presence.probe_windows", return_value=unrelated)):
+            with self.assertRaisesRegex(host.GateError, "GAME_FOREGROUND_NOT_OWNED"):
+                host.navigate("bi002-game-host", cfg, digest, True, True,
+                              gui=gui, session_id="host-test-active")
+        self.assertEqual(gui.scans, 0)
+        self.assertEqual(gui.clicked, [])
+
+    def test_windows_navigation_revalidates_focus_after_template_match(self):
+        cfg, digest = self.launch_fake()
+        gui = FakeGui()
+        from betterinstincts.player_presence import PresenceProbe
+
+        @contextmanager
+        def leased(*args, **kwargs):
+            yield lambda: None
+
+        owned = PresenceProbe(True, True, last_input_age_ms=20000,
+                              foreground_process_id=987, probe_ok=True)
+        stolen = PresenceProbe(False, False, last_input_age_ms=20000,
+                               foreground_process_id=999, probe_ok=True)
+        with (patch.object(host.sys, "platform", "win32"),
+              patch("betterinstincts.screen_admit.admitted_screen_lease", leased),
+              patch("betterinstincts.player_presence.probe_windows",
+                    side_effect=[owned, stolen])):
+            with self.assertRaisesRegex(host.GateError, "GAME_FOREGROUND_NOT_OWNED"):
+                host.navigate("bi002-game-host", cfg, digest, True, True,
+                              gui=gui, session_id="host-test-active")
+        self.assertEqual(gui.clicked, [])
+        self.assertEqual(host.status("bi002-game-host")["state"], "LAUNCH_DISPATCHED")
+
+    def test_windows_navigation_human_interrupt_aborts_before_observation(self):
+        cfg, digest = self.launch_fake()
+        gui = FakeGui()
+        from betterinstincts.control_handoff import HandoffError
+
+        @contextmanager
+        def denied_lease(*args, **kwargs):
+            def not_ready():
+                raise HandoffError("HOST_PAUSED:RECENT_HUMAN_INPUT")
+            yield not_ready
+
+        with (patch.object(host.sys, "platform", "win32"),
+              patch("betterinstincts.screen_admit.admitted_screen_lease", denied_lease)):
+            with self.assertRaisesRegex(host.GateError, "RECENT_HUMAN_INPUT"):
+                host.navigate("bi002-game-host", cfg, digest, True, True,
+                              gui=gui, session_id="host-test-active")
+        self.assertEqual(gui.clicked, [])
 
 
 if __name__ == "__main__":
