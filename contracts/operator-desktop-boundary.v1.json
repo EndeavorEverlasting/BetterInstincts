@@ -56,13 +56,15 @@
     "capture": "scripts/game_capture.py is passive; minimized game requires operator restoration",
     "screen_control": "betterinstincts/control_handoff.py requires fresh >=15s idle and shared desktop lease",
     "save": "betterinstincts/save_policy.py and build checkpoint still independently deny save/lot mutation",
-    "os_recovery": "SysAdminSuite, independently reviewed and operator-controlled; never automatic BetterInstincts capture recovery"
+    "os_recovery": "SysAdminSuite, independently reviewed and operator-controlled; never automatic BetterInstincts capture recovery",
+    "game_host_navigation": "scripts/game_host.py requires active host-listener session, exact Sims PID, admitted_screen_lease, two fresh idle probes, and Sims foreground before EACH screen scan/click"
   },
   "verification": {
     "offline": [
       "python -m unittest discover -s tests -p test_operator_boundary.py -v",
       "python -m unittest discover -s tests -v",
-      "python -m scripts.check_ontology"
+      "python -m scripts.check_ontology",
+      "python -m unittest discover -s tests -p test_game_host.py -v"
     ],
     "local_activation": [
       "Check Cursor Customize/Hooks and Hooks output channel after opening the project",
@@ -76,5 +78,8 @@
     ]
   },
   "privacy": "Hook emits only coarse action policy result; no payload, paths, clipboard, key logging or incident hardware IDs are persisted.",
-  "proof_ceiling": "OFFLINE_POLICY_TEST_NOT_HOST_LEVEL_ENFORCEMENT"
+  "proof_ceiling": "OFFLINE_POLICY_TEST_NOT_HOST_LEVEL_ENFORCEMENT",
+  "limits": [
+    "Navigation cannot be certified live without the actual operator Windows session and the game PID"
+  ]
 }
