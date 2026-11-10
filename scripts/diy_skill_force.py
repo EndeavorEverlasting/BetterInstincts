@@ -1429,17 +1429,20 @@ def main(argv: list[str] | None = None) -> int:
         "force-gaps",
         help=(
             "Durable select→type canonical gap cheats→play→scroll inventory. "
-            "Use --redo for full bundle (e.g. Charlee human after inherited attestation). "
+            "Use --redo for full bundle on a locally observed target Sim. "
             "Canonical Media Production: stats.set_skill_level Major_MediaProduction 10"
         ),
     )
-    fg.add_argument("--member-key", required=True, help="Portrait key e.g. CHARLEE_P3")
+    fg.add_argument("--member-key", required=True, help="Stable locally observed portrait key; never display name")
     fg.add_argument(
         "--portrait-xy",
         required=True,
-        help="Client X,Y for portrait LEFT_CLICK (e.g. 522,1055 for Charlee)",
+        help="Locally observed client X,Y for the selected portrait LEFT_CLICK",
     )
-    fg.add_argument("--session-id", default="household-n4-20261109")
+    fg.add_argument("--session-id", default=None)
+    _add_household_scope_flags(fg)
+    fg.add_argument("--members", type=int, default=None)
+    fg.add_argument("--roster-key", action="append", default=[])
     fg.add_argument("--bundle", default="full_unlock")
     fg.add_argument("--level", type=int, default=10)
     fg.add_argument("--redo", action="store_true", help="Force entire bundle even if ledger MAX")
@@ -1593,7 +1596,7 @@ def main(argv: list[str] | None = None) -> int:
     ts.add_argument(
         "--observed-panel-header",
         default=None,
-        help="Exact Skills/Dynasty header text proving selection (e.g. \"Olga hasn't earned…\")",
+        help="Exact Skills/Dynasty header text proving selection (e.g. \"Sim A hasn't earned…\")",
     )
     ts.add_argument("--observed-selected-roster-key", default=None)
     ts.add_argument(
@@ -1634,20 +1637,26 @@ def main(argv: list[str] | None = None) -> int:
             if len(xy_parts) != 2:
                 raise GateError("PORTRAIT_XY_MUST_BE_X_COMMA_Y")
             portrait_xy = (int(xy_parts[0]), int(xy_parts[1]))
-            ledger_path = (
-                Path(args.completion_ledger)
-                if args.completion_ledger is not None
-                else default_completion_ledger_path()
+            scope, scoped_path = _scoped_household_ledger(
+                args, required=bool(args.execute)
             )
+            ledger_path = _resolve_ledger_path(args, scoped_path)
             ledger = load_completion_ledger(ledger_path)
-            mk = completion_member_key(args.session_id, 0, args.member_key)
+            _validate_scope_ledger(ledger, scope)
+            if scope is not None:
+                if args.member_key not in args.roster_key:
+                    raise GateError("FORCE_GAPS_MEMBER_NOT_IN_SCOPED_ROSTER")
+                mk = scope["member_keys"][args.roster_key.index(args.member_key)]
+            else:
+                mk = completion_member_key(args.session_id, 0, args.member_key)
             observed = member_observed_levels_from_ledger(ledger, mk)
             if args.execute:
                 if args.process_id is None:
                     raise GateError("PROCESS_ID_REQUIRED_FOR_EXECUTE")
+                save_completion_ledger(ledger, ledger_path)
                 result = execute_force_gaps(
                     process_id=int(args.process_id),
-                    member_key=str(args.member_key),
+                    member_key=mk,
                     portrait_xy=portrait_xy,
                     session_id=str(args.session_id),
                     bundle=str(args.bundle),
