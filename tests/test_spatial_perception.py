@@ -8,6 +8,8 @@ from betterinstincts.spatial_perception import (
     SCHEMA, SpatialPerceptionError, assess_frame,
 )
 from scripts.spatial_perception_eval import evaluate
+from betterinstincts.host_listener import activate, deactivate, tick, HostListenerError
+from betterinstincts.player_presence import PresenceProbe
 
 
 def frame(**kwargs):
@@ -65,6 +67,52 @@ class SpatialPerceptionTests(unittest.TestCase):
         self.assertEqual(receipt["state"], "UNKNOWN_PATCH")
         self.assertEqual(receipt["objects"], [])
         self.assertFalse(receipt["execute_allowed"])
+
+
+    def test_listener_reports_spatial_while_yielding_to_player(self):
+        session = "spatialtest01"
+        source = frame()
+        activate(session, note="spatial-eval")
+        try:
+            report = tick(
+                session,
+                {
+                    "schema": "betterinstincts.host-listener.observation/v1",
+                    "needs": {k: 0.9 for k in ("hunger", "bladder", "energy", "hygiene", "fun", "social")},
+                    "queue": [], "location_kind": "home",
+                    "capture_ref": source["capture_ref"],
+                    "game_version": source["game_version"],
+                    "spatial_frame": source,
+                },
+                presence_probe=PresenceProbe(True, True),
+            )
+            self.assertEqual(report["listener_action"], "YIELD_TO_PLAYER")
+            self.assertEqual(report["spatial_perception"]["state"], "TOPOLOGY_UNVERIFIED")
+            self.assertFalse(report["spatial_perception"]["execute_allowed"])
+            self.assertFalse(report["execute_clicks"])
+        finally:
+            deactivate(session)
+
+    def test_listener_rejects_stale_capture_before_player_yield(self):
+        session = "spatialtest02"
+        source = frame()
+        activate(session, note="spatial-eval")
+        try:
+            with self.assertRaisesRegex(HostListenerError, "SPATIAL_CAPTURE_OR_BUILD_MISMATCH"):
+                tick(
+                    session,
+                    {
+                        "schema": "betterinstincts.host-listener.observation/v1",
+                        "needs": {k: 0.9 for k in ("hunger", "bladder", "energy", "hygiene", "fun", "social")},
+                        "queue": [], "location_kind": "home",
+                        "capture_ref": "capture:different",
+                        "game_version": source["game_version"],
+                        "spatial_frame": source,
+                    },
+                    presence_probe=PresenceProbe(True, True),
+                )
+        finally:
+            deactivate(session)
 
 
 if __name__ == "__main__":
