@@ -205,3 +205,15 @@ Bluetooth/PnP/capture preference controls. Print Screen, Escape and U are
 operator-owned. It is a CI/static regression guard, **not** prevention of an
 unadopted agent acting outside the repository. Local Windows game tests must
 demonstrate physical takeover, release and no OS setting mutation.
+
+### Human-first focus-borrow precondition (2026-11-10)
+
+The canonical `admitted_screen_lease.ensure_ready()` uses **two fresh trusted
+idle probes before any focus change**. If the game is not yet the foreground
+window, the authorized focus callback runs once, followed by **two more
+trusted samples**. Exact Sims foreground must be verified before returning
+one game-input permit. Losing foreground between later actions requires fresh
+admission and a new borrow; previously focused does not mean still focused.
+`scripts/needs_force.py` now composes this same owner instead of carrying
+a weaker duplicate one-sample focus preflight. Recovered mouse/keyboard input
+while waiting prevents a new focus borrow rather than shutting down devices.

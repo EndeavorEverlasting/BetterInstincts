@@ -77,30 +77,19 @@ def main(argv: list[str] | None = None) -> int:
             receipt_path = receipt_path.resolve()
             if not receipt_path.is_relative_to(OUTPUT.resolve()) or receipt_path.is_symlink():
                 raise GateError("RECEIPT_OUTSIDE_DIST_GAME_HOST")
-        from betterinstincts.host_listener import status as listener_status
-        from betterinstincts.control_handoff import HandoffError, decide, confirm, exclusive_screen_owner
-        from betterinstincts.player_presence import probe_windows
-        with exclusive_screen_owner(args.process_id):
-            if listener_status(args.session_id).get("state") != "ACTIVE":
-                raise GateError("HOST_HANDOFF_SESSION_INACTIVE")
+        from betterinstincts.control_handoff import HandoffError
+        from betterinstincts.screen_admit import admitted_screen_lease
+        from scripts.game_host import focus
+        # Shared gate doubles the input-age check BEFORE focus and AFTER
+        # focus, then enforces exact game foreground for this single step.
+        with admitted_screen_lease(
+            args.process_id, args.session_id, idle_ms=args.idle_ms,
+            focus_fn=lambda: focus(process_id=args.process_id),
+        ) as ensure_ready:
             try:
-                preflight = decide(probe_windows(args.process_id), session_active=True, idle_ms=args.idle_ms)
-                if not preflight["screen_control_allowed"]:
-                    raise GateError("HOST_PAUSED:" + preflight["reason"])
-                # Focus itself can disrupt the user; it is protected by preflight.
-                from scripts.game_host import focus
-                focus(process_id=args.process_id)
-                handoff = confirm(
-                    lambda: probe_windows(args.process_id),
-                    session_active=listener_status(args.session_id).get("state") == "ACTIVE",
-                    idle_ms=args.idle_ms,
-                )
+                handoff = ensure_ready()
             except HandoffError as exc:
                 raise GateError(str(exc)) from exc
-            if not handoff["screen_control_allowed"]:
-                raise GateError("HOST_PAUSED:" + handoff["reason"])
-            if listener_status(args.session_id).get("state") != "ACTIVE":
-                raise GateError("HOST_HANDOFF_SESSION_INACTIVE")
             step = selected[0]
             x, y = step["click"]
             _send_click(int(x), int(y))

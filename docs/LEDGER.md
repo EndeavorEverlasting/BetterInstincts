@@ -1,3 +1,16 @@
+## 2026-11-10 — Double-confirm focus-borrow admission following human-first mainline
+
+**Parent:** merged #175 establishes typed human-sovereignty effect classes and
+independent bounded passive observation. A second contract slice closes a
+specific race in `screen_admit`: previously one idle snapshot preceded focus
+stealing, and a remembered focus claim could survive a human foreground change.
+Two fresh input probes must now precede any focus borrow; two more follow
+the borrow, with exact Sims foreground required before one game effect.
+`needs_force` composes the canonical gate. This is offline code/fixture
+work; physical operator takeover, foreground restore and live gameplay remain
+independently uncertified. Consultation:
+`contracts/consultations/BI-HUMAN-FOCUS-BORROW-ADMISSION-20261110.v1.json`.
+
 ## 2026-11-10 — Human-first effect lanes and host input sovereignty
 
 **Parent objective:** make every BetterInstincts subsystem yield to physical
