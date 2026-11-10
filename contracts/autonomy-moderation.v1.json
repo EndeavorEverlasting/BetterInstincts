@@ -47,5 +47,59 @@
     "can_change_global_settings": false,
     "can_repair": false
   },
-  "proof_ceiling": "HOST_AUTONOMY_POLICY_ONLY_NOT_GAME_CANCELLATION"
+  "proof_ceiling": "HOST_AUTONOMY_POLICY_ONLY_NOT_GAME_CANCELLATION",
+  "native_household_policy": {
+    "schema": "betterinstincts.native-household-autonomy/v1",
+    "owner": "betterinstincts/autonomy_moderation.py#evaluate_native_household_autonomy",
+    "trigger": "EA-native interaction observation adapter only; no desktop control",
+    "actor_scope": "All observed household sims by stable sim_ref, never the selected portrait or names",
+    "native_adapter_status": "NOT_INSTALLED_NOT_EA_API_VERIFIED",
+    "requires": [
+      "exact_game_build",
+      "fresh_capture",
+      "per_sim_queue_verified",
+      "player_active_false",
+      "per_sim_player_command_present_false",
+      "per_sim_player_owned_false",
+      "independent_origin_proof",
+      "measured_yield_proof",
+      "verified_goal_interruption",
+      "explicit_policy_opt_in",
+      "native_affordance_verified_for_replacement"
+    ],
+    "domains": [
+      "hunger",
+      "bladder",
+      "energy",
+      "hygiene",
+      "fun",
+      "social",
+      "career",
+      "income",
+      "skill",
+      "aspiration",
+      "obligation",
+      "relationship",
+      "recovery"
+    ],
+    "decision_order": [
+      "PROTECT_PLAYER_AND_UNKNOWN",
+      "PROTECT_UNPROVEN_GOALS_AND_QUEUE",
+      "PRESERVE_BENEFICIAL_SOCIAL_FUN_AND_NEEDS",
+      "SUPPRESS_ONLY_PROVEN_LOWER_YIELD_GOAL_INTERRUPTION_OR_ZERO_YIELD_WITH_VERIFIED_REPLACEMENT",
+      "RECHECK_BEFORE_NATIVE_IN_GAME_INTERVENTION"
+    ],
+    "decisions_per_sim_max": 1,
+    "outputs": [
+      "suppress_candidate",
+      "replacement_candidate"
+    ],
+    "effect_authority": {
+      "cancel_allowed": false,
+      "enqueue_allowed": false,
+      "desktop_input_allowed": false
+    },
+    "research_gate": "Use scripts/tuning_audit.py on explicit user-selected EA XML export read-only, compare Sims4Studio and installed game APIs for exact patch, do not write EA files",
+    "live_gate": "P08 exact-patch adapter and disposable household game validation required for claimed effects"
+  }
 }
