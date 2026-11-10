@@ -1,3 +1,7 @@
+## 2026-11-10 P02/P12 moving-floor refresh
+
+Separately owned #161 advanced to 8d4d871 after cebec2d: a governance routing test and a pre-mutation consultation for game_host navigation through the existing lease/presence/foreground owners. That new seam is planned, not proven implemented or live. Its latest inspected CI failed. The canonical SAS closeout map assigns its implementation and platform fixture/runtime gates to #161 after the #160 parent floor. No child branch changes made here.
+
 ## 2026-11-10 P02/P12 refreshed peripheral and Cursor-hook closeout
 
 The verified successor floor includes SysAdminSuite #562, BetterInstincts #160 parent and separately owned #161 stacked Cursor-hook work. #161 advanced to cebec2d during inspection; it supplements rather than replaces #160. Canonical executable map: SysAdminSuite docs/plans/bluetooth-desktop-closeout-20261110.plan.md, in PR #562. Wave 1 owns SAS review/CI convergence and BI inherited UI-contract repair independently; wave 2 owns #161 Windows fixture/adoption; wave 3 converges proof and authorized integration. Do not overwrite #161 from this parent branch.
