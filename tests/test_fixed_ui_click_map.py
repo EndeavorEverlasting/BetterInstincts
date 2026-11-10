@@ -348,5 +348,43 @@ class LoadPlayRecoveryCoordTests(unittest.TestCase):
         self.assertFalse(cfg["camera_dependent_seeds_1920x1080"]["ingest_into_fixed_ledger"])
 
 
+class ManageWorldsTravelPartyCancelTests(unittest.TestCase):
+    def test_travel_party_cancel_x_live_measured(self):
+        cfg = load_contract()
+        self.assertGreaterEqual(cfg["version"], 14)
+        seeds = cfg["seed_targets_1920x1080"]
+        cancel = seeds["host.manage_worlds_travel_party_cancel_x"]
+        self.assertEqual(cancel["client_xy"], [1055, 33])
+        self.assertEqual(cancel["canvas_1456x840_xy"], [800, 25])
+        self.assertEqual(cancel["status"], "LIVE_MEASURED_20261110")
+        self.assertIn("manage_worlds.travel_party_cancel_x", cancel["aliases"])
+        self.assertEqual(cancel["text_miss_canvas_1456x840_xy"], [556, 34])
+        self.assertEqual(cancel["icon_order_after_lablab_text"], ["cancel_x", "footprint", "crown"])
+        self.assertEqual(
+            seeds["host.forbidden_manage_worlds_travel_party_footprint"]["status"],
+            "FORBIDDEN_DENY",
+        )
+        self.assertEqual(
+            seeds["host.forbidden_manage_worlds_travel_party_crown"]["status"],
+            "FORBIDDEN_DENY",
+        )
+        self.assertTrue(is_forbidden_target("host.forbidden_manage_worlds_travel_party_footprint"))
+        self.assertTrue(is_forbidden_target("host.forbidden_manage_worlds_travel_party_crown"))
+        self.assertFalse(is_forbidden_target("host.manage_worlds_travel_party_cancel_x"))
+        block = cfg["manage_worlds_travel_party_1920x1080"]
+        self.assertEqual(block["targets"]["travel_party_cancel_x"]["client_xy"], [1055, 33])
+        self.assertEqual(block["alias_key"], "manage_worlds.travel_party_cancel_x")
+        self.assertIn("CLICK_TRAVEL_PARTY_FOOTPRINT_AS_CANCEL", block["forbidden"])
+        self.assertIn("EXPECT_ESC_TO_CANCEL_TRAVEL", block["forbidden"])
+        # Text miss must not score as HIT against cancel X.
+        miss = cancel["text_miss_client_xy"]
+        scored = classify_click(
+            intended_xy=cancel["client_xy"],
+            observed_xy=miss,
+            cfg=cfg,
+        )
+        self.assertNotEqual(scored["classification"], "HIT")
+
+
 if __name__ == "__main__":
     unittest.main()

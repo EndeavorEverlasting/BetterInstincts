@@ -2,11 +2,11 @@
   "schema": "betterinstincts.horizon-execution-wide/v1",
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
-  "updated_at": "2026-11-10T09:50:00-05:00",
+  "updated_at": "2026-11-10T09:55:00-05:00",
   "live_truth_20261110": {
     "host": {"pid": 78240, "exe": "TS4_x64_fpb", "game_version": "1.121.361.1020"},
     "live_cert_run": "bi002-game1-20261107",
-    "live_cert_status": {"baseline": 2, "modified": 0, "rollback": 0, "state": "INCOMPLETE", "next_gate": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS"},
+    "live_cert_status": {"baseline": 2, "modified": 0, "rollback": 0, "state": "INCOMPLETE", "next_gate": "CHARLEE_SWITCH_CONTROL_THEN_EAT_THEN_LIVE_CERT_TRIAL_3_PLUS"},
     "default_save": "My Saved Game 6 / Slot_00000007 — NEVER delete or overwrite",
     "household": {
       "charlee_lablab": "RELOADED living from My Saved Game 6 — Needs 6-bar Hunger attested (living-subject-attestation.json). Prior ghost session was not saved over Slot_00000007.",
@@ -14,7 +14,20 @@
       "living_hunger_subject": "RECOVERED — LabLab Play via map Play [1811,1033]; never Create Household / CAS blue person+arrow [1883,1040]",
       "living_subject_gate_20261110": {"bernice": "SERVO (Durability) — not hunger subject", "charlee_olga_recovered": "living humans with commodity Hunger after load of Slot_00000007", "prove_via": "Needs panel 6-bar Hunger (vs Servo Durability / ghost Ethereal)", "receipts": ["dist/game-host/horizon-exec-20261110/bi002/living-subject-recovery-receipt.json", "dist/game-host/horizon-exec-20261110/bi002/living-subject-attestation.json"]},
       "adverse_bernice_death": "dist/game-host/horizon-exec-20261110/bi002/adverse-bernice-death.json",
-      "lot_focus_offlot_street": "PROVED assess_lot_focus OFF_LOT_STREET when camera/Sim on sidewalk/canal; restore Shift+Enter lot center when Enter alone leaves water/street; terrain-arm RMB [880,480] can displace to canal — avoid while OFF_LOT. Receipt: offlot-street-recognition.json"
+      "lot_focus_offlot_street": "PROVED assess_lot_focus OFF_LOT_STREET when camera/Sim on sidewalk/canal; restore Shift+Enter lot center when Enter alone leaves water/street; terrain-arm RMB [880,480] can displace to canal — avoid while OFF_LOT. Receipt: offlot-street-recognition.json",
+      "off_lot_scenery_not_in_focus": "After Manage Worlds travel-cancel, camera on street/rooftop needs Enter recenter. scenery-not-in-focus when Manage Worlds map or street fills viewport without household lot interior."
+    },
+    "travel_cancel_20261110_morning": {
+      "state": "PROVED_LIVE_MEASURED",
+      "stuck_surface": "Manage Worlds dual TRAVELING WITH: LabLab banners (Willow Creek then Sulani after accidental world nav)",
+      "cancel_hit": {"client_xy": [1055, 33], "canvas_1456x840_xy": [800, 25], "target_id": "host.manage_worlds_travel_party_cancel_x", "alias": "manage_worlds.travel_party_cancel_x"},
+      "text_miss": {"canvas_1456x840_xy": [556, 34], "client_xy_approx": [733, 44], "note": "hits banner TEXT not X"},
+      "forbidden": ["footprint_icon", "crown_icon"],
+      "kingdom_modal_close": {"canvas_1456x840_xy": [924, 217], "client_family": [1138, 255], "target_id": "host.manage_worlds_kingdom_modal_close_x"},
+      "esc_while_traveling": "zooms neighborhood; does NOT cancel travel",
+      "after_cancel": {"returned_to": "Live household lot", "funds": 649897, "clock": "Fri 8:54 AM", "active": "Servo", "charlee": "REMOTE_BRIEFCASE"},
+      "contract": "contracts/fixed-ui-click-map.v1.json v14 manage_worlds_travel_party_1920x1080",
+      "next_gate": "Charlee Switch Control → Eat → live_cert trial 3+ on run bi002-game1-20261107 (baseline still 2/5)"
     },
     "fridge_hit_zoomed_20261110": "HIT_PIE_MENU at client [500,560] after Z-zoom (~14) + Enter recenter; snack NOT queued; single frame; contracts/fixed-ui-click-map.v1.json camera_dependent_seeds_1920x1080",
     "fridge_hit": "WIDE [465,595] MISS (outdoor Upgrade/Possess); ZOOMED [500,560] HIT once then camera/story drift made re-HIT unstable",
@@ -248,6 +261,39 @@
             "dist/game-host/horizon-exec-20261110/bi002/school-diversion-receipt.json"
           ],
           "next": "Reselect Charlee → recover VIEWPORT_OK → queue Eat from personal inv food OR school cafeteria → unpause → live_cert record trial 3+; then modified×5 + rollback. Never Sell/delete saves. No BI-003 claim."
+        },
+        "travel_cancel_20261110_morning": {
+          "state": "PROVED_LIVE_MEASURED",
+          "snack_queued": false,
+          "baseline_still": "2/5",
+          "run_id": "bi002-game1-20261107",
+          "stuck": "Manage Worlds dual TRAVELING WITH: LabLab (Willow Creek → Sulani after accidental world nav)",
+          "cancel_x": {
+            "target_id": "host.manage_worlds_travel_party_cancel_x",
+            "alias": "manage_worlds.travel_party_cancel_x",
+            "client_xy": [1055, 33],
+            "canvas_1456x840_xy": [800, 25],
+            "prefer": "TOP_BANNER_X_FIRST_OF_THREE_ICONS"
+          },
+          "text_miss": {"canvas_1456x840_xy": [556, 34], "client_xy_approx": [733, 44]},
+          "forbidden_icons": ["footprint", "crown"],
+          "kingdom_modal": {
+            "opened_by": "miss travel X / hit near crown",
+            "close_x_canvas_1456x840_xy": [924, 217],
+            "close_x_client_family": [1138, 255],
+            "target_id": "host.manage_worlds_kingdom_modal_close_x"
+          },
+          "esc_while_traveling": "zooms neighborhood; does NOT cancel travel",
+          "after_cancel": {
+            "surface": "Live household lot",
+            "funds": 649897,
+            "clock": "Fri 8:54 AM",
+            "active": "Servo",
+            "charlee": "REMOTE_BRIEFCASE"
+          },
+          "off_lot_recognition": "Camera on street/rooftop after cancel needs Enter recenter; scenery-not-in-focus when Manage Worlds map or street fills viewport without household lot interior",
+          "contract_v14": "contracts/fixed-ui-click-map.v1.json#manage_worlds_travel_party_1920x1080",
+          "next": "Charlee Switch Control → Eat → live_cert trial 3+ on bi002-game1-20261107 (baseline still 2/5). Never Sell/delete saves. No BI-003 claim."
         }
       }
     },
@@ -295,10 +341,10 @@
   ],
   "next_gates_ordered": [
     "1. DONE — living Hunger subject attested on LabLab after Load Slot_00000007 (never delete saves)",
-    "2. Lot focus: OFF_LOT_STREET classify proved; prefer Shift+Enter when Enter centers Sim on canal/sidewalk; do not terrain-arm on water",
-    "3. Fridge/snack QUEUE still OPEN — close household inventory (Multiselect Off [1878,791]; never Sell); escape camera clip via lot-house [1768,22]+Shift+Enter+X zoom-out; kitchen Zx14+Enter; fridge [500,560]; Have Breakfast [420,505] / Get Leftovers; calendar dismiss only via live.calendar_close_x [1445,255]",
-    "4. BI-002 baseline trials 3-5 (record with python -m scripts.live_cert record; no set_stat drain without queued food)",
-    "5. BI-002 modified 5/5 with reversible package, rollback, maintainer review",
+    "2. DONE — Manage Worlds travel-cancel LIVE_MEASURED [1055,33] / canvas (800,25); FORBIDDEN footprint/crown; Esc≠cancel",
+    "3. NEXT — Charlee Switch Control → Eat → live_cert trial 3+ on bi002-game1-20261107 (baseline still 2/5); Enter recenter if street/rooftop/map scenery-not-in-focus",
+    "4. Fridge/snack QUEUE still OPEN if Eat not yet queued — Multiselect Off [1878,791]; never Sell; kitchen Zx14+Enter; fridge [500,560]",
+    "5. BI-002 baseline trials 3-5 then modified 5/5 + rollback + maintainer review",
     "6. Only after BI-002 live cert: BI-003A-E -> BI-003F -> BI-004 -> BI-005 -> BI-006"
   ],
   "next_commands": [

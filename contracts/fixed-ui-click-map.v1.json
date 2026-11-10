@@ -1,13 +1,14 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 13,
+  "version": 14,
   "version_notes": {
     "8": "Adds camera_dependent_seeds_1920x1080 (fridge HIT/MISS). Additive only: seed_targets_1920x1080 and all certified seeds unchanged; camera-dependent rows are NOT ingested into the fixed-HUD ledger.",
     "9": "Adds live.notebook_close_x [1338,276] (PrintWindow-measured Notebook dismiss). Additive only; prior seeds unchanged.",
     "10": "Promotes Load/Play/Exit-CAS/Residential Worlds/LabLab Play from living-subject-recovery receipt (2026-11-10). cas_cancel_x supersedes 1830,1050→1838,1048. FORBIDDEN deny ~[1883,1040] blue person+arrow (CAS, not Live). camera_dependent fridge seeds remain separate — not merged here.",
     "11": "Adds live.inventory_multiselect_toggle [1878,791] (household panel; PrintWindow ON/OFF measured 2026-11-10; prior approx [1880,735] was wrong) and live.inventory_sell_button FORBIDDEN_DENY [1915,925] plus inventory_multiselect_1920x1080 block. Additive only: v10 seeds (incl. live.panel_inventory) unchanged. Sell can never be attested HIT nor resolved as clickable.",
     "12": "Corrects live.panel_inventory tray glyph to [1750,1058] (PrintWindow 2026-11-10). prior_xy_wrong [1757,1045] hit dark bar above icons and left Simology/Needs open. Prefer hotkey I when armed. Additive only.",
-    "13": "Adds pack detail modal close X [1543,197], options MENU close X [1081,330], build cancel held-object [1013,1028]; documents Buy→Live prefer F1 + live.top_live_people; FORBIDDEN top-bar wander 1620-1700 (Owned Expansion Packs) and REMOVE_FLOOR without library checkpoint. Consultation BI-BUY-EXIT-PACK-MODAL-20261110. Additive only."
+    "13": "Adds pack detail modal close X [1543,197], options MENU close X [1081,330], build cancel held-object [1013,1028]; documents Buy→Live prefer F1 + live.top_live_people; FORBIDDEN top-bar wander 1620-1700 (Owned Expansion Packs) and REMOVE_FLOOR without library checkpoint. Consultation BI-BUY-EXIT-PACK-MODAL-20261110. Additive only.",
+    "14": "Adds host.manage_worlds_travel_party_cancel_x [1055,33] LIVE_MEASURED_20261110 (computer-use canvas ~(800,25) on 1456×840 → physical 1920×1080). Prefer top TRAVELING WITH banner X (first of three circular icons after LabLab text). Text-miss ~canvas (556,34)/client ~[733,44]. FORBIDDEN footprint + crown. Esc while traveling zooms neighborhood only. Kingdom-of-Willow-Creek modal close family [1138,255]/canvas ~(924,217). Additive only."
   },
   "authority": "docs/UI_CHROME.md",
   "owners": {
@@ -271,6 +272,44 @@
       "profile": "1920x1080",
       "precondition": "LabLab lot selected",
       "notes": "Bottom-right Play triangle when LabLab selected — not blue CAS person"
+    },
+    "host.manage_worlds_travel_party_cancel_x": {
+      "role": "CANCEL_TRAVELING_WITH_PARTY",
+      "aliases": ["manage_worlds.travel_party_cancel_x"],
+      "client_xy": [1055, 33],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "canvas_1456x840_xy": [800, 25],
+      "text_miss_canvas_1456x840_xy": [556, 34],
+      "text_miss_client_xy": [733, 44],
+      "icon_order_after_lablab_text": ["cancel_x", "footprint", "crown"],
+      "prefer": "TOP_BANNER_X",
+      "notes": "TRAVELING WITH: LabLab dual-banner stuck on Manage Worlds (Willow Creek then Sulani after accidental world nav). Live-proved cancel at computer-use canvas ~(800,25) on 1456×840 → client [1055,33] on 1920×1080 — FIRST circular icon after LabLab text (X). Canvas ~(556,34)/client ~[733,44] hits banner TEXT (MISS, not X). Bottom TRAVELING WITH X is also valid but harder; prefer top X. Esc while traveling zooms neighborhood and does NOT cancel travel. After cancel: Live household lot funds §649,897 Fri 8:54 AM; active Servo; Charlee still remote (briefcase)."
+    },
+    "host.forbidden_manage_worlds_travel_party_footprint": {
+      "role": "FORBIDDEN_DENY_TRAVEL_CANCEL",
+      "client_xy": [1090, 33],
+      "status": "FORBIDDEN_DENY",
+      "action": "deny",
+      "profile": "1920x1080",
+      "notes": "Second circular icon after LabLab text on TRAVELING WITH banner (footprint) — NOT cancel. Approx x right of cancel X [1055,33]; never click for travel cancel."
+    },
+    "host.forbidden_manage_worlds_travel_party_crown": {
+      "role": "FORBIDDEN_DENY_TRAVEL_CANCEL",
+      "client_xy": [1125, 33],
+      "status": "FORBIDDEN_DENY",
+      "action": "deny",
+      "profile": "1920x1080",
+      "notes": "Third circular icon after LabLab text on TRAVELING WITH banner (crown / Kingdom of Willow Creek). Missing the travel X and clicking near crown opened Kingdom modal. FORBIDDEN for cancel. Modal close X canvas ~(924,217) ≈ client near prior [1138,255] family (~[1218,279] scale)."
+    },
+    "host.manage_worlds_kingdom_modal_close_x": {
+      "role": "CLOSE_KINGDOM_WORLD_MODAL",
+      "client_xy": [1138, 255],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "canvas_1456x840_xy": [924, 217],
+      "scaled_client_xy_hint": [1218, 279],
+      "notes": "Kingdom of Willow Creek modal X — closed via canvas ~(924,217) on 1456×840; PrintWindow/client near prior [1138,255] family (scaled hint ~[1218,279]). Prefer seed [1138,255] as proved family center until remeasure."
     },
     "live.top_live_people": {
       "role": "EXIT_BUILD_BUY_TO_LIVE",
@@ -1155,6 +1194,70 @@
       "MERGE_CAMERA_DEPENDENT_FRIDGE_INTO_THIS_BLOCK",
       "CLICK_LOAD_GAME_DELETE_ROW",
       "USE_EXIT_CAS_BODY_TEXT_Y508_AS_BUTTON"
+    ]
+  },
+  "manage_worlds_travel_party_1920x1080": {
+    "measured_at": "2026-11-10T04:20:00-05:00",
+    "profile": "1920x1080",
+    "coordinate_basis": "computer-use canvas 1456×840 scaled to PrintWindow/client 1920×1080",
+    "game_version": "1.121.361.1020",
+    "location": "Manage Worlds TRAVELING WITH: LabLab dual banners (top preferred)",
+    "owner": "betterinstincts/fixed_ui_click_map.py",
+    "alias_key": "manage_worlds.travel_party_cancel_x",
+    "scale": {
+      "canvas": [1456, 840],
+      "client": [1920, 1080],
+      "proved_cancel_canvas_xy": [800, 25],
+      "proved_cancel_client_xy": [1055, 33],
+      "text_miss_canvas_xy": [556, 34],
+      "text_miss_client_xy": [733, 44]
+    },
+    "targets": {
+      "travel_party_cancel_x": {
+        "target_id": "host.manage_worlds_travel_party_cancel_x",
+        "client_xy": [1055, 33],
+        "canvas_1456x840_xy": [800, 25],
+        "status": "LIVE_MEASURED_20261110",
+        "notes": "First circular icon after LabLab text (X). Prefer top banner over bottom TRAVELING WITH X."
+      },
+      "kingdom_modal_close_x": {
+        "target_id": "host.manage_worlds_kingdom_modal_close_x",
+        "client_xy": [1138, 255],
+        "canvas_1456x840_xy": [924, 217],
+        "status": "LIVE_MEASURED_20261110"
+      },
+      "forbidden_footprint": {
+        "target_id": "host.forbidden_manage_worlds_travel_party_footprint",
+        "client_xy": [1090, 33],
+        "status": "FORBIDDEN_DENY",
+        "action": "deny"
+      },
+      "forbidden_crown": {
+        "target_id": "host.forbidden_manage_worlds_travel_party_crown",
+        "client_xy": [1125, 33],
+        "status": "FORBIDDEN_DENY",
+        "action": "deny"
+      }
+    },
+    "post_cancel_live_state": {
+      "returned_to": "Live household lot",
+      "funds": 649897,
+      "clock": "Fri 8:54 AM",
+      "active_sim": "Servo",
+      "charlee": "REMOTE_BRIEFCASE"
+    },
+    "off_lot_after_cancel": {
+      "note": "Camera often on street/rooftop after cancel — needs Enter recenter. scenery-not-in-focus when Manage Worlds map or street fills viewport without household lot interior."
+    },
+    "forbidden": [
+      "CLICK_TRAVEL_PARTY_FOOTPRINT_AS_CANCEL",
+      "CLICK_TRAVEL_PARTY_CROWN_AS_CANCEL",
+      "TREAT_BANNER_TEXT_556_34_AS_CANCEL_X",
+      "EXPECT_ESC_TO_CANCEL_TRAVEL"
+    ],
+    "not": [
+      "USE_FOOTPRINT_OR_CROWN_FOR_TRAVEL_CANCEL",
+      "ASSUME_ESC_CANCELS_TRAVELING_WITH"
     ]
   },
   "inventory_multiselect_1920x1080": {
