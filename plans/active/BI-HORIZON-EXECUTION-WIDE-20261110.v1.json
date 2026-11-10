@@ -641,5 +641,53 @@
     "floor_map": "contracts/lot-floor-map.v1.json",
     "save_safety": "docs/LIVE_CERT.md + AGENTS.md save-safe",
     "bi002": "plans/active/BI-002.execution.v1.json"
+  },
+  "closers_desktop_peripheral_20261110": {
+    "schema": "betterinstincts.horizon-desktop-interop-close/v1",
+    "id": "BI-HORIZON-DESKTOP-CLOSERS-20261110",
+    "purpose": "Cross-repository November 10 Bluetooth service/peripheral incident closeout; supporting safety for Horizon host work, never a substitute for BI-002 gameplay certification.",
+    "method": "Moonwake The Closers — P83 verify and advance; P03 recover repository and execute; P141 compare strategic ownership; P124 preserve cohesive owners; P04 factor the runtime proof gate.",
+    "provider_readback": {
+      "sysadminsuite": {
+        "repository": "EndeavorEverlasting/SysAdminSuite",
+        "default_branch": "main",
+        "parent_pr_562_merge": "fa4f957ea847166dd0f49d8fa93081eaf5d3db3a",
+        "repair_rollout_pr_563_merge": "5f1a2b63d998c8d1a66ddac3bf966d7008d81c41",
+        "verification": "Windows five focused Bluetooth tests + agent factoring and AI-layer validation PASS on PR #563"
+      },
+      "betterinstincts": {
+        "repository": "EndeavorEverlasting/BetterInstincts",
+        "default_branch": "main",
+        "passive_capture_pr_160_merge": "4be514452804c6b3e1f11244b494aed609edc0c1",
+        "peripheral_ontology_pr_162_merge": "0bc3ff28037138e8e5414747305eae139d5e4384",
+        "cursor_hook_pr_161_merge": "a6bed938a37a5308ac5b1946e595d32b165b30c1",
+        "verification": "PR #161 independent Cursor + peripheral safety CI PASS; full suite 12 failures and 30 errors match PR #162 failure names exactly, zero new failures"
+      }
+    },
+    "scope_boundaries": {
+      "os_repair_owner": "SysAdminSuite: harness/api/bluetooth-peripheral-incident-route.v1.json; docs/field/BLUETOOTH-PERIPHERAL-RECOVERY.md",
+      "game_interop_owner": "BetterInstincts: contracts/peripheral-authority.v1.json; contracts/operator-desktop-boundary.v1.json; betterinstincts/screen_admit.py",
+      "cursor_hook_owner": "BetterInstincts: .cursor/hooks.json; .cursor/hooks/operator_boundary.py",
+      "source_guard": "scripts/check_peripheral_boundary.py; tests/test_peripheral_boundary.py; tests/test_operator_boundary.py",
+      "horizon_owner": "plans/horizon.v1.json + this execution-wide contract"
+    },
+    "proof_dimensions": {
+      "operator_bluetooth_pairing": "USER_REPORTED_BOTH_BLUETOOTH_MICE_RECOVERED",
+      "service_only_causality": "NOT_ISOLATED_FROM_ADAPTER_TRANSITION",
+      "source": "MERGED_IN_BOTH_REPOSITORIES",
+      "independent_ci": "PASS_AT_PR_563_AND_PR_161",
+      "full_game_suite": "PREEXISTING_FAILURES_REMINDER_NOT_GAME_PROOF",
+      "cursor_project_hook_loaded_on_local_windows": "NOT_OBSERVED",
+      "direct_computer_use_and_other_harnesses": "NOT_INTERCEPTED_BY_CURSOR_PROJECT_HOOK",
+      "local_mouse_keyboard_uninterrupted_by_active_hook": "NOT_LIVE_PROVEN",
+      "horizon_bi002_hunger": "ACTIVE_GAME_UNPROVEN",
+      "future_need_income_skills_career": "NOT_PROMOTED"
+    },
+    "next_runtime_gates": [
+      "With operator screen ownership, verify the checked-out merged BetterInstincts project has .cursor/hooks.json active in Cursor Hooks output; do a benign allowed git status and synthetic denied-command canary WITHOUT invoking any dangerous Windows service/driver operation.",
+      "Prove agent receives denial from effective Cursor pre-effect hook while operator still has mouse and keyboard; record local build/version and minimal sanitized receipt. If a different agent harness is used, require an equivalent effective admission boundary rather than assuming Cursor hooks protect it.",
+      "Resume Horizon's already-selected local BI-002 hunger live-cert workflow only through the existing save, scene, player-presence and per-effect lease gates. Do not close BI-002, modify protected Slot_00000007, change OS services, or promote later stages from these offline and repository proofs."
+    ],
+    "routing_decision": "No new Horizon stage or dependency inserted. Active current gate remains BI-002; desktop interop safety is a local runtime preflight, not a gameplay certification or a permanent blocker to approved alternate harnesses."
   }
 }
