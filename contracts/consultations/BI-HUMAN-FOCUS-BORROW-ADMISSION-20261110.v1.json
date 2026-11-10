@@ -63,7 +63,8 @@
     "Foreground lost between actions must be borrowed again",
     "Missing PID or inactive session blocks",
     "Existing path with verified Sims foreground remains admitted",
-    "No OS setting or save mutation"
+    "No OS setting or save mutation",
+    "Legacy needs-force admission tests patch the canonical live status and probe seam; inactive session cannot dispatch"
   ],
   "rollback_path": "Revert isolated branch code without touching Windows, Sims installation, or saves.",
   "unresolved_unknowns": [
@@ -75,7 +76,8 @@
     "scripts/needs_force.py",
     "tests/test_screen_admit.py",
     "docs/ASYNC_INTEROP.md",
-    "docs/LEDGER.md"
+    "docs/LEDGER.md",
+    "tests/test_control_handoff.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
