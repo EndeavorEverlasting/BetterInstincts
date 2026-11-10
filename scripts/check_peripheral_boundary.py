@@ -30,7 +30,7 @@ DANGEROUS = {
     ),
     "OS_KEYBOARD_REMAP_OR_ACCESSIBILITY": re.compile(
         r"\b(?:Scancode\s+Map|SetKeyboardState|SystemParametersInfo[AW]?|"
-        r"FilterKeys|StickyKeys|ToggleKeys|Keyboard\s+Layout\\\\Scancode)\b",
+        r"FilterKeys|StickyKeys|ToggleKeys|Keyboard\s+Layout\\Scancode)\b",
         re.IGNORECASE,
     ),
     "OS_GLOBAL_INPUT_INTERCEPTION": re.compile(
