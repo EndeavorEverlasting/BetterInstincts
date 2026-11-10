@@ -867,7 +867,7 @@ class SkillsPanelRosterRecordTests(unittest.TestCase):
             session_id="fixture-save-household-session",
             members=4,
             roster_keys=["SIM_A_P0", "SIM_B_P1", "SIM_C_P2", "SIM_D_P3"],
-            display_names=["Sim Alpha", "Sim Beta", "Sim Gamma", "Charlee"],
+            display_names=["Sim Alpha", "Sim Beta", "Sim Gamma", "Sim Delta"],
         )
         self.assertEqual(ledger["household_roster"]["members"], 4)
         with self.assertRaises(DiySkillForceError):
@@ -1148,7 +1148,7 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         self.assertIn("WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY", wb["forbidden"])
         named = assess_selection_identity(
             expected_display_name="Sim Gamma",
-            observed_panel_header_name="Olga — Unemployed",
+            observed_panel_header_name="Sim Gamma — Unemployed",
             cue_source="WORK_OR_CAREER_PANEL_NAME",
             white_bounds_roster_index=2,
             expected_roster_index=2,
@@ -1211,7 +1211,7 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
             ],
         )
 
-        # Synthetic strip: two white walls bracketing Olga center x=454
+        # Synthetic strip: two white walls bracketing Sim Gamma center x=454
         tmp = Path("dist/game-host/household-skill-cert/live-20261109/_white-bound-fixture.png")
         tmp.parent.mkdir(parents=True, exist_ok=True)
         im = Image.new("RGB", (1920, 1080), (40, 40, 40))
@@ -1321,7 +1321,7 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         custom = plan_live_hotkey_arm(world_client_xy=[800, 400])
         self.assertEqual(custom["world_client_xy"], [800, 400])
         self.assertFalse(assess_arm_world_point([200, 200])["ok"])
-        self.assertFalse(assess_arm_world_point([454, 1055])["ok"])  # Olga portrait seed
+        self.assertFalse(assess_arm_world_point([454, 1055])["ok"])  # Sim Gamma portrait seed
         self.assertTrue(assess_arm_world_point([880, 480])["ok"])
         with self.assertRaises(DiySkillForceError):
             plan_live_hotkey_arm(world_client_xy=[454, 1055])
