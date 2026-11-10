@@ -2,7 +2,7 @@
   "schema": "betterinstincts.horizon-execution-wide/v1",
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
-  "updated_at": "2026-11-10T11:10:00Z",
+  "updated_at": "2026-11-10T14:05:00Z",
   "live_truth_20261110": {
     "host": {"pid": 78240, "exe": "TS4_x64_fpb", "game_version": "1.121.361.1020"},
     "live_cert_run": "bi002-game1-20261107",
@@ -11,11 +11,12 @@
     "household": {
       "charlee_lablab": "STARVED -> Become a Playable Ghost (adverse-charlee-starvation.json); death watch is NOT an eat trial",
       "olga": "death modal DISMISSED; playable-ghost path",
-      "living_hunger_subject": "RECOVERY_REQUIRED — a living (non-ghost) Sim must be selected before any further baseline trial",
-      "living_subject_gate_20261110": {"bernice": "SERVO (Durability) — NOT a living human hunger subject; any note assuming Bernice=human is superseded", "charlee_olga": "playable ghosts (Ethereal Sustenance) — not hunger subjects", "need": "a living human (Evil P0 or remeasure the roster)", "prove_via": "Needs panel 6-bar Hunger (vs Servo Durability / ghost Ethereal)"}
+      "living_hunger_subject": "BLOCKED — see dist/game-host/horizon-exec-20261110/bi002/living-subject-blocker.json",
+      "living_subject_gate_20261110": {"bernice": "SERVO (Durability) — NOT a living human hunger subject; any note assuming Bernice=human is superseded", "charlee_olga": "playable ghosts (Ethereal Sustenance) — not hunger subjects", "need": "a living human (Evil P0 or remesaure / invite / load earlier save without deleting)", "prove_via": "Needs panel 6-bar Hunger (vs Servo Durability / ghost Ethereal)"}
     },
     "fridge_hit_zoomed_20261110": "HIT_PIE_MENU at client [500,560] after Z-zoom (~14) + Enter recenter; snack NOT queued; single frame; contracts/fixed-ui-click-map.v1.json camera_dependent_seeds_1920x1080",
-    "fridge_hit": "MISS — [465,595] opened outdoor Upgrade/Possess pie (satellite/garden), not the fridge; camera too zoomed out; coords are single-frame, not promoted",
+    "fridge_hit": "WIDE [465,595] MISS (outdoor Upgrade/Possess); ZOOMED [500,560] HIT once then camera/story drift made re-HIT unstable",
+    "notebook_close_x": [1338, 276],
     "fg_s2_skills": "LOCAL_OBSERVED (done); not BI-005; not BI-002 closure",
     "evidence_root": "dist/game-host/horizon-exec-20261110/ (gitignored, local-only)",
     "bi002_closed": false
@@ -139,6 +140,37 @@
         "outside_seen": ["garden_glow_plants", "canal_LEFT", "street_RIGHT"],
         "lot_focus_live": "OFF_LOT_NEIGHBORHOOD_HIGH after arm+Enter — compound scenery recognition strengthened",
         "menus_mapped": ["Options", "MENU", "Save As", "ADD NEW SAVE", "Needs", "Skill Mastery Perks", "Help Center"]
+      },
+      "order_upgrade_parts_gate_20261110": {
+        "state": "OFFLINE_HARNESS_PREPARED_LIVE_NOT_ATTEMPTED",
+        "live_hit_claimed": false,
+        "proof_ceiling": "LOCAL_OBSERVED_ORDER_MAP_NOT_HORIZON_STAGE_CLOSE; NOT_BI002",
+        "owner_of_live_step": "parent LOCAL_AGENT (single screen owner); blocked while BI-002 fridge/living-subject recovery holds the screen",
+        "receipt_dir": "dist/game-host/horizon-exec-20261110/order-upgrade-parts/ (gitignored, local-only)",
+        "receipt_template": "dist/game-host/horizon-exec-20261110/order-upgrade-parts/receipt.template.json",
+        "runbook": "dist/game-host/horizon-exec-20261110/order-upgrade-parts/README.md",
+        "owners": ["contracts/upgrade-parts-force.v1.json", "betterinstincts/upgrade_parts_force.py", "contracts/lot-floor-map.v1.json#paths.computer_order_upgrade_parts", "dist/game-host/parts-buy/click-ledger.v1.json (local prior attempts)"],
+        "measured_single_frame": {
+          "computer_pie_open_xy": [1299, 280],
+          "pie_seen": ["Write", "Play Game", "Career", "University", "Household", "Networking", "Computer Security", "Donate to Online Charity", "More Choices"],
+          "order_row_seen": false,
+          "more_choices": "Donate subtree only",
+          "wrong_control": {"phone_shopping_bag": [216, 857], "laptop_counter": [1000, 378]},
+          "miss_wide_camera": [[980, 520], [1120, 470]],
+          "phone_hud_fixed_seed": [282, 1055]
+        },
+        "unknown": ["order_wedge_xy", "purchase_upgrade_parts_xy", "part_row_xy", "confirm_xy", "which pie branch (Household... candidate) exposes Order"],
+        "offline_commands": [
+          "python -m scripts.upgrade_parts_force plan --part robot_salvage_parts --quantity 1 --path computer --checklist",
+          "python -m scripts.lot_floor_map show"
+        ],
+        "next_live_steps": [
+          "capture ON_LOT + arm + living human Sim with funds + zoom/recenter on computer",
+          "click computer once; record pie_options_seen",
+          "open Household... if no Order...; then Order... -> Purchase Upgrade Parts -> Robot Salvage Parts -> confirm 1",
+          "fill receipt.json; python -m scripts.upgrade_parts_force record/status --run-id order-upgrade-20261110",
+          "Stay Offline only; never Connect; fallback = spawn Crafting Supplies path"
+        ]
       },
       "escape_menu_findings_20261110": {
         "source": "live + fixed-ui-click-map + BI-ESCAPE-MENU consultation",

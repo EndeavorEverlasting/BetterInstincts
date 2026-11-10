@@ -241,6 +241,8 @@ class CameraDependentFridgeSeedTests(unittest.TestCase):
         for tid in ledger["targets"]:
             self.assertFalse(tid.startswith("world.fridge"), tid)
         self.assertEqual(cfg["seed_targets_1920x1080"]["live.calendar_close_x"]["client_xy"], [1445, 255])
+        self.assertEqual(cfg["seed_targets_1920x1080"]["live.notebook_close_x"]["client_xy"], [1338, 276])
+        self.assertEqual(cfg["version"], 9)
 
 
 if __name__ == "__main__":

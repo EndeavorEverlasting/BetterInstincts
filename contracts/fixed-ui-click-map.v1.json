@@ -1,8 +1,9 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 8,
+  "version": 9,
   "version_notes": {
-    "8": "Adds camera_dependent_seeds_1920x1080 (fridge HIT/MISS). Additive only: seed_targets_1920x1080 and all certified seeds unchanged; camera-dependent rows are NOT ingested into the fixed-HUD ledger."
+    "8": "Adds camera_dependent_seeds_1920x1080 (fridge HIT/MISS). Additive only: seed_targets_1920x1080 and all certified seeds unchanged; camera-dependent rows are NOT ingested into the fixed-HUD ledger.",
+    "9": "Adds live.notebook_close_x [1338,276] (PrintWindow-measured Notebook dismiss). Additive only; prior seeds unchanged."
   },
   "authority": "docs/UI_CHROME.md",
   "owners": {
@@ -245,6 +246,13 @@
       "client_xy": [1445, 255],
       "status": "LIVE_MEASURED_20261110",
       "notes": "Top-right of calendar white header; PrintWindow-proved close. Do NOT toggle live.show_calendar to dismiss — that reopens the modal."
+    },
+    "live.notebook_close_x": {
+      "role": "DISMISS_NOTEBOOK_MODAL",
+      "client_xy": [1338, 276],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "notes": "White circular X on open Notebook (PROPERTY OF) top-right page corner; PrintWindow pixel center 2026-11-10. Esc alone is unreliable while Notebook owns focus; Space without dismiss stays on Notebook and blocks SELECT_NEXT_HOUSEHOLD_SIM."
     },
     "live.household_portrait_0": {
       "role": "SELECT_HOUSEHOLD_SIM",

@@ -1,3 +1,9 @@
+## 2026-11-10 — Living-subject blocker + notebook close X
+
+**CHANGED:** BI-002 living hunger subject **BLOCKED** on current LabLab roster (Charlee/Olga playable ghosts; Bernice Thermidor = Servo). Receipt `dist/game-host/horizon-exec-20261110/bi002/living-subject-blocker.json`. Fridge pie **HIT once** at zoomed `[500,560]` then camera/story drift made re-HIT unstable; snack still not queued. `live.notebook_close_x [1338,276]` promoted (v9); Space without Notebook dismiss does not cycle household. OEM_COMMA/PERIOD aliases added to `scripts/win32_input.py` for camera rotate. Horizon plan `live_truth` updated. Never delete `My Saved Game 6` / `Slot_00000007`.
+
+**NEXT:** Attest a living human via Needs 6-bar Hunger (invite/move-in or load earlier save without deleting), then fridge queue food before any hunger drain; continue baseline trials 3–5.
+
 ## 2026-11-10 — Fridge calibration promoted to contract (offline)
 
 **CHANGED:** `contracts/fixed-ui-click-map.v1.json` v8 adds `camera_dependent_seeds_1920x1080` (additive; certified seeds untouched; NOT ingested into the fixed-HUD ledger). Zoomed + Enter-recentered fridge pie **HIT `[500,560]`**; wide-zoom `[465,595]` **MISS/stale** (outdoor Upgrade/Possess pie). Zoom precondition: Z/wheel (~14), never RMB, then Enter. `load_camera_dependent_fridge_seeds` + `CameraDependentFridgeSeedTests`. Horizon plan living-subject gate: **Bernice is a Servo (Durability)**, not a living hunger subject; Charlee/Olga are playable ghosts (Ethereal Sustenance); need a living human (Evil P0 or remeasure). Calendar dismiss only via `live.calendar_close_x [1445,255]`.
