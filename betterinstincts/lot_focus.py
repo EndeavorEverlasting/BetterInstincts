@@ -16,6 +16,14 @@ Classification (``classification`` field, legacy):
 Scenery focus (``scenery_focus`` field, operator 2026-11-10):
   ON_LOT_INTERIOR_OR_YARD | STREET_OR_ROOFTOP_OFF_FOCUS | MANAGE_WORLDS_MAP |
   TRAVELING_WITH_BANNER | VIEWPORT_BLACK_OR_WHITE | AMBIGUOUS
+
+Off-intent view (``assess_off_intent_view``, operator 2026-11-10):
+  After a *world object* click intended for a framed object, if the post-click
+  view is street/empty asphalt OR Buy/Build catalog opened → OFF_INTENT_VIEW /
+  MISS_OFF_LOT. Recovery: Esc(+F1 if Buy) then Shift+Enter lot arm. Do not
+  roam hardcoded field XY; re-click only from a fresh capture that shows the
+  target. Buy after intended Live object click = assume clicked off — arm, do
+  not explore Buy.
 """
 from __future__ import annotations
 
@@ -28,6 +36,10 @@ from betterinstincts.sim_camera import CENTER_SIM, plan_sim_camera
 
 LOT_FOCUS_PROOF = "OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
 SCENERY_FOCUS_PROOF = "OFFLINE_SCENERY_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
+OFF_INTENT_VIEW_PROOF = "OFFLINE_OFF_INTENT_VIEW_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
+
+OFF_INTENT_VIEW = "OFF_INTENT_VIEW"
+MISS_OFF_LOT = "MISS_OFF_LOT"
 
 SCENERY_ON_LOT = "ON_LOT_INTERIOR_OR_YARD"
 SCENERY_STREET_ROOFTOP = "STREET_OR_ROOFTOP_OFF_FOCUS"
@@ -422,6 +434,155 @@ def recovery_for_scenery_focus(scenery_focus: str) -> dict[str, Any]:
         "action": None,
         "next": "REOBSERVE_WITH_SECOND_INDEPENDENT_CUE",
         "forbidden": list(_COMMON_FORBIDDEN),
+    }
+
+
+def recovery_for_off_intent_view(*, buy_or_build_opened: bool = False) -> dict[str, Any]:
+    """Recovery chord when a world-object click missed into street/Buy.
+
+    Policy only — never grants input. Esc clears overlays; F1 if Buy/Build;
+    Shift+Enter arms the active lot. Forbidden: Sell, street roam, more
+    hardcoded field XY, exploring Buy catalog.
+    """
+    steps: list[dict[str, Any]] = [
+        {
+            "step": "CLEAR_OVERLAYS",
+            "chord": ["ESCAPE"],
+            "repeat_max": 4,
+            "never": ["SELL"],
+        }
+    ]
+    if buy_or_build_opened:
+        steps.append(
+            {
+                "step": "EXIT_BUY_BUILD_TO_LIVE",
+                "chord": ["F1"],
+                "never": ["SELL", "GALLERY", "EXPLORE_BUY_CATALOG"],
+            }
+        )
+    steps.append(
+        {
+            "step": "ARM_ACTIVE_LOT",
+            "command": "CENTER_CURRENT_LOT",
+            "hotkey_id": "CENTER_CURRENT_LOT",
+            "chord": ["SHIFT", "ENTER"],
+            "note": "Shift+Enter is the arm after OFF_INTENT_VIEW miss — not roam, not hardcoded field XY.",
+        }
+    )
+    steps.append(
+        {
+            "step": "CONFIRM_PAUSED",
+            "chord": ["0"],
+            "forbidden": ["PLAY", "1", "2", "3", "UNPAUSE"],
+        }
+    )
+    return {
+        "flag": OFF_INTENT_VIEW,
+        "classification": MISS_OFF_LOT,
+        "order": steps,
+        "next": "REOBSERVE_PRINTWINDOW_FOR_TARGET_THEN_CLICK_ONLY_IF_VISIBLE",
+        "blocked_if_target_absent": "BLOCKED_NEED_OPERATOR_FRAME",
+        "forbidden": list(_COMMON_FORBIDDEN)
+        + [
+            "HARDCODED_FIELD_XY_AFTER_MISS",
+            "EXPLORE_BUY_CATALOG",
+            "STREET_ROAM",
+            "SELL",
+            "PLAY_WHILE_PARTS_GATE",
+            "CLICK_WITHOUT_TARGET_IN_CURRENT_CAPTURE",
+        ],
+        "proof_ceiling": OFF_INTENT_VIEW_PROOF,
+    }
+
+
+def assess_off_intent_view(
+    *,
+    observation: Mapping[str, Any] | None = None,
+    intent: str | None = None,
+) -> dict[str, Any]:
+    """Detect OFF_INTENT_VIEW / MISS_OFF_LOT after an intended Live world-object click.
+
+    Triggers when ``intent`` is a world-object click (or observation says so) AND
+    post-click cues show street/empty asphalt OR Buy/Build catalog. Camera-relative
+    object clicks are not durable as hardcoded field XY across zoom.
+    """
+    obs = observation if isinstance(observation, Mapping) else {}
+    intent_s = str(intent or obs.get("click_intent") or obs.get("intent") or "").strip().upper()
+    world_object_intent = intent_s in {
+        "WORLD_OBJECT",
+        "LIVE_WORLD_OBJECT",
+        "OBJECT_PIE",
+        "ROBOTICS_WORKSTATION",
+        "COMPUTER",
+        "FRIDGE",
+    } or obs.get("intended_world_object_click") is True
+
+    buy_open = bool(
+        obs.get("buy_mode") is True
+        or obs.get("build_mode") is True
+        or obs.get("buy_catalog_open") is True
+        or obs.get("build_buy_catalog_open") is True
+        or str(obs.get("ui_mode") or "").strip().lower() in {"buy", "build", "build_buy"}
+    )
+    street_or_empty = bool(
+        obs.get("street_empty_asphalt") is True
+        or obs.get("empty_asphalt") is True
+        or obs.get("post_click_view") in {"street", "empty_asphalt", "canal", "water", "off_lot"}
+        or str(obs.get("scenery_focus") or "") == SCENERY_STREET_ROOFTOP
+        or str(obs.get("classification") or "") == "OFF_LOT"
+    )
+    # Token / kind hints
+    host, tokens = _collect_tokens(obs) if obs else ([], set())
+    token_blob = " ".join(host)
+    if any(t in tokens for t in ("street", "asphalt", "sidewalk", "canal", "off_lot", "neighborhood")):
+        street_or_empty = True
+    if "buy" in token_blob or "build_buy" in token_blob or "catalog" in token_blob:
+        buy_open = True
+
+    base = {
+        "ok": True,
+        "flag": None,
+        "classification": None,
+        "triggered": False,
+        "proof_ceiling": OFF_INTENT_VIEW_PROOF,
+        "world_object_intent": world_object_intent,
+        "buy_or_build_opened": buy_open,
+        "street_or_empty_asphalt": street_or_empty,
+    }
+    if not world_object_intent:
+        return {
+            **base,
+            "reason": "NO_WORLD_OBJECT_CLICK_INTENT",
+            "next": "NO_OFF_INTENT_CHECK",
+        }
+    if not (buy_open or street_or_empty):
+        return {
+            **base,
+            "reason": "POST_CLICK_VIEW_NOT_OFF_INTENT",
+            "next": "CONTINUE_IF_TARGET_VISIBLE_IN_CURRENT_CAPTURE",
+        }
+
+    recovery = recovery_for_off_intent_view(buy_or_build_opened=buy_open)
+    return {
+        **base,
+        "ok": False,
+        "triggered": True,
+        "flag": OFF_INTENT_VIEW,
+        "classification": MISS_OFF_LOT,
+        "reason": (
+            "BUY_BUILD_AFTER_WORLD_OBJECT_CLICK"
+            if buy_open
+            else "STREET_OR_EMPTY_ASPHALT_AFTER_WORLD_OBJECT_CLICK"
+        ),
+        "gate": "OFF_INTENT_VIEW_ARM_REQUIRED",
+        "recovery": recovery,
+        "next": recovery["next"],
+        "forbidden": recovery["forbidden"],
+        "note": (
+            "Buy/Build after intended Live object click = assume clicked off; "
+            "run Esc(+F1)+Shift+Enter arm — do not explore Buy. "
+            "Hardcoded field XY are not durable across zoom."
+        ),
     }
 
 

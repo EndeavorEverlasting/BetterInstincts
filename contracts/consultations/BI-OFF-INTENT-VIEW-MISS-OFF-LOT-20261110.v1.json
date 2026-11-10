@@ -1,0 +1,34 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-OFF-INTENT-VIEW-MISS-OFF-LOT-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "53f41e68f6528e874d1ed6084d9a151a34b8ced30843131349b70b714c43dc76",
+  "proposed_capability": "Detect OFF_INTENT_VIEW / MISS_OFF_LOT when a Live world-object click lands on street/empty asphalt or opens Buy/Build catalog; recover via Esc(+F1)+Shift+Enter lot arm; forbid hardcoded field XY re-click and Buy exploration until target is visible in a fresh PrintWindow (else BLOCKED_NEED_OPERATOR_FRAME).",
+  "operator_corrections": [
+    "You missed, you clicked the street, and then you clicked buy mode.",
+    "Buy mode after intended Live object click = assume clicked off; run arm process — that is the task when this flag fires, not explore Buy.",
+    "STOP world hard-coded XY. Do not click again until PrintWindow shows workstation (not street/Buy).",
+    "ARM: Shift+Enter (lot center) to return to active lot after miss/off-lot."
+  ],
+  "owners": [
+    "betterinstincts/lot_focus.py",
+    "betterinstincts/host_stack.py",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+    "tests/test_lot_focus.py"
+  ],
+  "peers": [
+    "scenery_focus",
+    "assess_lot_focus",
+    "game_input_borrow_restore",
+    "CENTER_CURRENT_LOT"
+  ],
+  "rejected": [
+    "HARDCODED_FIELD_XY_AFTER_MISS",
+    "EXPLORE_BUY_CATALOG",
+    "STREET_ROAM",
+    "SELL",
+    "CLICK_WITHOUT_TARGET_IN_CURRENT_CAPTURE"
+  ],
+  "proof_ceiling": "OFFLINE_OFF_INTENT_VIEW_POLICY_NOT_LIVE_CAMERA_CERTIFIED",
+  "not_bi002": true
+}

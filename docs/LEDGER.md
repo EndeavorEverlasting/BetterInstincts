@@ -1,3 +1,29 @@
+## 2026-11-10 — OFF_INTENT_VIEW / MISS_OFF_LOT (street→Buy miss flag)
+
+**Operator:** Missed robotics workstation (street) then Buy catalog. Flag + arm, do not explore Buy. Stop hardcoded field XY until PrintWindow shows target.
+
+**CHANGED:** `assess_off_intent_view` + `recovery_for_off_intent_view` in `betterinstincts/lot_focus.py` (Esc[+F1]+Shift+Enter). `host_stack` attaches `off_intent_view` / `OFF_INTENT_VIEW_ARM` fallback. Consultation `BI-OFF-INTENT-VIEW-MISS-OFF-LOT-20261110`. Horizon H0 annotation. Tests `OffIntentViewTests`.
+
+**PROVED offline:** Buy-after-object-click and street-asphalt triggers → MISS_OFF_LOT; no-intent / on-target do not trigger.
+
+**LIVE:** Esc×N+F1+Shift+Enter+0 → Live+PAUSED; capture `pw-after-arm-recover.png` shows canal/water — **no workstation** → `BLOCKED_NEED_OPERATOR_FRAME`. Focus restored to operator.
+
+**NEXT:** Operator re-frames robotics workstation; one capture-relative click for Order/Parts only. Stay PAUSED.
+
+## 2026-11-10 — Multi-screen borrow wall (focus/interop harden)
+
+**Operator:** “You lost focus… other screens. Codify focus and interoperability.” / “You moved things around.” / stop thrash.
+
+**CHANGED:** Append-only `game_input_borrow_restore` (original `rule` restored; additive wall/observation/multi_screen/forbidden). Consultation `BI-FOCUS-BORROW-WALL-MULTI-SCREEN-20261110`. `assess_sims_input_borrow_cell` + `LAST_NON_SIMS_FOREGROUND_HWND` restore fallback + 8s/60s wall in `_with_sims_input_borrow`. ASYNC_INTEROP note. Tests in `test_diy_skill_force`.
+
+**PROVED offline:** assess denies tip_sweep / observe_only / wall exceed / multi-effect; contract rule text unchanged from HEAD baseline.
+
+**PROVED offline:** `assess_sims_input_borrow_cell` denies tip_sweep/observe_only/wall/multi-effect; unittest `test_live_hotkey_arm_plan_and_household_traverse_pin` OK; original `rule` string matches HEAD.
+
+**LIVE Eco (incomplete):** Short cells dismissed Mastery Perk No; camera recovered from canal; copper tank seen on courtyard but Build tip PrintWindow went white; Eco still **not** tip-title-proven and **not** in HI. Restore fallback hit once (`hwnd` non-Sims).
+
+**NEXT:** On-lot F2 tip exact “Eco-Matic Smog Vacuum” (copper/hazard) → Backspace/Clear Table → HI/Sim name proof. Short `_with_sims_input_borrow` cells only. Not BI-002 close.
+
 ## 2026-11-10 — Horizon plan/ledger sync (offline): next_gate + recovery path
 
 **CHANGED:** `plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json` additive sync only (no live input). `live_cert` `bi002-game1-20261107` still baseline **2/5** modified **0/5** rollback 0 INCOMPLETE. Horizon operational `next_gate` remains `CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3` until a new `live_cert record` exists (CLI still reports `RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS`). Recovery path noted: dismiss Ask-for-Help Cleaning modal X ~`[1138,222]`; never Sell; Charlee portrait `[450,1055]`; Buy exit F1+`live.top_live_people [1585,35]`. NEVER delete saves; no BI-003 claim.

@@ -7,12 +7,16 @@ from pathlib import Path
 
 from betterinstincts.host_stack import evaluate_turn
 from betterinstincts.lot_focus import (
+    MISS_OFF_LOT,
+    OFF_INTENT_VIEW,
     SCENERY_MANAGE_WORLDS,
     SCENERY_ON_LOT,
     SCENERY_STREET_ROOFTOP,
     SCENERY_TRAVELING,
     SCENERY_VIEWPORT,
     assess_lot_focus,
+    assess_off_intent_view,
+    recovery_for_off_intent_view,
     recovery_for_scenery_focus,
     should_assess_lot_focus,
 )
@@ -492,6 +496,57 @@ class SceneryFocusHardeningTests(unittest.TestCase):
                 payload = recovery_for_scenery_focus(focus)
                 self.assertEqual(payload["scenery_focus"], focus)
                 self.assertIn("forbidden", payload)
+
+
+class OffIntentViewTests(unittest.TestCase):
+    def test_buy_after_world_object_click_triggers_miss(self):
+        out = assess_off_intent_view(
+            intent="WORLD_OBJECT",
+            observation={"buy_catalog_open": True, "ui_mode": "buy"},
+        )
+        self.assertTrue(out["triggered"])
+        self.assertEqual(out["flag"], OFF_INTENT_VIEW)
+        self.assertEqual(out["classification"], MISS_OFF_LOT)
+        self.assertEqual(out["reason"], "BUY_BUILD_AFTER_WORLD_OBJECT_CLICK")
+        chords = [step.get("chord") for step in out["recovery"]["order"]]
+        self.assertIn(["ESCAPE"], chords)
+        self.assertIn(["F1"], chords)
+        self.assertIn(["SHIFT", "ENTER"], chords)
+        self.assertIn("EXPLORE_BUY_CATALOG", out["forbidden"])
+        self.assertIn("HARDCODED_FIELD_XY_AFTER_MISS", out["forbidden"])
+
+    def test_street_asphalt_after_object_click_triggers_miss(self):
+        out = assess_off_intent_view(
+            observation={
+                "intended_world_object_click": True,
+                "street_empty_asphalt": True,
+                "post_click_view": "empty_asphalt",
+            }
+        )
+        self.assertTrue(out["triggered"])
+        self.assertEqual(out["classification"], MISS_OFF_LOT)
+        self.assertEqual(out["reason"], "STREET_OR_EMPTY_ASPHALT_AFTER_WORLD_OBJECT_CLICK")
+        self.assertEqual(
+            out["recovery"]["blocked_if_target_absent"], "BLOCKED_NEED_OPERATOR_FRAME"
+        )
+
+    def test_no_intent_does_not_trigger(self):
+        out = assess_off_intent_view(observation={"buy_catalog_open": True})
+        self.assertFalse(out["triggered"])
+        self.assertEqual(out["reason"], "NO_WORLD_OBJECT_CLICK_INTENT")
+
+    def test_on_target_post_click_does_not_trigger(self):
+        out = assess_off_intent_view(
+            intent="ROBOTICS_WORKSTATION",
+            observation={"buy_mode": False, "post_click_view": "object_pie"},
+        )
+        self.assertFalse(out["triggered"])
+
+    def test_recovery_helper_includes_shift_enter_arm(self):
+        rec = recovery_for_off_intent_view(buy_or_build_opened=True)
+        self.assertEqual(rec["flag"], OFF_INTENT_VIEW)
+        self.assertEqual(rec["classification"], MISS_OFF_LOT)
+        self.assertEqual(rec["order"][-2]["chord"], ["SHIFT", "ENTER"])
 
 
 if __name__ == "__main__":

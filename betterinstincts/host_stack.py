@@ -95,7 +95,12 @@ from betterinstincts.camera_traverse import (
 from betterinstincts.viewport import ViewportError, predict_risk
 from betterinstincts.sim_camera import SimCameraError, plan_sim_camera
 from betterinstincts.active_sim_camera_lock import evaluate_active_sim_camera_lock
-from betterinstincts.lot_focus import LotFocusError, assess_lot_focus, should_assess_lot_focus
+from betterinstincts.lot_focus import (
+    LotFocusError,
+    assess_lot_focus,
+    assess_off_intent_view,
+    should_assess_lot_focus,
+)
 from betterinstincts.scenes import stamp_host_capture_game_version
 from betterinstincts.scene_ui_semantics import assess_live_hud, SceneUISemanticsError
 from betterinstincts.scenery_memory import record_scenery, SceneryMemoryError
@@ -908,6 +913,20 @@ def evaluate_turn(
         except (LotFocusError, SimCameraError, TypeError) as exc:
             raise HostStackError(str(exc)) from exc
 
+    off_intent_view = None
+    if isinstance(lot_focus_observation, Mapping) and (
+        lot_focus_observation.get("intended_world_object_click") is True
+        or lot_focus_observation.get("click_intent")
+        or lot_focus_observation.get("assess_off_intent_view") is True
+    ):
+        off_intent_view = assess_off_intent_view(observation=lot_focus_observation)
+        if off_intent_view.get("triggered") and isinstance(lot_focus, dict):
+            lot_focus = {
+                **lot_focus,
+                "off_intent_view": off_intent_view,
+                "gate": off_intent_view.get("gate") or lot_focus.get("gate"),
+            }
+
     # Pointer context is an optional observed phase, never a control permit.
     # Player-directed work always owns the cursor even if an agent supplied
     # a contradictory context flag.
@@ -1032,6 +1051,19 @@ def evaluate_turn(
             "scene": scenery_receipt,
             "execute_allowed": False,
             "next": "REOBSERVE_SELECTED_SIM_PORTRAIT_THEN_REVALIDATE_TARGET",
+        }
+    elif isinstance(off_intent_view, Mapping) and off_intent_view.get("triggered"):
+        next_gate = str(off_intent_view.get("gate") or "OFF_INTENT_VIEW_ARM_REQUIRED")
+        fallback = {
+            "mechanism": "OFF_INTENT_VIEW_ARM",
+            "owner": "betterinstincts/lot_focus.py",
+            "api": "assess_off_intent_view",
+            "off_intent_view": off_intent_view,
+            "recovery": off_intent_view.get("recovery"),
+            "execute_allowed": False,
+            "next": off_intent_view.get("next"),
+            "forbidden": list(off_intent_view.get("forbidden") or []),
+            "note": "Buy/street after world-object click = MISS_OFF_LOT; Esc(+F1)+Shift+Enter — do not explore Buy.",
         }
     elif lot_focus is not None and lot_focus.get("state") in {
         "OFF_LOT_STREET",
@@ -1741,6 +1773,7 @@ def evaluate_turn(
         "scenery_discovery": scenery_receipt,
         "active_sim_camera_lock": camera_lock,
         "lot_focus": lot_focus,
+        "off_intent_view": off_intent_view,
         "camera_recovery": drift_recovery,
         "world_target_framing": target_framing,
         "sim_camera": sim_camera_intent,

@@ -98,6 +98,30 @@
         "lot_floor_map under installation profiles (Build/Buy observation)",
         "betterinstincts/dbpf.py TGI index for mod .package only — NOT save geometry"
       ],
+      "research_20261110_offline": {
+        "consultation": "contracts/consultations/BI-LOT-GEOMETRY-SOURCE-OF-TRUTH-20261110.v1.json",
+        "stub": "contracts/lot-geometry-source.v1.json",
+        "installation_profiles_doc": "docs/INSTALLATION_PROFILES.md does NOT document EA Documents paths (LOCALAPPDATA BetterInstincts only)",
+        "windows_paths": {
+          "saves_dir": "%USERPROFILE%\\Documents\\Electronic Arts\\The Sims 4\\saves",
+          "slot_00000007": "%USERPROFILE%\\Documents\\Electronic Arts\\The Sims 4\\saves\\Slot_00000007.save",
+          "tray_my_library": "%USERPROFILE%\\Documents\\Electronic Arts\\The Sims 4\\Tray"
+        },
+        "host_metadata_only": {
+          "slot_00000007_exists": true,
+          "slot_00000007_size_bytes": 10315773,
+          "tray_file_count": 10,
+          "tray_building_blueprint_extensions_present": false,
+          "tray_extensions_present": [".householdbinary", ".trayitem", ".sgi", ".hhi"],
+          "sims_path_env_overrides": null
+        },
+        "dbpf_dry_run": {
+          "can_list_tgi_without_writing": "YES_IF_DBPF_AND_BUDGETS (open rb header+index only)",
+          "slot_under_MAX_PACKAGE_BYTES_64MiB": true,
+          "executed_on_real_save": false,
+          "still_not_geometry": true
+        }
+      },
       "safe_future_lane": "READ_ONLY save or Library blueprint analyzer; never write/delete/overwrite Slot_00000007 or any user save",
       "until_then": "PrintWindow + house_state + lot_floor_map + camera floor walks remain authoritative lot map"
     },
@@ -201,10 +225,25 @@
         "live_gap_20261110": "Camera still too zoomed out during fridge HIT; outdoor pie opened instead of fridge. Detector/zoom discipline not live-certified.",
         "contract": "contracts/camera-traverse.v1.json#lot_focus",
         "module": "betterinstincts/lot_focus.py",
+        "off_intent_view_20261110": {
+          "state": "OFFLINE_TESTED_LIVE_ARM_APPLIED_TARGET_ABSENT",
+          "flag": "OFF_INTENT_VIEW",
+          "classification": "MISS_OFF_LOT",
+          "trigger": "Post world-object click → street/empty asphalt OR Buy/Build catalog = miss (not explore Buy)",
+          "recovery": "Esc×N (+F1 if Buy) → Shift+Enter lot arm → confirm PAUSED; never Sell/Play",
+          "rule": "Hardcoded field XY not durable across zoom; click only target visible in current PrintWindow; else BLOCKED_NEED_OPERATOR_FRAME",
+          "api": "betterinstincts/lot_focus.py#assess_off_intent_view",
+          "host_stack": "off_intent_view + OFF_INTENT_VIEW_ARM fallback",
+          "consultation": "contracts/consultations/BI-OFF-INTENT-VIEW-MISS-OFF-LOT-20261110.v1.json",
+          "tests": "tests/test_lot_focus.py::OffIntentViewTests",
+          "live_receipt": "dist/game-host/horizon-exec-20261110/order-upgrade-parts/pw-after-arm-recover.png",
+          "live_result_20261110": "Buy exited; Live+PAUSED; Shift+Enter arm left canal/water — robotics workstation NOT in frame → BLOCKED_NEED_OPERATOR_FRAME",
+          "proof_ceiling": "OFFLINE_OFF_INTENT_VIEW_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
+        },
         "offline_hardening_20261110": {
           "state": "OFFLINE_TESTED_NOT_LIVE_CERTIFIED",
-          "adds": ["neighboring_houses", "dominant_sidewalk_streetlamp", "neighborhood_zoom_labels", "household_fixture_water_exclusion", "uncorroborated_on_lot_AMBIGUOUS", "stale_follow_flag_override_enter_restore", "scenery_focus_classes", "traveling_with_banner", "manage_worlds_map", "viewport_black_or_white_distinct", "rooftop_overlook", "shift_enter_escalation_only"],
-          "classification": ["ON_LOT", "OFF_LOT", "AMBIGUOUS"],
+          "adds": ["neighboring_houses", "dominant_sidewalk_streetlamp", "neighborhood_zoom_labels", "household_fixture_water_exclusion", "uncorroborated_on_lot_AMBIGUOUS", "stale_follow_flag_override_enter_restore", "scenery_focus_classes", "traveling_with_banner", "manage_worlds_map", "viewport_black_or_white_distinct", "rooftop_overlook", "shift_enter_escalation_only", "off_intent_view_miss_off_lot"],
+          "classification": ["ON_LOT", "OFF_LOT", "AMBIGUOUS", "MISS_OFF_LOT"],
           "scenery_focus": ["ON_LOT_INTERIOR_OR_YARD", "STREET_OR_ROOFTOP_OFF_FOCUS", "MANAGE_WORLDS_MAP", "TRAVELING_WITH_BANNER", "VIEWPORT_BLACK_OR_WHITE"],
           "tests": "tests/test_lot_focus.py",
           "proof_ceiling": "OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
