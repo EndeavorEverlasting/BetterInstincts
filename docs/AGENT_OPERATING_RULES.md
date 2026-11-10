@@ -37,6 +37,10 @@ Read `docs/COMPATIBILITY.md`, `docs/LIVE_CERT.md`, `plans/active/BI-002.executio
 
 **Local agent** owns hunger: inspect game/tuning, build reversible package, run 5 vanilla + 5 modified trials, verify rollback, queue and review. CI/handoffs cannot close BI-002; without host: BLOCKED_LOCAL_GAME_ACCESS, ACTIVE. `python -m scripts.live_cert status --run-id ID`.
 
+## Computer Order, Eco materials, and household purchase routing
+
+All agents use `docs/ACQUISITION_ROUTING.md` and `contracts/upgrade-parts-force.v1.json#acquisition_routing` (owner `betterinstincts/upgrade_parts_force.py`). Left-click observed computer → resolve Order by visible choices and bounded More Choices → resolve the desired observed domain → open picker → iterate each visible requested item with inventory/funds proof. Never hardcode two clicks; Order may also be behind More Choices. Select/revalidate each **observed** household portrait, never a fixed named roster or unadmitted Space-only traverse. Order is `INSTANT_UI_CANDIDATE`, not guaranteed; Fabricator eco parts (15 bits/10 pieces), Recycler/generator fuel, and Insect Farm biofuel are distinct queued/time-gated/resource routes. Plans are `execute_allowed=false`; player input, shared screen lease, saved-game safety, patch and pack observation gates remain active. Tests: `tests/test_upgrade_parts_force.py` and `tests/test_acquisition_integration.py`.
+
 ## Horizon continuity
 Read `docs/HORIZON.md`, `plans/horizon.v1.json`, `plans/active/BI-003.execution.v1.json`. Order: all six needs, balance, income, skills, careers; preserve prior patches. BI-002 stays open. `python -m scripts.check_horizon`.
 
