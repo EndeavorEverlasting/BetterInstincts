@@ -274,6 +274,25 @@ class NativeHouseholdAutonomyTests(unittest.TestCase):
         self.assertEqual(r["decisions"][0]["state"], "PLAYER_QUEUE_PROTECTED")
         self.assertIsNone(r["decisions"][0]["suppress_candidate"])
 
+
+    def test_unknown_or_host_queue_blocks_autonomy_mutation(self):
+        for origin in ("UNKNOWN", "HOST", "PLAYER"):
+            sim = self.sim("sim:1")
+            sim["queue"].insert(0, dict(sim["queue"][0], origin=origin,
+                                        queue_slot_ref="slot:other"))
+            with self.subTest(origin=origin):
+                decision = self.evaluate(self.household(sims=[sim]))["decisions"][0]
+                self.assertEqual(decision["state"], "PLAYER_QUEUE_PROTECTED")
+                self.assertIsNone(decision["suppress_candidate"])
+
+    def test_urgent_needs_and_obligation_do_not_get_trampled(self):
+        for field in ("urgent_need", "imminent_obligation"):
+            sim = self.sim("sim:1", **{field: True})
+            decision = self.evaluate(self.household(sims=[sim]))["decisions"][0]
+            self.assertEqual(decision["state"], "URGENT_NEED_OR_OBLIGATION_PROTECTED")
+        with self.assertRaisesRegex(AutonomyModerationError, "NATIVE_AUTONOMY_IDENTITY_INVALID"):
+            self.evaluate(self.household(game_build="UNKNOWN"))
+
     def test_unverified_autonomous_yield_and_duplicate_id_rejected(self):
         sim = self.sim("sim:1")
         sim["queue"][0]["yield_proof_ref"] = None
