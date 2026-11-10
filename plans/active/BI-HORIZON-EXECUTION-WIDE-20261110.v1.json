@@ -89,10 +89,16 @@
     {
       "id": "H1",
       "title": "Land harness PR / main integration",
-      "status": "ACTIVE",
+      "status": "PROVED_PARTIAL",
       "depends_on": ["H0"],
       "proof": ["COMMITTED_VALIDATED_HARNESS", "PR_OR_MAIN_READBACK"],
-      "proof_ceiling": "CI_GREEN_NOT_BI002_LIVE_CERT"
+      "proof_ceiling": "CI_GREEN_NOT_BI002_LIVE_CERT",
+      "git": {
+        "sha": "e81a06782eed37e4ef5980be4d723f537f72f853",
+        "branch": "main",
+        "pushed": true,
+        "note": "Horizon pack + lot_focus + floor-map harness landed; follow-up commits may append"
+      }
     },
     {
       "id": "MAP",
@@ -102,13 +108,22 @@
       "parallel_with": ["H1", "BI-002"],
       "proof": ["LOT_FLOOR_MAP_CONTRACT", "ESCAPE_MENU_TARGETS_PROMOTED"],
       "proof_ceiling": "LOCAL_OBSERVED_MAP_NOT_HORIZON_STAGE_CLOSE",
+      "live_20261110": {
+        "floor_map": "ENSURED bargain-bendh; dining/rug/robotics landmarks recorded",
+        "floors_seen": ["FLOOR_1", "stair_to_FLOOR_2"],
+        "outside_seen": ["garden_glow_plants", "canal_LEFT", "street_RIGHT"],
+        "lot_focus_live": "OFF_LOT_NEIGHBORHOOD_HIGH after arm+Enter — compound scenery recognition strengthened",
+        "menus_mapped": ["Options", "MENU", "Save As", "ADD NEW SAVE", "Needs", "Skill Mastery Perks", "Help Center"]
+      },
       "escape_menu_findings_20261110": {
-        "source": "explore subagent + scripts/cas_place_live.py",
+        "source": "live + fixed-ui-click-map + BI-ESCAPE-MENU consultation",
         "live.top_options": [1898, 22],
         "MENU_SAVE": [960, 420],
         "MENU_SAVE_AS": [960, 422],
-        "note": "Save vs Save As only 2px apart — promote distinct targets into fixed-ui-click-map; never use MENU_SAVE for new-slot intent",
-        "gap": "No first-class escape-menu contract yet; coords still orphaned in scripts/cas_place_live.py"
+        "ADD_NEW_SAVE": [850, 360],
+        "ADD_NEW_SAVE_OK": [957, 603],
+        "SAVE_GAME_X": [1342, 238],
+        "note": "Save vs Save As only 2px apart — never use MENU_SAVE for new-slot intent"
       }
     },
     {
@@ -118,7 +133,12 @@
       "depends_on": ["H0"],
       "run": "plans/active/BI-002.execution.v1.json",
       "proof": ["five_vanilla", "five_modified", "rollback", "maintainer_review"],
-      "proof_ceiling": "LIVE_CERT_ONLY; CI cannot close"
+      "proof_ceiling": "LIVE_CERT_ONLY; CI cannot close",
+      "live_20261110": {
+        "needs_panel": "Charlee hunger ~0.5 with marker; Servo needs distinct",
+        "trial1": "PARTIAL_BLOCKED_CAMERA_OFF_LOT — no seconds-to-eat recorded",
+        "receipt": "dist/game-host/horizon-exec-20261110/bi002/trial1-partial.json"
+      }
     },
     {
       "id": "BI-003A-E",

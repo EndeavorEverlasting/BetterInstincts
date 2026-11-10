@@ -25,6 +25,34 @@ _WATER_KINDS = frozenset({"water", "canal", "river", "pond", "ocean", "dock"})
 _WATER_TOKENS = frozenset(
     {"water", "canal", "river", "pond", "dock", "ocean", "lagoon", "marina"}
 )
+_STREET_TOKENS = frozenset(
+    {
+        "street",
+        "road",
+        "crosswalk",
+        "sidewalk",
+        "neighborhood",
+        "neighbor",
+        "streetlight",
+        "streetlights",
+        "world_map",
+        "off_lot",
+    }
+)
+
+
+def _scenery_hits(tokens: set[str], keywords: frozenset[str]) -> bool:
+    """Match exact tokens or compound labels like CANAL_LEFT / STREET_RIGHT."""
+    if tokens & keywords:
+        return True
+    for token in tokens:
+        parts = {p for p in token.replace("-", "_").split("_") if p}
+        if parts & keywords:
+            return True
+        for key in keywords:
+            if key in token:
+                return True
+    return False
 
 
 class LotFocusError(ValueError):
@@ -150,16 +178,31 @@ def assess_lot_focus(
     if isinstance(landmarks, list):
         scenery_tokens = {str(x).lower() for x in landmarks}
 
+    host_token_set = {str(t).lower() for t in host_tokens}
     water_hint = (
         lot_kind in _WATER_KINDS
-        or bool(scenery_tokens & _WATER_TOKENS)
+        or _scenery_hits(scenery_tokens, _WATER_TOKENS)
+        or _scenery_hits(host_token_set, _WATER_TOKENS)
         or "water_scenery" in host_tokens
         or "canal_view" in host_tokens
     )
+    lot_fraction = observation.get("lot_fraction_of_frame")
+    altitude = str(observation.get("camera_altitude") or "").upper()
+    neighborhood_high = altitude in {
+        "NEIGHBORHOOD_HIGH",
+        "NEIGHBORHOOD",
+        "TRAVEL_AFAR",
+        "WORLD",
+    } or (
+        isinstance(lot_fraction, (int, float)) and 0 < float(lot_fraction) < 0.45
+    )
     street_hint = (
         lot_kind in _STREET_KINDS
+        or _scenery_hits(scenery_tokens, _STREET_TOKENS)
+        or _scenery_hits(host_token_set, _STREET_TOKENS)
         or "street_scenery" in host_tokens
         or "neighborhood_view" in host_tokens
+        or neighborhood_high
         or (travel_afar_without_goal and not live_hud)
         or (travel_afar_without_goal and on_lot_flag is False)
     )

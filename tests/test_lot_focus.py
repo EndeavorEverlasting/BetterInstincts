@@ -91,6 +91,34 @@ class LotFocusTests(unittest.TestCase):
         self.assertEqual(out["gate"], "LOT_FOCUS_UNKNOWN")
         self.assertIsNone(out.get("restore"))
 
+    def test_off_lot_from_compound_scenery_tokens_with_live_hud(self):
+        """Neighborhood PrintWindow: canal/street labels + low lot fraction.
+
+        Live HUD can still be visible while scenery is clearly off immersion —
+        compound tokens like CANAL_LEFT must still force OFF_LOT + Enter restore.
+        """
+        out = assess_lot_focus(
+            capture_ref=CAPTURE,
+            observation=obs(
+                camera_on_active_household_lot=False,
+                camera_lot_kind="neighborhood",
+                live_hud_present=True,
+                camera_altitude="NEIGHBORHOOD_HIGH",
+                lot_fraction_of_frame=0.35,
+                scenery_tokens=[
+                    "CANAL_LEFT",
+                    "STREET_RIGHT",
+                    "NEIGHBOR_HOUSES",
+                    "STREETLIGHTS",
+                    "ACTIVE_LOT_LIT_CENTER",
+                ],
+            ),
+        )
+        self.assertEqual(out["state"], "OFF_LOT_STREET")
+        self.assertEqual(out["gate"], "LOT_OFF_FOCUS_RESTORE_REQUIRED")
+        self.assertEqual(out["restore_plan"]["chord"], ["ENTER"])
+        self.assertFalse(out["execute_allowed"])
+
     def test_should_assess_on_travel_afar_cue(self):
         self.assertTrue(
             should_assess_lot_focus(observation=obs(zoom_mode_observed="TRAVEL_AFAR"))
