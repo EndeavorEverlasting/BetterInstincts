@@ -84,6 +84,31 @@ def load_contract(path: Path = CONTRACT) -> dict:
     how = (cfg.get("how_to_buy") or {}).get("robot_salvage_parts") or {}
     if "Purchase Upgrade Parts" not in " ".join(how.get("steps") or []):
         raise UpgradePartsForceError("HOW_TO_BUY_MUST_NAME_PURCHASE_UPGRADE_PARTS")
+    if int(cfg.get("version") or 0) >= 3:
+        menu = cfg.get("computer_purchase_menu") or {}
+        observed = menu.get("part_ids") or []
+        expected = {
+            "common_upgrade_parts", "electronic_upgrade_parts",
+            "kitchen_upgrade_parts", "plumbing_upgrade_parts",
+            "robot_salvage_parts",
+        }
+        if not isinstance(observed, list) or len(observed) != 5 or set(observed) != expected:
+            raise UpgradePartsForceError("COMPUTER_MENU_PARTS_INCOMPLETE")
+        if menu.get("session_authority") != "EXPLICIT_USER_COMMAND_THEN_COOPERATIVE_QUEUE; NO_AUTORUN":
+            raise UpgradePartsForceError("COMPUTER_MENU_AUTORUN_FORBIDDEN")
+        if menu.get("fixed_menu_depth") is not None:
+            raise UpgradePartsForceError("COMPUTER_MENU_FIXED_DEPTH_FORBIDDEN")
+        if not 1 <= int(menu.get("max_menu_pages") or 0) <= 32:
+            raise UpgradePartsForceError("COMPUTER_MENU_DEPTH_BOUND_REQUIRED")
+        computer_steps = (paths.get("computer") or {}).get("steps_template") or []
+        if not any(step.get("op") == "DISCOVER_NESTED_MENU" for step in computer_steps):
+            raise UpgradePartsForceError("COMPUTER_MENU_SEMANTIC_DISCOVERY_REQUIRED")
+        if any(x not in set(menu.get("prohibited_effects") or []) for x in (
+            "BLUETOOTH_SERVICE_CHANGE", "OS_SERVICE_CHANGE",
+            "DRIVER_ADAPTER_CHANGE", "PAIRING_CHANGE",
+            "INPUT_PREFERENCE_CHANGE", "UAC_CHANGE", "EA_CONNECT",
+        )):
+            raise UpgradePartsForceError("COMPUTER_MENU_OS_BOUNDARY_REQUIRED")
     return cfg
 
 
@@ -154,6 +179,7 @@ def catalog_snapshot(cfg: Optional[dict] = None) -> dict:
             for key, val in (cfg.get("paths") or {}).items()
         },
         "quantity": dict(cfg["quantity"]),
+        "computer_purchase_menu": {k: v for k, v in (cfg.get("computer_purchase_menu") or {}).items() if k in ("part_ids", "target_label", "evidence_source", "max_menu_pages")},
         "forbidden": list(cfg.get("forbidden") or []),
         "proof_ceiling": cfg["proof_ceiling"],
         "execute_allowed": False,
@@ -196,31 +222,28 @@ def how_to_buy(part_id: str = "robot_salvage_parts", *, cfg: Optional[dict] = No
     cfg = cfg or load_contract()
     part = resolve_part(part_id, cfg=cfg)
     guide = (cfg.get("how_to_buy") or {}).get(part["id"])
-    # Eco-Upgrade Parts are a Fabricator resource, not a vanilla computer
-    # picker item. Keep the old DIY spawn planning contract separate.
     if part["id"] == "eco_upgrade_parts":
         guide = {
             "summary": "Eco Lifestyle Fabricator → Fabricate → Fabricated Eco-Upgrade Part",
             "steps": [
-                "Confirm Eco Lifestyle is actually installed and a Fabricator is available.",
-                "Observe at least 15 bits and 10 pieces per fabrication attempt.",
-                "Select Fabricate → Fabricated Eco-Upgrade Part when visibly offered.",
-                "Queue crafting; wait for completion and confirm the Sim pocket inventory.",
-                "Do not claim a successful eco part from merely opening a menu.",
+                "Verify Eco Lifestyle and a Fabricator are present.",
+                "Observe at least 15 bits and 10 pieces for each fabrication attempt.",
+                "Select Fabricate then the exact observed Eco-Upgrade Part recipe.",
+                "Wait for successful crafting and attest the selected Sim pocket inventory.",
             ],
-            "lab_bulk_alternative": "Not part of the normal computer Order picker",
-            "not_this": ["computer_purchase_unverified_for_eco", "claim_instant_eco_fabrication"],
+            "lab_bulk_alternative": "Not a normal computer Order picker purchase",
+            "not_this": ["COMPUTER_ECO_PARTS_NOT_OBSERVED", "CRAFT_NOT_INSTANT"],
         }
     if not isinstance(guide, dict):
         guide = {
             "summary": (
-                "Phone or computer → Order → Purchase Upgrade Parts → "
+                "Computer interactions → discover Purchase Upgrade Parts → "
                 + str(part.get("display_name") or part["id"])
             ),
             "steps": [
                 "Select the Sim who needs the parts.",
-                "Open phone or click any computer/laptop.",
-                "Choose Order → Purchase Upgrade Parts.",
+                "Click an observed computer/laptop while Live Mode is paused.",
+                "Discover currently visible nested menu labels until Purchase Upgrade Parts appears.",
                 "Select " + str(part.get("display_name") or part["id"]) + " and confirm.",
                 "Repeat to spam-buy additional units into pocket inventory.",
             ],
@@ -734,8 +757,6 @@ def steps_to_operator_checklist(plan: Mapping) -> list[str]:
             lines.append(str(op))
     return lines
 
-
-
 # Canonical cross-source acquisition routing. Preserve the existing DIY-kit
 # budget planner; these routines are observational decisions only.
 def acquisition_source_catalog(*, cfg: Optional[dict] = None) -> dict:
@@ -919,6 +940,9 @@ def plan_acquisition_routes(
             if entry["pack"].casefold() not in installed and entry["pack"] != "base":
                 raise UpgradePartsForceError("PACK_NOT_OBSERVED:" + entry["pack"])
     steps: list[dict] = [{
+        "op": "REQUIRE_PAUSED_INSIDE_LOT",
+        "reason": "Preserve PR163 observed computer purchase gate",
+    }, {
         "op": "REQUIRE_LIVE_MODE_AND_FRESH_SCENE",
         "reason": "No Build/Buy, no camera/desktop lease bypass",
     }, {
@@ -964,6 +988,8 @@ def plan_acquisition_routes(
                      **identity, "fail": "PART_ROW_NOT_OBSERVED"},
                     {"op": "SET_OBSERVED_PICKER_QUANTITY_OR_REPEAT", "quantity": item["quantity"],
                      **identity, "fail": "BULK_CONTROLS_NOT_OBSERVED"},
+                    {"op": "REQUIRE_SPEND_AUTHORIZATION_AND_FRESH_PRICE_FUNDS_CAP_POCKET_BASELINE",
+                     **identity, "fail": "PURCHASE_SPENDING_OR_BASELINE_UNPROVEN"},
                     {"op": "CONFIRM_PURCHASE_WITH_FRESH_ADMISSION", **identity,
                      "effect_class": item["action_effect"]},
                     {"op": "OBSERVE_FUNDS_AND_POCKET_DELTA", **identity,
@@ -1062,7 +1088,8 @@ def plan_computer_order_domain(
     else:
         chosen = people
     model = acquisition_source_catalog(cfg=cfg)["menu_model"]
-    steps = [{"op": "REQUIRE_LIVE_MODE_AND_FRESH_SCENE"},
+    steps = [{"op": "REQUIRE_PAUSED_INSIDE_LOT"},
+             {"op": "REQUIRE_LIVE_MODE_AND_FRESH_SCENE"},
              {"op": "REQUIRE_CURRENT_OBSERVED_PORTRAIT_SET",
               "portrait_ids": [p["portrait_id"] for p in people]}]
     for person in chosen:
