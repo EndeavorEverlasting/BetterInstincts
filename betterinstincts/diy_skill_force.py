@@ -464,11 +464,6 @@ def resolve_force_gap_commands(
     }
 
 
-
-# Compatibility route: old callers must now supply an explicitly observed target.
-# Do not resurrect name, portrait-index, or pixel defaults here.
-plan_lean_olga_skill_beat = plan_lean_selected_sim_skill_beat
-
 def plan_force_gaps_beat(
     *,
     member_key: str,
@@ -3207,3 +3202,8 @@ def steps_to_commands(plan: Mapping[str, object]) -> list[str]:
     if not any(c.startswith("stats.set_skill_level ") for c in out[1:]):
         raise DiySkillForceError("PLAN_MISSING_SKILL_COMMANDS")
     return out
+
+
+# Compatibility route: old callers must now supply an explicitly observed target.
+# Do not resurrect name, portrait-index, or pixel defaults here.
+plan_lean_olga_skill_beat = plan_lean_selected_sim_skill_beat
