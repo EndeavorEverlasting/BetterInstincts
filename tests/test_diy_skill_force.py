@@ -1083,11 +1083,21 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
             {"programming": 10, "photography": 5, "writing": 10},
             bundle="remote_income",
         )
-        self.assertIn("photography", [g["skill_id"] for g in gaps["gaps"]])
+        # Photography maxes at 5 — gold L5 is MAX, not a gap
+        self.assertNotIn("photography", [g["skill_id"] for g in gaps["gaps"]])
         self.assertNotIn("programming", [g["skill_id"] for g in gaps["gaps"]])
-        self.assertTrue(
-            any("Major_Photography 10" in c for c in gaps["commands"])
+        self.assertIn("photography", gaps["maxed_skill_ids"])
+        photo_cmds = canonical_skill_commands(bundle="remote_income")
+        photo = next(c for c in photo_cmds["commands"] if c["skill_id"] == "photography")
+        self.assertEqual(photo["max_level"], 5)
+        self.assertIn("Major_Photography 5", photo["command"])
+        pet = next(
+            c
+            for c in canonical_skill_commands(bundle="full_unlock")["commands"]
+            if c["skill_id"] == "pet_training"
         )
+        self.assertEqual(pet["max_level"], 5)
+        self.assertIn("Skill_Dog 5", pet["command"])
         from betterinstincts.diy_skill_force import (
             plan_force_gaps_beat,
             resolve_force_gap_commands,

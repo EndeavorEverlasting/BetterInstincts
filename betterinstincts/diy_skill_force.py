@@ -143,6 +143,32 @@ def save_completion_ledger(ledger: Mapping[str, object], path: Path | None = Non
     return path
 
 
+def skill_max_level(
+    skill_id: str | Mapping | None = None,
+    *,
+    cfg: Optional[dict] = None,
+    default: int = 10,
+) -> int:
+    """Per-skill ceiling from catalog (Photography / Pet Training = 5)."""
+    cfg = cfg or load_contract()
+    default_i = int(default)
+    row: Mapping | None = None
+    if isinstance(skill_id, Mapping):
+        row = skill_id
+    elif skill_id:
+        sid = str(skill_id).strip().lower()
+        for cand in cfg.get("skill_catalog") or []:
+            if isinstance(cand, Mapping) and str(cand.get("id") or "").strip().lower() == sid:
+                row = cand
+                break
+    if row is not None and row.get("max_level") is not None:
+        try:
+            return max(1, min(10, int(row["max_level"])))
+        except (TypeError, ValueError):
+            return default_i
+    return default_i
+
+
 def skill_is_complete(entry: object, *, target_level: int) -> bool:
     if not isinstance(entry, Mapping):
         return False
@@ -161,7 +187,9 @@ def completed_skill_ids_for_member(
     member_key: str,
     *,
     target_level: int,
+    cfg: Optional[dict] = None,
 ) -> set[str]:
+    cfg = cfg or load_contract()
     members = ledger.get("members") or {}
     if not isinstance(members, Mapping):
         return set()
@@ -173,7 +201,9 @@ def completed_skill_ids_for_member(
         return set()
     out: set[str] = set()
     for sid, entry in skills.items():
-        if skill_is_complete(entry, target_level=target_level):
+        ceiling = skill_max_level(str(sid), cfg=cfg, default=int(target_level))
+        need = min(int(target_level), ceiling)
+        if skill_is_complete(entry, target_level=need):
             out.add(str(sid).strip().lower())
     return out
 
@@ -230,6 +260,7 @@ def resolve_skill_ref(token: str, *, cfg: Optional[dict] = None) -> dict:
                 "skill_id": sid,
                 "skill_stat": str(row.get("skill_stat") or ""),
                 "display_name": str(row.get("display_name") or sid),
+                "max_level": skill_max_level(row, cfg=cfg),
             }
     raise DiySkillForceError(f"UNKNOWN_SKILL_REF:{raw}")
 
@@ -247,6 +278,7 @@ def canonical_skill_commands(
 
     Never invent stats; skill_catalog is the only spelling authority
     (e.g. Major_MediaProduction, not Major_MediaProducton).
+    Per-skill ``max_level`` caps the cheat (Photography / Pet Training = 5).
     """
     cfg = cfg or load_contract()
     target = int(target_level)
@@ -275,12 +307,14 @@ def canonical_skill_commands(
         stat = str(row.get("skill_stat") or "").strip()
         if not sid or not stat:
             continue
-        cmd = template.format(skill_stat=stat, level=target)
+        level = min(target, skill_max_level(row, cfg=cfg, default=target))
+        cmd = template.format(skill_stat=stat, level=level)
         entry = {
             "skill_id": sid,
             "display_name": str(row.get("display_name") or sid),
             "skill_stat": stat,
-            "level": target,
+            "level": level,
+            "max_level": skill_max_level(row, cfg=cfg, default=target),
             "command": cmd,
         }
         typos = row.get("typo_guard")
@@ -305,11 +339,12 @@ def gap_targets_from_observed_levels(
     bundle: str | None = "full_unlock",
     cfg: Optional[dict] = None,
 ) -> dict:
-    """Non-yellow / below-target Skills-panel rows → force targets + cheat lines.
+    """Non-yellow / below-skill-max Skills-panel rows → force targets + cheat lines.
 
     ``observed_levels`` maps skill_id (or display name) → LOCAL_OBSERVED level.
     Missing catalog skills are treated as unknown gaps (level 0) so we never
     forget an unlisted row after a full scroll inventory.
+    Photography and Pet Training max at 5 — gold at 5 is not a gap.
     """
     cfg = cfg or load_contract()
     target = int(target_level)
@@ -324,8 +359,10 @@ def gap_targets_from_observed_levels(
     maxed: list[str] = []
     for row in canon["commands"]:
         sid = str(row["skill_id"])
+        ceiling = int(row.get("max_level") or skill_max_level(sid, cfg=cfg, default=target))
+        need = min(target, ceiling)
         level = int(observed.get(sid, 0))
-        if level >= target:
+        if level >= need:
             maxed.append(sid)
             continue
         gaps.append(
@@ -334,7 +371,8 @@ def gap_targets_from_observed_levels(
                 "display_name": row["display_name"],
                 "skill_stat": row["skill_stat"],
                 "observed_level": level,
-                "target_level": target,
+                "target_level": need,
+                "max_level": ceiling,
                 "gap_cue": "NON_YELLOW_ROW_BELOW_TARGET",
                 "command": row["command"],
             }
@@ -351,7 +389,8 @@ def gap_targets_from_observed_levels(
         "commands": [g["command"] for g in gaps],
         "note": (
             "Scroll the Skills panel (burger expand + wheel) so every row is "
-            "seen; gold/yellow checkmark rows are maxed; non-yellow are gaps."
+            "seen; gold/yellow checkmark rows are maxed (Photography and Pet "
+            "Training max at 5); non-yellow below that skill's max are gaps."
         ),
     }
 
@@ -672,13 +711,15 @@ def record_skill_panel_observed(
     observed = int(level)
     if observed < 0 or observed > 10:
         raise DiySkillForceError("SKILL_LEVEL_OUT_OF_RANGE")
-    target = int(target_level)
+    ceiling = skill_max_level(sid, default=int(target_level))
+    target = min(int(target_level), ceiling)
     prior = skills.get(sid) if isinstance(skills.get(sid), Mapping) else {}
     status = "PANEL_OBSERVED_MAX" if observed >= target else "PANEL_OBSERVED"
     entry = {
         "skill_id": sid,
         "skill_stat": str(skill_stat or prior.get("skill_stat") or ""),
         "level": observed,
+        "max_level": ceiling,
         "status": status,
         "evidence": str(evidence),
         "prior_status": str(prior.get("status") or ""),

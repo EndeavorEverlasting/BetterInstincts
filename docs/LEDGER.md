@@ -1,3 +1,11 @@
+## 2026-11-10 — Photography + Pet Training max at 5
+
+**Operator:** Common sense — Pet Training and Photography max out at Level 5; gold at 5 is done, stop forcing to 10.
+
+**CHANGED:** catalog `max_level: 5` on both; `skill_max_level` / gap resolver / canonical commands / panel-record honor the ceiling; docs/tests; ledger Olga+Charlee photo/pet recorded MAX at 5.
+
+**PROVED offline:** photography L5 no longer a gap; cheat lines emit `… 5`. **NEXT:** Olga L-inventory → force only still-absent majors (dancing / media / vampire / selvadoradian / nectar).
+
 ## 2026-11-10 — Charlee force-gaps + MediaProduction codified
 
 **Operator:** Finish skills for the main human Sim (Charlee); keep `stats.set_skill_level Major_MediaProduction 10`; after many Live forces, codify so agents stop one-shot scripting.

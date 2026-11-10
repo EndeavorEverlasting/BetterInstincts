@@ -211,9 +211,13 @@
         "gap_resolver": "betterinstincts.diy_skill_force.gap_targets_from_observed_levels",
         "force_gaps_owner": "betterinstincts.diy_skill_force.plan_force_gaps_beat",
         "force_gaps_cli": "python -m scripts.diy_skill_force force-gaps --member-key portrait-001 --portrait-xy OBSERVED_X,OBSERVED_Y --bundle full_unlock --save-key observed-save --household-key observed-household --members 1 --roster-key portrait-001 --session-id active-host-session",
+        "inventory_before_type": true,
+        "inventory_hotkey": "L",
+        "inventory_rule": "Operator 2026-11-10: open Skills with L, burger-expand, scroll the FULL list, and type ONLY non-yellow / absent rows. Never re-type skills that already show gold Level 10. Photography and Pet Training max at 5.",
         "never_forget": "skill_catalog is the canonical id→skill_stat→cheat list; full_unlock must cover adult majors; CLI: python -m scripts.diy_skill_force commands",
         "media_production_canonical": "stats.set_skill_level Major_MediaProduction 10",
-        "inherited_all_listed_max_is_not_fresh_panel_proof": true
+        "inherited_all_listed_max_is_not_fresh_panel_proof": true,
+        "forbidden_waste": ["RETYPE_ALREADY_YELLOW_LEVEL_10", "FULL_BUNDLE_REDO_WITHOUT_L_INVENTORY", "FORCE_PHOTOGRAPHY_OR_PET_TRAINING_TO_10"]
       },
       "active_sim_camera": {
         "keep_focused": true,
@@ -769,7 +773,9 @@
       "skill_stat": "Major_Photography",
       "pack_hint": "base / City Living",
       "diy_role": "photo_unlocks",
-      "useful_at": "Photo modes"
+      "useful_at": "Photo modes",
+      "max_level": 5,
+      "notes": "Operator 2026-11-10: Photography maxes at Level 5 (gold at 5 is MAX, never force to 10)."
     },
     {
       "id": "wellness",
@@ -854,7 +860,9 @@
       "skill_stat": "Skill_Dog",
       "pack_hint": "Cats & Dogs",
       "diy_role": "pet_unlocks",
-      "useful_at": "Dog training commands"
+      "useful_at": "Dog training commands",
+      "max_level": 5,
+      "notes": "Operator 2026-11-10: Pet Training maxes at Level 5 (gold at 5 is MAX, never force to 10)."
     },
     {
       "id": "flower_arranging",
