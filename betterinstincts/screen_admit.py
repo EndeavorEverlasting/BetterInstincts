@@ -14,7 +14,6 @@ from betterinstincts.control_handoff import (
     DEFAULT_IDLE_MS,
     HandoffError,
     confirm,
-    decide,
     exclusive_screen_owner,
 )
 from betterinstincts.host_listener import status as listener_status
@@ -41,8 +40,9 @@ def admitted_screen_lease(
 ) -> Iterator[Callable[[], dict]]:
     """Hold exclusive screen ownership; yield ensure_ready() for each UI step.
 
-    ensure_ready probes, optionally focuses once, then double-confirms. Callers
-    must invoke it immediately before every SendInput / keystroke burst.
+    Two fresh idle samples PRECEDE any focus borrow. If focus is needed,
+    recheck twice AFTER the borrow, verify exact Sims foreground, and require
+    new admission before each subsequent SendInput / keystroke burst.
     """
     require_execute_session(session_id, process_id)
     probe = probe_fn or (lambda: probe_windows(int(process_id)))
@@ -53,19 +53,34 @@ def admitted_screen_lease(
             nonlocal focused
             if listener_status(session_id).get("state") != "ACTIVE":
                 raise HandoffError("HOST_HANDOFF_SESSION_INACTIVE")
-            preflight = decide(probe(), session_active=True, idle_ms=idle_ms)
-            if not preflight["screen_control_allowed"]:
-                raise HandoffError("HOST_PAUSED:" + str(preflight["reason"]))
-            if focus_fn is not None and not focused:
-                focus_fn()
-                focused = True
-            handoff = confirm(
+            # Focus changes the desktop and is itself a human-contending
+            # effect. A single probe is not sufficient before stealing focus.
+            preflight = confirm(
                 probe,
                 session_active=listener_status(session_id).get("state") == "ACTIVE",
                 idle_ms=idle_ms,
             )
-            if not handoff["screen_control_allowed"]:
-                raise HandoffError("HOST_PAUSED:" + str(handoff["reason"]))
+            if not preflight["screen_control_allowed"]:
+                raise HandoffError("HOST_PAUSED:" + str(preflight["reason"]))
+            handoff = preflight
+            if focus_fn is not None and (
+                not focused or not preflight.get("foreground_process", {}).get("is_sims")
+            ):
+                try:
+                    focus_fn()
+                except Exception as exc:
+                    raise HandoffError("HOST_FOCUS_FAILED") from exc
+                focused = True
+                # Human may have reclaimed control during the focus borrow.
+                handoff = confirm(
+                    probe,
+                    session_active=listener_status(session_id).get("state") == "ACTIVE",
+                    idle_ms=idle_ms,
+                )
+                if not handoff["screen_control_allowed"]:
+                    raise HandoffError("HOST_PAUSED:" + str(handoff["reason"]))
+            if not handoff.get("foreground_process", {}).get("is_sims"):
+                raise HandoffError("HOST_PAUSED:SIMS_FOREGROUND_UNVERIFIED")
             if listener_status(session_id).get("state") != "ACTIVE":
                 raise HandoffError("HOST_HANDOFF_SESSION_INACTIVE")
             return handoff
