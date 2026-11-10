@@ -62,8 +62,15 @@
     "selected": "PER_SIM_POCKET_STOCK",
     "destination": "sim_pocket_inventory",
     "forbid_household_inventory": true,
-    "preferred_acquisition_order": ["spawn", "computer", "phone"],
-    "rejected_primary_acquisition": ["buy_mode_debug_catalog", "gsi_create_obj"],
+    "preferred_acquisition_order": [
+      "spawn",
+      "computer",
+      "phone"
+    ],
+    "rejected_primary_acquisition": [
+      "buy_mode_debug_catalog",
+      "gsi_create_obj"
+    ],
     "diy_kit_id": "diy_builder_kit",
     "diy_kit_part_ids": [
       "common_upgrade_parts",
@@ -80,7 +87,9 @@
     "target_per_part": 20,
     "household_traverse": {
       "next_member_key": "SPACE",
-      "next_member_chord": ["SPACE"],
+      "next_member_chord": [
+        "SPACE"
+      ],
       "min_members": 1,
       "sanity_max_members": 100,
       "member_count_source": "operator_or_agent_observed_portrait_count",
@@ -90,7 +99,11 @@
     },
     "cert": {
       "schema": "betterinstincts.diy-parts-budget.cert/v1",
-      "states": ["UNKNOWN", "SHORT", "MET"],
+      "states": [
+        "UNKNOWN",
+        "SHORT",
+        "MET"
+      ],
       "aggregate_states": [
         "UNPROVEN",
         "PARTIAL",
@@ -131,15 +144,50 @@
       "scalability_rank": 1,
       "quantity_note": "Game grants a bulk stack (~50 each); covers robotics materials and common upgrade parts in one action.",
       "steps_template": [
-        {"op": "REQUIRE_MODE", "mode": "LIVE", "fail": "SPAWN_REQUIRES_LIVE"},
-        {"op": "REQUIRE_ACTIVE_SIM_SELECTION"},
-        {"op": "OPEN_CONSOLE", "chord": ["CTRL", "SHIFT", "C"]},
-        {"op": "TYPE_COMMAND", "command": "testingcheats enabled true"},
-        {"op": "OPTIONAL_CLOSE_CONSOLE", "key": "ESCAPE"},
-        {"op": "OBSERVE", "cue": "robotics_workstation_on_lot", "fail": "WORKSTATION_NOT_OBSERVED"},
-        {"op": "SHIFT_CLICK_OBJECT", "target": "robotics_workstation", "fail": "WORKSTATION_SHIFT_CLICK_MISS"},
-        {"op": "PIE_MENU", "choice": "Spawn Crafting Supplies", "fail": "SPAWN_SUPPLIES_MISSING"},
-        {"op": "OBSERVE", "cue": "crafting_supplies_in_sim_inventory", "fail": "SUPPLIES_NOT_IN_INVENTORY"}
+        {
+          "op": "REQUIRE_MODE",
+          "mode": "LIVE",
+          "fail": "SPAWN_REQUIRES_LIVE"
+        },
+        {
+          "op": "REQUIRE_ACTIVE_SIM_SELECTION"
+        },
+        {
+          "op": "OPEN_CONSOLE",
+          "chord": [
+            "CTRL",
+            "SHIFT",
+            "C"
+          ]
+        },
+        {
+          "op": "TYPE_COMMAND",
+          "command": "testingcheats enabled true"
+        },
+        {
+          "op": "OPTIONAL_CLOSE_CONSOLE",
+          "key": "ESCAPE"
+        },
+        {
+          "op": "OBSERVE",
+          "cue": "robotics_workstation_on_lot",
+          "fail": "WORKSTATION_NOT_OBSERVED"
+        },
+        {
+          "op": "SHIFT_CLICK_OBJECT",
+          "target": "robotics_workstation",
+          "fail": "WORKSTATION_SHIFT_CLICK_MISS"
+        },
+        {
+          "op": "PIE_MENU",
+          "choice": "Spawn Crafting Supplies",
+          "fail": "SPAWN_SUPPLIES_MISSING"
+        },
+        {
+          "op": "OBSERVE",
+          "cue": "crafting_supplies_in_sim_inventory",
+          "fail": "SUPPLIES_NOT_IN_INVENTORY"
+        }
       ]
     },
     "phone": {
@@ -154,16 +202,54 @@
       "funds_note": "Each purchase spends Simoleons; ensure funds or run funds_inject first on disposable lab.",
       "connection_note": "If CONNECTION IS REQUIRED appears, press Stay Offline only — never Connect. Prefer spawn when phone forces online.",
       "steps_template": [
-        {"op": "REQUIRE_MODE", "mode": "LIVE", "fail": "PHONE_PURCHASE_REQUIRES_LIVE"},
-        {"op": "REQUIRE_ACTIVE_SIM_SELECTION"},
-        {"op": "OPEN_PHONE", "fail": "PHONE_NOT_AVAILABLE"},
-        {"op": "IF_CONNECTION_REQUIRED", "choice": "Stay Offline", "never": ["Connect", "CONNECT"], "fail": "EA_ONLINE_CONNECT_FORBIDDEN"},
-        {"op": "PIE_MENU", "choice": "Order", "fail": "ORDER_MENU_MISSING"},
-        {"op": "PIE_MENU", "choice": "Purchase Upgrade Parts", "fail": "PURCHASE_UPGRADE_PARTS_MISSING"},
-        {"op": "SELECT_PART", "from_recipe_field": "display_name", "fail": "PART_ROW_MISSING"},
-        {"op": "CONFIRM_PURCHASE"},
-        {"op": "OBSERVE", "cue": "part_in_sim_inventory", "fail": "PART_NOT_IN_INVENTORY"},
-        {"op": "REPEAT_PURCHASE", "times_from": "quantity_remaining_after_first"}
+        {
+          "op": "REQUIRE_MODE",
+          "mode": "LIVE",
+          "fail": "PHONE_PURCHASE_REQUIRES_LIVE"
+        },
+        {
+          "op": "REQUIRE_ACTIVE_SIM_SELECTION"
+        },
+        {
+          "op": "OPEN_PHONE",
+          "fail": "PHONE_NOT_AVAILABLE"
+        },
+        {
+          "op": "IF_CONNECTION_REQUIRED",
+          "choice": "Stay Offline",
+          "never": [
+            "Connect",
+            "CONNECT"
+          ],
+          "fail": "EA_ONLINE_CONNECT_FORBIDDEN"
+        },
+        {
+          "op": "PIE_MENU",
+          "choice": "Order",
+          "fail": "ORDER_MENU_MISSING"
+        },
+        {
+          "op": "PIE_MENU",
+          "choice": "Purchase Upgrade Parts",
+          "fail": "PURCHASE_UPGRADE_PARTS_MISSING"
+        },
+        {
+          "op": "SELECT_PART",
+          "from_recipe_field": "display_name",
+          "fail": "PART_ROW_MISSING"
+        },
+        {
+          "op": "CONFIRM_PURCHASE"
+        },
+        {
+          "op": "OBSERVE",
+          "cue": "part_in_sim_inventory",
+          "fail": "PART_NOT_IN_INVENTORY"
+        },
+        {
+          "op": "REPEAT_PURCHASE",
+          "times_from": "quantity_remaining_after_first"
+        }
       ]
     },
     "computer": {
@@ -176,16 +262,51 @@
       "scalability_rank": 3,
       "funds_note": "Each purchase spends Simoleons; ensure funds or run funds_inject first on disposable lab.",
       "steps_template": [
-        {"op": "REQUIRE_MODE", "mode": "LIVE", "fail": "COMPUTER_PURCHASE_REQUIRES_LIVE"},
-        {"op": "REQUIRE_ACTIVE_SIM_SELECTION"},
-        {"op": "OBSERVE", "cue": "computer_on_lot", "fail": "COMPUTER_NOT_OBSERVED"},
-        {"op": "CLICK_OBJECT", "target": "computer", "preferred_channel": "MOUSE_FALLBACK"},
-        {"op": "PIE_MENU", "choice": "Order", "fail": "ORDER_MENU_MISSING"},
-        {"op": "PIE_MENU", "choice": "Purchase Upgrade Parts", "fail": "PURCHASE_UPGRADE_PARTS_MISSING"},
-        {"op": "SELECT_PART", "from_recipe_field": "display_name", "fail": "PART_ROW_MISSING"},
-        {"op": "CONFIRM_PURCHASE"},
-        {"op": "OBSERVE", "cue": "part_in_sim_inventory", "fail": "PART_NOT_IN_INVENTORY"},
-        {"op": "REPEAT_PURCHASE", "times_from": "quantity_remaining_after_first"}
+        {
+          "op": "REQUIRE_MODE",
+          "mode": "LIVE",
+          "fail": "COMPUTER_PURCHASE_REQUIRES_LIVE"
+        },
+        {
+          "op": "REQUIRE_ACTIVE_SIM_SELECTION"
+        },
+        {
+          "op": "OBSERVE",
+          "cue": "computer_on_lot",
+          "fail": "COMPUTER_NOT_OBSERVED"
+        },
+        {
+          "op": "CLICK_OBJECT",
+          "target": "computer",
+          "preferred_channel": "MOUSE_FALLBACK"
+        },
+        {
+          "op": "PIE_MENU",
+          "choice": "Order",
+          "fail": "ORDER_MENU_MISSING"
+        },
+        {
+          "op": "PIE_MENU",
+          "choice": "Purchase Upgrade Parts",
+          "fail": "PURCHASE_UPGRADE_PARTS_MISSING"
+        },
+        {
+          "op": "SELECT_PART",
+          "from_recipe_field": "display_name",
+          "fail": "PART_ROW_MISSING"
+        },
+        {
+          "op": "CONFIRM_PURCHASE"
+        },
+        {
+          "op": "OBSERVE",
+          "cue": "part_in_sim_inventory",
+          "fail": "PART_NOT_IN_INVENTORY"
+        },
+        {
+          "op": "REPEAT_PURCHASE",
+          "times_from": "quantity_remaining_after_first"
+        }
       ]
     }
   },
@@ -194,48 +315,86 @@
       "id": "common_upgrade_parts",
       "display_name": "Common Upgrade Parts",
       "pack_hint": "base",
-      "synonyms": ["common parts", "upgrade parts common"],
-      "used_for": ["Object upgrades", "Utili-Bot crafts"],
+      "synonyms": [
+        "common parts",
+        "upgrade parts common"
+      ],
+      "used_for": [
+        "Object upgrades",
+        "Utili-Bot crafts"
+      ],
       "diy_kit": true,
       "computer_buyable": true,
       "default_path": "spawn",
-      "allowed_paths": ["spawn", "phone", "computer"],
+      "allowed_paths": [
+        "spawn",
+        "phone",
+        "computer"
+      ],
       "budget_target": 20
     },
     {
       "id": "electronic_upgrade_parts",
       "display_name": "Electronic Upgrade Parts",
       "pack_hint": "base",
-      "synonyms": ["electronics parts", "electronic parts", "electronics"],
-      "used_for": ["Electronics upgrades", "Robotics crafts"],
+      "synonyms": [
+        "electronics parts",
+        "electronic parts",
+        "electronics"
+      ],
+      "used_for": [
+        "Electronics upgrades",
+        "Robotics crafts"
+      ],
       "diy_kit": true,
       "computer_buyable": true,
       "default_path": "spawn",
-      "allowed_paths": ["spawn", "phone", "computer"],
+      "allowed_paths": [
+        "spawn",
+        "phone",
+        "computer"
+      ],
       "budget_target": 20
     },
     {
       "id": "plumbing_upgrade_parts",
       "display_name": "Plumbing Upgrade Parts",
       "pack_hint": "base",
-      "synonyms": ["plumbing parts"],
-      "used_for": ["Plumbing upgrades", "Gardener-Bot / Fixer-Bot crafts"],
+      "synonyms": [
+        "plumbing parts"
+      ],
+      "used_for": [
+        "Plumbing upgrades",
+        "Gardener-Bot / Fixer-Bot crafts"
+      ],
       "diy_kit": true,
       "computer_buyable": true,
       "default_path": "spawn",
-      "allowed_paths": ["spawn", "phone", "computer"],
+      "allowed_paths": [
+        "spawn",
+        "phone",
+        "computer"
+      ],
       "budget_target": 20
     },
     {
       "id": "kitchen_upgrade_parts",
       "display_name": "Kitchen Upgrade Parts",
       "pack_hint": "base",
-      "synonyms": ["kitchen parts"],
-      "used_for": ["Kitchen appliance upgrades"],
+      "synonyms": [
+        "kitchen parts"
+      ],
+      "used_for": [
+        "Kitchen appliance upgrades"
+      ],
       "diy_kit": true,
       "computer_buyable": true,
       "default_path": "phone",
-      "allowed_paths": ["phone", "computer", "spawn"],
+      "allowed_paths": [
+        "phone",
+        "computer",
+        "spawn"
+      ],
       "budget_target": 20
     },
     {
@@ -257,7 +416,11 @@
       "diy_kit": true,
       "computer_buyable": true,
       "default_path": "spawn",
-      "allowed_paths": ["spawn", "phone", "computer"],
+      "allowed_paths": [
+        "spawn",
+        "phone",
+        "computer"
+      ],
       "tune_up_units_observed": 4,
       "budget_target": 20,
       "note": "Observed 2026-11-09: Charlee missing 4 Robot Salvage Parts to Tune Up Gardener-Bot."
@@ -266,12 +429,20 @@
       "id": "computer_chip",
       "display_name": "Computer Chip",
       "pack_hint": "Discover University",
-      "synonyms": ["chip", "computer chips"],
-      "used_for": ["Robotics crafts", "Servo / Utili-Bot builds"],
+      "synonyms": [
+        "chip",
+        "computer chips"
+      ],
+      "used_for": [
+        "Robotics crafts",
+        "Servo / Utili-Bot builds"
+      ],
       "diy_kit": true,
       "computer_buyable": false,
       "default_path": "spawn",
-      "allowed_paths": ["spawn"],
+      "allowed_paths": [
+        "spawn"
+      ],
       "budget_target": 20,
       "note": "Crafted or spawned at robotics workstation — not computer Order."
     },
@@ -279,12 +450,19 @@
       "id": "mechanism",
       "display_name": "Mechanism",
       "pack_hint": "Discover University",
-      "synonyms": ["mechanisms"],
-      "used_for": ["Robotics crafts", "Servo / Utili-Bot builds"],
+      "synonyms": [
+        "mechanisms"
+      ],
+      "used_for": [
+        "Robotics crafts",
+        "Servo / Utili-Bot builds"
+      ],
       "diy_kit": true,
       "computer_buyable": false,
       "default_path": "spawn",
-      "allowed_paths": ["spawn"],
+      "allowed_paths": [
+        "spawn"
+      ],
       "budget_target": 20,
       "note": "Crafted or spawned at robotics workstation — not computer Order."
     },
@@ -292,12 +470,19 @@
       "id": "eco_upgrade_parts",
       "display_name": "Eco-Upgrade Parts",
       "pack_hint": "Eco Lifestyle",
-      "synonyms": ["eco parts", "eco upgrade"],
-      "used_for": ["Eco Lifestyle object upgrades"],
+      "synonyms": [
+        "eco parts",
+        "eco upgrade"
+      ],
+      "used_for": [
+        "Eco Lifestyle object upgrades"
+      ],
       "diy_kit": false,
       "computer_buyable": false,
       "default_path": "spawn",
-      "allowed_paths": ["spawn"],
+      "allowed_paths": [
+        "spawn"
+      ],
       "budget_target": 10,
       "note": "Often absent from computer Order; optional pack row — not required for diy_builder_kit MET."
     }
@@ -324,7 +509,10 @@
     "selected": "PLAY_AS_INSTALLED_OFFLINE",
     "forbid_ea_online_connect": true,
     "connection_required_dialog": "STAY_OFFLINE_ONLY",
-    "never_press": ["Connect", "CONNECT"],
+    "never_press": [
+      "Connect",
+      "CONNECT"
+    ],
     "preferred_when_connection_gate": "spawn",
     "note": "Operator P00/P01 correction 2026-11-09: never connect The Sims 4 to the internet; Stay Offline only."
   },
@@ -337,5 +525,155 @@
     "Cert MET requires attested observed counts, never plan issuance alone",
     "Player-directed observations yield without steps",
     "Never press EA Connect; Stay Offline only on CONNECTION IS REQUIRED"
-  ]
+  ],
+  "acquisition_routing": {
+    "schema": "betterinstincts.household-acquisition-routes/v1",
+    "owner": "betterinstincts/upgrade_parts_force.py",
+    "entrypoint": "python -m scripts.upgrade_parts_force acquisition",
+    "scope": "EVALUATE_ONLY_NEVER_SIMULATED_LIVE_MOUSE_CLICKS",
+    "route_catalog": {
+      "common_upgrade_parts": {
+        "source": "computer_order",
+        "action_effect": "INSTANT_UI_CANDIDATE",
+        "destination": "sim_pocket_inventory",
+        "pack": "base"
+      },
+      "electronic_upgrade_parts": {
+        "source": "computer_order",
+        "action_effect": "INSTANT_UI_CANDIDATE",
+        "destination": "sim_pocket_inventory",
+        "pack": "base"
+      },
+      "plumbing_upgrade_parts": {
+        "source": "computer_order",
+        "action_effect": "INSTANT_UI_CANDIDATE",
+        "destination": "sim_pocket_inventory",
+        "pack": "base"
+      },
+      "kitchen_upgrade_parts": {
+        "source": "computer_order",
+        "action_effect": "INSTANT_UI_CANDIDATE",
+        "destination": "sim_pocket_inventory",
+        "pack": "base"
+      },
+      "robot_salvage_parts": {
+        "source": "computer_order",
+        "action_effect": "INSTANT_UI_CANDIDATE",
+        "destination": "sim_pocket_inventory",
+        "pack": "Discover University"
+      },
+      "eco_upgrade_parts": {
+        "source": "eco_fabricator",
+        "action_effect": "SIM_QUEUED_AND_POSSIBLY_FAILED",
+        "destination": "sim_pocket_inventory",
+        "pack": "Eco Lifestyle",
+        "requirements": {
+          "bits_per_attempt": 15,
+          "pieces_per_attempt": 10
+        },
+        "alternate": "DUMPSTER_RANDOM_NO_GUARANTEE"
+      },
+      "generator_fuel": {
+        "source": "recycler_generator",
+        "action_effect": "RESOURCE_CONVERSION_THEN_REFILL",
+        "destination": "generator_fuel_level",
+        "pack": "Eco Lifestyle",
+        "requirements": {
+          "recycled_bits_pieces": "OBSERVE_RESOURCE_BALANCE",
+          "generator": "OBSERVE_TARGET_OBJECT"
+        },
+        "source_hypothesis": "Fuel may be refilled directly from recycled bits/pieces; do not assert inventory can or eco-fabrication"
+      },
+      "insect_biofuel_filled_can": {
+        "source": "insect_farm",
+        "action_effect": "TIME_GATED_HARVEST",
+        "destination": "sim_pocket_inventory_unverified",
+        "pack": "Eco Lifestyle",
+        "requirements": {
+          "farm_condition": "READY_AND_HEALTHY",
+          "collection_interval": "OBSERVED_OR_APPROX_24_GAME_HOURS"
+        },
+        "source_hypothesis": "Insect farm produces biofuel for generator; exact canned item label and delivery require patch-specific live observation"
+      }
+    },
+    "menu_model": {
+      "entry_object": "computer_or_laptop",
+      "entry_action": "LEFT_CLICK_OBJECT",
+      "entry_mode": "LIVE",
+      "top_level_goal": "Order",
+      "domain_goal": "Purchase Upgrade Parts",
+      "candidate_pagination_label": "More Choices",
+      "expected_more_choices_from_order": "ABOUT_TWO_BUT_NOT_FIXED",
+      "max_page_explorations": 8,
+      "max_total_menu_actions": 32,
+      "resolve_by": "EXACT_OBSERVED_LABEL_NOT_HARDCODED_COORDINATES",
+      "choice_routing": "Check currently visible choices before any More Choices; advance only if observed and unseen; deny cycles/exhausted options.",
+      "purchase": "After opening picker, iterate requested items; if picker closes, re-observe and reopen the same domain before next item; never assume item rows or bulk-quantity support",
+      "current_household": "SELECT_EXACT_OBSERVED_PORTRAIT_AND_REVALIDATE_EACH_EFFECT",
+      "distance_to_computer": "NOT_ASSUMED_REQUIRED_FOR_INSTANT_ORDER_UI; SIM_MAY_BE_REMOTE_IF_GAME_PERMITS",
+      "safety": "PLAYER_PRESENCE_AND_SCREEN_LEASE_REQUIRED_BY_DOWNSTREAM_LIVE_ADAPTER"
+    },
+    "effect_classes": {
+      "INSTANT_UI_CANDIDATE": {
+        "queue_expectation": "NOT_REQUIRED_UNTIL_OBSERVED",
+        "claim": "MAY_APPLY_IMMEDIATELY_AFTER_CONFIRM",
+        "proof": "FUNDS_AND_SELECTED_SIM_INVENTORY_DELTA"
+      },
+      "SIM_QUEUED_AND_POSSIBLY_FAILED": {
+        "queue_expectation": "EXPECTED",
+        "claim": "CRAFT_ACTION_NOT_IMMEDIATE",
+        "proof": "COMPLETION_AND_INVENTORY_DELTA"
+      },
+      "TIME_GATED_HARVEST": {
+        "queue_expectation": "POSSIBLE",
+        "claim": "WAIT_FOR_READINESS_AND_COLLECTION",
+        "proof": "FARM_COLLECTION_AND_INVENTORY_DELTA"
+      },
+      "RESOURCE_CONVERSION_THEN_REFILL": {
+        "queue_expectation": "UNKNOWN",
+        "claim": "RESOURCE_CONSUMPTION_AND_TARGET_REFILL_NOT_ORDER_PURCHASE",
+        "proof": "RECYCLER_BALANCE_AND_GENERATOR_FUEL_LEVEL"
+      },
+      "UNKNOWN": {
+        "queue_expectation": "UNKNOWN",
+        "claim": "DO_NOT_ASSUME_INSTANT",
+        "proof": "OBSERVED_EFFECT_REQUIRED"
+      }
+    },
+    "source_evidence": [
+      {
+        "source": "EA help Civil Designer career",
+        "url": "https://help.ea.com/en/articles/the-sims/the-sims-4/the-sims-4-civil-designer-career/",
+        "supports": "fabricator 15 bits and 10 pieces for eco part"
+      },
+      {
+        "source": "EA Eco Lifestyle gameplay",
+        "url": "https://www.ea.com/games/battlefield/news/eco-lifestyle-gameplay",
+        "supports": "insect farm biofuel for generator"
+      },
+      {
+        "source": "EA community generator fuel discussion",
+        "url": "https://forums.ea.com/discussions/the-sims-4-general-discussion-en/where-do-i-get-the-fuel-for-the-generators/2668272",
+        "supports": "recycled bits/pieces generator fuel path, community report, not per-build proof"
+      },
+      {
+        "source": "Operator UI observation",
+        "supports": "Computer Order/Purchase Upgrade Parts; often two More Choices after Order; Order itself can require More Choices"
+      }
+    ],
+    "guardrails": [
+      "NO_BLIND_PAGINATION",
+      "NO_FIXED_CLICK_COORDINATES",
+      "NO_FIXED_HOUSEHOLD_ROSTER",
+      "NO_UNKNOWN_DLC_CLAIM",
+      "NO_ASSUMED_ECO_PARTS_IN_COMPUTER",
+      "NO_ASSUMED_FUEL_IN_COMPUTER",
+      "NO_AUTOMATIC_PURCHASE_OR_CURRENCY_SPEND",
+      "NO_SCREEN_CLICK_WITHOUT_ADMISSION",
+      "NO_CHEATS_FOR_ECO_SOURCE_DISCOVERY",
+      "NO_ONLINE_CONNECT",
+      "NO_CLAIM_FROM_PLAN_ONLY",
+      "BI002_LIVE_CERT_NOT_ADVANCED"
+    ]
+  }
 }
