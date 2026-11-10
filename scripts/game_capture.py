@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Capture a Sims window via PrintWindow without desktop screenshots.
 
-Desktop / Playwright / computer-use screenshots minimize The Sims 4 (same class of
-focus/capture conflict as Signal). PrintWindow reads the HWND client bitmap and
-does not use desktop duplication, so the game can stay restored and focused.
+PrintWindow reads the HWND client bitmap without taking desktop focus.
+A minimized game must be restored by the operator; capture never restores it.
 This is still NOT Live Mode proof and NOT a vision classifier.
 """
 from __future__ import annotations
@@ -30,7 +29,6 @@ def capture_sims(*, process_id: int | None, out: Path) -> dict:
 
     user32 = ctypes.windll.user32
     gdi32 = ctypes.windll.gdi32
-    WM_SYSCOMMAND, SC_RESTORE = 0x0112, 0xF120
     PW_RENDERFULLCONTENT = 2
 
     class RECT(ctypes.Structure):
@@ -61,10 +59,8 @@ def capture_sims(*, process_id: int | None, out: Path) -> dict:
     if len(found) > 1 and process_id is None:
         raise GateError("AMBIGUOUS_SIMS_WINDOW_REQUIRE_PROCESS_ID")
     hwnd, pid = found[0]
-    user32.PostMessageW(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0)
-    user32.ShowWindow(hwnd, 9)
-    user32.AllowSetForegroundWindow(-1)
-    user32.SetForegroundWindow(hwnd)
+    if user32.IsIconic(hwnd):
+        raise GateError("SIMS_MINIMIZED_OPERATOR_RESTORE_REQUIRED")
 
     rc = RECT()
     user32.GetClientRect(hwnd, ctypes.byref(rc))

@@ -1,3 +1,7 @@
+## 2026-11-10 — Critical desktop peripheral ownership and passive capture
+
+Owner: `scripts/game_capture.py`; consultation `BI-DESKTOP-PERIPHERAL-OWNERSHIP-20261110`. Remove capture-time restore/foreground effects; minimized capture refuses with an operator-restoration gate. Tests cover refusal and forbidden desktop-control calls. Windows Bluetooth service/adapter/driver recovery belongs to SysAdminSuite, linked in `docs/PERIPHERAL_INCIDENT.md`. Print Screen restored and operator-confirmed; EM11 physical acceptance pending. No demonstrated Cursor attribution or common Bluetooth/capture cause. Offline capture tests do not certify live game capture or mouse repair.
+
 ## 2026-11-10 — Eco-Matic hard reset + catalog search admission
 
 **Operator:** Stop thrash; plan hard-reset gates; get Eco into HI via Clear Table / Backspace after exact tip.
