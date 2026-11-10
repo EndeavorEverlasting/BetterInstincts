@@ -864,29 +864,29 @@ class SkillsPanelRosterRecordTests(unittest.TestCase):
         ledger = empty_completion_ledger()
         set_household_roster(
             ledger,
-            session_id="household-n4-20261109",
+            session_id="fixture-save-household-session",
             members=4,
-            roster_keys=["EVIL_P0", "BERNICE_P1", "OLGA_P2", "CHARLEE_P3"],
-            display_names=["Evil Fagbot", "Bernice Thermidor", "Olga Chabenvenutzki", "Charlee"],
+            roster_keys=["SIM_A_P0", "SIM_B_P1", "SIM_C_P2", "SIM_D_P3"],
+            display_names=["Sim Alpha", "Sim Beta", "Sim Gamma", "Sim Delta"],
         )
         self.assertEqual(ledger["household_roster"]["members"], 4)
         with self.assertRaises(DiySkillForceError):
             set_household_roster(
                 ledger,
-                session_id="household-n4-20261109",
+                session_id="fixture-save-household-session",
                 members=5,
-                roster_keys=["EVIL_P0", "BERNICE_P1", "OLGA_P2", "CHARLEE_P3"],
+                roster_keys=["SIM_A_P0", "SIM_B_P1", "SIM_C_P2", "SIM_D_P3"],
             )
-        bernice = completion_member_key("household-n4-20261109", 1, "BERNICE_P1")
+        bernice = completion_member_key("fixture-save-household-session", 1, "SIM_B_P1")
         snap = record_member_panel_snapshot(
             ledger,
             member_key=bernice,
             observed_skills={"cooking": 10, "handiness": 10},
-            display_name="Bernice Thermidor",
+            display_name="Sim Beta",
             mark_unlisted_full_unlock_max=True,
         )
         self.assertGreaterEqual(snap["panel_max_count"], 2)
-        evil = completion_member_key("household-n4-20261109", 0, "EVIL_P0")
+        evil = completion_member_key("fixture-save-household-session", 0, "SIM_A_P0")
         record_member_panel_snapshot(
             ledger,
             member_key=evil,
@@ -898,7 +898,7 @@ class SkillsPanelRosterRecordTests(unittest.TestCase):
                 "video_gaming": 1,
                 "wellness": 1,
             },
-            display_name="Evil Fagbot",
+            display_name="Sim Alpha",
         )
         self.assertEqual(
             ledger["members"][evil]["skills"]["robotics"]["status"], "PANEL_OBSERVED"
@@ -909,19 +909,19 @@ class SkillsPanelRosterRecordTests(unittest.TestCase):
         plan = plan_household_skill_force(
             members=4,
             skill_ids=["robotics", "cooking"],
-            session_id="household-n4-20261109",
-            member_keys=["EVIL_P0", "BERNICE_P1", "OLGA_P2", "CHARLEE_P3"],
+            session_id="fixture-save-household-session",
+            member_keys=["SIM_A_P0", "SIM_B_P1", "SIM_C_P2", "SIM_D_P3"],
             completion_ledger=ledger,
         )
-        # Bernice cooking+robotics panel-maxed => those cells skip; Evil still needs robotics.
+        # Sim Beta cooking+robotics panel-maxed => those cells skip; Evil still needs robotics.
         bernice_units = [
             u for u in plan["dispatch_units"]
-            if u["member_key"].endswith("BERNICE_P1")
+            if u["member_key"].endswith("SIM_B_P1")
         ]
         self.assertTrue(all(u["skip_dispatch"] for u in bernice_units))
         evil_robotics = [
             u for u in plan["dispatch_units"]
-            if u["member_key"].endswith("EVIL_P0") and u["skill_id"] == "robotics"
+            if u["member_key"].endswith("SIM_A_P0") and u["skill_id"] == "robotics"
         ]
         self.assertEqual(len(evil_robotics), 1)
         self.assertFalse(evil_robotics[0]["skip_dispatch"])
@@ -939,20 +939,20 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         )
 
         ledger = empty_completion_ledger()
-        mkey = completion_member_key("household-n4-20261109", 2, "OLGA_P2")
+        mkey = completion_member_key("fixture-save-household-session", 2, "SIM_C_P2")
         record_member_panel_snapshot(
             ledger,
             member_key=mkey,
             observed_skills={"cooking": 10, "robotics": 3, "charisma": 1},
-            display_name="Olga Chabenvenutzki",
+            display_name="Sim Gamma",
         )
         plan = plan_target_sim_skill_algorithm(
-            session_id="household-n4-20261109",
-            member_key="OLGA_P2",
-            display_name="Olga Chabenvenutzki",
+            session_id="fixture-save-household-session",
+            member_key="SIM_C_P2",
+            display_name="Sim Gamma",
             roster_index=2,
             members=4,
-            roster_keys=["EVIL_P0", "BERNICE_P1", "OLGA_P2", "CHARLEE_P3"],
+            roster_keys=["SIM_A_P0", "SIM_B_P1", "SIM_C_P2", "SIM_D_P3"],
             bundle="diy_maker",
             ledger=ledger,
             observed_panel_header_name=None,
@@ -967,40 +967,40 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         self.assertEqual(denied["state"], "CONSOLE_TYPE_DENIED")
         self.assertIn("TYPE_WITHOUT_CONSOLE_STRIP", denied["forbidden"])
         mismatch = assess_selection_identity(
-            expected_display_name="Olga Chabenvenutzki",
-            observed_panel_header_name="Bernice hasn't earned any perks yet.",
+            expected_display_name="Sim Gamma",
+            observed_panel_header_name="Unit Beta hasn't earned any perks yet.",
         )
         self.assertEqual(mismatch["state"], "SELECTION_MISMATCH")
         proven = assess_selection_identity(
-            expected_display_name="Olga Chabenvenutzki",
-            observed_panel_header_name="Olga hasn't earned any perks yet. Keep practicing!",
-            expected_roster_key="OLGA_P2",
-            observed_selected_roster_key="OLGA_P2",
+            expected_display_name="Sim Gamma",
+            observed_panel_header_name="Sim Gamma hasn't earned any perks yet. Keep practicing!",
+            expected_roster_key="SIM_C_P2",
+            observed_selected_roster_key="SIM_C_P2",
         )
         self.assertEqual(proven["state"], "SELECTION_PROVEN")
         satisfaction = assess_selection_identity(
-            expected_display_name="Olga",
-            observed_panel_header_name="Olga's Satisfaction: 150",
+            expected_display_name="Sim Gamma",
+            observed_panel_header_name="Sim Gamma's Satisfaction: 150",
             cue_source="ASPIRATION_SATISFACTION_NAME",
         )
         self.assertEqual(satisfaction["state"], "SELECTION_PROVEN")
         self.assertIn("MOOD_COLOR_AS_SELECTION", satisfaction["forbidden"])
         unproven = assess_selection_identity(
-            expected_display_name="Olga",
+            expected_display_name="Sim Gamma",
             observed_panel_header_name=None,
         )
         self.assertEqual(unproven["preferred_panel_hotkeys"]["career_work"], "J")
         ready = plan_target_sim_skill_algorithm(
-            session_id="household-n4-20261109",
-            member_key="OLGA_P2",
-            display_name="Olga Chabenvenutzki",
+            session_id="fixture-save-household-session",
+            member_key="SIM_C_P2",
+            display_name="Sim Gamma",
             roster_index=2,
             members=4,
-            roster_keys=["EVIL_P0", "BERNICE_P1", "OLGA_P2", "CHARLEE_P3"],
+            roster_keys=["SIM_A_P0", "SIM_B_P1", "SIM_C_P2", "SIM_D_P3"],
             bundle="diy_maker",
             ledger=ledger,
-            observed_panel_header_name="Olga hasn't earned any perks yet.",
-            observed_selected_roster_key="OLGA_P2",
+            observed_panel_header_name="Sim Gamma hasn't earned any perks yet.",
+            observed_selected_roster_key="SIM_C_P2",
             console_strip_observed=True,
             portrait_client_xy=[420, 1000],
         )
@@ -1106,7 +1106,7 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
             "stats.set_skill_level Major_MediaProduction 10",
         )
         beat = plan_force_gaps_beat(
-            member_key="CHARLEE_P3",
+            member_key="SIM_D_P3",
             portrait_client_xy=(522, 1055),
             bundle="full_unlock",
             redo=True,
@@ -1138,7 +1138,7 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         self.assertIn("GUESS_ITERATION_COUNT", bad["forbidden"])
 
         wb = assess_selection_identity(
-            expected_display_name="Olga",
+            expected_display_name="Sim Gamma",
             observed_panel_header_name=None,
             white_bounds_roster_index=2,
             expected_roster_index=2,
@@ -1147,8 +1147,8 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         self.assertTrue(wb["white_bounds_corroborates_index"])
         self.assertIn("WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY", wb["forbidden"])
         named = assess_selection_identity(
-            expected_display_name="Olga",
-            observed_panel_header_name="Olga — Unemployed",
+            expected_display_name="Sim Gamma",
+            observed_panel_header_name="Sim Gamma — Unemployed",
             cue_source="WORK_OR_CAREER_PANEL_NAME",
             white_bounds_roster_index=2,
             expected_roster_index=2,
@@ -1211,7 +1211,7 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
             ],
         )
 
-        # Synthetic strip: two white walls bracketing Olga center x=454
+        # Synthetic strip: two white walls bracketing Sim Gamma center x=454
         tmp = Path("dist/game-host/household-skill-cert/live-20261109/_white-bound-fixture.png")
         tmp.parent.mkdir(parents=True, exist_ok=True)
         im = Image.new("RGB", (1920, 1080), (40, 40, 40))
@@ -1321,7 +1321,7 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         custom = plan_live_hotkey_arm(world_client_xy=[800, 400])
         self.assertEqual(custom["world_client_xy"], [800, 400])
         self.assertFalse(assess_arm_world_point([200, 200])["ok"])
-        self.assertFalse(assess_arm_world_point([454, 1055])["ok"])  # Olga portrait seed
+        self.assertFalse(assess_arm_world_point([454, 1055])["ok"])  # Sim Gamma portrait seed
         self.assertTrue(assess_arm_world_point([880, 480])["ok"])
         with self.assertRaises(DiySkillForceError):
             plan_live_hotkey_arm(world_client_xy=[454, 1055])
