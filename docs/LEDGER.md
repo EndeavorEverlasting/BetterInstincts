@@ -1,4 +1,4 @@
-## 2026-11-10 — Eco-Matic hard reset + catalog search admission
+undefined## 2026-11-10 — Eco-Matic hard reset + catalog search admission
 
 **Operator:** Stop thrash; plan hard-reset gates; get Eco into HI via Clear Table / Backspace after exact tip.
 
