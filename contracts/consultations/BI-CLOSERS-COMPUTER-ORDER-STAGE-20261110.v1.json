@@ -1,0 +1,70 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-CLOSERS-COMPUTER-ORDER-STAGE-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "decdaa28d980ef298c258a376418e3de8936f2bf",
+  "proposed_capability": "Prevent bypass of user-required Order-first computer interaction through an explicit observed ROOT -> ORDER submenu stage, while repairing a verifiably incorrect EA Eco Lifestyle source URL; preserve PR163 queue, unit spend and player/hardware safety.",
+  "affected_concepts": [
+    "OBSERVED_MENU_ROUTE",
+    "ACQUISITION_SOURCE",
+    "ACTION_EFFECT_CLASS",
+    "HOUSEHOLD",
+    "SIM",
+    "PLAYER_INTENT",
+    "OBSERVATION",
+    "CONTROL_PERMIT",
+    "HOST_ACTION"
+  ],
+  "relevant_canonical_owners": [
+    "contracts/upgrade-parts-force.v1.json",
+    "betterinstincts/computer_upgrade_parts.py",
+    "betterinstincts/upgrade_parts_force.py",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/ONTOLOGY.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-023",
+    "BI-ONT-024",
+    "BI-ONT-025",
+    "BI-ONT-026",
+    "BI-ONT-027"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "REPOSITORY_CI_AND_STATIC_SOURCE_PROOF_NOT_LIVE_ORDER_NAVIGATION",
+  "player_save_control_impact": "No live input or Sims save changes; no OS peripheral or Bluetooth configuration. Purchase authorization and player idle lease preserved.",
+  "expected_outcome": "An agent never selects Purchase Upgrade Parts before observed Order entry; menus may page at both scopes; tests prove denial of unobserved Order subtree, while verified EA source URL replaces invalid Battlefield path.",
+  "negative_tests": [
+    "ROOT menu with Order and Purchase Upgrade Parts always chooses Order",
+    "ROOT with Purchase Upgrade Parts but no Order must not bypass Order",
+    "Nested domain requires observed Order context",
+    "Menu pagination bound and repeat signature remain fail-closed",
+    "No purchase, EA Connect, Bluetooth, file or save side effects",
+    "Upstream PR163 queue controls and spend cap unchanged",
+    "Source documents and machine evidence use verified EA Eco Lifestyle URL"
+  ],
+  "rollback_path": "Revert only named scope/locator changes after a recorded regression; retain merged PR163/PR165 behavior and never bypass operator safety gates.",
+  "unresolved_unknowns": [
+    "Installed game patch may reorder nesting, so Order-first is an operator-authoritative route contract requiring real live confirmation",
+    "Actual Sims live screen and Cursor hook activation not accessible through GitHub connector"
+  ],
+  "files_expected": [
+    "betterinstincts/computer_upgrade_parts.py",
+    "tests/test_computer_upgrade_parts.py",
+    "contracts/upgrade-parts-force.v1.json",
+    "tests/test_acquisition_integration.py",
+    "docs/UPGRADE_PARTS_FORCE.md",
+    "docs/ACQUISITION_ROUTING.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "CONSULTED_BEFORE_SOURCE_MUTATION",
+  "source_main_sha": "50964fec9a0b4ec3ce7a896967c45b1a932ad3f2"
+}
