@@ -1,3 +1,11 @@
+## 2026-11-10 — Insect Farm Bio-Fuel discovery design (not automation)
+
+- **Operator evidence:** provided gameplay screenshot shows the labels `Clean Out Insect Farm`, `Nurture`, `Collect Bio-Fuel`, and `Collect Cricket Flour`; it does **not** prove enabled states, farm readiness, successful collection, inventory custody or generator fuel.
+- **Research:** https://bestgamingtips.com/sims-4-eco-lifestyle-get-fuel/ gives a multi-farm, feed/nurture, roughly 24 in-game-hour harvest approach; Carl's guide warns `Clean Out` may reset a colony. The five-farm suggestion is not a required quantity. Published sources disagree over biofuel's environmental effect; retain `UNKNOWN` until controlled observed comparison.
+- **Design committed:** `docs/INSECT_FARM_BIOFUEL.md` and `plans/active/BI-INSECT-FARM-BIOFUEL-DESIGN-20261110.v1.json`; linked from `docs/ACQUISITION_ROUTING.md`. Scope: N observed farms, any observed household/portrait, care/harvest arbitration, in-game clock and individual item/queue/generator receipts. No redundant input controller; future actions stay with `CooperativeScreenQueue` / `screen_admit`.
+- **Risk:** never automatically use `Clean Out` or select another insect-food harvest when biofuel is the current goal; never assume one menu label guarantees availability. User screen priority, protected saves, active-lot limits and OS peripheral prohibitions persist.
+- **Proof:** design-only; no new application runtime, live Sims session, generator action, mod package, game automation, save mutation or host service change. Next gate is **passive observation of exact-patch farm state**, then a separately operator-performed single-farm harvest with readback. **Horizon BI-002 remains active and unaltered.**
+
 ## 2026-11-10 — Household source acquisition / Fifth Gear
 
 - Parent: generalize computer LEFT-CLICK → Order (possibly behind More Choices) → observed purchase domain (variable More Choices depth) → picker → each desired item; switch and revalidate any observed household portrait. No fixed roster or magic two-click shortcut.

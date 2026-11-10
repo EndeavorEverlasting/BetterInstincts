@@ -1,0 +1,382 @@
+{
+  "schema": "betterinstincts.biofuel-discovery-design/v1",
+  "id": "BI-INSECT-FARM-BIOFUEL-DESIGN-20261110",
+  "created_date": "2026-11-10",
+  "phase": "DESIGN_ONLY",
+  "owner_goal": "Learn and later implement reliable user-sovereign insect-farm care, biofuel harvesting, inventory custody, and optional generator refueling for any observed household without interfering with normal gameplay.",
+  "scope": "THE_SIMS_4_ECO_LIFESTYLE_INSECT_FARM",
+  "main_at_design_start": "03c02f209514517b00da95dd154325d2f7ad3385",
+  "ownership": {
+    "existing_source_route": "contracts/upgrade-parts-force.v1.json#acquisition_routing.route_catalog.insect_biofuel_filled_can",
+    "source_planner": "betterinstincts/upgrade_parts_force.py#plan_acquisition_routes",
+    "player_input_queue": "betterinstincts/workflow_interop.py#CooperativeScreenQueue",
+    "physical_execution_admission": "betterinstincts/screen_admit.py#admitted_screen_lease",
+    "existing_scene_and_lot": "docs/ACQUISITION_ROUTING.md and current host scene/lot contracts",
+    "future_domain_owner": "betterinstincts/insect_farm_service.py (proposed; NOT YET CREATED)",
+    "future_contract_owner": "contracts/insect-farm-biofuel.v1.json (proposed; NOT YET CREATED)",
+    "future_test_owner": "tests/test_insect_farm_biofuel.py (proposed; NOT YET CREATED)",
+    "human_readable_design": "docs/INSECT_FARM_BIOFUEL.md"
+  },
+  "evidence": [
+    {
+      "id": "operator_image_20261110",
+      "kind": "UPLOADED_IMAGE_VISUAL_OBSERVATION",
+      "observed": [
+        "Insect Farm menu",
+        "Clean Out Insect Farm",
+        "Nurture",
+        "Collect Bio-Fuel",
+        "Collect Cricket Flour",
+        "multiple insect-farm-looking objects in scene"
+      ],
+      "does_not_prove": [
+        "farm count for full lot",
+        "enabled/disabled state",
+        "health",
+        "specific Sim identity",
+        "harvest dispatch",
+        "inventory can name/count",
+        "fuel refill",
+        "24h cadence"
+      ],
+      "image_handling": "Do not copy screenshot to public repository; preserve only nonpersonal menu observation notes."
+    },
+    {
+      "id": "article_user",
+      "kind": "THIRD_PARTY_GUIDE",
+      "url": "https://bestgamingtips.com/sims-4-eco-lifestyle-get-fuel/",
+      "claims": [
+        "insect farm source",
+        "feed and nurture daily",
+        "roughly every 24 game hours collect biofuel when bugs healthy",
+        "5 houses as author's recommended throughput strategy, not requirement",
+        "two Bits and Pieces as generator refuel alternative",
+        "claims any fuel pollution impact"
+      ],
+      "verification": "SOURCE_RESEARCH_NOT_INSTALLED_GAME"
+    },
+    {
+      "id": "carls_insect",
+      "kind": "THIRD_PARTY_GUIDE",
+      "url": "https://www.carls-sims-4-guide.com/expansionpacks/ecolifestyle/insect-farms.php",
+      "claims": [
+        "farm care includes separate hunger and health",
+        "feed compost or Simoleons; nurture",
+        "all four insect types can provide biofuel",
+        "harvest alternatives differ by insect type",
+        "Clean Out may reset colony",
+        "harvest ~24 game hours",
+        "claims biofuel greener than ordinary fuel"
+      ],
+      "verification": "SOURCE_RESEARCH_NOT_INSTALLED_GAME"
+    },
+    {
+      "id": "ea_civil_designer",
+      "kind": "OFFICIAL_HELP",
+      "url": "https://help.ea.com/en/articles/the-sims/the-sims-4/the-sims-4-civil-designer-career/",
+      "claims": [
+        "Eco-Upgrade Parts made at Fabricator using 15 bits and 10 pieces"
+      ],
+      "verification": "OFFICIAL_GAME_MECHANIC_NOT_LOCAL_GAME"
+    },
+    {
+      "id": "ea_forums",
+      "kind": "PLAYER_DISCUSSION",
+      "url": "https://forums.ea.com/discussions/the-sims-4-gameplay-en/how-to-store-power-off-the-grid-/13060591/replies/13062007",
+      "claims": [
+        "generators can use insect farm fuel"
+      ],
+      "verification": "COMMUNITY_NOT_CODE_PROOF"
+    }
+  ],
+  "design_decisions": [
+    "Separate insect farm health/feeding from collection, Sim pocket inventory, and generator fuel consumption; no one-step 'get fuel' assumption.",
+    "Discover N observed farm objects on the active lot, not a fixed number of houses. Five houses is a suggestion, not minimum.",
+    "Use current observed farm and portrait identities scoped to lot/scene revision; no name, pixel, house coordinates or old clicked object replay.",
+    "All insect care/harvest are physically queued/time gated candidates. Never classify as instant computer Order without observed per-effect proof.",
+    "Observe screenshot menu items as possible affordances only; visible text alone does not prove enabled action or actual completion.",
+    "Do not infer a daily clock based on wall-time; use in-game clock and last observed outcome, with 24h as a provisional observation hint.",
+    "Never perform Clean Out as routine maintenance. Treat as RESET_COLONY destructive with separate informed operator approval, safe backup and explicit observation.",
+    "Harvest product arbitration: biofuel versus cricket flour/beetle nuggets/grub meal on a farm may share cooldown; assume conflict until tested.",
+    "Fuel asset inventory is distinct from household Bits/Pieces resource and generator fuel tank. No synthetic conversion without proof.",
+    "No new process daemon, key hook, mouse controller or global override. Integrate later into existing game source/queue/lease.",
+    "Eco footprint impact sources disagree: keep UNKNOWN and test in isolated, controlled game before optimization."
+  ],
+  "inferred_source_routes": {
+    "insect_biofuel_filled_can": {
+      "producer": "Mitey Mitey Home Insect Farm or verified same-type insect farm",
+      "action": "Collect Bio-Fuel",
+      "preconditions": [
+        "Eco Lifestyle installed",
+        "farm observed inside active lot or appropriately authorized scene",
+        "insects initialized and alive",
+        "hunger/health sufficient",
+        "collection currently enabled",
+        "one-at-a-time per farm"
+      ],
+      "postconditions": [
+        "selected Sim's inventory before/after or other attested receiving destination",
+        "farm collection readiness changes",
+        "new cooldown only after confirmed outcome"
+      ],
+      "fallback": "WAIT_AND_REOBSERVE_NOT_GENERATOR_BITS_AUTOSUBSTITUTE"
+    },
+    "generator_fuel_from_bits_pieces": {
+      "producer": "Recycler and approved recyclables to Bits/Pieces; generator's observed consume/refill action",
+      "action": "generator-specific refill interaction",
+      "preconditions": [
+        "owned generator",
+        "resource currency observed",
+        "actor and scene admitted",
+        "explicit resource-spend approval"
+      ],
+      "postconditions": [
+        "resource change",
+        "generator fuel level change"
+      ],
+      "fallback": "SOURCE_NOT_OBSERVED"
+    },
+    "eco_upgrade_parts": {
+      "producer": "Fabricator",
+      "action": "Fabricate > Fabricated Eco-Upgrade Part",
+      "preconditions": [
+        "15 bits + 10 pieces per attempt and observed recipe"
+      ],
+      "postconditions": [
+        "craft completion and received part"
+      ],
+      "fallback": "SOURCE_NOT_OBSERVED"
+    },
+    "cricket_flour": {
+      "producer": "insect farm with appropriate insect type",
+      "action": "Collect Cricket Flour",
+      "preconditions": [
+        "operator explicitly selects food goal",
+        "harvest availability attested"
+      ],
+      "postconditions": [
+        "food output inventory evidence"
+      ],
+      "fallback": "NO_BLIND_DUAL_HARVEST"
+    }
+  },
+  "farm_observation_model": {
+    "farm_ref": "fresh source-backed object identity (ephemeral if no stable game object ID)",
+    "world_lot_ref": "observed exact lot identity; no off-lot traversal",
+    "scene_revision": "fresh observation revision",
+    "species": "grubs | crickets | beetles | bombardier_beetles | unknown",
+    "colony_state": "unknown | empty | growing | healthy | declining | dead",
+    "hunger_state": "unknown | fed | hungry | starving",
+    "health_state": "unknown | thriving | fine | declining | poor",
+    "menu_actions": [
+      {
+        "label": "Nurture",
+        "available": "unknown"
+      },
+      {
+        "label": "Feed",
+        "available": "unknown"
+      },
+      {
+        "label": "Collect Bio-Fuel",
+        "available": "observed_label_not_availability"
+      },
+      {
+        "label": "Collect Cricket Flour",
+        "available": "observed_label_not_availability"
+      },
+      {
+        "label": "Clean Out Insect Farm",
+        "available": "observed_label_dangerous"
+      }
+    ],
+    "harvest_status": "unknown | immature | available | locked | attempted | confirmed",
+    "last_harvest_game_clock": "unknown until observed",
+    "cooldown_target_game_hours": "approx_24_unverified_by_local_host",
+    "sim_portrait_id": "current freshly observed selection, no hardcoded name",
+    "sim_inventory_before": "unknown until fresh attestation",
+    "sim_inventory_after": "unknown until fresh attestation",
+    "producer_health_before_after": "unknown until fresh attestation",
+    "action_queue_receipt": "not captured at design phase",
+    "human_presence": "unknown_or_active_denies_effect",
+    "proof_status": "SOURCE_ONLY"
+  },
+  "state_machine": [
+    {
+      "state": "UNOBSERVED",
+      "on": "source_on_active_lot_observed",
+      "to": "COLONY_INSPECTION_REQUIRED",
+      "effect": false
+    },
+    {
+      "state": "COLONY_INSPECTION_REQUIRED",
+      "on": "empty_or_dead_observed",
+      "to": "RECOVERY_NEEDS_OPERATOR",
+      "effect": false
+    },
+    {
+      "state": "COLONY_INSPECTION_REQUIRED",
+      "on": "live_unhealthy_observed",
+      "to": "CARE_CANDIDATE",
+      "effect": false
+    },
+    {
+      "state": "COLONY_INSPECTION_REQUIRED",
+      "on": "live_healthy_and_harvest_enabled_observed",
+      "to": "HARVEST_CANDIDATE",
+      "effect": false
+    },
+    {
+      "state": "COLONY_INSPECTION_REQUIRED",
+      "on": "live_healthy_but_harvest_locked_observed",
+      "to": "WAIT_GAME_CLOCK",
+      "effect": false
+    },
+    {
+      "state": "CARE_CANDIDATE",
+      "on": "operator_approved_feeding_or_nurture_queued_in_future",
+      "to": "CARE_PENDING",
+      "effect": "FUTURE_NOT_IMPLEMENTED"
+    },
+    {
+      "state": "CARE_PENDING",
+      "on": "care_outcome_observed",
+      "to": "COLONY_INSPECTION_REQUIRED",
+      "effect": false
+    },
+    {
+      "state": "HARVEST_CANDIDATE",
+      "on": "operator_selects_biofuel_and_future_game_queue_ack",
+      "to": "HARVEST_PENDING",
+      "effect": "FUTURE_NOT_IMPLEMENTED"
+    },
+    {
+      "state": "HARVEST_PENDING",
+      "on": "inventory_delta_and_queue_outcome_observed",
+      "to": "HARVEST_CONFIRMED",
+      "effect": false
+    },
+    {
+      "state": "HARVEST_PENDING",
+      "on": "interruption_or_unknown_outcome",
+      "to": "RECONCILIATION_REQUIRED",
+      "effect": false
+    },
+    {
+      "state": "HARVEST_CONFIRMED",
+      "on": "next_cooldown_estimate",
+      "to": "WAIT_GAME_CLOCK",
+      "effect": false
+    },
+    {
+      "state": "WAIT_GAME_CLOCK",
+      "on": "game_clock_elapsed_and_menu_freshly_reobserved",
+      "to": "COLONY_INSPECTION_REQUIRED",
+      "effect": false
+    },
+    {
+      "state": "RECONCILIATION_REQUIRED",
+      "on": "new_noninvasive_observations",
+      "to": "COLONY_INSPECTION_REQUIRED",
+      "effect": false
+    },
+    {
+      "state": "RECOVERY_NEEDS_OPERATOR",
+      "on": "new_colony_authorized_in_separate_gameplay_workflow",
+      "to": "COLONY_INSPECTION_REQUIRED",
+      "effect": "FUTURE_OPERATOR_APPROVAL_REQUIRED"
+    }
+  ],
+  "absolute_denials": [
+    "CLEAN_OUT_INSECT_FARM_AUTOMATION",
+    "CREATE_OR_RESET_COLONY_WITHOUT_APPROVAL",
+    "GUESS_SCREEN_COORDINATES",
+    "CLICK_ON_OFF_LOT_FARM",
+    "UNOBSERVED_REPEATED_HARVEST",
+    "CONSUME_UNAPPROVED_COMPOST_OR_INVENTORY_ITEM",
+    "REPLAY_ON_PARTIAL_QUEUE",
+    "CLAIM_IMMEDIATE_HARVEST",
+    "MUTATE_WINDOWS_BLUETOOTH_DRIVER_HID_OR_PRINTSCREEN",
+    "DISABLE_OR_BYPASS_CURSOR_HOOKS",
+    "CHANGE_PROTECTED_SAVES_OR_LOT_STRUCTURE",
+    "AUTO_UNPAUSE_OR_HIJACK_GAME_SCREEN",
+    "EA_ONLINE_CONNECT",
+    "ASSUME_FIVE_FARMS",
+    "ASSUME_ECO_IMPACT"
+  ],
+  "proof_pipeline": {
+    "P0": "MENU_LABELS_FROM_OPERATOR_IMAGE + EXTERNAL_SOURCES, no game effect",
+    "P1": "PASSIVE exact-build local scene: identify every farm/portrait/health/menu/clock, measure enabled states; no click",
+    "P2": "OPERATOR_PERFORMS care and first controlled harvest; record queue, before/after counts, cooldown and one-farm output",
+    "P3": "OPERATOR_PERFORMS optional generator refuel using one observed biofuel can, observe item consumption and generator level",
+    "P4": "ONE_SUPERVISED_ADOPTED_QUEUE_EFFECT with explicit opt-in, one farm, no automated retry, human interruption test",
+    "P5": "N-farm/multi-portrait cooperative scheduling with no player conflict, no dead colony, no duplicate harvest, exact game-build receipts",
+    "P6": "OPT_IN_AUTONOMY_AFTER_OPERATOR_ACCEPTANCE only; eco impact experiment and tradeoffs measured separately"
+  },
+  "operator_handoff_questions_to_resolve_by_observation": [
+    "Is Collect Bio-Fuel enabled on the same farm/menu when Cricket Flour is offered?",
+    "Does choosing Bio-Fuel prevent Flour that day, and do different insect types alter harvest policy?",
+    "Where exactly does the resulting can land (selected Sim pocket, household inventory, alternate)? Exact menu and item text?",
+    "Is feed available as paid vs compost action, and how much improvement after Nurture?",
+    "How many game hours between eligible collections on this game version?",
+    "Does the household's generator accept a can directly, and through which exact visible menu?",
+    "How many fuel units/level increments per can; does consumption alter observed eco footprint?",
+    "Can you select another portrait to collect or does farm proximity/pathfinding change queue behavior?",
+    "Does Clean Out actually reset a colony on this installed patch (do not click to test without disposable test state)?"
+  ],
+  "implementation_sprints": [
+    {
+      "id": "S0",
+      "owner": "existing host listener, scene and game object atlas",
+      "scope": "observation-only farm species/health and menu label adapter, object IDs",
+      "gate": "P1 passive attested scene",
+      "status": "DESIGN_ONLY"
+    },
+    {
+      "id": "S1",
+      "owner": "existing upgrade_parts_force + new pure insect source reducer",
+      "scope": "typed farm facts, requests, NO_IMPLICIT_CLEAN_OUT policy, per-farm arbitration, game-clock cooldown estimation",
+      "gate": "unit tests with missing/stale/cyclic/contradictory observations",
+      "status": "DESIGN_ONLY"
+    },
+    {
+      "id": "S2",
+      "owner": "existing CooperativeScreenQueue + screen_admit",
+      "scope": "one supervised feed or nurture with two idle probes and per-effect fresh validation",
+      "gate": "operator approves next step + local click denial/canary",
+      "status": "DESIGN_ONLY"
+    },
+    {
+      "id": "S3",
+      "owner": "existing CooperativeScreenQueue + inventory evidence",
+      "scope": "one selected farm Collect Bio-Fuel with observed inventory delta and no blind retries",
+      "gate": "P2 real inventory/queue proof",
+      "status": "DESIGN_ONLY"
+    },
+    {
+      "id": "S4",
+      "owner": "existing generator resource route",
+      "scope": "optional separate consumption of observed can, observed generator-level proof, without guessing fuel equivalence",
+      "gate": "P3 real generator proof",
+      "status": "DESIGN_ONLY"
+    },
+    {
+      "id": "S5",
+      "owner": "existing household portrait switching + bounded goals",
+      "scope": "N-farm, any portrait, protected queue continuity, prioritize player/needs and farm health",
+      "gate": "P4/P5 receipts and human interruption",
+      "status": "DESIGN_ONLY"
+    }
+  ],
+  "horizon_preservation": {
+    "current_gate": "BI-002",
+    "owner": "plans/horizon.v1.json",
+    "modifies_dependency_order": false,
+    "certifies_hunger": false,
+    "scope_class": "SUPPORTING_FUTURE_RESOURCE_MICROSYSTEM_NOT_BI002_PREREQUISITE"
+  },
+  "human_approval_required_before_live_automation": true,
+  "execute_allowed": false,
+  "game_host_access_in_this_sprint": "NOT_AVAILABLE",
+  "status": "DESIGN_ONLY_RESEARCHED_NOT_IMPLEMENTED_OR_LIVE_VALIDATED"
+}
