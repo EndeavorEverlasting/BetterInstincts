@@ -7,6 +7,8 @@ check screen admission before each input, and never treat typed cheats as proof.
 from __future__ import annotations
 
 import json
+import hashlib
+import re
 from pathlib import Path
 from typing import Mapping, Sequence
 
@@ -126,3 +128,57 @@ def require_skill_action(
     )
     if result["state"] != "ACTION_IN_SCOPE":
         raise HouseholdJudgmentError(result["reason"])
+
+
+# Stable *local* game identities, not Sim display names, own progression state.
+# The derived ids are opaque; no player's Sim/household identifiers belong in
+# tracked contracts or examples. Runtime adapters must supply observed keys.
+_LOCAL_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9:_-]{0,63}$")
+_SCOPE_SCHEMA = "betterinstincts.household-scope/v1"
+
+
+def bind_household_scope(
+    *,
+    profile_id: str,
+    save_key: str,
+    household_key: str,
+    roster_keys: Sequence[str],
+) -> dict:
+    """Bind a profile + save + household + observed ordered roster.
+
+    Portrait keys must be stable locally observed identities, never names or
+    portrait indices. The result is safe for a private, per-profile ledger;
+    it is not screen-observation evidence or permission to control the game.
+    """
+    from betterinstincts.installation_profiles import PROFILE_ID
+
+    if not isinstance(profile_id, str) or not PROFILE_ID.fullmatch(profile_id):
+        raise HouseholdJudgmentError("INSTALLATION_PROFILE_ID_INVALID")
+    for value, label in ((save_key, "SAVE_KEY"), (household_key, "HOUSEHOLD_KEY")):
+        if not isinstance(value, str) or not _LOCAL_KEY.fullmatch(value):
+            raise HouseholdJudgmentError(f"{label}_REQUIRED_OPAQUE_ID")
+    roster = require_fixed_roster(roster_keys, roster_keys)
+    if any(not isinstance(key, str) or not _LOCAL_KEY.fullmatch(key) for key in roster):
+        raise HouseholdJudgmentError("PORTRAIT_KEYS_REQUIRE_STABLE_OPAQUE_IDS")
+    namespace = json.dumps(
+        [_SCOPE_SCHEMA, profile_id, save_key, household_key],
+        separators=(",", ":"), ensure_ascii=True,
+    )
+    scope_id = hashlib.sha256(namespace.encode("utf-8")).hexdigest()
+    member_keys = [
+        f"{scope_id}::key::{hashlib.sha256(key.encode('utf-8')).hexdigest()}"
+        for key in roster
+    ]
+    roster_fingerprint = hashlib.sha256(
+        json.dumps(list(roster), separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return {
+        "schema": _SCOPE_SCHEMA,
+        "scope_id": scope_id,
+        "profile_id": profile_id,
+        "member_count": len(roster),
+        "member_keys": member_keys,
+        "roster_fingerprint": roster_fingerprint,
+        "execution_permit": None,
+        "proof_ceiling": "SUPPLIED_IDENTITY_SCOPE_ONLY_NOT_LIVE_OBSERVED",
+    }
