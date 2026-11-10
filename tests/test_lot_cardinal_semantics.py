@@ -4,6 +4,7 @@ from __future__ import annotations
 import unittest
 
 from betterinstincts.lot_cardinal_semantics import (
+    assess_camera_side_drift,
     assess_library_search_admission,
     assess_workstation_candidate,
     authority_stack,
@@ -84,6 +85,43 @@ class LotCardinalSemanticsTests(unittest.TestCase):
         self.assertEqual(
             cfg["robotics_workstation_identity"]["visual"]["body_color"], "GRAY"
         )
+        self.assertIn("STREET_SIDE", cfg["anchors"])
+        self.assertIn("CREEK_SIDE", cfg["anchors"])
+        self.assertEqual(
+            cfg["lot_sides_bargain_bendh_20261110"]["STREET_SIDE"]["risk"],
+            "OFF_LOT_ASPHALT",
+        )
+
+    def test_camera_side_drift_street_and_creek(self):
+        street = assess_camera_side_drift(scenery_tokens=["ASPHALT", "SIDEWALK"])
+        self.assertTrue(street["triggered"])
+        self.assertEqual(street["gate"], "STREET_SIDE_OFF_LOT_RISK")
+        self.assertEqual(street["drift"], "TOWARD_STREET")
+        creek = assess_camera_side_drift(scenery_tokens=["CANAL", "WATER"])
+        self.assertTrue(creek["triggered"])
+        self.assertEqual(creek["gate"], "CREEK_SIDE_OFF_LOT_RISK")
+        self.assertIn("SHIFT_ENTER", creek["recovery"])
+        none = assess_camera_side_drift(scenery_tokens=["INTERIOR"])
+        self.assertFalse(none["triggered"])
+
+
+class LotGeometrySourceAuthorityTests(unittest.TestCase):
+    def test_ea_file_first_authority_stack(self):
+        import json
+        from pathlib import Path
+
+        data = json.loads(
+            Path("contracts/lot-geometry-source.v1.json").read_text(encoding="utf-8")
+        )
+        stack = data["authority_stack"]
+        self.assertEqual(stack[0], "EA_DOCUMENTS_SAVE_OR_TRAY_READONLY_WHEN_AUTHORIZED")
+        self.assertIn("CARDINAL_STREET_CREEK_FALLBACK", stack)
+        self.assertLess(
+            stack.index("EA_DOCUMENTS_SAVE_OR_TRAY_READONLY_WHEN_AUTHORIZED"),
+            stack.index("CARDINAL_STREET_CREEK_FALLBACK"),
+        )
+        self.assertIn("INVENT_EXTERNAL_TOWN_MAP_AS_PRIMARY", data["forbidden"])
+        self.assertIn("OPEN_SLOT_00000007_WITHOUT_OPERATOR_AUTH", data["forbidden"])
 
 
 if __name__ == "__main__":

@@ -427,8 +427,20 @@ class SceneryFocusHardeningTests(unittest.TestCase):
         self.assertEqual(primary["seed"], "host.manage_worlds_travel_party_cancel_x")
         self.assertEqual(primary["client_xy"], [1055, 22])
         self.assertEqual(primary["canvas_1456x840_xy"], [800, 25])
+        self.assertEqual(
+            primary["secondary_seed"],
+            "host.manage_worlds_travel_party_cancel_x_bottom",
+        )
         self.assertIsNone(out.get("restore"))
-        for banned in ("CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "ESC_AS_TRAVEL_CANCEL"):
+        for banned in (
+            "CROWN",
+            "FOOTPRINT",
+            "SELL",
+            "DELETE_SAVE",
+            "ESC_AS_TRAVEL_CANCEL",
+            "CLICK_WORLD_GLOBE_WHILE_TRAVELING",
+            "CLICK_PLAY_OR_LOT_PIN_WHILE_MAPPING",
+        ):
             self.assertIn(banned, out["recovery"]["forbidden"])
 
     def test_manage_worlds_map_not_enter_roam(self):
@@ -439,6 +451,11 @@ class SceneryFocusHardeningTests(unittest.TestCase):
         self.assertEqual(out["state"], "MANAGE_WORLDS_MAP")
         self.assertIsNone(out.get("restore"))
         self.assertIn("ENTER_AS_MAP_ROAM", out["recovery"]["forbidden"])
+        self.assertEqual(
+            out["recovery"]["if_traveling_with_banner"]["seed"],
+            "host.manage_worlds_travel_party_cancel_x",
+        )
+        self.assertIn("CLICK_WORLD_GLOBE_WHILE_TRAVELING", out["recovery"]["forbidden"])
 
     def test_viewport_black_or_white_distinct_from_street(self):
         out = assess_lot_focus(

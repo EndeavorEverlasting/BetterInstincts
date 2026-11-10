@@ -31,6 +31,13 @@
   ],
   "inside_zones": ["INTERIOR", "YARD"],
   "outside_zones": ["STREET", "WATER", "NEIGHBOR"],
+  "lot_edge_orientation": {
+    "owner": "contracts/lot-cardinal-semantics.v1.json#lot_sides_bargain_bendh_20261110",
+    "helper": "betterinstincts.lot_cardinal_semantics.assess_camera_side_drift",
+    "STREET_SIDE": "asphalt/sidewalk OFF_LOT risk",
+    "CREEK_SIDE": "creek/canal WATER OFF_LOT risk",
+    "note": "Footprint admit uses zones; street/creek sides explain WHICH edge the camera drifted past"
+  },
   "gates": {
     "LOT_BOUNDARY_OUTSIDE_FOOTPRINT": {
       "when": "client_xy outside footprint_aabb OR zone in outside_zones OR lot_focus OFF_LOT",

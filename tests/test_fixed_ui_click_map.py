@@ -363,10 +363,18 @@ class ManageWorldsTravelPartyCancelTests(unittest.TestCase):
         self.assertEqual(cancel["icon_order_after_lablab_text"], ["cancel_x", "footprint", "crown"])
         self.assertEqual(
             seeds["host.forbidden_manage_worlds_travel_party_footprint"]["client_xy"],
+            [1096, 20],
+        )
+        self.assertEqual(
+            seeds["host.forbidden_manage_worlds_travel_party_footprint"]["prior_xy"],
             [1090, 22],
         )
         self.assertEqual(
             seeds["host.forbidden_manage_worlds_travel_party_crown"]["client_xy"],
+            [1136, 20],
+        )
+        self.assertEqual(
+            seeds["host.forbidden_manage_worlds_travel_party_crown"]["prior_xy"],
             [1131, 22],
         )
         self.assertEqual(
@@ -393,6 +401,44 @@ class ManageWorldsTravelPartyCancelTests(unittest.TestCase):
             cfg=cfg,
         )
         self.assertNotEqual(scored["classification"], "HIT")
+
+    def test_traveling_with_surface_map_v19(self):
+        cfg = load_contract()
+        self.assertGreaterEqual(cfg["version"], 19)
+        self.assertIn("19", cfg["version_notes"])
+        seeds = cfg["seed_targets_1920x1080"]
+        bottom = seeds["host.manage_worlds_travel_party_cancel_x_bottom"]
+        self.assertEqual(bottom["client_xy"], [351, 1053])
+        self.assertEqual(bottom["prefer"], "TOP_BANNER_X")
+        self.assertEqual(
+            seeds["host.manage_worlds_travel_party_portrait_0"]["client_xy"], [70, 930]
+        )
+        self.assertEqual(
+            seeds["host.manage_worlds_travel_party_portrait_1"]["client_xy"], [145, 930]
+        )
+        self.assertEqual(
+            seeds["host.manage_worlds_travel_party_portrait_2"]["client_xy"], [295, 960]
+        )
+        self.assertTrue(is_forbidden_target("host.forbidden_manage_worlds_world_globe"))
+        self.assertTrue(is_forbidden_target("host.forbidden_manage_worlds_travel_confirm_play"))
+        self.assertTrue(is_forbidden_target("host.forbidden_manage_worlds_selected_lot_pin"))
+        self.assertFalse(is_forbidden_target("host.manage_worlds_play_household"))
+        block = cfg["manage_worlds_travel_party_1920x1080"]
+        self.assertEqual(
+            block["consultation"],
+            "contracts/consultations/BI-TRAVELING-WITH-MANAGE-WORLDS-MAP-20261110.v1.json",
+        )
+        self.assertEqual(block["recovery"]["primary"], "host.manage_worlds_travel_party_cancel_x")
+        self.assertFalse(block["search_filter_chrome"]["observed"])
+        self.assertEqual(
+            block["targets"]["forbidden_footprint"]["client_xy"], [1096, 20]
+        )
+        self.assertIn("CLICK_WORLD_GLOBE_WHILE_TRAVELING", block["forbidden"])
+        self.assertIn("CLICK_PLAY_OR_LOT_PIN_WHILE_MAPPING_UNINTENDED_TRAVEL", block["forbidden"])
+        self.assertEqual(
+            block["targets"]["safe_seed_only_play_household"]["policy_while_mapping"],
+            "DO_NOT_CONFIRM_WHILE_MAPPING",
+        )
 
     def test_switch_control_chip_trap_annotated(self):
         cfg = load_contract()

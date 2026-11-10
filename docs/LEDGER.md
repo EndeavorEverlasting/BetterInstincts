@@ -1,3 +1,45 @@
+## 2026-11-10 — Eco-Matic hard reset + catalog search admission
+
+**Operator:** Stop thrash; plan hard-reset gates; get Eco into HI via Clear Table / Backspace after exact tip.
+
+**CHANGED:** Halt PrintWindow (`eco-halt-observe.png`): Live paused, Aspiration open, street exterior, Charlee ASLEEP, §669,855. Added fail-closed `assess_build_catalog_search_admission` + contract `catalog_search_admission` (empty Search → DENY tip). Observation rewrite with `audit_20261110_hard_reset`.
+
+**PROVED:** Eco still not in HI; `search_text_proven`/`tip_title_proven_eco` false; Build chrome not proven on halt frame.
+
+**NEXT:** Phase0 Esc + lot-center → prove Build → Show All → Search shows Smog → tip exact Eco-Matic → Backspace/Clear Table → HI name-proof. Not BI-002 close.
+
+## 2026-11-10 — TRAVELING WITH / Manage Worlds travel-surface map (fixed-ui v19)
+
+**Operator:** Map TRAVELING WITH Willow Creek travel UI (cancel X, forbidden footprint/crown, party portraits, safe pin/Play annotations). Prefer seed over exiting; cancel X only if stuck. Preserve street/creek + EA-file-first.
+
+**CHANGED:** Consultation `BI-TRAVELING-WITH-MANAGE-WORLDS-MAP-20261110`; `fixed-ui-click-map` v19 expands `manage_worlds_travel_party_1920x1080` + seeds (bottom cancel `[351,1053]`, portraits, forbidden globe/Play-while-mapping/lot-pin); `lot_focus` recovery forbids globe/Play/pin; tests. Street/creek + EA-file-first already in lot-cardinal / lot-geometry owners.
+
+**PROVED offline:** Top cancel remains `[1055,22]`; footprint/crown/globe/Play-while-mapping/lot-pin `FORBIDDEN_DENY`; operator-frame evidence under `dist/game-host/horizon-exec-20261110/order-upgrade-parts/op-frame-traveling-with-willow-creek-upscaled.png`. Live Sims at map time was Live+PAUSED (not re-entered travel).
+
+**NEXT:** Stay PAUSED; footprint-admit gray WS/computer Order parts; BI-002 trial 3+. If travel map returns — cancel X only.
+
+## 2026-11-10 — Eco-Matic resume: distractors + catalog blocker
+
+**Operator:** Hard-stop thrash; tip-gate Eco into HI via Clear Table / Backspace.
+
+**CHANGED:** Live resume after interop harden. Tip-selected copper/cyan on Bargain Bend proved **Hydro-Aqua Filtration Chamber** / **Water Siphon** — not Eco. Typed elementary `testingcheats true` + `bb.showhiddenobjects`. Catalog search focus failed (Small Business/Surfaces trap); world-wheel zoom degraded camera. Observation updated `dist/game-host/eco-matic-household-inventory-observed.json`.
+
+**PROVED:** Eco still `observed_in_household_inventory: false`. Funds §669,855. Distractor registry expanded.
+
+**NEXT:** Recover Build catalog (Z/X zoom only; no world-wheel for menus) → Show All → Search `Smog` → tip exact `Eco-Matic Smog Vacuum` → Backspace or F2 Clear Table → HI name-proof. Not BI-002 close.
+
+## 2026-11-10 — STREET_SIDE vs CREEK_SIDE + EA-file-first geometry
+
+**Operator:** Codify Bargain Bendh street-facing vs creek/canal-facing sides (drift → asphalt vs water OFF_LOT). Prefer EA Documents save/Tray READ_ONLY over remapping town from PrintWindow; advance geometry stub without opening Slot_00000007.
+
+**CHANGED:** `lot-cardinal-semantics` v2 + `assess_camera_side_drift`; `lot-geometry-source` v2 authority_stack EA-first + file_backed progress; lot-boundary edge orientation cross-link; tests; AGENTS/DOCTRINE/Horizon. Consultation `BI-STREET-CREEK-SIDES-EA-FILE-FIRST-20261110`.
+
+**PROVED offline:** street tokens → STREET_SIDE_OFF_LOT_RISK; canal → CREEK_SIDE_OFF_LOT_RISK; geometry authority_stack[0]=EA Documents; Slot open still forbidden.
+
+**LIVE:** BI-002 baseline still 2/5; gray WS click miss earlier — restore ON_LOT inside footprint while PAUSED.
+
+**NEXT:** Shift+Enter if street/creek drift; footprint-admit gray WS or computer Order parts; then BI-002 trial 3+.
+
 ## 2026-11-10 — Lot boundary / house footprint admission
 
 **Operator:** Clicks on street/asphalt/Buy prove agents do not know house boundaries. Develop the algorithm, codify it, make it durable across agents.

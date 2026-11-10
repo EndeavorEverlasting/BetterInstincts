@@ -1,7 +1,8 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 18,
+  "version": 19,
   "version_notes": {
+    "19": "Expands Manage Worlds TRAVELING WITH travel-surface map from operator Willow Creek frame (dual-monitor crop upscaled) + prior PrintWindow cancel. Confirms top cancel X [1055,22]; remasures forbidden footprint [1096,20] / crown [1136,20] (priors 1090/1131 retained). Adds bottom cancel X [351,1053], party portrait tray seeds, forbidden world-globe while traveling, and DO_NOT_CONFIRM annotations for Play/lot-pin while mapping. No search/filter chrome observed on this surface. Consultation BI-TRAVELING-WITH-MANAGE-WORLDS-MAP-20261110. Additive only; never Sell/delete; Esc≠cancel.",
     "18": "Adds library_search_clear_1920x1080 policy + gallery.my_library_search_field / gallery.my_library_search_clear seeds (POLICY_CHORD_UNTIL_MEASURED). Gate CLEAR_SEARCH_BEFORE_QUERY — leftover Smog blocked later Library finds. Chord Ctrl+A Delete until PrintWindow measures clear-X. Owner contracts/lot-cardinal-semantics.v1.json#library_search. Additive only; prior seeds unchanged.",
     "17": "Adds live.mastery_perk_modal_yes [960,560] and live.mastery_perk_modal_no [960,610] (OPERATOR_FRAME_APPROX from dual-monitor attach thumb upscaled; PrintWindow recheck found modal already gone — Servo tooltip/world). Prefer No to defer perk picker during paused parts work. No close-X observed. Additive only; prior seeds unchanged. Consultation BI-PAUSED-PRODUCTIVITY-BEFORE-TIME-RISK-20261110.",
     "8": "Adds camera_dependent_seeds_1920x1080 (fridge HIT/MISS). Additive only: seed_targets_1920x1080 and all certified seeds unchanged; camera-dependent rows are NOT ingested into the fixed-HUD ledger.",
@@ -309,20 +310,81 @@
     },
     "host.forbidden_manage_worlds_travel_party_footprint": {
       "role": "FORBIDDEN_DENY_TRAVEL_CANCEL",
-      "client_xy": [1090, 22],
+      "client_xy": [1096, 20],
+      "prior_xy": [1090, 22],
       "status": "FORBIDDEN_DENY",
       "action": "deny",
       "profile": "1920x1080",
-      "notes": "Second circular icon after LabLab text on TRAVELING WITH banner (footprint) — NOT cancel. PrintWindow ~x1090; never click for travel cancel."
+      "notes": "Second circular icon after LabLab text on TRAVELING WITH banner (footprint) — NOT cancel. Operator-frame remasure centroid ~[1096,20]; prior PrintWindow ~[1090,22]. Never click for travel cancel."
     },
     "host.forbidden_manage_worlds_travel_party_crown": {
       "role": "FORBIDDEN_DENY_TRAVEL_CANCEL",
-      "client_xy": [1131, 22],
+      "client_xy": [1136, 20],
+      "prior_xy": [1131, 22],
       "prior_xy_approx": [1125, 33],
       "status": "FORBIDDEN_DENY",
       "action": "deny",
       "profile": "1920x1080",
-      "notes": "Third circular icon after LabLab text on TRAVELING WITH banner (crown / Kingdom of Willow Creek). PrintWindow ~[1131,22] FORBIDDEN. Missing the travel X and clicking near crown opened Kingdom modal. Modal close X canvas ~(924,217) ≈ client near prior [1138,255] family."
+      "notes": "Third circular icon after LabLab text on TRAVELING WITH banner (crown / Kingdom of Willow Creek). Operator-frame remasure centroid ~[1136,20]; prior PrintWindow ~[1131,22] FORBIDDEN. Missing the travel X and clicking near crown opened Kingdom modal. Modal close X canvas ~(924,217) ≈ client near prior [1138,255] family."
+    },
+    "host.manage_worlds_travel_party_cancel_x_bottom": {
+      "role": "CANCEL_TRAVELING_WITH_PARTY_BOTTOM",
+      "aliases": ["manage_worlds.travel_party_cancel_x_bottom"],
+      "client_xy": [351, 1053],
+      "status": "OPERATOR_FRAME_APPROX_20261110",
+      "profile": "1920x1080",
+      "prefer": "TOP_BANNER_X",
+      "notes": "Secondary X on bottom-left TRAVELING WITH: LABLAB strip under party portraits. Prefer top cancel [1055,22]. Operator dual-monitor frame white cluster centroid; PrintWindow remeasure when next stuck on travel."
+    },
+    "host.manage_worlds_travel_party_portrait_0": {
+      "role": "TRAVEL_PARTY_PORTRAIT_TRAY",
+      "client_xy": [70, 930],
+      "status": "OPERATOR_FRAME_ANNOTATED_20261110",
+      "profile": "1920x1080",
+      "slot": 0,
+      "notes": "Leftmost travel-party portrait (Servo) above bottom TRAVELING WITH strip. Annotation only — not a travel confirm; not Switch Control."
+    },
+    "host.manage_worlds_travel_party_portrait_1": {
+      "role": "TRAVEL_PARTY_PORTRAIT_TRAY",
+      "client_xy": [145, 930],
+      "status": "OPERATOR_FRAME_ANNOTATED_20261110",
+      "profile": "1920x1080",
+      "slot": 1,
+      "notes": "Middle travel-party portrait (Servo). Annotation only."
+    },
+    "host.manage_worlds_travel_party_portrait_2": {
+      "role": "TRAVEL_PARTY_PORTRAIT_TRAY",
+      "client_xy": [295, 960],
+      "status": "OPERATOR_FRAME_ANNOTATED_20261110",
+      "profile": "1920x1080",
+      "slot": 2,
+      "notes": "Right travel-party portrait (human Sim). Annotation only — never treat as Live Switch Control chip."
+    },
+    "host.forbidden_manage_worlds_world_globe": {
+      "role": "FORBIDDEN_DENY_WORLD_SWITCH_WHILE_TRAVELING",
+      "client_xy": [1860, 1010],
+      "status": "FORBIDDEN_DENY",
+      "action": "deny",
+      "profile": "1920x1080",
+      "notes": "Lower-right world/globe switcher on Manage Worlds map. Prior accidental click navigated Willow Creek → Sulani while TRAVELING WITH LabLab. DENY while mapping or cancelling travel; cancel via X only."
+    },
+    "host.forbidden_manage_worlds_travel_confirm_play": {
+      "role": "FORBIDDEN_DENY_UNWANTED_TRAVEL_CONFIRM",
+      "client_xy": [1811, 1033],
+      "alias_of": "host.manage_worlds_play_household",
+      "status": "FORBIDDEN_DENY",
+      "action": "deny",
+      "profile": "1920x1080",
+      "notes": "Same XY as host.manage_worlds_play_household. While mapping TRAVELING WITH or recovering unintended travel, DENY Play confirm. Intentional Play remains the non-forbidden seed only when operator authorizes travel."
+    },
+    "host.forbidden_manage_worlds_selected_lot_pin": {
+      "role": "FORBIDDEN_DENY_UNWANTED_TRAVEL_CONFIRM",
+      "client_xy": [1643, 780],
+      "status": "FORBIDDEN_DENY",
+      "action": "deny",
+      "profile": "1920x1080",
+      "camera_dependent": true,
+      "notes": "Selected destination lot pin / green-plumbob family on operator Willow Creek travel frame (centroid ~[1643,780]). CAMERA_DEPENDENT — do not treat as fixed HUD. DENY while mapping; use cancel X instead of pin/Play."
     },
     "host.manage_worlds_kingdom_modal_close_x": {
       "role": "CLOSE_KINGDOM_WORLD_MODAL",
@@ -1259,12 +1321,28 @@
   "manage_worlds_travel_party_1920x1080": {
     "measured_at": "2026-11-10T04:20:00-05:00",
     "remeasured_at": "2026-11-10T09:36:00-05:00",
+    "operator_frame_mapped_at": "2026-11-10T11:35:00-05:00",
+    "consultation": "contracts/consultations/BI-TRAVELING-WITH-MANAGE-WORLDS-MAP-20261110.v1.json",
     "profile": "1920x1080",
-    "coordinate_basis": "PrintWindow client 1920×1080 (v15); prior computer-use canvas 1456×840 scale retained as prior_xy",
+    "coordinate_basis": "PrintWindow client 1920×1080 (v15 cancel X); v19 operator dual-monitor frame crop upscaled for tray/forbidden affordances",
+    "evidence": [
+      "dist/game-host/horizon-exec-20261110/order-upgrade-parts/op-frame-traveling-with-willow-creek-upscaled.png"
+    ],
     "game_version": "1.121.361.1020",
-    "location": "Manage Worlds TRAVELING WITH: LabLab dual banners (top preferred)",
+    "location": "Manage Worlds TRAVELING WITH: LabLab dual banners (top preferred) on Willow Creek neighborhood map",
     "owner": "betterinstincts/fixed_ui_click_map.py",
     "alias_key": "manage_worlds.travel_party_cancel_x",
+    "scenery_focus": ["TRAVELING_WITH_BANNER", "MANAGE_WORLDS_MAP"],
+    "recovery": {
+      "primary": "host.manage_worlds_travel_party_cancel_x",
+      "secondary": "host.manage_worlds_travel_party_cancel_x_bottom",
+      "lot_focus": "betterinstincts/lot_focus.py#recovery_for_scenery_focus",
+      "note": "Cancel X only to leave unintended travel; never footprint/crown/globe/Play/lot-pin; Esc zooms only"
+    },
+    "search_filter_chrome": {
+      "observed": false,
+      "notes": "No search/filter field on this TRAVELING WITH neighborhood map frame"
+    },
     "scale": {
       "canvas": [1456, 840],
       "client": [1920, 1080],
@@ -1273,7 +1351,12 @@
       "prior_computer_use_scale_client_xy": [1055, 33],
       "first_white_circle_cluster_approx": [1050, 20],
       "text_miss_canvas_xy": [556, 34],
-      "text_miss_client_xy": [733, 44]
+      "text_miss_client_xy": [733, 44],
+      "operator_frame_top_icon_centroids": {
+        "cancel_x": [1055, 20],
+        "footprint": [1096, 20],
+        "crown": [1136, 20]
+      }
     },
     "targets": {
       "travel_party_cancel_x": {
@@ -1281,7 +1364,28 @@
         "client_xy": [1055, 22],
         "canvas_1456x840_xy": [800, 25],
         "status": "PRINTWINDOW_REMEASURED_20261110",
-        "notes": "First circular icon after LabLab text (X). PrintWindow [1055,22]; prefer top banner over bottom TRAVELING WITH X."
+        "notes": "First circular icon after LabLab text (X). PrintWindow [1055,22]; operator-frame blob confirms ~[1055,20]. Prefer top banner over bottom TRAVELING WITH X."
+      },
+      "travel_party_cancel_x_bottom": {
+        "target_id": "host.manage_worlds_travel_party_cancel_x_bottom",
+        "client_xy": [351, 1053],
+        "status": "OPERATOR_FRAME_APPROX_20261110",
+        "notes": "Secondary; prefer top X"
+      },
+      "party_portrait_0": {
+        "target_id": "host.manage_worlds_travel_party_portrait_0",
+        "client_xy": [70, 930],
+        "status": "OPERATOR_FRAME_ANNOTATED_20261110"
+      },
+      "party_portrait_1": {
+        "target_id": "host.manage_worlds_travel_party_portrait_1",
+        "client_xy": [145, 930],
+        "status": "OPERATOR_FRAME_ANNOTATED_20261110"
+      },
+      "party_portrait_2": {
+        "target_id": "host.manage_worlds_travel_party_portrait_2",
+        "client_xy": [295, 960],
+        "status": "OPERATOR_FRAME_ANNOTATED_20261110"
       },
       "kingdom_modal_close_x": {
         "target_id": "host.manage_worlds_kingdom_modal_close_x",
@@ -1291,15 +1395,49 @@
       },
       "forbidden_footprint": {
         "target_id": "host.forbidden_manage_worlds_travel_party_footprint",
-        "client_xy": [1090, 22],
+        "client_xy": [1096, 20],
+        "prior_xy": [1090, 22],
         "status": "FORBIDDEN_DENY",
         "action": "deny"
       },
       "forbidden_crown": {
         "target_id": "host.forbidden_manage_worlds_travel_party_crown",
-        "client_xy": [1131, 22],
+        "client_xy": [1136, 20],
+        "prior_xy": [1131, 22],
         "status": "FORBIDDEN_DENY",
         "action": "deny"
+      },
+      "forbidden_world_globe": {
+        "target_id": "host.forbidden_manage_worlds_world_globe",
+        "client_xy": [1860, 1010],
+        "status": "FORBIDDEN_DENY",
+        "action": "deny"
+      },
+      "forbidden_travel_confirm_play": {
+        "target_id": "host.forbidden_manage_worlds_travel_confirm_play",
+        "client_xy": [1811, 1033],
+        "status": "FORBIDDEN_DENY",
+        "action": "deny",
+        "notes": "DENY while mapping/unintended travel; intentional Play uses host.manage_worlds_play_household under operator auth"
+      },
+      "forbidden_selected_lot_pin": {
+        "target_id": "host.forbidden_manage_worlds_selected_lot_pin",
+        "client_xy": [1643, 780],
+        "status": "FORBIDDEN_DENY",
+        "action": "deny",
+        "camera_dependent": true
+      },
+      "safe_seed_only_play_household": {
+        "target_id": "host.manage_worlds_play_household",
+        "client_xy": [1811, 1033],
+        "status": "LIVE_MEASURED_20261110",
+        "policy_while_mapping": "DO_NOT_CONFIRM_WHILE_MAPPING"
+      },
+      "safe_seed_only_lablab_lot_house_body": {
+        "target_id": "host.lablab_lot_house_body",
+        "client_xy": [1456, 850],
+        "status": "LIVE_MEASURED_20261110",
+        "policy_while_mapping": "DO_NOT_CONFIRM_WHILE_MAPPING"
       }
     },
     "post_cancel_live_state": {
@@ -1311,7 +1449,7 @@
       "next": "Switch Control via live.switch_control_chip (pill text) — never ~(455,900) empty street"
     },
     "off_lot_after_cancel": {
-      "note": "Camera often on street/rooftop after cancel — needs Enter recenter. scenery-not-in-focus when Manage Worlds map or street fills viewport without household lot interior."
+      "note": "Camera often on street/rooftop after cancel — needs Enter recenter. scenery-not-in-focus when Manage Worlds map or street fills viewport without household lot interior. STREET_SIDE vs CREEK_SIDE FALLBACK via lot-cardinal; EA file first via lot-geometry-source."
     },
     "switch_control_trap": {
       "see": "live.switch_control_chip",
@@ -1321,14 +1459,20 @@
     "forbidden": [
       "CLICK_TRAVEL_PARTY_FOOTPRINT_AS_CANCEL",
       "CLICK_TRAVEL_PARTY_CROWN_AS_CANCEL",
+      "CLICK_WORLD_GLOBE_WHILE_TRAVELING",
+      "CLICK_PLAY_OR_LOT_PIN_WHILE_MAPPING_UNINTENDED_TRAVEL",
       "TREAT_BANNER_TEXT_556_34_AS_CANCEL_X",
       "EXPECT_ESC_TO_CANCEL_TRAVEL",
-      "SWITCH_CONTROL_EMPTY_STREET_ABOVE_STRIP"
+      "SWITCH_CONTROL_EMPTY_STREET_ABOVE_STRIP",
+      "SELL",
+      "DELETE_SAVE"
     ],
     "not": [
       "USE_FOOTPRINT_OR_CROWN_FOR_TRAVEL_CANCEL",
       "ASSUME_ESC_CANCELS_TRAVELING_WITH",
-      "CLAIM_SWITCH_CONTROL_HIT_FROM_BAND_MIDPOINT"
+      "CLAIM_SWITCH_CONTROL_HIT_FROM_BAND_MIDPOINT",
+      "TREAT_CAMERA_DEPENDENT_LOT_PIN_AS_FIXED_HUD",
+      "REENTER_TRAVEL_MAP_JUST_TO_REMEASURE_WHEN_LIVE_PAUSED"
     ]
   },
   "inventory_multiselect_1920x1080": {

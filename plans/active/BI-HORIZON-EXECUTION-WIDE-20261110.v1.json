@@ -2,9 +2,9 @@
   "schema": "betterinstincts.horizon-execution-wide/v1",
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
-  "updated_at": "2026-11-10T11:25:00-05:00",
+  "updated_at": "2026-11-10T11:32:00-05:00",
   "lot_boundary_footprint_20261110": {
-    "state": "CONTRACT_LANDED_NOT_LIVE_AABB_MEASURE",
+    "state": "CONTRACT_LANDED_LIVE_AABB_CANDIDATE_WS_CLICK_MISS",
     "owner": "contracts/lot-boundary.v1.json",
     "library": "betterinstincts/lot_boundary.py",
     "api": ["assess_lot_boundary", "admit_world_click_in_footprint"],
@@ -12,13 +12,18 @@
     "consultation": "contracts/consultations/BI-LOT-BOUNDARY-FOOTPRINT-ADMIT-20261110.v1.json",
     "rule": "Street/asphalt/neighbor/canal/Buy-without-census = OUTSIDE house; world clicks DENY until ON_LOT + inside footprint AABB or INTERIOR/YARD zone",
     "recovery": ["ESC", "F1_IF_BUY", "SHIFT_ENTER", "REOBSERVE_ON_LOT"],
+    "live_20261110": {
+      "candidate_aabb": {"x0": 60, "y0": 120, "x1": 1400, "y1": 980, "camera_revision": "horizon-goal-continue"},
+      "gray_ws_click": {"client_xy": [697, 612], "admit": true, "result": "MISS_OR_CAMERA_EDGE_TOPDOWN_STREET", "receipt": "dist/game-host/horizon-exec-20261110/order-upgrade-parts/gray-ws-click-receipt.json"},
+      "note": "White lot line visible; street RIGHT of line is OUTSIDE. Gardener-Bot on gray WS visible pre-click. Post-click top-down street — restore Shift+Enter; do not click asphalt."
+    },
     "proof_ceiling": "CONTRACT_HARNESS_NOT_LIVE_FOOTPRINT_MEASURE_NOT_BI002_CLOSE"
   },
   "lot_cardinal_semantics_20261110": {
-    "state": "CONTRACT_LANDED_NOT_LIVE_WORKSTATION_HIT",
+    "state": "CONTRACT_V2_STREET_CREEK_LANDED_NOT_LIVE_WORKSTATION_HIT",
     "owner": "contracts/lot-cardinal-semantics.v1.json",
     "library": "betterinstincts/lot_cardinal_semantics.py",
-    "consultation": "contracts/consultations/BI-LOT-CARDINAL-SEMANTICS-CV-LIBRARY-20261110.v1.json",
+    "consultation": "contracts/consultations/BI-STREET-CREEK-SIDES-EA-FILE-FIRST-20261110.v1.json",
     "authority_stack": [
       "EA_SAVE_OR_TRAY_PARSER_WHEN_AUTHORIZED",
       "LOT_FLOOR_MAP_GRAPH",
@@ -26,6 +31,12 @@
       "PRINTWINDOW_CV_CUES",
       "CAMERA_ROAM_LAST_RESORT"
     ],
+    "lot_sides": {
+      "STREET_SIDE": "asphalt/sidewalk OFF_LOT risk; drift TOWARD_STREET",
+      "CREEK_SIDE": "canal/water OFF_LOT risk; drift TOWARD_CREEK",
+      "helper": "assess_camera_side_drift",
+      "recovery": ["SAFE_CURSOR_REST", "SHIFT_ENTER"]
+    },
     "seed_relations": {
       "bathtub": "SAME_SIDE_AS hydroponic_garden",
       "fridge": "OPPOSITE_SIDE_AS hydroponic_garden + NEAR doors",
@@ -110,11 +121,11 @@
         ],
         "recovery": {
           "STREET_OR_ROOFTOP_OFF_FOCUS": "Enter then Shift+Enter if Enter left street/rooftop",
-          "TRAVELING_WITH_BANNER": "host.manage_worlds_travel_party_cancel_x PrintWindow [1055,22] (prior computer-use scale [1055,33] / canvas ~(800,25)); never crown/footprint",
-          "MANAGE_WORLDS_MAP": "exit/cancel unintended map; do not Enter-roam",
+          "TRAVELING_WITH_BANNER": "host.manage_worlds_travel_party_cancel_x PrintWindow [1055,22] (prior computer-use scale [1055,33] / canvas ~(800,25)); secondary bottom X [351,1053]; never crown/footprint/globe/Play/lot-pin",
+          "MANAGE_WORLDS_MAP": "exit/cancel unintended map; if TRAVELING WITH banner use cancel X; do not Enter-roam",
           "VIEWPORT_BLACK_OR_WHITE": "viewport.py ladder (distinct from scenery)"
         },
-        "forbidden": ["CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "CLICK_VOID", "SWITCH_CONTROL_EMPTY_STREET_ABOVE_STRIP"],
+        "forbidden": ["CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "CLICK_VOID", "SWITCH_CONTROL_EMPTY_STREET_ABOVE_STRIP", "WORLD_GLOBE_WHILE_TRAVELING", "PLAY_OR_LOT_PIN_WHILE_MAPPING"],
         "tests": "tests/test_lot_focus.py::SceneryFocusHardeningTests",
         "fixtures": "tests/fixtures/scenery_focus/ (crops from horizon-exec-20261110/bi002; originals preserved)",
         "consultation": "contracts/consultations/BI-SCENERY-FOCUS-20261110.v1.json",
@@ -132,6 +143,25 @@
       "after_cancel": {"returned_to": "Live household lot", "funds": 649897, "clock": "Fri 8:54 AM", "active": "Servo", "charlee": "REMOTE_BRIEFCASE"},
       "contract": "contracts/fixed-ui-click-map.v1.json v15 manage_worlds_travel_party_1920x1080 + switch_control_chip_trap",
       "next_gate": "Charlee Switch Control → Eat → live_cert trial 3+ on run bi002-game1-20261107 (baseline still 2/5)"
+    },
+    "traveling_with_surface_map_20261110": {
+      "state": "OFFLINE_SEEDED_OPERATOR_FRAME",
+      "consultation": "contracts/consultations/BI-TRAVELING-WITH-MANAGE-WORLDS-MAP-20261110.v1.json",
+      "contract": "contracts/fixed-ui-click-map.v1.json v19#manage_worlds_travel_party_1920x1080",
+      "evidence": "dist/game-host/horizon-exec-20261110/order-upgrade-parts/op-frame-traveling-with-willow-creek-upscaled.png",
+      "live_at_map_time": "Live+PAUSED street (pw-traveling-with-map.png) — did not re-enter travel to measure",
+      "seeds": {
+        "cancel_x_top": {"id": "host.manage_worlds_travel_party_cancel_x", "xy": [1055, 22]},
+        "cancel_x_bottom": {"id": "host.manage_worlds_travel_party_cancel_x_bottom", "xy": [351, 1053]},
+        "forbidden_footprint": {"id": "host.forbidden_manage_worlds_travel_party_footprint", "xy": [1096, 20], "prior": [1090, 22]},
+        "forbidden_crown": {"id": "host.forbidden_manage_worlds_travel_party_crown", "xy": [1136, 20], "prior": [1131, 22]},
+        "forbidden_globe": {"id": "host.forbidden_manage_worlds_world_globe", "xy": [1860, 1010]},
+        "forbidden_play_while_mapping": {"id": "host.forbidden_manage_worlds_travel_confirm_play", "xy": [1811, 1033]},
+        "forbidden_lot_pin": {"id": "host.forbidden_manage_worlds_selected_lot_pin", "xy": [1643, 780], "camera_dependent": true},
+        "portraits": [[70, 930], [145, 930], [295, 960]]
+      },
+      "search_filter_chrome": false,
+      "next": "Stay PAUSED; footprint-admit gray WS/computer Order parts; cancel X only if travel returns"
     },
     "switch_control_click_trap_20261110": {
       "state": "PROVED_LIVE_MISS_TRAP",
@@ -163,17 +193,22 @@
       "next_gate": "Switch Control to Charlee → Eat → live_cert trial 3+ on bi002-game1-20261107 (baseline still 2/5)"
     },
     "lot_geometry_source_of_truth_20261110": {
-      "decision": "NO_EA_SAVE_FLOORPLAN_PARSER_YET",
+      "decision": "NO_EA_SAVE_FLOORPLAN_PARSER_YET_BUT_EA_FILE_FIRST_AUTHORITY",
       "operator_question": "Is there a game file to analyze instead of recreating a manual lot map?",
-      "answer": "Yes candidates exist (Slot_*.save DBPF zone graphs; My Library building/lot blueprints; tray metadata) but BetterInstincts does not decode lot floors/rooms from them yet.",
+      "answer": "Yes — prefer Documents/Electronic Arts save/Tray READ_ONLY when authorized. Cardinal/street-creek/PrintWindow are FALLBACK only. Parser not landed; Slot_00000007 not opened this slice.",
+      "authority_stack_owner": "contracts/lot-geometry-source.v1.json v2",
       "repo_ceiling": "docs/HOUSE_STATE.md proof_ceiling OFFLINE_RECURSIVE_LOT_MODEL_NOT_EA_SAVE_API_NOT_LOT_RESTORE_PROOF",
       "what_exists_now": [
+        "lot-geometry-source authority_stack EA Documents first",
+        "path + Slot_00000007/Tray metadata (no payload open)",
         "house_state RECURSIVE_LOT_MODEL from observations",
-        "lot_floor_map under installation profiles (Build/Buy observation)",
-        "betterinstincts/dbpf.py TGI index for mod .package only — NOT save geometry"
+        "lot_floor_map under installation profiles",
+        "FALLBACK: lot_boundary + street/creek cardinal drift",
+        "betterinstincts/dbpf.py TGI index — NOT save geometry until authorized spike"
       ],
       "research_20261110_offline": {
-        "consultation": "contracts/consultations/BI-LOT-GEOMETRY-SOURCE-OF-TRUTH-20261110.v1.json",
+        "consultation": "contracts/consultations/BI-STREET-CREEK-SIDES-EA-FILE-FIRST-20261110.v1.json",
+        "prior_consultation": "contracts/consultations/BI-LOT-GEOMETRY-SOURCE-OF-TRUTH-20261110.v1.json",
         "stub": "contracts/lot-geometry-source.v1.json",
         "installation_profiles_doc": "docs/INSTALLATION_PROFILES.md does NOT document EA Documents paths (LOCALAPPDATA BetterInstincts only)",
         "windows_paths": {
@@ -577,6 +612,7 @@
     "0b. While paused — UI map / Needs O measure-only / queue ALL household actions; unpause DENIED until queues set",
     "1. DONE — living Hunger subject attested on LabLab after Load Slot_00000007 (never delete saves)",
     "2. DONE — Manage Worlds travel-cancel PrintWindow [1055,22] (prior scale [1055,33] / canvas 800,25); FORBIDDEN footprint~1090 / crown~1131; Esc≠cancel",
+    "2b. DONE — TRAVELING WITH surface map fixed-ui v19 (bottom X [351,1053]; portraits; forbidden globe/Play-while-mapping/lot-pin; operator frame); street/creek+EA-file-first owners retained",
     "3. DONE — Switch Control click trap annotated: Charlee magenta bbox x431-480 y1060-1075; face hover ~(455,1035); chip just above strip y~898-922; ~(455,900) MISS re-opens TRAVELING WITH — click pill text, not empty street / lightning-alone",
     "4. DONE — Switch Control + travel-cancel + calendar X [1440,254]; Charlee control restored (school then home)",
     "5. AFTER parts+queues — CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3 on bi002-game1-20261107 (baseline still 2/5 modified 0/5). Recovery: dismiss Ask-for-Help Cleaning modal X ~[1138,222]; Charlee portrait [450,1055]; Buy exit F1+live.top_live_people [1585,35]; never Sell; NEVER delete saves; no BI-003 claim",

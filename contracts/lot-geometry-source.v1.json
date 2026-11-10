@@ -1,18 +1,34 @@
 {
   "schema": "betterinstincts.lot-geometry-source/v1",
-  "version": 1,
+  "version": 2,
   "status": "RESEARCH_STUB_NO_PARSER",
-  "consultation": "contracts/consultations/BI-LOT-GEOMETRY-SOURCE-OF-TRUTH-20261110.v1.json",
+  "consultation": "contracts/consultations/BI-STREET-CREEK-SIDES-EA-FILE-FIRST-20261110.v1.json",
+  "prior_consultation": "contracts/consultations/BI-LOT-GEOMETRY-SOURCE-OF-TRUTH-20261110.v1.json",
   "horizon_lane": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json#live_truth_20261110.lot_geometry_source_of_truth_20261110",
-  "purpose": "Offline path and capability research for possible future READ_ONLY save/Tray analysis. Does not decode floors/rooms and does not replace house_state or lot_floor_map.",
+  "purpose": "PREFERRED path to lot/town identity is authorized READ_ONLY parse of Sims user-data under Documents/Electronic Arts (save Slot_*.save / Tray). Cardinal, street/creek, and PrintWindow maps are FALLBACK only — do not remap the town from screenshots when EA files can answer. This stub records paths, dry-run limits, and the next authorized spike. Does not decode floors/rooms yet.",
   "proof_ceiling": "PATH_AND_DBPF_INDEX_RESEARCH_NOT_EA_FLOORPLAN_PARSER_NOT_BI002_CLOSE",
-  "authoritative_until_parser": [
-    "PrintWindow observations",
-    "betterinstincts/house_state.py RECURSIVE_LOT_MODEL",
-    "betterinstincts/lot_floor_map.py (profile-local; never Sims saves)",
-    "betterinstincts/lot_cardinal_semantics.py (FALLBACK corner/side relations only)"
+  "authority_stack": [
+    "EA_DOCUMENTS_SAVE_OR_TRAY_READONLY_WHEN_AUTHORIZED",
+    "DBPF_INDEX_KEYS_ONLY_ON_AUTHED_OR_DISPOSABLE_COPY",
+    "LOT_FLOOR_MAP_PROFILE_GRAPH",
+    "LOT_BOUNDARY_FOOTPRINT",
+    "CARDINAL_STREET_CREEK_FALLBACK",
+    "PRINTWINDOW_OBSERVATION_LAST"
   ],
-  "docs_note": "docs/INSTALLATION_PROFILES.md owns BetterInstincts LOCALAPPDATA preferences and profile floor maps; it does NOT own EA Documents paths.",
+  "authority_rule": "Agents MUST prefer EA file-backed lot identity over inventing external town maps or remapping Bargain Bendh from PrintWindow alone. FALLBACK layers activate only when EA parse is unavailable or unauthorized.",
+  "fallback_only": [
+    "betterinstincts/lot_cardinal_semantics.py",
+    "contracts/lot-cardinal-semantics.v1.json#lot_sides_bargain_bendh_20261110",
+    "PrintWindow street/creek cues",
+    "camera roam"
+  ],
+  "authoritative_until_parser": [
+    "EA path + existence metadata (this contract)",
+    "betterinstincts/house_state.py RECURSIVE_LOT_MODEL (offline)",
+    "betterinstincts/lot_floor_map.py (profile-local; never Sims saves as store)",
+    "FALLBACK: lot_boundary + lot_cardinal_semantics + PrintWindow"
+  ],
+  "docs_note": "docs/INSTALLATION_PROFILES.md owns BetterInstincts LOCALAPPDATA preferences and profile floor maps; it does NOT own EA Documents paths. EA Documents ownership for geometry research is THIS contract.",
   "windows_ea_user_data": {
     "root_template": "%USERPROFILE%\\Documents\\Electronic Arts\\The Sims 4",
     "saves_dir_template": "%USERPROFILE%\\Documents\\Electronic Arts\\The Sims 4\\saves",
@@ -52,6 +68,25 @@
       "note": "No Sims path env overrides present; EA default Documents tree used"
     }
   },
+  "file_backed_lot_identity_progress": {
+    "state": "PATHS_AND_METADATA_LANDED_PARSER_NOT_AUTHORIZED",
+    "proved": [
+      "EA Documents root + saves + Tray templates",
+      "Slot_00000007 exists (metadata only)",
+      "Tray file_count + extensions (no blueprint extensions yet)",
+      "dbpf.read_package_index dry-run limits documented"
+    ],
+    "not_proved": [
+      "DBPF index of Slot_00000007",
+      "zone/lot TGI identification",
+      "floor/room decode"
+    ],
+    "forbidden_this_slice": [
+      "OPEN_SLOT_00000007",
+      "COPY_SLOT_WITHOUT_OPERATOR_AUTH",
+      "CLAIM_FLOORPLAN_PARSER"
+    ]
+  },
   "dbpf_read_only_dry_run": {
     "module": "betterinstincts/dbpf.py",
     "api": "read_package_index(path, max_reported<=256)",
@@ -72,15 +107,18 @@
         "INDEX_KEYS_ONLY — not floor/room/zone-graph decode"
       ],
       "executed_on_real_save_this_slice": false,
-      "reason_not_executed": "Operator lane: do not open/mutate real saves; dry-run proposal only"
+      "reason_not_executed": "Operator: do not open Slot_00000007 without explicit auth; prefer disposable copy spike"
     },
-    "plan_ceiling_quote": "betterinstincts/dbpf.py TGI index for mod .package only — NOT save geometry"
+    "plan_ceiling_quote": "betterinstincts/dbpf.py TGI index for mod .package only — NOT save geometry until authorized spike"
   },
   "forbidden": [
     "EA_FLOORPLAN_PARSER_CLAIM",
     "AUTO_DISCOVER_AND_WRITE_DOCUMENTS_EA",
     "DELETE_OR_OVERWRITE_SLOT_00000007",
+    "OPEN_SLOT_00000007_WITHOUT_OPERATOR_AUTH",
     "TREAT_TRAY_OR_SAVE_AS_LOT_FLOOR_MAP_CANONICAL",
+    "INVENT_EXTERNAL_TOWN_MAP_AS_PRIMARY",
+    "REMAP_TOWN_FROM_PRINTWINDOW_WHEN_EA_PATH_AVAILABLE",
     "CLOSE_BI_002_FROM_RESEARCH"
   ],
   "next_authorized_spike": {

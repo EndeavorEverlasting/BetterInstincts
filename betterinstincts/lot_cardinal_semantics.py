@@ -201,6 +201,95 @@ def assess_workstation_candidate(
     }
 
 
+def assess_camera_side_drift(
+    *,
+    scenery_tokens: Optional[Sequence[str]] = None,
+    dominant_side: Optional[str] = None,
+    cfg: Optional[Mapping[str, Any]] = None,
+) -> dict[str, Any]:
+    """Detect camera drift toward STREET_SIDE (asphalt) or CREEK_SIDE (canal).
+
+    FALLBACK orientation for Bargain Bendh — does not replace lot_focus or
+    footprint admit. Recovery: SAFE_CURSOR_REST then Shift+Enter.
+    """
+    cfg = cfg or load_contract()
+    sides = cfg.get("lot_sides_bargain_bendh_20261110") or {}
+    street = sides.get("STREET_SIDE") if isinstance(sides.get("STREET_SIDE"), Mapping) else {}
+    creek = sides.get("CREEK_SIDE") if isinstance(sides.get("CREEK_SIDE"), Mapping) else {}
+    tokens = {str(t).upper() for t in (scenery_tokens or [])}
+    street_cues = {str(c).upper() for c in (street.get("cues") or [])}
+    creek_cues = {str(c).upper() for c in (creek.get("cues") or [])}
+    side = str(dominant_side or "").upper()
+    if side in {"CANAL_SIDE", "WATER_SIDE"}:
+        side = "CREEK_SIDE"
+    if side in {"ASPHALT_SIDE", "SIDEWALK_EDGE"}:
+        side = "STREET_SIDE"
+
+    toward_street = bool(tokens & street_cues) or side == "STREET_SIDE"
+    toward_creek = bool(tokens & creek_cues) or side == "CREEK_SIDE"
+    if toward_street and toward_creek:
+        # Both visible: prefer explicit dominant_side, else AMBIGUOUS_EDGE
+        if side == "STREET_SIDE":
+            toward_creek = False
+        elif side == "CREEK_SIDE":
+            toward_street = False
+        else:
+            return {
+                "triggered": True,
+                "drift": "AMBIGUOUS_STREET_AND_CREEK",
+                "gate": "LOT_SIDE_DRIFT_AMBIGUOUS",
+                "risk": "OFF_LOT",
+                "recovery": ["SAFE_CURSOR_REST", "SHIFT_ENTER"],
+                "tokens_hit": sorted(tokens & (street_cues | creek_cues)),
+                "next": "REOBSERVE_WHICH_LOT_EDGE_DOMINATES",
+                "authority": "CARDINAL_SEMANTIC_MODEL_FALLBACK",
+                "outranked_by": ["EA_SAVE_OR_TRAY_PARSER_WHEN_AUTHORIZED", "LOT_BOUNDARY_FOOTPRINT"],
+                "proof_ceiling": PROOF,
+            }
+
+    if toward_street:
+        return {
+            "triggered": True,
+            "drift": "TOWARD_STREET",
+            "side": "STREET_SIDE",
+            "gate": "STREET_SIDE_OFF_LOT_RISK",
+            "risk": street.get("risk") or "OFF_LOT_ASPHALT",
+            "recovery": list(street.get("recovery") or ["SAFE_CURSOR_REST", "SHIFT_ENTER"]),
+            "tokens_hit": sorted(tokens & street_cues),
+            "forbidden": ["CLICK_ASPHALT", "STREET_ROAM", "HARDCODED_FIELD_XY"],
+            "next": "PARK_SAFE_CURSOR_REST_THEN_SHIFT_ENTER_ON_LOT",
+            "authority": "CARDINAL_SEMANTIC_MODEL_FALLBACK",
+            "outranked_by": ["EA_SAVE_OR_TRAY_PARSER_WHEN_AUTHORIZED", "LOT_BOUNDARY_FOOTPRINT"],
+            "proof_ceiling": PROOF,
+        }
+    if toward_creek:
+        return {
+            "triggered": True,
+            "drift": "TOWARD_CREEK",
+            "side": "CREEK_SIDE",
+            "gate": "CREEK_SIDE_OFF_LOT_RISK",
+            "risk": creek.get("risk") or "OFF_LOT_WATER",
+            "recovery": list(creek.get("recovery") or ["SAFE_CURSOR_REST", "SHIFT_ENTER"]),
+            "tokens_hit": sorted(tokens & creek_cues),
+            "forbidden": ["CLICK_CANAL", "CREEK_ROAM", "HARDCODED_FIELD_XY"],
+            "next": "PARK_SAFE_CURSOR_REST_THEN_SHIFT_ENTER_ON_LOT",
+            "authority": "CARDINAL_SEMANTIC_MODEL_FALLBACK",
+            "outranked_by": ["EA_SAVE_OR_TRAY_PARSER_WHEN_AUTHORIZED", "LOT_BOUNDARY_FOOTPRINT"],
+            "proof_ceiling": PROOF,
+        }
+    return {
+        "triggered": False,
+        "drift": None,
+        "gate": None,
+        "risk": None,
+        "recovery": [],
+        "tokens_hit": [],
+        "next": "NO_STREET_OR_CREEK_DRIFT",
+        "authority": "CARDINAL_SEMANTIC_MODEL_FALLBACK",
+        "proof_ceiling": PROOF,
+    }
+
+
 def assess_library_search_admission(
     *,
     current_search_text: Optional[str],

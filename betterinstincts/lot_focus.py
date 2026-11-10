@@ -400,8 +400,21 @@ def recovery_for_scenery_focus(scenery_focus: str) -> dict[str, Any]:
                 "action": "EXIT_OR_CANCEL_UNINTENDED_MANAGE_WORLDS",
                 "note": "Do not Enter-roam the travel map; cancel unintended travel or return to Live lot.",
             },
+            "if_traveling_with_banner": {
+                "action": "CANCEL_TRAVELING_WITH_PARTY",
+                "seed": _TRAVEL_CANCEL_SEED,
+                "client_xy": list(_TRAVEL_CANCEL_CLIENT_XY),
+                "prefer": "TOP_BANNER_X",
+            },
             "forbidden": list(_COMMON_FORBIDDEN)
-            + ["ENTER_AS_MAP_ROAM", "ESC_AS_TRAVEL_CANCEL"],
+            + [
+                "ENTER_AS_MAP_ROAM",
+                "ESC_AS_TRAVEL_CANCEL",
+                "CLICK_TRAVEL_PARTY_FOOTPRINT",
+                "CLICK_TRAVEL_PARTY_CROWN",
+                "CLICK_WORLD_GLOBE_WHILE_TRAVELING",
+                "CLICK_PLAY_OR_LOT_PIN_WHILE_MAPPING",
+            ],
         }
     if scenery_focus == SCENERY_TRAVELING:
         return {
@@ -412,10 +425,18 @@ def recovery_for_scenery_focus(scenery_focus: str) -> dict[str, Any]:
                 "client_xy": list(_TRAVEL_CANCEL_CLIENT_XY),
                 "canvas_1456x840_xy": list(_TRAVEL_CANCEL_CANVAS_XY),
                 "prefer": "TOP_BANNER_X",
+                "secondary_seed": "host.manage_worlds_travel_party_cancel_x_bottom",
             },
             "forbidden": list(_COMMON_FORBIDDEN)
-            + ["ESC_AS_TRAVEL_CANCEL", "CLICK_BANNER_TEXT"],
-            "note": "Cancel X is first circular icon after household name; never footprint or crown.",
+            + [
+                "ESC_AS_TRAVEL_CANCEL",
+                "CLICK_BANNER_TEXT",
+                "CLICK_TRAVEL_PARTY_FOOTPRINT",
+                "CLICK_TRAVEL_PARTY_CROWN",
+                "CLICK_WORLD_GLOBE_WHILE_TRAVELING",
+                "CLICK_PLAY_OR_LOT_PIN_WHILE_MAPPING",
+            ],
+            "note": "Cancel X is first circular icon after household name; never footprint, crown, globe, Play, or lot pin.",
         }
     if scenery_focus == SCENERY_VIEWPORT:
         return {
