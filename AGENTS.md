@@ -10,10 +10,6 @@ Ontology revision 4 embraces any user-chosen game/mod, mouse, keyboard, voice/as
 
 `contracts/peripheral-authority.v1.json` and `scripts/check_peripheral_boundary.py` deny game agents Windows Bluetooth service, driver, pairing and input-preference changes. Idle/player permits never grant OS repair authority: route incidents to SysAdminSuite Field Workflow. Run the checker and `tests.test_peripheral_boundary` with ontology preflight; see `docs/PERIPHERAL_INCIDENT.md`.
 
-## Computer upgrade parts
-
-Five-part on-demand computer menu: `docs/UPGRADE_PARTS_FORCE.md`. Only observed labels; cooperative per-effect queue, player reclaim, spending gate, no OS/peripheral changes, autorun or blind replay. P08 live proof remains separate.
-
 ## Invariants
 
 - **Player first:** explicit user control wins; no uncontrolled loops. Preserve any chosen interaction shape.
@@ -27,7 +23,8 @@ Five-part on-demand computer menu: `docs/UPGRADE_PARTS_FORCE.md`. Only observed 
 
 ## Existing operator/agent handoffs
 
-- Judgment P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`. Cursor shell/file hooks belong to PR #161, not the source scanner.
+- Judgment P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`.
+- Cursor pre-effect guard: `.cursor/hooks.json` → `.cursor/hooks/operator_boundary.py` (`contracts/operator-desktop-boundary.v1.json`). No agent may disable, dodge or remove the guard. Hooks must activate locally; separate tools need separate enforcement.
 
 ## Trajectory and proof
 
