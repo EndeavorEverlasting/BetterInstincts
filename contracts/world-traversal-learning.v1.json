@@ -1,0 +1,74 @@
+{
+  "schema": "betterinstincts.world-traversal-learning/v1",
+  "version": 1,
+  "purpose": "Evaluate and learn from world-object traversal, not fixed chrome; opt-in to existing camera-first host target route",
+  "frames": {
+    "max": 12,
+    "min_for_lock": 2,
+    "required_source": "HOST_CAPTURE",
+    "confidence_floor": 0.75,
+    "cue_sources": [
+      "VISUAL_MASK",
+      "EDGE_CONTRAST",
+      "GAME_SIGNAL",
+      "OPERATOR_REVIEW"
+    ],
+    "each_frame_requires_two_distinct_cue_sources": true,
+    "negative_confirmations": 2,
+    "camera_changes_invalidate_all_prior_frames": true,
+    "pointer_context_required": "HOVERING_TARGET"
+  },
+  "classifier": {
+    "states": [
+      "LOCKED",
+      "HIGHLIGHT_LOST",
+      "TARGET_LOST",
+      "TARGET_IDENTITY_CHANGED",
+      "TARGET_OCCLUDED",
+      "CAMERA_CHANGED_REACQUIRE",
+      "HIGHLIGHT_UNVERIFIED",
+      "HIGHLIGHT_TRANSIENT",
+      "HIGHLIGHT_AMBIGUOUS",
+      "TARGET_TRACK_DRIFT",
+      "HIGHLIGHT_NOT_EXPECTED"
+    ],
+    "lost_requires_two_absent_frames": true,
+    "unknown_never_grants_click": true
+  },
+  "learning": {
+    "model_schema": "betterinstincts.world-traversal.model/v1",
+    "max_contexts": 64,
+    "max_examples_per_update": 128,
+    "max_count_per_context": 4096,
+    "min_examples_to_rank": 8,
+    "prior_alpha": 1,
+    "prior_beta": 1,
+    "confidence_bound_z": 1.645,
+    "allow_outcome_sources": [
+      "GAME_EVENT",
+      "OPERATOR_REVIEW"
+    ],
+    "outcome_labels": [
+      "SUCCESS",
+      "FAILURE"
+    ],
+    "strategies_are_contextual_not_authorities": true
+  },
+  "boundaries": {
+    "execute_allowed_default": false,
+    "forbidden": [
+      "SEND_INPUT",
+      "AUTO_RECLICK",
+      "BLIND_WORLD_CLICK",
+      "REUSE_PRE_PAN_COORDINATES",
+      "OVERWRITE_GAME_SAVES",
+      "PERIPHERAL_SERVICE_CHANGES",
+      "PLAYER_CONTROL_OVERRIDE",
+      "AUTO_COLLECT_SCREENSHOTS",
+      "PERSIST_PERSONAL_SIM_IDENTITIES"
+    ],
+    "host_stack_opt_in_field": "world_target.highlight_frames",
+    "separate_live_admission": "screen_admit + lot_boundary + player_presence + exact patch + operator permit"
+  },
+  "proof_ceiling": "OFFLINE_SUPPLIED_HIGHLIGHT_EVIDENCE_AND_OUTCOMES_NOT_PIXEL_DETECTOR_OR_LIVE_GAME_CERT"
+}

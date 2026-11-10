@@ -380,9 +380,10 @@ class HostStackIntegrationTests(unittest.TestCase):
             client_width=1920,
             client_height=1080,
         )
-        self.assertEqual(turn["next_gate"], "CAMERA_SAFE_REST")
-        self.assertEqual(turn["fallback"]["mechanism"], "SAFE_CURSOR_REST")
+        self.assertEqual(turn["next_gate"], "EDGE_CREEK_REGRESSION")
+        self.assertEqual(turn["fallback"]["mechanism"], "EDGE_MOUSE_PARK_TO_CREEK")
         self.assertIn("EDGE_MOUSE_PARK", turn["fallback"]["forbidden"])
+        self.assertIsNotNone(turn["fallback"]["recovery_chord"])
 
     def test_scan_plan_gate(self):
         turn = evaluate_turn(

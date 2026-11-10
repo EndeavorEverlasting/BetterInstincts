@@ -59,8 +59,22 @@ def load_contract(path: Path = CONTRACT) -> dict:
             raise UIMicrosystemError("MICROSYSTEM_TWO_CUES_REQUIRED")
         for action_id, action in actions.items():
             if (not isinstance(action_id, str) or not TOKEN.fullmatch(action_id)
-                    or not isinstance(action, dict)
-                    or action.get("status") != "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"):
+                    or not isinstance(action, dict)):
+                raise UIMicrosystemError("MICROSYSTEM_ACTION_UNSAFE")
+            if action.get("status") == "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION":
+                continue
+            # The *one* measured skills scrollbar drag is owned by the
+            # fixed-UI planner, not by this native panel-click interface.
+            # Enforce the named route rather than accepting arbitrary measured
+            # statuses or granting a hitbox click shortcut.
+            if not (
+                panel_id == "skills" and action_id == "expand_burger_bar"
+                and action.get("status") == "PRINTWINDOW_ENDPOINTS_MEASURED_1920x1080"
+                and action.get("fixed_ui_owner")
+                    == "contracts/fixed-ui-click-map.v1.json#skills_burger_bar_1920x1080"
+                and action.get("planner")
+                    == "betterinstincts.fixed_ui_click_map.plan_skills_burger_expand"
+            ):
                 raise UIMicrosystemError("MICROSYSTEM_ACTION_UNSAFE")
     return data
 
@@ -163,6 +177,9 @@ def resolve_action(
     prefix = panel_id + "."
     if not target_id.startswith(prefix) or target_id[len(prefix):] not in panel["actions"]:
         raise UIMicrosystemError("TARGET_NOT_IN_PANEL")
+    if panel["actions"][target_id[len(prefix):]].get("status") == "PRINTWINDOW_ENDPOINTS_MEASURED_1920x1080":
+        # Measured drag does not become an ordinary click by registry lookup.
+        raise UIMicrosystemError("ACTION_OWNED_BY_FIXED_UI_DRAG_PLANNER")
     return {
         "panel_id": panel_id, "target_id": target_id, "mode": mode,
         "panel_cues": panel["cues"],

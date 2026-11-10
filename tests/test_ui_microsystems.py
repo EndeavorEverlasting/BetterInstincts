@@ -1,4 +1,5 @@
 """P82/P95: semantic Sims panels share one independently admitted native clicker."""
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -80,6 +81,21 @@ def panel_observation(**updates):
 
 
 class MicrosystemContractTests(unittest.TestCase):
+    def test_measured_scroll_is_discoverable_but_not_generic_click(self):
+        cfg = load_contract()
+        measured = cfg["panels"]["skills"]["actions"]["expand_burger_bar"]
+        self.assertEqual(measured["status"], "PRINTWINDOW_ENDPOINTS_MEASURED_1920x1080")
+        self.assertEqual(measured["planner"], "betterinstincts.fixed_ui_click_map.plan_skills_burger_expand")
+        with self.assertRaisesRegex(UIMicrosystemError, "ACTION_OWNED_BY_FIXED_UI_DRAG_PLANNER"):
+            resolve_action("skills", "skills.expand_burger_bar", mode="LIVE", cfg=cfg)
+        bad = json.loads(json.dumps(cfg))
+        bad["panels"]["skills"]["actions"]["expand_burger_bar"]["planner"] = "unverified.click"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ui-microsystems.v1.json"
+            path.write_text(json.dumps(bad), encoding="utf-8")
+            with self.assertRaisesRegex(UIMicrosystemError, "MICROSYSTEM_ACTION_UNSAFE"):
+                load_contract(path)
+
     def test_inventory_has_distinct_menus_without_unsafe_pixel_defaults(self):
         cfg = load_contract()
         rows = inventory(cfg=cfg)["panels"]

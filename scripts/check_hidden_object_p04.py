@@ -46,7 +46,12 @@ def verify(root: Path = ROOT) -> dict:
         raise ValueError("P04_UNSAFE_HOST_AUTHORITY")
 
     required_text = {
-        "AGENTS.md": ["## P04 hidden-object discovery", GUIDE_COMMAND, AUDIT_COMMAND, HANDOFF],
+        # The root is intentionally compact; it MUST route to its mandatory
+        # detailed owner, where the P04 workflow and commands are preserved.
+        "AGENTS.md": ["docs/AGENT_OPERATING_RULES.md"],
+        "docs/AGENT_OPERATING_RULES.md": [
+            "## P04 hidden-object discovery", GUIDE_COMMAND, AUDIT_COMMAND, HANDOFF,
+        ],
         HANDOFF: [GUIDE_COMMAND, AUDIT_COMMAND, *ORDER,
                   "Ctrl+Shift+C", "testingcheats true", "bb.showhiddenobjects",
                   "bb.showliveeditobjects", "F2", "DEBUG"],
