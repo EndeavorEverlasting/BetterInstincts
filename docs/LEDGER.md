@@ -1,3 +1,13 @@
+## 2026-11-10 — BI-002 adverse: Charlee starvation → playable ghost
+
+**Operator:** Lab hunger drain without queued food is forbidden.
+
+**CHANGED:** `stats.set_stat commodity_Hunger -100` for trial setup + failed fridge HIT → Charlee died of starvation during watch. Chose **Become a Playable Ghost** (kept LabLab household; not freeroaming). Receipt `dist/game-host/horizon-exec-20261110/bi002/adverse-charlee-starvation.json`. Achievement GHOSTLY observed.
+
+**Prevention:** Never drain hunger until fridge/food interaction is queued and admitted; pause after set_stat; Prefer organic Bernice/other living human for remaining vanilla trials while Charlee is ghost.
+
+**Baseline stays 2/5** — death watch is not an eat trial.
+
 ## 2026-11-10 — BI-002 baseline 2/5 + Charlee portrait remesaure
 
 **Operator:** Horizon gate remains BI-002 hunger live cert.
