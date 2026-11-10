@@ -877,10 +877,10 @@ class SkillsPanelRosterRecordTests(unittest.TestCase):
                 members=5,
                 roster_keys=["SIM_A_P0", "SIM_B_P1", "SIM_C_P2", "SIM_D_P3"],
             )
-        bernice = completion_member_key("fixture-save-household-session", 1, "SIM_B_P1")
+        sim_b = completion_member_key("fixture-save-household-session", 1, "SIM_B_P1")
         snap = record_member_panel_snapshot(
             ledger,
-            member_key=bernice,
+            member_key=sim_b,
             observed_skills={"cooking": 10, "handiness": 10},
             display_name="Sim Beta",
             mark_unlisted_full_unlock_max=True,
@@ -914,11 +914,11 @@ class SkillsPanelRosterRecordTests(unittest.TestCase):
             completion_ledger=ledger,
         )
         # Sim Beta cooking+robotics panel-maxed => those cells skip; Evil still needs robotics.
-        bernice_units = [
+        sim_b_units = [
             u for u in plan["dispatch_units"]
             if u["member_key"].endswith("SIM_B_P1")
         ]
-        self.assertTrue(all(u["skip_dispatch"] for u in bernice_units))
+        self.assertTrue(all(u["skip_dispatch"] for u in sim_b_units))
         evil_robotics = [
             u for u in plan["dispatch_units"]
             if u["member_key"].endswith("SIM_A_P0") and u["skill_id"] == "robotics"
@@ -928,7 +928,7 @@ class SkillsPanelRosterRecordTests(unittest.TestCase):
 
 
 class TargetSimSkillAlgorithmTests(unittest.TestCase):
-    def test_evaluate_gaps_and_gated_plan_for_olga(self):
+    def test_evaluate_gaps_and_gated_plan_for_synthetic_sim(self):
         from betterinstincts.diy_skill_force import (
             assess_console_type_safety,
             assess_selection_identity,
