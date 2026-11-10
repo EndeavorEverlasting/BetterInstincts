@@ -1,0 +1,74 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-FRIDGE-CAMERA-SEEDS-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "Promote PrintWindow-proved fridge calibration (zoomed HIT [500,560], wide-zoom MISS [465,595]) into a camera-dependent seed block of fixed-ui-click-map, kept OUT of the fixed-HUD seed ledger; annotate Horizon plan living-subject gate (Bernice is a Servo, not a living hunger subject).",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "OBSERVATION",
+    "CLAIM",
+    "PLAYER_PRESENCE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/UI_CHROME.md",
+    "contracts/fixed-ui-click-map.v1.json",
+    "contracts/camera-traverse.v1.json",
+    "betterinstincts/fixed_ui_click_map.py",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "PRINTWINDOW_FRIDGE_PIE_HIT_SNACK_QUEUE_NOT_PROVED",
+  "player_save_control_impact": "Docs/contract/test only. No Sims input, no save or install file touched.",
+  "expected_outcome": "fixed-ui-click-map v8 camera_dependent_seeds_1920x1080 block (not ingested as fixed seeds); accessor + unit test documenting zoom precondition and wide-vs-zoomed non-equivalence; ledger note; Horizon plan living-subject annotation.",
+  "negative_tests": [
+    "camera-dependent seeds are never loaded by seed_targets_from_contract",
+    "HIT and stale coords differ and are farther apart than hit_radius",
+    "HIT requires zoom precondition; stale is wide-zoom only",
+    "zoom actuator never RIGHT_CLICK"
+  ],
+  "rollback_path": "Revert the commit; v7 contract and its seeds are untouched.",
+  "unresolved_unknowns": [
+    "Snack queue (Have Breakfast) not proved",
+    "Second camera-frame confirmation of [500,560]",
+    "Living human hunger subject"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-FRIDGE-CAMERA-SEEDS-20261110.v1.json",
+    "contracts/fixed-ui-click-map.v1.json",
+    "betterinstincts/fixed_ui_click_map.py",
+    "tests/test_fixed_ui_click_map.py",
+    "docs/LEDGER.md",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decided_at": "2026-11-10T10:55:00Z",
+  "decided_by": "cursor-local-agent",
+  "decision_rationale": "Offline promotion of already-captured PrintWindow evidence; prevents repeat of the wide-zoom fridge MISS."
+}
