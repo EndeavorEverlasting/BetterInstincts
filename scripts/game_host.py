@@ -243,6 +243,8 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
                 try:
                     ensure_ready()
                     matches = list(gui.locateAllOnScreen(template, grayscale=False))
+                except GateError:
+                    raise  # preserve the exact operator-handoff denial
                 except Exception as exc:
                     if type(exc).__name__ == "ImageNotFoundException":
                         matches = []
