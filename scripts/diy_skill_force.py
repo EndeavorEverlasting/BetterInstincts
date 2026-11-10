@@ -938,6 +938,9 @@ def _execute_household(
         if completion_ledger_path is not None
         else default_completion_ledger_path()
     )
+    expected_scope = household_plan.get("identity_scope_id")
+    if expected_scope and load_completion_ledger(ledger_path).get("scope_id") != expected_scope:
+        raise GateError("HOUSEHOLD_LEDGER_SCOPE_DRIFT")
     units = list(household_plan.get("dispatch_units") or [])
     if not units:
         # Legacy / empty plans: synthesize round-robin from member_plans + skills.
@@ -1012,6 +1015,8 @@ def _execute_household(
         omit: list[str] = []
         if not redo:
             ledger = load_completion_ledger(ledger_path)
+            if expected_scope and ledger.get("scope_id") != expected_scope:
+                raise GateError("HOUSEHOLD_LEDGER_SCOPE_DRIFT")
             omit = sorted(
                 completed_skill_ids_for_member(ledger, mkey, target_level=target)
             )
@@ -1258,7 +1263,7 @@ def execute_force_gaps(
     process_id: int,
     member_key: str,
     portrait_xy: tuple[int, int],
-    session_id: str = "household-n4-20261109",
+    session_id: str,
     bundle: str = "full_unlock",
     target_level: int = 10,
     redo: bool = False,
@@ -1283,17 +1288,18 @@ def execute_force_gaps(
         type_text,
     )
 
+    if not session_id or completion_ledger_path is None:
+        raise GateError("SCOPED_LOCAL_SESSION_AND_LEDGER_REQUIRED_FOR_FORCE_GAPS")
     safety = assess_console_type_safety(console_strip_observed=console_strip_observed)
     if safety.get("state") != "CONSOLE_TYPE_ALLOWED":
         raise GateError("CONSOLE_STRIP_REQUIRED_BEFORE_FORCE_GAPS")
 
-    ledger_path = (
-        Path(completion_ledger_path)
-        if completion_ledger_path is not None
-        else default_completion_ledger_path()
-    )
+    ledger_path = Path(completion_ledger_path)
     ledger = load_completion_ledger(ledger_path)
-    mk = completion_member_key(session_id, 0, member_key)
+    scope_id = ledger.get("scope_id")
+    if not scope_id or not str(member_key).startswith(scope_id + "::key::"):
+        raise GateError("FORCE_GAPS_MEMBER_MUST_MATCH_SCOPED_LEDGER")
+    mk = str(member_key)
     observed = member_observed_levels_from_ledger(ledger, mk)
     plan = plan_force_gaps_beat(
         member_key=member_key,
@@ -1885,18 +1891,16 @@ def main(argv: list[str] | None = None) -> int:
             if bundle is None and not skill_ids:
                 bundle = "full_unlock"
             accept = None if not getattr(args, "no_accept_reward_dialogs", False) else False
-            ledger_path = (
-                Path(args.completion_ledger)
-                if getattr(args, "completion_ledger", None)
-                else default_completion_ledger_path()
+            scope, scoped_path = _scoped_household_ledger(
+                args, required=bool(args.execute)
             )
-            if not ledger_path.is_absolute():
-                ledger_path = ROOT / ledger_path
+            ledger_path = _resolve_ledger_path(args, scoped_path)
             ledger = (
                 empty_completion_ledger()
                 if getattr(args, "redo", False)
                 else load_completion_ledger(ledger_path)
             )
+            _validate_scope_ledger(ledger, scope)
             plan = plan_household_skill_force(
                 members=int(args.members),
                 skill_ids=skill_ids,
@@ -1906,11 +1910,13 @@ def main(argv: list[str] | None = None) -> int:
                 accept_reward_dialogs=accept,
                 session_id=getattr(args, "session_id", None),
                 member_keys=list(args.roster_key) if args.roster_key else None,
+                household_scope=scope,
                 completion_ledger=ledger,
                 redo=bool(getattr(args, "redo", False)),
             )
             result = {"plan": plan, "execute": False, "detached": False}
             if args.execute:
+                save_completion_ledger(ledger, ledger_path)
                 result["live"] = _execute_household(
                     plan,
                     process_id=args.process_id,
