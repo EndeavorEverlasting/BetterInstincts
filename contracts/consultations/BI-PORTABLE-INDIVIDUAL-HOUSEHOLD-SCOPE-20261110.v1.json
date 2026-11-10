@@ -3,7 +3,7 @@
   "id": "BI-PORTABLE-INDIVIDUAL-HOUSEHOLD-SCOPE-20261110",
   "ontology": "contracts/ontology.v1.json",
   "ontology_blob_sha": "024057a4836967a64fc7a7dcd386a4bb5c6f30c7",
-  "proposed_capability": "Portable public BetterInstincts: bind per-installation profile and observed save/household/portrait identity to local-only progression data. No individual's Sim names, household rosters or progress are universal rules.",
+  "proposed_capability": "Portable public BetterInstincts: bind per-installation profile and observed save/household/portrait identity to local-only progression data. No individual's Sim names, household rosters or progress are universal rules. Generalize named-Sim live beat and remove hardcoded session/portrait examples from active reusable mechanics.",
   "operator_correction": "Public installs use different households, Sims, names, save state and profile preferences; agents must not commit one operator's Sim instances into shared source/tests/identity assumptions.",
   "affected_concepts": [
     "HOST_SESSION",
@@ -55,7 +55,8 @@
     "name-only, duplicate or missing local IDs denied",
     "legacy populated ledger cannot silently import",
     "no session hard-coded in live helper",
-    "no game or save mutation from offline planners"
+    "no game or save mutation from offline planners",
+    "new live beat requires explicitly observed target, never a hardcoded named Sim/portrait slot"
   ],
   "rollback_path": "Revert PR; leave existing local preferences and ignored/private ledgers intact. New scoped ledgers are never auto-migrated.",
   "unresolved_unknowns": [
@@ -72,7 +73,9 @@
     "tests/test_diy_skill_force.py",
     "tests/test_household_scope.py",
     "docs/HOUSEHOLD_SCOPE.md",
-    "README.md"
+    "README.md",
+    "contracts/diy-skill-force.v1.json",
+    "docs/DIY_SKILL_FORCE.md"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
