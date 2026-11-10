@@ -1,3 +1,13 @@
+## 2026-11-10 — Moonwake Closers: Order-first, source evidence and runbook restoration
+
+**P83:** Revalidated SysAdminSuite #562/#563 and BetterInstincts #160/#161/#162/#163/#164/#165/#166 against current default-branch truth. Identified a live-computer menu proposal defect: `MENU` preferred `Purchase Upgrade Parts` over `Order` when both labels were seen, violating the operator's explicit sequence. Also found a stale EA URL containing `/games/battlefield/`, plus a regressed v2 runbook missing the PR163 v3 spending/queue safety instructions.
+
+**P03 / P141:** Selected the smallest proven connected repair, not a replacement player controller or a new materials subsystem. Preserved PR163 CooperativeScreenQueue, fresh player/scene checks, existing spending cap, five-item purchase catalog and the general read-only source planner. Restored version-3 agent runbook with subsequent eco/insect fuel routing kept intact. Verified canonical EA source: `https://www.ea.com/ea-studios/motive/news/eco-lifestyle-gameplay`; EA Fabricator evidence remains `https://help.ea.com/en/articles/the-sims/the-sims-4/the-sims-4-civil-designer-career/`.
+
+**P124 / recurrence guard:** `betterinstincts/computer_upgrade_parts.py` MENU phase must choose `Order` in `ROOT`, require a separately observed `ORDER` submenu, and only then choose `Purchase Upgrade Parts`. Unknown scope, unobserved subtree, ambiguous target, repeated menu signatures and page exhaustion fail closed. Regression cases in `tests/test_computer_upgrade_parts.py` and `tests/test_acquisition_integration.py` protect this sequencing, source URL and full v3 safety runbook.
+
+**P04 / proof placement:** Provider/CI can prove offline decision/contract behavior but cannot observe the active Sims or local Cursor hooks. Local owner must independently demonstrate per-portrait selection, ROOT→ORDER→picker navigation with variable More Choices, explicit approval and money/inventory delta for one supervised purchase, plus Eco Fabricator/insect farm/generator effects without Build/Buy save mutation or changing OS Bluetooth/peripheral state. `plans/horizon.v1.json` gate **BI-002** remains open and is not promoted. Do not conflate game effect, OS pairing repair, repo merge, CI, and P08 live certification.
+
 ## 2026-11-10 — Insect Farm Bio-Fuel discovery design (not automation)
 
 - **Operator evidence:** provided gameplay screenshot shows the labels `Clean Out Insect Farm`, `Nurture`, `Collect Bio-Fuel`, and `Collect Cricket Flour`; it does **not** prove enabled states, farm readiness, successful collection, inventory custody or generator fuel.
