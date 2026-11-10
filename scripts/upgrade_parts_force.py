@@ -30,6 +30,7 @@ from betterinstincts.upgrade_parts_force import (
     acquisition_source_catalog,
     next_observed_menu_choice,
     plan_acquisition_routes,
+    plan_computer_order_domain,
     budget_snapshot,
     catalog_snapshot,
     evaluate_diy_parts_cert,
@@ -63,6 +64,13 @@ def main(argv: list[str] | None = None) -> int:
     acquire.add_argument("--packs-observed", nargs="*", default=None,
                          help="Actual observed installed pack names (never assumed)")
     acquire.add_argument("--player-directed", action="store_true")
+
+    order = sub.add_parser("order-domain", help="Plan any exact observed computer Order domain (NO clicks)")
+    order.add_argument("--portraits", required=True, help="Observed portrait JSON array")
+    order.add_argument("--domain", required=True, help="Target Order domain label")
+    order.add_argument("--item", action="append", required=True, help="Desired exact item label, repeatable")
+    order.add_argument("--selected-slots", type=int, nargs="*", default=None)
+    order.add_argument("--player-directed", action="store_true")
 
     menu = sub.add_parser("menu-next", help="Resolve exactly one observed menu page (NO clicks)")
     menu.add_argument("--options", required=True, help="JSON array of current visible labels")
@@ -121,6 +129,13 @@ def main(argv: list[str] | None = None) -> int:
                 requests=requests,
                 selected_slots=args.selected_slots,
                 packs_observed=args.packs_observed,
+                player_directed=bool(args.player_directed),
+            ))
+        if args.cmd == "order-domain":
+            portraits = json.loads(Path(args.portraits).read_text(encoding="utf-8"))
+            return _print(plan_computer_order_domain(
+                portraits=portraits, domain=args.domain, item_labels=args.item,
+                selected_slots=args.selected_slots,
                 player_directed=bool(args.player_directed),
             ))
         if args.cmd == "menu-next":
