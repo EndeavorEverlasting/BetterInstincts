@@ -17,3 +17,10 @@ The Bluetooth per-user service was stopped while the main Bluetooth service ran.
 Before this change, capture restored Sims and called SetForegroundWindow, introduced in commit 7fa277b8. This is a confirmed interference mechanism, not proof of the Bluetooth cause. Regression tests protect passive capture and minimized-window refusal. Live capture quality remains unverified.
 
 Do not repair capture failures by altering OS screenshot preferences or resetting peripherals. Human activity in Cursor, Codex or any other app takes precedence over game automation. Other game-input adapters still require their existing fresh player-presence and admission checks; passive capture does not grant input authority.
+
+
+## Fail-closed Cursor project boundary (stacked hardening after PR #160)
+
+The passive capture fix only covers PrintWindow. Additional project-level pre-effect hooks in `.cursor/hooks.json` route Cursor shell/file effects through `.cursor/hooks/operator_boundary.py` (contract: `contracts/operator-desktop-boundary.v1.json`). The default agent shell action is **DENY** unless it matches a narrow read-only/offline-test allowlist. Agent Delete is denied; agent Write/Edit is repository-scoped and cannot alter the guard configuration, source hooks, AGENTS.md or protected save files. OS service/device/driver/registry/Print Screen mutation and arbitrary shell launch are not available as an automatic capture-repair strategy.
+
+This is defense in depth, not a system-wide security boundary: project hooks must load locally and other IDEs/external computer-control tools need independent enforcement. No hook code changes the operator's Windows settings or installs a service. Verify the hook in Cursor's Hooks output before claiming live coverage. Offline tests in `tests/test_operator_boundary.py` are not proof of host-level activation.
