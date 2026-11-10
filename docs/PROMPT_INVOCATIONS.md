@@ -339,3 +339,8 @@ Exact P-number intents only; prompt bodies are not reproduced here (TokenCorrido
 ## 2026-11-10 P00/P01 interaction sovereignty
 
 P00 Governance Doctrine Installer and P01 Harness Infrastructure Builder (canonical definition owners in the table above) extend ontology revision 4 and the existing control_handoff/workflow_interop owners. Consultation BI-P00-P01-COOPERATIVE-INTERACTION-20261110 precedes mutation. Native transport, atomic effects and observed partial-intent reconciliation preserve arbitrary user interaction. No new scheduler, peripheral setting change or live gameplay certification.
+
+
+## 2026-11-10 /fifth-gear — computer Upgrade Parts command and player-control boundary
+
+Resolved from the Moonwake/TokenCorridor current prompt-invocation catalog `harness/exports/prompt-invocation-catalog.v1.json` and canonical `scripts/prompt_invocation_resolver.py`; exact ordered sequence **P95 → P82 → P08 → P07 → P124**. P95: map computer/menu/part/funds/inventory/queue call stacks; P82: prototype semantic navigation and negative cases; P08: distinguish live Sims host proof (not available in GitHub environment) from offline evidence; P07: commit, test, PR and seek mainline merge; P124: preserve single DIY/queue owners and regressions. Consultation: `contracts/consultations/BI-COMPUTER-UPGRADE-PARTS-HUMAN-FIRST-20261110.v1.json`. Files: `betterinstincts/computer_upgrade_parts.py`, `contracts/upgrade-parts-force.v1.json` v3, `scripts/upgrade_parts_force.py`, `tests/test_computer_upgrade_parts.py`, `docs/UPGRADE_PARTS_FORCE.md`. Never translate Fifth Gear into authority to change OS Bluetooth or any peripheral service.
