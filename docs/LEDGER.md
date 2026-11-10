@@ -1428,4 +1428,3 @@ action. Do not promote this offline feature to a shipped playable mod.
 **P07/P124:** Extend current owners; do not start a duplicate host daemon,
 fixed-pixel queue canceller or mutate EA files/saves. Preserve BI-002
 hunger certification as a separate active game-host gate.
-
