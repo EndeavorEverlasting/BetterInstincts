@@ -93,6 +93,22 @@ class AcquisitionRoutingIntegrationTests(unittest.TestCase):
             self.assertEqual(plan["known_item_availability"], "NOT_PROVEN_UNTIL_VISIBLE")
             self.assertFalse(plan["execute_allowed"])
 
+    def test_ea_eco_lifestyle_source_and_required_menu_stages(self):
+        data = json.loads((ROOT / "contracts/upgrade-parts-force.v1.json")
+                          .read_text(encoding="utf-8"))
+        menu = data["computer_purchase_menu"]
+        self.assertEqual(menu["required_menu_scopes"], ["ROOT", "ORDER"])
+        self.assertIn("OBSERVED_ORDER", menu["required_route"])
+        self.assertIn("OBSERVED_PURCHASE_UPGRADE_PARTS", menu["required_route"])
+        source = next(row for row in data["acquisition_routing"]["source_evidence"]
+                      if row["source"] == "EA Eco Lifestyle gameplay")
+        self.assertEqual(source["url"],
+                         "https://www.ea.com/ea-studios/motive/news/eco-lifestyle-gameplay")
+        self.assertNotIn("/battlefield/", source["url"])
+        guide = (ROOT / "docs/ACQUISITION_ROUTING.md").read_text(encoding="utf-8")
+        self.assertIn(source["url"], guide)
+        self.assertNotIn("www.ea.com/games/battlefield/news/eco-lifestyle-gameplay", guide)
+
     def test_semantic_contract_and_horizon_remain_consistent(self):
         graph = json.loads((ROOT / "contracts/ontology.v1.json").read_text(encoding="utf-8"))
         self.assertIn("OBSERVED_MENU_ROUTE", graph["concepts"])
