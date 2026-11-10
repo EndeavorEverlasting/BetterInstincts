@@ -1,3 +1,7 @@
+## 2026-11-10 — Adverse: Bernice Thermidor death modal (inventory → ghost)
+
+**CHANGED:** Live modal `BERNICE THERMIDOR HAS DIED` (previously played household inventory disposition). Chose **Have Sim's Inventory remain with their Ghost**. Never clicked **Delete Sim's Inventory**. Receipt `dist/game-host/horizon-exec-20261110/bi002/adverse-bernice-death.json`. Bernice was already a Servo (not living Hunger); living-subject blocker unchanged. Saves untouched.
+
 ## 2026-11-10 — Lot-focus OFF_LOT classify proved (needs game_version)
 
 **CHANGED:** `assess_lot_focus` correctly returns `OFF_LOT_STREET` + restore `CENTER_ACTIVE_SIM` when HOST_CAPTURE includes catalog `game_version` and canal/neighbor/street tokens; without `game_version` it stays `UNKNOWN`/`HOST_CAPTURE_AND_BUILD_REQUIRED`. Receipt `dist/game-host/horizon-exec-20261110/bi002/lot-focus-recognition-receipt.json`. Live Enter restore after canal fishing view remains partial (neighborhood-high still common).

@@ -12,7 +12,8 @@
       "charlee_lablab": "STARVED -> Become a Playable Ghost (adverse-charlee-starvation.json); death watch is NOT an eat trial",
       "olga": "death modal DISMISSED; playable-ghost path",
       "living_hunger_subject": "BLOCKED — see dist/game-host/horizon-exec-20261110/bi002/living-subject-blocker.json",
-      "living_subject_gate_20261110": {"bernice": "SERVO (Durability) — NOT a living human hunger subject; any note assuming Bernice=human is superseded", "charlee_olga": "playable ghosts (Ethereal Sustenance) — not hunger subjects", "need": "a living human (Evil P0 or remesaure / invite / load earlier save without deleting)", "prove_via": "Needs panel 6-bar Hunger (vs Servo Durability / ghost Ethereal)"}
+      "living_subject_gate_20261110": {"bernice": "SERVO then DIED (inventory remain with ghost; never Delete) — still NOT a living hunger subject", "charlee_olga": "playable ghosts (Ethereal Sustenance) — not hunger subjects", "need": "a living human (Evil P0 or remesaure / invite / load earlier save without deleting)", "prove_via": "Needs panel 6-bar Hunger (vs Servo Durability / ghost Ethereal)"},
+      "adverse_bernice_death": "dist/game-host/horizon-exec-20261110/bi002/adverse-bernice-death.json"
     },
     "fridge_hit_zoomed_20261110": "HIT_PIE_MENU at client [500,560] after Z-zoom (~14) + Enter recenter; snack NOT queued; single frame; contracts/fixed-ui-click-map.v1.json camera_dependent_seeds_1920x1080",
     "fridge_hit": "WIDE [465,595] MISS (outdoor Upgrade/Possess); ZOOMED [500,560] HIT once then camera/story drift made re-HIT unstable",
