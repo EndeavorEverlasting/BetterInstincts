@@ -73,8 +73,8 @@
     "docs/LEDGER.md",
     "docs/PROMPT_INVOCATIONS.md"
   ],
-  "decision": "ADMIT_FOR_BOUNDED_LOCAL_CERT",
-  "decision_rationale": "Host skill-round-robin already merged; operator requests floor refresh + fifth-gear pack + live maximize across existing N without expansion.",
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Host skill-round-robin already merged; operator requests floor refresh + fifth-gear pack + live maximize across existing N without expansion. Live P08 remains separately gated by screen_admit.",
   "date": "2026-11-09",
   "prompt_order": [
     "P05",
