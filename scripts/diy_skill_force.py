@@ -46,7 +46,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from betterinstincts.household_judgment import (
-    HouseholdJudgmentError, require_fixed_roster, require_skill_action,
+    HouseholdJudgmentError, bind_household_scope, require_fixed_roster,
+    require_skill_action,
+)
+from betterinstincts.installation_profiles import (
+    InstallationProfileError, household_ledger_path, view as view_installation_profile,
 )
 from betterinstincts.diy_skill_force import (
     DiySkillForceError,
@@ -1123,6 +1127,70 @@ def _execute_household(
     }
 
 
+
+def _add_household_scope_flags(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--profile-id", default=None,
+                        help="Existing local installation preference profile (default active)")
+    parser.add_argument("--save-key", default=None,
+                        help="Locally observed opaque stable save identifier, not a filename/name")
+    parser.add_argument("--household-key", default=None,
+                        help="Locally observed opaque stable household identifier, not a name")
+
+
+def _scoped_household_ledger(args, *, required: bool = False):
+    """Resolve a private local ledger; no game scan or implicit write."""
+    save_key = getattr(args, "save_key", None)
+    household_key = getattr(args, "household_key", None)
+    if not save_key and not household_key:
+        if required:
+            raise GateError("SAVE_AND_HOUSEHOLD_SCOPE_REQUIRED_BEFORE_EXECUTION")
+        return None, None
+    if not save_key or not household_key:
+        raise GateError("SAVE_AND_HOUSEHOLD_SCOPE_MUST_BE_SUPPLIED_TOGETHER")
+    roster_keys = list(getattr(args, "roster_key", []) or [])
+    members = getattr(args, "members", None)
+    if members is None or len(roster_keys) != members:
+        raise GateError("EXACT_OBSERVED_PORTRAIT_ROSTER_REQUIRED_FOR_SCOPE")
+    try:
+        profile = getattr(args, "profile_id", None) or view_installation_profile()["profile_id"]
+        view_installation_profile(profile_id=profile)
+        scope = bind_household_scope(
+            profile_id=profile, save_key=save_key,
+            household_key=household_key, roster_keys=roster_keys,
+        )
+        path = household_ledger_path(profile_id=profile, scope_id=scope["scope_id"])
+    except (InstallationProfileError, HouseholdJudgmentError) as exc:
+        raise GateError(str(exc)) from exc
+    return scope, path
+
+
+def _resolve_ledger_path(args, scoped_path: Path | None) -> Path:
+    requested = getattr(args, "completion_ledger", None)
+    if requested is None:
+        return scoped_path if scoped_path is not None else default_completion_ledger_path()
+    path = Path(requested)
+    if not path.is_absolute():
+        path = ROOT / path
+    if scoped_path is not None and path.resolve().is_relative_to(ROOT.resolve()):
+        raise GateError("SCOPED_LEDGER_MUST_REMAIN_OUTSIDE_REPOSITORY")
+    return path
+
+
+def _validate_scope_ledger(ledger: dict, scope: dict | None) -> None:
+    if scope is None:
+        return
+    old = ledger.get("scope_id")
+    if old != scope["scope_id"] and (old is not None or ledger.get("members")):
+        raise GateError("CROSS_HOUSEHOLD_LEDGER_REUSE_FORBIDDEN")
+    old_roster = ledger.get("roster_fingerprint")
+    if old_roster != scope["roster_fingerprint"] and (
+        old_roster is not None or ledger.get("members")
+    ):
+        raise GateError("HOUSEHOLD_ROSTER_CHANGED_STOP_RECONCILE")
+    ledger["scope_id"] = scope["scope_id"]
+    ledger["roster_fingerprint"] = scope["roster_fingerprint"]
+
+
 def _add_common_execute_flags(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--bundle", default=None, help="Named bundle (default full_unlock when no --skill)")
     ap.add_argument("--skill", action="append", default=[], help="Repeatable skill id")
@@ -1444,6 +1512,7 @@ def main(argv: list[str] | None = None) -> int:
         help="Exact observed Live household portrait count (N = whatever the household is)",
     )
     _add_common_execute_flags(hh)
+    _add_household_scope_flags(hh)
     hh.add_argument("--roster-key", action="append", default=[],
                     help="Observed stable portrait ID, once per Sim, ordered from first portrait")
     hh.add_argument("--first-portrait-attested", action="store_true",
@@ -1459,6 +1528,7 @@ def main(argv: list[str] | None = None) -> int:
         help="Record Skills-panel LOCAL_OBSERVED levels into the completion ledger (no screenshots required next time)",
     )
     pr.add_argument("--session-id", required=True)
+    _add_household_scope_flags(pr)
     pr.add_argument("--members", type=int, default=None, help="Exact observed portrait count N")
     pr.add_argument("--roster-key", action="append", default=[], help="Ordered portrait keys matching N")
     pr.add_argument("--display-name", action="append", default=[], help="Optional display names ordered with roster")
@@ -1489,6 +1559,9 @@ def main(argv: list[str] | None = None) -> int:
         help="Print household roster N + per-member panel/dispatched skill status from the ledger",
     )
     rs.add_argument("--session-id", default=None)
+    _add_household_scope_flags(rs)
+    rs.add_argument("--members", type=int, default=None)
+    rs.add_argument("--roster-key", action="append", default=[])
     rs.add_argument("--completion-ledger", type=Path, default=None)
     rs.add_argument("--target-level", type=int, default=10)
     rs.add_argument("--bundle", default="full_unlock")
@@ -1502,6 +1575,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     ts.add_argument("--session-id", required=True)
+    _add_household_scope_flags(ts)
     ts.add_argument("--members", type=int, required=True)
     ts.add_argument("--roster-key", action="append", default=[])
     ts.add_argument("--member-key", required=True)
