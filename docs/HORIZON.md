@@ -4,6 +4,8 @@ This is the long-term product outcome, not a command to implement everything imm
 
 **Desktop safety / November 10 Closers:** `plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json#closers_desktop_peripheral_20261110` records cross-repository Bluetooth recovery, all five merged PRs, independent CI proof, and the still-required local Cursor hook-activation canary. This is a supporting runtime-interoperability gate; it does **not** certify BI-002 hunger, install protection on the user's desktop, or change the needs → income → skills → careers order.
 
+**Material acquisition routing (supporting infrastructure):** `docs/ACQUISITION_ROUTING.md` covers observed computer Order domains for arbitrary household/portrait identities, Fabricator eco parts, Recycler/generator fuel and insect-farm biofuel, with instant-candidate versus queued/time-gated effect classes. Its read-only plans **do not** advance the Horizon stage gates; BI-002 hunger remains active and requires actual Sims gameplay certification.
+
 ## Delivery trajectory
 1. **BI-002: Hunger** — finish the first actual reversible Sims tuning package, >=5 vanilla and >=5 modified gameplay trials, rollback and maintainer review. Cannot close based on offline CI.
 2. **BI-003A–E: The other five adult needs** — bladder, energy, hygiene, fun and social. Each module needs its own real tuning resource, reversible package, valid full game-version profile, observed A/B comparison, and no player command interruption. After the BI-002 mechanism is live-proven, these five *investigations* may proceed as independent branches if actual workers and collision-free tuning ownership are established. Never reuse the hunger resource ID for another need.
