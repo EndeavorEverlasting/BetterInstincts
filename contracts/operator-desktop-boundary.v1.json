@@ -28,12 +28,17 @@
       "write": "ALLOW_ONLY_RESOLVED_REPOSITORY_CHILD_EXCEPT_PROTECTED_POLICY",
       "blocked_paths": [
         "AGENTS.md",
-        ".cursor/hooks.json",
-        ".cursor/hooks/**",
-        ".cursor/rules/**",
+        ".git/**",
+        ".cursor/**",
+        ".github/workflows/**",
+        "**/.env",
+        "**/.env.*",
+        "**/*.{pem,p12,pfx,key}",
         "contracts/operator-desktop-boundary.v1.json",
         "outside_repo/**"
-      ]
+      ],
+      "unknown_effectful_tools": "DENY",
+      "protected_user_data": "NEVER_EDIT_OR_DELETE_USER_SAVES_OR_OS_INPUT_SETTINGS"
     },
     "forbidden_effects": [
       "STOP_OR_RESTART_BLUETOOTH_SERVICES",
