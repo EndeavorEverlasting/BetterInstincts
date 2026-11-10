@@ -2,7 +2,7 @@
 
 **Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
 **P124:** expand existing `upgrade_parts_force` (peer to `diy_skill_force` household traverse)
-**Machine owner:** [`contracts/upgrade-parts-force.v1.json`](../contracts/upgrade-parts-force.v1.json) v2
+**Machine owner:** [`contracts/upgrade-parts-force.v1.json`](../contracts/upgrade-parts-force.v1.json) v3
 **Planner:** `betterinstincts.upgrade_parts_force`
 **CLI:** `python -m scripts.upgrade_parts_force`
 
@@ -13,7 +13,7 @@ Every household Sim (observed portrait count **N**) keeps DIY building parts in 
 ## Scalable acquisition (preferred order)
 
 1. **spawn** — `testingcheats` → Shift+click Dr. F robotics workstation → **Spawn Crafting Supplies** (~50 each; one action stocks most DIY materials).
-2. **computer** — Computer/laptop → Order → Purchase Upgrade Parts (local, offline).
+2. **computer** — Computer/laptop → inspect its interactions → discover the nested **Purchase Upgrade Parts** module (offline; intermediate names/depth must be observed, not assumed).
 3. **phone** — Phone → Order → Purchase Upgrade Parts (buyable rows) **only if it stays offline**.
 
 **Offline install (P00/P01):** never press **Connect** on `CONNECTION IS REQUIRED`. Choose **Stay Offline** only. Prefer spawn when phone forces an online gate. The game plays as installed offline.
@@ -62,6 +62,53 @@ Plans alone never certify. `MET` requires independently attested pocket counts �
 
 `HOST_DIY_PARTS_BUDGET_PLAN_AND_CERT_SCHEMA_NOT_BI002` — offline plans + cert schema; live SendInput / inventory OCR remain P08. Does not close BI-002.
 
+
+## 2026-11-10 — verified menu, command and player sovereignty
+
+The operator located the **Purchase Upgrade Parts** module deep inside the
+interactions of a computer. The *purchase-menu catalog* has exactly five
+operator-reported options: Common, Electronic, Kitchen, Plumbing, and Robot
+Salvage Upgrade Parts. Computer Chips, Mechanisms and optional Eco-Upgrade
+Parts are separate DIY/pack materials, **not** asserted menu rows.
+
+Machine contract: `contracts/upgrade-parts-force.v1.json#computer_purchase_menu`.
+Host proposal + cooperative queue adapter:
+`betterinstincts/computer_upgrade_parts.py`. Existing DIY budget,
+spawn alternative, planner and certification remain owned by
+`betterinstincts/upgrade_parts_force.py` — no parallel commerce daemon.
+
+```sh
+python -m scripts.upgrade_parts_force computer-menu
+python -m scripts.upgrade_parts_force computer-intent --part kitchen_upgrade_parts --quantity 2
+```
+
+These commands are **passive** and never move the cursor. At an explicitly
+activated Live session the host must observe the selected Sim, paused Live
+mode, active-lot computer and safe footprint, and choose a verified native
+game API or an explicitly opted-in desktop fallback. It may propose clicking
+the observed computer. It must then discover the visible nested labels,
+accept only observed `Purchase Upgrade Parts`, `Order` or `More Choices...`
+where they actually appear, and re-observe after each selection. The
+`More Choices` label can recur on distinct pages; repeated page fingerprints
+and >16 pages fail closed. An unknown submenu means **wait for evidence**,
+not a guessed click or a hardcoded coordinate.
+
+For each unit, verify an actual part row, spending consent, observed price,
+funds, approved spend cap and personal-inventory baseline before confirming.
+One purchase must show an inventory increase **before** another unit is
+considered. Each single action goes through
+`CooperativeScreenQueue.enqueue_effect` with fresh scene validation and two
+idle probes. Human mouse, keyboard, voice or other-app activity yields;
+interrupted or unknown purchases require observed reconciliation, never
+blind replay. Boot is passive, and a command does **not** authorize OS
+service, Bluetooth, adapter/driver, pairing, UAC or peripheral-preference
+changes. Preserve offline installation; never EA Connect.
+
+P95 architecture → P82 offline falsifiers → P08 local runtime proof
+(**unavailable without the user's explicitly controlled Sims 4 host**) →
+P07 existing-owner implementation → P124 readability/cross-layer
+regression guard. Unit tests/CI cannot certify an actual in-game purchase.
+
 ## 2026-11-10 — universal observed Order domains and eco/fuel source routing
 
 The [acquisition routing guide](ACQUISITION_ROUTING.md) extends this existing module across any attested active household and selected portrait, including interactive Order menus whose **Order** entry or nested domain can require variable **More Choices** paging. Reinspect each page, detect loops, and select only visible labels; a previously observed "two More Choices" is a hint, not a fixed instruction. The upstream five-item computer menu remains owned by `betterinstincts/computer_upgrade_parts.py` and its existing CooperativeScreenQueue dispatch/spend-cap/readback gates; `betterinstincts/upgrade_parts_force.py` adds read-only cross-source planning, not a second clicker.
@@ -69,3 +116,8 @@ The [acquisition routing guide](ACQUISITION_ROUTING.md) extends this existing mo
 `Eco-Upgrade Parts` route to the Fabricator (15 bits + 10 pieces per attempt). Generator fuel is a refill via recycled bits/pieces. Biofuel-filled cans route to an insect farm's observed Collect Bio Fuel interaction, which is readiness/time dependent. Neither fuel category is assumed to be sold in the computer purchase picker. The typed contract is `contracts/upgrade-parts-force.v1.json#acquisition_routing`, with ontology `OBSERVED_MENU_ROUTE`, `ACQUISITION_SOURCE`, `ACTION_EFFECT_CLASS` and tests `tests/test_acquisition_integration.py`.
 
 Run `python -m scripts.upgrade_parts_force sources`, `acquisition --portraits ... --requests ...`, `menu-next --options ... --goal ...`, or `order-domain --portraits ... --domain ... --item ...` for **evaluate-only** source plans. An immediate-order candidate is not proof that the Sim received stock; follow the existing fresh scene, spend approval, pocket/funds-delta and player control gates. No protected saves, Build/Buy mutation, online Connect, OS services or Bluetooth changes.
+
+
+### 2026-11-10 Closers correction — Order-first is mandatory in the live executor
+
+The computer menu has **two independently observed phases**: `menu_scope=ROOT` may select `Order` only after it is visible (using bounded `More Choices` if necessary), then `menu_scope=ORDER` requires `order_menu_observed=true` before selecting the actual `Purchase Upgrade Parts` domain. A direct-looking part-purchase label in the root is **not** permission to skip Order. Re-read menu after every click; no hardcoded “two More Choices.” Every effect still requires the shared `CooperativeScreenQueue` lease, current selected portrait, explicit spend approval, fresh price/funds/cap/inventory baseline, and post-purchase pocket-stock receipt. See `docs/ACQUISITION_ROUTING.md` and `tests/test_computer_upgrade_parts.py`. Both games/live host and Windows Cursor activation remain unobserved in provider CI.
