@@ -280,7 +280,9 @@ class InventoryMultiselectTests(unittest.TestCase):
 
     def test_prior_inventory_and_needs_tray_entries_unchanged(self):
         seeds = load_contract()["seed_targets_1920x1080"]
-        self.assertEqual(seeds["live.panel_inventory"]["client_xy"], [1757, 1045])
+        # v12 corrected tray glyph; prior_xy_wrong [1757,1045] remains on the seed.
+        self.assertEqual(seeds["live.panel_inventory"]["client_xy"], [1750, 1058])
+        self.assertEqual(seeds["live.panel_inventory"]["prior_xy_wrong"], [1757, 1045])
         self.assertEqual(seeds["live.panel_inventory"]["panel_id"], "personal_inventory")
         self.assertEqual(seeds["live.panel_inventory"]["hotkey"], "I")
         self.assertEqual(seeds["live.panel_needs"]["client_xy"], [1820, 1045])

@@ -1,0 +1,38 @@
+{
+  "schema": "betterinstincts.consultation/v1",
+  "id": "BI-BUY-EXIT-PACK-MODAL-20261110",
+  "created_at": "2026-11-10T09:50:00-05:00",
+  "status": "OBSERVED_LIVE",
+  "proposed_capability": "Durable Buy/Build exit + pack/options modal close map so Live hunger work is not trapped in Appliances/Owned Expansion Packs after Esc or top-bar wander.",
+  "live_observations_1920x1080": {
+    "buy_trap": "Esc from Live (Cook Together dismiss, inventory clear) and some tray clicks re-enter Buy/Build with Appliances or Small Business catalog. F2 alone does not exit once already in Buy.",
+    "exit_live": {
+      "prefer_hotkey": "F1",
+      "people_control": {"target_id": "live.top_live_people", "client_xy": [1585, 35]},
+      "forbidden": ["top-bar wander x≈1620-1700 (opens Owned Expansion Packs)", "Esc spam as primary Live restore", "Sell / Place while cancelling held objects"]
+    },
+    "pack_detail_modal_close_x": {
+      "client_xy": [1543, 197],
+      "method": "blue-pixel centroid on white Owned Expansion Packs detail modal",
+      "evidence": ["dist/game-host/horizon-exec-20261110/bi002/packs-modal-now.png", "dist/game-host/horizon-exec-20261110/bi002/modal-x-crop.png"]
+    },
+    "options_menu_close_x": {
+      "client_xy": [1081, 330],
+      "method": "blue X on centered MENU white panel bbox ~820,316–1098,814",
+      "evidence": ["dist/game-host/horizon-exec-20261110/bi002/live-restored.png"]
+    },
+    "build_cancel_held_object": {
+      "client_xy": [1013, 1028],
+      "role": "CANCEL_HELD_BUILD_OBJECT",
+      "notes": "Cancel (Esc) button while holding catalog/inventory object; never left Sell / Place in Inventory"
+    },
+    "clear_household_inventory_live": {
+      "prefer": "Needs tray [1820,1058] panel switch",
+      "avoid": "Esc (Buy trap), Sell [1915,925], Multiselect On"
+    }
+  },
+  "horizon_owner": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+  "fixed_ui_promotion": "contracts/fixed-ui-click-map.v1.json additive seeds for pack/options close + buy-exit notes",
+  "proof_ceiling": "LOCAL_OBSERVED_UI_RECOVERY_NOT_BI002_CLOSE",
+  "bi002_closed": false
+}

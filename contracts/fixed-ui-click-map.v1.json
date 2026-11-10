@@ -1,11 +1,13 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 11,
+  "version": 13,
   "version_notes": {
     "8": "Adds camera_dependent_seeds_1920x1080 (fridge HIT/MISS). Additive only: seed_targets_1920x1080 and all certified seeds unchanged; camera-dependent rows are NOT ingested into the fixed-HUD ledger.",
     "9": "Adds live.notebook_close_x [1338,276] (PrintWindow-measured Notebook dismiss). Additive only; prior seeds unchanged.",
     "10": "Promotes Load/Play/Exit-CAS/Residential Worlds/LabLab Play from living-subject-recovery receipt (2026-11-10). cas_cancel_x supersedes 1830,1050→1838,1048. FORBIDDEN deny ~[1883,1040] blue person+arrow (CAS, not Live). camera_dependent fridge seeds remain separate — not merged here.",
-    "11": "Adds live.inventory_multiselect_toggle [1878,791] (household panel; PrintWindow ON/OFF measured 2026-11-10; prior approx [1880,735] was wrong) and live.inventory_sell_button FORBIDDEN_DENY [1915,925] plus inventory_multiselect_1920x1080 block. Additive only: v10 seeds (incl. live.panel_inventory) unchanged. Sell can never be attested HIT nor resolved as clickable."
+    "11": "Adds live.inventory_multiselect_toggle [1878,791] (household panel; PrintWindow ON/OFF measured 2026-11-10; prior approx [1880,735] was wrong) and live.inventory_sell_button FORBIDDEN_DENY [1915,925] plus inventory_multiselect_1920x1080 block. Additive only: v10 seeds (incl. live.panel_inventory) unchanged. Sell can never be attested HIT nor resolved as clickable.",
+    "12": "Corrects live.panel_inventory tray glyph to [1750,1058] (PrintWindow 2026-11-10). prior_xy_wrong [1757,1045] hit dark bar above icons and left Simology/Needs open. Prefer hotkey I when armed. Additive only.",
+    "13": "Adds pack detail modal close X [1543,197], options MENU close X [1081,330], build cancel held-object [1013,1028]; documents Buy→Live prefer F1 + live.top_live_people; FORBIDDEN top-bar wander 1620-1700 (Owned Expansion Packs) and REMOVE_FLOOR without library checkpoint. Consultation BI-BUY-EXIT-PACK-MODAL-20261110. Additive only."
   },
   "authority": "docs/UI_CHROME.md",
   "owners": {
@@ -276,7 +278,28 @@
       "status": "DOCUMENTED_CANDIDATE_BUILD_EXIT",
       "profile": "1920x1080",
       "hotkey_prefer": "F1",
-      "notes": "Prefer F1; Build→Live people control"
+      "notes": "Prefer F1; Build→Live people control. F2 alone does not exit Appliances/Buy once already in Buy. FORBIDDEN top-bar wander x≈1620-1700 (opens Owned Expansion Packs)."
+    },
+    "live.pack_detail_modal_close_x": {
+      "role": "CLOSE_PACK_DETAIL_MODAL",
+      "client_xy": [1543, 197],
+      "status": "PRINTWINDOW_MEASURED_20261110_BLUE_X",
+      "profile": "1920x1080",
+      "notes": "Blue X on Owned Expansion Packs detail modal (Seasons/For Rent). Evidence packs-modal-now.png / modal-x-crop.png. Never click VIEW/buy."
+    },
+    "live.options_menu_close_x": {
+      "role": "CLOSE_OPTIONS_MENU",
+      "client_xy": [1081, 330],
+      "status": "PRINTWINDOW_MEASURED_20261110",
+      "profile": "1920x1080",
+      "notes": "X on centered MENU white panel (Save/Save As/…). Never Exit Game. Evidence live-restored.png."
+    },
+    "build.cancel_held_object": {
+      "role": "CANCEL_HELD_BUILD_OBJECT",
+      "client_xy": [1013, 1028],
+      "status": "PRINTWINDOW_MEASURED_20261110",
+      "profile": "1920x1080",
+      "notes": "Cancel (Esc) button while holding catalog/inventory object. Never Sell / Place in Inventory / REMOVE FLOOR."
     },
     "live.notebook": {
       "role": "OPEN_NOTEBOOK",
@@ -430,10 +453,11 @@
       "panel_id": "personal_inventory",
       "hotkey_id": "PANEL_INVENTORY",
       "hotkey": "I",
-      "client_xy": [1757, 1045],
-      "status": "PRINTWINDOW_MEASURED_20261109",
+      "client_xy": [1750, 1058],
+      "prior_xy_wrong": [1757, 1045],
+      "status": "PRINTWINDOW_MEASURED_20261110_TRAY_GLYPH",
       "profile": "1920x1080",
-      "notes": "Box inventory tray icon; prefer hotkey I"
+      "notes": "Box inventory tray icon glyph center; y=1045 hits bar above icons (Simology/Needs). Prefer hotkey I when Live hotkeys armed. Slot0 olive cylinder on this household is 'Can You See Me Now?' Camera — not Eco-Matic."
     },
     "live.inventory_multiselect_toggle": {
       "role": "TOGGLE_INVENTORY_MULTISELECT",
@@ -1156,11 +1180,12 @@
     },
     "open_via": {
       "target_id": "live.panel_inventory",
-      "client_xy": [1757, 1045],
+      "client_xy": [1750, 1058],
+      "prior_xy_wrong": [1757, 1045],
       "hotkey_prefer": "I"
     },
     "related_fixed_targets": {
-      "live.panel_needs": {"client_xy": [1820, 1045], "notes": "Needs tray icon (approx confirmed by operator evidence); prefer hotkey O"}
+      "live.panel_needs": {"client_xy": [1820, 1058], "notes": "Needs tray icon; glyph Y matches inventory tray correction 2026-11-10; prefer hotkey O"}
     },
     "targets": {
       "multiselect_toggle": {

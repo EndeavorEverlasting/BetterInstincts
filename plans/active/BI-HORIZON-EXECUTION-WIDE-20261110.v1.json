@@ -2,7 +2,7 @@
   "schema": "betterinstincts.horizon-execution-wide/v1",
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
-  "updated_at": "2026-11-10T21:30:00Z",
+  "updated_at": "2026-11-10T09:50:00-05:00",
   "live_truth_20261110": {
     "host": {"pid": 78240, "exe": "TS4_x64_fpb", "game_version": "1.121.361.1020"},
     "live_cert_run": "bi002-game1-20261107",
@@ -206,7 +206,21 @@
         "prevention": "No stats.set_stat hunger drain unless fridge/food interaction is already admitted and queued; pause after set_stat until food queued",
         "ui_recovery_v10": "contracts/fixed-ui-click-map.v1.json v10 Load/Play/CAS/LabLab Play seeds; FORBIDDEN Create Household ~[1883,1040]",
         "ui_inventory_v11": "fixed-ui v11 Multiselect toggle [1878,791] (prior [1880,735] WRONG); Sell FORBIDDEN [1915,925]; household inventory (Place in World/Drag to sell) cannot Eat — close before fridge",
-        "snack_queue_session_20261110_evening": "Charlee living Happy/Tense/Ravenous cycles; household Multiselect Off proved; stuck household inventory cleared via panel switch; camera clip OFF_LOT after stairs; snack_queued=false; receipt snack-queue-session-receipt.json"
+        "snack_queue_session_20261110_evening": "Charlee living Happy/Tense/Ravenous cycles; household Multiselect Off proved; stuck household inventory cleared via panel switch; camera clip OFF_LOT after stairs; snack_queued=false; receipt snack-queue-session-receipt.json",
+        "snack_queue_session_20261110_morning": {
+          "snack_queued": false,
+          "baseline_still": "2/5",
+          "hunger_needs_panel": "CRITICAL red bar + X LOCAL_OBSERVED (needs-open.png / bar-zoom.png / live-needs-check.png)",
+          "funds": {"from": 649163, "to": 649897, "delta": 734, "note": "649163→649657 (+494) then →649897 (+240) during Build thrash — never Sell again; treat Sell as live risk"},
+          "buy_trap": "Esc and some tray clicks re-enter Buy/Build; F2 alone does not exit; prefer F1 + live.top_live_people [1585,35]; top-bar wander opens Owned Expansion Packs / Help Center / Gallery — Build hammer is LEFTMOST of top-right cluster, Gallery is lightbulb",
+          "modal_close_x": {"pack_detail": [1543, 197], "options_menu": [1081, 330], "build_cancel": [1013, 1028], "gallery_my_library": [1819, 48], "lessons": [1466, 185], "help_center_candidate": [1071, 53]},
+          "cook_together_miss": "Counter Cook Together With… modal opened instead of fridge Have Breakfast (bar-fridge-opt.png) — dismiss without Esc when possible",
+          "household_inventory_fridge_object": "Fridge + Growfruit + bowl still in household inventory; Place attempts failed (wrong item / Can't intersect / outside lot). Inventory fridge click target ~[1310,940] when zoomed interior; Growfruit ~[720,940]. Never Sell / REMOVE_FLOOR",
+          "clear_household_inv": "Needs tray [1820,1058] closes household Sell panel without Esc (proved needs-open.png)",
+          "camera": "OFF_LOT street/canal + face-cam clip LOCAL_OBSERVED; Enter after terrain arm; Gallery close via pixel [1819,48]; lot_focus assess_lot_focus remains policy",
+          "receipt": "dist/game-host/horizon-exec-20261110/bi002/snack-queue-session-receipt.json",
+          "next": "Dismiss Help/Gallery via measured X → zoom sane → phone Order OR Place fridge [1310,940] onto clear kitchen floor → Live Eat → live_cert trial 3"
+        }
       }
     },
     {
