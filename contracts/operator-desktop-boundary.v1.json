@@ -1,0 +1,75 @@
+{
+  "schema": "betterinstincts.operator-desktop-boundary/v1",
+  "id": "OPERATOR_DESKTOP_BOUNDARY",
+  "owner": ".cursor/hooks/operator_boundary.py",
+  "introduced_after": "BetterInstincts PR #160 passive PrintWindow capture and EM11 incident",
+  "priority": [
+    "OPERATOR_CONTROL",
+    "PROTECTED_USER_DATA",
+    "REPOSITORY_SCOPED_WORK",
+    "AGENT_CONVENIENCE"
+  ],
+  "project_hook": {
+    "config": ".cursor/hooks.json",
+    "events": [
+      "beforeShellExecution",
+      "preToolUse"
+    ],
+    "mode": "FAIL_CLOSED",
+    "default_shell": "DENY_UNKNOWN",
+    "allowed_shell_classes": [
+      "GIT_READ_ONLY_DIAGNOSTICS",
+      "KNOWN_OFFLINE_UNITTEST",
+      "KNOWN_OFFLINE_DOCTRINE_CHECKS",
+      "WORKING_DIRECTORY_INSPECT"
+    ],
+    "file_actions": {
+      "delete": "DENY_ALL_AGENT_DELETE",
+      "write": "ALLOW_ONLY_RESOLVED_REPOSITORY_CHILD_EXCEPT_PROTECTED_POLICY",
+      "blocked_paths": [
+        "AGENTS.md",
+        ".cursor/hooks.json",
+        ".cursor/hooks/**",
+        ".cursor/rules/**",
+        "contracts/operator-desktop-boundary.v1.json",
+        "outside_repo/**"
+      ]
+    },
+    "forbidden_effects": [
+      "STOP_OR_RESTART_BLUETOOTH_SERVICES",
+      "DISABLE_ENABLE_REMOVE_HID_DEVICE",
+      "MUTATE_DRIVER_PACKAGE",
+      "MUTATE_WINDOWS_REGISTRY",
+      "MUTATE_PRINT_SCREEN_OR_INPUT_PREFERENCES",
+      "UNAPPROVED_FOREGROUND_OR_POINTER_CAPTURE",
+      "DELETE_OR_OVERWRITE_USER_SAVES",
+      "UNREVIEWED_REPOSITORY_DELETION",
+      "SHELL_INDIRECTION_OR_UNKNOWN_COMMAND"
+    ]
+  },
+  "coexistence": {
+    "capture": "scripts/game_capture.py is passive; minimized game requires operator restoration",
+    "screen_control": "betterinstincts/control_handoff.py requires fresh >=15s idle and shared desktop lease",
+    "save": "betterinstincts/save_policy.py and build checkpoint still independently deny save/lot mutation",
+    "os_recovery": "SysAdminSuite, independently reviewed and operator-controlled; never automatic BetterInstincts capture recovery"
+  },
+  "verification": {
+    "offline": [
+      "python -m unittest discover -s tests -p test_operator_boundary.py -v",
+      "python -m unittest discover -s tests -v",
+      "python -m scripts.check_ontology"
+    ],
+    "local_activation": [
+      "Check Cursor Customize/Hooks and Hooks output channel after opening the project",
+      "Test a benign git status and synthetic denied command without actually running destructive host operation"
+    ],
+    "limits": [
+      "Project hooks must be loaded by Cursor; a GitHub branch is not a local installation",
+      "Other IDEs, arbitrary external tools, non-cooperating computer-use clients and direct user commands are not intercepted",
+      "Python unittest executes repository code and is not an OS sandbox",
+      "Project hooks are not tamper-proof against an untrusted process with filesystem access"
+    ]
+  },
+  "privacy": "Hook emits only coarse action policy result; no payload, paths, clipboard, key logging or incident hardware IDs are persisted.",
+  "proof_ceiling": "OFFLINE_POLICY_TEST_NOT_HOST_LEVEL_ENFORCEMENT"
+}
