@@ -1,3 +1,9 @@
+## 2026-11-10 — Calendar X + snack toast briefly queued; Buy/Sell-for trap recurrence
+
+**CHANGED:** Horizon plan next_gate → `CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3`. Calendar dismiss PrintWindow HIT `[1440,254]` (map `live.calendar_close_x` ~`[1445,255]`). Charlee Switch Control + travel-cancel already proved; school diversion then home LabLab. Toast/pie Eat briefly in action queue (`queued-action-hud.png` / `pie-queue-proof-hud.png`) then cancelled when Live probes re-entered Buy household inventory Sell-for (never clicked Sell; exit Esc+F1+`live.top_live_people [1585,35]`). Charlee Mortified after bladder fail — hunger still critical; BI-002 `bi002-game1-20261107` still baseline 2/5.
+
+**NEXT:** Verify Live (no Sell panel) before world clicks; durable fridge Have Breakfast / snack queue → unpause → `live_cert record` trial 3+. Never Sell/delete saves. No BI-003 claim.
+
 ## 2026-11-10 — Switch Control click trap + travel-cancel PrintWindow remeasure (fixed-ui v15)
 
 **CHANGED:** Horizon plan + `contracts/fixed-ui-click-map.v1.json` v15 annotate LIVE PROOF Switch Control miss trap: Charlee magenta bbox x431–480 y1060–1075; face hover `~(455,1035)`; chip just above strip y~898–922 — click PILL TEXT; `~(455,900)` MISSED and re-opened Manage Worlds TRAVELING WITH LabLab. Travel-cancel PrintWindow `[1055,22]` (prior computer-use scale `[1055,33]`); footprint ~1090; crown ~1131 FORBIDDEN. Buy/Sell-for exit via `live.top_live_people [1585,35]` + F1; never Sell. `lot_focus` recovery seed aligned to `[1055,22]`.
