@@ -164,6 +164,12 @@ The canonical `player_presence.probe_windows` now reports only the foreground PI
 
 The legacy skill-force cursor-stability idle bypass was revoked because a stationary cursor while someone types/dictates is not a trustworthy idle signal. Reward-trait/level-up blind Enter and coordinate clicks are now held for identification, with safe likes/dislikes evaluation in [PREFERENCE_PROMPTS.md](PREFERENCE_PROMPTS.md). No automatic screen seizure, unverified dialog dismissal or game certification is claimed.
 
+## P00/P01 atomic effects and retained partial intent
+
+New adapters call queue.enqueue_effect(work_id, validate, effect) for one bounded semantic/API/CLI or desktop effect. The queue supplies the immediate pre-effect checkpoint; break sequences into separate steps. live_host_ops.assess_interaction_channel prefers verified native capability, permits desktop fallback only on opt-in, and never grants execution.
+
+Activity before effects retains pending work. Partial interruption retains the original intent in queue.suspended, marked NEEDS_RECONCILIATION. After observing outcome, call queue.reconcile(work_id, outcome_observed=True, completed=True), or provide an explicit QueuedStep remainder with the same ID. No original callback is automatically replayed. Remainders pass target validation, ownership and dual idle checks again. Pending and suspended work share the bounded budget. No watcher installed. Executing native calls cannot be forcibly preempted. Existing raw scripts and external agents must adopt the owners before claiming compliance. Offline tests are not live Sims certification.
+
 
 ## Cursor pre-effect admission — operator desktop boundary
 

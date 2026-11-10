@@ -53,5 +53,23 @@
     30000,
     60000,
     120000
-  ]
+  ],
+  "interaction_policy": {
+    "doctrine_owner": "P00 Governance Doctrine Installer",
+    "harness_owner": "P01 Harness Infrastructure Builder",
+    "rule": "Any user-chosen game, mod, mouse, keyboard, voice, assistive or other-app interaction outranks autonomous effects. Unknown presence yields. Inactivity permits re-evaluation, never a stale action replay.",
+    "admission_owner": "betterinstincts/control_handoff.py",
+    "queue_owner": "betterinstincts/workflow_interop.py",
+    "channel_owner": "betterinstincts/live_host_ops.py#assess_interaction_channel",
+    "preferred_channel": "VERIFIED_NATIVE_SEMANTIC_API",
+    "desktop_fallback": "EXPLICIT_OPERATOR_OPT_IN_AND_FRESH_PER_EFFECT_ADMISSION",
+    "resume": "TWO_FRESH_IDLE_PROBES_AND_TARGET_REVALIDATION",
+    "partial_work": "RETAIN_INTENT_REQUIRE_OBSERVED_RECONCILIATION_AND_REMAINDER",
+    "peripheral_settings": "PRESERVE_USER_PREFERENCES_SYSADMINSUITE_OWNS_AUTHORIZED_OS_REPAIR",
+    "limits": [
+      "Cooperative adapters only; external raw input is not intercepted.",
+      "Already executing native calls cannot be forcibly preempted.",
+      "No new global hooks, UAC changes, scheduler or background service."
+    ]
+  }
 }

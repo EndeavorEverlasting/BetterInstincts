@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.ontology/v1",
-  "revision": 3,
+  "revision": 4,
   "state": "CANDIDATE_REVIEW_NOT_RUNTIME_AUTHORITY",
   "owner": "BetterInstincts",
   "source_main_sha": "502f66efc0eedd4136d6a8cd0879f566c3f3612f",
@@ -549,7 +549,7 @@
     {
       "id": "BI-ONT-001",
       "term": "PLAYER_FIRST",
-      "rule": "Explicit player commands or uncertain presence yield; autonomous actions never interrupt player-directed interactions.",
+      "rule": "Any user-chosen game, mod, mouse, keyboard, voice, assistive or other-app interaction outranks autonomous effects. Unknown presence yields. Inactivity permits re-evaluation, never a stale action replay.",
       "owned_by": [
         "contracts/player-presence.v1.json",
         "AGENTS.md"
@@ -728,6 +728,26 @@
         "contracts/scenery-memory.v1.json",
         "contracts/scenery-discoveries.v1.json"
       ]
+    },
+    {
+      "id": "BI-ONT-023",
+      "term": "USER_INTERACTION_SOVEREIGNTY",
+      "rule": "Any user-chosen game, mod, mouse, keyboard, voice, assistive or other-app interaction outranks autonomous effects. Unknown presence yields. Inactivity permits re-evaluation, never a stale action replay.",
+      "owned_by": [
+        "contracts/player-presence.v1.json",
+        "contracts/control-handoff.v1.json",
+        "contracts/workflow-interoperability.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-024",
+      "term": "NATIVE_INTERACTION_AND_PERIPHERAL_PRESERVATION",
+      "rule": "Prefer independently verified native semantic APIs. Desktop fallback requires operator opt-in. No focus capture for observation or peripheral preference/security changes to aid automation.",
+      "owned_by": [
+        "contracts/live-host-ops.v1.json",
+        "scripts/game_capture.py",
+        "docs/PERIPHERAL_INCIDENT.md"
+      ]
     }
   ],
   "interpretation_rules": [
@@ -814,9 +834,19 @@
       "MAX_CLOSE": 1.0
     },
     "zoom_controls": {
-      "CAMERA_ZOOM_IN": ["Z", "SCROLL_WHEEL_ZOOM_IN"],
-      "CAMERA_ZOOM_OUT": ["X", "SCROLL_WHEEL_ZOOM_OUT"],
-      "not": ["RIGHT_CLICK", "PORTRAIT_RMB", "RIGHT_CLICK_VIEW_AS_ACTUATOR"]
+      "CAMERA_ZOOM_IN": [
+        "Z",
+        "SCROLL_WHEEL_ZOOM_IN"
+      ],
+      "CAMERA_ZOOM_OUT": [
+        "X",
+        "SCROLL_WHEEL_ZOOM_OUT"
+      ],
+      "not": [
+        "RIGHT_CLICK",
+        "PORTRAIT_RMB",
+        "RIGHT_CLICK_VIEW_AS_ACTUATOR"
+      ]
     },
     "object_pick_identify": "TRAVERSE_THEN_ZOOM_IN_THEN_CAPTURE_THEN_IDENTIFY_THEN_CLICK",
     "travel_afar_only_when": "VERIFIED_LONG_DISTANCE_TRAVEL_GOAL",
@@ -828,6 +858,24 @@
       "contracts/ui-chrome.v1.json",
       "contracts/scenery-memory.v1.json",
       "contracts/ui-microsystems.v1.json"
+    ]
+  },
+  "interaction_policy": {
+    "doctrine_owner": "P00 Governance Doctrine Installer",
+    "harness_owner": "P01 Harness Infrastructure Builder",
+    "rule": "Any user-chosen game, mod, mouse, keyboard, voice, assistive or other-app interaction outranks autonomous effects. Unknown presence yields. Inactivity permits re-evaluation, never a stale action replay.",
+    "admission_owner": "betterinstincts/control_handoff.py",
+    "queue_owner": "betterinstincts/workflow_interop.py",
+    "channel_owner": "betterinstincts/live_host_ops.py#assess_interaction_channel",
+    "preferred_channel": "VERIFIED_NATIVE_SEMANTIC_API",
+    "desktop_fallback": "EXPLICIT_OPERATOR_OPT_IN_AND_FRESH_PER_EFFECT_ADMISSION",
+    "resume": "TWO_FRESH_IDLE_PROBES_AND_TARGET_REVALIDATION",
+    "partial_work": "RETAIN_INTENT_REQUIRE_OBSERVED_RECONCILIATION_AND_REMAINDER",
+    "peripheral_settings": "PRESERVE_USER_PREFERENCES_SYSADMINSUITE_OWNS_AUTHORIZED_OS_REPAIR",
+    "limits": [
+      "Cooperative adapters only; external raw input is not intercepted.",
+      "Already executing native calls cannot be forcibly preempted.",
+      "No new global hooks, UAC changes, scheduler or background service."
     ]
   }
 }

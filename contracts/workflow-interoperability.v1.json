@@ -44,7 +44,7 @@
     },
     "composes_with": "15s idle admission still gates every new screen lease; borrow/restore does not shorten idle",
     "operator_activity": "Any mouse move or key press resets last-input age; listeners and skill-force helpers MUST wait (not cancel work) until trusted idle again",
-    "agent_adhoc_rule": "Ad-hoc agent scripts must use _with_sims_input_borrow (or equivalent snapshot→borrow→ONE effect→restore cells). Forbidden: open raw _borrow_sims_foreground then tip-grid / camera thrash for tens of seconds before restore.",
+    "agent_adhoc_rule": "Ad-hoc agent scripts must use _with_sims_input_borrow (or equivalent snapshot\u00e2\u2020\u2019borrow\u00e2\u2020\u2019ONE effect\u00e2\u2020\u2019restore cells). Forbidden: open raw _borrow_sims_foreground then tip-grid / camera thrash for tens of seconds before restore.",
     "resume_mechanism": {
       "in_process": "CooperativeScreenQueue drain / host_listener tick / _wait_for_input_idle poll",
       "not": [
@@ -53,7 +53,7 @@
         "AUTOSTART_SERVICE",
         "BACKGROUND_KEYLOGGER"
       ],
-      "note": "Operator 'cron resume' maps to the cooperative waiter re-checking idle — never install a scheduled task"
+      "note": "Operator 'cron resume' maps to the cooperative waiter re-checking idle \u00e2\u20ac\u201d never install a scheduled task"
     },
     "forbidden": [
       "MONOPOLIZE_FOREGROUND_FOR_AGENT_SESSION",
@@ -71,22 +71,49 @@
   "live_hud_surface_lease": {
     "owner": "betterinstincts/workflow_interop.py",
     "lock_owner": "betterinstincts/control_handoff.py",
-    "operator_correction_20261110": "Skills panel and phone are exclusive Live HUD surfaces. Agents opening both reset each other; overlay-clear that dismisses a peer-leased phone/panel is an interop failure. Queue and WAITING_FOR_AGENT — do not fight.",
+    "operator_correction_20261110": "Skills panel and phone are exclusive Live HUD surfaces. Agents opening both reset each other; overlay-clear that dismisses a peer-leased phone/panel is an interop failure. Queue and WAITING_FOR_AGENT \u00e2\u20ac\u201d do not fight.",
     "rule": "At most one named Live HUD surface lease per desktop lock root. Peer agents observe WAITING_FOR_AGENT and retain their work_id. Overlay-clear must withhold peer-leased surfaces.",
     "surfaces": {
       "BOTTOM_RIGHT_PANEL": {
-        "aliases": ["PANEL_SKILLS", "PANEL_CAREER", "PANEL_ASPIRATIONS", "PANEL_RELATIONSHIPS", "PANEL_INVENTORY", "PANEL_SIMOLOGY", "PANEL_NEEDS", "PANEL_CLUBS"],
-        "hotkeys": ["G", "J", "L", "R", "I", "Y", "O", "U"],
+        "aliases": [
+          "PANEL_SKILLS",
+          "PANEL_CAREER",
+          "PANEL_ASPIRATIONS",
+          "PANEL_RELATIONSHIPS",
+          "PANEL_INVENTORY",
+          "PANEL_SIMOLOGY",
+          "PANEL_NEEDS",
+          "PANEL_CLUBS"
+        ],
+        "hotkeys": [
+          "G",
+          "J",
+          "L",
+          "R",
+          "I",
+          "Y",
+          "O",
+          "U"
+        ],
         "clearable_kind": "BOTTOM_RIGHT_PANEL_EXPANDED"
       },
       "PHONE": {
-        "aliases": ["PHONE_INTERFACE", "live.phone"],
-        "hotkeys": ["M"],
+        "aliases": [
+          "PHONE_INTERFACE",
+          "live.phone"
+        ],
+        "hotkeys": [
+          "M"
+        ],
         "clearable_kind": "PHONE_INTERFACE_EXPANDED"
       },
       "CHEAT_CONSOLE": {
-        "aliases": ["CONSOLE"],
-        "hotkeys": ["CTRL+SHIFT+C"],
+        "aliases": [
+          "CONSOLE"
+        ],
+        "hotkeys": [
+          "CTRL+SHIFT+C"
+        ],
         "clearable_kind": "CHEAT_CONSOLE"
       }
     },
@@ -125,5 +152,26 @@
   "evidence_ceiling": "OFFLINE_COOPERATIVE_ADAPTER_NOT_LIVE_DESKTOP_OR_GAME_CERT",
   "idle_ms_minimum": 15000,
   "preferred_effect_channel": "HOTKEY_THEN_MOUSE_FALLBACK",
-  "effect_channel_rule": "Prefer catalogued hotkeys and KEY chords over mouse clicks whenever an equivalent exists. Keyboard effects still require the same dual idle checkpoints and session gates, but avoid relocating the cursor into chrome/lot contention with the operator. Mouse remains only for effects with no catalogued hotkey equivalent."
+  "effect_channel_rule": "Prefer catalogued hotkeys and KEY chords over mouse clicks whenever an equivalent exists. Keyboard effects still require the same dual idle checkpoints and session gates, but avoid relocating the cursor into chrome/lot contention with the operator. Mouse remains only for effects with no catalogued hotkey equivalent.",
+  "interaction_policy": {
+    "doctrine_owner": "P00 Governance Doctrine Installer",
+    "harness_owner": "P01 Harness Infrastructure Builder",
+    "rule": "Any user-chosen game, mod, mouse, keyboard, voice, assistive or other-app interaction outranks autonomous effects. Unknown presence yields. Inactivity permits re-evaluation, never a stale action replay.",
+    "admission_owner": "betterinstincts/control_handoff.py",
+    "queue_owner": "betterinstincts/workflow_interop.py",
+    "channel_owner": "betterinstincts/live_host_ops.py#assess_interaction_channel",
+    "preferred_channel": "VERIFIED_NATIVE_SEMANTIC_API",
+    "desktop_fallback": "EXPLICIT_OPERATOR_OPT_IN_AND_FRESH_PER_EFFECT_ADMISSION",
+    "resume": "TWO_FRESH_IDLE_PROBES_AND_TARGET_REVALIDATION",
+    "partial_work": "RETAIN_INTENT_REQUIRE_OBSERVED_RECONCILIATION_AND_REMAINDER",
+    "peripheral_settings": "PRESERVE_USER_PREFERENCES_SYSADMINSUITE_OWNS_AUTHORIZED_OS_REPAIR",
+    "limits": [
+      "Cooperative adapters only; external raw input is not intercepted.",
+      "Already executing native calls cannot be forcibly preempted.",
+      "No new global hooks, UAC changes, scheduler or background service."
+    ]
+  },
+  "atomic_effect_entrypoint": "CooperativeScreenQueue.enqueue_effect",
+  "reconciliation_entrypoint": "CooperativeScreenQueue.reconcile",
+  "suspended_intents": "Retained in memory, bounded with pending steps, explicitly reconcile observed outcome before a rebuilt remainder can resume."
 }
