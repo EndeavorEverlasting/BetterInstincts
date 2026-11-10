@@ -1,0 +1,111 @@
+{
+  "schema": "betterinstincts.p05-ordered-sprint-pack/v1",
+  "id": "BI-P05-FIFTH-GEAR-HOUSEHOLD-SKILL-RR-20261109",
+  "prompt_resolution": {
+    "P05": {
+      "name": "[SERIALIZED] Ordered Sprint Plan Pack Generator",
+      "source_blob": "848728632c1243ebba023fa0012292a2ad33cada",
+      "role": "This ordered pack; /fifth-gear alias"
+    },
+    "P83_fifth_gear": {
+      "consultation": "contracts/consultations/BI-P83-FIFTH-GEAR-LOCAL-SKILL-CERT-20261109.v1.json",
+      "handoff": "docs/handoff/BI-HOUSEHOLD-SKILL-LOCAL-P04-2026-11-09.md",
+      "dispatch": "plans/active/BI-HOUSEHOLD-SKILL-LOCAL-P04.dispatch.v1.json",
+      "prior_send_alone_pack": "plans/active/BI-P05-FIFTH-GEAR-SEND-ALONE-PACK-20261109.v1.json"
+    },
+    "P08": {
+      "role": "Live household skill-round-robin cert on disposable save"
+    },
+    "P07": {
+      "role": "Keep skill-round-robin host logic on main; converge pack + receipts"
+    }
+  },
+  "floor": {
+    "repo": "EndeavorEverlasting/BetterInstincts",
+    "primary_local_path": "C:/Users/CheeksMcClappeth/dev/BetterInstincts",
+    "origin_main_sha_at_pack": "553e2fa33d0c0dd0d075fb91304509f5eb5ed4cb",
+    "aligned": true,
+    "minimum_ancestor_pr146": "5ebe8f74f6869556d947c964aa1392e92fa10259",
+    "host_owner": "betterinstincts/diy_skill_force.py + scripts/diy_skill_force.py household",
+    "algorithm": "skill_round_robin: for each skill, maximize every portrait 0..N-1 via Space, then next skill"
+  },
+  "operator_screen": {
+    "owner": "LOCAL_AGENT_WHEN_LEASED",
+    "yield_rule": "PLAYER_FIRST; no input while operator owns fire/control",
+    "computer_use": "OBSERVE_ONLY_EXCEPT_ADMITTED_HOST_EXECUTE"
+  },
+  "observed_live_preflight": {
+    "ts4_pid": 78240,
+    "session_id": "household-skill-rr-20261109",
+    "observed_n": 5,
+    "roster_keys_attested": [
+      "SERVO_P0",
+      "SERVO_P1",
+      "SERVO_P2",
+      "SERVO_P3",
+      "CHARLEE_P4"
+    ],
+    "first_portrait_selected": "SERVO_P0",
+    "canary_skill": "handiness",
+    "do_not_expand_household": true
+  },
+  "parent_outcome": "Canonical main hosts skill-round-robin maximize; live cert levels one skill across all fixed portraits then the next skill; DISPATCHED never claimed as Skills-panel PASS",
+  "runtime_partition": {
+    "host": "LOCAL_AGENT_RUNTIME",
+    "provider_routes": ["GITHUB_ORIGIN"],
+    "parallel_execution": "NOT_APPLICABLE_SINGLE_SCREEN_OWNER"
+  },
+  "ordered_sprints": [
+    {
+      "id": "S0",
+      "title": "Floor align to origin/main",
+      "owner": "LOCAL_AGENT",
+      "status": "DONE",
+      "done_when": "git pull --ff-only origin main; HEAD == origin/main; PR146 ancestor"
+    },
+    {
+      "id": "S1",
+      "title": "Persist fifth-gear household skill RR pack on main",
+      "owner": "LOCAL_AGENT",
+      "status": "IN_PROGRESS",
+      "artifacts": [
+        "plans/active/BI-P05-FIFTH-GEAR-HOUSEHOLD-SKILL-RR-20261109.v1.json",
+        "docs/LEDGER.md",
+        "docs/PROMPT_INVOCATIONS.md"
+      ],
+      "done_when": "Pack committed and merged to main"
+    },
+    {
+      "id": "S2",
+      "title": "P08 Handiness canary across observed N",
+      "owner": "LOCAL_AGENT",
+      "status": "READY",
+      "command": "python -m scripts.diy_skill_force household --members 5 --skill handiness --execute --roster-key SERVO_P0 --roster-key SERVO_P1 --roster-key SERVO_P2 --roster-key SERVO_P3 --roster-key CHARLEE_P4 --first-portrait-attested --process-id 78240 --session-id household-skill-rr-20261109",
+      "done_when": "Each portrait Handiness DISPATCHED with Space transitions; optional Skills-panel LOCAL_OBSERVED on canary cell"
+    },
+    {
+      "id": "S3",
+      "title": "P08 continue skill-round-robin (next skills)",
+      "owner": "LOCAL_AGENT",
+      "status": "BLOCKED_ON_S2",
+      "command": "python -m scripts.diy_skill_force household --members 5 --bundle diy_maker --execute --roster-key SERVO_P0 --roster-key SERVO_P1 --roster-key SERVO_P2 --roster-key SERVO_P3 --roster-key CHARLEE_P4 --first-portrait-attested --process-id 78240 --session-id household-skill-rr-20261109",
+      "done_when": "Remaining diy_maker skills dispatched skill-first across fixed N; panel proof where practical"
+    },
+    {
+      "id": "S4",
+      "title": "Sanitize receipts + converge",
+      "owner": "LOCAL_AGENT",
+      "status": "BLOCKED_ON_S3",
+      "done_when": "Private captures under dist/game-host/household-skill-cert/; ledger note; no private paths on GitHub"
+    }
+  ],
+  "invariants": [
+    "PLAYER_FIRST",
+    "ONE_SCREEN_OWNER",
+    "FIXED_ROSTER_N_NO_NEW_SIM_OR_SERVO",
+    "SKILL_ROUND_ROBIN_NOT_MEMBER_FIRST",
+    "NO_CLAIM_SKILL_PASS_FROM_DISPATCHED_LEDGER",
+    "BI002_BI005_REMAIN_OPEN"
+  ],
+  "proof_ceiling": "HOST_DISPATCH_AND_ORDERED_PACK_NOT_FULL_SKILLS_PANEL_PASS_UNTIL_LOCAL_OBSERVED"
+}
