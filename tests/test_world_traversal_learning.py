@@ -47,6 +47,22 @@ class HighlightTests(unittest.TestCase):
                 cue["state"] = "ABSENT"
         self.assertEqual(assess(seq)["state"], "HIGHLIGHT_LOST")
 
+    def test_absent_highlight_has_no_id_and_still_registers_lost(self):
+        seq = frames()
+        for frame in seq:
+            frame["highlight_target_id"] = None
+            for cue in frame["highlight_cues"]:
+                cue["state"] = "ABSENT"
+        result = assess(seq)
+        self.assertEqual(result["state"], "HIGHLIGHT_LOST")
+        self.assertFalse(result["highlight_locked"])
+        self.assertFalse(result["execute_allowed"])
+
+    def test_present_highlight_without_identity_is_unverified(self):
+        seq = frames()
+        seq[-1]["highlight_target_id"] = None
+        self.assertEqual(assess(seq)["state"], "HIGHLIGHT_UNVERIFIED")
+
     def test_one_frame_flicker_never_succeeds_or_confirms_lost(self):
         seq = frames()
         for cue in seq[-1]["highlight_cues"]:
@@ -129,6 +145,51 @@ class LearningTests(unittest.TestCase):
         self.assertNotIn("plant-17", json.dumps(out["model"]))
         self.assertFalse(rank["execute_allowed"])
 
+    def test_repeat_in_single_batch_has_one_successful_evidence_unit(self):
+        attempt = copy.deepcopy(FIXTURE["train"][0])
+        out = learn_observed_attempts(empty_model(), [attempt, copy.deepcopy(attempt)])
+        self.assertEqual((out["accepted"], out["abstained"], out["replayed"]), (1, 1, 1))
+        self.assertEqual(len(out["model"]["seen_attempts"]), 1)
+        self.assertEqual(sum(c["successes"] for c in out["model"]["contexts"].values()), 1)
+
+    def test_repeat_across_snapshots_and_strategy_renaming_abstains(self):
+        attempt = copy.deepcopy(FIXTURE["train"][0])
+        first = learn_observed_attempts(empty_model(), [attempt])["model"]
+        renamed = copy.deepcopy(attempt)
+        renamed["strategy"] = "BLIND_OFFSET"
+        renamed["after_capture_ref"] = "capture:forged-outcome"
+        replay = learn_observed_attempts(first, [renamed, attempt])
+        self.assertEqual((replay["accepted"], replay["replayed"]), (0, 2))
+        self.assertEqual(replay["model"], first)
+
+    def test_missing_interruption_attestation_is_not_a_label(self):
+        attempt = copy.deepcopy(FIXTURE["train"][0])
+        del attempt["player_interrupted"]
+        self.assertEqual(learn_observed_attempts(empty_model(), [attempt])["accepted"], 0)
+
+    def test_legacy_training_counts_without_replay_ids_fail_closed(self):
+        trained = learn_observed_attempts(empty_model(), FIXTURE["train"][:1])["model"]
+        del trained["seen_attempts"]
+        with self.assertRaisesRegex(WorldTraversalLearningError, "LEGACY_MODEL_MISSING_REPLAY_PROOF"):
+            rank_strategies(trained, [FIXTURE["train"][0]])
+
+    def test_replay_history_is_checked_for_corruption_and_budget(self):
+        valid = learn_observed_attempts(empty_model(), FIXTURE["train"][:2])["model"]
+        invalid = copy.deepcopy(valid)
+        invalid["seen_attempts"][0] = "fake"
+        with self.assertRaisesRegex(WorldTraversalLearningError, "MODEL_REPLAY_HISTORY_INVALID"):
+            rank_strategies(invalid, [FIXTURE["train"][0]])
+        invalid = copy.deepcopy(valid)
+        invalid["seen_attempts"].pop()
+        with self.assertRaisesRegex(WorldTraversalLearningError, "MODEL_REPLAY_HISTORY_COUNT_MISMATCH"):
+            rank_strategies(invalid, [FIXTURE["train"][0]])
+        cfg = load_contract()
+        cfg["learning"]["max_seen_attempts"] = 1
+        model = empty_model()
+        with self.assertRaisesRegex(WorldTraversalLearningError, "MODEL_REPLAY_HISTORY_BUDGET_EXCEEDED"):
+            learn_observed_attempts(model, FIXTURE["train"][:2], cfg=cfg)
+        self.assertEqual(model["contexts"], {})
+
     def test_empty_or_sparse_model_must_abstain(self):
         self.assertEqual(rank_strategies(empty_model(), [FIXTURE["train"][0]])["state"],
                          "ABSTAIN_INSUFFICIENT_LABELS")
@@ -156,6 +217,14 @@ class LearningTests(unittest.TestCase):
         self.assertEqual(score["coverage"], 1.0)
         self.assertLess(score["brier"], score["baseline_brier"])
         self.assertFalse(score["execute_allowed"])
+
+    def test_holdout_replays_training_and_itself_abstain(self):
+        trained = learn_observed_attempts(empty_model(), FIXTURE["train"])["model"]
+        training_example = copy.deepcopy(FIXTURE["train"][0])
+        fresh_example = copy.deepcopy(FIXTURE["holdout"][0])
+        report = evaluate_holdout(trained, [training_example, fresh_example, copy.deepcopy(fresh_example)])
+        self.assertEqual((report["evaluated"], report["abstained"], report["replayed"]), (1, 2, 2))
+        self.assertEqual(report["coverage"], round(1 / 3, 6))
 
     def test_invalid_model_counts_and_unbounded_batch_rejected(self):
         corrupted = empty_model()
@@ -185,6 +254,18 @@ class HostStackGateTests(unittest.TestCase):
         self.assertEqual(out["world_target_framing"]["highlight_tracking"]["state"], "LOCKED")
         self.assertEqual(out["next_gate"], "WORLD_TARGET_AWAIT_HOST_ADMISSION")
         self.assertFalse(out["fallback"]["execute_allowed"])
+
+    def test_highlight_lost_with_missing_id_revokes_world_candidate(self):
+        seq = frames()
+        for frame in seq:
+            frame["highlight_target_id"] = None
+            for cue in frame["highlight_cues"]:
+                cue["state"] = "ABSENT"
+        out = self._host_target(seq)
+        self.assertEqual(out["world_target_framing"]["highlight_tracking"]["state"], "HIGHLIGHT_LOST")
+        self.assertEqual(out["next_gate"], "WORLD_HIGHLIGHT_REACQUIRE_REQUIRED")
+        self.assertIsNone(out["world_target_framing"]["click_candidate"])
+        self.assertFalse(out["world_target_framing"]["click_ready"])
 
     def test_highlight_lost_blocks_otherwise_framed_world_target(self):
         seq = frames()

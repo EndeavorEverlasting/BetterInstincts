@@ -16,7 +16,8 @@
     "each_frame_requires_two_distinct_cue_sources": true,
     "negative_confirmations": 2,
     "camera_changes_invalidate_all_prior_frames": true,
-    "pointer_context_required": "HOVERING_TARGET"
+    "pointer_context_required": "HOVERING_TARGET",
+    "highlight_target_id_policy": "NULL_ALLOWED_WHEN_HIGHLIGHT_ABSENT_OR_UNVERIFIED; PRESENT_WITHOUT_ID_DENIED"
   },
   "classifier": {
     "states": [
@@ -52,7 +53,13 @@
       "SUCCESS",
       "FAILURE"
     ],
-    "strategies_are_contextual_not_authorities": true
+    "strategies_are_contextual_not_authorities": true,
+    "max_seen_attempts": 2048,
+    "replay_identity": "SHA256_160_BIT_OF_GAME_VERSION_AND_BEFORE_CAPTURE_REF",
+    "legacy_snapshots_without_replay_history": "EMPTY_ONLY_OLD_NONEMPTY_COUNTS_REJECTED",
+    "heldout_training_overlap": "ABSTAIN_NOT_COUNTED_AS_VALIDATION",
+    "player_interrupted_attestation": "EXPLICIT_FALSE_REQUIRED",
+    "replay_history": "BOUNDED_NON_EVICTING_REJECT_WHEN_FULL"
   },
   "boundaries": {
     "execute_allowed_default": false,
