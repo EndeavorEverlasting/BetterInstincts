@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -148,6 +149,35 @@ def launch(run_id: str, cfg: dict, digest: str, execute: bool) -> dict:
                         process_id=proc.pid, proof_ceiling="PROCESS_DISPATCH_ONLY")
 
 
+@contextmanager
+def _admitted_template_navigation(process_id: int | None, session_id: str | None, *, idle_ms: int):
+    """One leased Windows screen owner; fail closed before each pixel scan/click.
+
+    Offline FakeGui tests on non-Windows may model the state machine without
+    OS input. Live Windows, including injected GUI adapters, MUST hold the
+    canonical session/PID lease and prove the exact game owns foreground.
+    """
+    if sys.platform != "win32":
+        yield lambda: None
+        return
+    from betterinstincts.control_handoff import HandoffError
+    from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
+    from betterinstincts.player_presence import probe_windows
+
+    try:
+        require_execute_session(session_id, process_id)
+        with admitted_screen_lease(int(process_id), str(session_id), idle_ms=idle_ms) as ensure_ready:
+            def check() -> None:
+                ensure_ready()  # two fresh trusted-idle probes per side-effect
+                observation = probe_windows(int(process_id))
+                if (not observation.probe_ok or not observation.foreground_is_sims
+                        or observation.foreground_process_id != int(process_id)):
+                    raise GateError("GAME_FOREGROUND_NOT_OWNED")
+            yield check
+    except HandoffError as exc:
+        raise GateError("HOST_CONTROL_NOT_ADMITTED:" + str(exc)) from exc
+
+
 def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
              disposable_confirmed: bool, timeout: int = 45, gui=None,
              session_id: str | None = None, idle_ms: int = 15000) -> dict:
@@ -203,31 +233,34 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
             raise GateError("PYAutoGUI_NOT_INSTALLED") from exc
     gui.FAILSAFE = True
     gui.PAUSE = 0.3
-    base = Path(cfg["_profile_path"]).resolve().parent
-    for step in steps(cfg):
-        template = str((base / cfg["templates"][step]).resolve())
-        deadline = time.monotonic() + timeout
-        found = None
-        while time.monotonic() < deadline:
-            try:
-                matches = list(gui.locateAllOnScreen(template, grayscale=False))
-            except Exception as exc:
-                if type(exc).__name__ == "ImageNotFoundException":
-                    matches = []
-                else:
-                    raise GateError("UI_IMAGE_MATCH_ERROR") from exc
-            if len(matches) > 1:
-                raise GateError("AMBIGUOUS_UI_TARGET_" + step.upper())
-            if len(matches) == 1:
-                found = matches[0]
-                break
-            time.sleep(0.5)
-        if found is None:
-            raise GateError("UI_TARGET_TIMEOUT_" + step.upper())
-        gui.click(gui.center(found))
-        # Durable per-click checkpoint: never replay a partly completed UI flow.
-        append_event(root, "UI_CLICK_DISPATCHED", ui_step=step,
-                     proof_ceiling="CLICK_DISPATCH_ONLY")
+    with _admitted_template_navigation(rows[-1].get("process_id"), session_id, idle_ms=idle_ms) as ensure_ready:
+        base = Path(cfg["_profile_path"]).resolve().parent
+        for step in steps(cfg):
+            template = str((base / cfg["templates"][step]).resolve())
+            deadline = time.monotonic() + timeout
+            found = None
+            while time.monotonic() < deadline:
+                try:
+                    ensure_ready()
+                    matches = list(gui.locateAllOnScreen(template, grayscale=False))
+                except Exception as exc:
+                    if type(exc).__name__ == "ImageNotFoundException":
+                        matches = []
+                    else:
+                        raise GateError("UI_IMAGE_MATCH_ERROR") from exc
+                if len(matches) > 1:
+                    raise GateError("AMBIGUOUS_UI_TARGET_" + step.upper())
+                if len(matches) == 1:
+                    found = matches[0]
+                    break
+                time.sleep(0.5)
+            if found is None:
+                raise GateError("UI_TARGET_TIMEOUT_" + step.upper())
+            ensure_ready()
+            gui.click(gui.center(found))
+            # Durable per-click checkpoint: never replay a partly completed UI flow.
+            append_event(root, "UI_CLICK_DISPATCHED", ui_step=step,
+                         proof_ceiling="CLICK_DISPATCH_ONLY")
     state = ("NEW_GAME_CAS_REQUESTED" if cfg["save_mode"] == "new"
              else "CHOSEN_SAVE_PLAY_REQUESTED")
     return append_event(root, state, ui_steps=steps(cfg),
