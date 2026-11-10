@@ -261,6 +261,62 @@ def recommendation_to_dict(result: DecisionRecommendation) -> dict:
     }
 
 
+def option_has_no_risk_tags(tags: Sequence[str]) -> bool:
+    """True only when every tag is a known SAFE_TAG and none are RISK_TAGS."""
+    if not isinstance(tags, (list, tuple)) or not tags:
+        return False
+    normalized = [str(t) for t in tags]
+    if any(t not in SAFE_TAGS for t in normalized):
+        return False
+    return not any(t in RISK_TAGS for t in normalized)
+
+
+def no_risk_host_auto_choice_eligible(
+    tags: Sequence[str],
+    *,
+    implications_row: Mapping | None = None,
+    catalog_policy: Mapping | None = None,
+    option_id: str | None = None,
+) -> bool:
+    """Standing host policy gate: safe tags + empty/reversible implications.
+
+    Catalog ``host_no_risk_auto_choice`` may further pin the allowed option_id.
+    This never authorizes SendInput by itself.
+    """
+    if not option_has_no_risk_tags(tags):
+        return False
+    if isinstance(catalog_policy, Mapping):
+        if catalog_policy.get("enabled") is not True:
+            return False
+        pinned = catalog_policy.get("option_id")
+        if pinned is not None and option_id is not None and str(pinned) != str(option_id):
+            return False
+    if implications_row is None:
+        # Tag / catalog pin only. When chance-event research is present, callers
+        # must pass the matching implications_row for empty-risk permanence.
+        return True
+    if not isinstance(implications_row, Mapping):
+        return False
+    risks = implications_row.get("risks")
+    permanence = implications_row.get("permanence")
+    if not isinstance(risks, list) or any(not isinstance(x, str) for x in risks):
+        return False
+    if risks:
+        return False
+    if permanence not in {"REVERSIBLE"}:
+        return False
+    if implications_row.get("disputed") is True:
+        return False
+    return True
+
+
+def host_no_risk_policy_for_prompt(prompt_id: str, catalog: dict | None = None) -> dict | None:
+    """Return catalog host_no_risk_auto_choice block, or None."""
+    prompt = get_prompt(prompt_id, catalog)
+    policy = prompt.get("host_no_risk_auto_choice")
+    return dict(policy) if isinstance(policy, Mapping) else None
+
+
 def measure_need_deltas(
     before: Mapping[str, float],
     after: Mapping[str, float],

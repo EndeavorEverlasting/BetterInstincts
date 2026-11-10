@@ -6,8 +6,11 @@ from betterinstincts.decision_eval import (
     DecisionEvalError,
     _forced_option,
     get_prompt,
+    host_no_risk_policy_for_prompt,
     load_catalog,
     measure_need_deltas,
+    no_risk_host_auto_choice_eligible,
+    option_has_no_risk_tags,
     recommend,
 )
 from betterinstincts.host_stack import evaluate_turn
@@ -96,6 +99,39 @@ class DecisionEvalTests(unittest.TestCase):
     def test_cli_script_present(self):
         script = Path(__file__).resolve().parents[1] / "scripts" / "decision_eval.py"
         compile(script.read_text(encoding="utf-8"), str(script), "exec")
+
+    def test_life_death_inheritance_prefers_free_money_and_no_risk_policy(self):
+        prompt = get_prompt("life_death.inheritance.ghost_stranger")
+        self.assertEqual(prompt["default_when_unknown_needs"], "free_money_yes")
+        result = recommend("life_death.inheritance.ghost_stranger", SIX)
+        self.assertEqual(result.recommended_option_id, "free_money_yes")
+        policy = host_no_risk_policy_for_prompt("life_death.inheritance.ghost_stranger")
+        self.assertEqual(policy["option_id"], "free_money_yes")
+        free = next(o for o in prompt["options"] if o["option_id"] == "free_money_yes")
+        self.assertTrue(option_has_no_risk_tags(free["tags"]))
+        self.assertTrue(no_risk_host_auto_choice_eligible(
+            free["tags"], catalog_policy=policy, option_id="free_money_yes",
+            implications_row={
+                "option_id": "free_money_yes",
+                "benefits": ["Immediate Simoleons"],
+                "risks": [],
+                "unknowns": [],
+                "permanence": "REVERSIBLE",
+                "confidence": "HIGH",
+            },
+        ))
+        self.assertFalse(no_risk_host_auto_choice_eligible(
+            free["tags"], catalog_policy=policy, option_id="free_money_yes",
+            implications_row={
+                "option_id": "free_money_yes",
+                "benefits": [],
+                "risks": ["Marriage timer"],
+                "unknowns": [],
+                "permanence": "PERSISTENT",
+                "confidence": "LOW",
+            },
+        ))
+        self.assertFalse(option_has_no_risk_tags(["safe", "risk_reputation"]))
 
 
 if __name__ == "__main__":
