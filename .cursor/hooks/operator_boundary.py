@@ -30,6 +30,8 @@ SAFE_SHELL = (
     re.compile(r"git\s+ls-files", re.I),
     re.compile(r"(?:python|python3|py\s+-3)(?:\s+-B)?\s+-m\s+unittest(?:\s+discover(?:\s+-s\s+tests)?(?:\s+-v)?)?", re.I),
     re.compile(r"(?:python|python3|py\s+-3)(?:\s+-B)?\s+-m\s+scripts\.(?:check_ontology|validate_doctrine|check_scene_contract|check_horizon)", re.I),
+    re.compile(r"(?:python|python3|py\\s+-3)(?:\\s+-B)?\\s+-m\\s+scripts\\.check_peripheral_boundary", re.I),
+    re.compile(r"(?:python|python3|py\\s+-3)(?:\\s+-B)?\\s+-m\\s+unittest\\s+tests\\.test_(?:peripheral_boundary|operator_boundary)(?:\\s+-v)?", re.I),
     re.compile(r"(?:pwd|ls|dir|Get-Location)", re.I),
 )
 
