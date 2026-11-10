@@ -246,4 +246,3 @@ grant game-effect authority.
 Current result: policy and offline regression coverage only.
 No installed mod, in-game hook, EA file mutation or real cancellation is
 asserted. See \`contracts/autonomy-moderation.v1.json#native_household_policy\`.
-
