@@ -4,6 +4,7 @@ from pathlib import Path
 
 from betterinstincts.diy_skill_force import (
     DiySkillForceError,
+    assess_skill_force_claim,
     catalog_snapshot,
     classify_reward_trait,
     completed_skill_ids_for_member,
@@ -17,9 +18,11 @@ from betterinstincts.diy_skill_force import (
     plan_trait_repair,
     trait_repair_commands,
     record_skill_dispatched,
+    record_skill_panel_falsified,
     required_residual_skills,
     resolve_skills,
     save_completion_ledger,
+    skill_is_complete,
     skills_panel_observation_policy,
     steps_to_commands,
 )
@@ -783,6 +786,70 @@ class ServoEvilEscapeRegressionTests(unittest.TestCase):
         code, out = run(["trait-repair", "--equip-good"])
         self.assertEqual(code, 2)
         self.assertIn("GOOD_TRAIT_REQUIRES_OPERATOR_REQUEST", out["reason"])
+
+
+class DispatchedIsNotMaximizedTests(unittest.TestCase):
+    """P83: operator Skills panel falsified 'Handiness maximized' after DISPATCHED."""
+
+    def test_claim_language_rejects_maximized_from_dispatched(self):
+        rejected = assess_skill_force_claim(
+            claim="Handiness maximized via host across the attested 5 portraits.",
+            live_state="HOUSEHOLD_SKILL_FORCE_DISPATCHED",
+            pass_claim="FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
+        )
+        self.assertFalse(rejected["allowed"])
+        self.assertEqual(rejected["state"], "CLAIM_REJECTED_DISPATCHED_IS_NOT_MAXIMIZED")
+        allowed = assess_skill_force_claim(
+            claim="HOUSEHOLD_SKILL_FORCE_DISPATCHED for Handiness; panel still UNPROVEN_STALE.",
+            live_state="HOUSEHOLD_SKILL_FORCE_DISPATCHED",
+        )
+        self.assertTrue(allowed["allowed"])
+
+    def test_panel_falsified_clears_dispatched_skip(self):
+        ledger = empty_completion_ledger()
+        member = completion_member_key("session-p83-panel", 0, "SERVO_P0")
+        record_skill_dispatched(
+            ledger,
+            member_key=member,
+            skill_id="handiness",
+            skill_stat="Major_Handiness",
+            level=10,
+        )
+        self.assertTrue(
+            skill_is_complete(ledger["members"][member]["skills"]["handiness"], target_level=10)
+        )
+        record_skill_panel_falsified(
+            ledger,
+            member_key=member,
+            skill_id="handiness",
+            observed_level=0,
+            note="Skills panel: Cooking 10; Handiness absent — not maximized",
+        )
+        entry = ledger["members"][member]["skills"]["handiness"]
+        self.assertEqual(entry["status"], "PANEL_FALSIFIED")
+        self.assertFalse(skill_is_complete(entry, target_level=10))
+        self.assertEqual(
+            completed_skill_ids_for_member(ledger, member, target_level=10),
+            set(),
+        )
+        plan = plan_household_skill_force(
+            members=1,
+            skill_ids=["handiness"],
+            session_id="session-p83-panel",
+            member_keys=["SERVO_P0"],
+            completion_ledger=ledger,
+        )
+        self.assertEqual(plan["cells_needing_work"], 1)
+        self.assertEqual(plan["state"], "HOUSEHOLD_SKILL_FORCE_PLAN_READY")
+
+    def test_contract_pins_claim_language_guard(self):
+        cfg = load_contract()
+        claim = cfg["completion_ledger"]["claim_language"]
+        self.assertEqual(
+            claim["reject_state"], "CLAIM_REJECTED_DISPATCHED_IS_NOT_MAXIMIZED"
+        )
+        self.assertIn("maximized", claim["forbidden_from_dispatched"])
+        self.assertIn("PANEL_FALSIFIED", cfg["completion_ledger"]["statuses"])
 
 
 if __name__ == "__main__":

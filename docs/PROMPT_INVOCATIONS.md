@@ -300,6 +300,10 @@ Consultation first: `BI-HOUSEHOLD-SERVO-BILLS-20261109.v1.json`; offline gates: 
 
 Fresh Moonwake `harness/exports/prompt-invocation-catalog.v1.json` resolution: **P95 — Program Design & Call-Stack Prototype Architect** designs the phase/target/ownership call stack; **P124 — Repository Code Readability & Structural Refactorer** reuses existing `camera_traverse` / `win32_input` ownership and glossary rather than a second cursor controller. **Trifecta:** **P82 — Prototype-Measure-Refine Delivery Loop** supplies edge-click/dwell/player-priority falsifiers, **P07 — Repo Sprint Executor** owns bounded source+CI+integration, and **P08 — Live Runtime Proof Executor** remains open pending disposable Sims host measurements. All five prompt identities were read from current Moonwake catalog; no claim is made that its local resolver or a remote parallel agent process executed. Consultation `BI-CAMERA-EDGE-INTERACTION-20261109` predates source mutation.
 
+## 2026-11-09 — P83 DISPATCHED ≠ maximized (Handiness panel falsifier)
+
+**P83** rejects reporting `HOUSEHOLD_SKILL_FORCE_DISPATCHED` as “Handiness maximized.” Owner: `assess_skill_force_claim` / `PANEL_FALSIFIED`. Operator panel: Cooking 10, Handiness absent. Consultation `contracts/consultations/BI-P83-DISPATCHED-NOT-MAXIMIZED-20261109.v1.json`.
+
 ## 2026-11-09 — Fifth Gear household skill RR live cert (P05)
 
 **/fifth-gear** → P05 ordered pack `plans/active/BI-P05-FIFTH-GEAR-HOUSEHOLD-SKILL-RR-20261109.v1.json` on floor `553e2fa`. Continues P83/P04 local skill cert handoff. Algorithm: skill-round-robin maximize across fixed observed N (no new Sims). Host: `python -m scripts.diy_skill_force household --members N …`. Consultation `contracts/consultations/BI-P05-FIFTH-GEAR-HOUSEHOLD-SKILL-RR-20261109.v1.json`.

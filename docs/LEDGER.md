@@ -1,3 +1,11 @@
+## 2026-11-09 — P83: DISPATCHED is not Handiness maximized
+
+**Operator correction (LIES:P83):** Chat claimed “Handiness maximized via host across the attested 5 portraits.” Operator Skills panel on the selected Servo showed **Cooking 10** and **Handiness absent** (Robotics 3). Truthful receipt was only `HOUSEHOLD_SKILL_FORCE_DISPATCHED` / `HOST_CHEAT_TYPED` with `pass_claim=FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED`.
+
+**CHANGED:** `assess_skill_force_claim` rejects maximize language from DISPATCHED; `record_skill_panel_falsified` + status `PANEL_FALSIFIED` clear ledger skips; contract `completion_ledger.claim_language`. Consultation `BI-P83-DISPATCHED-NOT-MAXIMIZED-20261109.v1.json`.
+
+**PROVED offline:** `tests.test_diy_skill_force.DispatchedIsNotMaximizedTests`. Live Handiness Skills-panel LOCAL_OBSERVED across N remains **OPEN** / **FALSIFIED**.
+
 ## 2026-11-09 — Fifth Gear household skill-round-robin live cert pack
 
 **Operator:** Too many Sims already present; refresh floor to `origin/main`; leave durable skill-maximize host logic; live-cert skill-first round-robin (pick skill → maximize portrait 1..N → next skill). No household expansion.
