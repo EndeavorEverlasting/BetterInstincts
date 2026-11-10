@@ -48,6 +48,18 @@ class OperatorBoundaryTests(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertEqual(boundary.evaluate({"command": command})["permission"], "allow")
 
+    def test_approved_repo_peripheral_diagnostics_are_reachable(self):
+        for command in (
+            "python -m scripts.check_peripheral_boundary",
+            "python -m unittest tests.test_peripheral_boundary -v",
+            "python -m unittest tests.test_operator_boundary -v",
+        ):
+            with self.subTest(command=command):
+                self.assertEqual(boundary.evaluate({"hook_event_name": "beforeShellExecution",
+                                                    "command": command})["permission"], "allow")
+        self.assert_denies({"hook_event_name": "beforeShellExecution",
+                            "command": "python -m scripts.check_peripheral_boundary; sc stop bthserv"})
+
     def test_no_peripheral_settings_registry_destructive_or_unknown_shell(self):
         for command in (
             "powershell -Command Restart-Service bthserv",
