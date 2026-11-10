@@ -306,6 +306,28 @@ def load_escape_menu_coords(*, cfg: Optional[dict] = None) -> dict[str, tuple[in
     return out
 
 
+def load_camera_dependent_fridge_seeds(*, cfg: Optional[dict] = None) -> dict:
+    """Return camera-dependent fridge seeds with their zoom precondition.
+
+    These are NOT fixed-HUD seeds and are never ingested into the ledger.
+    """
+    cfg = cfg or load_contract()
+    block = cfg.get("camera_dependent_seeds_1920x1080")
+    if not isinstance(block, Mapping):
+        raise FixedUiClickMapError("CAMERA_DEPENDENT_SEEDS_REQUIRED")
+    targets = block.get("targets")
+    if not isinstance(targets, Mapping):
+        raise FixedUiClickMapError("CAMERA_DEPENDENT_TARGETS_REQUIRED")
+    out: dict = {"zoom_precondition": dict(block.get("zoom_precondition") or {})}
+    for key, tid in (("hit_zoomed", "world.fridge_pie_zoomed"), ("stale_wide", "world.fridge_pie_wide_stale")):
+        row = targets.get(tid)
+        xy = row.get("client_xy") if isinstance(row, Mapping) else None
+        if not (isinstance(xy, (list, tuple)) and len(xy) == 2 and all(isinstance(v, int) for v in xy)):
+            raise FixedUiClickMapError(f"CAMERA_DEPENDENT_XY_REQUIRED:{tid}")
+        out[key] = {"client_xy": (int(xy[0]), int(xy[1])), "camera_state": str(row.get("camera_state") or "")}
+    return out
+
+
 def plan_escape_menu_save(*, intent: str = "SAVE_AS", cfg: Optional[dict] = None) -> dict:
     """Plan centered MENU save path; guard Save vs Save As 2px collision."""
     cfg = cfg or load_contract()

@@ -1,6 +1,9 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 7,
+  "version": 8,
+  "version_notes": {
+    "8": "Adds camera_dependent_seeds_1920x1080 (fridge HIT/MISS). Additive only: seed_targets_1920x1080 and all certified seeds unchanged; camera-dependent rows are NOT ingested into the fixed-HUD ledger."
+  },
   "authority": "docs/UI_CHROME.md",
   "owners": {
     "map": "betterinstincts/fixed_ui_click_map.py",
@@ -929,6 +932,54 @@
     "not": [
       "TREAT_SAVE_AND_SAVE_AS_AS_INTERCHANGEABLE",
       "CLICK_EXISTING_SAVE_THUMBNAIL_IN_SAVE_GAME_DIALOG"
+    ]
+  },
+  "camera_dependent_seeds_1920x1080": {
+    "scope_note": "CAMERA_DEPENDENT_WORLD_PIXELS stay out of seed_targets_1920x1080. These rows are valid ONLY under the stated zoom precondition and are never loaded as fixed-HUD ledger seeds.",
+    "ingest_into_fixed_ledger": false,
+    "status": "PRINTWINDOW_MEASURED_20261110_SINGLE_FRAME_NOT_PROMOTED",
+    "proof_ceiling": "PRINTWINDOW_FRIDGE_PIE_HIT_SNACK_QUEUE_NOT_PROVED",
+    "lot": "Bargain Bend LabLab",
+    "zoom_precondition": {
+      "required": "ZOOMED_IN_RECENTERED",
+      "actuator": ["KEY_Z", "MOUSE_WHEEL"],
+      "approx_z_presses": 14,
+      "recenter": "ENTER_CENTER_ACTIVE_SIM",
+      "forbidden_actuator": ["RIGHT_CLICK", "RMB"],
+      "owner": "contracts/ui-chrome.v1.json + contracts/camera-traverse.v1.json zoom-controls"
+    },
+    "targets": {
+      "world.fridge_pie_zoomed": {
+        "role": "OPEN_REFRIGERATOR_PIE_MENU",
+        "client_xy": [500, 560],
+        "camera_state": "ZOOMED_IN_RECENTERED",
+        "status": "HIT_PIE_MENU_PRINTWINDOW_20261110",
+        "pie_options_seen": ["More Choices", "Have Breakfast", "Cook a Grand Meal", "Get Leftovers", "Cook Together With", "Bake (gray)"],
+        "evidence": "dist/game-host/horizon-exec-20261110/bi002/fridge-cand-500_560.png",
+        "receipt": "dist/game-host/horizon-exec-20261110/bi002/fridge-hit-receipt.json",
+        "snack_queued": false,
+        "notes": "Second camera-frame confirmation still required before attesting as a stable coordinate."
+      },
+      "world.fridge_pie_wide_stale": {
+        "role": "STALE_DO_NOT_USE",
+        "client_xy": [465, 595],
+        "camera_state": "WIDE_NEIGHBORHOOD_ZOOM",
+        "status": "MISS_OUTDOOR_UPGRADE_POSSESS_PIE",
+        "evidence": "dist/game-host/horizon-exec-20261110/bi002/followup-fridge-pie.png",
+        "notes": "Opened the outdoor satellite/garden Upgrade/Possess pie. Not equivalent to the zoomed HIT coordinate."
+      }
+    },
+    "related_fixed_targets": {
+      "live.calendar_close_x": {
+        "client_xy": [1445, 255],
+        "notes": "Only supported calendar dismiss; never toggle live.show_calendar to close."
+      }
+    },
+    "forbidden": [
+      "CLICK_WIDE_STALE_FRIDGE_XY",
+      "USE_HIT_XY_WITHOUT_ZOOM_PRECONDITION",
+      "ZOOM_WITH_RIGHT_CLICK",
+      "STATS_SET_HUNGER_BEFORE_FOOD_QUEUED"
     ]
   },
   "guarantees": [

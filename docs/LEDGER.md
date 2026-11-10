@@ -1,3 +1,10 @@
+## 2026-11-10 — Fridge calibration promoted to contract (offline)
+
+**CHANGED:** `contracts/fixed-ui-click-map.v1.json` v8 adds `camera_dependent_seeds_1920x1080` (additive; certified seeds untouched; NOT ingested into the fixed-HUD ledger). Zoomed + Enter-recentered fridge pie **HIT `[500,560]`**; wide-zoom `[465,595]` **MISS/stale** (outdoor Upgrade/Possess pie). Zoom precondition: Z/wheel (~14), never RMB, then Enter. `load_camera_dependent_fridge_seeds` + `CameraDependentFridgeSeedTests`. Horizon plan living-subject gate: **Bernice is a Servo (Durability)**, not a living hunger subject; Charlee/Olga are playable ghosts (Ethereal Sustenance); need a living human (Evil P0 or remeasure). Calendar dismiss only via `live.calendar_close_x [1445,255]`.
+
+**Evidence (local, gitignored):** `dist/game-host/horizon-exec-20261110/bi002/fridge-cand-500_560.png` (HIT), `followup-fridge-pie.png` (MISS), `fridge-hit-receipt.json` (`HIT_PIE_MENU`, `snack_queued=false`). Consultation `BI-FRIDGE-CAMERA-SEEDS-20261110`.
+
+**Proof ceiling:** `PRINTWINDOW_FRIDGE_PIE_HIT_SNACK_QUEUE_NOT_PROVED`; single frame, no live input this pass. BI-002 stays open (baseline 2/5).
 ## 2026-11-10 — Horizon plan sync to live truth (repo/docs only)
 
 **CHANGED:** `plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json` now carries `live_truth_20261110` + `next_gates_ordered`; closers pack points at it via `live_status_pointer`. H0 save DONE (`My Saved Game 6` / `Slot_00000007`, never delete); lot_focus PARTIAL; fridge HIT MISS (`[465,595]` opened outdoor Upgrade/Possess pie; camera too zoomed out); Charlee starved -> playable ghost; Olga death modal cleared; living hunger subject RECOVERY_REQUIRED; FG S2 Skills LOCAL_OBSERVED (not BI-005).

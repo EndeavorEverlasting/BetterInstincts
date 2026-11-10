@@ -9,6 +9,7 @@ from betterinstincts.fixed_ui_click_map import (
     empty_ledger,
     ensure_seeded_ledger,
     load_contract,
+    load_camera_dependent_fridge_seeds,
     load_escape_menu_coords,
     plan_arm_to_console_handoff,
     plan_escape_menu_save,
@@ -182,7 +183,7 @@ class FixedUiClickMapTests(unittest.TestCase):
 
     def test_escape_menu_save_and_save_as_distinct_with_dialog_policy(self):
         cfg = load_contract()
-        self.assertEqual(cfg["version"], 7)
+        self.assertGreaterEqual(cfg["version"], 7)
         coords = load_escape_menu_coords()
         self.assertEqual(coords["menu_options"], (1898, 22))
         self.assertEqual(coords["save"], (960, 420))
@@ -205,6 +206,41 @@ class FixedUiClickMapTests(unittest.TestCase):
         self.assertEqual(dialog["add_new_save_ok"]["client_xy"], [957, 603])
         self.assertEqual(dialog["save_game_close_x"]["client_xy"], [1342, 238])
         self.assertIn("USE_MENU_SAVE_FOR_NEW_SLOT", plan["forbidden"])
+
+
+class CameraDependentFridgeSeedTests(unittest.TestCase):
+    def test_wide_and_zoomed_fridge_coords_are_not_equivalent(self):
+        cfg = load_contract()
+        seeds = load_camera_dependent_fridge_seeds(cfg=cfg)
+        hit = seeds["hit_zoomed"]["client_xy"]
+        stale = seeds["stale_wide"]["client_xy"]
+        self.assertEqual(hit, (500, 560))
+        self.assertEqual(stale, (465, 595))
+        self.assertEqual(seeds["hit_zoomed"]["camera_state"], "ZOOMED_IN_RECENTERED")
+        self.assertEqual(seeds["stale_wide"]["camera_state"], "WIDE_NEIGHBORHOOD_ZOOM")
+        radius = cfg["thresholds_px"]["hit_radius"]
+        dist = ((hit[0] - stale[0]) ** 2 + (hit[1] - stale[1]) ** 2) ** 0.5
+        self.assertGreater(dist, radius)
+        scored = classify_click(intended_xy=hit, observed_xy=stale, cfg=cfg)
+        self.assertNotEqual(scored["classification"], "HIT")
+
+    def test_zoom_precondition_is_z_or_wheel_never_rmb(self):
+        pre = load_camera_dependent_fridge_seeds()["zoom_precondition"]
+        self.assertEqual(pre["required"], "ZOOMED_IN_RECENTERED")
+        self.assertEqual(pre["actuator"], ["KEY_Z", "MOUSE_WHEEL"])
+        self.assertIn("RIGHT_CLICK", pre["forbidden_actuator"])
+        self.assertEqual(pre["recenter"], "ENTER_CENTER_ACTIVE_SIM")
+
+    def test_camera_dependent_seeds_not_ingested_as_fixed_hud(self):
+        cfg = load_contract()
+        block = cfg["camera_dependent_seeds_1920x1080"]
+        self.assertFalse(block["ingest_into_fixed_ledger"])
+        self.assertIn("USE_HIT_XY_WITHOUT_ZOOM_PRECONDITION", block["forbidden"])
+        self.assertIn("CAMERA_DEPENDENT_WORLD_PIXELS", cfg["scope"]["out"])
+        ledger = ensure_seeded_ledger(empty_ledger(), cfg=cfg)
+        for tid in ledger["targets"]:
+            self.assertFalse(tid.startswith("world.fridge"), tid)
+        self.assertEqual(cfg["seed_targets_1920x1080"]["live.calendar_close_x"]["client_xy"], [1445, 255])
 
 
 if __name__ == "__main__":

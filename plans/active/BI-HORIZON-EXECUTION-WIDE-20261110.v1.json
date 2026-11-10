@@ -2,7 +2,7 @@
   "schema": "betterinstincts.horizon-execution-wide/v1",
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
-  "updated_at": "2026-11-10T10:45:00Z",
+  "updated_at": "2026-11-10T11:10:00Z",
   "live_truth_20261110": {
     "host": {"pid": 78240, "exe": "TS4_x64_fpb", "game_version": "1.121.361.1020"},
     "live_cert_run": "bi002-game1-20261107",
@@ -11,8 +11,10 @@
     "household": {
       "charlee_lablab": "STARVED -> Become a Playable Ghost (adverse-charlee-starvation.json); death watch is NOT an eat trial",
       "olga": "death modal DISMISSED; playable-ghost path",
-      "living_hunger_subject": "RECOVERY_REQUIRED — a living (non-ghost) Sim must be selected before any further baseline trial"
+      "living_hunger_subject": "RECOVERY_REQUIRED — a living (non-ghost) Sim must be selected before any further baseline trial",
+      "living_subject_gate_20261110": {"bernice": "SERVO (Durability) — NOT a living human hunger subject; any note assuming Bernice=human is superseded", "charlee_olga": "playable ghosts (Ethereal Sustenance) — not hunger subjects", "need": "a living human (Evil P0 or remeasure the roster)", "prove_via": "Needs panel 6-bar Hunger (vs Servo Durability / ghost Ethereal)"}
     },
+    "fridge_hit_zoomed_20261110": "HIT_PIE_MENU at client [500,560] after Z-zoom (~14) + Enter recenter; snack NOT queued; single frame; contracts/fixed-ui-click-map.v1.json camera_dependent_seeds_1920x1080",
     "fridge_hit": "MISS — [465,595] opened outdoor Upgrade/Possess pie (satellite/garden), not the fridge; camera too zoomed out; coords are single-frame, not promoted",
     "fg_s2_skills": "LOCAL_OBSERVED (done); not BI-005; not BI-002 closure",
     "evidence_root": "dist/game-host/horizon-exec-20261110/ (gitignored, local-only)",
@@ -162,7 +164,8 @@
         "trial1": "PARTIAL_BLOCKED_CAMERA_OFF_LOT — no seconds-to-eat recorded",
         "receipt": "dist/game-host/horizon-exec-20261110/bi002/trial1-partial.json",
         "live_cert": {"run_id": "bi002-game1-20261107", "baseline": "2/5", "modified": "0/5", "rollback": 0, "state": "INCOMPLETE", "next_gate": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS"},
-        "fridge_hit": {"state": "MISS", "receipt": "dist/game-host/horizon-exec-20261110/bi002/fridge-hit-receipt.json", "xy": [465, 595], "observed": "outdoor Upgrade/Possess pie (satellite/garden); camera too zoomed out"},
+        "fridge_hit": {"state": "MISS", "receipt": "dist/game-host/horizon-exec-20261110/bi002/fridge-hit-receipt.json", "xy": [465, 595], "observed": "outdoor Upgrade/Possess pie (satellite/garden); camera too zoomed out", "wide_zoom_only": true, "zoomed_hit_xy": [500, 560], "zoomed_hit_state": "HIT_PIE_MENU", "zoom_precondition": "ZOOMED_IN_RECENTERED via Z/wheel (never RMB) + Enter"},
+        "living_subject_gate": "Bernice=Servo (Durability), not living human; need living human (Evil P0 or remeasure); Charlee/Olga are playable ghosts",
         "adverse": {"event": "CHARLEE_STARVATION_DEATH -> playable ghost", "receipt": "dist/game-host/horizon-exec-20261110/bi002/adverse-charlee-starvation.json", "baseline_effect": "none; stays 2/5"},
         "olga_modal": "CLEARED (followup-olga-cleared.png)",
         "living_hunger_subject": "RECOVERY_REQUIRED",
@@ -212,9 +215,9 @@
     }
   ],
   "next_gates_ordered": [
-    "1. Recover a LIVING hunger subject: select a living Sim (not Charlee/Olga ghost); never delete My Saved Game 6 / Slot_00000007",
+    "1. Recover a LIVING hunger subject: select a living HUMAN Sim (not Charlee/Olga ghost, not Bernice Servo; Evil P0 or remeasure); never delete My Saved Game 6 / Slot_00000007",
     "2. Fix lot focus: arm hotkeys, Enter to recenter on active Sim, zoom in so the fridge is bbox-centered (no outdoor pie)",
-    "3. Fridge HIT: PrintWindow-confirm kitchen fridge pie (Grab/Quick Meal) before any hunger drain; promote coords only after a second camera frame",
+    "3. Fridge HIT: PrintWindow-confirm kitchen fridge pie (Grab/Quick Meal) before any hunger drain; promote coords only after a second camera frame; zoomed HIT [500,560] seeded as camera-dependent (stale wide [465,595]); calendar dismiss only via live.calendar_close_x [1445,255]",
     "4. BI-002 baseline trials 3-5 (record with python -m scripts.live_cert record; no set_stat drain without queued food)",
     "5. BI-002 modified 5/5 with reversible package, rollback, maintainer review",
     "6. Only after BI-002 live cert: BI-003A-E -> BI-003F -> BI-004 -> BI-005 -> BI-006"
