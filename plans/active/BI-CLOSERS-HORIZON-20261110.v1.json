@@ -18,7 +18,9 @@
     "head": "a94f114",
     "origin_main": "a94f11439cfea6a0fbe5ed9dbfbf08c9e5135ee7",
     "dirty_worktree": true,
-    "open_prs": [149],
+    "open_prs": [
+      149
+    ],
     "horizon": {
       "current_gate": "BI-002",
       "check_horizon": "PASS_TOPOLOGY",
@@ -59,32 +61,51 @@
       "id": "C3",
       "title": "Needs-investigation opportunistic floor map during hunger remedy",
       "runtime": "LOCAL_AGENT",
-      "depends_on": ["C1"],
-      "serial_with": ["C2"],
+      "depends_on": [
+        "C1"
+      ],
+      "serial_with": [
+        "C2"
+      ],
       "why": "Maps fridge/food while satisfying hunger — accelerates BI-002 object path without Build sampling"
     },
     {
       "id": "C4",
       "title": "Fifth Gear S2 Skills-panel LOCAL_OBSERVED",
       "runtime": "LOCAL_AGENT",
-      "depends_on": ["C1"],
-      "serial_with": ["C2", "C3"],
+      "depends_on": [
+        "C1"
+      ],
+      "serial_with": [
+        "C2",
+        "C3"
+      ],
       "why": "Lab N=4 skill cert; NOT horizon BI-005"
     },
     {
       "id": "C5",
       "title": "Builder placement live sensor + graph links",
       "runtime": "LOCAL_AGENT",
-      "depends_on": ["C1"],
-      "serial_with": ["C2", "C3", "C4"],
+      "depends_on": [
+        "C1"
+      ],
+      "serial_with": [
+        "C2",
+        "C3",
+        "C4"
+      ],
       "why": "Prove host_listener build_placements observation; Escape/center census discipline"
     },
     {
       "id": "C6",
       "title": "Horizon convergence + ledger",
       "runtime": "REPO_AGENT",
-      "depends_on": ["C1"],
-      "soft_depends_on": ["C2"],
+      "depends_on": [
+        "C1"
+      ],
+      "soft_depends_on": [
+        "C2"
+      ],
       "why": "check_horizon; refuse BI-003 promotion until BI-002 live-certified"
     }
   ],
@@ -102,5 +123,86 @@
     "fifth_gear_s2": "plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json",
     "floor_map": "contracts/lot-floor-map.v1.json + betterinstincts/lot_floor_map.py",
     "this_pack": "plans/active/BI-CLOSERS-HORIZON-20261110.v1.json"
+  },
+  "closeout_native_autonomy_20261110": {
+    "scope": "Current conversation: native household autonomy and cross-cutting Horizon contract reconciliation; preserve historical original 2026-11-10 local C1–C6 snapshot unchanged",
+    "moonwake_closer_execution": [
+      "P83",
+      "P03",
+      "P141",
+      "P124",
+      "P04"
+    ],
+    "provider_floor_at_intake": {
+      "repo": "EndeavorEverlasting/BetterInstincts",
+      "main": "57eb5edd0639615f38152d7ba8e27b2c820c4516",
+      "merged_pr": 170,
+      "game_adapter_open_issue": 171
+    },
+    "p83": {
+      "claim_to_evidence": {
+        "PR_170_merged": "VERIFIED_GITHUB",
+        "offline_unit_ci_and_peripheral_gate": "VERIFIED_GITHUB",
+        "native_game_queue_cancellation": "NOT_OBSERVED",
+        "live_patch_matched_adapter": "NOT_OBSERVED",
+        "BI_002_hunger_close": "NOT_OBSERVED"
+      },
+      "verified_missing": "Native EA adapter and local game before/after + rollback"
+    },
+    "p03": {
+      "first_safe_sprint": "Add native_goal_continuity as cross-cutting machine Horizon contract; enforce no automatic phase promotion in check_horizon and regression tests"
+    },
+    "p141": {
+      "selected": "Cross-cutting native gameplay capability without phase promotion",
+      "rejected": [
+        "new_blocking_horizon_stage",
+        "independent_desktop_mouse_queue_canceller"
+      ]
+    },
+    "p124": {
+      "single_policy_owner": "betterinstincts/autonomy_moderation.py",
+      "single_horizon_owner": "plans/horizon.v1.json + scripts/check_horizon.py",
+      "behavior_refactor": "NOT_NEEDED_POLICY_UNCHANGED"
+    },
+    "p04": {
+      "launch_order": [
+        {
+          "id": "HC-1",
+          "runtime": "CURRENT_CHAT_RUNTIME",
+          "owner": "GitHub provider",
+          "task": "Reconcile merged PR170 and issue171 to Horizon, test, merge validated closeout"
+        },
+        {
+          "id": "HC-2",
+          "runtime": "LOCAL_AGENT_RUNTIME",
+          "owner": "Game-capable BetterInstincts agent",
+          "task": "BI-002 hunger live cert first as current Horizon stage; preserve previous receipts and player/saves"
+        },
+        {
+          "id": "HC-3",
+          "runtime": "LOCAL_AGENT_RUNTIME",
+          "owner": "Game-capable BetterInstincts agent",
+          "depends_on": [
+            "local exact game build and read-only EA source observation"
+          ],
+          "task": "Native EA queue/score hook research from issue171; isolated from C2 screen ownership"
+        },
+        {
+          "id": "HC-4",
+          "runtime": "LOCAL_AGENT_RUNTIME",
+          "owner": "Game-capable BetterInstincts agent",
+          "depends_on": [
+            "HC-3"
+          ],
+          "task": "Narrow reversible native package with per-Sim before/after and rollback; independent game certification"
+        }
+      ],
+      "collision": "Only one active Sims game screen owner; no parallel UI or unapproved game asset access",
+      "first_live_command": "python -m scripts.live_cert status --run-id bi002-game1-20261107",
+      "stop_boundary": "ChatGPT GitHub tools cannot inspect the actual installed EA game state, which must be independently observed"
+    },
+    "correct_current_horizon_gate": "BI-002",
+    "durable_owner": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json#native_goal_continuity_closeout_20261110",
+    "original_historical_launch_order_preserved": true
   }
 }
