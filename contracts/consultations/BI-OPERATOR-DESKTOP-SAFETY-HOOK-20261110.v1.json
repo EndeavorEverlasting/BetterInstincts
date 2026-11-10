@@ -1,0 +1,72 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-OPERATOR-DESKTOP-SAFETY-HOOK-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "a9c8fd1778b0d340fc69c72850e5c5fb1363ecbd",
+  "proposed_capability": "Add project-scoped Cursor pre-effect gates that refuse risky host shell commands, arbitrary file deletes, protected saves and peripheral changes without changing desktop services or user settings.",
+  "affected_concepts": [
+    "HOST_SESSION",
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "HOST_ACTION",
+    "OUTCOME",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/ASYNC_INTEROP.md",
+    "docs/PERIPHERAL_INCIDENT.md",
+    "scripts/semantic_preflight.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_CURSOR_HOOK_AND_POLICY_TESTS_ONLY_NOT_LOCAL_HOOK_ACTIVATION_OR_OS_RECOVERY",
+  "player_save_control_impact": "No OS, peripherals, preferences, EA saves, user files, or local hook installations are mutated by this repository change. Rules gate future project-scoped agent operations on supported Cursor versions.",
+  "expected_outcome": "Fail-closed Cursor project hook refuses unsafe shell execution, protected file deletion/write and direct risky tool calls; permits narrow read-only diagnostics and isolated offline tests.",
+  "negative_tests": [
+    "Refuse service/driver/device/registry/screenshot preference mutation and shell indirection",
+    "Refuse save deletion and paths outside repository for tool writes",
+    "Refuse attempts to disable guard files",
+    "Refuse unknown commands, malformed inputs, symlinks or ambiguous scope; allow well-known read-only diagnostics"
+  ],
+  "rollback_path": "Remove the feature branch or revert the isolated hook/contract/tests; leave original PR160 and Windows host unchanged.",
+  "unresolved_unknowns": [
+    "Cursor project hook load and enforcement on operator host must be verified locally.",
+    "Non-Cursor tools, direct computer-use interaction and out-of-repo agents are not automatically controlled by project hooks."
+  ],
+  "files_expected": [
+    ".cursor/hooks.json",
+    ".cursor/hooks/operator_boundary.py",
+    "tests/test_operator_boundary.py",
+    "contracts/operator-desktop-boundary.v1.json",
+    "AGENTS.md",
+    "docs/PERIPHERAL_INCIDENT.md",
+    "docs/ASYNC_INTEROP.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
+  "source_main_sha": "dcfa26ac9cfe661ff5d19c0d687e7d468f06d3e9"
+}
