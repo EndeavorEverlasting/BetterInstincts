@@ -24,6 +24,25 @@ class PeripheralBoundaryTests(unittest.TestCase):
                 with self.subTest(case=case):
                     self.assertIn(reason, inspect_source(case))
 
+    def test_protect_screenshot_escape_u_and_global_input_channels(self):
+        examples = {
+            "OS_KEYBOARD_REMAP_OR_ACCESSIBILITY": [
+                "Scancode Map", "SetKeyboardState(...)", "SystemParametersInfoW(...)",
+                "FilterKeys enabled", "Keyboard Layout\\\\Scancode",
+            ],
+            "OS_GLOBAL_INPUT_INTERCEPTION": [
+                "SetWindowsHookExW(...)", "RegisterHotKey(hwnd, U)",
+            ],
+            "OS_REGISTRY_MUTATION": [
+                "reg.exe add HKCU\\\\Software", "Set-ItemProperty -Path HKCU:",
+                "winreg.SetValueEx(key, name, 0, type, data)",
+            ],
+        }
+        for reason, cases in examples.items():
+            for code in cases:
+                with self.subTest(code=code):
+                    self.assertIn(reason, inspect_source(code))
+
     def test_allow_game_observation_and_readonly_service_language(self):
         self.assertEqual(inspect_source("passive PrintWindow; Get-Service bthserv; idle probe"), ())
 

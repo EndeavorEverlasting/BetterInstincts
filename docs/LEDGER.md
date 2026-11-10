@@ -1,3 +1,21 @@
+## 2026-11-10 — Human-first effect lanes and host input sovereignty
+
+**Parent objective:** make every BetterInstincts subsystem yield to physical
+operator use of any application, keeping read-only observation/reasoning useful
+while preventing screen/game effects and forbidden Windows control. The reported
+Bluetooth, Print Screen, Escape and U interference is classified as
+UNAUTHORIZED_OPERATOR_HOST_CAPABILITY_INTERFERENCE; attribution/root cause
+remain unproved from GitHub-only access.
+
+**P95/P82/P08/P07/P124:** Reuse existing cooperative screen-owner and idle
+admission instead of inventing a second daemon. Added typed policy,
+bounded independent passive observation, direct regression fixtures and expanded
+host-setting static deny lists. P08 Windows/Sims runtime proof remains required,
+not asserted by offline CI. Consultation:
+`contracts/consultations/BI-HUMAN-SOVEREIGNTY-EFFECT-LANES-20261110.v1.json`.
+Keep BI-002 hunger live certification ACTIVE and do not overwrite parallel PR
+#159 spatial-perception work.
+
 ## 2026-11-10 — P04 canonical next supporting contract horizon priority
 
 **Operator direction:** After the exact P83→P03→P141→P124→P04 Closers repair (#169), invoke Moonwake P04 again so that the **next priority exists in the canonical BetterInstincts contract horizon** for durable local-agent execution. The existing runbook alone was not enough: `plans/horizon.v1.json`, `plans/active/BI-HORIZON.dispatch.v1.json`, repo-wide owner `plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json`, and `scripts/horizon_status.py` did not agree on a discoverable supporting P08 sensor priority.

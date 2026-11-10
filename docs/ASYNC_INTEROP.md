@@ -180,3 +180,28 @@ This project-level hook does not reach non-Cursor harnesses, uncooperative compu
 ### Game-host template-navigation admission
 
 The `scripts/game_host.py` PyAutoGUI navigation path is not an exception to `admitted_screen_lease`: on Windows it now validates an active session and game PID, locks the shared desktop, confirms human-idle admission and exact Sims foreground before every template scan and each click. It does not focus/restore a different window to bypass these checks. Loss of ownership aborts with a blocked receipt; do not replay partial UI flows. `tests/test_game_host.py` contains four negative cases. Live Windows certification is still required.
+
+## 2026-11-10 — Typed human-sovereignty effect admission
+
+`contracts/effect-authority.v1.json` and `betterinstincts/effect_authority.py`
+classify read-only `PASSIVE_OBSERVATION` / `BACKGROUND_REASONING`,
+human-gated `SCREEN_EFFECT` / `GAME_MUTATION`, and always-denied
+`OS_CONFIGURATION`. Missing/unknown class is denied. The pure policy cannot
+be substituted for per-action `screen_admit` checks.
+
+`CooperativeScreenQueue.enqueue_observation` is the reviewed read-only lane:
+bounded local observation or processing can finish while the gamer is typing,
+playing, using Wispr, or controlling another monitor. It requires an explicit
+active session, and does not acquire the screen lock or change focus. UI/game
+actions in the original queue **remain queued and paused** until trusted idle.
+Both lanes share the 32-item cap; passive callbacks have a 2-second timeout
+and no blind replay on ambiguous outcomes. A callback declaration is not a
+sandbox: never pass untrusted code, Windows input, Playwright interactions,
+game-state mutation, focus-changing capture, or save operations into it.
+
+`scripts/check_peripheral_boundary.py` also rejects OS keyboard scancode and
+accessibility changes, global input interception, registry mutations and existing
+Bluetooth/PnP/capture preference controls. Print Screen, Escape and U are
+operator-owned. It is a CI/static regression guard, **not** prevention of an
+unadopted agent acting outside the repository. Local Windows game tests must
+demonstrate physical takeover, release and no OS setting mutation.

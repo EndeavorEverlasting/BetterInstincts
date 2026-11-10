@@ -221,6 +221,102 @@ class UserInteractionSovereigntyTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.queue.suspended)
 
 
+
+class BackgroundObservationTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.active, self.age = True, 0
+        self.receipts = []
+
+        async def fake_sleep(seconds):
+            pass
+
+        self.queue = CooperativeScreenQueue(
+            lambda: PresenceProbe(False, False, last_input_age_ms=self.age),
+            lambda: self.active, lock_root=Path(self.tmp.name), sleep=fake_sleep,
+        )
+
+    async def test_user_can_play_while_passive_observation_completes(self):
+        async def valid():
+            self.receipts.append("validate")
+            return True
+
+        async def observe():
+            self.receipts.append("observe")
+
+        async def effect():
+            self.receipts.append("screen")
+
+        self.queue.enqueue_effect("screen", valid, effect)
+        self.queue.enqueue_observation("look", valid, observe)
+        result = await self.queue.run_once()
+        self.assertEqual(result["state"], "COMPLETED")
+        self.assertEqual(result["effect_class"], "PASSIVE_OBSERVATION")
+        self.assertEqual(self.receipts, ["validate", "observe"])
+        self.assertEqual((await self.queue.run_once())["state"], "WAITING_FOR_USER")
+        self.assertEqual(self.receipts, ["validate", "observe"])
+        self.age = 16000
+        self.assertEqual((await self.queue.run_once())["state"], "COMPLETED")
+        self.assertEqual(self.receipts[-1], "screen")
+
+    async def test_observation_does_not_claim_desktop_lock(self):
+        async def valid():
+            return True
+
+        async def observe():
+            self.receipts.append("passive")
+
+        self.queue.enqueue_observation("passive", valid, observe)
+        with exclusive_desktop_owner(lock_root=Path(self.tmp.name)):
+            self.assertEqual((await self.queue.run_once())["state"], "COMPLETED")
+        self.assertEqual(self.receipts, ["passive"])
+
+    async def test_failed_background_does_not_replay_and_requires_review(self):
+        async def valid():
+            return True
+
+        async def fail():
+            self.receipts.append("attempt")
+            raise RuntimeError("sensor failed")
+
+        self.queue.enqueue_observation("uncertain", valid, fail)
+        self.assertEqual((await self.queue.run_once())["state"], "NEEDS_RECONCILIATION")
+        self.assertIn("uncertain", self.queue.suspended)
+        self.assertEqual((await self.queue.run_once())["state"], "EMPTY")
+        self.assertEqual(self.receipts, ["attempt"])
+
+    async def test_inactive_session_stops_background(self):
+        self.active = False
+
+        async def valid():
+            return True
+
+        async def observe():
+            self.receipts.append("unexpected")
+
+        self.queue.enqueue_observation("idle", valid, observe)
+        self.assertEqual((await self.queue.run_once())["state"], "WAITING_FOR_USER")
+        self.assertEqual(self.receipts, [])
+        self.active = True
+        self.assertEqual((await self.queue.run_once())["state"], "COMPLETED")
+
+    async def test_cross_lane_dedup_and_shared_capacity(self):
+        async def valid():
+            return True
+
+        async def observe():
+            return None
+
+        self.queue.enqueue_observation("same", valid, observe)
+        with self.assertRaisesRegex(ValueError, "ALREADY_REGISTERED"):
+            self.queue.enqueue(QueuedStep("same", valid, lambda checkpoint: observe()))
+        for index in range(MAX_QUEUE - 1):
+            self.queue.enqueue_observation(f"extra{index}", valid, observe)
+        with self.assertRaisesRegex(ValueError, "QUEUE_FULL"):
+            self.queue.enqueue_observation("overflow", valid, observe)
+
+
 class CanonicalScreenLockTests(unittest.TestCase):
     def test_default_lock_location_is_shared_outside_repository_checkouts(self):
         import bootstrap
