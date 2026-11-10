@@ -1,0 +1,79 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-LOT-BOUNDARY-FOOTPRINT-ADMIT-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "P00/P01: Durable household lot BOUNDARY / FOOTPRINT admission so agents cannot click street/asphalt/neighbor/canal as if they were house contents. Algorithm: (1) classify frame zones INTERIOR|YARD|STREET|WATER|NEIGHBOR; (2) require lot_focus ON_LOT before any Live world click; (3) deny client_xy outside measured footprint AABB or in STREET/WATER/NEIGHBOR zones; (4) Buy/Build catalog open without Build-census lease = OUTSIDE/OFF_INTENT. Recover Esc(+F1)+Shift+Enter — never thrash asphalt. Complements lot_focus + cardinal semantics; EA parser remains preferred when authorized.",
+  "affected_concepts": [
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "OBSERVATION",
+    "CLAIM",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT",
+    "PLAYER_PRESENCE"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "contracts/lot-boundary.v1.json",
+    "betterinstincts/lot_boundary.py",
+    "betterinstincts/lot_focus.py",
+    "betterinstincts/lot_cardinal_semantics.py",
+    "betterinstincts/host_stack.py",
+    "contracts/lot-cardinal-semantics.v1.json",
+    "contracts/camera-traverse.v1.json",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "CONTRACT_HARNESS_NOT_LIVE_FOOTPRINT_MEASURE_NOT_BI002_CLOSE",
+  "player_save_control_impact": "No save mutation. Boundary gate only denies unsafe world clicks; never Sell; Shift+Enter lot arm is restore not roam.",
+  "expected_outcome": "lot-boundary contract + assess_lot_boundary + admit_world_click_in_footprint + host_stack attach + tests + AGENTS/DOCTRINE/Horizon; agents fail closed outside house footprint.",
+  "negative_tests": [
+    "Street/asphalt click must DENY even if a world target name is guessed",
+    "OFF_LOT lot_focus must DENY world clicks",
+    "Buy catalog open without build_census_lease must DENY Live world clicks",
+    "client_xy outside footprint AABB must DENY",
+    "AMBIGUOUS without operator_frame must DENY"
+  ],
+  "rollback_path": "Revert lot-boundary contract/library/tests/host_stack wiring and this consultation; prior lot_focus OFF_LOT + OFF_INTENT remain; BI-002 ACTIVE.",
+  "unresolved_unknowns": [
+    "PrintWindow-measured Bargain Bendh footprint AABB for current camera_revision",
+    "Whether pink/green Build lot outline can be auto-extracted without false street fills"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-LOT-BOUNDARY-FOOTPRINT-ADMIT-20261110.v1.json",
+    "contracts/lot-boundary.v1.json",
+    "betterinstincts/lot_boundary.py",
+    "tests/test_lot_boundary.py",
+    "betterinstincts/host_stack.py",
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator 2026-11-10: agents clicking street/Buy prove they lack house-boundary knowledge. Codify footprint admission as durable gate across agents — not more chat reminders."
+}
