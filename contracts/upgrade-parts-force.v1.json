@@ -581,7 +581,21 @@
       "EA_CONNECT",
       "SAVE_MUTATION"
     ],
-    "proof_ceiling": "OFFLINE_COMPUTER_MENU_QUEUE_NOT_LIVE_PURCHASE_PROOF"
+    "proof_ceiling": "OFFLINE_COMPUTER_MENU_QUEUE_NOT_LIVE_PURCHASE_PROOF",
+    "required_menu_scopes": [
+      "ROOT",
+      "ORDER"
+    ],
+    "required_route": [
+      "LEFT_CLICK_COMPUTER",
+      "OBSERVED_ORDER",
+      "OBSERVED_PURCHASE_UPGRADE_PARTS",
+      "PICKER",
+      "OBSERVED_ITEM",
+      "AUTHORIZED_CONFIRM",
+      "OUTCOME_READBACK"
+    ],
+    "nested_scope_proof": "ORDER_MENU_OBSERVED_TRUE_REQUIRED; no direct Purchase Upgrade Parts from ROOT"
   },
   "acquisition_routing": {
     "schema": "betterinstincts.household-acquisition-routes/v1",
@@ -669,7 +683,12 @@
       "current_household": "SELECT_EXACT_OBSERVED_PORTRAIT_AND_REVALIDATE_EACH_EFFECT",
       "distance_to_computer": "NOT_ASSUMED_REQUIRED_FOR_INSTANT_ORDER_UI; SIM_MAY_BE_REMOTE_IF_GAME_PERMITS",
       "safety": "PLAYER_PRESENCE_AND_SCREEN_LEASE_REQUIRED_BY_DOWNSTREAM_LIVE_ADAPTER",
-      "default_goal_resolution": "CURRENT_OBSERVED_CHOICES_FIRST"
+      "default_goal_resolution": "CURRENT_OBSERVED_CHOICES_FIRST",
+      "canonical_live_computer_dispatch": "betterinstincts/computer_upgrade_parts.py#propose_computer_purchase_step",
+      "live_scopes": [
+        "ROOT",
+        "ORDER"
+      ]
     },
     "effect_classes": {
       "INSTANT_UI_CANDIDATE": {
@@ -706,7 +725,7 @@
       },
       {
         "source": "EA Eco Lifestyle gameplay",
-        "url": "https://www.ea.com/games/battlefield/news/eco-lifestyle-gameplay",
+        "url": "https://www.ea.com/ea-studios/motive/news/eco-lifestyle-gameplay",
         "supports": "insect farm biofuel for generator"
       },
       {
