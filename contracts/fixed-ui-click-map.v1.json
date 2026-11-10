@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 15,
+  "version": 16,
   "version_notes": {
     "8": "Adds camera_dependent_seeds_1920x1080 (fridge HIT/MISS). Additive only: seed_targets_1920x1080 and all certified seeds unchanged; camera-dependent rows are NOT ingested into the fixed-HUD ledger.",
     "9": "Adds live.notebook_close_x [1338,276] (PrintWindow-measured Notebook dismiss). Additive only; prior seeds unchanged.",
@@ -9,7 +9,8 @@
     "12": "Corrects live.panel_inventory tray glyph to [1750,1058] (PrintWindow 2026-11-10). prior_xy_wrong [1757,1045] hit dark bar above icons and left Simology/Needs open. Prefer hotkey I when armed. Additive only.",
     "13": "Adds pack detail modal close X [1543,197], options MENU close X [1081,330], build cancel held-object [1013,1028]; documents Buy→Live prefer F1 + live.top_live_people; FORBIDDEN top-bar wander 1620-1700 (Owned Expansion Packs) and REMOVE_FLOOR without library checkpoint. Consultation BI-BUY-EXIT-PACK-MODAL-20261110. Additive only.",
     "14": "Adds host.manage_worlds_travel_party_cancel_x [1055,33] LIVE_MEASURED_20261110 (computer-use canvas ~(800,25) on 1456×840 → physical 1920×1080). Prefer top TRAVELING WITH banner X (first of three circular icons after LabLab text). Text-miss ~canvas (556,34)/client ~[733,44]. FORBIDDEN footprint + crown. Esc while traveling zooms neighborhood only. Kingdom-of-Willow-Creek modal close family [1138,255]/canvas ~(924,217). Additive only.",
-    "15": "PrintWindow-remeasures travel-party cancel X to [1055,22] (first white circle cluster ~[1050,20]; prior computer-use scale [1055,33] retained as prior_xy). Footprint ~[1090,22]; crown ~[1131,22] FORBIDDEN. Adds live.switch_control_chip trap band (just above portrait strip y~898-922): click PILL TEXT; ~(455,900) after Charlee hover MISSED chip and re-opened Manage Worlds TRAVELING WITH LabLab — never empty street high above strip; never lightning-alone if it opens travel. Charlee portrait magenta bbox x431-480 y1060-1075; face hover ~(455,1035). Buy/Sell-for exit remains F1 + live.top_live_people [1585,35]. Additive only; not HIT-certified Switch Control click."
+    "15": "PrintWindow-remeasures travel-party cancel X to [1055,22] (first white circle cluster ~[1050,20]; prior computer-use scale [1055,33] retained as prior_xy). Footprint ~[1090,22]; crown ~[1131,22] FORBIDDEN. Adds live.switch_control_chip trap band (just above portrait strip y~898-922): click PILL TEXT; ~(455,900) after Charlee hover MISSED chip and re-opened Manage Worlds TRAVELING WITH LabLab — never empty street high above strip; never lightning-alone if it opens travel. Charlee portrait magenta bbox x431-480 y1060-1075; face hover ~(455,1035). Buy/Sell-for exit remains F1 + live.top_live_people [1585,35]. Additive only; not HIT-certified Switch Control click.",
+    "16": "Adds live.ask_for_help_cleaning_modal_close_x [1138,222] (PrintWindow-measured Ask-for-Help Cleaning modal X dismiss). Same x-family as host.manage_worlds_kingdom_modal_close_x [1138,255] but 33px higher / distinct surface — do not conflate. Dismiss X only; never Ask-for-Help Cleaning accept / OK, never Sell. Horizon recovery_path_20261110 already notes this coord. Additive only; prior certified close-X seeds unchanged."
   },
   "authority": "docs/UI_CHROME.md",
   "owners": {
@@ -336,6 +337,26 @@
       "status": "PRINTWINDOW_MEASURED_20261110",
       "profile": "1920x1080",
       "notes": "X on centered MENU white panel (Save/Save As/…). Never Exit Game. Evidence live-restored.png."
+    },
+    "live.ask_for_help_cleaning_modal_close_x": {
+      "role": "DISMISS_ASK_FOR_HELP_CLEANING_MODAL",
+      "client_xy": [1138, 222],
+      "status": "PRINTWINDOW_MEASURED_20261110",
+      "profile": "1920x1080",
+      "aliases": ["ask_for_help_cleaning_modal_x"],
+      "distinct_from": {
+        "target_id": "host.manage_worlds_kingdom_modal_close_x",
+        "client_xy": [1138, 255],
+        "delta_xy": [0, -33],
+        "note": "Same x=1138 family; kingdom modal X is 33px lower. Within near_miss_radius (36) — surface identity required before click."
+      },
+      "forbidden": [
+        "ASK_FOR_HELP_CLEANING_ACCEPT",
+        "ASK_FOR_HELP_CLEANING_OK",
+        "SELL"
+      ],
+      "horizon_recovery_path": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json#live_truth_20261110.recovery_path_20261110.ask_for_help_cleaning_modal_x",
+      "notes": "Ask-for-Help Cleaning modal white circular X — PrintWindow ~[1138,222]. Dismiss X only (recovery path). Never accept/OK the cleaning help offer; never Sell. Distinct from kingdom modal close [1138,255], pack detail X [1543,197], options MENU X [1081,330], notebook X [1338,276], calendar X [1445,255], SAVE GAME X [1342,238], and save-name OK [957,603]."
     },
     "build.cancel_held_object": {
       "role": "CANCEL_HELD_BUILD_OBJECT",

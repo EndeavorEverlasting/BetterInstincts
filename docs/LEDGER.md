@@ -1,3 +1,11 @@
+## 2026-11-10 — Horizon plan/ledger sync (offline): next_gate + recovery path
+
+**CHANGED:** `plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json` additive sync only (no live input). `live_cert` `bi002-game1-20261107` still baseline **2/5** modified **0/5** rollback 0 INCOMPLETE. Horizon operational `next_gate` remains `CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3` until a new `live_cert record` exists (CLI still reports `RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS`). Recovery path noted: dismiss Ask-for-Help Cleaning modal X ~`[1138,222]`; never Sell; Charlee portrait `[450,1055]`; Buy exit F1+`live.top_live_people [1585,35]`. NEVER delete saves; no BI-003 claim.
+
+**PROVED offline:** `python -m scripts.live_cert status --run-id bi002-game1-20261107` → baseline 2 / modified 0; `python -m scripts.check_horizon` PASS / game cert NOT_PROVED.
+
+**NEXT:** LIVE-ONLY durable fridge Have Breakfast → survive unpause → `python -m scripts.live_cert record --run-id bi002-game1-20261107 ...` trial 3+.
+
 ## 2026-11-10 — Calendar X + snack toast briefly queued; Buy/Sell-for trap recurrence
 
 **CHANGED:** Horizon plan next_gate → `CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3`. Calendar dismiss PrintWindow HIT `[1440,254]` (map `live.calendar_close_x` ~`[1445,255]`). Charlee Switch Control + travel-cancel already proved; school diversion then home LabLab. Toast/pie Eat briefly in action queue (`queued-action-hud.png` / `pie-queue-proof-hud.png`) then cancelled when Live probes re-entered Buy household inventory Sell-for (never clicked Sell; exit Esc+F1+`live.top_live_people [1585,35]`). Charlee Mortified after bladder fail — hunger still critical; BI-002 `bi002-game1-20261107` still baseline 2/5.

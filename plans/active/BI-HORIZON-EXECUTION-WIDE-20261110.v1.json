@@ -2,11 +2,18 @@
   "schema": "betterinstincts.horizon-execution-wide/v1",
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
-  "updated_at": "2026-11-10T09:36:00-05:00",
+  "updated_at": "2026-11-10T10:14:00-05:00",
   "live_truth_20261110": {
     "host": {"pid": 78240, "exe": "TS4_x64_fpb", "game_version": "1.121.361.1020"},
     "live_cert_run": "bi002-game1-20261107",
-    "live_cert_status": {"baseline": 2, "modified": 0, "rollback": 0, "state": "INCOMPLETE", "next_gate": "CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3"},
+    "live_cert_status": {"baseline": 2, "modified": 0, "rollback": 0, "state": "INCOMPLETE", "next_gate": "CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3", "cli_next_gate_until_new_record": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS", "note": "Horizon operational next_gate stays CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3 until a new live_cert record exists; CLI still reports RECORD_OR_REPAIR while baseline=2/5 modified=0/5"},
+    "recovery_path_20261110": {
+      "ask_for_help_cleaning_modal_x": {"client_xy_approx": [1138, 222], "action": "dismiss X only", "forbidden": ["Sell", "Ask for Help Cleaning accept"]},
+      "charlee_portrait": {"client_xy": [450, 1055], "target_id": "live.household_portrait_3"},
+      "buy_exit": {"keys": ["F1"], "live_top_live_people": [1585, 35], "never": "Sell"},
+      "saves": "NEVER delete or overwrite My Saved Game 6 / Slot_00000007",
+      "bi003": "no BI-003 claim while BI-002 open"
+    },
     "default_save": "My Saved Game 6 / Slot_00000007 — NEVER delete or overwrite",
     "household": {
       "charlee_lablab": "RELOADED living from My Saved Game 6 — Needs 6-bar Hunger attested (living-subject-attestation.json). Prior ghost session was not saved over Slot_00000007.",
@@ -80,6 +87,30 @@
       },
       "contract": "contracts/fixed-ui-click-map.v1.json v15 live.switch_control_chip + live.household_portrait_3 notes",
       "next_gate": "Switch Control to Charlee → Eat → live_cert trial 3+ on bi002-game1-20261107 (baseline still 2/5)"
+    },
+    "lot_geometry_source_of_truth_20261110": {
+      "decision": "NO_EA_SAVE_FLOORPLAN_PARSER_YET",
+      "operator_question": "Is there a game file to analyze instead of recreating a manual lot map?",
+      "answer": "Yes candidates exist (Slot_*.save DBPF zone graphs; My Library building/lot blueprints; tray metadata) but BetterInstincts does not decode lot floors/rooms from them yet.",
+      "repo_ceiling": "docs/HOUSE_STATE.md proof_ceiling OFFLINE_RECURSIVE_LOT_MODEL_NOT_EA_SAVE_API_NOT_LOT_RESTORE_PROOF",
+      "what_exists_now": [
+        "house_state RECURSIVE_LOT_MODEL from observations",
+        "lot_floor_map under installation profiles (Build/Buy observation)",
+        "betterinstincts/dbpf.py TGI index for mod .package only — NOT save geometry"
+      ],
+      "safe_future_lane": "READ_ONLY save or Library blueprint analyzer; never write/delete/overwrite Slot_00000007 or any user save",
+      "until_then": "PrintWindow + house_state + lot_floor_map + camera floor walks remain authoritative lot map"
+    },
+    "fridge_scout_wide_20261110": {
+      "kitchen_scout_png": "dist/game-host/horizon-exec-20261110/bi002/kitchen-scout.png",
+      "wide_fridge_click_candidate": [392, 158],
+      "live_probe_392_158": {
+        "result": "MISS_NEIGHBOR_LOT",
+        "pie_seen": ["Break In", "Move In Household from the Gallery", "…Household…"],
+        "evidence": "dist/game-host/horizon-exec-20261110/bi002/fridge-392-pie.png",
+        "rule": "When camera/scenery is street/neighbor, [392,158] is NOT fridge — Esc dismiss; never Break In / Gallery Move In; Enter then Shift+Enter if still OFF_LOT; only then Z+Enter and use zoomed [500,560]"
+      },
+      "note": "Scout candidate only valid while ON_LOT_INTERIOR kitchen is framed; do not reuse after scenery-not-in-focus"
     },
     "fridge_hit_zoomed_20261110": "HIT_PIE_MENU at client [500,560] after Z-zoom (~14) + Enter recenter; snack NOT queued; single frame; contracts/fixed-ui-click-map.v1.json camera_dependent_seeds_1920x1080",
     "fridge_hit": "WIDE [465,595] MISS (outdoor Upgrade/Possess); ZOOMED [500,560] HIT once then camera/story drift made re-HIT unstable",
@@ -263,7 +294,7 @@
         "needs_panel": "Charlee hunger ~0.5 with marker; Servo needs distinct",
         "trial1": "PARTIAL_BLOCKED_CAMERA_OFF_LOT — no seconds-to-eat recorded",
         "receipt": "dist/game-host/horizon-exec-20261110/bi002/trial1-partial.json",
-        "live_cert": {"run_id": "bi002-game1-20261107", "baseline": "2/5", "modified": "0/5", "rollback": 0, "state": "INCOMPLETE", "next_gate": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS"},
+        "live_cert": {"run_id": "bi002-game1-20261107", "baseline": "2/5", "modified": "0/5", "rollback": 0, "state": "INCOMPLETE", "next_gate": "CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3", "cli_next_gate_until_new_record": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS"},
         "fridge_hit": {"state": "MISS", "receipt": "dist/game-host/horizon-exec-20261110/bi002/fridge-hit-receipt.json", "xy": [465, 595], "observed": "outdoor Upgrade/Possess pie (satellite/garden); camera too zoomed out", "wide_zoom_only": true, "zoomed_hit_xy": [500, 560], "zoomed_hit_state": "HIT_PIE_MENU", "zoom_precondition": "ZOOMED_IN_RECENTERED via Z/wheel (never RMB) + Enter"},
         "living_subject_gate": "RECOVERED living Charlee/Olga via Load My Saved Game 6 → Willow Creek → LabLab Play [1811,1033]; Bernice remains Servo",
         "adverse": {"event": "CHARLEE_STARVATION_DEATH -> playable ghost", "receipt": "dist/game-host/horizon-exec-20261110/bi002/adverse-charlee-starvation.json", "baseline_effect": "none; stays 2/5; ghost session not saved over Slot_00000007"},
@@ -376,6 +407,13 @@
           "buy_trap_exit": "household inventory Sell-for panel → live.top_live_people [1585,35] + F1; never Sell",
           "contract_v15": "contracts/fixed-ui-click-map.v1.json#live.switch_control_chip",
           "next": "Switch Control to Charlee (pill text, not empty street / lightning-alone) → Eat → live_cert trial 3+. Never Sell/delete saves. No BI-003 claim."
+        },
+        "recovery_path_20261110_offline_sync": {
+          "ask_for_help_cleaning_modal_x": [1138, 222],
+          "charlee_portrait": [450, 1055],
+          "buy_exit": "F1 + live.top_live_people [1585,35]",
+          "never": ["Sell", "delete_saves", "BI-003_claim"],
+          "next_gate": "CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3"
         }
       }
     },
@@ -426,7 +464,7 @@
     "2. DONE — Manage Worlds travel-cancel PrintWindow [1055,22] (prior scale [1055,33] / canvas 800,25); FORBIDDEN footprint~1090 / crown~1131; Esc≠cancel",
     "3. DONE — Switch Control click trap annotated: Charlee magenta bbox x431-480 y1060-1075; face hover ~(455,1035); chip just above strip y~898-922; ~(455,900) MISS re-opens TRAVELING WITH — click pill text, not empty street / lightning-alone",
     "4. DONE — Switch Control + travel-cancel + calendar X [1440,254]; Charlee control restored (school then home)",
-    "5. NEXT — LIVE-ONLY fridge Have Breakfast (or durable snack queue) then live_cert trial 3+ on bi002-game1-20261107 (baseline still 2/5). Toast/pie briefly queued then cancelled by Buy/Sell-for trap — never Sell; exit Buy via Esc+F1+live.top_live_people [1585,35]. Verify Live (no Sell panel) before world clicks; avoid RMB arm while Buy risk high. Enter recenter if street/rooftop OFF_LOT. Mortified/bladder-fail risk Death by Embarrassment — mirror Calm Down + Eat",
+    "5. NEXT — CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3 on bi002-game1-20261107 (baseline still 2/5 modified 0/5; no new live_cert record yet). LIVE-ONLY durable fridge Have Breakfast / snack queue → survive unpause → live_cert record trial 3+. Recovery: dismiss Ask-for-Help Cleaning modal X ~[1138,222]; Charlee portrait [450,1055]; Buy exit F1+live.top_live_people [1585,35]; never Sell; NEVER delete saves; no BI-003 claim. Toast/pie briefly queued then cancelled by Buy/Sell-for trap — verify Live (no Sell panel) before world clicks; avoid RMB arm while Buy risk high. Enter recenter if street/rooftop OFF_LOT. Mortified/bladder-fail risk Death by Embarrassment — mirror Calm Down + Eat",
     "5b. Fridge seed [500,560] after Z-zoom ON_LOT kitchen; Multiselect Off [1878,791] household inv ≠ Eat",
     "6. BI-002 baseline trials 3-5 then modified 5/5 + rollback + maintainer review",
     "7. Only after BI-002 live cert: BI-003A-E -> BI-003F -> BI-004 -> BI-005 -> BI-006"
