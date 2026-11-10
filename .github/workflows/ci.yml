@@ -70,6 +70,11 @@ jobs:
         run: |
           python -m scripts.host_eval --out dist/host-eval/ci.json > /dev/null
           python -m unittest tests.test_host_eval -v
+      - name: World-target highlight and observed-outcome learning eval
+        run: |
+          python -m scripts.world_traversal_eval
+          python -m unittest tests.test_world_traversal_learning -v
+          python -m scripts.semantic_preflight --consultation contracts/consultations/BI-WORLD-HIGHLIGHT-TRAVERSAL-LEARNING-20261110.v1.json --operation repo_mutation --file betterinstincts/world_traversal_learning.py --file betterinstincts/host_stack.py
       - name: Progression rate and CI honesty eval (P67 P62)
         run: |
           python -m scripts.progression_eval --out dist/progression-eval/ci.json > /dev/null
