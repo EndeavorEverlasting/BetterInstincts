@@ -157,9 +157,9 @@
         "WHITE_PORTRAIT_BOUNDARIES"
       ],
       "examples": [
-        "work/career panel embeds Olga",
-        "Olga hasn't earned any perks yet",
-        "Olga's Satisfaction (valid, not preferred for skill-force)"
+        "work/career panel embeds observed target's name",
+        "Sim A hasn't earned any perks yet",
+        "Sim A's Satisfaction (valid, not preferred for skill-force)"
       ],
       "forbidden": [
         "MOOD_COLOR_AS_SELECTION",
@@ -171,7 +171,7 @@
       "bottom_right_open": "HOTKEY_FIRST via ui_microsystems.plan_open_bottom_right_panel (J=work/career preferred identity, L=skills progress, G=aspirations valid-not-preferred)"
     },
     "lean_panel_sequence": {
-      "owner": "betterinstincts.diy_skill_force.plan_lean_olga_skill_beat",
+      "owner": "betterinstincts.diy_skill_force.plan_lean_selected_sim_skill_beat",
       "arm_then_letter_owner": "betterinstincts.diy_skill_force.plan_arm_then_panel_letter",
       "fresh_arm_before_every_panel_letter": false,
       "arm_once_per_skill_beat": true,
@@ -239,7 +239,7 @@
     "operator_corrections": [
       "2026-11-09: burger-bar expand Skills list before full read",
       "2026-11-09: unfocused type_text presses V and starts video recording",
-      "2026-11-09: selection drift — prove Olga/Bernice/… from panel header, not Space guesses",
+      "2026-11-09: selection drift — prove whichever Sim is selected from its observed panel header, not Space guesses",
       "2026-11-09: Space does nothing until left-click world then right-click cancel options (live-hotkey-arm)",
       "2026-11-09: selected Sim = white portrait boundaries and/or BR work/aspiration name text; mood color is not selection",
       "2026-11-09: BR panels open by letter — G aspirations, J career/work, L skills, R relationships, I inventory, Y simology, O needs, U clubs",
@@ -992,7 +992,7 @@
         "dj_mixing"
       ],
       "default_level": 10,
-      "notes": "Home/remote earn order for Olga: programming/writing/painting/fabrication first, then photo/media/gaming, then craft-sell and creative tip skills."
+      "notes": "Home/remote earn order for the observed target Sim: programming/writing/painting/fabrication first, then photo/media/gaming, then craft-sell and creative tip skills."
     },
     "social": {
       "display_name": "Social unlocks",
