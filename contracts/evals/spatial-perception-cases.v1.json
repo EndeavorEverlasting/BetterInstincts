@@ -1,0 +1,724 @@
+{
+  "schema": "betterinstincts.spatial-perception.evals/v1",
+  "proof_level": "SYNTHETIC_INTEGRATION_NOT_LIVE_IMAGE_RECOGNITION",
+  "frame_defaults": {
+    "width": 640,
+    "height": 480,
+    "source": "HOST_CAPTURE",
+    "capture_ref": "capture:synthetic",
+    "camera_revision": "cam1",
+    "active_lot_id": "lotA",
+    "observed_lot_id": "lotA",
+    "scene_id": "live_mode",
+    "regions": {
+      "lot": {
+        "source": "EA_SAVE_GEOMETRY",
+        "camera_revision": "cam1",
+        "evidence_ref": "model:lot",
+        "polygon": [
+          [
+            20,
+            20
+          ],
+          [
+            600,
+            20
+          ],
+          [
+            600,
+            460
+          ],
+          [
+            20,
+            460
+          ]
+        ]
+      },
+      "house": {
+        "source": "EA_SAVE_GEOMETRY",
+        "camera_revision": "cam1",
+        "evidence_ref": "model:house",
+        "polygon": [
+          [
+            80,
+            100
+          ],
+          [
+            400,
+            100
+          ],
+          [
+            400,
+            390
+          ],
+          [
+            80,
+            390
+          ]
+        ]
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "hydroponic_plant_nested",
+      "weakness": "false_support",
+      "objects": [
+        {
+          "id": "plant",
+          "kind": "PLANT",
+          "bbox": [
+            150,
+            140,
+            195,
+            232
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        },
+        {
+          "id": "hydro",
+          "kind": "HYDROPONIC_PLANTER",
+          "bbox": [
+            130,
+            215,
+            245,
+            280
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "contacts": [
+        {
+          "child": "plant",
+          "parent": "hydro",
+          "relation": "GROWS_IN",
+          "source": "OPERATOR_REVIEW",
+          "evidence_ref": "review:fixture",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "state": "CANDIDATE_TOPOLOGY",
+        "relation": [
+          "plant",
+          "hydro",
+          "GROWS_IN",
+          "SUPPLIED_CONTACT_EVIDENCE"
+        ]
+      }
+    },
+    {
+      "id": "chair_at_counter",
+      "weakness": "furniture_role",
+      "objects": [
+        {
+          "id": "seat",
+          "kind": "CHAIR",
+          "bbox": [
+            135,
+            170,
+            210,
+            288
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        },
+        {
+          "id": "surface",
+          "kind": "COUNTER",
+          "bbox": [
+            195,
+            155,
+            350,
+            235
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "contacts": [
+        {
+          "child": "seat",
+          "parent": "surface",
+          "relation": "SEATED_AT",
+          "source": "OPERATOR_REVIEW",
+          "evidence_ref": "review:fixture",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "relation": [
+          "seat",
+          "surface",
+          "SEATED_AT",
+          "SUPPLIED_CONTACT_EVIDENCE"
+        ]
+      }
+    },
+    {
+      "id": "laptop_on_desk",
+      "weakness": "device_surface",
+      "objects": [
+        {
+          "id": "laptop",
+          "kind": "LAPTOP",
+          "bbox": [
+            200,
+            125,
+            290,
+            174
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        },
+        {
+          "id": "desk",
+          "kind": "DESK",
+          "bbox": [
+            145,
+            158,
+            360,
+            245
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "contacts": [
+        {
+          "child": "laptop",
+          "parent": "desk",
+          "relation": "RESTS_ON",
+          "source": "OPERATOR_REVIEW",
+          "evidence_ref": "review:fixture",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "relation": [
+          "laptop",
+          "desk",
+          "RESTS_ON",
+          "SUPPLIED_CONTACT_EVIDENCE"
+        ]
+      }
+    },
+    {
+      "id": "paper_wall_attachment",
+      "weakness": "wall_mount",
+      "objects": [
+        {
+          "id": "paper",
+          "kind": "TOILET_PAPER",
+          "bbox": [
+            200,
+            155,
+            240,
+            210
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        },
+        {
+          "id": "wall",
+          "kind": "WALL",
+          "bbox": [
+            195,
+            110,
+            280,
+            300
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "contacts": [
+        {
+          "child": "paper",
+          "parent": "wall",
+          "relation": "ATTACHED_TO",
+          "source": "OPERATOR_REVIEW",
+          "evidence_ref": "review:fixture",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "relation": [
+          "paper",
+          "wall",
+          "ATTACHED_TO",
+          "SUPPLIED_CONTACT_EVIDENCE"
+        ]
+      }
+    },
+    {
+      "id": "broom_wall_adjacent",
+      "weakness": "adjacency_not_attachment",
+      "objects": [
+        {
+          "id": "broom",
+          "kind": "BROOM",
+          "bbox": [
+            190,
+            130,
+            220,
+            330
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        },
+        {
+          "id": "wall",
+          "kind": "WALL",
+          "bbox": [
+            200,
+            110,
+            260,
+            350
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "contacts": [
+        {
+          "child": "broom",
+          "parent": "wall",
+          "relation": "ADJACENT_TO",
+          "source": "OPERATOR_REVIEW",
+          "evidence_ref": "review:fixture",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "relation": [
+          "broom",
+          "wall",
+          "ADJACENT_TO",
+          "SUPPLIED_CONTACT_EVIDENCE"
+        ]
+      }
+    },
+    {
+      "id": "overlap_without_contact",
+      "weakness": "hallucinated_physical_relation",
+      "objects": [
+        {
+          "id": "plant",
+          "kind": "PLANT",
+          "bbox": [
+            150,
+            140,
+            195,
+            232
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        },
+        {
+          "id": "hydro",
+          "kind": "PLANTER",
+          "bbox": [
+            130,
+            215,
+            245,
+            280
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "relation": [
+          "plant",
+          "hydro",
+          "GROWS_IN",
+          "GEOMETRY_HYPOTHESIS"
+        ]
+      }
+    },
+    {
+      "id": "wall_gate_ambiguous",
+      "weakness": "structural_conflict",
+      "objects": [
+        {
+          "id": "wall",
+          "kind": "WALL",
+          "bbox": [
+            150,
+            110,
+            250,
+            345
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        },
+        {
+          "id": "gate",
+          "kind": "GATE",
+          "bbox": [
+            152,
+            111,
+            251,
+            344
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "state": "STRUCTURE_AMBIGUOUS",
+        "conflict": "WALL_GATE_CONFLICT"
+      }
+    },
+    {
+      "id": "lot_offscreen_mismatch",
+      "weakness": "active_lot_drift",
+      "overrides": {
+        "observed_lot_id": "lotB"
+      },
+      "objects": [
+        {
+          "id": "chair",
+          "kind": "CHAIR",
+          "bbox": [
+            140,
+            130,
+            200,
+            280
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "state": "OFF_ACTIVE_LOT",
+        "zone": [
+          "chair",
+          "OFF_ACTIVE_LOT"
+        ]
+      }
+    },
+    {
+      "id": "inside_outside_zone",
+      "weakness": "house_footprint_vs_yard",
+      "objects": [
+        {
+          "id": "laptop",
+          "kind": "LAPTOP",
+          "bbox": [
+            170,
+            130,
+            240,
+            165
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        },
+        {
+          "id": "planter",
+          "kind": "PLANTER",
+          "bbox": [
+            450,
+            150,
+            520,
+            220
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        },
+        {
+          "id": "street",
+          "kind": "GATE",
+          "bbox": [
+            603,
+            200,
+            631,
+            280
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "zones": [
+          [
+            "laptop",
+            "HOUSE_FOOTPRINT"
+          ],
+          [
+            "planter",
+            "YARD_OR_OPEN_LOT"
+          ],
+          [
+            "street",
+            "OUTSIDE_ACTIVE_LOT"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "unanchored_cardinal",
+      "weakness": "screen_right_not_north",
+      "objects": [
+        {
+          "id": "desk",
+          "kind": "DESK",
+          "bbox": [
+            150,
+            130,
+            220,
+            210
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "camera_side": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "anchored_creek_side",
+      "weakness": "camera_orientation_source",
+      "overrides": {
+        "view": {
+          "side": "CREEK_SIDE",
+          "source": "EA_SAVE_GEOMETRY",
+          "camera_revision": "cam1",
+          "evidence_ref": "map:anchor"
+        }
+      },
+      "objects": [
+        {
+          "id": "desk",
+          "kind": "DESK",
+          "bbox": [
+            150,
+            130,
+            220,
+            210
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "camera_side": "CREEK_SIDE"
+      }
+    },
+    {
+      "id": "wrong_game_patch",
+      "weakness": "unknown_patch",
+      "overrides": {
+        "game_version": "0.0.0.0"
+      },
+      "objects": [
+        {
+          "id": "desk",
+          "kind": "DESK",
+          "bbox": [
+            150,
+            130,
+            220,
+            210
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "state": "UNKNOWN_PATCH",
+        "object_count": 0
+      }
+    },
+    {
+      "id": "stale_camera_geometry_rejected",
+      "weakness": "stale_camera_revision",
+      "overrides": {
+        "regions": {
+          "lot": {
+            "source": "EA_SAVE_GEOMETRY",
+            "camera_revision": "stale",
+            "evidence_ref": "model:lot",
+            "polygon": [
+              [
+                20,
+                20
+              ],
+              [
+                600,
+                20
+              ],
+              [
+                600,
+                460
+              ],
+              [
+                20,
+                460
+              ]
+            ]
+          }
+        }
+      },
+      "objects": [
+        {
+          "id": "desk",
+          "kind": "DESK",
+          "bbox": [
+            150,
+            130,
+            220,
+            210
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect_error": "REGION_PROVENANCE_OR_CAMERA_STALE"
+    },
+    {
+      "id": "unknown_object_label_rejected",
+      "weakness": "taxonomy_invention",
+      "objects": [
+        {
+          "id": "surprise",
+          "kind": "MYSTERY_ITEM",
+          "bbox": [
+            150,
+            130,
+            220,
+            210
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect_error": "OBJECT_EVIDENCE_INVALID"
+    },
+    {
+      "id": "unsupported_contact_rejected",
+      "weakness": "semantic_relation_invention",
+      "objects": [
+        {
+          "id": "laptop",
+          "kind": "LAPTOP",
+          "bbox": [
+            200,
+            125,
+            290,
+            174
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        },
+        {
+          "id": "wall",
+          "kind": "WALL",
+          "bbox": [
+            200,
+            110,
+            300,
+            230
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "contacts": [
+        {
+          "child": "laptop",
+          "parent": "wall",
+          "relation": "ATTACHED_TO",
+          "source": "OPERATOR_REVIEW",
+          "evidence_ref": "review:fixture",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect_error": "CONTACT_TYPE_CONFLICT"
+    },
+    {
+      "id": "wrong_scene_cues",
+      "weakness": "scene_source_conflict",
+      "overrides": {
+        "scene_id": "buy_mode"
+      },
+      "objects": [
+        {
+          "id": "laptop",
+          "kind": "LAPTOP",
+          "bbox": [
+            200,
+            125,
+            290,
+            174
+          ],
+          "confidence": 0.95,
+          "source": "HOST_CV",
+          "evidence_ref": "capture:synthetic",
+          "camera_revision": "cam1"
+        }
+      ],
+      "expect": {
+        "state": "SCENE_UNVERIFIED",
+        "zone": [
+          "laptop",
+          "UNVERIFIED"
+        ]
+      }
+    }
+  ]
+}
