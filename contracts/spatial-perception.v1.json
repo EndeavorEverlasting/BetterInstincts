@@ -1,0 +1,82 @@
+{
+  "schema": "betterinstincts.spatial-perception/v1",
+  "version": 1,
+  "authority": "READ_ONLY_HOST_OWNED_SPATIAL_PERCEPTION",
+  "owners": {
+    "scene_classification": "betterinstincts/scenes.py",
+    "lot_boundary": "betterinstincts/lot_boundary.py",
+    "lot_geometry": "betterinstincts/lot_floor_map.py",
+    "build_spatial": "betterinstincts/build_spatial.py",
+    "projection": "betterinstincts/spatial_perception.py",
+    "host_integration": "betterinstincts/host_listener.py"
+  },
+  "interfaces": {
+    "observation_schema": "betterinstincts.spatial-perception.frame/v1",
+    "report_schema": "betterinstincts.spatial-perception.report/v1",
+    "source": "HOST_CAPTURE",
+    "model_input": "SUPPLIED_DETECTOR_OBSERVATIONS_WITH_PROVENANCE",
+    "dependency_boundary": "NO_CURSOR_CODEX_PLAYWRIGHT_REQUIREMENT"
+  },
+  "limits": {
+    "max_objects": 48,
+    "max_contacts": 96,
+    "max_frame_pixels": 16000000,
+    "min_candidate_confidence": 0.7
+  },
+  "taxonomy": {
+    "structural_distinctions": [
+      "WALL",
+      "GATE",
+      "FENCE",
+      "DOOR",
+      "WINDOW"
+    ],
+    "contents": [
+      "PLANT",
+      "PLANTER",
+      "HYDROPONIC_PLANTER",
+      "CHAIR",
+      "DESK",
+      "COUNTER",
+      "LAPTOP",
+      "COMPUTER",
+      "DEVICE",
+      "WALL_MOUNT",
+      "TOILET_PAPER",
+      "BROOM"
+    ],
+    "unrecognized": "UNKNOWN"
+  },
+  "relations": {
+    "projected_overlap": "SCREEN_OVERLAP",
+    "physical_claims_require": "GAME_MODEL_OR_OPERATOR_REVIEW_CONTACT_EVIDENCE",
+    "candidate_without_contact": "GEOMETRY_HYPOTHESIS",
+    "attested_with_contact": "SUPPLIED_CONTACT_EVIDENCE",
+    "never_promote_2d_projection_to_3d": "true"
+  },
+  "spatial_axes": {
+    "frame": "CAMERA_REVISION_BOUND_CLIENT_XY",
+    "lot": "INDEPENDENTLY_ATTESTED_POLYGON_OR_UNVERIFIED",
+    "house": "HOUSE_FOOTPRINT_NOT_ROOM_INTERIOR_CERTIFICATION",
+    "camera_side": "EA_SAVE_GEOMETRY_OR_OPERATOR_REVIEW_ANCHOR_ONLY",
+    "outside_lot": "DENY_INDEPENDENT_OF_VISUAL_CONFIDENCE"
+  },
+  "forbidden": [
+    "AUTHORIZE_GAME_INPUT",
+    "AUTOMATIC_WALL_VS_GATE_GUESS",
+    "TREAT_PROJECTED_OVERLAP_AS_SUPPORT",
+    "INFER_WORLD_NORTH_FROM_SCREEN_LEFT",
+    "CLAIM_ROOM_INTERIOR_FROM_A_HOUSE_BBOX",
+    "INFER_ON_LOT_FROM_BACKGROUND",
+    "WRITE_GAME_SAVE_OR_MOD",
+    "PROMOTE_SYNTHETIC_EVAL_TO_GAME_CERTIFIED"
+  ],
+  "proof_ceiling": "OFFLINE_SUPPLIED_DETECTIONS_NOT_PIXEL_RECOGNITION_OR_LIVE_GAME_CERT",
+  "evaluation": {
+    "owner": "scripts/spatial_perception_eval.py",
+    "fixtures": "contracts/evals/spatial-perception-cases.v1.json",
+    "pass_rule": "ALL_NEGATIVE_AND_POSITIVE_CASES_PASS",
+    "live_calibration_state": "OPEN",
+    "image_detector_state": "OPEN"
+  }
+}
