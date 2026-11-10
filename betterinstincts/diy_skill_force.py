@@ -77,6 +77,8 @@ def empty_completion_ledger() -> dict:
     return {
         "schema": COMPLETION_SCHEMA,
         "updated_at": None,
+        "scope_id": None,
+        "roster_fingerprint": None,
         "members": {},
         "note": (
             "DISPATCHED = host typed stats.set_skill_level for resume/skip. "
@@ -107,6 +109,19 @@ def load_completion_ledger(path: Path | None = None) -> dict:
         raise DiySkillForceError("COMPLETION_LEDGER_INVALID")
     out = empty_completion_ledger()
     out["updated_at"] = raw.get("updated_at")
+    scope_id = raw.get("scope_id")
+    if scope_id is not None and (
+        not isinstance(scope_id, str) or not re.fullmatch(r"[0-9a-f]{64}", scope_id)
+    ):
+        raise DiySkillForceError("COMPLETION_LEDGER_SCOPE_INVALID")
+    out["scope_id"] = scope_id
+    roster_fingerprint = raw.get("roster_fingerprint")
+    if roster_fingerprint is not None and (
+        not isinstance(roster_fingerprint, str) or
+        not re.fullmatch(r"[0-9a-f]{64}", roster_fingerprint)
+    ):
+        raise DiySkillForceError("COMPLETION_LEDGER_ROSTER_INVALID")
+    out["roster_fingerprint"] = roster_fingerprint
     out["members"] = dict(members)
     if isinstance(raw.get("note"), str):
         out["note"] = raw["note"]
@@ -1262,14 +1277,14 @@ def assess_selection_identity(
     """Prove the highlighted portrait matches the intended Sim before cheats.
 
     Identity requires a panel name embed (Servos look alike — white bounds alone
-    cannot tell Olga from Bernice). Preferred lean order: **J work/career** name,
+    cannot tell one same-looking Servo from another). Preferred lean order: **J work/career** name,
     then **L skills** for progress sight. Aspiration G also embeds the name but
     is not the preferred identity panel for skill-force.
 
     Accepted name embeds (open BR panels via letter hotkeys, not mood color):
     - Career/work panel name text — hotkey **J** (preferred)
-    - Skills/Dynasty header (``Olga hasn't…``) — hotkey **L**
-    - Aspiration Satisfaction (``Olga's Satisfaction``) — hotkey G (valid, not preferred)
+    - Skills/Dynasty header (``Sim A hasn't…``) — hotkey **L**
+    - Aspiration Satisfaction (``Sim A's Satisfaction``) — hotkey G (valid, not preferred)
 
     White portrait boundaries only corroborate that *some* chip is selected.
     Mood glow behind a chip is NOT selection. Space-cycle without name is rejected.
@@ -1314,7 +1329,7 @@ def assess_selection_identity(
                 "indistinguishable — open J (work) or L (skills) for the Sim name."
             )
         return out
-    # Header often embeds the first name: "Olga hasn't…" / work panel / Satisfaction
+    # Header often embeds an observed first name in work/Skills/Satisfaction panels
     expected_token = expected.split()[0].casefold()
     observed_l = observed.casefold()
     name_ok = expected_token in observed_l or expected.casefold() in observed_l
@@ -1457,26 +1472,36 @@ def plan_arm_then_play_brief(
     }
 
 
-def plan_lean_olga_skill_beat(
+def plan_lean_selected_sim_skill_beat(
     *,
-    portrait_client_xy: Sequence[int] = (454, 1055),
-    roster_index: int = 2,
+    portrait_client_xy: Sequence[int],
+    roster_index: int,
+    expected_display_name: str,
 ) -> dict:
-    """Lean Olga skill-force: one pinned arm, Enter recenter, then hotkeys.
+    """Lean active-Sim skill-force: observed portrait first, then hotkeys.
 
     Operator 2026-11-10: keep the camera on the active Sim. Arm once may
     displace the view — press Enter (native center-active-Sim) to refocus.
     Notice selection/camera switches and Enter again. Never roam/zoom the lot.
     Then J → L → console → type → close → play/pause. Re-arm only on hotkey miss.
     """
+    if not isinstance(expected_display_name, str) or not expected_display_name.strip():
+        raise DiySkillForceError("OBSERVED_TARGET_NAME_REQUIRED")
+    if isinstance(roster_index, bool) or not isinstance(roster_index, int) or roster_index < 0:
+        raise DiySkillForceError("OBSERVED_ROSTER_INDEX_REQUIRED")
+    if len(portrait_client_xy) != 2 or any(
+        isinstance(x, bool) or not isinstance(x, int) or x < 0 for x in portrait_client_xy
+    ):
+        raise DiySkillForceError("OBSERVED_PORTRAIT_COORDS_REQUIRED")
     xy = [int(portrait_client_xy[0]), int(portrait_client_xy[1])]
     arm_xy = list(
         (load_contract().get("live_hotkey_arm") or {}).get("default_world_client_xy")
         or [880, 480]
     )
     return {
-        "schema": "betterinstincts.lean-olga-skill-beat/v1",
-        "state": "LEAN_OLGA_SKILL_BEAT_READY",
+        "schema": "betterinstincts.lean-selected-sim-skill-beat/v1",
+        "state": "LEAN_SELECTED_SIM_SKILL_BEAT_READY",
+        "expected_display_name": expected_display_name.strip(),
         "execute_allowed": False,
         "roster_index": int(roster_index),
         "portrait_client_xy": xy,
@@ -1509,7 +1534,7 @@ def plan_lean_olga_skill_beat(
                 ],
             },
             {
-                "step": "LEFT_CLICK_OLGA_PORTRAIT",
+                "step": "LEFT_CLICK_SELECTED_PORTRAIT",
                 "detail": "LEFT_CLICK portrait only (no portrait RMB, no world roam)",
                 "client_xy": xy,
                 "forbidden": ["PORTRAIT_RIGHT_CLICK", "PORTRAIT_PROBE_LOOP"],
@@ -1518,7 +1543,7 @@ def plan_lean_olga_skill_beat(
                 "step": "J_WORK_NAME",
                 "hotkey": "J",
                 "purpose": "NAME_IDENTITY",
-                "read": "Panel must embed Olga (work/career name text)",
+                "read": "Work/career panel must corroborate the locally observed target name",
             },
             {
                 "step": "PROVE_SELECTION_IDENTITY",
@@ -2927,6 +2952,7 @@ def plan_household_skill_force(
     accept_reward_dialogs: Optional[bool] = None,
     session_id: Optional[str] = None,
     member_keys: Optional[Sequence[str]] = None,
+    household_scope: Optional[Mapping[str, object]] = None,
     completion_ledger: Optional[Mapping[str, object]] = None,
     redo: bool = False,
     cfg: Optional[dict] = None,
@@ -2979,9 +3005,31 @@ def plan_household_skill_force(
     target = int(probe.get("level") or cfg["inject_sequence"]["default_level"])
     ledger = completion_ledger if completion_ledger is not None else empty_completion_ledger()
     skill_rows = list(probe.get("skills") or [])
-    member_keys_resolved = [
-        completion_member_key(session_id, index, labels[index]) for index in range(count)
-    ]
+    if household_scope is not None:
+        scope_id = household_scope.get("scope_id")
+        scoped_keys = household_scope.get("member_keys")
+        if (not isinstance(scope_id, str) or
+                not re.fullmatch(r"[0-9a-f]{64}", scope_id) or
+                not isinstance(scoped_keys, list) or len(scoped_keys) != count or
+                not all(isinstance(k, str) and k.startswith(scope_id + "::key::") for k in scoped_keys)):
+            raise DiySkillForceError("HOUSEHOLD_SCOPE_INVALID")
+        ledger_scope = ledger.get("scope_id")
+        if ledger_scope != scope_id and (ledger_scope is not None or ledger.get("members")):
+            raise DiySkillForceError("CROSS_HOUSEHOLD_LEDGER_REUSE_FORBIDDEN")
+        fingerprint = household_scope.get("roster_fingerprint")
+        if not isinstance(fingerprint, str) or not re.fullmatch(r"[0-9a-f]{64}", fingerprint):
+            raise DiySkillForceError("HOUSEHOLD_ROSTER_FINGERPRINT_REQUIRED")
+        previous_fingerprint = ledger.get("roster_fingerprint")
+        if previous_fingerprint != fingerprint and (
+            previous_fingerprint is not None or ledger.get("members")
+        ):
+            raise DiySkillForceError("HOUSEHOLD_ROSTER_CHANGED_STOP_RECONCILE")
+        member_keys_resolved = list(scoped_keys)
+    else:
+        scope_id = None
+        member_keys_resolved = [
+            completion_member_key(session_id, index, labels[index]) for index in range(count)
+        ]
     completed_by_member: list[set[str]] = []
     for mkey in member_keys_resolved:
         if redo:
@@ -3091,6 +3139,7 @@ def plan_household_skill_force(
             else "EXECUTE_HOUSEHOLD_SKILL_FORCE"
         ),
         "household_members": count,
+        "identity_scope_id": scope_id,
         "members_needing_work": members_needing,
         "cells_needing_work": cells_needing,
         "max_level_verified_by_ledger": False,
@@ -3111,6 +3160,7 @@ def plan_household_skill_force(
         "completion_ledger": {
             "schema": COMPLETION_SCHEMA,
             "session_id": session_id,
+            "scope_id": scope_id,
             "redo": bool(redo),
             "skip_already_maxed": not bool(redo),
         },
@@ -3152,3 +3202,8 @@ def steps_to_commands(plan: Mapping[str, object]) -> list[str]:
     if not any(c.startswith("stats.set_skill_level ") for c in out[1:]):
         raise DiySkillForceError("PLAN_MISSING_SKILL_COMMANDS")
     return out
+
+
+# Compatibility route: old callers must now supply an explicitly observed target.
+# Do not resurrect name, portrait-index, or pixel defaults here.
+plan_lean_olga_skill_beat = plan_lean_selected_sim_skill_beat

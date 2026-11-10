@@ -46,7 +46,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from betterinstincts.household_judgment import (
-    HouseholdJudgmentError, require_fixed_roster, require_skill_action,
+    HouseholdJudgmentError, bind_household_scope, require_fixed_roster,
+    require_skill_action,
+)
+from betterinstincts.installation_profiles import (
+    InstallationProfileError, household_ledger_path, view as view_installation_profile,
 )
 from betterinstincts.diy_skill_force import (
     DiySkillForceError,
@@ -934,6 +938,9 @@ def _execute_household(
         if completion_ledger_path is not None
         else default_completion_ledger_path()
     )
+    expected_scope = household_plan.get("identity_scope_id")
+    if expected_scope and load_completion_ledger(ledger_path).get("scope_id") != expected_scope:
+        raise GateError("HOUSEHOLD_LEDGER_SCOPE_DRIFT")
     units = list(household_plan.get("dispatch_units") or [])
     if not units:
         # Legacy / empty plans: synthesize round-robin from member_plans + skills.
@@ -1008,6 +1015,8 @@ def _execute_household(
         omit: list[str] = []
         if not redo:
             ledger = load_completion_ledger(ledger_path)
+            if expected_scope and ledger.get("scope_id") != expected_scope:
+                raise GateError("HOUSEHOLD_LEDGER_SCOPE_DRIFT")
             omit = sorted(
                 completed_skill_ids_for_member(ledger, mkey, target_level=target)
             )
@@ -1123,6 +1132,70 @@ def _execute_household(
     }
 
 
+
+def _add_household_scope_flags(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--profile-id", default=None,
+                        help="Existing local installation preference profile (default active)")
+    parser.add_argument("--save-key", default=None,
+                        help="Locally observed opaque stable save identifier, not a filename/name")
+    parser.add_argument("--household-key", default=None,
+                        help="Locally observed opaque stable household identifier, not a name")
+
+
+def _scoped_household_ledger(args, *, required: bool = False):
+    """Resolve a private local ledger; no game scan or implicit write."""
+    save_key = getattr(args, "save_key", None)
+    household_key = getattr(args, "household_key", None)
+    if not save_key and not household_key:
+        if required:
+            raise GateError("SAVE_AND_HOUSEHOLD_SCOPE_REQUIRED_BEFORE_EXECUTION")
+        return None, None
+    if not save_key or not household_key:
+        raise GateError("SAVE_AND_HOUSEHOLD_SCOPE_MUST_BE_SUPPLIED_TOGETHER")
+    roster_keys = list(getattr(args, "roster_key", []) or [])
+    members = getattr(args, "members", None)
+    if members is None or len(roster_keys) != members:
+        raise GateError("EXACT_OBSERVED_PORTRAIT_ROSTER_REQUIRED_FOR_SCOPE")
+    try:
+        profile = getattr(args, "profile_id", None) or view_installation_profile()["profile_id"]
+        view_installation_profile(profile_id=profile)
+        scope = bind_household_scope(
+            profile_id=profile, save_key=save_key,
+            household_key=household_key, roster_keys=roster_keys,
+        )
+        path = household_ledger_path(profile_id=profile, scope_id=scope["scope_id"])
+    except (InstallationProfileError, HouseholdJudgmentError) as exc:
+        raise GateError(str(exc)) from exc
+    return scope, path
+
+
+def _resolve_ledger_path(args, scoped_path: Path | None) -> Path:
+    requested = getattr(args, "completion_ledger", None)
+    if requested is None:
+        return scoped_path if scoped_path is not None else default_completion_ledger_path()
+    path = Path(requested)
+    if not path.is_absolute():
+        path = ROOT / path
+    if scoped_path is not None and path.resolve().is_relative_to(ROOT.resolve()):
+        raise GateError("SCOPED_LEDGER_MUST_REMAIN_OUTSIDE_REPOSITORY")
+    return path
+
+
+def _validate_scope_ledger(ledger: dict, scope: dict | None) -> None:
+    if scope is None:
+        return
+    old = ledger.get("scope_id")
+    if old != scope["scope_id"] and (old is not None or ledger.get("members")):
+        raise GateError("CROSS_HOUSEHOLD_LEDGER_REUSE_FORBIDDEN")
+    old_roster = ledger.get("roster_fingerprint")
+    if old_roster != scope["roster_fingerprint"] and (
+        old_roster is not None or ledger.get("members")
+    ):
+        raise GateError("HOUSEHOLD_ROSTER_CHANGED_STOP_RECONCILE")
+    ledger["scope_id"] = scope["scope_id"]
+    ledger["roster_fingerprint"] = scope["roster_fingerprint"]
+
+
 def _add_common_execute_flags(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--bundle", default=None, help="Named bundle (default full_unlock when no --skill)")
     ap.add_argument("--skill", action="append", default=[], help="Repeatable skill id")
@@ -1190,7 +1263,7 @@ def execute_force_gaps(
     process_id: int,
     member_key: str,
     portrait_xy: tuple[int, int],
-    session_id: str = "household-n4-20261109",
+    session_id: str,
     bundle: str = "full_unlock",
     target_level: int = 10,
     redo: bool = False,
@@ -1215,17 +1288,18 @@ def execute_force_gaps(
         type_text,
     )
 
+    if not session_id or completion_ledger_path is None:
+        raise GateError("SCOPED_LOCAL_SESSION_AND_LEDGER_REQUIRED_FOR_FORCE_GAPS")
     safety = assess_console_type_safety(console_strip_observed=console_strip_observed)
     if safety.get("state") != "CONSOLE_TYPE_ALLOWED":
         raise GateError("CONSOLE_STRIP_REQUIRED_BEFORE_FORCE_GAPS")
 
-    ledger_path = (
-        Path(completion_ledger_path)
-        if completion_ledger_path is not None
-        else default_completion_ledger_path()
-    )
+    ledger_path = Path(completion_ledger_path)
     ledger = load_completion_ledger(ledger_path)
-    mk = completion_member_key(session_id, 0, member_key)
+    scope_id = ledger.get("scope_id")
+    if not scope_id or not str(member_key).startswith(scope_id + "::key::"):
+        raise GateError("FORCE_GAPS_MEMBER_MUST_MATCH_SCOPED_LEDGER")
+    mk = str(member_key)
     observed = member_observed_levels_from_ledger(ledger, mk)
     plan = plan_force_gaps_beat(
         member_key=member_key,
@@ -1355,17 +1429,20 @@ def main(argv: list[str] | None = None) -> int:
         "force-gaps",
         help=(
             "Durable select→type canonical gap cheats→play→scroll inventory. "
-            "Use --redo for full bundle (e.g. Charlee human after inherited attestation). "
+            "Use --redo for full bundle on a locally observed target Sim. "
             "Canonical Media Production: stats.set_skill_level Major_MediaProduction 10"
         ),
     )
-    fg.add_argument("--member-key", required=True, help="Portrait key e.g. CHARLEE_P3")
+    fg.add_argument("--member-key", required=True, help="Stable locally observed portrait key; never display name")
     fg.add_argument(
         "--portrait-xy",
         required=True,
-        help="Client X,Y for portrait LEFT_CLICK (e.g. 522,1055 for Charlee)",
+        help="Locally observed client X,Y for the selected portrait LEFT_CLICK",
     )
-    fg.add_argument("--session-id", default="household-n4-20261109")
+    fg.add_argument("--session-id", default=None)
+    _add_household_scope_flags(fg)
+    fg.add_argument("--members", type=int, default=None)
+    fg.add_argument("--roster-key", action="append", default=[])
     fg.add_argument("--bundle", default="full_unlock")
     fg.add_argument("--level", type=int, default=10)
     fg.add_argument("--redo", action="store_true", help="Force entire bundle even if ledger MAX")
@@ -1444,6 +1521,7 @@ def main(argv: list[str] | None = None) -> int:
         help="Exact observed Live household portrait count (N = whatever the household is)",
     )
     _add_common_execute_flags(hh)
+    _add_household_scope_flags(hh)
     hh.add_argument("--roster-key", action="append", default=[],
                     help="Observed stable portrait ID, once per Sim, ordered from first portrait")
     hh.add_argument("--first-portrait-attested", action="store_true",
@@ -1459,6 +1537,7 @@ def main(argv: list[str] | None = None) -> int:
         help="Record Skills-panel LOCAL_OBSERVED levels into the completion ledger (no screenshots required next time)",
     )
     pr.add_argument("--session-id", required=True)
+    _add_household_scope_flags(pr)
     pr.add_argument("--members", type=int, default=None, help="Exact observed portrait count N")
     pr.add_argument("--roster-key", action="append", default=[], help="Ordered portrait keys matching N")
     pr.add_argument("--display-name", action="append", default=[], help="Optional display names ordered with roster")
@@ -1489,6 +1568,9 @@ def main(argv: list[str] | None = None) -> int:
         help="Print household roster N + per-member panel/dispatched skill status from the ledger",
     )
     rs.add_argument("--session-id", default=None)
+    _add_household_scope_flags(rs)
+    rs.add_argument("--members", type=int, default=None)
+    rs.add_argument("--roster-key", action="append", default=[])
     rs.add_argument("--completion-ledger", type=Path, default=None)
     rs.add_argument("--target-level", type=int, default=10)
     rs.add_argument("--bundle", default="full_unlock")
@@ -1502,6 +1584,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     ts.add_argument("--session-id", required=True)
+    _add_household_scope_flags(ts)
     ts.add_argument("--members", type=int, required=True)
     ts.add_argument("--roster-key", action="append", default=[])
     ts.add_argument("--member-key", required=True)
@@ -1513,7 +1596,7 @@ def main(argv: list[str] | None = None) -> int:
     ts.add_argument(
         "--observed-panel-header",
         default=None,
-        help="Exact Skills/Dynasty header text proving selection (e.g. \"Olga hasn't earned…\")",
+        help="Exact Skills/Dynasty header text proving selection (e.g. \"Sim A hasn't earned…\")",
     )
     ts.add_argument("--observed-selected-roster-key", default=None)
     ts.add_argument(
@@ -1554,20 +1637,26 @@ def main(argv: list[str] | None = None) -> int:
             if len(xy_parts) != 2:
                 raise GateError("PORTRAIT_XY_MUST_BE_X_COMMA_Y")
             portrait_xy = (int(xy_parts[0]), int(xy_parts[1]))
-            ledger_path = (
-                Path(args.completion_ledger)
-                if args.completion_ledger is not None
-                else default_completion_ledger_path()
+            scope, scoped_path = _scoped_household_ledger(
+                args, required=bool(args.execute)
             )
+            ledger_path = _resolve_ledger_path(args, scoped_path)
             ledger = load_completion_ledger(ledger_path)
-            mk = completion_member_key(args.session_id, 0, args.member_key)
+            _validate_scope_ledger(ledger, scope)
+            if scope is not None:
+                if args.member_key not in args.roster_key:
+                    raise GateError("FORCE_GAPS_MEMBER_NOT_IN_SCOPED_ROSTER")
+                mk = scope["member_keys"][args.roster_key.index(args.member_key)]
+            else:
+                mk = completion_member_key(args.session_id, 0, args.member_key)
             observed = member_observed_levels_from_ledger(ledger, mk)
             if args.execute:
                 if args.process_id is None:
                     raise GateError("PROCESS_ID_REQUIRED_FOR_EXECUTE")
+                save_completion_ledger(ledger, ledger_path)
                 result = execute_force_gaps(
                     process_id=int(args.process_id),
-                    member_key=str(args.member_key),
+                    member_key=mk,
                     portrait_xy=portrait_xy,
                     session_id=str(args.session_id),
                     bundle=str(args.bundle),
@@ -1597,14 +1686,10 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 result = {**result, "receipt": str(args.receipt)}
         elif args.command == "panel-record":
-            ledger_path = (
-                Path(args.completion_ledger)
-                if args.completion_ledger is not None
-                else default_completion_ledger_path()
-            )
-            if not ledger_path.is_absolute():
-                ledger_path = ROOT / ledger_path
+            scope, scoped_path = _scoped_household_ledger(args)
+            ledger_path = _resolve_ledger_path(args, scoped_path)
             ledger = load_completion_ledger(ledger_path)
+            _validate_scope_ledger(ledger, scope)
             if args.members is not None:
                 if len(args.roster_key) != int(args.members):
                     raise GateError("EXACT_OBSERVED_PORTRAIT_ROSTER_REQUIRED")
@@ -1626,11 +1711,16 @@ def main(argv: list[str] | None = None) -> int:
             if args.all_listed_max and not observed:
                 # Treat as full max attestation with empty explicit map.
                 observed = {}
-            mkey = (
-                args.member_key
-                if ("::key::" in args.member_key or "::idx::" in args.member_key)
-                else completion_member_key(args.session_id, 0, args.member_key)
-            )
+            if scope is not None:
+                if args.member_key not in args.roster_key:
+                    raise GateError("PANEL_MEMBER_NOT_IN_OBSERVED_SCOPED_ROSTER")
+                mkey = scope["member_keys"][args.roster_key.index(args.member_key)]
+            else:
+                mkey = (
+                    args.member_key
+                    if ("::key::" in args.member_key or "::idx::" in args.member_key)
+                    else completion_member_key(args.session_id, 0, args.member_key)
+                )
             snap = record_member_panel_snapshot(
                 ledger,
                 member_key=mkey,
@@ -1639,6 +1729,8 @@ def main(argv: list[str] | None = None) -> int:
                 mark_unlisted_full_unlock_max=bool(args.all_listed_max),
                 target_level=int(args.target_level),
             )
+            if scope is None and args.completion_ledger is None:
+                raise GateError("PRIVATE_PROFILE_SCOPE_REQUIRED_FOR_PANEL_PERSISTENCE")
             path = save_completion_ledger(ledger, ledger_path)
             result = {
                 "state": "SKILLS_PANEL_RECORDED",
@@ -1653,21 +1745,19 @@ def main(argv: list[str] | None = None) -> int:
                     json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
                 )
         elif args.command == "roster-status":
-            ledger_path = (
-                Path(args.completion_ledger)
-                if args.completion_ledger is not None
-                else default_completion_ledger_path()
-            )
-            if not ledger_path.is_absolute():
-                ledger_path = ROOT / ledger_path
+            scope, scoped_path = _scoped_household_ledger(args)
+            ledger_path = _resolve_ledger_path(args, scoped_path)
             ledger = load_completion_ledger(ledger_path)
+            _validate_scope_ledger(ledger, scope)
             catalog = catalog_snapshot()
             bundle = args.bundle or "full_unlock"
             skill_ids = list((catalog.get("bundles") or {}).get(bundle, {}).get("skill_ids") or [])
             roster = ledger.get("household_roster") if isinstance(ledger.get("household_roster"), dict) else {}
             members_out = []
             for key, row in sorted((ledger.get("members") or {}).items()):
-                if args.session_id and args.session_id not in str(key):
+                if scope is not None and key not in scope["member_keys"]:
+                    continue
+                if scope is None and args.session_id and args.session_id not in str(key):
                     continue
                 skills = (row or {}).get("skills") or {}
                 done = completed_skill_ids_for_member(ledger, key, target_level=int(args.target_level))
@@ -1721,14 +1811,10 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "target-sim":
             if len(args.roster_key) != int(args.members):
                 raise GateError("EXACT_OBSERVED_PORTRAIT_ROSTER_REQUIRED")
-            ledger_path = (
-                Path(args.completion_ledger)
-                if args.completion_ledger is not None
-                else default_completion_ledger_path()
-            )
-            if not ledger_path.is_absolute():
-                ledger_path = ROOT / ledger_path
+            scope, scoped_path = _scoped_household_ledger(args)
+            ledger_path = _resolve_ledger_path(args, scoped_path)
             ledger = load_completion_ledger(ledger_path)
+            _validate_scope_ledger(ledger, scope)
             portrait_xy = None
             if args.portrait_client_xy:
                 parts = [p.strip() for p in str(args.portrait_client_xy).split(",")]
@@ -1765,10 +1851,14 @@ def main(argv: list[str] | None = None) -> int:
                 "evaluation": evaluate_member_skill_levels(
                     ledger,
                     member_key=(
-                        args.member_key
-                        if "::key::" in args.member_key
-                        else completion_member_key(
-                            args.session_id, int(args.roster_index), args.member_key
+                        scope["member_keys"][int(args.roster_index)]
+                        if scope is not None
+                        else (
+                            args.member_key
+                            if "::key::" in args.member_key
+                            else completion_member_key(
+                                args.session_id, int(args.roster_index), args.member_key
+                            )
                         )
                     ),
                     skill_ids=list(
@@ -1810,18 +1900,16 @@ def main(argv: list[str] | None = None) -> int:
             if bundle is None and not skill_ids:
                 bundle = "full_unlock"
             accept = None if not getattr(args, "no_accept_reward_dialogs", False) else False
-            ledger_path = (
-                Path(args.completion_ledger)
-                if getattr(args, "completion_ledger", None)
-                else default_completion_ledger_path()
+            scope, scoped_path = _scoped_household_ledger(
+                args, required=bool(args.execute)
             )
-            if not ledger_path.is_absolute():
-                ledger_path = ROOT / ledger_path
+            ledger_path = _resolve_ledger_path(args, scoped_path)
             ledger = (
                 empty_completion_ledger()
                 if getattr(args, "redo", False)
                 else load_completion_ledger(ledger_path)
             )
+            _validate_scope_ledger(ledger, scope)
             plan = plan_household_skill_force(
                 members=int(args.members),
                 skill_ids=skill_ids,
@@ -1831,11 +1919,13 @@ def main(argv: list[str] | None = None) -> int:
                 accept_reward_dialogs=accept,
                 session_id=getattr(args, "session_id", None),
                 member_keys=list(args.roster_key) if args.roster_key else None,
+                household_scope=scope,
                 completion_ledger=ledger,
                 redo=bool(getattr(args, "redo", False)),
             )
             result = {"plan": plan, "execute": False, "detached": False}
             if args.execute:
+                save_completion_ledger(ledger, ledger_path)
                 result["live"] = _execute_household(
                     plan,
                     process_id=args.process_id,
