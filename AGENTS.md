@@ -21,6 +21,11 @@ Ontology revision 4 embraces any user-chosen game/mod, mouse, keyboard, voice/as
 - **Continuity:** preserve intent and update docs/LEDGER.md, docs/ROADMAP.md and active sprint; no chat-only corrections.
 - Offline installation only; never EA Connect. Preserve lot-boundary, EA-file-first geometry and live-host policies in the mandatory detailed rules.
 
+## Existing operator/agent handoffs
+
+- Judgment-learning P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md` (preserve earlier certified handoff paths when compacting governance).
+- Project Cursor shell/file effect interception is separately owned by PR #161; the source peripheral checker is an additional layer, not a substitute for activated hooks.
+
 ## Trajectory and proof
 
 plans/active/BI-001.md is merged; plans/active/BI-002.md owns the game-lab gate. docs/HORIZON.md and plans/horizon.v1.json retain six needs, balance, income, skills and career order. docs/COMPATIBILITY.md and docs/LIVE_CERT.md require exact game build and immutable older certifications. BI-002 requires actual vanilla/modified trials and rollback; absent host means BLOCKED_LOCAL_GAME_ACCESS, active rather than complete. Report CHANGED | PROVED | NEXT, checks, SHA, push/PR/merge and actual live status. An offline pass is not gameplay proof.
