@@ -2,7 +2,18 @@
   "schema": "betterinstincts.horizon-execution-wide/v1",
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
-  "updated_at": "2026-11-10T11:20:00-05:00",
+  "updated_at": "2026-11-10T11:25:00-05:00",
+  "lot_boundary_footprint_20261110": {
+    "state": "CONTRACT_LANDED_NOT_LIVE_AABB_MEASURE",
+    "owner": "contracts/lot-boundary.v1.json",
+    "library": "betterinstincts/lot_boundary.py",
+    "api": ["assess_lot_boundary", "admit_world_click_in_footprint"],
+    "host_stack": "lot_boundary + world_click_footprint deny",
+    "consultation": "contracts/consultations/BI-LOT-BOUNDARY-FOOTPRINT-ADMIT-20261110.v1.json",
+    "rule": "Street/asphalt/neighbor/canal/Buy-without-census = OUTSIDE house; world clicks DENY until ON_LOT + inside footprint AABB or INTERIOR/YARD zone",
+    "recovery": ["ESC", "F1_IF_BUY", "SHIFT_ENTER", "REOBSERVE_ON_LOT"],
+    "proof_ceiling": "CONTRACT_HARNESS_NOT_LIVE_FOOTPRINT_MEASURE_NOT_BI002_CLOSE"
+  },
   "lot_cardinal_semantics_20261110": {
     "state": "CONTRACT_LANDED_NOT_LIVE_WORKSTATION_HIT",
     "owner": "contracts/lot-cardinal-semantics.v1.json",
@@ -562,7 +573,7 @@
     }
   ],
   "next_gates_ordered": [
-    "0. NEXT — PAUSED_PRODUCTIVITY: keep PAUSED; Order→Purchase Upgrade Parts OR gray robotics workstation (Gardener-Bot fix; do NOT Activate Servo; not blue water generator) spawn/HIT while paused. Cardinal FALLBACK: ~90° from FRONT_DOOR / same-side hydroponics language in lot-cardinal-semantics. Library: CLEAR_SEARCH_BEFORE_QUERY. OFF_INTENT/EDGE_CREEK → Esc(+F1)+SAFE_CURSOR_REST+Shift+Enter. Owners: live-host-ops + lot-cardinal-semantics",
+    "0. NEXT — LOT_BOUNDARY then PAUSED_PRODUCTIVITY: admit world clicks only INSIDE house footprint (lot-boundary); street/asphalt DENY. Keep PAUSED; Order parts OR gray robotics workstation (Gardener-Bot; never Activate Servo). Cardinal FALLBACK only after footprint admit. Library CLEAR_SEARCH_BEFORE_QUERY. OFF_INTENT/EDGE_CREEK → Esc(+F1)+SAFE_CURSOR_REST+Shift+Enter. Owners: lot-boundary + live-host-ops + lot-cardinal-semantics",
     "0b. While paused — UI map / Needs O measure-only / queue ALL household actions; unpause DENIED until queues set",
     "1. DONE — living Hunger subject attested on LabLab after Load Slot_00000007 (never delete saves)",
     "2. DONE — Manage Worlds travel-cancel PrintWindow [1055,22] (prior scale [1055,33] / canvas 800,25); FORBIDDEN footprint~1090 / crown~1131; Esc≠cancel",
@@ -584,6 +595,7 @@
     "horizon_topology": "plans/horizon.v1.json",
     "this_pack": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
     "live_host_ops": "contracts/live-host-ops.v1.json + betterinstincts/live_host_ops.py",
+    "lot_boundary": "contracts/lot-boundary.v1.json + betterinstincts/lot_boundary.py",
     "lot_cardinal_semantics": "contracts/lot-cardinal-semantics.v1.json + betterinstincts/lot_cardinal_semantics.py",
     "priority_algorithm": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json#priority_algorithm_20261110",
     "closers_handoff": "plans/active/BI-CLOSERS-HORIZON-20261110.v1.json + docs/handoff/BI-CLOSERS-HORIZON-P12-2026-11-10.md",

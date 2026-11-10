@@ -3,7 +3,7 @@
   "id": "LOT_CARDINAL_SEMANTICS",
   "version": 1,
   "consultation": "contracts/consultations/BI-LOT-CARDINAL-SEMANTICS-CV-LIBRARY-20261110.v1.json",
-  "purpose": "Cardinal-direction and landmark-relation model so agents can reason about corners and sides of a lot (bathtub same side as hydroponics; fridge opposite near doors; workstation 90° from front door). FALLBACK only — never outranks authorized EA save/Tray geometry or the profile lot_floor_map graph.",
+  "purpose": "Cardinal-direction and landmark-relation model so agents can reason about corners and sides of a lot (bathtub same side as hydroponics; fridge opposite near doors; workstation 90° from front door). FALLBACK only — never outranks authorized EA save/Tray geometry, the profile lot_floor_map graph, or lot-boundary footprint admit. Cardinal hints never justify street/asphalt clicks.",
   "proof_ceiling": "CONTRACT_HARNESS_NOT_LIVE_WORKSTATION_HIT_NOT_EA_PARSER_NOT_BI002_CLOSE",
   "owners": {
     "contract": "contracts/lot-cardinal-semantics.v1.json",

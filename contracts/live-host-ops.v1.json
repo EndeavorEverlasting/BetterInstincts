@@ -17,6 +17,7 @@
     "horizon": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json#priority_algorithm_20261110",
     "camera": "contracts/camera-traverse.v1.json#edge_creek_regression",
     "lot_focus": "betterinstincts/lot_focus.py#assess_off_intent_view",
+    "lot_boundary": "contracts/lot-boundary.v1.json + betterinstincts/lot_boundary.py",
     "interop": "contracts/workflow-interoperability.v1.json#game_input_borrow_restore",
     "consultation": "contracts/consultations/BI-LIVE-HOST-OPS-CHAT-RULES-20261110.v1.json"
   },

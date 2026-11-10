@@ -113,6 +113,11 @@ from betterinstincts.live_host_ops import (
     load_contract as load_live_host_ops,
     priority_order as live_host_priority_order,
 )
+from betterinstincts.lot_boundary import (
+    LotBoundaryError,
+    admit_world_click_in_footprint,
+    assess_lot_boundary,
+)
 from betterinstincts.scenes import stamp_host_capture_game_version
 from betterinstincts.scene_ui_semantics import assess_live_hud, SceneUISemanticsError
 from betterinstincts.scenery_memory import record_scenery, SceneryMemoryError
@@ -1047,10 +1052,71 @@ def evaluate_turn(
             "proof_ceiling": "LIVE_HOST_OPS_CONTRACT_LOAD_FAILED",
         }
 
+    # Lot FOOTPRINT / BOUNDARY: street/asphalt/neighbor are not the house.
+    lot_boundary = None
+    world_click_footprint = None
+    try:
+        lot_boundary = assess_lot_boundary(
+            observation=lot_focus_observation if isinstance(lot_focus_observation, Mapping) else None,
+            lot_focus=lot_focus if isinstance(lot_focus, Mapping) else None,
+        )
+        if isinstance(lot_focus_observation, Mapping) and lot_focus_observation.get(
+            "proposed_world_click_xy"
+        ):
+            xy = lot_focus_observation.get("proposed_world_click_xy")
+            world_click_footprint = admit_world_click_in_footprint(
+                client_xy=xy if isinstance(xy, (list, tuple)) else (0, 0),
+                observation=lot_focus_observation,
+                lot_focus=lot_focus if isinstance(lot_focus, Mapping) else None,
+                click_zone=str(lot_focus_observation.get("proposed_click_zone") or "UNKNOWN"),
+            )
+    except LotBoundaryError as exc:
+        lot_boundary = {
+            "error": str(exc),
+            "admit_world_clicks": False,
+            "proof_ceiling": "LOT_BOUNDARY_CONTRACT_LOAD_FAILED",
+        }
+
     # Priority: viewport > camera edge-park > player > survival/event > map travel > decision > needs.
     next_gate = "EXECUTE_INSTINCTS_PLAN"
     fallback = None
     if (
+        isinstance(world_click_footprint, Mapping)
+        and world_click_footprint.get("admit") is False
+        and isinstance(lot_focus_observation, Mapping)
+        and lot_focus_observation.get("proposed_world_click_xy") is not None
+    ):
+        next_gate = str(world_click_footprint.get("gate") or "LOT_BOUNDARY_OUTSIDE_FOOTPRINT")
+        fallback = {
+            "mechanism": "LOT_BOUNDARY_FOOTPRINT_DENY",
+            "owner": "betterinstincts/lot_boundary.py",
+            "contract": "contracts/lot-boundary.v1.json",
+            "lot_boundary": lot_boundary,
+            "world_click_footprint": world_click_footprint,
+            "execute_allowed": False,
+            "forbidden": list(world_click_footprint.get("forbidden") or []),
+            "recovery": list(world_click_footprint.get("recovery") or []),
+            "next": world_click_footprint.get("next"),
+            "note": "Street/asphalt/neighbor/outside AABB are not house contents — restore ON_LOT before world clicks.",
+        }
+    elif (
+        isinstance(lot_boundary, Mapping)
+        and lot_boundary.get("admit_world_clicks") is False
+        and isinstance(lot_focus_observation, Mapping)
+        and lot_focus_observation.get("require_world_click_admit") is True
+    ):
+        next_gate = str(lot_boundary.get("gate") or "LOT_BOUNDARY_OUTSIDE_FOOTPRINT")
+        fallback = {
+            "mechanism": "LOT_BOUNDARY_FOOTPRINT_DENY",
+            "owner": "betterinstincts/lot_boundary.py",
+            "contract": "contracts/lot-boundary.v1.json",
+            "lot_boundary": lot_boundary,
+            "execute_allowed": False,
+            "forbidden": list(lot_boundary.get("forbidden") or []),
+            "recovery": list(lot_boundary.get("recovery") or []),
+            "next": lot_boundary.get("next"),
+        }
+    elif (
         isinstance(live_host_ops, Mapping)
         and isinstance(live_host_ops.get("unpause_admission"), Mapping)
         and live_host_ops["unpause_admission"].get("admit") is False
@@ -1900,6 +1966,8 @@ def evaluate_turn(
         "lot_focus": lot_focus,
         "off_intent_view": off_intent_view,
         "live_host_ops": live_host_ops,
+        "lot_boundary": lot_boundary,
+        "world_click_footprint": world_click_footprint,
         "camera_recovery": drift_recovery,
         "world_target_framing": target_framing,
         "sim_camera": sim_camera_intent,

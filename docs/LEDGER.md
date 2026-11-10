@@ -1,3 +1,15 @@
+## 2026-11-10 — Lot boundary / house footprint admission
+
+**Operator:** Clicks on street/asphalt/Buy prove agents do not know house boundaries. Develop the algorithm, codify it, make it durable across agents.
+
+**CHANGED:** `contracts/lot-boundary.v1.json` + `betterinstincts/lot_boundary.py` + `tests/test_lot_boundary.py`; `host_stack` attaches `lot_boundary` / `world_click_footprint` deny before world clicks; AGENTS/DOCTRINE/Horizon. Consultation `BI-LOT-BOUNDARY-FOOTPRINT-ADMIT-20261110`.
+
+**PROVED offline:** OFF_LOT/street DENY; Buy-without-census DENY; ON_LOT+INTERIOR admit; XY outside AABB DENY; STREET zone DENY even under ON_LOT claim.
+
+**LIVE ceiling:** measured Bargain Bendh footprint AABB for current camera_revision still open.
+
+**NEXT:** Remeasure ON_LOT footprint AABB while Live+PAUSED; only then gray workstation click inside footprint.
+
 ## 2026-11-10 — Lot cardinal semantics + workstation CV + Library search clear
 
 **Operator:** Establish cardinal directions in-repo so traversal uses corner/side intuition (bathtub same side as hydroponics; fridge opposite near doors; workstation ~90° from front door) as FALLBACK under EA file parse + lot_floor_map. Workstation is gray (not blue), Gardener-Bot needs fix, Servo pending — do not Activate. My Library leftover search term (Smog) must be cleared. Enhance CV + semantic layer. `/fifth-gear` with Sims live: codify + execute — no new P05 pack.

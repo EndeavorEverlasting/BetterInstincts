@@ -1,0 +1,90 @@
+{
+  "schema": "betterinstincts.lot-boundary/v1",
+  "id": "LOT_BOUNDARY_FOOTPRINT",
+  "version": 1,
+  "consultation": "contracts/consultations/BI-LOT-BOUNDARY-FOOTPRINT-ADMIT-20261110.v1.json",
+  "purpose": "Fail-closed household lot FOOTPRINT / BOUNDARY admission. Agents must know where the house ends before any Live world click. Street, asphalt, neighbor lots, canal, and Buy catalog thrash are OUTSIDE — never treat them as house contents.",
+  "proof_ceiling": "CONTRACT_HARNESS_NOT_LIVE_FOOTPRINT_MEASURE_NOT_BI002_CLOSE",
+  "owners": {
+    "contract": "contracts/lot-boundary.v1.json",
+    "library": "betterinstincts/lot_boundary.py",
+    "lot_focus": "betterinstincts/lot_focus.py",
+    "cardinal": "contracts/lot-cardinal-semantics.v1.json",
+    "host_stack": "betterinstincts/host_stack.py",
+    "geometry_research": "contracts/lot-geometry-source.v1.json"
+  },
+  "authority_stack": [
+    "EA_SAVE_OR_TRAY_PARSER_WHEN_AUTHORIZED",
+    "MEASURED_FOOTPRINT_AABB_CAMERA_REVISION_BOUND",
+    "LOT_FOCUS_ON_LOT_CLASSIFICATION",
+    "ZONE_TOKENS_INTERIOR_YARD_VS_STREET",
+    "CARDINAL_SEMANTICS_INSIDE_FOOTPRINT_ONLY",
+    "OPERATOR_FRAME_WHEN_AMBIGUOUS"
+  ],
+  "zones": [
+    "INTERIOR",
+    "YARD",
+    "STREET",
+    "WATER",
+    "NEIGHBOR",
+    "UNKNOWN"
+  ],
+  "inside_zones": ["INTERIOR", "YARD"],
+  "outside_zones": ["STREET", "WATER", "NEIGHBOR"],
+  "gates": {
+    "LOT_BOUNDARY_OUTSIDE_FOOTPRINT": {
+      "when": "client_xy outside footprint_aabb OR zone in outside_zones OR lot_focus OFF_LOT",
+      "forbid": [
+        "WORLD_OBJECT_CLICK",
+        "HARDCODED_FIELD_XY",
+        "STREET_ROAM",
+        "ASPHALT_CLICK",
+        "EXPLORE_BUY"
+      ],
+      "recovery": ["ESC", "F1_IF_BUY", "SHIFT_ENTER", "REOBSERVE_ON_LOT"]
+    },
+    "LOT_BOUNDARY_AMBIGUOUS": {
+      "when": "insufficient cues and no measured AABB",
+      "forbid": ["BLIND_WORLD_CLICK"],
+      "next": "BLOCKED_NEED_OPERATOR_FRAME_OR_REMEASURE_FOOTPRINT"
+    },
+    "LOT_BOUNDARY_BUY_WITHOUT_CENSUS": {
+      "when": "buy_or_build_open and not build_census_lease",
+      "forbid": ["LIVE_WORLD_CLICK", "EXPLORE_CATALOG"],
+      "recovery": ["ESC", "F1", "CONFIRM_LIVE_HUD"]
+    }
+  },
+  "algorithm": [
+    "1. Observe PrintWindow: classify dominant zones + optional footprint_aabb bound to camera_revision",
+    "2. Run assess_lot_focus; OFF_LOT / AMBIGUOUS → deny world clicks",
+    "3. If Buy/Build open without build_census_lease → deny Live world clicks; Esc+F1",
+    "4. admit_world_click_in_footprint only when ON_LOT and (xy in AABB or click_zone in INTERIOR|YARD)",
+    "5. Cardinal semantics apply only after admit — never to justify street clicks",
+    "6. On deny: SAFE_CURSOR_REST then Shift+Enter lot arm; never thrash asphalt"
+  ],
+  "footprint_model": {
+    "kind": "CLIENT_AABB_CAMERA_REVISION_BOUND",
+    "fields": ["x0", "y0", "x1", "y1", "camera_revision", "capture_ref"],
+    "note": "AABB is inclusive client pixels of household lot interior+yard. Stale revision → treat as unknown (deny).",
+    "cues": [
+      "BUILD_LOT_OUTLINE_PINK_OR_GREEN",
+      "LIVE_HUD_HOUSEHOLD_PORTRAITS",
+      "INTERIOR_FLOOR_GRID_OR_FURNITURE",
+      "YARD_PLANTERS_INSIDE_FENCE",
+      "ABSENCE_OF_DOMINANT_ASPHALT"
+    ]
+  },
+  "forbidden_always": [
+    "CLICK_STREET_AS_HOUSE",
+    "CLICK_ASPHALT_AS_WORKSTATION",
+    "CLICK_NEIGHBOR_LOT",
+    "CLICK_CANAL_AS_YARD",
+    "CARDINAL_HINT_WITHOUT_ON_LOT_ADMIT",
+    "CHAT_ONLY_BOUNDARY_MEMORY"
+  ],
+  "proof_non_equivalence": [
+    "lot_focus ON_LOT is necessary but not sufficient without xy/zone inside footprint when AABB known",
+    "cardinal SAME_SIDE_AS does not admit a street pixel",
+    "unit PASS is not live footprint measure"
+  ]
+}
