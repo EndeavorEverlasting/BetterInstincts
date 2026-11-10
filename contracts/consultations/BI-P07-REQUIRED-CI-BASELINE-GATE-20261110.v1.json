@@ -24,7 +24,8 @@
     "contracts/ui-chrome.v1.json",
     "betterinstincts/camera_traverse.py",
     "betterinstincts/sim_camera.py",
-    "betterinstincts/progression_eval.py"
+    "betterinstincts/progression_eval.py",
+    "docs/AGENT_OPERATING_RULES.md"
   ],
   "invariants_checked": [
     "BI-ONT-001",
@@ -57,12 +58,14 @@
     "Hotkey test validates IDs by name not unstable positional index",
     "Vision marker accurately distinguishes CI from live game proof",
     "Targeted new world highlight tests remain green",
-    "Measured skills expansion action must never resolve as an arbitrary native click target"
+    "Measured skills expansion action must never resolve as an arbitrary native click target",
+    "P04 checker must follow compact root AGENTS mandatory delegation and reject absent detailed guide commands, never require duplicating full operator guidance in root"
   ],
   "rollback_path": "Revert CI-specific fixes while preserving opt-in world-highlight layer; report baseline CI failures separately; BI-002 stays ACTIVE.",
   "unresolved_unknowns": [
     "CI full suite might expose further legacy regression once initial registry load is repaired",
-    "Live game and sensor P08 proof remains separate"
+    "Live game and sensor P08 proof remains separate",
+    "Later CI gates were previously masked by old early failures and must be checked after P04 routing"
   ],
   "files_expected": [
     "contracts/consultations/BI-P07-REQUIRED-CI-BASELINE-GATE-20261110.v1.json",
@@ -71,7 +74,8 @@
     "tests/test_sim_camera.py",
     "docs/DOCTRINE.md",
     "docs/LEDGER.md",
-    "tests/test_ui_microsystems.py"
+    "tests/test_ui_microsystems.py",
+    "scripts/check_hidden_object_p04.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "decision_rationale": "Existing GitHub Actions main baseline and branch both show same 42 named failures. Repairing the broken required CI gate is a proven dependency of safe P07 mainline merge, not a speculative side project."
