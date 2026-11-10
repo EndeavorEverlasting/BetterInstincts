@@ -6,6 +6,10 @@ Before edits, samples or experiments, read mandatory `docs/AGENT_OPERATING_RULES
 
 Ontology revision 4 embraces any user-chosen game/mod, mouse, keyboard, voice/assistive or other-app interaction. Adopted autonomous effects yield on activity or unknown presence. Resume after two fresh trusted idle probes and target revalidation. Prefer verified native semantic APIs; desktop fallback requires explicit opt-in. Use the existing cooperative queue's enqueue_effect; partial work retains intent and requires observed reconciliation plus a rebuilt remainder. Never change peripheral preferences or UAC to aid automation. Passive capture never steals focus. Unadopted agents and executing native calls are not forcibly intercepted.
 
+## Windows peripheral authority boundary
+
+`contracts/peripheral-authority.v1.json` and `scripts/check_peripheral_boundary.py` guard this repository: no game host agent may change Windows Bluetooth service state, PnP drivers, pairing records, mouse/keyboard preferences or Print Screen settings. Even when game input is idle, OS repairs route to SysAdminSuite Bluetooth Field Workflow; keep user hardware under the operator's control. Run `python -m scripts.check_peripheral_boundary` and `python -m unittest tests.test_peripheral_boundary` with the ontology preflight before changing related source. See `docs/PERIPHERAL_INCIDENT.md`.
+
 ## Invariants
 
 - **Player first:** explicit user control wins; no uncontrolled loops. Preserve any chosen interaction shape.
