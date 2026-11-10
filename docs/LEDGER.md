@@ -1,3 +1,10 @@
+## 2026-11-10 — Horizon plan sync to live truth (repo/docs only)
+
+**CHANGED:** `plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json` now carries `live_truth_20261110` + `next_gates_ordered`; closers pack points at it via `live_status_pointer`. H0 save DONE (`My Saved Game 6` / `Slot_00000007`, never delete); lot_focus PARTIAL; fridge HIT MISS (`[465,595]` opened outdoor Upgrade/Possess pie; camera too zoomed out); Charlee starved -> playable ghost; Olga death modal cleared; living hunger subject RECOVERY_REQUIRED; FG S2 Skills LOCAL_OBSERVED (not BI-005).
+
+**Live truth:** Sims pid 78240 `TS4_x64_fpb`, game 1.121.361.1020; live_cert `bi002-game1-20261107` baseline 2/5, modified 0, rollback 0, INCOMPLETE, next_gate `RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS`. Evidence (local, gitignored): `dist/game-host/horizon-exec-20261110/` (`new-save-receipt.json`, `bi002/fridge-hit-receipt.json`, `bi002/adverse-charlee-starvation.json`, `bi002/followup-olga-cleared.png`, `bi002/trial1-partial.json`).
+
+**Proof ceiling:** plan/docs sync only; no live input. BI-002 stays open; BI-003+ not promoted.
 ## 2026-11-10 — BI-002 adverse: Charlee starvation → playable ghost
 
 **Operator:** Lab hunger drain without queued food is forbidden.

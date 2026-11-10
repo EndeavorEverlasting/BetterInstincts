@@ -4,6 +4,7 @@
   "created_at": "2026-11-10T09:07:00Z",
   "source": "P02_Conversation_Closeout + P12_Handoff; Horizon contract considered",
   "durable_execution_owner": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+  "live_status_pointer": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json#live_truth_20261110 (BI-002 baseline 2/5 INCOMPLETE; living hunger subject RECOVERY_REQUIRED; fridge HIT MISS; bi002_closed=false)",
   "p02_closeout_map": {
     "conversation_scope": "Horizon-wide execution + harness land-before-live",
     "preserved_gate": "BI-002 ACTIVE_GAME_UNPROVEN",

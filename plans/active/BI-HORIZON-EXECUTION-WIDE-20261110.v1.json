@@ -2,7 +2,22 @@
   "schema": "betterinstincts.horizon-execution-wide/v1",
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
-  "updated_at": "2026-11-10T21:30:00Z",
+  "updated_at": "2026-11-10T10:45:00Z",
+  "live_truth_20261110": {
+    "host": {"pid": 78240, "exe": "TS4_x64_fpb", "game_version": "1.121.361.1020"},
+    "live_cert_run": "bi002-game1-20261107",
+    "live_cert_status": {"baseline": 2, "modified": 0, "rollback": 0, "state": "INCOMPLETE", "next_gate": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS"},
+    "default_save": "My Saved Game 6 / Slot_00000007 — NEVER delete or overwrite",
+    "household": {
+      "charlee_lablab": "STARVED -> Become a Playable Ghost (adverse-charlee-starvation.json); death watch is NOT an eat trial",
+      "olga": "death modal DISMISSED; playable-ghost path",
+      "living_hunger_subject": "RECOVERY_REQUIRED — a living (non-ghost) Sim must be selected before any further baseline trial"
+    },
+    "fridge_hit": "MISS — [465,595] opened outdoor Upgrade/Possess pie (satellite/garden), not the fridge; camera too zoomed out; coords are single-frame, not promoted",
+    "fg_s2_skills": "LOCAL_OBSERVED (done); not BI-005; not BI-002 closure",
+    "evidence_root": "dist/game-host/horizon-exec-20261110/ (gitignored, local-only)",
+    "bi002_closed": false
+  },
   "repo_wide_execution_owner": true,
   "authority": [
     "docs/HORIZON.md",
@@ -60,7 +75,7 @@
     {
       "id": "H0",
       "title": "Safety save + lot-focus detector",
-      "status": "PROVED_PARTIAL",
+      "status": "SAVE_DONE_LOT_FOCUS_PARTIAL",
       "depends_on": [],
       "proof": ["LOT_OFF_FOCUS_CONTRACT_AND_TESTS", "NEW_SAVE_SLOT_ATTESTED"],
       "proof_ceiling": "NEW_SLOT_CREATED_NOT_HORIZON_STAGE_CLOSE",
@@ -80,8 +95,9 @@
         "note": "NEW slot only; never Delete/Overwrite; MENU_SAVE [960,420] forbidden for new-slot intent (2px from Save As)"
       },
       "lot_focus": {
-        "state": "OFF_LOT_OBSERVED_OFFLINE_OK",
+        "state": "PARTIAL",
         "live": "OFF_LOT_WATER canal observed then restored to on-lot Build T via arm+Enter",
+        "live_gap_20261110": "Camera still too zoomed out during fridge HIT; outdoor pie opened instead of fridge. Detector/zoom discipline not live-certified.",
         "contract": "contracts/camera-traverse.v1.json#lot_focus",
         "module": "betterinstincts/lot_focus.py"
       }
@@ -137,7 +153,13 @@
       "live_20261110": {
         "needs_panel": "Charlee hunger ~0.5 with marker; Servo needs distinct",
         "trial1": "PARTIAL_BLOCKED_CAMERA_OFF_LOT — no seconds-to-eat recorded",
-        "receipt": "dist/game-host/horizon-exec-20261110/bi002/trial1-partial.json"
+        "receipt": "dist/game-host/horizon-exec-20261110/bi002/trial1-partial.json",
+        "live_cert": {"run_id": "bi002-game1-20261107", "baseline": "2/5", "modified": "0/5", "rollback": 0, "state": "INCOMPLETE", "next_gate": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS"},
+        "fridge_hit": {"state": "MISS", "receipt": "dist/game-host/horizon-exec-20261110/bi002/fridge-hit-receipt.json", "xy": [465, 595], "observed": "outdoor Upgrade/Possess pie (satellite/garden); camera too zoomed out"},
+        "adverse": {"event": "CHARLEE_STARVATION_DEATH -> playable ghost", "receipt": "dist/game-host/horizon-exec-20261110/bi002/adverse-charlee-starvation.json", "baseline_effect": "none; stays 2/5"},
+        "olga_modal": "CLEARED (followup-olga-cleared.png)",
+        "living_hunger_subject": "RECOVERY_REQUIRED",
+        "prevention": "No stats.set_stat hunger drain unless fridge/food interaction is already admitted and queued; pause after set_stat until food queued"
       }
     },
     {
@@ -176,18 +198,24 @@
     {
       "id": "FG-S2",
       "title": "Fifth Gear Skills-panel LOCAL_OBSERVED",
-      "status": "ACTIVE",
+      "status": "LOCAL_OBSERVED_DONE",
       "parallel_with": ["BI-002", "MAP"],
       "run": "plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json",
       "proof_ceiling": "NOT_BI005; NOT_HORIZON_STAGE_CLOSE"
     }
   ],
+  "next_gates_ordered": [
+    "1. Recover a LIVING hunger subject: select a living Sim (not Charlee/Olga ghost); never delete My Saved Game 6 / Slot_00000007",
+    "2. Fix lot focus: arm hotkeys, Enter to recenter on active Sim, zoom in so the fridge is bbox-centered (no outdoor pie)",
+    "3. Fridge HIT: PrintWindow-confirm kitchen fridge pie (Grab/Quick Meal) before any hunger drain; promote coords only after a second camera frame",
+    "4. BI-002 baseline trials 3-5 (record with python -m scripts.live_cert record; no set_stat drain without queued food)",
+    "5. BI-002 modified 5/5 with reversible package, rollback, maintainer review",
+    "6. Only after BI-002 live cert: BI-003A-E -> BI-003F -> BI-004 -> BI-005 -> BI-006"
+  ],
   "next_commands": [
+    "python -m scripts.live_cert status --run-id bi002-game1-20261107",
     "python -m scripts.check_horizon",
-    "python -m scripts.semantic_preflight --consultation contracts/consultations/BI-LOT-OFF-FOCUS-20261110.v1.json --operation offline_experiment",
-    "python -m scripts.live_cert status --run-id <hunger-run-id>",
-    "git add plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json plans/active/BI-CLOSERS-HORIZON-20261110.v1.json docs/HORIZON.md docs/LEDGER.md docs/handoff/BI-CLOSERS-HORIZON-P12-2026-11-10.md",
-    "git commit -m \"docs/plans: canonical Horizon execution-wide owner + closers handoff pointers\""
+    "python -m scripts.semantic_preflight --consultation contracts/consultations/BI-LOT-OFF-FOCUS-20261110.v1.json --operation offline_experiment"
   ],
   "receipt_lane": "dist/game-host/horizon-exec-20261110/plan-lane-receipt.json",
   "owners": {

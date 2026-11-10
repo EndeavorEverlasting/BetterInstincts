@@ -23,10 +23,10 @@ Floor map + memorial + needs opportunistic map; `BUILD_TOP_DOWN_MAP`; Select-ins
 ## Next command
 ```powershell
 cd $env:USERPROFILE\dev\BetterInstincts
+python -m scripts.live_cert status --run-id bi002-game1-20261107   # baseline 2/5 INCOMPLETE
 python -m scripts.check_horizon
-# C1: commit+push dirty floor-map/camera/placement/Horizon harness on main (or owned PR)
-# C2: python -m scripts.live_cert status --run-id <hunger-run>  # BI-002 gate
-# MAP: lot floors/rooms/outside + menus with lot_focus OFF_LOT→Enter
+# Live truth + ordered gates: plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json#live_truth_20261110 / next_gates_ordered
+# Gate 1: recover a LIVING hunger subject (Charlee/Olga are ghosts); gate 2: recenter+zoom so fridge pie opens; never set_stat drain without queued food
 ```
 
 ## Copy-paste next agent
