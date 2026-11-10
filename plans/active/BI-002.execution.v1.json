@@ -26,7 +26,7 @@
       "owner": "game-capable agent",
       "goal": "Observe exact game version and hunger tuning, record five genuine vanilla trials",
       "gate": "five_vanilla_trials",
-      "status": "WAITING_FOR_LOCAL_GAME"
+      "status": "IN_PROGRESS"
     },
     {
       "id": "GAME-2",

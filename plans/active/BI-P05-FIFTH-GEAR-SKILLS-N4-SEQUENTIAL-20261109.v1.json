@@ -176,6 +176,18 @@
         "proof_ceiling": "DISPATCHED_NOT_PANEL_PASS",
         "receipt": "dist/game-host/household-skill-cert/live-20261109/canary-evil-robotics.json"
       },
+      "skills_panel_local_observed_20261110": {
+        "member": "OLGA_P2",
+        "session_id": "household-n4-20261109",
+        "process_id": 78240,
+        "admitted_host": true,
+        "play_brief_before_panel": true,
+        "primary_proof": "dist/game-host/horizon-exec-20261110/fg-s2/olga-skills-panel-top-v3.png",
+        "receipt": "dist/game-host/horizon-exec-20261110/fg-s2/fg-s2-skills-panel-receipt.json",
+        "panel_header_observed": "Olga hasn't earned any perks yet",
+        "proof_ceiling": "LOCAL_OBSERVED_PANEL_SIGHT_NOT_S2_REMOTE_INCOME_PASS_NOT_BI005",
+        "note": "DISPATCHED ledger and prior fg-s2 captures with Charlee/wrong portrait are not PASS; remaining remote_income five still open"
+      },
       "command": "python -m scripts.diy_skill_force target-sim --session-id household-n4-20261109 --members 4 --roster-key EVIL_P0 --roster-key BERNICE_P1 --roster-key OLGA_P2 --roster-key CHARLEE_P3 --member-key OLGA_P2 --display-name \"Olga Chabenvenutzki\" --roster-index 2 --bundle remote_income",
       "gate": "Skills-panel LOCAL_OBSERVED after armed play-brief; DISPATCHED is not PASS; yield on operator input",
       "overlay_preflight_20261109": {
