@@ -1,0 +1,64 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-FOCUS-BORROW-WALL-MULTI-SCREEN-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "Harden ASYNC_INTEROP game_input_borrow_restore for multi-screen operators: PrintWindow observe without stealing focus; each Sims input cell is a short borrow with a hard wall-clock; always restore the operator's other app/monitor; forbid long tip-sweep / ad-hoc raw-borrow monopolies that leave the operator trapped in Sims. Aligns with live-host-ops OPERATOR_RECLAIM (mouse/Wispr).",
+  "affected_concepts": [
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "OBSERVATION",
+    "CONTROL_PERMIT",
+    "PLAYER_PRESENCE",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "contracts/workflow-interoperability.v1.json",
+    "docs/ASYNC_INTEROP.md",
+    "docs/LEDGER.md",
+    "contracts/live-host-ops.v1.json",
+    "scripts/game_capture.py",
+    "betterinstincts/workflow_interop.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_BORROW_WALL_POLICY_NOT_LIVE_MULTI_MONITOR_CERT",
+  "player_save_control_impact": "No save mutations. Borrow must restore operator foreground; never monopolize Sims window across multi-monitor work.",
+  "expected_outcome": "workflow-interoperability borrow wall + ASYNC_INTEROP docs + live-host-ops OPERATOR_RECLAIM pointer; observation via PrintWindow without focus steal.",
+  "negative_tests": [
+    "Long tip-sweep under a single borrow must be denied",
+    "PRIOR_WAS_SIMS restore must not no-op after monopolizing borrow",
+    "Observe path must not require Sims foreground steal"
+  ],
+  "rollback_path": "Revert workflow-interoperability borrow-wall keys and ASYNC_INTEROP doc rows for this consultation; prior 15s idle interop remains; BI-002 ACTIVE.",
+  "unresolved_unknowns": [
+    "Live multi-monitor restore latency under Wispr + dual display not re-measured this commit",
+    "Whether diy_skill_force tip cells already honor the new wall without further script edits"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-FOCUS-BORROW-WALL-MULTI-SCREEN-20261110.v1.json",
+    "contracts/workflow-interoperability.v1.json",
+    "docs/ASYNC_INTEROP.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator lost focus while using other screens; codify borrow/restore wall in repository contracts rather than chat-only corrections."
+}

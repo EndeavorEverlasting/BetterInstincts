@@ -1,0 +1,65 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-LOT-GEOMETRY-SOURCE-OF-TRUTH-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "OFFLINE research stub only: record exact Windows EA user-data paths for Slot_*.save and My Library/Tray blueprints, and the dry-run limits of betterinstincts/dbpf.py read_package_index on .save files. No EA floorplan/room decoder. Never open, write, delete, or overwrite real saves in this slice.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "CLAIM",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+    "docs/HOUSE_STATE.md",
+    "docs/INSTALLATION_PROFILES.md",
+    "docs/BUILD_LIBRARY_CHECKPOINT.md",
+    "betterinstincts/dbpf.py",
+    "betterinstincts/house_state.py",
+    "betterinstincts/lot_floor_map.py",
+    "contracts/lot-floor-map.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "PATH_AND_DBPF_INDEX_RESEARCH_NOT_EA_FLOORPLAN_PARSER_NOT_BI002_CLOSE",
+  "player_save_control_impact": "No Sims Live input. No open/read of Slot_00000007.save contents in this slice. No Tray/save writes, deletes, or overwrites. Installation profiles remain the lot_floor_map owner and still forbid SIMS_SAVES as canonical store.",
+  "expected_outcome": "Consultation + contracts/lot-geometry-source.v1.json research stub with Windows path templates, host-observed existence metadata (not payload), and dbpf dry-run proposal. Horizon lane lot_geometry_source_of_truth_20261110 annotated. PrintWindow + house_state + lot_floor_map remain authoritative until a separate authorized READ_ONLY analyzer spike.",
+  "negative_tests": [
+    "Stub must not claim floor/room decode from .save or Tray",
+    "Stub must forbid auto-discovery writers against Documents/Electronic Arts",
+    "dbpf proof ceiling remains INDEX_KEYS_ONLY",
+    "BI-002 remains open / not closed by this research"
+  ],
+  "rollback_path": "Delete consultation + contracts/lot-geometry-source.v1.json research stub; revert horizon lane annotation; BI-002 ACTIVE.",
+  "unresolved_unknowns": [
+    "Whether Slot_*.save index enumerates under MAX_INDEX_ENTRIES without opening (not tested; real save not opened)",
+    "Which Tray resource types encode building/lot blueprints vs household metadata on this install",
+    "Public TGI type IDs for zone graphs / floorplans suitable for a future READ_ONLY analyzer"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-LOT-GEOMETRY-SOURCE-OF-TRUTH-20261110.v1.json",
+    "contracts/lot-geometry-source.v1.json",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator research lane already records candidates exist but no EA floorplan parser. Safe offline deliverable is path + dbpf dry-run proposal + stub; opening Slot_00000007 or implementing a decoder requires a separate authorized spike. Decision enum is ADMIT_FOR_OFFLINE_PROTOTYPE; scope remains research-stub-only (no parser, no save open)."
+}

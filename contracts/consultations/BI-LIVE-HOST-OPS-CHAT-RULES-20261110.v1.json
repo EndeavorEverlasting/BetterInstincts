@@ -1,0 +1,83 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-LIVE-HOST-OPS-CHAT-RULES-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "P00/P01: Codify operator live-host rules from Horizon chat into a durable contract + harness evaluator (contracts/live-host-ops.v1.json, betterinstincts/live_host_ops.py) so agents cannot treat chat-only corrections as execution memory. Includes PAUSED_PRODUCTIVITY_BEFORE_TIME_RISK, parts-before-needs, OFF_INTENT_VIEW→Shift+Enter arm, EDGE_MOUSE_PARK→creek recovery, no hardcoded field XY, inside/outside, focus borrow yield to mouse/Wispr, never Sell/delete saves. Fifth Gear: no new P05 pack while Sims live; S2 LOCAL_OBSERVED ≠ BI-005.",
+  "affected_concepts": [
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "OBSERVATION",
+    "CLAIM",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT",
+    "PLAYER_PRESENCE"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "docs/CAMERA_TRAVERSE.md",
+    "docs/ASYNC_INTEROP.md",
+    "contracts/live-host-ops.v1.json",
+    "contracts/camera-traverse.v1.json",
+    "betterinstincts/live_host_ops.py",
+    "betterinstincts/lot_focus.py",
+    "betterinstincts/camera_traverse.py",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "CONTRACT_HARNESS_NOT_LIVE_PARTS_HIT_NOT_BI002_CLOSE",
+  "player_save_control_impact": "Never delete/overwrite Slot_00000007 / My Saved Game 6; never Sell; Stay Offline; unpause deferred under parts/paused-productivity gate. This consultation admits offline policy owners only — not live SendInput.",
+  "expected_outcome": "Tracked contract + evaluator + tests + AGENTS/DOCTRINE/Horizon pointers committed to main; chat rules no longer sole carrier.",
+  "negative_tests": [
+    "Chat-only correction without contract mutation is incomplete",
+    "Unpause while parts_gate_open must DENY",
+    "Edge dwell without SAFE_CURSOR_REST must flag EDGE_CREEK_REGRESSION",
+    "Hardcoded field XY after zoom change must be forbidden for world targets",
+    "New P05 pack must not substitute for live S2 / live-host-ops execution"
+  ],
+  "rollback_path": "Revert live-host-ops contract/library/tests/host_stack/AGENTS/DOCTRINE/Horizon priority_algorithm and this consultation; prior OFF_INTENT_VIEW + camera SAFE_CURSOR_REST remain; BI-002 ACTIVE.",
+  "unresolved_unknowns": [
+    "Live Order→Purchase Upgrade Parts HIT still unproved on current PrintWindow frame",
+    "Whether robotics workstation spawn remains reachable without operator reframe",
+    "Needs-panel O client XY not yet measured on this build while paused"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-LIVE-HOST-OPS-CHAT-RULES-20261110.v1.json",
+    "contracts/live-host-ops.v1.json",
+    "betterinstincts/live_host_ops.py",
+    "tests/test_live_host_ops.py",
+    "betterinstincts/camera_traverse.py",
+    "contracts/camera-traverse.v1.json",
+    "betterinstincts/host_stack.py",
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator 2026-11-10: agents performed live cert from chat rules without repository codification — P00/P01 failure. Fix is durable policy owners, not more chat memory. Offline contract/harness only; live parts HIT remains a separate gate.",
+  "notes": "Fifth Gear with Sims PID live: execute live gates after this lands; do not emit a new P05 pack."
+}

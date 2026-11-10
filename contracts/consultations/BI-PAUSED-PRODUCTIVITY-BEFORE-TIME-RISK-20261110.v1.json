@@ -1,0 +1,73 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PAUSED-PRODUCTIVITY-BEFORE-TIME-RISK-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "Canonical live priority: any work achievable while the game is PAUSED outranks needs/eat/bladder and other motive traversals that require clock time (higher health/death risk). Persist as priority_algorithm_20261110 / PAUSED_PRODUCTIVITY_BEFORE_TIME_RISK on BI-HORIZON-EXECUTION-WIDE. Order: (1) paused Buy/Order/Purchase Upgrade Parts + UI mapping + fixed-ui seeds; (2) paused Needs-panel O icon measure-only; (3) queue household actions for ALL Sims while still paused; (4) unpause only after queues are set. Map-roam fridge with clock running is last resort. Fifth Gear: no new P05 pack; live screen owner follows this algorithm; S2 Skills LOCAL_OBSERVED is infra not BI-005.",
+  "affected_concepts": [
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "OBSERVATION",
+    "CLAIM",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT",
+    "PLAYER_PRESENCE"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/HORIZON.md",
+    "docs/LEDGER.md",
+    "docs/DOCTRINE.md",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+    "plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json",
+    "contracts/live-host-ops.v1.json",
+    "contracts/upgrade-parts-force.v1.json",
+    "contracts/fixed-ui-click-map.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "PLAN_POLICY_NOT_LIVE_PARTS_HIT_NOT_BI002_CLOSE",
+  "player_save_control_impact": "No delete/overwrite of My Saved Game 6 / Slot_00000007. Never Sell. Stay Offline. Unpause deferred until paused queues set. Policy consultation only — does not authorize unpause or Buy purchases beyond Order Upgrade Parts when separately admitted.",
+  "expected_outcome": "Horizon plan priority_algorithm_20261110 + LEDGER entry + live-host-ops architecture lock; agents prefer paused Order/parts and UI mapping before Needs satisfaction or fridge roam.",
+  "negative_tests": [
+    "Do not emit a new P05 pack as Fifth Gear completion while Sims PID live",
+    "Do not unpause solely to map Needs icons",
+    "Do not treat map-roam fridge as primary over paused Order path",
+    "Do not claim BI-002 or BI-005 closed from this policy alone"
+  ],
+  "rollback_path": "Revert priority_algorithm_20261110 Horizon block and live-host-ops architecture selection to prior next_gates fridge-first ordering; BI-002 ACTIVE.",
+  "unresolved_unknowns": [
+    "Exact paused Order menu path HIT on current host frame",
+    "Household queue completeness attestation format for unpause admission"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-PAUSED-PRODUCTIVITY-BEFORE-TIME-RISK-20261110.v1.json",
+    "contracts/live-host-ops.v1.json",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+    "docs/LEDGER.md",
+    "docs/DOCTRINE.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator 2026-11-10 generalization supersedes prior Needs-O-first interrupt for live screen ownership order. Persist as offline plan/policy owners before further live unpause.",
+  "notes": "Companion to BI-LIVE-HOST-OPS-CHAT-RULES-20261110."
+}
