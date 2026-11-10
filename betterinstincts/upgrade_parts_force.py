@@ -196,6 +196,21 @@ def how_to_buy(part_id: str = "robot_salvage_parts", *, cfg: Optional[dict] = No
     cfg = cfg or load_contract()
     part = resolve_part(part_id, cfg=cfg)
     guide = (cfg.get("how_to_buy") or {}).get(part["id"])
+    # Eco-Upgrade Parts are a Fabricator resource, not a vanilla computer
+    # picker item. Keep the old DIY spawn planning contract separate.
+    if part["id"] == "eco_upgrade_parts":
+        guide = {
+            "summary": "Eco Lifestyle Fabricator → Fabricate → Fabricated Eco-Upgrade Part",
+            "steps": [
+                "Confirm Eco Lifestyle is actually installed and a Fabricator is available.",
+                "Observe at least 15 bits and 10 pieces per fabrication attempt.",
+                "Select Fabricate → Fabricated Eco-Upgrade Part when visibly offered.",
+                "Queue crafting; wait for completion and confirm the Sim pocket inventory.",
+                "Do not claim a successful eco part from merely opening a menu.",
+            ],
+            "lab_bulk_alternative": "Not part of the normal computer Order picker",
+            "not_this": ["computer_purchase_unverified_for_eco", "claim_instant_eco_fabrication"],
+        }
     if not isinstance(guide, dict):
         guide = {
             "summary": (
