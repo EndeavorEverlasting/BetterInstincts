@@ -1,0 +1,120 @@
+{
+  "schema": "betterinstincts.p05-ordered-sprint-pack/v1",
+  "id": "BI-P05-FIFTH-GEAR-CAMERA-ZOOM-LADDER-20261109",
+  "prompt_resolution": {
+    "P05": {
+      "name": "[SERIALIZED] Ordered Sprint Plan Pack Generator",
+      "source_blob": "848728632c1243ebba023fa0012292a2ad33cada",
+      "role": "This ordered pack; /fifth-gear alias"
+    },
+    "P01": {
+      "name": "Harness Infrastructure Builder",
+      "role": "Bind agent_zoom_policy + overlay-clear into camera/HUD harness for all agents"
+    },
+    "P83": {
+      "role": "Refuse Handiness maximized / Skills-panel PASS from DISPATCHED-only receipts"
+    },
+    "P95": {
+      "role": "Zoom ladder + overlay-clear call stack on existing owners"
+    },
+    "P124": {
+      "role": "Reuse camera_traverse, active_sim_camera_lock, portrait_follow, scene_ui_semantics"
+    },
+    "P08": {
+      "role": "Live wheel-notch calibration + native dismiss + RIGHT_CLICK_VIEW restore proof"
+    }
+  },
+  "floor": {
+    "repo": "EndeavorEverlasting/BetterInstincts",
+    "primary_local_path": "C:/Users/CheeksMcClappeth/dev/BetterInstincts",
+    "origin_main_sha_at_pack": "377a6deef39e27094c774f43bd90de9461b1bde5",
+    "branch": "feat/camera-zoom-ladder-overlay-clear-20261109",
+    "consultation": "contracts/consultations/BI-CAMERA-ZOOM-LADDER-OVERLAY-CLEAR-20261109.v1.json",
+    "p83_handiness_truth": {
+      "receipt": "dist/game-host/household-skill-cert/handiness-canary-receipt.json",
+      "state": "HOUSEHOLD_SKILL_FORCE_DISPATCHED",
+      "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
+      "lie_rejected": "Handiness maximized via host across the attested 5 portraits"
+    }
+  },
+  "parent_outcome": "Every agent defaults to RIGHT_CLICK_VIEW (portrait follow + 0.85 zoom), uses halfway zoom only for environment planning, full zoom-out only for verified afar travel, clears tracked overlays when zoomed in after metadata accounted, and never claims skill PASS from DISPATCHED",
+  "runtime_partition": {
+    "host": "CURRENT_CHAT_RUNTIME_PLUS_LOCAL_AGENT_FOR_P08",
+    "provider_routes": ["GITHUB_ORIGIN"],
+    "complete_safe_current_runtime_first": true,
+    "parallel_lanes": [
+      "REPO_ZOOM_POLICY_AND_CI",
+      "DOCS_LEDGER_PACK",
+      "LOCAL_P08_CAMERA_AFTER_OPERATOR_LEASE"
+    ],
+    "serial_screen_owner": "ONE_LIVE_INPUT_OWNER"
+  },
+  "operator_screen": {
+    "owner": "OPERATOR_UNTIL_LEASED",
+    "yield_rule": "PLAYER_FIRST",
+    "computer_use": "FORBIDDEN_FOR_UNADMITTED_ZOOM_OR_OVERLAY_CLEAR"
+  },
+  "ordered_sprints": [
+    {
+      "id": "S0",
+      "title": "P83 honesty: strike Handiness maximized claim",
+      "owner": "REPO_AGENT",
+      "status": "DONE_IN_THIS_PACK",
+      "done_when": "Ledger + pack record DISPATCHED≠PASS; no agent may claim maximized from canary receipt"
+    },
+    {
+      "id": "S1",
+      "title": "Land zoom ladder + overlay-clear harness (P01)",
+      "owner": "REPO_AGENT",
+      "status": "IN_PROGRESS",
+      "artifacts": [
+        "contracts/camera-traverse.v1.json",
+        "betterinstincts/camera_traverse.py",
+        "betterinstincts/active_sim_camera_lock.py",
+        "betterinstincts/scene_ui_semantics.py",
+        "tests/test_camera_zoom_policy.py"
+      ],
+      "done_when": "Offline tests green; PR open; STREET_TOPDOWN rejected as default"
+    },
+    {
+      "id": "S2",
+      "title": "Wire host_stack / diy paths to refuse street default",
+      "owner": "REPO_AGENT",
+      "status": "DONE_WITH_S1",
+      "note": "host_stack.evaluate_turn passes camera_zoom_intent/planning/travel into active_sim_camera_lock; TRAVEL_AFAR observed without travel goal returns CAMERA_ZOOM_POLICY_BLOCK",
+      "done_when": "Admitted host turns surface zoom_policy restore before skill/needs clicks when observed TRAVEL_AFAR"
+    },
+    {
+      "id": "S3",
+      "title": "P08 calibrate wheel notches to 0.85 / 0.50 / 0.0",
+      "owner": "LOCAL_AGENT",
+      "status": "BLOCKED_ON_OPERATOR_SCREEN_LEASE",
+      "done_when": "Exact-build notch distances recorded under dist/game-host/; RIGHT_CLICK_VIEW visually matches Screenshot 2"
+    },
+    {
+      "id": "S4",
+      "title": "P08 overlay clear after metadata on zoomed-in view",
+      "owner": "LOCAL_AGENT",
+      "status": "BLOCKED_ON_S3",
+      "done_when": "Opportunity/skills/console/phone dismiss observed only after tracked metadata; unresolved decisions untouched"
+    },
+    {
+      "id": "S5",
+      "title": "P83 Handiness Skills-panel LOCAL_OBSERVED across fixed N",
+      "owner": "LOCAL_AGENT",
+      "status": "BLOCKED_ON_OPERATOR_SCREEN_LEASE",
+      "follow": "docs/handoff/BI-HOUSEHOLD-SKILL-LOCAL-P04-2026-11-09.md",
+      "done_when": "Skills panel level 10 observed per portrait; DISPATCHED alone never labeled PASS"
+    }
+  ],
+  "invariants": [
+    "PLAYER_FIRST",
+    "ONE_SCREEN_OWNER",
+    "RIGHT_CLICK_VIEW_IS_AGENT_DEFAULT",
+    "TRAVEL_AFAR_ONLY_FOR_LONG_DISTANCE_TRAVEL",
+    "NO_OVERLAY_CLEAR_BEFORE_METADATA_TRACKED",
+    "NO_CLAIM_SKILL_PASS_FROM_DISPATCHED_LEDGER",
+    "BI002_BI005_REMAIN_OPEN"
+  ],
+  "proof_ceiling": "OFFLINE_ZOOM_LADDER_AND_PACK_NOT_LIVE_CAMERA_OR_SKILL_PANEL_CERT"
+}

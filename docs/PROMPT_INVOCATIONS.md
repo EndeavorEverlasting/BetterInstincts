@@ -304,6 +304,10 @@ Fresh Moonwake `harness/exports/prompt-invocation-catalog.v1.json` resolution: *
 
 **/fifth-gear** → P05 ordered pack `plans/active/BI-P05-FIFTH-GEAR-HOUSEHOLD-SKILL-RR-20261109.v1.json` on floor `553e2fa`. Continues P83/P04 local skill cert handoff. Algorithm: skill-round-robin maximize across fixed observed N (no new Sims). Host: `python -m scripts.diy_skill_force household --members N …`. Consultation `contracts/consultations/BI-P05-FIFTH-GEAR-HOUSEHOLD-SKILL-RR-20261109.v1.json`.
 
+## 2026-11-09 — Fifth Gear camera zoom ladder + overlay clear (P05 / P01)
+
+**/fifth-gear** (this correction) → P05 ordered pack `plans/active/BI-P05-FIFTH-GEAR-CAMERA-ZOOM-LADDER-20261109.v1.json` on floor `377a6de`. **P01** harness binds RIGHT_CLICK_VIEW default (0.85 / 15% pullback), ENVIRONMENT_NAV halfway, TRAVEL_AFAR only for long-distance travel, and zoomed-in overlay clear after metadata tracked. Consultation `BI-CAMERA-ZOOM-LADDER-OVERLAY-CLEAR-20261109`. P83: Handiness `DISPATCHED` ×5 is not Skills-panel maximized.
+
 ## 2026-11-09 — Fifth Gear fixed-roster skill judgment
 
 Resolved using Moonwake main `AGENTS.md` and `harness/exports/prompt-invocation-catalog.v1.json`: **P95 Program Design & Call-Stack Prototype Architect** repairs skill/Space console selection; **P82 Prototype-Measure-Refine Delivery Loop** tests existing mechanics against console toggle, roster drift, detached-worker and online negative cases; **P07 Repo Sprint Executor** implements and integrates to default branch after checks; **P08 Live Runtime Proof Executor** requires observed disposable Sims game Skills-panel results, not a console receipt or GitHub CI; **P124 Repository Code Readability & Structural Refactorer** preserves existing DIY skill owner and cross-contract cohesion. **P00 Governance Doctrine Installer** and **P01 Harness Infrastructure Builder** inform the offline, no-household-expansion hard policy without installing live Cursor settings. Scope/receipt: `contracts/consultations/BI-HOUSEHOLD-JUDGMENT-SERIAL-OFFLINE-20261109.v1.json`, `docs/HOUSEHOLD_JUDGMENT.md`, `tests/test_household_judgment.py`.

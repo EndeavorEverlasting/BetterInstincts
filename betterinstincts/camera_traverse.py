@@ -907,3 +907,191 @@ def assess_drift_recovery(
         "clock_revision": time_pause["clock_revision"] if time_pause else None,
         "target_framing": framed,
     }
+
+
+ZOOM_MODES = frozenset({
+    "RIGHT_CLICK_VIEW", "ENVIRONMENT_NAV", "TRAVEL_AFAR", "MAX_CLOSE",
+})
+ZOOM_PROOF = "OFFLINE_ZOOM_POLICY_NOT_LIVE_CAMERA_PROOF"
+
+
+def _zoom_policy(cfg: Mapping[str, object] | None = None) -> dict:
+    data = dict(cfg or load_contract())
+    policy = data.get("agent_zoom_policy")
+    if not isinstance(policy, Mapping):
+        raise CameraTraverseError("AGENT_ZOOM_POLICY_MISSING")
+    modes = policy.get("modes")
+    if not isinstance(modes, Mapping) or not ZOOM_MODES.issubset(modes):
+        raise CameraTraverseError("AGENT_ZOOM_MODES_INCOMPLETE")
+    if policy.get("default_mode") != "RIGHT_CLICK_VIEW":
+        raise CameraTraverseError("AGENT_ZOOM_DEFAULT_MUST_BE_RIGHT_CLICK_VIEW")
+    return dict(policy)
+
+
+def resolve_zoom_mode_alias(token: str, *, cfg: Mapping[str, object] | None = None) -> str:
+    """Map operator aliases (SCREENSHOT_2, HALFWAY_ZOOM, …) to canonical modes."""
+    if not isinstance(token, str) or not token:
+        raise CameraTraverseError("ZOOM_MODE_TOKEN_REQUIRED")
+    policy = _zoom_policy(cfg)
+    if token in policy["modes"]:
+        return token
+    for mode, row in policy["modes"].items():
+        aliases = row.get("aliases") or []
+        if token in aliases:
+            return str(mode)
+    raise CameraTraverseError("UNKNOWN_ZOOM_MODE_OR_ALIAS")
+
+
+def assess_agent_zoom_mode(
+    *,
+    intent: str | None = None,
+    observation: Mapping[str, object] | None = None,
+    planning_goal: Mapping[str, object] | None = None,
+    travel_goal: Mapping[str, object] | None = None,
+    cfg: Mapping[str, object] | None = None,
+) -> dict:
+    """Choose the agent zoom ladder rung. Plans never grant input.
+
+    RIGHT_CLICK_VIEW (0.85 of max close / 15% pullback) is the durable default.
+    ENVIRONMENT_NAV (0.50) needs a named planning/nav goal.
+    TRAVEL_AFAR (0.0 / street top-down) needs verified long-distance travel.
+    """
+    policy = _zoom_policy(cfg)
+    base = {
+        "execute_allowed": False,
+        "proof_ceiling": ZOOM_PROOF,
+        "policy_default": "RIGHT_CLICK_VIEW",
+        "preferred_control": "RIGHT_CLICK_ACTIVE_SIM_PORTRAIT",
+    }
+
+    def hold(gate: str, reason: str, **extra: object) -> dict:
+        return {**base, "state": "AGENT_ZOOM_HOLD", "gate": gate, "reason": reason, **extra}
+
+    if observation is not None and not isinstance(observation, Mapping):
+        return hold("AGENT_ZOOM_REOBSERVE", "HOST_OBSERVATION_INVALID")
+    if isinstance(observation, Mapping) and observation.get("player_camera_owned") is True:
+        return hold("AGENT_ZOOM_YIELD", "PLAYER_OWNS_CAMERA")
+
+    requested = intent or "RIGHT_CLICK_VIEW"
+    try:
+        mode = resolve_zoom_mode_alias(requested, cfg=cfg)
+    except CameraTraverseError as exc:
+        return hold("AGENT_ZOOM_UNKNOWN_MODE", str(exc))
+
+    row = dict(policy["modes"][mode])
+    fraction = row.get("zoom_in_fraction_of_max")
+    if type(fraction) is not float and type(fraction) is not int:
+        return hold("AGENT_ZOOM_CONTRACT_INVALID", "MODE_FRACTION_MISSING", mode=mode)
+    fraction = float(fraction)
+
+    if mode == "ENVIRONMENT_NAV":
+        if not isinstance(planning_goal, Mapping):
+            return hold(
+                "ENVIRONMENT_NAV_GOAL_REQUIRED",
+                "NAMED_ENVIRONMENT_PLANNING_OR_NAV_GOAL_REQUIRED",
+                mode=mode,
+            )
+        goal_id = planning_goal.get("goal_id")
+        kind = planning_goal.get("kind")
+        if (
+            not isinstance(goal_id, str) or not 1 <= len(goal_id) <= 96
+            or kind not in {"ENVIRONMENT_PLANNING", "ENVIRONMENT_NAV", "LOT_UNDERSTANDING"}
+            or planning_goal.get("source") != "HOST_TASK"
+        ):
+            return hold(
+                "ENVIRONMENT_NAV_GOAL_REQUIRED",
+                "UNVERIFIED_ENVIRONMENT_PLANNING_GOAL",
+                mode=mode,
+            )
+
+    if mode == "TRAVEL_AFAR":
+        if not isinstance(travel_goal, Mapping):
+            return hold(
+                "TRAVEL_AFAR_GOAL_REQUIRED",
+                "VERIFIED_LONG_DISTANCE_TRAVEL_GOAL_REQUIRED",
+                mode=mode,
+                forbidden_as_default=True,
+            )
+        goal_id = travel_goal.get("goal_id")
+        if (
+            not isinstance(goal_id, str) or not 1 <= len(goal_id) <= 96
+            or travel_goal.get("kind") != "LONG_DISTANCE_TRAVEL"
+            or travel_goal.get("source") != "HOST_TASK"
+            or travel_goal.get("destination_attested") is not True
+        ):
+            return hold(
+                "TRAVEL_AFAR_GOAL_REQUIRED",
+                "UNVERIFIED_LONG_DISTANCE_TRAVEL_GOAL",
+                mode=mode,
+                forbidden_as_default=True,
+            )
+
+    if mode == "MAX_CLOSE" and intent is None:
+        return hold(
+            "MAX_CLOSE_NOT_DEFAULT",
+            "REFERENCE_EXTREME_REQUIRES_EXPLICIT_INTENT",
+            mode=mode,
+        )
+
+    observed = None
+    if isinstance(observation, Mapping):
+        observed = observation.get("zoom_mode_observed")
+        if observed is not None:
+            try:
+                observed = resolve_zoom_mode_alias(str(observed), cfg=cfg)
+            except CameraTraverseError:
+                return hold("AGENT_ZOOM_REOBSERVE", "OBSERVED_ZOOM_CLASS_UNKNOWN")
+
+    if observed == "TRAVEL_AFAR" and mode == "RIGHT_CLICK_VIEW":
+        # Street top-down is never an acceptable parked default.
+        return {
+            **base,
+            "state": "AGENT_ZOOM_RESTORE_REQUIRED",
+            "gate": "LEAVE_STREET_TOPDOWN_FOR_RIGHT_CLICK_VIEW",
+            "mode": mode,
+            "zoom_in_fraction_of_max": fraction,
+            "pullback_from_max_fraction": row.get("pullback_from_max_fraction"),
+            "observed_mode": observed,
+            "required_follow": row.get("required_follow"),
+            "screenshot_refs": list(row.get("screenshot_refs") or []),
+            "wheel": {
+                "kind": "WHEEL_ZOOM",
+                "direction": "IN",
+                "until_fraction": fraction,
+                "notches": None,
+                "requires_live_calibration": True,
+            },
+            "next": "PORTRAIT_RIGHT_CLICK_THEN_BOUNDED_WHEEL_IN_TO_0_85",
+        }
+
+    return {
+        **base,
+        "state": "AGENT_ZOOM_READY_FOR_ADMISSION",
+        "gate": "AGENT_ZOOM_POLICY_READY",
+        "mode": mode,
+        "zoom_in_fraction_of_max": fraction,
+        "pullback_from_max_fraction": row.get("pullback_from_max_fraction"),
+        "observed_mode": observed,
+        "required_follow": row.get("required_follow"),
+        "screenshot_refs": list(row.get("screenshot_refs") or []),
+        "forbidden_as_default": bool(row.get("forbidden_as_default")),
+        "wheel": {
+            "kind": "WHEEL_ZOOM",
+            "direction": "OUT" if fraction < 0.85 else "IN" if fraction > 0.85 else "HOLD",
+            "until_fraction": fraction,
+            "notches": None,
+            "requires_live_calibration": True,
+        },
+        "next": "ADMITTED_HOST_FOLLOW_AND_WHEEL_THEN_SAFE_REST",
+    }
+
+
+def plan_agent_default_view(
+    *,
+    observation: Mapping[str, object] | None = None,
+    cfg: Mapping[str, object] | None = None,
+) -> dict:
+    """Canonical agent default: RIGHT_CLICK_VIEW at 15% pullback from max close."""
+    return assess_agent_zoom_mode(
+        intent="RIGHT_CLICK_VIEW", observation=observation, cfg=cfg,
+    )

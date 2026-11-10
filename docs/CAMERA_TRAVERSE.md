@@ -161,3 +161,18 @@ Machine ownership: `contracts/portrait-follow.v1.json` and `betterinstincts/port
 ## Escape is not a traverse close (2026-11-09)
 
 Escape while Live opens the **Travel map / pause MENU**. It is never the household-traverse or cheat-console close and is never spammed. Close the console with **Ctrl+Shift+C** (`CTRL_SHIFT_C_TOGGLE`) and advance portraits with **Space**. One deliberate Escape-cancel of an *observed* dialog (for example CAS when the operator asked to cancel) is the only allowed use. Machine owner: `contracts/diy-skill-force.v1.json` `ui_forbids`, evaluated by `betterinstincts.diy_skill_force.evaluate_ui_action`.
+
+## 2026-11-09 — agent zoom ladder (RIGHT_CLICK_VIEW default)
+
+Operator-attested ladder for **every** agent (P01 harness, not chat preference):
+
+| Mode | Zoom-in fraction of max | When |
+| --- | --- | --- |
+| **RIGHT_CLICK_VIEW** (Screenshot 2 / default) | **0.85** (15% pullback from max close / Screenshot 3) | Default agent work; portrait right-click follow first |
+| **ENVIRONMENT_NAV** | **0.50** | Named environment planning / understanding / move planning only |
+| **TRAVEL_AFAR** (Screenshot 1 / 4) | **0.0** full zoom-out | Verified long-distance travel goal only — never a parked default |
+| **MAX_CLOSE** (Screenshot 3) | **1.0** | Reference extreme; not the agent default |
+
+Machine owner: `contracts/camera-traverse.v1.json#agent_zoom_policy`, `assess_agent_zoom_mode` / `plan_agent_default_view`. `active_sim_camera_lock` fails closed when the observed view is street top-down without a travel goal. Wheel notch distances require local P08 calibration; offline plans set `requires_live_calibration=true` and never grant input.
+
+**Zoomed-in overlay clear:** at RIGHT_CLICK_VIEW or MAX_CLOSE, after BetterInstincts has `metadata_tracked` + `accounted_by=BETTER_INSTINCTS`, propose dismiss for expanded opportunity panel, expanded bottom-right panels, cheat console, expanded phone (extensible). Unresolved decision overlays never clear as clutter. Owner: `scene_ui_semantics.assess_overlay_clear_after_metadata`.

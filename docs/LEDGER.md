@@ -1,3 +1,11 @@
+## 2026-11-09 — Camera zoom ladder + overlay clear for all agents (P01 / Fifth Gear)
+
+**Operator correction:** Agents keep parking at full zoom-out (Screenshot 1/4). Default must be Right Click View (Screenshot 2): portrait follow + zoom to 15% less than max close (Screenshot 3). Halfway zoom for environment planning. Full zoom-out only when travelling afar. When zoomed in, remove overlays once metadata is tracked. False "Handiness maximized" after DISPATCHED-only receipts is a P83 lie.
+
+**CHANGED:** consultation `BI-CAMERA-ZOOM-LADDER-OVERLAY-CLEAR-20261109`; `contracts/camera-traverse.v1.json#agent_zoom_policy` + `#zoomed_in_overlay_clear`; ontology viewpoint revision 4; `assess_agent_zoom_mode` / `plan_agent_default_view`; camera lock gate; `assess_overlay_clear_after_metadata`; Fifth Gear pack `plans/active/BI-P05-FIFTH-GEAR-CAMERA-ZOOM-LADDER-20261109.v1.json`.
+
+**PROVED offline:** `tests/test_camera_zoom_policy.py`. Live wheel-notch calibration and native dismiss P08 remain OPEN. Handiness Skills-panel LOCAL_OBSERVED across N remains OPEN (`HOUSEHOLD_SKILL_FORCE_DISPATCHED` only).
+
 ## 2026-11-09 — Fifth Gear household skill-round-robin live cert pack
 
 **Operator:** Too many Sims already present; refresh floor to `origin/main`; leave durable skill-maximize host logic; live-cert skill-first round-robin (pick skill → maximize portrait 1..N → next skill). No household expansion.

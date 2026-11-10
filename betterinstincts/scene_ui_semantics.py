@@ -22,7 +22,15 @@ BOTTOM_RIGHT = frozenset({
     "personal_inventory", "needs",
 })
 OVERLAY_TYPES = frozenset({"CAREER_EVENT", "RANDOM_EVENT", "OPPORTUNITY", "SIM_NOTIFICATION", "DECISION_MODAL"})
+CLEARABLE_OVERLAY_KINDS = frozenset({
+    "OPPORTUNITY_PANEL_EXPANDED",
+    "BOTTOM_RIGHT_PANEL_EXPANDED",
+    "CHEAT_CONSOLE",
+    "PHONE_INTERFACE_EXPANDED",
+})
+ZOOMED_IN_FOR_CLEAR = frozenset({"RIGHT_CLICK_VIEW", "MAX_CLOSE"})
 PROOF = "OFFLINE_HUD_CONTEXT_NOT_LIVE_GAME_CERTIFIED"
+OVERLAY_CLEAR_PROOF = "OFFLINE_OVERLAY_CLEAR_POLICY_NOT_LIVE_DISMISS_PROOF"
 
 
 class SceneUISemanticsError(ValueError):
@@ -451,3 +459,135 @@ def enqueue_native_overlay_choice(
     return {"state": "QUEUED_VERIFIED_OVERLAY_CHOICE",
             "work_id": work_id, "execute_allowed": False,
             "receipt": receipt, "proof_ceiling": PROOF}
+
+
+def assess_overlay_clear_after_metadata(
+    *,
+    capture_ref: str,
+    observation: Mapping[str, Any] | None,
+    zoom_mode: str,
+) -> dict:
+    """When zoomed in, clear tracked HUD chrome after metadata is accounted for.
+
+    Decision/event overlays that still need a player/host choice are never
+    treated as clearable clutter. Plans never grant input.
+    """
+    base = {
+        "execute_allowed": False,
+        "proof_ceiling": OVERLAY_CLEAR_PROOF,
+        "capture_ref": capture_ref,
+        "zoom_mode": zoom_mode,
+        "clears": [],
+    }
+
+    def hold(gate: str, reason: str, **extra: object) -> dict:
+        return {**base, "state": "OVERLAY_CLEAR_HOLD", "gate": gate, "reason": reason, **extra}
+
+    if not _token(capture_ref):
+        return hold("OVERLAY_CLEAR_REOBSERVE", "CAPTURE_REF_REQUIRED")
+    if zoom_mode not in ZOOMED_IN_FOR_CLEAR:
+        return hold(
+            "OVERLAY_CLEAR_NOT_APPLICABLE",
+            "ONLY_WHEN_RIGHT_CLICK_VIEW_OR_MAX_CLOSE",
+        )
+    if not isinstance(observation, Mapping):
+        return hold("OVERLAY_CLEAR_REOBSERVE", "HOST_OBSERVATION_REQUIRED")
+    if (
+        observation.get("source") != "HOST_CAPTURE"
+        or observation.get("capture_ref") != capture_ref
+        or observation.get("mode") != "LIVE"
+    ):
+        return hold("OVERLAY_CLEAR_REOBSERVE", "LIVE_CAPTURE_UNVERIFIED")
+    if observation.get("player_queue_owned") is True:
+        return hold("OVERLAY_CLEAR_YIELD", "PLAYER_OWNS_QUEUE")
+
+    # Unresolved career/random/decision overlays are never chrome clutter.
+    overlay = observation.get("overlay")
+    if isinstance(overlay, Mapping) and overlay.get("visible") is True:
+        if overlay.get("decision_state") != "RESOLVED":
+            return hold(
+                "OVERLAY_CLEAR_BLOCKED_BY_DECISION",
+                "UNRESOLVED_DECISION_OVERLAY",
+                overlay_id=overlay.get("overlay_id"),
+            )
+
+    raw = observation.get("clearable_overlays")
+    if raw is None:
+        return {**base, "state": "OVERLAY_CLEAR_NONE_OBSERVED", "gate": "HUD_CONTEXT_READY"}
+    if not isinstance(raw, list) or len(raw) > 16:
+        return hold("OVERLAY_CLEAR_REOBSERVE", "CLEARABLE_OVERLAYS_INVALID")
+
+    ready: list[dict] = []
+    withheld: list[dict] = []
+    for item in raw:
+        if not isinstance(item, Mapping):
+            return hold("OVERLAY_CLEAR_REOBSERVE", "CLEARABLE_OVERLAY_ROW_INVALID")
+        kind = item.get("kind")
+        if kind not in CLEARABLE_OVERLAY_KINDS:
+            withheld.append({"kind": kind, "reason": "UNKNOWN_OR_NOT_CLEARABLE"})
+            continue
+        if item.get("capture_ref") != capture_ref:
+            withheld.append({"kind": kind, "reason": "STALE_CAPTURE"})
+            continue
+        if item.get("visible") is not True:
+            continue
+        if item.get("metadata_tracked") is not True:
+            withheld.append({"kind": kind, "reason": "METADATA_NOT_TRACKED"})
+            continue
+        if item.get("accounted_by") != "BETTER_INSTINCTS":
+            withheld.append({"kind": kind, "reason": "METADATA_NOT_ACCOUNTED"})
+            continue
+        if item.get("player_owned") is True:
+            withheld.append({"kind": kind, "reason": "PLAYER_OWNED_MODAL"})
+            continue
+        dismiss = item.get("dismiss_target")
+        if (
+            not isinstance(dismiss, Mapping)
+            or dismiss.get("capture_ref") != capture_ref
+            or dismiss.get("visible") is not True
+            or dismiss.get("enabled") is not True
+            or dismiss.get("obscured") is not False
+            or not _cues(dismiss.get("cues"), {
+                "visual": "tracked_overlay_dismiss_control",
+                "operator": "tracked_overlay_dismiss_confirmed",
+            })
+        ):
+            withheld.append({"kind": kind, "reason": "DISMISS_TARGET_UNVERIFIED"})
+            continue
+        rect = dismiss.get("hitbox")
+        w, h = observation.get("client_width"), observation.get("client_height")
+        if (
+            type(w) is not int or type(h) is not int or w < 640 or h < 480
+            or not isinstance(rect, list) or len(rect) != 4
+            or any(type(v) is not int for v in rect)
+        ):
+            withheld.append({"kind": kind, "reason": "DISMISS_HITBOX_UNVERIFIED"})
+            continue
+        left, top, right, bottom = rect
+        if not (0 <= left < right < w and 0 <= top < bottom < h
+                and min(right - left, bottom - top) >= 8):
+            withheld.append({"kind": kind, "reason": "DISMISS_HITBOX_OUT_OF_BOUNDS"})
+            continue
+        ready.append({
+            "kind": kind,
+            "button": "LEFT",
+            "client": [(left + right) // 2, (top + bottom) // 2],
+            "hitbox": list(rect),
+            "metadata_tracked": True,
+            "accounted_by": "BETTER_INSTINCTS",
+        })
+
+    if not ready:
+        return {
+            **base, "state": "OVERLAY_CLEAR_WITHHELD",
+            "gate": "METADATA_OR_HITBOX_REQUIRED",
+            "withheld": withheld,
+        }
+    return {
+        **base,
+        "state": "OVERLAY_CLEAR_AWAIT_NATIVE_ADMISSION",
+        "gate": "OVERLAY_CLEAR_READY",
+        "clears": ready,
+        "withheld": withheld,
+        "next": "ONE_ADMITTED_DISMISS_PER_TRACKED_OVERLAY_THEN_REOBSERVE",
+    }

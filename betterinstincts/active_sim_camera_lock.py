@@ -9,7 +9,9 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from betterinstincts.camera_traverse import CameraTraverseError, plan_traverse
+from betterinstincts.camera_traverse import (
+    CameraTraverseError, plan_traverse, assess_agent_zoom_mode, plan_agent_default_view,
+)
 from betterinstincts.sim_camera import (
     CENTER_SIM, plan_sim_camera,
 )
@@ -26,6 +28,9 @@ def evaluate_active_sim_camera_lock(
     map_goal: Mapping[str, Any] | None = None,
     directions: Sequence[str] = (),
     zoom_notches: int = 0,
+    zoom_intent: str | None = None,
+    planning_goal: Mapping[str, Any] | None = None,
+    travel_goal: Mapping[str, Any] | None = None,
     now_ms: int | None = None,
 ) -> dict:
     """Require an active-Sim anchor or a finite goal-scoped map exception.
@@ -61,6 +66,25 @@ def evaluate_active_sim_camera_lock(
     anchored = following or centered_once
     portrait = plan_portrait_follow(capture_ref=capture_ref, observation=observation)
     movement_requested = bool(map_requested or directions or zoom_notches)
+
+    # Zoom ladder is mandatory for every agent path: street top-down is never
+    # an acceptable parked default, even when follow already looks locked.
+    zoom = assess_agent_zoom_mode(
+        intent=zoom_intent,
+        observation=observation,
+        planning_goal=planning_goal,
+        travel_goal=travel_goal,
+    )
+    if zoom["state"] in {"AGENT_ZOOM_HOLD", "AGENT_ZOOM_RESTORE_REQUIRED"}:
+        return {
+            **base, "state": "CAMERA_ZOOM_POLICY_BLOCK",
+            "gate": zoom["gate"], "reason": zoom.get("reason"),
+            "sim_id": sim_id, "center": None,
+            "portrait_follow": portrait if zoom.get("mode") == "RIGHT_CLICK_VIEW" else None,
+            "zoom_policy": zoom, "map_plan": None, "restore": None,
+            "preferred_control": "RIGHT_CLICK_ACTIVE_SIM_PORTRAIT",
+            "default_view": plan_agent_default_view(observation=observation),
+        }
 
     if movement_requested:
         if not anchored:
@@ -121,7 +145,8 @@ def evaluate_active_sim_camera_lock(
         return {**base, "state": "CAMERA_ACTIVE_SIM_LOCKED",
                 "gate": "CAMERA_ACTIVE_SIM_LOCKED", "sim_id": sim_id,
                 "center": None, "portrait_follow": None,
-                "map_plan": None, "restore": None}
+                "zoom_policy": zoom, "map_plan": None, "restore": None,
+                "default_view": "RIGHT_CLICK_VIEW"}
     if portrait["state"] == "PORTRAIT_FOLLOW_READY_FOR_ADMISSION":
         return {**base, "state": "CAMERA_PORTRAIT_FOLLOW_FIRST",
                 "gate": "CAMERA_PORTRAIT_FOLLOW_REQUIRED",
