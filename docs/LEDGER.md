@@ -1,3 +1,15 @@
+## 2026-11-10 — Lot cardinal semantics + workstation CV + Library search clear
+
+**Operator:** Establish cardinal directions in-repo so traversal uses corner/side intuition (bathtub same side as hydroponics; fridge opposite near doors; workstation ~90° from front door) as FALLBACK under EA file parse + lot_floor_map. Workstation is gray (not blue), Gardener-Bot needs fix, Servo pending — do not Activate. My Library leftover search term (Smog) must be cleared. Enhance CV + semantic layer. `/fifth-gear` with Sims live: codify + execute — no new P05 pack.
+
+**CHANGED:** `contracts/lot-cardinal-semantics.v1.json` + `betterinstincts/lot_cardinal_semantics.py` + tests; lot-floor-map cardinal edges + workstation CV note; fixed-ui v18 `CLEAR_SEARCH_BEFORE_QUERY`; room_map_traverse landmark hint; AGENTS/DOCTRINE/Horizon. Consultation `BI-LOT-CARDINAL-SEMANTICS-CV-LIBRARY-20261110`.
+
+**PROVED offline:** authority stack prefers EA parser; ninety-deg + landmark relations; gray admit / blue generator deny; uncleared Smog search DENY until clear.
+
+**LIVE ceiling:** gray workstation HIT + measured Library clear-X still open; EA parser still stub.
+
+**NEXT:** Fresh PrintWindow of gray robotics workstation (Gardener-Bot visible); click while PAUSED for parts; measure Library search clear-X when next in Gallery.
+
 ## 2026-11-10 — P00/P01 live-host-ops: chat rules → repository owners
 
 **Operator:** Agents were following live-cert rules from chat only without codifying them — P00/P01 failure. `/fifth-gear` with Sims live = execute gates + land durable policy; do **not** emit a new P05 pack.

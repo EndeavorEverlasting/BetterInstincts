@@ -1,7 +1,8 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 17,
+  "version": 18,
   "version_notes": {
+    "18": "Adds library_search_clear_1920x1080 policy + gallery.my_library_search_field / gallery.my_library_search_clear seeds (POLICY_CHORD_UNTIL_MEASURED). Gate CLEAR_SEARCH_BEFORE_QUERY — leftover Smog blocked later Library finds. Chord Ctrl+A Delete until PrintWindow measures clear-X. Owner contracts/lot-cardinal-semantics.v1.json#library_search. Additive only; prior seeds unchanged.",
     "17": "Adds live.mastery_perk_modal_yes [960,560] and live.mastery_perk_modal_no [960,610] (OPERATOR_FRAME_APPROX from dual-monitor attach thumb upscaled; PrintWindow recheck found modal already gone — Servo tooltip/world). Prefer No to defer perk picker during paused parts work. No close-X observed. Additive only; prior seeds unchanged. Consultation BI-PAUSED-PRODUCTIVITY-BEFORE-TIME-RISK-20261110.",
     "8": "Adds camera_dependent_seeds_1920x1080 (fridge HIT/MISS). Additive only: seed_targets_1920x1080 and all certified seeds unchanged; camera-dependent rows are NOT ingested into the fixed-HUD ledger.",
     "9": "Adds live.notebook_close_x [1338,276] (PrintWindow-measured Notebook dismiss). Additive only; prior seeds unchanged.",
@@ -123,7 +124,22 @@
       "status": "PRINTWINDOW_MEASURED_20261109",
       "profile": "1920x1080",
       "hotkey_prefer": "F4",
-      "notes": "Lightbulb+heart; prefer F4"
+      "notes": "Lightbulb+heart; prefer F4. After open → My Library: CLEAR_SEARCH_BEFORE_QUERY (gallery.my_library_search_clear / Ctrl+A Delete) before any new term."
+    },
+    "gallery.my_library_search_field": {
+      "role": "FOCUS_MY_LIBRARY_SEARCH",
+      "client_xy": [420, 120],
+      "status": "POLICY_CHORD_UNTIL_MEASURED",
+      "profile": "1920x1080",
+      "notes": "Approx My Library search field — PrintWindow remeasure required. Before typing: Ctrl+A Delete or clear-X. Leftover 'Smog' is a known regression."
+    },
+    "gallery.my_library_search_clear": {
+      "role": "CLEAR_MY_LIBRARY_SEARCH",
+      "client_xy": [580, 120],
+      "status": "POLICY_CHORD_UNTIL_MEASURED",
+      "profile": "1920x1080",
+      "chord_fallback": ["CTRL_A", "DELETE"],
+      "notes": "Prefer clear-X when measured; until then focus field + Ctrl+A Delete. Owner lot-cardinal-semantics library_search gate."
     },
     "live.top_ea_store": {
       "role": "OPEN_EA_STORE",
@@ -1424,11 +1440,34 @@
       "STATS_SET_HUNGER_BEFORE_FOOD_QUEUED"
     ]
   },
+  "library_search_clear_1920x1080": {
+    "id": "CLEAR_SEARCH_BEFORE_QUERY",
+    "owner": "contracts/lot-cardinal-semantics.v1.json#library_search",
+    "helper": "betterinstincts.lot_cardinal_semantics.assess_library_search_admission",
+    "operator_correction_20261110": "My Library retained leftover 'Smog' after Eco-Matic Smog Vacuum search; agents typed new queries without clearing and could not resolve finds. Always clear before a new term.",
+    "targets": {
+      "search_field": "gallery.my_library_search_field",
+      "search_clear": "gallery.my_library_search_clear"
+    },
+    "require_before_type": [
+      "FOCUS_SEARCH_FIELD",
+      "SELECT_ALL",
+      "DELETE_OR_BACKSPACE",
+      "VERIFY_FIELD_EMPTY_OR_PLACEHOLDER"
+    ],
+    "chord_until_measured": ["CTRL_A", "DELETE"],
+    "forbidden": [
+      "TYPE_NEW_QUERY_OVER_LEFTOVER_TERM",
+      "ASSUME_FIELD_EMPTY_AFTER_PRIOR_SEARCH"
+    ],
+    "proof_ceiling": "POLICY_CHORD_NOT_MEASURED_CLEAR_X_CERT"
+  },
   "guarantees": [
     "Every fixed-UI click attempt is append-recorded with intended target_id and client_xy",
     "WRONG_CONTROL does not promote miss coordinates onto the intended target",
     "Moving targets never update this map",
     "HIT attestation still requires independent PrintWindow/header proof for selection claims",
-    "Never SendInput from the map module itself"
+    "Never SendInput from the map module itself",
+    "My Library / Gallery search must CLEAR_SEARCH_BEFORE_QUERY before typing a new term"
   ]
 }

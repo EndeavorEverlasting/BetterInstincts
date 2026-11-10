@@ -1057,7 +1057,12 @@ def ingest_parts_buy_observations(
         object_id="robotics_workstation_primary",
         status="SKELETON",
         path_ids=["spawn_crafting_supplies"],
-        note="Shift+click Spawn Crafting Supplies after testingcheats",
+        note=(
+            "GRAY body (not blue water generator); Gardener-Bot needs fix; "
+            "Servo pending activation — DO NOT Activate. "
+            "Cardinal fallback: ~90° from front door. "
+            "Shift+click Spawn Crafting Supplies after testingcheats."
+        ),
         cfg=cfg,
     )
     # Record computer HIT from live 20261110 if ledger notes it

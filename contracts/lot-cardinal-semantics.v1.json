@@ -1,0 +1,143 @@
+{
+  "schema": "betterinstincts.lot-cardinal-semantics/v1",
+  "id": "LOT_CARDINAL_SEMANTICS",
+  "version": 1,
+  "consultation": "contracts/consultations/BI-LOT-CARDINAL-SEMANTICS-CV-LIBRARY-20261110.v1.json",
+  "purpose": "Cardinal-direction and landmark-relation model so agents can reason about corners and sides of a lot (bathtub same side as hydroponics; fridge opposite near doors; workstation 90° from front door). FALLBACK only — never outranks authorized EA save/Tray geometry or the profile lot_floor_map graph.",
+  "proof_ceiling": "CONTRACT_HARNESS_NOT_LIVE_WORKSTATION_HIT_NOT_EA_PARSER_NOT_BI002_CLOSE",
+  "owners": {
+    "contract": "contracts/lot-cardinal-semantics.v1.json",
+    "library": "betterinstincts/lot_cardinal_semantics.py",
+    "floor_map": "contracts/lot-floor-map.v1.json",
+    "geometry_research": "contracts/lot-geometry-source.v1.json",
+    "room_traverse": "betterinstincts/room_map_traverse.py",
+    "fixed_ui": "contracts/fixed-ui-click-map.v1.json"
+  },
+  "authority_stack": [
+    "EA_SAVE_OR_TRAY_PARSER_WHEN_AUTHORIZED",
+    "LOT_FLOOR_MAP_GRAPH",
+    "CARDINAL_SEMANTIC_MODEL",
+    "PRINTWINDOW_CV_CUES",
+    "CAMERA_ROAM_LAST_RESORT"
+  ],
+  "authority_notes": {
+    "EA_SAVE_OR_TRAY_PARSER_WHEN_AUTHORIZED": "Preferred when a separate operator-authorized READ_ONLY spike lands; today RESEARCH_STUB_NO_PARSER — never open Slot_00000007 without auth.",
+    "CARDINAL_SEMANTIC_MODEL": "Operator intuition layer: break the house into corners/sides relative to FRONT_DOOR / FACADE. Used when graph XY is stale or CV alone mislabels.",
+    "PRINTWINDOW_CV_CUES": "Color/attachment cues (gray workstation, not blue generator). Mis-click water-generator = OFF_INTENT.",
+    "CAMERA_ROAM_LAST_RESORT": "Forbidden as primary; only after Shift+Enter arm + fresh capture still lacks target → BLOCKED_NEED_OPERATOR_FRAME."
+  },
+  "cardinals": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
+  "anchors": {
+    "FRONT_DOOR": "Primary street-facing household entrance / front door",
+    "FACADE": "Front elevation facing the street",
+    "HYDROPONIC_GARDEN": "Garden side with hydroponic planters",
+    "DOORS_CLUSTER": "Door cluster / entrance side"
+  },
+  "relations": [
+    "SAME_SIDE_AS",
+    "OPPOSITE_SIDE_AS",
+    "NINETY_DEG_FROM",
+    "NEAR",
+    "CORNER_OF",
+    "INSIDE",
+    "OUTSIDE"
+  ],
+  "bearing_math": {
+    "cardinal_degrees": {
+      "N": 0,
+      "NE": 45,
+      "E": 90,
+      "SE": 135,
+      "S": 180,
+      "SW": 225,
+      "W": 270,
+      "NW": 315
+    },
+    "ninety_deg_tolerance_deg": 20
+  },
+  "bargain_bendh_lab_seed_20261110": {
+    "lot_key_hint": "bargain-bendh",
+    "front_door": "street-facing entrance",
+    "landmarks": {
+      "hydroponic_garden": {
+        "anchor": "HYDROPONIC_GARDEN",
+        "note": "Side of house with hydroponic planters"
+      },
+      "bathtub": {
+        "relations": [
+          {"kind": "SAME_SIDE_AS", "of": "hydroponic_garden"}
+        ],
+        "note": "Bathtub on the garden/hydroponics side of the house"
+      },
+      "fridge": {
+        "relations": [
+          {"kind": "OPPOSITE_SIDE_AS", "of": "hydroponic_garden"},
+          {"kind": "NEAR", "of": "DOORS_CLUSTER"}
+        ],
+        "note": "Fridge on the other side of the house, close to the doors"
+      },
+      "robotics_workstation": {
+        "relations": [
+          {"kind": "NINETY_DEG_FROM", "of": "FRONT_DOOR"}
+        ],
+        "note": "About 90° from the front-door entrance bearing"
+      }
+    }
+  },
+  "robotics_workstation_identity": {
+    "id": "ROBOTICS_WORKSTATION",
+    "visual": {
+      "body_color": "GRAY",
+      "forbidden_color_aliases": [
+        "BLUE",
+        "COPPER_BLUE_GLOW_AS_PRIMARY",
+        "ATMOSPHERIC_WATER_GENERATOR_BLUE"
+      ],
+      "note": "Operator 2026-11-10: workstation is gray — not blue. Blue tall cylinder with fuel menu is Atmospheric Water Generator (MISS)."
+    },
+    "attachments": {
+      "gardener_bot": {
+        "state": "NEEDS_FIX",
+        "cue": "Gardener bot on/at workstation requiring repair / Robot Salvage Parts"
+      },
+      "servo_pending": {
+        "state": "READY_FOR_ACTIVATION_DO_NOT_ACTIVATE",
+        "forbid": ["ACTIVATE_SERVO", "FINISH_SERVO_ACTIVATION", "CLICK_ACTIVATE"]
+      }
+    },
+    "cv_cues": [
+      "GRAY_BODY",
+      "GARDENER_BOT_PRESENT_OR_QUEUED_FIX",
+      "SERVO_NEARBY_INACTIVE",
+      "NOT_WATER_GENERATOR_FUEL_PIE"
+    ],
+    "deny_if": [
+      "PIE_SHOWS_ADD_FUEL",
+      "PIE_SHOWS_START_WATER_GENERATOR",
+      "DOMINANT_BLUE_GLOW_CYLINDER",
+      "SERVO_ACTIVATE_AFFORDANCE_SELECTED"
+    ]
+  },
+  "library_search": {
+    "gate": "CLEAR_SEARCH_BEFORE_QUERY",
+    "when": "My Library / Gallery / catalog search field retains a prior term (e.g. Smog)",
+    "require_before_type": [
+      "FOCUS_SEARCH_FIELD",
+      "SELECT_ALL",
+      "DELETE_OR_BACKSPACE",
+      "VERIFY_FIELD_EMPTY_OR_PLACEHOLDER"
+    ],
+    "optional_ui": ["SEARCH_CLEAR_X"],
+    "forbidden": [
+      "TYPE_NEW_QUERY_OVER_LEFTOVER_TERM",
+      "ASSUME_FIELD_EMPTY_AFTER_PRIOR_SEARCH"
+    ],
+    "known_regression_20261110": "My Library leftover 'Smog' after Eco-Matic Smog Vacuum search blocked later finds until Esc",
+    "fixed_ui_targets": [
+      "gallery.my_library_search_field",
+      "gallery.my_library_search_clear"
+    ],
+    "chord_until_measured": ["CTRL_A", "DELETE"],
+    "proof_ceiling": "POLICY_CHORD_NOT_MEASURED_CLEAR_X_CERT"
+  }
+}

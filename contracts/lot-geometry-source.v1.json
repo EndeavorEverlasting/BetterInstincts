@@ -9,7 +9,8 @@
   "authoritative_until_parser": [
     "PrintWindow observations",
     "betterinstincts/house_state.py RECURSIVE_LOT_MODEL",
-    "betterinstincts/lot_floor_map.py (profile-local; never Sims saves)"
+    "betterinstincts/lot_floor_map.py (profile-local; never Sims saves)",
+    "betterinstincts/lot_cardinal_semantics.py (FALLBACK corner/side relations only)"
   ],
   "docs_note": "docs/INSTALLATION_PROFILES.md owns BetterInstincts LOCALAPPDATA preferences and profile floor maps; it does NOT own EA Documents paths.",
   "windows_ea_user_data": {

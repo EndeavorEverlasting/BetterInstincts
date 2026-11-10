@@ -29,8 +29,12 @@ DEFAULT_LANDMARK_HINT = {
         "LANDMARK_RUG_CLUSTER",
     ),
     "adjacency_note": (
-        "Corner of room: overlapping rugs + dinner table → workbench/robotics"
+        "Corner of room: overlapping rugs + dinner table → workbench/robotics. "
+        "Cardinal FALLBACK (lot-cardinal-semantics): ~90° from FRONT_DOOR; "
+        "GRAY body + Gardener-Bot needs fix; never Activate pending Servo; "
+        "never blue Atmospheric Water Generator."
     ),
+    "cardinal_owner": "contracts/lot-cardinal-semantics.v1.json",
 }
 
 

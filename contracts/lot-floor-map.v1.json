@@ -8,7 +8,9 @@
     "build_trigger": "betterinstincts/host_stack.py",
     "miss_causes": "betterinstincts/click_miss_cause.py",
     "object_pick": "contracts/camera-traverse.v1.json#OBJECT_PICK_IDENTIFY",
-    "room_traverse": "betterinstincts/room_map_traverse.py"
+    "room_traverse": "betterinstincts/room_map_traverse.py",
+    "cardinal_fallback": "contracts/lot-cardinal-semantics.v1.json",
+    "geometry_research": "contracts/lot-geometry-source.v1.json"
   },
   "purpose": "Per-installation-profile lot floor map: computers, laptops, robotics workstations, landmarks, traversable notes, click paths, and a relative graph of room adjacencies. Agents accumulate observations over time. Private local store only.",
   "execute_allowed_default": false,
@@ -91,9 +93,19 @@
       "SEATED_AT",
       "SLOTTED_TO",
       "PARENT_SURFACE",
-      "LINKED_WITH"
+      "LINKED_WITH",
+      "SAME_SIDE_AS",
+      "OPPOSITE_SIDE_AS",
+      "NINETY_DEG_FROM",
+      "NEAR"
     ],
-    "note": "Relative camera/graph edges; chairs-on-desks and slotted furniture use ON_TOP_OF/SEATED_AT/SLOTTED_TO. client_xy is bbox-center, camera-revision bound."
+    "note": "Relative camera/graph edges; chairs-on-desks and slotted furniture use ON_TOP_OF/SEATED_AT/SLOTTED_TO. SAME_SIDE_AS/OPPOSITE_SIDE_AS/NINETY_DEG_FROM are cardinal FALLBACK edges (lot-cardinal-semantics) when EA parser unavailable. client_xy is bbox-center, camera-revision bound."
+  },
+  "robotics_workstation_cv_20261110": {
+    "body_color": "GRAY",
+    "not": ["BLUE", "ATMOSPHERIC_WATER_GENERATOR"],
+    "attachments": ["GARDENER_BOT_NEEDS_FIX", "SERVO_PENDING_DO_NOT_ACTIVATE"],
+    "owner": "contracts/lot-cardinal-semantics.v1.json#robotics_workstation_identity"
   },
   "object_statuses": [
     "SKELETON",
