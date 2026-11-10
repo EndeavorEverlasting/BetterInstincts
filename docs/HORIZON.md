@@ -32,3 +32,44 @@ Each patch and module maintains a separately certified immutable profile. A new 
 
 ## Progress semantics
 `plans/horizon.v1.json` describes *required work* and static dependencies; status is a planning signal, **not** runtime certification. Current active gate is BI-002. `python -m scripts.check_horizon` verifies relationships. Future agents must record game evidence in version-scoped certification records, update the canonical ledger, and only then open successor implementation gates. PR CI validates topology, decision logic and guardrails. Local-game certification remains a separate proof.
+
+## 2026-11-10 — Moonwake Closers: native autonomy crosses the Horizon
+
+**Execution order:** P83 → P03 → P141 → P124 → P04, resolved via Moonwake's
+current catalog. The prior conversation's Fifth Gear delivered
+[PR #170](https://github.com/EndeavorEverlasting/BetterInstincts/pull/170)
+(merged on `main` at `57eb5edd0639615f38152d7ba8e27b2c820c4516`):
+`betterinstincts/autonomy_moderation.py#evaluate_native_household_autonomy`
+now evaluates independently supplied household Sims using attested action
+origin, goal continuity and quantified gameplay yields. Its output is a
+**nonexecuting policy candidate**, not an installed or verified EA-native mod.
+
+**Horizon placement:** `plans/horizon.v1.json#cross_cutting_capabilities.native_goal_continuity`
+links this policy to all existing stages without inserting a new prerequisite
+or changing stage order. **BI-002 hunger remains ACTIVE_GAME_UNPROVEN**.
+No BI-003+ live milestone, income, skill, or career stage is certified by
+an offline policy, synthetic tests, merged PR, or host-input observation.
+Autonomy itself is not synonymous with career-only throughput: protected
+needs, fun, social, relationships, recovery, personality and player choices
+must remain viable. The policy never cancels player-directed queues; origin
+or effect uncertainty means abstain.
+
+**P83 claim reconciliation:** repo merge and CI are verified; native queue
+cancellation, installation, exact EA hook signature, multi-Sim live runtime,
+rollback and per-patch gameplay performance remain **NOT OBSERVED**.
+[Issue #171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171)
+owns the executable local-game remainder. P03's safe current sprint is
+the Horizon cross-stage contract + regression guard; P141 selected this
+minimal cross-cutting seam over either a new blocking Horizon milestone
+or a duplicate GUI clicker. P124 keeps `autonomy_moderation` and
+`scripts/check_horizon.py` as the unique policy and topology owners.
+
+**P04 execution placement:** provider/CI lane owns the Horizon linkage,
+contract validator and merged proof; local-game lane owns patch-pinned
+EA XML/script reconnaissance, reversible mod packaging, per-Sim queue
+before/after, player override, unknown-origin abstention, beneficial
+leisure preservation and rollback. No remote GitHub test, UI mouse hook,
+or copied EA asset can substitute for that local-game proof. The local
+agent should use the existing `plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json`
+and `plans/active/BI-002.execution.v1.json` owners; the two live
+certification gates are independently open.

@@ -178,5 +178,53 @@
   "compatibility_rule": "An exact certified game patch/module is required per gate. Unknown is not certified; never mutate older accepted files.",
   "proof_ceiling": "Roadmap readiness is never Sims live evidence",
   "independent_work": "Code-only offline evaluators can advance for later phases while gameplay phase gates remain unproven.",
-  "convergence": "Every P07 implementation reports CHANGED | PROVED | NEXT and updates docs/LEDGER.md; unfinished game phases remain OPEN."
+  "convergence": "Every P07 implementation reports CHANGED | PROVED | NEXT and updates docs/LEDGER.md; unfinished game phases remain OPEN.",
+  "cross_cutting_capabilities": {
+    "native_goal_continuity": {
+      "contract_id": "NATIVE_AUTONOMY_GOAL_YIELD",
+      "placement": "CROSS_CUTTING_NON_GATE",
+      "linked_stage_ids": [
+        "BI-002",
+        "BI-003A",
+        "BI-003B",
+        "BI-003C",
+        "BI-003D",
+        "BI-003E",
+        "BI-003F",
+        "BI-004",
+        "BI-005",
+        "BI-006",
+        "BI-007",
+        "BI-008"
+      ],
+      "horizon_gate_effect": "NONE",
+      "owner_contract": "contracts/autonomy-moderation.v1.json#native_household_policy",
+      "policy_implementation": "betterinstincts/autonomy_moderation.py#evaluate_native_household_autonomy",
+      "policy_merge": {
+        "pr": 170,
+        "commit": "57eb5edd0639615f38152d7ba8e27b2c820c4516",
+        "proof": "OFFLINE_POLICY_CI_VALIDATED"
+      },
+      "native_adapter": {
+        "status": "NOT_INSTALLED_NOT_CERTIFIED",
+        "game_build": null,
+        "live_receipt": null,
+        "rollback_receipt": null,
+        "owner_issue": 171,
+        "runtime": "LOCAL_AGENT_RUNTIME"
+      },
+      "requirements": [
+        "per_sim_stable_identity_not_selected_portrait",
+        "player_commands_out_rank_mod",
+        "unknown_origin_yield_or_player_presence_abstains",
+        "protected_measured_goal_continues_when_autonomy_diverts",
+        "legitimate_need_fun_social_personality_yields_protected",
+        "no_desktop_queue_clicks_or_os_input_mutations",
+        "native_ea_tuning_or_patched_script_adapter_only_after_verified_local_inspection",
+        "exact_build_multi_sim_game_trials_and_rollback_before_game_effect_claim"
+      ],
+      "excluded_from_stage_certification": true,
+      "next_executable_gate": "ISSUE_171_INSPECT_LOCAL_EA_AUTONOMY_TUNING_AND_REAL_QUEUE_HOOKS"
+    }
+  }
 }
