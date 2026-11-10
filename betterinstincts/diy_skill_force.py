@@ -78,6 +78,7 @@ def empty_completion_ledger() -> dict:
         "schema": COMPLETION_SCHEMA,
         "updated_at": None,
         "scope_id": None,
+        "roster_fingerprint": None,
         "members": {},
         "note": (
             "DISPATCHED = host typed stats.set_skill_level for resume/skip. "
@@ -112,6 +113,13 @@ def load_completion_ledger(path: Path | None = None) -> dict:
     if scope_id is not None and (not isinstance(scope_id, str) or not re.fullmatch(r"[0-9a-f]{64}", scope_id)):
         raise DiySkillForceError("COMPLETION_LEDGER_SCOPE_INVALID")
     out["scope_id"] = scope_id
+    roster_fingerprint = raw.get("roster_fingerprint")
+    if roster_fingerprint is not None and (
+        not isinstance(roster_fingerprint, str) or
+        not re.fullmatch(r"[0-9a-f]{64}", roster_fingerprint)
+    ):
+        raise DiySkillForceError("COMPLETION_LEDGER_ROSTER_INVALID")
+    out["roster_fingerprint"] = roster_fingerprint
     out["members"] = dict(members)
     if isinstance(raw.get("note"), str):
         out["note"] = raw["note"]
@@ -2996,6 +3004,14 @@ def plan_household_skill_force(
         ledger_scope = ledger.get("scope_id")
         if ledger_scope != scope_id and (ledger_scope is not None or ledger.get("members")):
             raise DiySkillForceError("CROSS_HOUSEHOLD_LEDGER_REUSE_FORBIDDEN")
+        fingerprint = household_scope.get("roster_fingerprint")
+        if not isinstance(fingerprint, str) or not re.fullmatch(r"[0-9a-f]{64}", fingerprint):
+            raise DiySkillForceError("HOUSEHOLD_ROSTER_FINGERPRINT_REQUIRED")
+        previous_fingerprint = ledger.get("roster_fingerprint")
+        if previous_fingerprint != fingerprint and (
+            previous_fingerprint is not None or ledger.get("members")
+        ):
+            raise DiySkillForceError("HOUSEHOLD_ROSTER_CHANGED_STOP_RECONCILE")
         member_keys_resolved = list(scoped_keys)
     else:
         scope_id = None
