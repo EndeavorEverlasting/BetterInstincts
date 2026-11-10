@@ -96,11 +96,11 @@ class ComputerMenuTests(unittest.TestCase):
         self.assertEqual(ready(**fields)["reason"], "PURCHASE_SPENDING_AUTHORIZATION_REQUIRED")
         self.assertEqual(ready(**fields, spending_authorized=True)["state"], "READY_TO_QUEUE")
         self.assertEqual(
-            ready(**fields, spending_authorized=True, approved_spend_cap=5)["state"], "WAIT")
+            ready(**dict(fields, spending_authorized=True, approved_spend_cap=5))["state"], "WAIT")
         self.assertEqual(
-            ready(**fields, spending_authorized=True, inventory_before=None)["state"], "WAIT")
+            ready(**dict(fields, spending_authorized=True, inventory_before=None))["state"], "WAIT")
         self.assertEqual(
-            ready(**fields, spending_authorized=True, menu_labels=["Cancel"])["state"], "WAIT")
+            ready(**dict(fields, spending_authorized=True, menu_labels=["Cancel"]))["state"], "WAIT")
 
     def test_outcome_requires_observed_inventory_increase_no_auto_retry(self):
         self.assertEqual(
