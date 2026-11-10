@@ -1,0 +1,92 @@
+{
+  "schema": "betterinstincts.lot-geometry-source/v1",
+  "version": 1,
+  "status": "RESEARCH_STUB_NO_PARSER",
+  "consultation": "contracts/consultations/BI-LOT-GEOMETRY-SOURCE-OF-TRUTH-20261110.v1.json",
+  "horizon_lane": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json#live_truth_20261110.lot_geometry_source_of_truth_20261110",
+  "purpose": "Offline path and capability research for possible future READ_ONLY save/Tray analysis. Does not decode floors/rooms and does not replace house_state or lot_floor_map.",
+  "proof_ceiling": "PATH_AND_DBPF_INDEX_RESEARCH_NOT_EA_FLOORPLAN_PARSER_NOT_BI002_CLOSE",
+  "authoritative_until_parser": [
+    "PrintWindow observations",
+    "betterinstincts/house_state.py RECURSIVE_LOT_MODEL",
+    "betterinstincts/lot_floor_map.py (profile-local; never Sims saves)"
+  ],
+  "docs_note": "docs/INSTALLATION_PROFILES.md owns BetterInstincts LOCALAPPDATA preferences and profile floor maps; it does NOT own EA Documents paths.",
+  "windows_ea_user_data": {
+    "root_template": "%USERPROFILE%\\Documents\\Electronic Arts\\The Sims 4",
+    "saves_dir_template": "%USERPROFILE%\\Documents\\Electronic Arts\\The Sims 4\\saves",
+    "slot_file_template": "%USERPROFILE%\\Documents\\Electronic Arts\\The Sims 4\\saves\\Slot_<NNNNNNNN>.save",
+    "protected_lab_slot": {
+      "ui_name": "My Saved Game 6",
+      "disk_name": "Slot_00000007.save",
+      "path_template": "%USERPROFILE%\\Documents\\Electronic Arts\\The Sims 4\\saves\\Slot_00000007.save",
+      "forbid": ["DELETE", "OVERWRITE", "MUTATE", "OPEN_WITHOUT_OPERATOR_AUTH"]
+    },
+    "my_library_tray_template": "%USERPROFILE%\\Documents\\Electronic Arts\\The Sims 4\\Tray",
+    "tray_notes": [
+      "My Library building/lot blueprints and household tray items live under Tray as type-prefixed files",
+      "Common household extensions observed: .householdbinary .trayitem .sgi .hhi",
+      "Building/lot blueprint extensions are candidate sources when present; absence does not authorize inventing geometry"
+    ]
+  },
+  "host_observed_20261110": {
+    "source": "directory metadata only; payloads not opened",
+    "userprofile": "C:\\Users\\CheeksMcClappeth",
+    "slot_00000007": {
+      "path": "C:\\Users\\CheeksMcClappeth\\Documents\\Electronic Arts\\The Sims 4\\saves\\Slot_00000007.save",
+      "exists": true,
+      "size_bytes": 10315773,
+      "mtime_local": "2026-11-10T04:29:10"
+    },
+    "tray": {
+      "path": "C:\\Users\\CheeksMcClappeth\\Documents\\Electronic Arts\\The Sims 4\\Tray",
+      "exists": true,
+      "file_count": 10,
+      "extensions_present": [".householdbinary", ".trayitem", ".sgi", ".hhi"],
+      "building_blueprint_extensions_present": false
+    },
+    "env": {
+      "SIMS_USER_DATA": null,
+      "TS4_USER_DATA": null,
+      "note": "No Sims path env overrides present; EA default Documents tree used"
+    }
+  },
+  "dbpf_read_only_dry_run": {
+    "module": "betterinstincts/dbpf.py",
+    "api": "read_package_index(path, max_reported<=256)",
+    "writes": false,
+    "opens_mode": "rb",
+    "behavior": "Parses DBPF header + resource index TGI metadata only; never decompresses, extracts, executes, or rewrites payloads",
+    "proposal_for_dot_save": {
+      "theoretically_list_tgi_keys": "YES_IF_FILE_IS_DBPF_2_x_AND_WITHIN_BUDGETS",
+      "size_gate_vs_slot_00000007": {
+        "save_size_bytes": 10315773,
+        "MAX_PACKAGE_BYTES": 67108864,
+        "under_size_budget": true
+      },
+      "remaining_fail_closed_risks": [
+        "INVALID_PACKAGE_MAGIC if .save is not DBPF",
+        "INDEX_ENTRY_BUDGET_EXCEEDED if index_count > 10000",
+        "report truncated at MAX_REPORTED_RESOURCES=256",
+        "INDEX_KEYS_ONLY — not floor/room/zone-graph decode"
+      ],
+      "executed_on_real_save_this_slice": false,
+      "reason_not_executed": "Operator lane: do not open/mutate real saves; dry-run proposal only"
+    },
+    "plan_ceiling_quote": "betterinstincts/dbpf.py TGI index for mod .package only — NOT save geometry"
+  },
+  "forbidden": [
+    "EA_FLOORPLAN_PARSER_CLAIM",
+    "AUTO_DISCOVER_AND_WRITE_DOCUMENTS_EA",
+    "DELETE_OR_OVERWRITE_SLOT_00000007",
+    "TREAT_TRAY_OR_SAVE_AS_LOT_FLOOR_MAP_CANONICAL",
+    "CLOSE_BI_002_FROM_RESEARCH"
+  ],
+  "next_authorized_spike": {
+    "id": "DBPF_SAVE_INDEX_READONLY_COPY_SPIKE",
+    "requires_operator": "Explicit path to a disposable copy OR explicit auth to open Slot_00000007 read-only once",
+    "command": "python -c \"from betterinstincts.dbpf import read_package_index; import json; print(json.dumps(read_package_index(r'PATH_TO_DISPOSABLE_OR_AUTHED_SAVE'), indent=2)[:4000])\"",
+    "success_bar": "INDEX_READ_ONLY status + TGI sample; still NOT floorplan decode",
+    "follow_on": "If TGI types for zone/lot resources are identifiable, draft a separate READ_ONLY analyzer consultation before any decoder code"
+  }
+}

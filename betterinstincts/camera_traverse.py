@@ -213,6 +213,46 @@ def assess_edge_interaction(
     }
 
 
+def assess_edge_creek_regression(
+    *,
+    cursor_in_edge_band: bool,
+    scenery_tokens: Optional[Sequence[str]] = None,
+    buy_catalog_open_after_world_click: bool = False,
+    cfg: Optional[Mapping[str, object]] = None,
+) -> dict:
+    """Oldest regression: mouse at edge → creek/canal pan (operator 2026-11-10).
+
+    Recovery: SAFE_CURSOR_REST first, then Shift+Enter lot arm. If Buy opened
+    from the miss, Esc+F1 before arm. Policy only — no input.
+    """
+    cfg = cfg or load_contract()
+    block = cfg.get("edge_creek_regression") or {}
+    if not isinstance(block, dict) or block.get("id") != "EDGE_MOUSE_PARK_TO_CREEK":
+        raise CameraTraverseError("EDGE_CREEK_REGRESSION_BLOCK_MISSING")
+    tokens = {str(t).upper() for t in (scenery_tokens or [])}
+    detect = block.get("detect") or {}
+    token_set = {str(t).upper() for t in (detect.get("scenery_tokens") or [])}
+    creekish = bool(tokens & token_set) if token_set else bool(
+        tokens & {"CREEK", "CANAL", "WATER", "STREET", "OFF_LOT", "ASPHALT"}
+    )
+    triggered = bool(cursor_in_edge_band or creekish or buy_catalog_open_after_world_click)
+    recovery = list(block.get("recovery_chord") or ["SAFE_CURSOR_REST", "SHIFT_ENTER"])
+    if buy_catalog_open_after_world_click:
+        recovery = ["ESC", "F1_IF_BUY", *recovery]
+    return {
+        "triggered": triggered,
+        "id": "EDGE_MOUSE_PARK_TO_CREEK",
+        "gate": "EDGE_CREEK_REGRESSION" if triggered else None,
+        "recovery_chord": recovery,
+        "cursor_in_edge_band": bool(cursor_in_edge_band),
+        "creekish_scenery": creekish,
+        "buy_catalog_open_after_world_click": bool(buy_catalog_open_after_world_click),
+        "forbidden": list(block.get("forbidden") or []),
+        "proof_ceiling": block.get("proof_ceiling") or PROOF_CEILING,
+        "next": "PARK_SAFE_CURSOR_REST_THEN_SHIFT_ENTER" if triggered else "NO_EDGE_CREEK_FLAG",
+    }
+
+
 def safe_rest_point(
     *,
     client_width: Optional[int] = None,

@@ -1,3 +1,15 @@
+## 2026-11-10 — P00/P01 live-host-ops: chat rules → repository owners
+
+**Operator:** Agents were following live-cert rules from chat only without codifying them — P00/P01 failure. `/fifth-gear` with Sims live = execute gates + land durable policy; do **not** emit a new P05 pack.
+
+**CHANGED:** `contracts/live-host-ops.v1.json` + `betterinstincts/live_host_ops.py` + `tests/test_live_host_ops.py`; `contracts/camera-traverse.v1.json#edge_creek_regression` + `assess_edge_creek_regression`; `host_stack` attaches `live_host_ops` / `EDGE_CREEK_REGRESSION` / `PAUSED_PRODUCTIVITY_REQUIRED`; AGENTS + DOCTRINE invariants; Horizon `priority_algorithm_20261110` + next_gate 0 parts-while-paused. Consultations: `BI-LIVE-HOST-OPS-CHAT-RULES-20261110`, `BI-PAUSED-PRODUCTIVITY-BEFORE-TIME-RISK-20261110`.
+
+**PROVED offline:** unpause DENY while `parts_gate_open`; edge/creek assessors return SAFE_CURSOR_REST→Shift+Enter; hardcoded field XY DENY without fresh visible target; architecture lock `PAUSED_PRODUCTIVITY_BEFORE_TIME_RISK`.
+
+**LIVE ceiling:** parts HIT / BI-002 trial 3+ still open — contract ≠ live proof.
+
+**NEXT:** Operator frame with robotics workstation or computer visible; Order→Purchase Upgrade Parts while PAUSED; then Needs O map; then queues; then unpause/fridge/BI-002.
+
 ## 2026-11-10 — OFF_INTENT_VIEW / MISS_OFF_LOT (street→Buy miss flag)
 
 **Operator:** Missed robotics workstation (street) then Buy catalog. Flag + arm, do not explore Buy. Stop hardcoded field XY until PrintWindow shows target.

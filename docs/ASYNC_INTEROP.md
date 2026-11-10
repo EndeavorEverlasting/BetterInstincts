@@ -19,7 +19,8 @@ This is **not** permission to run unattended, overwrite a player's command, or e
 | Browser adapter | `playwright_interop.py` | Reuse an injected existing Playwright page; one click/fill; never spawn a new context |
 | Game adapter | existing `scripts/*` host admission | Session/PID, scene, protected-save and player-queue checks still required |
 | Effect channel | `ui_chrome` input_preference + `win32_input` | **Prefer hotkeys/KEY over mouse** when equivalent; mouse is fallback only; no global keyhook |
-| Cursor park | `camera_traverse` + `win32_input.park_safe_cursor_rest` | After any mouse effect, park **SAFE_CURSOR_REST** (default 48px edge band). Never leave the cursor on the Sims viewport/screen edge. |
+| Cursor park | `camera_traverse` + `win32_input.park_safe_cursor_rest` | After any mouse effect, park **SAFE_CURSOR_REST** (default 48px edge band). Never leave the cursor on the Sims viewport/screen edge. Edge→creek is `EDGE_CREEK_REGRESSION` (`live-host-ops` / `camera-traverse#edge_creek_regression`): park then Shift+Enter. |
+| Live-host ops | `contracts/live-host-ops.v1.json` + `live_host_ops.py` | Chat corrections incomplete until repo-encoded. `PAUSED_PRODUCTIVITY_BEFORE_TIME_RISK`; yield to mouse/Wispr (`OPERATOR_RECLAIM`). |
 | Machine paths | `bootstrap.py:paths` | Canonical dev/use/worktree roles, no arbitrary duplicate clones |
 
 ### States and control transitions
@@ -139,15 +140,17 @@ skills agent claims BOTTOM_RIGHT_PANEL
 
 Authorized Live effects still need Sims focused for a moment (Windows delivers keyboard/mouse to the foreground window). That must **not** mean the agent monopolizes the desktop or leaves the operator trapped in Sims while they watch YouTube or use any other app.
 
-Contract: `workflow-interoperability.v1.json` → `game_input_borrow_restore`. Live helper: `scripts.diy_skill_force._with_sims_input_borrow`.
+Contract: `workflow-interoperability.v1.json` → `game_input_borrow_restore`. Live helper: `scripts.diy_skill_force._with_sims_input_borrow`. Assess: `assess_sims_input_borrow_cell`.
 
 ```text
 WAIT trusted idle >= 15s (any mouse/key activity restarts the wait; work retained)
-  -> SNAPSHOT operator foreground (YouTube / browser / IDE / …)
-  -> BORROW Sims briefly
+  -> SNAPSHOT operator foreground (YouTube / browser / IDE / …; remember last non-Sims hwnd)
+  -> BORROW Sims briefly (<=8s wall; 1 effect; console batch <=60s)
   -> one armed effect (terrain RMB, panel letter, play/pause, console chord, …)
-  -> RESTORE operator foreground
+  -> RESTORE operator foreground (fallback LAST_NON_SIMS if prior was Sims)
 ```
+
+**Multi-screen / other monitors (2026-11-10 correction):** Operator may work on another screen while Sims runs. Forbidden: long tip-sweeps or ad-hoc raw `_borrow_sims_foreground` loops that hold Sims for tens of seconds. **PrintWindow observation must not borrow** (`scripts/game_capture.py`). Computer-use screenshots that exclude Sims are not a substitute for PrintWindow.
 
 **Resume ≠ OS cron.** When the operator is busy, host_listener ticks and skill-force helpers yield and keep the intent. Continuation happens when `GetLastInputInfo` age again clears 15s — via `CooperativeScreenQueue.drain`, host_listener tick, or `_wait_for_input_idle`. Do **not** install Task Scheduler, cron, autostart, or a keylogger daemon. Play-brief waits with the operator app restored so Skills can refresh while they keep watching. Typed cheat batches may hold the borrow until console close, then restore.
 

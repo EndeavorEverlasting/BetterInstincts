@@ -2,7 +2,44 @@
   "schema": "betterinstincts.horizon-execution-wide/v1",
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
-  "updated_at": "2026-11-10T10:14:00-05:00",
+  "updated_at": "2026-11-10T11:10:00-05:00",
+  "priority_algorithm_20261110": {
+    "id": "PAUSED_PRODUCTIVITY_BEFORE_TIME_RISK",
+    "state": "CONTRACT_LANDED_NOT_LIVE_PARTS_HIT",
+    "owner_contract": "contracts/live-host-ops.v1.json",
+    "owner_library": "betterinstincts/live_host_ops.py",
+    "consultations": [
+      "contracts/consultations/BI-LIVE-HOST-OPS-CHAT-RULES-20261110.v1.json",
+      "contracts/consultations/BI-PAUSED-PRODUCTIVITY-BEFORE-TIME-RISK-20261110.v1.json"
+    ],
+    "order": [
+      "KEEP_PAUSED",
+      "EXIT_BUY_IF_OPEN_ESC_F1_NEVER_SELL",
+      "ORDER_PURCHASE_UPGRADE_PARTS_OR_WORKSTATION_SPAWN",
+      "UI_MAP_WHILE_PAUSED",
+      "NEEDS_PANEL_O_MEASURE_ONLY",
+      "QUEUE_ALL_HOUSEHOLD_ACTIONS_WHILE_PAUSED",
+      "UNPAUSE_ONLY_AFTER_QUEUES_SET",
+      "MAP_ROAM_FRIDGE_LAST_RESORT"
+    ],
+    "gates": [
+      "PAUSED_PRODUCTIVITY_REQUIRED",
+      "OFF_INTENT_VIEW_ARM_REQUIRED",
+      "EDGE_CREEK_REGRESSION",
+      "OPERATOR_RECLAIM",
+      "INSIDE_REQUIRED_FOR_PARTS",
+      "HARDCODED_FIELD_XY_FORBIDDEN"
+    ],
+    "fifth_gear": "Sims PID live → execute live gates; do not emit a new P05 pack; FG S2 LOCAL_OBSERVED ≠ BI-005",
+    "forbidden": [
+      "CHAT_ONLY_RULE_WITHOUT_REPO_MUTATION",
+      "SELL",
+      "DELETE_SAVE",
+      "OVERWRITE_SLOT_00000007",
+      "EA_CONNECT"
+    ],
+    "proof_ceiling": "CONTRACT_HARNESS_NOT_LIVE_PARTS_HIT_NOT_BI002_CLOSE"
+  },
   "live_truth_20261110": {
     "host": {"pid": 78240, "exe": "TS4_x64_fpb", "game_version": "1.121.361.1020"},
     "live_cert_run": "bi002-game1-20261107",
@@ -499,27 +536,33 @@
     }
   ],
   "next_gates_ordered": [
+    "0. NEXT — PAUSED_PRODUCTIVITY: keep PAUSED; Order→Purchase Upgrade Parts OR robotics workstation spawn HIT while paused (inside frame only; no hardcoded field XY; OFF_INTENT/EDGE_CREEK → Esc(+F1)+SAFE_CURSOR_REST+Shift+Enter). Owner: contracts/live-host-ops.v1.json",
+    "0b. While paused — UI map / Needs O measure-only / queue ALL household actions; unpause DENIED until queues set",
     "1. DONE — living Hunger subject attested on LabLab after Load Slot_00000007 (never delete saves)",
     "2. DONE — Manage Worlds travel-cancel PrintWindow [1055,22] (prior scale [1055,33] / canvas 800,25); FORBIDDEN footprint~1090 / crown~1131; Esc≠cancel",
     "3. DONE — Switch Control click trap annotated: Charlee magenta bbox x431-480 y1060-1075; face hover ~(455,1035); chip just above strip y~898-922; ~(455,900) MISS re-opens TRAVELING WITH — click pill text, not empty street / lightning-alone",
     "4. DONE — Switch Control + travel-cancel + calendar X [1440,254]; Charlee control restored (school then home)",
-    "5. NEXT — CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3 on bi002-game1-20261107 (baseline still 2/5 modified 0/5; no new live_cert record yet). LIVE-ONLY durable fridge Have Breakfast / snack queue → survive unpause → live_cert record trial 3+. Recovery: dismiss Ask-for-Help Cleaning modal X ~[1138,222]; Charlee portrait [450,1055]; Buy exit F1+live.top_live_people [1585,35]; never Sell; NEVER delete saves; no BI-003 claim. Toast/pie briefly queued then cancelled by Buy/Sell-for trap — verify Live (no Sell panel) before world clicks; avoid RMB arm while Buy risk high. Enter recenter if street/rooftop OFF_LOT. Mortified/bladder-fail risk Death by Embarrassment — mirror Calm Down + Eat",
+    "5. AFTER parts+queues — CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3 on bi002-game1-20261107 (baseline still 2/5 modified 0/5). Recovery: dismiss Ask-for-Help Cleaning modal X ~[1138,222]; Charlee portrait [450,1055]; Buy exit F1+live.top_live_people [1585,35]; never Sell; NEVER delete saves; no BI-003 claim",
     "5b. Fridge seed [500,560] after Z-zoom ON_LOT kitchen; Multiselect Off [1878,791] household inv ≠ Eat",
     "6. BI-002 baseline trials 3-5 then modified 5/5 + rollback + maintainer review",
     "7. Only after BI-002 live cert: BI-003A-E -> BI-003F -> BI-004 -> BI-005 -> BI-006"
   ],
   "next_commands": [
+    "python -m scripts.semantic_preflight --consultation contracts/consultations/BI-LIVE-HOST-OPS-CHAT-RULES-20261110.v1.json --operation offline_experiment",
+    "python -m unittest tests.test_live_host_ops -v",
     "python -m scripts.live_cert status --run-id bi002-game1-20261107",
-    "python -m scripts.check_horizon",
-    "python -m scripts.semantic_preflight --consultation contracts/consultations/BI-LOT-OFF-FOCUS-20261110.v1.json --operation offline_experiment"
+    "python -m scripts.check_horizon"
   ],
   "receipt_lane": "dist/game-host/horizon-exec-20261110/plan-lane-receipt.json",
   "owners": {
     "horizon_topology": "plans/horizon.v1.json",
     "this_pack": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+    "live_host_ops": "contracts/live-host-ops.v1.json + betterinstincts/live_host_ops.py",
+    "priority_algorithm": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json#priority_algorithm_20261110",
     "closers_handoff": "plans/active/BI-CLOSERS-HORIZON-20261110.v1.json + docs/handoff/BI-CLOSERS-HORIZON-P12-2026-11-10.md",
     "lot_focus": "contracts/camera-traverse.v1.json#lot_focus + betterinstincts/lot_focus.py",
     "scenery_focus": "betterinstincts/lot_focus.py#scenery_focus + recovery_for_scenery_focus",
+    "edge_creek": "contracts/camera-traverse.v1.json#edge_creek_regression + betterinstincts/camera_traverse.py#assess_edge_creek_regression",
     "floor_map": "contracts/lot-floor-map.v1.json",
     "save_safety": "docs/LIVE_CERT.md + AGENTS.md save-safe",
     "bi002": "plans/active/BI-002.execution.v1.json"

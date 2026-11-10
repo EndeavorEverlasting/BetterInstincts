@@ -90,7 +90,11 @@ from betterinstincts.teen_homework import (
     should_attach_teen_homework,
 )
 from betterinstincts.camera_traverse import (
-    CameraTraverseError, assess_drift_recovery, assess_world_target, evaluate_cursor_risk,
+    CameraTraverseError,
+    assess_drift_recovery,
+    assess_edge_creek_regression,
+    assess_world_target,
+    evaluate_cursor_risk,
 )
 from betterinstincts.viewport import ViewportError, predict_risk
 from betterinstincts.sim_camera import SimCameraError, plan_sim_camera
@@ -100,6 +104,14 @@ from betterinstincts.lot_focus import (
     assess_lot_focus,
     assess_off_intent_view,
     should_assess_lot_focus,
+)
+from betterinstincts.live_host_ops import (
+    LiveHostOpsError,
+    assess_edge_creek_flag,
+    assess_unpause_admission,
+    assess_world_xy_policy,
+    load_contract as load_live_host_ops,
+    priority_order as live_host_priority_order,
 )
 from betterinstincts.scenes import stamp_host_capture_game_version
 from betterinstincts.scene_ui_semantics import assess_live_hud, SceneUISemanticsError
@@ -956,10 +968,107 @@ def evaluate_turn(
     except CameraTraverseError as exc:
         raise HostStackError(str(exc)) from exc
 
+    # P00/P01 live-host-ops: chat corrections are incomplete until this contract fires.
+    live_host_ops = None
+    edge_creek = None
+    try:
+        lho_cfg = load_live_host_ops()
+        obs = lot_focus_observation if isinstance(lot_focus_observation, Mapping) else {}
+        scenery_tokens: list[str] = []
+        raw_tokens = obs.get("scenery_tokens") if isinstance(obs, Mapping) else None
+        if isinstance(raw_tokens, (list, tuple)):
+            scenery_tokens = [str(t) for t in raw_tokens]
+        elif isinstance(lot_focus, Mapping):
+            state = str(lot_focus.get("state") or "")
+            if "WATER" in state or "CANAL" in state:
+                scenery_tokens.append("CANAL")
+            if "STREET" in state:
+                scenery_tokens.append("STREET")
+            if state.startswith("OFF_LOT"):
+                scenery_tokens.append("OFF_LOT")
+        cursor_edge = bool(
+            isinstance(camera_traverse, Mapping)
+            and camera_traverse.get("gate") == "CAMERA_SAFE_REST"
+        )
+        buy_after = bool(
+            isinstance(obs, Mapping)
+            and (
+                obs.get("buy_catalog_open") is True
+                or obs.get("build_buy_open") is True
+            )
+        )
+        edge_creek = assess_edge_creek_regression(
+            cursor_in_edge_band=cursor_edge,
+            scenery_tokens=scenery_tokens,
+            buy_catalog_open_after_world_click=buy_after,
+        )
+        # Keep live_host_ops assess_edge_creek_flag aligned for policy consumers.
+        edge_flag = assess_edge_creek_flag(
+            cursor_in_edge_band=cursor_edge,
+            scenery_tokens=scenery_tokens,
+            cfg=lho_cfg,
+        )
+        parts_open = bool(isinstance(obs, Mapping) and obs.get("parts_gate_open") is True)
+        queue_incomplete = bool(
+            isinstance(obs, Mapping) and obs.get("household_queue_incomplete") is True
+        )
+        paused_verified = bool(
+            not isinstance(obs, Mapping) or obs.get("paused_verified", True) is not False
+        )
+        unpause = assess_unpause_admission(
+            parts_gate_open=parts_open,
+            household_queue_incomplete=queue_incomplete,
+            paused_verified=paused_verified,
+            cfg=lho_cfg,
+        )
+        world_xy = None
+        if isinstance(obs, Mapping) and obs.get("world_target_kind"):
+            world_xy = assess_world_xy_policy(
+                target_kind=str(obs.get("world_target_kind")),
+                using_hardcoded_field_xy=bool(obs.get("using_hardcoded_field_xy")),
+                target_visible_in_fresh_capture=bool(
+                    obs.get("target_visible_in_fresh_capture")
+                ),
+                cfg=lho_cfg,
+            )
+        live_host_ops = {
+            "architecture": lho_cfg["architecture"]["selected"],
+            "priority_order": live_host_priority_order(lho_cfg),
+            "unpause_admission": unpause,
+            "edge_creek_regression": edge_creek,
+            "edge_creek_flag": edge_flag,
+            "world_xy_policy": world_xy,
+            "owners": lho_cfg.get("owners"),
+            "proof_ceiling": lho_cfg.get("proof_ceiling"),
+        }
+    except LiveHostOpsError as exc:
+        live_host_ops = {
+            "error": str(exc),
+            "proof_ceiling": "LIVE_HOST_OPS_CONTRACT_LOAD_FAILED",
+        }
+
     # Priority: viewport > camera edge-park > player > survival/event > map travel > decision > needs.
     next_gate = "EXECUTE_INSTINCTS_PLAN"
     fallback = None
-    if viewport is not None and viewport.get("state") != "VIEWPORT_OK":
+    if (
+        isinstance(live_host_ops, Mapping)
+        and isinstance(live_host_ops.get("unpause_admission"), Mapping)
+        and live_host_ops["unpause_admission"].get("admit") is False
+        and isinstance(lot_focus_observation, Mapping)
+        and lot_focus_observation.get("request_unpause") is True
+    ):
+        next_gate = "PAUSED_PRODUCTIVITY_REQUIRED"
+        fallback = {
+            "mechanism": "PAUSED_PRODUCTIVITY_BEFORE_TIME_RISK",
+            "owner": "betterinstincts/live_host_ops.py",
+            "contract": "contracts/live-host-ops.v1.json",
+            "unpause_admission": live_host_ops["unpause_admission"],
+            "priority_order": live_host_ops.get("priority_order"),
+            "execute_allowed": False,
+            "forbidden": list(live_host_ops["unpause_admission"].get("forbid") or []),
+            "next": live_host_ops["unpause_admission"].get("next"),
+        }
+    elif viewport is not None and viewport.get("state") != "VIEWPORT_OK":
         classification = str(viewport.get("classification") or "")
         next_gate = str(viewport.get("next_gate") or "VERIFY_VIEWPORT_BEFORE_ACTION")
         if classification in {
@@ -1005,6 +1114,22 @@ def evaluate_turn(
                 "RESUME",
             ],
         }
+        if isinstance(edge_creek, Mapping) and edge_creek.get("triggered"):
+            next_gate = "EDGE_CREEK_REGRESSION"
+            fallback = {
+                **fallback,
+                "mechanism": "EDGE_MOUSE_PARK_TO_CREEK",
+                "edge_creek_regression": edge_creek,
+                "recovery_chord": edge_creek.get("recovery_chord"),
+                "next": edge_creek.get("next"),
+                "forbidden": list(
+                    dict.fromkeys(
+                        list(fallback.get("forbidden") or [])
+                        + list(edge_creek.get("forbidden") or [])
+                    )
+                ),
+                "note": "Oldest regression: edge dwell pans to creek — SAFE_CURSOR_REST then Shift+Enter.",
+            }
     elif camera_traverse is not None and camera_traverse.get("gate") == "YIELD_TO_PLAYER":
         next_gate = "RESPECT_PLAYER_OR_BUSY_STATE"
         fallback = None
@@ -1774,6 +1899,7 @@ def evaluate_turn(
         "active_sim_camera_lock": camera_lock,
         "lot_focus": lot_focus,
         "off_intent_view": off_intent_view,
+        "live_host_ops": live_host_ops,
         "camera_recovery": drift_recovery,
         "world_target_framing": target_framing,
         "sim_camera": sim_camera_intent,

@@ -366,6 +366,31 @@
     "recovery_helper": "recovery_for_scenery_focus",
     "proof_ceiling": "OFFLINE_LOT_FOCUS_ASSESS_NOT_LIVE_CAMERA_CERT"
   },
+  "edge_creek_regression": {
+    "id": "EDGE_MOUSE_PARK_TO_CREEK",
+    "operator_label": "oldest regression: mouse at edge of screen → creek",
+    "owner": "betterinstincts/camera_traverse.py",
+    "helper": "assess_edge_creek_regression",
+    "mechanism": "Sims edge-pan band (default 48px) translates the camera; on Bargain Bend / canal lots this commonly lands on creek/water/street.",
+    "detect": {
+      "cursor": "in_edge_band OR phase REST with EDGE_MOUSE_PARK",
+      "scenery_tokens": ["CREEK", "CANAL", "WATER", "STREET", "OFF_LOT", "ASPHALT"],
+      "also": "post-click Buy/Build catalog after intended Live world click → OFF_INTENT_VIEW (lot_focus.assess_off_intent_view)"
+    },
+    "recovery_chord": ["SAFE_CURSOR_REST", "SHIFT_ENTER"],
+    "recovery_notes": [
+      "park_safe_cursor_rest() FIRST — stops further creek pan",
+      "then Shift+Enter lot arm (not roam, not hardcoded field XY)",
+      "Esc+F1 if Buy opened from the miss",
+      "never leave safe_rest_after=False without a finally park"
+    ],
+    "forbidden": [
+      "LEAVE_CURSOR_IN_EDGE_BAND",
+      "CONTINUE_WORLD_CLICKS_WHILE_CREEK_IN_VIEW",
+      "HARDCODED_FIELD_XY_AFTER_ZOOM_CHANGE"
+    ],
+    "proof_ceiling": "OFFLINE_EDGE_CREEK_REGRESSION_POLICY_NOT_LIVE_CAMERA_CERT"
+  },
   "agent_zoom_policy": {
     "owner": "betterinstincts/camera_traverse.py",
     "axis": "ZOOM_IN_FRACTION_OF_MAX_WHERE_1_0_IS_MAX_CLOSE",

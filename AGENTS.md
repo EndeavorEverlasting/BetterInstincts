@@ -23,6 +23,7 @@ Useful-item force: `python -m scripts.household_object_force`. DIY parts: `pytho
 - **Performance:** bounded work; no global per-frame scans, busy-waits or unmeasured runtime hooks.
 - **Evidence:** separate tests, build, PR, merge and gameplay. See docs/SCENE_INTELLIGENCE.md; two cues; unknown -> no action.
 - **Continuity:** keep docs/LEDGER.md, docs/ROADMAP.md and sprint current; no chat-only decisions.
+- **Live-host ops (P00/P01):** Operator live corrections are incomplete until encoded in `contracts/live-host-ops.v1.json` + `betterinstincts/live_host_ops.py` (+ tests/AGENTS/DOCTRINE/Horizon). Chat memory alone is forbidden. Architecture `PAUSED_PRODUCTIVITY_BEFORE_TIME_RISK`: keep PAUSED; Order/Purchase Upgrade Parts or robotics workstation spawn before Needs/unpause; OFF_INTENT_VIEW → Esc(+F1)+Shift+Enter; EDGE_MOUSE_PARK→creek → SAFE_CURSOR_REST then Shift+Enter; no hardcoded field XY across zoom; yield focus to mouse/Wispr; never Sell / delete Slot_00000007. Fifth Gear with Sims PID live: execute live gates — do **not** emit a new P05 pack.
 
 ## Multiversion + real-game closure
 Read `docs/COMPATIBILITY.md`, `docs/LIVE_CERT.md`, `plans/active/BI-002.execution.v1.json`. Pin exact version/platform/module; UNKNOWN_VERSION denies. Never change older certified profiles or call synthetic work game proof.

@@ -1,7 +1,8 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 16,
+  "version": 17,
   "version_notes": {
+    "17": "Adds live.mastery_perk_modal_yes [960,560] and live.mastery_perk_modal_no [960,610] (OPERATOR_FRAME_APPROX from dual-monitor attach thumb upscaled; PrintWindow recheck found modal already gone — Servo tooltip/world). Prefer No to defer perk picker during paused parts work. No close-X observed. Additive only; prior seeds unchanged. Consultation BI-PAUSED-PRODUCTIVITY-BEFORE-TIME-RISK-20261110.",
     "8": "Adds camera_dependent_seeds_1920x1080 (fridge HIT/MISS). Additive only: seed_targets_1920x1080 and all certified seeds unchanged; camera-dependent rows are NOT ingested into the fixed-HUD ledger.",
     "9": "Adds live.notebook_close_x [1338,276] (PrintWindow-measured Notebook dismiss). Additive only; prior seeds unchanged.",
     "10": "Promotes Load/Play/Exit-CAS/Residential Worlds/LabLab Play from living-subject-recovery receipt (2026-11-10). cas_cancel_x supersedes 1830,1050→1838,1048. FORBIDDEN deny ~[1883,1040] blue person+arrow (CAS, not Live). camera_dependent fridge seeds remain separate — not merged here.",

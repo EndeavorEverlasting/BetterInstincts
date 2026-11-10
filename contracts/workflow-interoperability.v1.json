@@ -21,6 +21,7 @@
   "interruption": "Do not cancel a queued task; no new UI effects until two fresh trusted idle probes >=15s. An active callback must cooperatively checkpoint between side effects. A result after human interruption requires reconciliation to avoid blind replay.",
   "game_input_borrow_restore": {
     "rule": "Authorized Sims keyboard/mouse effects may briefly borrow the Sims window, then MUST restore the operator's prior foreground app (YouTube, browser, IDE, anything). Never monopolize the desktop or leave the operator trapped in Sims. Play-brief waits happen while the operator app remains foreground.",
+    "operator_correction_20261110_multi_screen": "Operator uses other screens/apps while Sims runs. Long tip-sweeps and ad-hoc raw borrows that hold Sims foreground for minutes are interop failures. Codify short cells + always restore.",
     "order": [
       "WAIT_TRUSTED_IDLE_GE_15S",
       "SNAPSHOT_OPERATOR_FOREGROUND",
@@ -29,8 +30,21 @@
       "RESTORE_OPERATOR_FOREGROUND"
     ],
     "owner": "scripts.diy_skill_force._with_sims_input_borrow",
+    "assess_helper": "scripts.diy_skill_force.assess_sims_input_borrow_cell",
+    "max_borrow_wall_ms_default": 8000,
+    "max_borrow_wall_ms_console_batch": 60000,
+    "max_effects_per_borrow_cell": 1,
+    "observation": {
+      "rule": "PrintWindow / game_capture.capture_sims observes without stealing focus. Observation MUST NOT borrow Sims foreground. Computer-use screenshots that exclude Sims are not a substitute for PrintWindow.",
+      "owner": "scripts/game_capture.py"
+    },
+    "multi_screen": {
+      "rule": "Operator may work on another monitor or non-Sims app. Snapshot the non-Sims foreground before borrow; restore it after every cell even if a prior monopolizing borrow left Sims focused (remember last non-Sims hwnd).",
+      "restore_fallback": "LAST_NON_SIMS_FOREGROUND_HWND"
+    },
     "composes_with": "15s idle admission still gates every new screen lease; borrow/restore does not shorten idle",
     "operator_activity": "Any mouse move or key press resets last-input age; listeners and skill-force helpers MUST wait (not cancel work) until trusted idle again",
+    "agent_adhoc_rule": "Ad-hoc agent scripts must use _with_sims_input_borrow (or equivalent snapshot→borrow→ONE effect→restore cells). Forbidden: open raw _borrow_sims_foreground then tip-grid / camera thrash for tens of seconds before restore.",
     "resume_mechanism": {
       "in_process": "CooperativeScreenQueue drain / host_listener tick / _wait_for_input_idle poll",
       "not": [
@@ -45,7 +59,11 @@
       "MONOPOLIZE_FOREGROUND_FOR_AGENT_SESSION",
       "LEAVE_OPERATOR_TRAPPED_IN_SIMS",
       "SKIP_15S_IDLE_GATE",
-      "INSTALL_OS_CRON_FOR_GAME_RESUME"
+      "INSTALL_OS_CRON_FOR_GAME_RESUME",
+      "LONG_TIP_SWEEP_UNDER_SINGLE_BORROW",
+      "ADHOC_RAW_BORROW_WITHOUT_RESTORE_CELLS",
+      "OBSERVE_VIA_FOREGROUND_STEAL",
+      "EXCEED_BORROW_WALL_WITHOUT_CONSOLE_BATCH"
     ]
   },
   "persistence": "While caller session/process lives only; receipts contain IDs and states, never entered text or arbitrary URL; process restart requires rehydrating and revalidating intent. No background service installed.",

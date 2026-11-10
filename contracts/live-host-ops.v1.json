@@ -1,0 +1,75 @@
+{
+  "schema": "betterinstincts.live-host-ops/v1",
+  "id": "LIVE_HOST_OPS",
+  "version": 1,
+  "architecture": {
+    "selected": "PAUSED_PRODUCTIVITY_BEFORE_TIME_RISK",
+    "rejected": [
+      "CHAT_ONLY_OPERATOR_CORRECTIONS",
+      "NEEDS_UNPAUSE_BEFORE_PAUSED_PARTS",
+      "HARDCODED_FIELD_XY_AS_WORLD_AUTHORITY",
+      "EDGE_MOUSE_PARK_WHILE_REASONING"
+    ]
+  },
+  "owners": {
+    "contract": "contracts/live-host-ops.v1.json",
+    "library": "betterinstincts/live_host_ops.py",
+    "horizon": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json#priority_algorithm_20261110",
+    "camera": "contracts/camera-traverse.v1.json#edge_creek_regression",
+    "lot_focus": "betterinstincts/lot_focus.py#assess_off_intent_view",
+    "interop": "contracts/workflow-interoperability.v1.json#game_input_borrow_restore",
+    "consultation": "contracts/consultations/BI-LIVE-HOST-OPS-CHAT-RULES-20261110.v1.json"
+  },
+  "priority_order": [
+    "KEEP_PAUSED",
+    "EXIT_BUY_IF_OPEN_ESC_F1_NEVER_SELL",
+    "ORDER_PURCHASE_UPGRADE_PARTS_OR_WORKSTATION_SPAWN",
+    "UI_MAP_WHILE_PAUSED",
+    "NEEDS_PANEL_O_MEASURE_ONLY",
+    "QUEUE_ALL_HOUSEHOLD_ACTIONS_WHILE_PAUSED",
+    "UNPAUSE_ONLY_AFTER_QUEUES_SET",
+    "MAP_ROAM_FRIDGE_LAST_RESORT"
+  ],
+  "gates": {
+    "PAUSED_PRODUCTIVITY_REQUIRED": {
+      "when": "parts_gate_open OR household_queue_incomplete",
+      "forbid": ["UNPAUSE", "PLAY", "SPEED_UP", "SPACE_AS_PLAY"]
+    },
+    "OFF_INTENT_VIEW_ARM_REQUIRED": {
+      "when": "post_world_click_view_is_street_or_buy_catalog",
+      "recovery": ["ESC", "F1_IF_BUY", "SHIFT_ENTER"],
+      "forbid": ["EXPLORE_BUY", "HARDCODED_FIELD_XY", "STREET_ROAM"]
+    },
+    "EDGE_CREEK_REGRESSION": {
+      "when": "cursor_in_edge_band OR scenery_creek_canal_after_edge_dwell",
+      "recovery": ["SAFE_CURSOR_REST", "SHIFT_ENTER"],
+      "forbid": ["LEAVE_CURSOR_IN_EDGE_BAND", "CONTINUE_CLICKS_ON_CREEK_VIEW"]
+    },
+    "OPERATOR_RECLAIM": {
+      "when": "mouse_move_or_wispr_flow_dictation",
+      "action": "RESTORE_OPERATOR_FOREGROUND",
+      "forbid": ["FIGHT_FOR_SCREEN"]
+    },
+    "INSIDE_REQUIRED_FOR_PARTS": {
+      "when": "purchase_upgrade_parts_or_workstation",
+      "forbid": ["TREE_CLICK", "STREET_CLICK", "OUTSIDE_ONLY_FRAME"]
+    }
+  },
+  "world_targeting": {
+    "rule": "World object clicks are camera-relative; hardcoded field XY are not durable across zoom/pan.",
+    "require": ["FRESH_PRINTWINDOW_CAPTURE", "TARGET_VISIBLE_IN_CURRENT_FRAME"],
+    "on_miss": "OFF_INTENT_VIEW_ARM_REQUIRED"
+  },
+  "fifth_gear": {
+    "rule": "Sims PID live + N roster seeded → execute live gates; do not emit a new P05 pack as Fifth Gear completion",
+    "s2_skills": "LOCAL_OBSERVED is infra not BI-005"
+  },
+  "forbidden_always": [
+    "SELL",
+    "DELETE_SAVE",
+    "OVERWRITE_SLOT_00000007",
+    "EA_CONNECT",
+    "CHAT_ONLY_RULE_WITHOUT_REPO_MUTATION"
+  ],
+  "proof_ceiling": "CONTRACT_HARNESS_NOT_LIVE_PARTS_HIT_NOT_BI002_CLOSE"
+}
