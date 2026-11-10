@@ -240,8 +240,8 @@
     "live.calendar_close_x": {
       "role": "DISMISS_CALENDAR_MODAL",
       "client_xy": [1445, 255],
-      "status": "CANDIDATE",
-      "notes": "Top-right of calendar white header band (~y 239–349, x≈1457)"
+      "status": "LIVE_MEASURED_20261110",
+      "notes": "Top-right of calendar white header; PrintWindow-proved close. Do NOT toggle live.show_calendar to dismiss — that reopens the modal."
     },
     "live.household_portrait_0": {
       "role": "SELECT_HOUSEHOLD_SIM",
