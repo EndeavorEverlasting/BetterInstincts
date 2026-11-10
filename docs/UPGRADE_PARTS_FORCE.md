@@ -2,7 +2,7 @@
 
 **Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
 **P124:** expand existing `upgrade_parts_force` (peer to `diy_skill_force` household traverse)
-**Machine owner:** [`contracts/upgrade-parts-force.v1.json`](../contracts/upgrade-parts-force.v1.json) v2
+**Machine owner:** [`contracts/upgrade-parts-force.v1.json`](../contracts/upgrade-parts-force.v1.json) v3
 **Planner:** `betterinstincts.upgrade_parts_force`
 **CLI:** `python -m scripts.upgrade_parts_force`
 
@@ -13,7 +13,7 @@ Every household Sim (observed portrait count **N**) keeps DIY building parts in 
 ## Scalable acquisition (preferred order)
 
 1. **spawn** — `testingcheats` → Shift+click Dr. F robotics workstation → **Spawn Crafting Supplies** (~50 each; one action stocks most DIY materials).
-2. **computer** — Computer/laptop → Order → Purchase Upgrade Parts (local, offline).
+2. **computer** — Computer/laptop → inspect its interactions → discover the nested **Purchase Upgrade Parts** module (offline; intermediate names/depth must be observed, not assumed).
 3. **phone** — Phone → Order → Purchase Upgrade Parts (buyable rows) **only if it stays offline**.
 
 **Offline install (P00/P01):** never press **Connect** on `CONNECTION IS REQUIRED`. Choose **Stay Offline** only. Prefer spawn when phone forces an online gate. The game plays as installed offline.
@@ -61,3 +61,50 @@ Plans alone never certify. `MET` requires independently attested pocket counts �
 ## Proof ceiling
 
 `HOST_DIY_PARTS_BUDGET_PLAN_AND_CERT_SCHEMA_NOT_BI002` — offline plans + cert schema; live SendInput / inventory OCR remain P08. Does not close BI-002.
+
+
+## 2026-11-10 — verified menu, command and player sovereignty
+
+The operator located the **Purchase Upgrade Parts** module deep inside the
+interactions of a computer. The *purchase-menu catalog* has exactly five
+operator-reported options: Common, Electronic, Kitchen, Plumbing, and Robot
+Salvage Upgrade Parts. Computer Chips, Mechanisms and optional Eco-Upgrade
+Parts are separate DIY/pack materials, **not** asserted menu rows.
+
+Machine contract: `contracts/upgrade-parts-force.v1.json#computer_purchase_menu`.
+Host proposal + cooperative queue adapter:
+`betterinstincts/computer_upgrade_parts.py`. Existing DIY budget,
+spawn alternative, planner and certification remain owned by
+`betterinstincts/upgrade_parts_force.py` — no parallel commerce daemon.
+
+```sh
+python -m scripts.upgrade_parts_force computer-menu
+python -m scripts.upgrade_parts_force computer-intent --part kitchen_upgrade_parts --quantity 2
+```
+
+These commands are **passive** and never move the cursor. At an explicitly
+activated Live session the host must observe the selected Sim, paused Live
+mode, active-lot computer and safe footprint, and choose a verified native
+game API or an explicitly opted-in desktop fallback. It may propose clicking
+the observed computer. It must then discover the visible nested labels,
+accept only observed `Purchase Upgrade Parts`, `Order` or `More Choices...`
+where they actually appear, and re-observe after each selection. The
+`More Choices` label can recur on distinct pages; repeated page fingerprints
+and >16 pages fail closed. An unknown submenu means **wait for evidence**,
+not a guessed click or a hardcoded coordinate.
+
+For each unit, verify an actual part row, spending consent, observed price,
+funds, approved spend cap and personal-inventory baseline before confirming.
+One purchase must show an inventory increase **before** another unit is
+considered. Each single action goes through
+`CooperativeScreenQueue.enqueue_effect` with fresh scene validation and two
+idle probes. Human mouse, keyboard, voice or other-app activity yields;
+interrupted or unknown purchases require observed reconciliation, never
+blind replay. Boot is passive, and a command does **not** authorize OS
+service, Bluetooth, adapter/driver, pairing, UAC or peripheral-preference
+changes. Preserve offline installation; never EA Connect.
+
+P95 architecture → P82 offline falsifiers → P08 local runtime proof
+(**unavailable without the user's explicitly controlled Sims 4 host**) →
+P07 existing-owner implementation → P124 readability/cross-layer
+regression guard. Unit tests/CI cannot certify an actual in-game purchase.
