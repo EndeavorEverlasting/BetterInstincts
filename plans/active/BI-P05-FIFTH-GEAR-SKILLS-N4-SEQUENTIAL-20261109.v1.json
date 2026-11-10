@@ -46,25 +46,46 @@
     "provider_routes": ["GITHUB_ORIGIN"],
     "current_chat_safe_work": "panel-record mechanism + seed ledger + pack + PR"
   },
+  "fifth_gear_rule": "When game PID + session household-n4-20261109 + N=4 roster exist, S2 live cert is the first incomplete sprint. Emitting another P05 pack alone is not Fifth Gear completion.",
   "ordered_sprints": [
     {
       "id": "S0",
       "title": "Land panel-record mechanism + seed N=4 panel truth",
       "owner": "REPO_AGENT",
-      "status": "IN_PROGRESS"
+      "status": "DONE"
     },
     {
       "id": "S1",
       "title": "Merge camera zoom ladder PR #151 after rebase",
       "owner": "REPO_AGENT",
-      "status": "READY"
+      "status": "DONE",
+      "merged_sha": "4278f3513e34a65891b3f20b750300dc7c94705d",
+      "pr": 151
     },
     {
       "id": "S2",
       "title": "P08 sequential household skill-force N=4 full_unlock",
       "owner": "LOCAL_AGENT",
-      "status": "BLOCKED_ON_OPERATOR_SCREEN",
-      "command": "python -m scripts.diy_skill_force household --members 4 --bundle full_unlock --execute --roster-key EVIL_P0 --roster-key BERNICE_P1 --roster-key OLGA_P2 --roster-key CHARLEE_P3 --first-portrait-attested --process-id PID --session-id household-n4-20261109"
+      "status": "ACTIVE_BLOCKED_CHEAT_EFFECT",
+      "process_id": 78240,
+      "session_id": "household-n4-20261109",
+      "canary": {
+        "skill": "robotics",
+        "member": "EVIL_P0",
+        "dispatch": "DIY_SKILL_FORCE_DISPATCHED",
+        "skills_panel_local_observed": {"robotics": 3},
+        "proof_ceiling": "DISPATCHED_NOT_PANEL_PASS",
+        "receipt": "dist/game-host/household-skill-cert/live-20261109/canary-evil-robotics.json"
+      },
+      "command": "python -m scripts.diy_skill_force household --members 4 --bundle full_unlock --execute --roster-key EVIL_P0 --roster-key BERNICE_P1 --roster-key OLGA_P2 --roster-key CHARLEE_P3 --first-portrait-attested --process-id 78240 --session-id household-n4-20261109",
+      "gate": "Do not bulk until Evil robotics Skills-panel rises after an admitted canary",
+      "overlay_preflight_20261109": {
+        "event": "life_death.inheritance.ghost_stranger",
+        "choice": "free_money_yes",
+        "funds_delta": 4000,
+        "receipt": "dist/game-host/chance-event-live-20261109/free-money-receipt.json",
+        "note": "Inheritance overlay cleared under HOST_NO_RISK_POLICY; Geeta lounge text left untouched"
+      }
     },
     {
       "id": "S3",

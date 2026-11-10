@@ -9,7 +9,9 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from betterinstincts.decision_eval import score_option, SAFE_TAGS, RISK_TAGS
+from betterinstincts.decision_eval import (
+    score_option, SAFE_TAGS, RISK_TAGS, no_risk_host_auto_choice_eligible,
+)
 from betterinstincts.chance_event_research import assess as assess_chance_event, ChanceEventError
 from betterinstincts.ui_microsystems import (
     load_contract as load_ui_contract, resolve_action, panel_observation_matches,
@@ -107,13 +109,17 @@ def _score_observed_overlay_choices(
         return {**base, "state": "OVERLAY_CHOICE_TIE_OR_UNSAFE_REVIEW",
                 "ranked_ids": [x.option_id for x in ranks]}
     best = ranks[0]
+    best_choice = next(x for x in choices if x["option_id"] == best.option_id)
+    no_risk = no_risk_host_auto_choice_eligible(best_choice.get("tags") or ())
     return {**base, "state": "OVERLAY_CHOICE_RECOMMENDED",
             "recommended_option_id": best.option_id,
             "score": best.score,
             "rationale": list(best.rationale),
-            "option_hitbox": list(next(x["hitbox"] for x in choices if x["option_id"] == best.option_id)),
+            "option_hitbox": list(best_choice["hitbox"]),
             "ranked_ids": [x.option_id for x in ranks],
-            "next": "EXACT_HOST_AND_PLAYER_ADMISSION_REQUIRED_NO_AUTO_ACCEPT"}
+            "no_risk_host_auto_choice_eligible": no_risk,
+            "next": ("HOST_NO_RISK_POLICY_ADMISSIBLE_WITH_SESSION_AUTHORITY" if no_risk
+                     else "EXACT_HOST_AND_PLAYER_ADMISSION_REQUIRED_NO_AUTO_ACCEPT")}
 
 
 def assess_live_hud(
@@ -380,10 +386,9 @@ def enqueue_native_overlay_choice(
             return None
         overlay = obs.get("overlay")
         advice = ui["overlay"]["choice_advisory"]
-        # Chance-event companion currently retains PLAYER_ONLY input authority.
-        # Even a strong heuristic recommendation is not authorization.
+        # Player approval remains the default authority. HOST_NO_RISK_POLICY is
+        # a standing operator policy for catalogued zero-risk options only.
         if (not isinstance(overlay, Mapping) or not isinstance(player_choice_approval, Mapping)
-                or player_choice_approval.get("source") != "PLAYER_CHOICE_APPROVAL"
                 or player_choice_approval.get("approved") is not True
                 or player_choice_approval.get("capture_ref") != capture_ref
                 or player_choice_approval.get("overlay_id") != overlay.get("overlay_id")
@@ -393,14 +398,46 @@ def enqueue_native_overlay_choice(
                 or player_choice_approval.get("option_id") != advice["recommended_option_id"]
                 or not _token(player_choice_approval.get("approval_ref"))):
             return None
-        # When the richer chance-event identity is available, respect its
-        # exact-patch reviewed-memo gate and the player's chosen option.
-        research = ui["overlay"].get("chance_event_research")
-        if research is not None and (
-            research.get("state") != "READY_FOR_PLAYER"
-            or research.get("recommended_option_id") != advice["recommended_option_id"]
-        ):
+        source = player_choice_approval.get("source")
+        if source == "PLAYER_CHOICE_APPROVAL":
+            pass
+        elif source == "HOST_NO_RISK_POLICY":
+            if (overlay.get("auto_choice_authorized") is not True
+                    or advice.get("no_risk_host_auto_choice_eligible") is not True
+                    or player_choice_approval.get("policy_id") != "no_risk_safe_option"):
+                return None
+            chosen = next(
+                (c for c in overlay.get("choices", [])
+                 if isinstance(c, Mapping)
+                 and c.get("option_id") == advice["recommended_option_id"]),
+                None,
+            )
+            if chosen is None or not no_risk_host_auto_choice_eligible(chosen.get("tags") or ()):
+                return None
+        else:
             return None
+        # When the richer chance-event identity is available, respect its
+        # exact-patch reviewed-memo gate and empty-risk permanence for host policy.
+        research = ui["overlay"].get("chance_event_research")
+        if research is not None:
+            if (research.get("state") != "READY_FOR_PLAYER"
+                    or research.get("recommended_option_id") != advice["recommended_option_id"]):
+                return None
+            if source == "HOST_NO_RISK_POLICY":
+                ui_model = research.get("ui") if isinstance(research.get("ui"), Mapping) else {}
+                choices = ui_model.get("choices") if isinstance(ui_model, Mapping) else None
+                row = None
+                if isinstance(choices, list):
+                    row = next(
+                        (c for c in choices if isinstance(c, Mapping)
+                         and c.get("option_id") == advice["recommended_option_id"]),
+                        None,
+                    )
+                if not no_risk_host_auto_choice_eligible(
+                    (chosen or {}).get("tags") or (),
+                    implications_row=row,
+                ):
+                    return None
         fingerprint = (
             overlay["overlay_id"], advice["recommended_option_id"],
             tuple(advice["option_hitbox"]), obs["ui_layout_revision"],

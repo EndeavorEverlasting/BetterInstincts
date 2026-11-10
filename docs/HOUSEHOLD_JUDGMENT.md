@@ -7,7 +7,7 @@
 1. Observe the Live portrait count and exact ordered identities. Attest the first selected portrait. N is not a guessed cap.
 2. For skill S1, level portrait 0, then 1 through N−1 to the target (normally 10). Close the console within each cell. Space advances only under fresh admitted input ownership. Never toggle the already-closed console before Space.
 3. Repeat for skill S2 only after S1 visits all N portraits. Skip previously dispatched cells through the existing completion ledger, while retaining portrait alignment.
-4. Use bounded play-brief, Skills panel observation and re-pause. Cheat text, toasts and DISPATCHED ledger entries are not level-10 PASS.
+4. Use bounded play-brief, Skills panel observation and re-pause. Expand the Skills flyout via the **burger bar** above `SKILL MASTERY PERKS` (click-drag upward) before reading the full list — scrollbar alone is not enough. Cheat text, toasts and DISPATCHED ledger entries are not level-10 PASS.
 
 ## Hard judgment boundaries
 

@@ -19,6 +19,10 @@ Do not treat this as a local Prompt Kit or substitute repository. Source of trut
 | P62 | Skill Correctness and Efficiency Eval Implementer | `src/tokencorridor/interface/promptkit/registry/prompts/skill-development-prompts.v1.json` | `7ef8e6991f558db191989c495d9255a282f88ba9` | 2026-11-07 vision/scaffolding/product rates + forbidden promotion cases — see `betterinstincts/progression_eval.py` |
 | P124 | Repository Code Readability & Structural Refactorer | `src/tokencorridor/interface/promptkit/registry/prompts/spec-architecture-prompts.v1.json` | `5926a198a14567de55110ed19e922fc444b4dec7` | 2026-11-08 build_optimize single-owner pools + countertop mechanics (no second catalog daemon); balance_service reuses survival_critical; need_service_base + domain_cascade; prior moodlets/event_balance |
 
+## 2026-11-09 Life & Death inheritance no-risk Free money (P124 + Fifth Gear)
+
+**P124 — Repository Code Readability & Structural Refactorer** (owner `spec-architecture-prompts.v1.json`, blob `5926a198a14567de55110ed19e922fc444b4dec7`): expand existing `decision_eval` / `decision-prompts` / `scene_ui_semantics` for standing `HOST_NO_RISK_POLICY` on catalogued zero-risk options; do not add a second overlay clicker. **Fifth Gear / P05 live-first:** with PID 78240 + session `household-n4-20261109`, clear the inheritance overlay as preflight; do not emit another P05 pack; S2 skill canary remains separately blocked on cheat effect. Live Free money click used detached Win32 (`cas_quiz_okay`), not computer-use.
+
 ## 2026-11-09 Servo mutual Tune Up peer helper (P95 + P124 + Trifecta)
 
 **P95** admits verified-Robotics peer Servo helpers for Tune Up/Repair under
@@ -303,6 +307,10 @@ Fresh Moonwake `harness/exports/prompt-invocation-catalog.v1.json` resolution: *
 ## 2026-11-09 — P83 DISPATCHED ≠ maximized (Handiness panel falsifier)
 
 **P83** rejects reporting `HOUSEHOLD_SKILL_FORCE_DISPATCHED` as “Handiness maximized.” Owner: `assess_skill_force_claim` / `PANEL_FALSIFIED`. Operator panel: Cooking 10, Handiness absent. Consultation `contracts/consultations/BI-P83-DISPATCHED-NOT-MAXIMIZED-20261109.v1.json`.
+
+## 2026-11-09 — Fifth Gear live-first when PID + N roster exist
+
+**/fifth-gear** on BetterInstincts with running Sims PID + seeded N roster (e.g. `household-n4-20261109`) → execute S2 live skill cert from `plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json` and `docs/handoff/BI-HOUSEHOLD-SKILL-LOCAL-P04-2026-11-09.md`. Do **not** emit another P05 pack as completion. DISPATCHED ≠ Skills-panel PASS. 2026-11-09 canary: Evil robotics DISPATCHED but panel still L3 — bulk blocked until cheat effect observed.
 
 ## 2026-11-09 — Fifth Gear household skill RR live cert (P05)
 

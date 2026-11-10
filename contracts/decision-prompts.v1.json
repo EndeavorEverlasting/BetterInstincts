@@ -169,6 +169,41 @@
       "notes": "Host overlay when household funds < 100. Yes → scripts.funds_inject (testingcheats enabled true then Money N). Not BI-004 earned income."
     },
     {
+      "prompt_id": "life_death.inheritance.ghost_stranger",
+      "title": "Hello from the other side",
+      "repeatable": true,
+      "scene_tags": ["life_death", "inheritance", "will", "phone", "chance_card"],
+      "narrative_tokens": [
+        "Hello from the other side",
+        "you're going to inherit from me",
+        "hard-earned Simoleons",
+        "write up a Will",
+        "Inheritance Lawyer",
+        "Free money? Yes, please!",
+        "No, thanks. Sounds sketchy"
+      ],
+      "options": [
+        {
+          "option_id": "free_money_yes",
+          "label": "Free money? Yes, please!",
+          "tags": ["safe", "funds_recovery", "host_prep"]
+        },
+        {
+          "option_id": "decline_sketchy",
+          "label": "No, thanks. Sounds sketchy...",
+          "tags": ["ethical", "player_choice"]
+        }
+      ],
+      "default_when_unknown_needs": "free_money_yes",
+      "host_no_risk_auto_choice": {
+        "enabled": true,
+        "option_id": "free_money_yes",
+        "policy_id": "no_risk_safe_option",
+        "requires_empty_risk_implications": true
+      },
+      "notes": "Life & Death stranger-ghost inheritance phone call. Community LOCAL_OBSERVED: Free money grants ~§2k–§4.5k with no marriage timer or known downside; decline grants §0. Distinct from Eco Lifestyle distant-relative inheritance (marriage-within-7-days condition). Soft tutorial toward Wills / Inheritance Lawyer. Host may auto-pick Free money only via HOST_NO_RISK_POLICY when tags and reviewed implications show no risks."
+    },
+    {
       "prompt_id": "occult.fairy.mother_nature_summon",
       "title": "Summon Mother Nature",
       "repeatable": false,

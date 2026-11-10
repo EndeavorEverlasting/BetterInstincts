@@ -45,6 +45,8 @@ Library plans keep `execute_allowed=false`. Live execute requires an ACTIVE `hos
 
 **Skills panel proof:** a paused-only Skills screenshot is `UNPROVEN_STALE`. Keep Live paused while time is precious and the main goal is unfinished, but to confirm residual levels run the bounded verify loop (`--verify-skills-panel`): play 5–10 seconds at 1x, read the panel, immediately pause again. Never leave sim speed running; never main-menu Resume.
 
+**Expand the Skills list (operator correction 2026-11-09):** the default Skills flyout shows only ~2 rows. Do **not** treat the tiny scrollbar alone as enough. Grab the **burger bar** (two short horizontal lines) centered on the thin grey strip **directly above** the green `SKILL MASTERY PERKS` header at the top of the bottom-right panel, then **click-drag upward** to resize. On 1920×1080 borderless Live the grip is ~physical `(1721, 810)` when the panel sits at its default height; re-locate from pixels if the panel has already moved. Fast sidecar drags often miss and leave a prohibited cursor in the world — prefer a focused window + stepped `SetCursorPos` drag on the grip itself. Collapse the perks chevron only as a secondary space-saver after the burger expand.
+
 **PASS ceiling:** only a Skills-panel `LOCAL_OBSERVED` read after play-brief may support a live skill-force PASS. Console text, reward/trait dialogs, and mid-cascade `LEVEL UP` / `MAXED SKILL` toasts are **not** PASS. Open the console with `send_key_chord(['CTRL','SHIFT','C'])` (not a bare `send_vk`/`tap` sequence that can drop SHIFT and screenshot). Each cheat line: re-click the console strip → `type_text(cmd + "\n")`.
 
 ## CLI

@@ -242,5 +242,66 @@ class OverlayChoiceQueueTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((await queue.run_once())["state"],"NEEDS_REVALIDATION")
             self.assertEqual(actions,[])
 
+    async def test_host_no_risk_policy_clicks_safe_option_when_authorized(self):
+        from betterinstincts.scene_ui_semantics import enqueue_native_overlay_choice
+        with tempfile.TemporaryDirectory() as root:
+            current=[frame(overlay=choice_overlay(),needs=SIX)]
+            actions=[]
+            async def observe():return current[0]
+            async def click(x,y):
+                actions.append(("choice",x,y))
+                current[0]=frame(overlay=overlay(resolved=True),needs=SIX)
+            async def move(x,y):actions.append(("rest",x,y))
+            async def sleep(_):pass
+            queue=CooperativeScreenQueue(
+                lambda:PresenceProbe(False,False,last_input_age_ms=18000),
+                lambda:True,lock_root=Path(root),sleep=sleep)
+            outcome=enqueue_native_overlay_choice(
+                queue,work_id="event-choice-no-risk",capture_ref=CAP,
+                observe=observe,process_id=303,session_id="demo",
+                click_screen=click,move_screen=move,
+                player_choice_approval={
+                    "source":"HOST_NO_RISK_POLICY","approved":True,
+                    "policy_id":"no_risk_safe_option",
+                    "capture_ref":CAP,"overlay_id":"evt:promotion",
+                    "selected_sim_id":492,"ui_layout_revision":"hud:1",
+                    "option_id":"choice:ethical","approval_ref":"host:no-risk-1",
+                })
+            self.assertEqual((await queue.run_once())["state"],"COMPLETED")
+            self.assertEqual(actions[0],("choice",550,620))
+            self.assertTrue(outcome["receipt"]["choice_acknowledged"])
+
+    async def test_host_no_risk_policy_rejects_risk_tagged_recommendation(self):
+        from betterinstincts.scene_ui_semantics import enqueue_native_overlay_choice
+        risky=choice_overlay(choices=[
+            {"source":"HOST_CAPTURE","option_id":"choice:risky",
+             "tags":["risk_reputation"],"hitbox":[500,600,600,640]},
+            {"source":"HOST_CAPTURE","option_id":"choice:also",
+             "tags":["theft"],"hitbox":[800,600,900,640]},
+        ])
+        with tempfile.TemporaryDirectory() as root:
+            current=frame(overlay=risky,needs=SIX)
+            actions=[]
+            async def observe():return current
+            async def click(x,y):actions.append((x,y))
+            async def move(x,y):actions.append((x,y))
+            async def sleep(_):pass
+            queue=CooperativeScreenQueue(
+                lambda:PresenceProbe(False,False,last_input_age_ms=18000),
+                lambda:True,lock_root=Path(root),sleep=sleep)
+            enqueue_native_overlay_choice(
+                queue,work_id="event-choice-risky",capture_ref=CAP,
+                observe=observe,process_id=303,session_id="demo",
+                click_screen=click,move_screen=move,
+                player_choice_approval={
+                    "source":"HOST_NO_RISK_POLICY","approved":True,
+                    "policy_id":"no_risk_safe_option",
+                    "capture_ref":CAP,"overlay_id":"evt:promotion",
+                    "selected_sim_id":492,"ui_layout_revision":"hud:1",
+                    "option_id":"choice:risky","approval_ref":"host:no-risk-bad",
+                })
+            self.assertEqual((await queue.run_once())["state"],"NEEDS_REVALIDATION")
+            self.assertEqual(actions,[])
+
 
 if __name__=="__main__":unittest.main()

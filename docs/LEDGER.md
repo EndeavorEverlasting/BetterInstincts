@@ -1,3 +1,35 @@
+## 2026-11-09 — Life & Death inheritance Free money (P124 + Fifth Gear live-first)
+
+**Operator:** Standing host policy — pick Free money when there are no risks; inheritance popup on screen for live cert; invoke P124 + `/fifth-gear`.
+
+**P124:** kept `decision_eval` / `chance_event_research` / `scene_ui_semantics` as owners; catalogued `life_death.inheritance.ghost_stranger`; added `no_risk_host_auto_choice_eligible` + `HOST_NO_RISK_POLICY` admission (requires `auto_choice_authorized`, SAFE tags only, empty reversible implications when research present). No second click daemon; computer-use overlay clicks remain forbidden.
+
+**Live:** PrintWindow-calibrated Win32 click `(1024,660)` via `scripts.cas_quiz_okay.click_okay` on PID 78240. Funds **§10,757 → §14,757 (+§4,000)**; inheritance dialog cleared. Unrelated Geeta lounge text left untouched (travel risk). Receipt `dist/game-host/chance-event-live-20261109/free-money-receipt.json`. Consultation `BI-INHERITANCE-NO-RISK-AUTOCHOICE-20261109.v1.json`.
+
+**Fifth Gear:** did **not** emit another P05 pack. S2 remains `ACTIVE_BLOCKED_CHEAT_EFFECT` (Evil/Olga robotics panel still L3 after DISPATCHED). Overlay preflight cleared.
+
+**PROVED offline:** inheritance catalog + no-risk policy unit tests. **PROVED live:** Free money funds delta + dialog clear. **NOT proved:** bulk N=4 skill maximize; BI-002/BI-005 remain open.
+
+## 2026-11-09 — Skills burger-bar expand + Olga canary panel (Fifth Gear)
+
+**Operator correction:** Expand the bottom-right Skills list with the **burger bar** (two lines) above `SKILL MASTERY PERKS` — click-drag upward. Scrollbar alone does not count as a full panel read.
+
+**CHANGED:** Win32 stepped drag on grip (~1721,810 → up) expanded Olga Skills; recorded `panel-olga-after-canary.json`. Durable notes in `docs/DIY_SKILL_FORCE.md` + `docs/HOUSEHOLD_JUDGMENT.md`. Olga robotics canary was `DISPATCHED` (`canary-olga-robotics-redo.json`); expanded LOCAL_OBSERVE still shows **Robotics 3** / Cooking 10 (same as Evil — effect unproven). Bulk still blocked.
+
+**PROVED live:** burger expand works; Olga panel-record after expand (12 listed skills). **NOT proved:** robotics raise on Olga or Evil; bulk N=4 maximize.
+
+**NEXT:** Diagnose why `stats.set_skill_level Major_Robotics 10` leaves Skills-panel L3 before any bulk unlock. BI-002/BI-005 remain open.
+
+## 2026-11-09 — P08 live N=4 skill cert canary (Fifth Gear / stop packing)
+
+**Operator correction:** `/fifth-gear` with game PID + seeded N=4 ledger is live cert, not another P05 pack.
+
+**CHANGED:** Merged PR #151 → `main` `4278f35` (panel-record + RIGHT_CLICK_VIEW zoom ladder). Activated host session `household-n4-20261109`. Declined Charlee age-up dialog ("You'll always be my baby") — N stayed 4. Ran Evil robotics canary via `diy_skill_force level --skill robotics --execute --verify-skills-panel` → `DIY_SKILL_FORCE_DISPATCHED` (receipt `dist/game-host/household-skill-cert/live-20261109/canary-evil-robotics.json`). Re-opened Skills panel on Evil: **Robotics still Level 3** (`panel-record` refreshed). Manual console type of `stats.set_skill_level Major_Robotics 10` also did not raise the panel. Bulk `full_unlock` **not started**.
+
+**PROVED live:** PID 78240 Live paused; N=4 portraits; Bernice/Charlee ledger skips for robotics; host ACTIVE; DISPATCHED≠LOCAL_OBSERVED (P83). **NOT proved:** cheat effect on Evil robotics (still L3); RIGHT_CLICK_VIEW parked (street top-down persists); bulk N=4 maximize.
+
+**NEXT:** Diagnose why `stats.set_skill_level Major_Robotics 10` leaves Skills-panel L3 (console focus / Servo gate / stale panel) with Evil selected and overlays closed; only then bulk `--members 4 --bundle full_unlock --execute`. BI-002/BI-005 remain open.
+
 ## 2026-11-09 — Skills-panel roster ledger N=4 + sequential upgrade (Fifth Gear)
 
 **Operator correction:** Every Skills screenshot shows **four** portraits. **N=4** (not 5). Bernice Thermidor + Charlee already panel-maxed; Evil Fagbot + Olga Chabenvenutzki still have gaps. Stop requiring screenshots — record panel levels in the completion ledger.
