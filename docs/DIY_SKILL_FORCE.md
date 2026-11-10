@@ -47,7 +47,7 @@ Library plans keep `execute_allowed=false`. Live execute requires an ACTIVE `hos
 
 **Canonical cheat list:** `skill_catalog` owns every `skill_id` → `skill_stat` → `stats.set_skill_level …` spelling. Print with `python -m scripts.diy_skill_force commands` (optional `--bundle remote_income|full_unlock`). Never invent stats — e.g. `stats.set_skill_level Major_MediaProduction 10` (with **i**); `Major_MediaProducton` is a no-op typo.
 
-**Force gaps (codified Live path):** prefer `python -m scripts.diy_skill_force force-gaps` over one-shot agent scripts. Example Charlee (human P3): `--member-key CHARLEE_P3 --portrait-xy 522,1055 --bundle full_unlock --redo --always-include media_production --execute --process-id PID --console-strip-observed`. Inherited `--all-listed-max` ledger rows are **not** fresh panel proof — use `--redo` when re-certifying a household member.
+**Force gaps (codified Live path):** prefer `python -m scripts.diy_skill_force force-gaps` over one-shot agent scripts. A live invocation must supply the *observed* portrait key and location, exact `--members N` / ordered `--roster-key` list, existing `--profile-id` (or active profile), observed `--save-key` / `--household-key`, `--session-id`, PID, console proof and screen admission. No sample named Sim, pixel or session may substitute for observation. Inherited `--all-listed-max` ledger rows are **not** fresh panel proof — use `--redo` when re-certifying a household member.
 
 **Scroll the full Skills list (operator 2026-11-10):** after burger-expand, wheel-scroll the list (`plan_skills_panel_inventory` / `skills-inventory-plan`) so every row is seen. Gold/yellow checkmark rows are maxed; **non-yellow** rows are gap targets. Do not trust the first viewport alone. Resolve gaps with `gap_targets_from_observed_levels` or `commands --gaps-from levels.json`.
 
@@ -92,13 +92,14 @@ CLI (evaluate-only until gates attested):
 
 ```sh
 python -m scripts.diy_skill_force target-sim \
-  --session-id household-n4-20261109 --members 4 \
-  --roster-key EVIL_P0 --roster-key BERNICE_P1 --roster-key OLGA_P2 --roster-key CHARLEE_P3 \
-  --member-key OLGA_P2 --display-name "Olga Chabenvenutzki" --roster-index 2 \
+  --session-id example-local-session --members 4 \
+  --save-key example-save --household-key example-household \
+  --roster-key sim-001 --roster-key sim-002 --roster-key sim-003 --roster-key sim-004 \
+  --member-key sim-003 --display-name "Sim Gamma" --roster-index 2 \
   --bundle full_unlock
 ```
 
-Pass `--observed-panel-header "Olga hasn't…"` and `--console-strip-observed` only after live proof; `live_dispatch_ready` stays false otherwise. Owner: `plan_target_sim_skill_algorithm` / contract `target_sim_algorithm`.
+Pass `--observed-panel-header "Sim Gamma hasn't…"` and `--console-strip-observed` only after live proof; `live_dispatch_ready` stays false otherwise. Owner: `plan_target_sim_skill_algorithm` / contract `target_sim_algorithm`.
 
 ## CLI
 
@@ -118,16 +119,17 @@ python bootstrap.py household-skills -- --members 3 --bundle full_unlock --execu
 **Skills-panel roster ledger (no more screenshot loops):** after you read a Skills panel once, record it:
 
 ```sh
-python -m scripts.diy_skill_force panel-record --session-id household-n4-20261109 --members 4 \
-  --roster-key EVIL_P0 --roster-key BERNICE_P1 --roster-key OLGA_P2 --roster-key CHARLEE_P3 \
-  --display-name "Evil Fagbot" --display-name "Bernice Thermidor" --display-name "Olga Chabenvenutzki" --display-name Charlee \
-  --member-key BERNICE_P1 --member-display-name "Bernice Thermidor" --all-listed-max --skill-level cooking=10
-python -m scripts.diy_skill_force roster-status --session-id household-n4-20261109
+python -m scripts.diy_skill_force panel-record --session-id example-local-session --members 4 \
+  --save-key example-save --household-key example-household \
+  --roster-key sim-001 --roster-key sim-002 --roster-key sim-003 --roster-key sim-004 \
+  --display-name "Sim Alpha" --display-name "Sim Beta" --display-name "Sim Gamma" --display-name Sim Delta \
+  --member-key sim-002 --member-display-name "Sim Beta" --all-listed-max --skill-level cooking=10
+python -m scripts.diy_skill_force roster-status --session-id example-local-session
 ```
 
-`PANEL_OBSERVED_MAX` skips maximize cells; `PANEL_OBSERVED` stores gaps below 10. `household_roster.members` is exact Live portrait count — **N=4** for the current attested household. Do not invent a fifth portrait. Ledger path: `dist/game-host/diy-skill-force-completion.json` (local).
+`PANEL_OBSERVED_MAX` skips maximize cells; `PANEL_OBSERVED` stores gaps below 10. `household_roster.members` is exact Live portrait count — **N** must be observed for each user's current household; example N=4 is synthetic. Never invent any portrait. Scoped ledger path: local user configuration under `households/<profile-id>/<scope-id>.json` (never a tracked repository fixture).
 
-**Household (skill-round-robin):** observe Live portrait count → `--members N` where **N is whatever that household is** (not an invented 8/10 ceiling). Dispatch order is **one skill × every portrait, then the next skill** (not all skills on one Sim before Space). Between cells, `_execute_plan(close_console=True)` has **already closed** the console with Ctrl+Shift+C; **never toggle it again** before **Space** (`SELECT_NEXT_HOUSEHOLD_SIM`; wraps after last portrait). The Space action requires a fresh `admitted_screen_lease`; another agent owning the screen must cause deferral, not blind selection. Already-complete skill×member cells in the durable completion ledger (`dist/game-host/diy-skill-force-completion.json`) are **skipped** while Space still advances so selection stays aligned. Each typed cheat line is recorded `DISPATCHED` immediately (resume/skip evidence only; **not** Skills-panel PASS). `--redo` ignores the ledger for that run. Bootstrap entry `python bootstrap.py household-skills` prints the recipe; with `-- --members N …` it forwards into the verified checkout — never on install/gui open. `--detach` is **rejected before launching any subprocess**. The foreground executor waits for trustworthy OS input idle ≥15000ms and rechecks admission. Only one screen-input owner should work on the skill job. `--roster-key` values must be the exact, stable, ordered portrait identities, not invented names; `--first-portrait-attested` is a local host/operator assertion that the initial selected portrait is the first. These arguments are not themselves visual evidence: any roster change or uncertain selection requires stopping and reobserving, never adding a household member. Residual ids: `Major_HomestyleCooking`, `Skill_Fitness`, `Skill_NLS`. Missing packs may no-op individual lines.
+**Household (skill-round-robin):** observe Live portrait count → `--members N` where **N is whatever that household is** (not an invented 8/10 ceiling). Dispatch order is **one skill × every portrait, then the next skill** (not all skills on one Sim before Space). Between cells, `_execute_plan(close_console=True)` has **already closed** the console with Ctrl+Shift+C; **never toggle it again** before **Space** (`SELECT_NEXT_HOUSEHOLD_SIM`; wraps after last portrait). The Space action requires a fresh `admitted_screen_lease`; another agent owning the screen must cause deferral, not blind selection. Already-complete skill×member cells in the durable completion ledger (`households/<profile-id>/<scope-id>.json`) are **skipped** while Space still advances so selection stays aligned. Each typed cheat line is recorded `DISPATCHED` immediately (resume/skip evidence only; **not** Skills-panel PASS). `--redo` ignores the ledger for that run. Bootstrap entry `python bootstrap.py household-skills` prints the recipe; with `-- --members N …` it forwards into the verified checkout — never on install/gui open. `--detach` is **rejected before launching any subprocess**. The foreground executor waits for trustworthy OS input idle ≥15000ms and rechecks admission. Only one screen-input owner should work on the skill job. `--roster-key` values must be the exact, stable, ordered portrait identities, not invented names; `--first-portrait-attested` is a local host/operator assertion that the initial selected portrait is the first. These arguments are not themselves visual evidence: any roster change or uncertain selection requires stopping and reobserving, never adding a household member. Residual ids: `Major_HomestyleCooking`, `Skill_Fitness`, `Skill_NLS`. Missing packs may no-op individual lines.
 
 ## P83 installation and ledger-proof correction (2026-11-09)
 
