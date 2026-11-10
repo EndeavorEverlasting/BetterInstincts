@@ -44,6 +44,17 @@ class PeripheralBoundaryTests(unittest.TestCase):
         for effect in ("OS_BLUETOOTH_SERVICE", "OS_DRIVER_OR_ADAPTER", "OS_INPUT_PREFERENCE"):
             self.assertTrue(authority["effect_classes"][effect]["decision"].startswith("DENY"))
 
+    def test_ontology_graph_owns_windows_peripheral_authority(self):
+        graph = json.loads((ROOT / "contracts/ontology.v1.json").read_text(encoding="utf-8"))
+        concept = graph["concepts"]["OS_PERIPHERAL_AUTHORITY"]
+        self.assertEqual(concept["canonical_owner"], "contracts/peripheral-authority.v1.json")
+        self.assertIn({"from": "CONTROL_PERMIT",
+                       "predicate": "DOES_NOT_GRANT_OS_REPAIR_AUTHORITY",
+                       "to": "OS_PERIPHERAL_AUTHORITY"}, graph["relations"])
+        invariants = {x["id"]: x for x in graph["invariants"]}
+        self.assertEqual(invariants["BI-ONT-025"]["term"],
+                         "GAME_AGENT_MUST_NOT_MUTATE_WINDOWS_PERIPHERALS")
+
     def test_repository_source_boundary(self):
         self.assertEqual(inspect_repository(ROOT), [], "Game source must not operate Bluetooth/driver/preferences")
 
