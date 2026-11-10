@@ -22,6 +22,10 @@ Owner: `contracts/upgrade-parts-force.v1.json#acquisition_routing` and `betterin
 
 The user's word **fuel** is ambiguous. Route generator refill resources to `generator_fuel`, and insect-farm biofuel to `insect_biofuel_filled_can` as distinct semantic IDs. Do not assert that an "insect biofuel-filled can" is sold by the computer, fabricated by Recycler, or has a specific live inventory label until observed. The Recycler is an upstream source of **bits/pieces**, not a verified source of bottled insect fuel. The candidate **instant UI** effect is not a universal 99% success claim: queue, delay, actor movement and actual output must be observed separately.
 
+## Insect biofuel farm production — designed, NOT automated
+
+For the screenshot-grounded **Collect Bio-Fuel / Nurture / Collect Cricket Flour / Clean Out Insect Farm** path, see [Insect Farm Biofuel](INSECT_FARM_BIOFUEL.md) and [the machine-readable phased design](../plans/active/BI-INSECT-FARM-BIOFUEL-DESIGN-20261110.v1.json). This design preserves an *N*-farm, any-portrait, health-aware source state machine, harvest-versus-food arbitration, queued actions, and separate generator inventory/fuel proof; **Clean Out** is never an autonomous maintenance action. These are research and implementation acceptance gates only: no harvest, cursor automation or new live service is coded or permitted by the design document. Exact game version and outcome evidence are pending.
+
 ## Runtime authority and non-goals
 
 - Use `betterinstincts/screen_admit.py` and the existing cooperative player-presence/desktop owner, with fresh per-effect admission, observed on-lot target, current UI/menu/actor context, bounded navigation and no active operator input. The catalog is **not a live SendInput executor**.
