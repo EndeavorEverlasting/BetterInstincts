@@ -67,9 +67,9 @@ def _scope(path: Any, root: str | Path) -> tuple[bool, str]:
         return False, "MISSING_OR_INVALID_PATH"
     root_s = str(root)
     # Reject Windows absolute paths when regression tests run on Linux.
-    if os.name != "nt" and not ntpath.isabs(root_s) and ntpath.splitdrive(path)[0]:
+    if os.name != "nt" and not ntpath.splitdrive(root_s)[0] and ntpath.splitdrive(path)[0]:
         return False, "OUTSIDE_REPOSITORY_OR_SYMLINK_ESCAPE"
-    if os.name == "nt" or ntpath.isabs(root_s):
+    if os.name == "nt" or ntpath.splitdrive(root_s)[0]:
         if os.name == "nt":
             base = Path(root_s).resolve()
             target = (Path(path) if Path(path).is_absolute() else base / path).resolve()
