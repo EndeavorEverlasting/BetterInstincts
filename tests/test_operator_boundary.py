@@ -66,7 +66,10 @@ class OperatorBoundaryTests(unittest.TestCase):
         self.assert_denies({"hook_event_name": "preToolUse", "tool_name": "Delete",
                             "tool_input": {"file_path": "docs/LEDGER.md"}})
         for path in ("AGENTS.md", ".cursor/hooks.json",
-                     ".cursor/rules/disable.mdc", "../OtherRepo/file.py",
+                     ".cursor/rules/disable.mdc", ".cursor/mcp.json",
+                     ".git/config", ".github/workflows/ci.yml",
+                     "secrets/.env", "local/private-key.pem",
+                     "../OtherRepo/file.py",
                      "../../Documents/Electronic Arts/The Sims 4/saves/Slot_00000007.save",
                      "C:\\Users\\Operator\\Documents\\Electronic Arts\\The Sims 4\\saves\\Slot_00000007.save"):
             with self.subTest(path=path):
@@ -74,6 +77,9 @@ class OperatorBoundaryTests(unittest.TestCase):
                                     "tool_input": {"file_path": path}})
         self.assert_denies({"hook_event_name": "preToolUse", "tool_name": "Write",
                             "tool_input": None})
+        for name in ("WriteFile", "UnknownShell", ""):
+            self.assert_denies({"hook_event_name": "preToolUse", "tool_name": name,
+                                "tool_input": {"file_path": "docs/LEDGER.md"}})
         self.assertEqual(boundary.evaluate({"hook_event_name": "preToolUse", "tool_name": "Write",
                                             "tool_input": {"file_path": "betterinstincts/priority.py"}})["permission"], "allow")
 
