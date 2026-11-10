@@ -222,3 +222,22 @@ def reset_toggle(key: str, path: Path | None = None,
     if key not in DEFAULTS:
         raise InstallationProfileError("SETTING_UNKNOWN")
     return set_toggle(key, DEFAULTS[key], path, profile_id=profile_id)
+
+
+def household_ledger_path(
+    *,
+    profile_id: str,
+    scope_id: str,
+    settings_file: Path | None = None,
+) -> Path:
+    """Private local state owner for one installation-profile/save/household.
+
+    This does not create a file or scan saves. The caller must bind observed
+    portrait identities through household_judgment.bind_household_scope first.
+    """
+    if not isinstance(scope_id, str) or not re.fullmatch(r"[0-9a-f]{64}", scope_id):
+        raise InstallationProfileError("HOUSEHOLD_SCOPE_ID_INVALID")
+    settings_file = settings_path() if settings_file is None else Path(settings_file)
+    _safe_path(settings_file)
+    view(settings_file, profile_id=profile_id)  # Existing named profile only.
+    return settings_file.parent / "households" / profile_id / (scope_id + ".json")
