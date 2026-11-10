@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "python .cursor/hooks/operator_boundary.py",
+        "timeout": 10,
+        "failClosed": true
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "python .cursor/hooks/operator_boundary.py",
+        "matcher": "Shell|Terminal|Bash|PowerShell|Write|Edit|ApplyPatch|Delete",
+        "timeout": 10,
+        "failClosed": true
+      }
+    ]
+  }
+}
