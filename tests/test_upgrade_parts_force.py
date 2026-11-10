@@ -23,10 +23,12 @@ class UpgradePartsForceTests(unittest.TestCase):
     def test_contract_household_budget_architecture(self):
         cfg = load_contract()
         self.assertEqual(cfg["architecture"]["selected"], "HOUSEHOLD_DIY_PARTS_BUDGET")
-        self.assertEqual(cfg["version"], 2)
+        self.assertEqual(cfg["version"], 3)
         self.assertEqual(cfg["household_budget"]["selected"], "PER_SIM_POCKET_STOCK")
         self.assertEqual(cfg["household_budget"]["preferred_acquisition_order"][0], "spawn")
         self.assertIn("phone", cfg["paths"])
+        self.assertEqual(len(cfg["computer_purchase_menu"]["part_ids"]), 5)
+        self.assertEqual(cfg["paths"]["computer"]["steps_template"][6]["op"], "DISCOVER_NESTED_MENU")
         self.assertIn("gsi_create_obj", cfg["forbidden"])
         self.assertTrue(cfg["offline_install"]["forbid_ea_online_connect"])
         self.assertEqual(cfg["offline_install"]["connection_required_dialog"], "STAY_OFFLINE_ONLY")

@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from betterinstincts.computer_upgrade_parts import menu_catalog, plan_computer_purchase
 from betterinstincts.upgrade_parts_force import (
     UpgradePartsForceError,
     budget_snapshot,
@@ -50,6 +51,10 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("catalog", help="List upgrade-part catalog + path summaries")
     sub.add_parser("budget", help="Show DIY kit pocket-stock targets")
+    sub.add_parser("computer-menu", help="Passive verified five-part menu and on-demand interaction guide")
+    cp = sub.add_parser("computer-intent", help="Passive one-step-at-a-time computer purchase command plan; no UI effects")
+    cp.add_argument("--part", default="robot_salvage_parts")
+    cp.add_argument("--quantity", type=int, default=1)
 
     how = sub.add_parser("how-to-buy", help="Print phone/computer Order path")
     how.add_argument("--part", default="robot_salvage_parts")
@@ -94,6 +99,10 @@ def main(argv: list[str] | None = None) -> int:
             return _print(catalog_snapshot())
         if args.cmd == "budget":
             return _print(budget_snapshot())
+        if args.cmd == "computer-menu":
+            return _print(menu_catalog())
+        if args.cmd == "computer-intent":
+            return _print(plan_computer_purchase(args.part, args.quantity))
         if args.cmd == "how-to-buy":
             return _print(how_to_buy(args.part))
         if args.cmd == "plan":

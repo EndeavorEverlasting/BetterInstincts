@@ -84,6 +84,31 @@ def load_contract(path: Path = CONTRACT) -> dict:
     how = (cfg.get("how_to_buy") or {}).get("robot_salvage_parts") or {}
     if "Purchase Upgrade Parts" not in " ".join(how.get("steps") or []):
         raise UpgradePartsForceError("HOW_TO_BUY_MUST_NAME_PURCHASE_UPGRADE_PARTS")
+    if int(cfg.get("version") or 0) >= 3:
+        menu = cfg.get("computer_purchase_menu") or {}
+        observed = menu.get("part_ids") or []
+        expected = {
+            "common_upgrade_parts", "electronic_upgrade_parts",
+            "kitchen_upgrade_parts", "plumbing_upgrade_parts",
+            "robot_salvage_parts",
+        }
+        if not isinstance(observed, list) or len(observed) != 5 or set(observed) != expected:
+            raise UpgradePartsForceError("COMPUTER_MENU_PARTS_INCOMPLETE")
+        if menu.get("session_authority") != "EXPLICIT_USER_COMMAND_THEN_COOPERATIVE_QUEUE; NO_AUTORUN":
+            raise UpgradePartsForceError("COMPUTER_MENU_AUTORUN_FORBIDDEN")
+        if menu.get("fixed_menu_depth") is not None:
+            raise UpgradePartsForceError("COMPUTER_MENU_FIXED_DEPTH_FORBIDDEN")
+        if not 1 <= int(menu.get("max_menu_pages") or 0) <= 32:
+            raise UpgradePartsForceError("COMPUTER_MENU_DEPTH_BOUND_REQUIRED")
+        computer_steps = (paths.get("computer") or {}).get("steps_template") or []
+        if not any(step.get("op") == "DISCOVER_NESTED_MENU" for step in computer_steps):
+            raise UpgradePartsForceError("COMPUTER_MENU_SEMANTIC_DISCOVERY_REQUIRED")
+        if any(x not in set(menu.get("prohibited_effects") or []) for x in (
+            "BLUETOOTH_SERVICE_CHANGE", "OS_SERVICE_CHANGE",
+            "DRIVER_ADAPTER_CHANGE", "PAIRING_CHANGE",
+            "INPUT_PREFERENCE_CHANGE", "UAC_CHANGE", "EA_CONNECT",
+        )):
+            raise UpgradePartsForceError("COMPUTER_MENU_OS_BOUNDARY_REQUIRED")
     return cfg
 
 
@@ -154,6 +179,7 @@ def catalog_snapshot(cfg: Optional[dict] = None) -> dict:
             for key, val in (cfg.get("paths") or {}).items()
         },
         "quantity": dict(cfg["quantity"]),
+        "computer_purchase_menu": {k: v for k, v in (cfg.get("computer_purchase_menu") or {}).items() if k in ("part_ids", "target_label", "evidence_source", "max_menu_pages")},
         "forbidden": list(cfg.get("forbidden") or []),
         "proof_ceiling": cfg["proof_ceiling"],
         "execute_allowed": False,
@@ -199,13 +225,13 @@ def how_to_buy(part_id: str = "robot_salvage_parts", *, cfg: Optional[dict] = No
     if not isinstance(guide, dict):
         guide = {
             "summary": (
-                "Phone or computer → Order → Purchase Upgrade Parts → "
+                "Computer interactions → discover Purchase Upgrade Parts → "
                 + str(part.get("display_name") or part["id"])
             ),
             "steps": [
                 "Select the Sim who needs the parts.",
-                "Open phone or click any computer/laptop.",
-                "Choose Order → Purchase Upgrade Parts.",
+                "Click an observed computer/laptop while Live Mode is paused.",
+                "Discover currently visible nested menu labels until Purchase Upgrade Parts appears.",
                 "Select " + str(part.get("display_name") or part["id"]) + " and confirm.",
                 "Repeat to spam-buy additional units into pocket inventory.",
             ],
