@@ -779,7 +779,9 @@ def tick(
         tick_path = path / f"tick-{ticks:04d}.json"
         if chance_event_advisory is not None:
             receipt["chance_event"] = chance_event_advisory
-        if spatial_report is not None:\n            receipt["spatial_perception"] = spatial_report\n        _write_json(tick_path, receipt)
+        if spatial_report is not None:
+            receipt["spatial_perception"] = spatial_report
+        _write_json(tick_path, receipt)
         receipt["receipt"] = str(tick_path.relative_to(ROOT))
         return receipt
 
@@ -895,7 +897,9 @@ def tick(
         tick_path = path / f"tick-{ticks:04d}.json"
         if chance_event_advisory is not None:
             receipt["chance_event"] = chance_event_advisory
-        if spatial_report is not None:\n            receipt["spatial_perception"] = spatial_report\n        _write_json(tick_path, receipt)
+        if spatial_report is not None:
+            receipt["spatial_perception"] = spatial_report
+        _write_json(tick_path, receipt)
         receipt["receipt"] = str(tick_path.relative_to(ROOT))
         return receipt
 
@@ -1082,6 +1086,8 @@ def tick(
     tick_path = path / f"tick-{ticks + 1:04d}.json"
     if chance_event_advisory is not None:
         receipt["chance_event"] = chance_event_advisory
-    if spatial_report is not None:\n        receipt["spatial_perception"] = spatial_report\n    _write_json(tick_path, receipt)
+    if spatial_report is not None:
+        receipt["spatial_perception"] = spatial_report
+    _write_json(tick_path, receipt)
     receipt["receipt"] = str(tick_path.relative_to(ROOT))
     return receipt
