@@ -26,6 +26,8 @@ Examples:
   python -m scripts.diy_skill_force reward-check --trait trait_Evil
   python -m scripts.diy_skill_force ui-check --action ESCAPE --context household_traverse
   python -m scripts.diy_skill_force catalog
+  python -m scripts.diy_skill_force commands --bundle remote_income
+  python -m scripts.diy_skill_force skills-inventory-plan --pages 8
   python -m scripts.diy_skill_force plan --bundle full_unlock
   python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID
   python -m scripts.diy_skill_force household --members 3 --bundle full_unlock
@@ -51,27 +53,33 @@ from betterinstincts.diy_skill_force import (
     assess_console_type_safety,
     assess_selection_identity,
     catalog_snapshot,
+    canonical_skill_commands,
     completed_skill_ids_for_member,
-    decide_reward_dialog,
-    plan_trait_repair,
-    trait_repair_commands,
-    evaluate_member_skill_levels,
-    evaluate_ui_action,
     completion_member_key,
+    decide_reward_dialog,
     default_completion_ledger_path,
     empty_completion_ledger,
+    evaluate_member_skill_levels,
+    evaluate_ui_action,
+    gap_targets_from_observed_levels,
     load_completion_ledger,
+    member_observed_levels_from_ledger,
+    plan_force_gaps_beat,
     plan_household_skill_force,
     plan_skill_force,
+    plan_skills_panel_inventory,
     plan_target_sim_skill_algorithm,
+    plan_trait_repair,
     record_member_panel_snapshot,
     record_skill_dispatched,
     record_skill_panel_observed,
+    resolve_force_gap_commands,
     resolve_skill_ref,
     save_completion_ledger,
     set_household_roster,
     skills_panel_observation_policy,
     steps_to_commands,
+    trait_repair_commands,
 )
 
 OUTPUT = ROOT / "dist" / "game-host"
@@ -180,77 +188,256 @@ def _wait_for_input_idle(
         time.sleep(poll_sec)
 
 
-def _focus(process_id: int | None, *, click_client: bool = False) -> dict:
-    """Soft-focus Sims without stealing Build tools (no center click by default)."""
+def _snapshot_operator_foreground() -> dict:
+    """Remember which app the operator is actually using (YouTube, browser, …)."""
+    import ctypes
+
+    user32 = ctypes.windll.user32
+    hwnd = int(user32.GetForegroundWindow() or 0)
+    return {
+        "hwnd": hwnd,
+        "step": "SNAPSHOT_OPERATOR_FOREGROUND",
+    }
+
+
+def _restore_operator_foreground(prior_hwnd: int | None, *, sims_hwnd: int | None = None) -> dict:
+    """Give the operator their app back after a brief Sims input borrow.
+
+    Interruptibility: never leave the user trapped in Sims after an agent tick.
+    If prior was Sims or invalid, no-op restore.
+    """
+    import ctypes
+
+    user32 = ctypes.windll.user32
+    KEYEVENTF_KEYUP = 0x0002
+    VK_MENU = 0x12
+    prior = int(prior_hwnd or 0)
+    sims = int(sims_hwnd or 0)
+    if prior <= 0 or not user32.IsWindow(prior):
+        return {"step": "RESTORE_OPERATOR_FOREGROUND", "restored": False, "reason": "NO_VALID_PRIOR"}
+    if sims and prior == sims:
+        return {"step": "RESTORE_OPERATOR_FOREGROUND", "restored": False, "reason": "PRIOR_WAS_SIMS"}
+    if user32.GetForegroundWindow() == prior:
+        return {"step": "RESTORE_OPERATOR_FOREGROUND", "restored": True, "already": True, "hwnd": prior}
+    fg = user32.GetForegroundWindow()
+    tid_fg = user32.GetWindowThreadProcessId(fg, None)
+    tid_t = user32.GetWindowThreadProcessId(prior, None)
+    attached = False
+    if tid_fg and tid_t and tid_fg != tid_t:
+        attached = bool(user32.AttachThreadInput(tid_fg, tid_t, True))
+    try:
+        user32.AllowSetForegroundWindow(-1)
+        user32.BringWindowToTop(prior)
+        user32.SetForegroundWindow(prior)
+        user32.SetActiveWindow(prior)
+    finally:
+        if attached:
+            user32.AttachThreadInput(tid_fg, tid_t, False)
+    time.sleep(0.08)
+    if user32.GetForegroundWindow() != prior:
+        user32.keybd_event(VK_MENU, 0, 0, 0)
+        time.sleep(0.02)
+        user32.keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
+        user32.AllowSetForegroundWindow(-1)
+        user32.SetForegroundWindow(prior)
+        time.sleep(0.08)
+    ok = user32.GetForegroundWindow() == prior
+    return {
+        "step": "RESTORE_OPERATOR_FOREGROUND",
+        "restored": bool(ok),
+        "hwnd": prior,
+        "interop": "borrow_restore",
+    }
+
+
+def _borrow_sims_foreground(
+    process_id: int | None,
+    *,
+    settle_for_interop_idle: bool = False,
+    retries: int = 2,
+) -> dict:
+    """Briefly borrow Sims foreground for one authorized input effect.
+
+    Operator may be in any other app (YouTube, browser, IDE). Live hotkeys need
+    Sims focused briefly — then callers MUST restore the operator app.
+    Does not replace the 15s interop idle gate. Mid-beat borrows stay fast;
+    settle_for_interop_idle=True only when a new screen_admit lease follows Alt.
+    """
     import ctypes
 
     from scripts.game_host import focus
 
+    if process_id is None:
+        raise GateError("PROCESS_ID_REQUIRED_FOR_SIMS_INPUT_BORROW")
     report = focus(process_id=process_id)
     user32 = ctypes.windll.user32
     hwnd = int(report["hwnd"])
     VK_MENU = 0x12
-    user32.keybd_event(VK_MENU, 0, 0, 0)
-    user32.keybd_event(VK_MENU, 0, 2, 0)
-    fg = user32.GetForegroundWindow()
-    tid_fg = user32.GetWindowThreadProcessId(fg, None)
-    tid_t = user32.GetWindowThreadProcessId(hwnd, None)
-    user32.AttachThreadInput(tid_fg, tid_t, True)
-    user32.BringWindowToTop(hwnd)
-    user32.AllowSetForegroundWindow(-1)
-    user32.SetForegroundWindow(hwnd)
-    user32.SetActiveWindow(hwnd)
-    user32.AttachThreadInput(tid_fg, tid_t, False)
-    # Synthetic Alt unlock counts as last-input; age past interop idle (15s)
-    # so screen_admit confirm does not immediately PAUSE_FOR_PLAYER.
-    time.sleep(15.25)
+    KEYEVENTF_KEYUP = 0x0002
+    used_alt_unlock = False
+    fg_ok = False
+    attempts = max(1, int(retries) + 1)
+    for _attempt in range(attempts):
+        if user32.GetForegroundWindow() == hwnd:
+            fg_ok = True
+            break
+        fg = user32.GetForegroundWindow()
+        tid_fg = user32.GetWindowThreadProcessId(fg, None)
+        tid_t = user32.GetWindowThreadProcessId(hwnd, None)
+        attached = False
+        if tid_fg and tid_t and tid_fg != tid_t:
+            attached = bool(user32.AttachThreadInput(tid_fg, tid_t, True))
+        try:
+            # Do not ShowWindow(SW_RESTORE) unless iconic — avoid yanking maximized
+            # YouTube layouts more than necessary when Sims is already shown.
+            if user32.IsIconic(hwnd):
+                user32.ShowWindow(hwnd, 9)
+            user32.AllowSetForegroundWindow(-1)
+            user32.SetForegroundWindow(hwnd)
+            user32.SetActiveWindow(hwnd)
+            user32.SetFocus(hwnd)
+        finally:
+            if attached:
+                user32.AttachThreadInput(tid_fg, tid_t, False)
+        time.sleep(0.1)
+        if user32.GetForegroundWindow() == hwnd:
+            fg_ok = True
+            break
+        user32.keybd_event(VK_MENU, 0, 0, 0)
+        time.sleep(0.02)
+        user32.keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
+        used_alt_unlock = True
+        user32.AllowSetForegroundWindow(-1)
+        user32.SetForegroundWindow(hwnd)
+        user32.SetActiveWindow(hwnd)
+        time.sleep(0.1)
+        if user32.GetForegroundWindow() == hwnd:
+            fg_ok = True
+            break
+    if used_alt_unlock and settle_for_interop_idle:
+        time.sleep(15.25)
+    report["foreground_ok"] = bool(fg_ok)
+    report["used_alt_unlock"] = bool(used_alt_unlock)
+    report["settle_for_interop_idle"] = bool(settle_for_interop_idle)
+    report["borrow"] = True
+    report["foreground_owner"] = "scripts.diy_skill_force._borrow_sims_foreground"
+    if not fg_ok:
+        raise GateError("SIMS_FOREGROUND_BORROW_FAILED_OPERATOR_APP_STILL_FOREGROUND")
+    return report
+
+
+def _with_sims_input_borrow(
+    process_id: int | None,
+    effect,
+    *,
+    idle_ms: int = 15000,
+    wait_for_operator_idle: bool = True,
+    wait_idle_timeout_sec: float = 600.0,
+):
+    """Wait for operator idle → snapshot app → borrow Sims → effect → restore.
+
+    Interruptibility (ASYNC_INTEROP): any mouse motion or keyboard activity
+    restarts the wait. Work is retained; this is the in-process resume path
+    (CooperativeScreenQueue / host_listener tick) — not an OS cron, Task
+    Scheduler, or background daemon. After >= idle_ms trusted quiet, borrow
+    Sims briefly, run one effect, restore the operator's app (YouTube, …).
+    """
+    from betterinstincts.control_handoff import MIN_IDLE_MS
+
+    idle_wait = None
+    need = max(int(MIN_IDLE_MS), int(idle_ms))
+    if wait_for_operator_idle and process_id is not None:
+        idle_wait = _wait_for_input_idle(
+            int(process_id),
+            idle_ms=need,
+            timeout_sec=float(wait_idle_timeout_sec),
+            poll_sec=0.5,
+        )
+    snap = _snapshot_operator_foreground()
+    borrow = _borrow_sims_foreground(
+        process_id,
+        settle_for_interop_idle=False,
+        retries=2,
+    )
+    sims_hwnd = int(borrow["hwnd"])
+    try:
+        result = effect()
+    finally:
+        restore = _restore_operator_foreground(snap.get("hwnd"), sims_hwnd=sims_hwnd)
+    return {
+        "idle_wait": idle_wait,
+        "snapshot": snap,
+        "borrow": borrow,
+        "restore": restore,
+        "result": result,
+        "resume_owner": "scripts.diy_skill_force._wait_for_input_idle",
+        "not": ["OS_CRON", "TASK_SCHEDULER", "BACKGROUND_DAEMON"],
+    }
+
+
+def _focus(process_id: int | None, *, click_client: bool = False) -> dict:
+    """Soft-focus Sims without stealing Build tools (no center click by default)."""
+    report = _borrow_sims_foreground(
+        process_id,
+        settle_for_interop_idle=True,
+        retries=2,
+    )
     if click_client:
+        import ctypes
         from ctypes import wintypes
 
+        from scripts.win32_input import send_click
+
+        user32 = ctypes.windll.user32
+        hwnd = int(report["hwnd"])
         rect = wintypes.RECT()
         user32.GetClientRect(hwnd, ctypes.byref(rect))
         pt = wintypes.POINT(rect.right // 2, rect.bottom // 2)
         user32.ClientToScreen(hwnd, ctypes.byref(pt))
-        from scripts.win32_input import send_click
-
         send_click(int(pt.x), int(pt.y), between_sec=0.04)
         time.sleep(0.2)
-    fg_ok = user32.GetForegroundWindow() == hwnd
-    report["foreground_ok"] = fg_ok
     report["soft_focus"] = not click_client
-    if not fg_ok:
-        raise GateError("SIMS_FOREGROUND_REQUIRED_FOR_CHEAT_CONSOLE")
     return report
 
 
 def _play_brief_observe_repause(
     *,
+    process_id: int | None = None,
     play_seconds: int | None = None,
     play_key: str = "1",
     pause_key: str = "0",
 ) -> dict:
     """Bounded Live tick for Skills-panel refresh, then always re-pause.
 
-    Robust verify: play 5–10s @ 1x → caller captures/analyzes → pause (0).
-    Never leaves sim speed running. Not main-menu Resume.
+    Interruptible verify:
+    1) borrow Sims → arm → press play → restore operator app
+    2) wait play_seconds while operator keeps their app (YouTube, …)
+    3) borrow Sims → arm → press pause → restore operator app
+
+    Never leaves the operator trapped in Sims. Not main-menu Resume.
     """
-    from scripts.win32_input import type_text
+    from scripts.win32_input import send_key_chord
 
     policy = skills_panel_observation_policy(purpose="verify")
     seconds = int(play_seconds if play_seconds is not None else policy["play_seconds"])
     seconds = max(int(policy["min_play_seconds"]), min(int(policy["max_play_seconds"]), seconds))
     play = str(play_key or policy["play_key"] or "1")[:1]
     pause = str(pause_key or policy["pause_key"] or "0")[:1]
-    # Speed keys must hit Live HUD. Caller must close the cheat console first
-    # (see _execute_plan); if console is open, '1'/'0' become console text.
-    from scripts.win32_input import send_click
 
-    send_click(960, 400, between_sec=0.04)
-    time.sleep(0.15)
-    type_text(play)
+    def _press_play():
+        # No terrain RMB — map clicks are noise (operator 2026-11-10).
+        send_key_chord([play], down_sec=0.06, after_sec=0.12, via="keybd_event")
+        return {"pressed": play}
+
+    def _press_pause():
+        send_key_chord([pause], down_sec=0.06, after_sec=0.12, via="keybd_event")
+        return {"pressed": pause}
+
+    play_tick = _with_sims_input_borrow(process_id, _press_play)
+    # Operator app restored — wait while they keep watching / working.
     time.sleep(float(seconds))
-    type_text(pause)
-    time.sleep(0.35)
+    pause_tick = _with_sims_input_borrow(process_id, _press_pause)
+    time.sleep(0.2)
     return {
         "step": "PLAY_BRIEF_OBSERVE_REPAUSE",
         "action": "PLAY_BRIEF_OBSERVE_REPAUSE",
@@ -258,8 +445,15 @@ def _play_brief_observe_repause(
         "pause_key": pause,
         "play_seconds": seconds,
         "always_repause": True,
+        "interruptible": True,
+        "no_terrain_rmb": True,
+        "play_tick": play_tick,
+        "pause_tick": pause_tick,
         "panel_status": "FRESH_PANEL_AFTER_PLAY_BRIEF",
-        "note": "Capture Skills panel between play and pause; do not leave clock running.",
+        "note": (
+            "Borrow Sims for 1/0 only — no map/terrain clicks. Restore "
+            "operator app during the wait."
+        ),
     }
 
 
@@ -397,13 +591,15 @@ def _execute_plan(
         except HandoffError as exc:
             raise GateError(str(exc)) from exc
         handoff = {**handoff, "idle_wait": idle_wait}
+        operator_snap = _snapshot_operator_foreground()
         focus_report = _focus(process_id)
         hwnd = int(focus_report["hwnd"])
         time.sleep(0.2)
-        # Durable console open in whatever mode the operator is in: Ctrl+Shift+C
-        _toggle_cheat_console()
+        # Hold Sims for the typed batch; restore operator app after close.
+        _toggle_cheat_console(process_id=int(process_id), restore_operator=False)
         time.sleep(0.15)
         _refocus_cheat_console()
+        console_field_focused = True
         dispatched: list[str] = []
         reward_accepts: list[dict] = []
         testing_alias_sent = False
@@ -411,11 +607,12 @@ def _execute_plan(
             name = str(step.get("step") or "")
             if name == "ACTIVATE_TESTING_CHEATS":
                 cmd = str(step.get("command") or "")
-                _type_cheat_line(cmd)
+                _type_cheat_line(cmd, refocus_strip=not console_field_focused)
+                console_field_focused = True
                 dispatched.append(cmd)
                 alias = step.get("alias")
                 if isinstance(alias, str) and alias.strip() and not testing_alias_sent:
-                    _type_cheat_line(alias.strip())
+                    _type_cheat_line(alias.strip(), refocus_strip=False)
                     dispatched.append(alias.strip())
                     testing_alias_sent = True
                 continue
@@ -423,7 +620,8 @@ def _execute_plan(
                 cmd = str(step.get("command") or "")
                 if not cmd:
                     continue
-                _type_cheat_line(cmd)
+                _type_cheat_line(cmd, refocus_strip=not console_field_focused)
+                console_field_focused = True
                 dispatched.append(cmd)
                 if completion_ledger_path is not None:
                     mkey = member_key or completion_member_key(
@@ -447,16 +645,21 @@ def _execute_plan(
                 continue
         if close_console or verify_skills_panel:
             # Never Esc-close: Esc opens pause MENU and breaks household traverse.
-            _toggle_cheat_console()
+            _toggle_cheat_console(process_id=int(process_id), restore_operator=False)
             time.sleep(0.25)
+        _restore_operator_foreground(operator_snap.get("hwnd"), sims_hwnd=hwnd)
         panel_verify = None
         if verify_skills_panel:
-            panel_verify = _play_brief_observe_repause(play_seconds=verify_play_seconds)
+            panel_verify = _play_brief_observe_repause(
+                process_id=int(process_id),
+                play_seconds=verify_play_seconds,
+            )
     cursor_rest = _park_safe_cursor_rest()
     return {
         "state": "DIY_SKILL_FORCE_DISPATCHED",
         "commands": dispatched,
         "safe_cursor_rest": cursor_rest,
+        "interruptible_borrow_restore": True,
         "reward_accepts": reward_accepts,
         "accept_reward_dialogs": bool(plan.get("accept_reward_dialogs")),
         "typing_owner": plan.get("typing_owner", "scripts/win32_input.type_text"),
@@ -491,23 +694,72 @@ def _execute_plan(
     }
 
 
-def _toggle_cheat_console() -> dict:
+def _toggle_cheat_console(
+    *,
+    process_id: int | None = None,
+    restore_operator: bool = True,
+) -> dict:
     """Open/close cheat console via Ctrl+Shift+C.
 
     Prefer this over Escape: Esc while Live often opens the pause MENU and
     blocks household Space-traverse / skill typing.
 
-    Use send_key_chord so modifiers stay held for the C tap. A bare
-    send_vk/tap_vk sequence can drop SHIFT and fire screenshot (C) instead.
+    Interruptible by default (borrow → chord → restore). When about to type
+    cheat lines, pass restore_operator=False and restore only after the batch
+    closes — otherwise keystrokes land in the operator's other app.
     """
     from scripts.win32_input import send_key_chord
 
-    send_key_chord(["CTRL", "SHIFT", "C"], down_sec=0.06, after_sec=0.35)
-    time.sleep(0.15)
+    def _chord():
+        send_key_chord(
+            ["CTRL", "SHIFT", "C"],
+            down_sec=0.08,
+            after_sec=0.4,
+            via="keybd_event",
+        )
+        time.sleep(0.15)
+        return True
+
+    if process_id is None:
+        _chord()
+        return {
+            "step": "TOGGLE_CHEAT_CONSOLE",
+            "chord": "Ctrl+Shift+C",
+            "chord_owner": "scripts.win32_input.send_key_chord",
+            "chord_via": "keybd_event",
+            "interruptible": False,
+            "note": "No process_id — chord without borrow/restore",
+        }
+    if restore_operator:
+        tick = _with_sims_input_borrow(int(process_id), _chord)
+        return {
+            "step": "TOGGLE_CHEAT_CONSOLE",
+            "chord": "Ctrl+Shift+C",
+            "chord_owner": "scripts.win32_input.send_key_chord",
+            "chord_via": "keybd_event",
+            "interruptible": True,
+            "foreground_ok": bool((tick.get("borrow") or {}).get("foreground_ok")),
+            "borrow_restore": tick,
+        }
+    # Keep Sims focused for an imminent type batch; caller restores after close.
+    snap = _snapshot_operator_foreground()
+    borrow = _borrow_sims_foreground(
+        int(process_id),
+        settle_for_interop_idle=False,
+        retries=2,
+    )
+    _chord()
     return {
         "step": "TOGGLE_CHEAT_CONSOLE",
         "chord": "Ctrl+Shift+C",
         "chord_owner": "scripts.win32_input.send_key_chord",
+        "chord_via": "keybd_event",
+        "interruptible": False,
+        "held_for_type_batch": True,
+        "foreground_ok": bool(borrow.get("foreground_ok")),
+        "borrow": borrow,
+        "operator_hwnd_to_restore": snap.get("hwnd"),
+        "sims_hwnd": int(borrow.get("hwnd") or 0),
     }
 
 
@@ -530,44 +782,90 @@ def _park_safe_cursor_rest() -> dict:
     return park_safe_cursor_rest()
 
 
-def _type_cheat_line(cmd: str) -> None:
+def _type_cheat_line(cmd: str, *, refocus_strip: bool = True) -> None:
     """Type one cheat and submit with embedded newline via type_text.
 
     Live cert (P83): computer_type newlines do not submit Sims console lines.
-    Durable path: refocus strip → type_text(cmd + '\\n') so keybd_event Enter
-    is part of the same typing owner (proven LOCAL_OBSERVED on Servo level-ups).
+    After Ctrl+Shift+C the game host focuses the cheat field — skip per-line
+    strip re-click while that focus holds (operator correction 2026-11-09).
     """
     from scripts.win32_input import type_text
 
-    _refocus_cheat_console()
+    if refocus_strip:
+        _refocus_cheat_console()
     line = str(cmd).rstrip("\r\n")
     type_text(line + "\n")
     time.sleep(0.45)
 
 
-def _arm_live_hotkeys(*, world_xy: tuple[int, int] | None = None) -> dict:
-    """Left-click world, then right-click cancel options so Live hotkeys work.
+def _arm_live_hotkeys(
+    *,
+    process_id: int | None = None,
+    world_xy: tuple[int, int] | None = None,
+    restore_operator: bool = True,
+) -> dict:
+    """Borrow Sims → terrain RMB → restore operator app (interruptible arm).
 
-    Operator rule (repository skill live-hotkey-arm): left-click ensures focus
-    is in the game; right-click cancels the options so that the hotkeys work.
-    Cancel RMB is NOT RIGHT_CLICK_VIEW portrait follow.
+    Live hotkeys need Sims focused for the RMB arm, but the operator may be in
+    YouTube or any other app. Default path snapshots their foreground, borrows
+    Sims for the terrain right-click, then restores them. Pass
+    restore_operator=False when the caller already wraps a borrow (e.g. play
+    brief) so we do not double-restore mid-effect. Terrain RMB is NOT
+    RIGHT_CLICK_VIEW portrait follow.
     """
     from betterinstincts.diy_skill_force import plan_live_hotkey_arm
-    from scripts.win32_input import send_click, send_right_click
+    from scripts.win32_input import send_right_click
 
+    # Skill-force: pin the contract default arm point. Roaming street corners /
+    # map clicks / zoom is operator-forbidden noise and does not level skills.
     plan = plan_live_hotkey_arm(
-        world_client_xy=list(world_xy) if world_xy is not None else None,
+        world_client_xy=None if world_xy is None else list(world_xy),
     )
+    if world_xy is not None:
+        default = list(plan.get("world_client_xy") or [880, 480])
+        # Allow explicit override only when it matches the pinned default;
+        # otherwise force the pinned point (ignore roam coords like 1200,700).
+        if [int(world_xy[0]), int(world_xy[1])] != [int(default[0]), int(default[1])]:
+            plan = plan_live_hotkey_arm(world_client_xy=None)
     x, y = int(plan["world_client_xy"][0]), int(plan["world_client_xy"][1])
-    # Keep cursor on the world point between LMB and RMB so cancel hits the pie.
-    send_click(x, y, between_sec=0.05, safe_rest_after=False)
-    time.sleep(0.2)
-    send_right_click(x, y, between_sec=0.05, safe_rest_after=True)
-    time.sleep(0.15)
+
+    def _rmb():
+        send_right_click(x, y, between_sec=0.05, safe_rest_after=True)
+        time.sleep(0.15)
+        return {"world_xy": [x, y], "pinned_arm": True}
+
+    if process_id is None:
+        _rmb()
+        return {
+            "step": "ARM_LIVE_HOTKEYS",
+            "world_xy": [x, y],
+            "order": list(plan["order"]),
+            "interruptible": False,
+            "repository_skill": plan.get("repository_skill"),
+            "note": plan.get("select_note"),
+        }
+
+    if restore_operator:
+        tick = _with_sims_input_borrow(int(process_id), _rmb)
+        return {
+            "step": "ARM_LIVE_HOTKEYS",
+            "world_xy": [x, y],
+            "order": list(plan["order"]),
+            "interruptible": True,
+            "borrow_restore": tick,
+            "foreground_ok": bool((tick.get("borrow") or {}).get("foreground_ok")),
+            "repository_skill": plan.get("repository_skill"),
+            "note": plan.get("select_note"),
+        }
+
+    # Nested inside an outer borrow — Sims already foreground.
+    _rmb()
     return {
         "step": "ARM_LIVE_HOTKEYS",
         "world_xy": [x, y],
         "order": list(plan["order"]),
+        "interruptible": False,
+        "nested_borrow": True,
         "repository_skill": plan.get("repository_skill"),
         "note": plan.get("select_note"),
     }
@@ -876,11 +1174,219 @@ def _add_common_execute_flags(ap: argparse.ArgumentParser) -> None:
     )
 
 
+def _keybd_tap(vk: int) -> None:
+    import ctypes
+
+    user32 = ctypes.windll.user32
+    keyup = 0x0002
+    user32.keybd_event(vk, 0, 0, 0)
+    time.sleep(0.05)
+    user32.keybd_event(vk, 0, keyup, 0)
+    time.sleep(0.12)
+
+
+def execute_force_gaps(
+    *,
+    process_id: int,
+    member_key: str,
+    portrait_xy: tuple[int, int],
+    session_id: str = "household-n4-20261109",
+    bundle: str = "full_unlock",
+    target_level: int = 10,
+    redo: bool = False,
+    always_include: list[str] | None = None,
+    console_strip_observed: bool = False,
+    idle_ms: int = 15000,
+    play_seconds: int = 7,
+    scroll_inventory: bool = True,
+    completion_ledger_path: Path | None = None,
+) -> dict:
+    """Select portrait, type gap cheats (canonical spelling), play, optional scroll.
+
+    Codifies the Live force path so agents stop re-authoring one-shot scripts.
+    Never presses lone V (video). Away desk is not a busy invent.
+    """
+    from scripts.win32_input import (
+        left_drag,
+        park_safe_cursor_rest,
+        send_click,
+        send_right_click,
+        send_wheel,
+        type_text,
+    )
+
+    safety = assess_console_type_safety(console_strip_observed=console_strip_observed)
+    if safety.get("state") != "CONSOLE_TYPE_ALLOWED":
+        raise GateError("CONSOLE_STRIP_REQUIRED_BEFORE_FORCE_GAPS")
+
+    ledger_path = (
+        Path(completion_ledger_path)
+        if completion_ledger_path is not None
+        else default_completion_ledger_path()
+    )
+    ledger = load_completion_ledger(ledger_path)
+    mk = completion_member_key(session_id, 0, member_key)
+    observed = member_observed_levels_from_ledger(ledger, mk)
+    plan = plan_force_gaps_beat(
+        member_key=member_key,
+        portrait_client_xy=portrait_xy,
+        bundle=bundle,
+        target_level=target_level,
+        redo=redo,
+        always_include=always_include,
+        observed_levels=observed,
+    )
+    rows = list((plan.get("gaps") or {}).get("rows") or [])
+    if not rows:
+        return {
+            "state": "FORCE_GAPS_EMPTY",
+            "member_key": member_key,
+            "plan": plan,
+            "note": "No gap commands — ledger already PANEL_OBSERVED_MAX for bundle",
+        }
+
+    idle = _wait_for_input_idle(int(process_id), idle_ms=int(idle_ms), timeout_sec=180.0)
+    if idle.get("state") != "INPUT_IDLE_READY":
+        raise GateError(f"NOT_IDLE:{idle}")
+
+    snap = _snapshot_operator_foreground()
+    borrow = _borrow_sims_foreground(int(process_id), settle_for_interop_idle=False, retries=2)
+    hwnd = int(borrow["hwnd"])
+    typed: list[str] = []
+    try:
+        _arm_live_hotkeys(process_id=int(process_id), restore_operator=False)
+        _keybd_tap(0x0D)  # Enter recenter
+        time.sleep(0.2)
+        send_click(int(portrait_xy[0]), int(portrait_xy[1]), between_sec=0.05, safe_rest_after=False)
+        time.sleep(0.25)
+        send_right_click(int(portrait_xy[0]), int(portrait_xy[1]), between_sec=0.05, safe_rest_after=False)
+        time.sleep(0.45)
+        _keybd_tap(0x0D)
+        time.sleep(0.15)
+        _keybd_tap(0x4A)  # J name proof
+        time.sleep(0.35)
+        _toggle_cheat_console(process_id=int(process_id), restore_operator=False)
+        _refocus_cheat_console()
+        time.sleep(0.12)
+        type_text("testingcheats true\n")
+        time.sleep(0.4)
+        for row in rows:
+            sid = str(row.get("skill_id") or "")
+            cmd = str(row["command"])
+            times = 2 if sid in {"photography", "writing", "media_production"} else 1
+            for _ in range(times):
+                type_text(cmd + "\n")
+                time.sleep(0.34)
+            typed.append(cmd)
+        _toggle_cheat_console(process_id=int(process_id), restore_operator=False)
+        _keybd_tap(0x0D)
+    finally:
+        _restore_operator_foreground(snap.get("hwnd"), sims_hwnd=hwnd)
+
+    _play_brief_observe_repause(process_id=int(process_id), play_seconds=int(play_seconds))
+
+    inventory_done = False
+    if scroll_inventory:
+        idle2 = _wait_for_input_idle(int(process_id), idle_ms=int(idle_ms), timeout_sec=180.0)
+        if idle2.get("state") != "INPUT_IDLE_READY":
+            raise GateError(f"NOT_IDLE_AFTER_PLAY:{idle2}")
+        snap2 = _snapshot_operator_foreground()
+        borrow2 = _borrow_sims_foreground(int(process_id), settle_for_interop_idle=False, retries=2)
+        try:
+            _arm_live_hotkeys(process_id=int(process_id), restore_operator=False)
+            _keybd_tap(0x0D)
+            send_click(int(portrait_xy[0]), int(portrait_xy[1]), between_sec=0.05, safe_rest_after=False)
+            time.sleep(0.2)
+            send_right_click(
+                int(portrait_xy[0]), int(portrait_xy[1]), between_sec=0.05, safe_rest_after=False
+            )
+            time.sleep(0.4)
+            _keybd_tap(0x0D)
+            _keybd_tap(0x4C)  # L skills
+            time.sleep(0.4)
+            left_drag(1722, 810, 1722, 225, steps=12, step_sec=0.018, safe_rest_after=False)
+            time.sleep(0.1)
+            send_click(1700, 520, between_sec=0.04, safe_rest_after=False)
+            send_wheel(-30, x=1700, y=520, safe_rest_after=False)
+            time.sleep(0.2)
+            send_wheel(12, x=1700, y=520, safe_rest_after=False)
+            park_safe_cursor_rest()
+            inventory_done = True
+        finally:
+            _restore_operator_foreground(snap2.get("hwnd"), sims_hwnd=int(borrow2["hwnd"]))
+
+    return {
+        "state": "FORCE_GAPS_DISPATCHED",
+        "member_key": member_key,
+        "portrait_xy": list(portrait_xy),
+        "typed_count": len(typed),
+        "commands": typed,
+        "inventory_scrolled": inventory_done,
+        "plan": plan,
+        "proof_ceiling": "HOST_TYPED_NOT_PANEL_OBSERVED_MAX",
+        "media_production_canonical": "stats.set_skill_level Major_MediaProduction 10",
+        "next": "LOCAL_OBSERVE Skills panel (scroll); panel-record yellow vs non-yellow",
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest="command", required=True)
 
     sub.add_parser("catalog")
+    cmd = sub.add_parser(
+        "commands",
+        help="Print canonical skill_id → skill_stat → stats.set_skill_level lines (never invent spelling)",
+    )
+    cmd.add_argument("--bundle", default=None, help="Limit to a bundle (e.g. remote_income, full_unlock)")
+    cmd.add_argument("--level", type=int, default=10)
+    cmd.add_argument(
+        "--gaps-from",
+        default=None,
+        help="JSON object of skill_id→observed_level; emit only non-yellow/below-target gap commands",
+    )
+    inv = sub.add_parser(
+        "skills-inventory-plan",
+        help="Plan burger-expand + scroll Skills list; non-yellow rows are gap targets",
+    )
+    inv.add_argument("--pages", type=int, default=8)
+
+    fg = sub.add_parser(
+        "force-gaps",
+        help=(
+            "Durable select→type canonical gap cheats→play→scroll inventory. "
+            "Use --redo for full bundle (e.g. Charlee human after inherited attestation). "
+            "Canonical Media Production: stats.set_skill_level Major_MediaProduction 10"
+        ),
+    )
+    fg.add_argument("--member-key", required=True, help="Portrait key e.g. CHARLEE_P3")
+    fg.add_argument(
+        "--portrait-xy",
+        required=True,
+        help="Client X,Y for portrait LEFT_CLICK (e.g. 522,1055 for Charlee)",
+    )
+    fg.add_argument("--session-id", default="household-n4-20261109")
+    fg.add_argument("--bundle", default="full_unlock")
+    fg.add_argument("--level", type=int, default=10)
+    fg.add_argument("--redo", action="store_true", help="Force entire bundle even if ledger MAX")
+    fg.add_argument(
+        "--always-include",
+        action="append",
+        default=[],
+        help="Repeatable skill_id to force even if ledger says max (e.g. media_production)",
+    )
+    fg.add_argument("--process-id", type=int, default=None)
+    fg.add_argument("--execute", action="store_true")
+    fg.add_argument(
+        "--console-strip-observed",
+        action="store_true",
+        help="Required with --execute: white cheat strip open+focused before type",
+    )
+    fg.add_argument("--idle-ms", type=int, default=15000)
+    fg.add_argument("--play-seconds", type=int, default=7)
+    fg.add_argument("--no-scroll-inventory", action="store_true")
+    fg.add_argument("--completion-ledger", type=Path, default=None)
+    fg.add_argument("--receipt", type=Path, default=None)
 
     pl = sub.add_parser("plan")
     pl.add_argument("--bundle", default=None, help="Named bundle (default full_unlock when no --skill)")
@@ -1026,6 +1532,70 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "catalog":
             result = catalog_snapshot()
+        elif args.command == "commands":
+            if args.gaps_from:
+                observed = json.loads(Path(args.gaps_from).read_text(encoding="utf-8"))
+                if not isinstance(observed, dict):
+                    raise GateError("GAPS_FROM_MUST_BE_JSON_OBJECT")
+                result = gap_targets_from_observed_levels(
+                    observed,
+                    target_level=int(args.level),
+                    bundle=args.bundle or "full_unlock",
+                )
+            else:
+                result = canonical_skill_commands(
+                    target_level=int(args.level),
+                    bundle=args.bundle,
+                )
+        elif args.command == "skills-inventory-plan":
+            result = plan_skills_panel_inventory(pages=int(args.pages))
+        elif args.command == "force-gaps":
+            xy_parts = [p.strip() for p in str(args.portrait_xy).split(",")]
+            if len(xy_parts) != 2:
+                raise GateError("PORTRAIT_XY_MUST_BE_X_COMMA_Y")
+            portrait_xy = (int(xy_parts[0]), int(xy_parts[1]))
+            ledger_path = (
+                Path(args.completion_ledger)
+                if args.completion_ledger is not None
+                else default_completion_ledger_path()
+            )
+            ledger = load_completion_ledger(ledger_path)
+            mk = completion_member_key(args.session_id, 0, args.member_key)
+            observed = member_observed_levels_from_ledger(ledger, mk)
+            if args.execute:
+                if args.process_id is None:
+                    raise GateError("PROCESS_ID_REQUIRED_FOR_EXECUTE")
+                result = execute_force_gaps(
+                    process_id=int(args.process_id),
+                    member_key=str(args.member_key),
+                    portrait_xy=portrait_xy,
+                    session_id=str(args.session_id),
+                    bundle=str(args.bundle),
+                    target_level=int(args.level),
+                    redo=bool(args.redo),
+                    always_include=list(args.always_include or []),
+                    console_strip_observed=bool(args.console_strip_observed),
+                    idle_ms=int(args.idle_ms),
+                    play_seconds=int(args.play_seconds),
+                    scroll_inventory=not bool(args.no_scroll_inventory),
+                    completion_ledger_path=ledger_path,
+                )
+            else:
+                result = plan_force_gaps_beat(
+                    member_key=str(args.member_key),
+                    portrait_client_xy=portrait_xy,
+                    bundle=str(args.bundle),
+                    target_level=int(args.level),
+                    redo=bool(args.redo),
+                    always_include=list(args.always_include or []),
+                    observed_levels=observed,
+                )
+            if args.receipt is not None:
+                Path(args.receipt).parent.mkdir(parents=True, exist_ok=True)
+                Path(args.receipt).write_text(
+                    json.dumps(result, indent=2) + "\n", encoding="utf-8"
+                )
+                result = {**result, "receipt": str(args.receipt)}
         elif args.command == "panel-record":
             ledger_path = (
                 Path(args.completion_ledger)

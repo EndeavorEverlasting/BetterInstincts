@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 1,
+  "version": 5,
   "authority": "docs/UI_CHROME.md",
   "owners": {
     "map": "betterinstincts/fixed_ui_click_map.py",
@@ -54,11 +54,160 @@
       "status": "CANDIDATE",
       "notes": "Empty top-left viewport; avoid desks/Sims that open pie menus"
     },
+    "live.discovery_tab_lifelong_aspirations": {
+      "role": "SELECT_DISCOVERY_QUEST_TAB",
+      "quest_label": "Lifelong Aspirations",
+      "slot_index": 0,
+      "client_xy": [26, 34],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Top-left gift-box tab row, leftmost"
+    },
+    "live.discovery_tab_navigating_needs": {
+      "role": "SELECT_DISCOVERY_QUEST_TAB",
+      "quest_label": "Navigating Needs",
+      "slot_index": 1,
+      "client_xy": [60, 34],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Top-left gift-box tab row, middle of the standing three"
+    },
+    "live.discovery_tab_you_and_your_phone": {
+      "role": "SELECT_DISCOVERY_QUEST_TAB",
+      "quest_label": "You and Your Phone",
+      "slot_index": 2,
+      "client_xy": [99, 34],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Top-left gift-box tab row, rightmost when only three present"
+    },
+    "live.discovery_tab_event_context": {
+      "role": "SELECT_DISCOVERY_QUEST_TAB",
+      "quest_label": "EVENT_CONTEXT",
+      "slot_index": 3,
+      "client_xy": [135, 34],
+      "status": "ABSENT_NOW_ESTIMATED_WHEN_PRESENT",
+      "profile": "1920x1080",
+      "notes": "Fourth gift-box slot for work/school/party/event quests; estimated pitch from three-tab row — remeasure on Live event capture"
+    },
+    "live.top_build_buy": {
+      "role": "ENTER_BUILD_BUY",
+      "client_xy": [1504, 22],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "hotkey_prefer": "F3",
+      "notes": "Hammer/wrench; prefer F3. Under cheat strip when console open."
+    },
+    "live.top_manage_worlds": {
+      "role": "OPEN_MANAGE_WORLDS",
+      "client_xy": [1562, 22],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Map pin; do not confuse with Gallery"
+    },
+    "live.top_gallery": {
+      "role": "OPEN_GALLERY",
+      "client_xy": [1609, 22],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "hotkey_prefer": "F4",
+      "notes": "Lightbulb+heart; prefer F4"
+    },
+    "live.top_ea_store": {
+      "role": "OPEN_EA_STORE",
+      "client_xy": [1650, 22],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Shopping cart"
+    },
+    "live.top_floor_story": {
+      "role": "FLOOR_STORY_CONTROL",
+      "client_xy": [1707, 22],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080"
+    },
+    "live.top_walls_view": {
+      "role": "WALLS_VIEW_CONTROL",
+      "client_xy": [1740, 22],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080"
+    },
+    "live.top_camera_lot_house": {
+      "role": "CAMERA_LOT_HOUSE",
+      "client_xy": [1768, 22],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080"
+    },
+    "live.top_lessons_help": {
+      "role": "OPEN_LESSONS_HELP",
+      "client_xy": [1801, 22],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080"
+    },
+    "live.top_video_capture": {
+      "role": "TOGGLE_VIDEO_CAPTURE",
+      "client_xy": [1838, 22],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Movie camera icon; distinct from unfocused Live hotkey V"
+    },
+    "live.top_notification_inbox": {
+      "role": "OPEN_NOTIFICATION_INBOX",
+      "client_xy": [1859, 22],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080"
+    },
+    "live.top_options": {
+      "role": "OPEN_OPTIONS_MENU",
+      "client_xy": [1898, 22],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Ellipsis …"
+    },
+    "live.top_live_people": {
+      "role": "EXIT_BUILD_BUY_TO_LIVE",
+      "client_xy": [1585, 35],
+      "status": "DOCUMENTED_CANDIDATE_BUILD_EXIT",
+      "profile": "1920x1080",
+      "hotkey_prefer": "F1",
+      "notes": "Prefer F1; Build→Live people control"
+    },
+    "live.notebook": {
+      "role": "OPEN_NOTEBOOK",
+      "client_xy": [258, 1055],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "tray": "BOTTOM_LEFT_UTILITY",
+      "order": 0,
+      "notes": "Leftmost icon in grey pill left of portraits (spiral notebook); green glow possible"
+    },
+    "live.phone": {
+      "role": "TOGGLE_SIM_PHONE",
+      "client_xy": [282, 1055],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "tray": "BOTTOM_LEFT_UTILITY",
+      "order": 1,
+      "hotkey_id": "PHONE",
+      "hotkey": "M",
+      "hotkey_status": "UNVERIFIED_CANDIDATE",
+      "notes": "Middle icon in grey pill (smartphone grid); prefer hotkey M when armed+verified"
+    },
+    "live.show_calendar": {
+      "role": "OPEN_SHOW_CALENDAR",
+      "client_xy": [305, 1055],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "tray": "BOTTOM_LEFT_UTILITY",
+      "order": 2,
+      "notes": "Rightmost icon in grey pill (desk calendar). Same control as portrait WRONG_CONTROL miss."
+    },
     "live.calendar_icon": {
       "role": "AVOID_WHEN_SELECTING_PORTRAIT",
-      "client_xy": [300, 1045],
-      "status": "MISS_OBSERVED_20261109",
-      "notes": "Agent intended household portrait; opened LABLAB HOUSEHOLD CALENDAR"
+      "client_xy": [305, 1055],
+      "status": "ALIAS_OF_SHOW_CALENDAR",
+      "alias_of": "live.show_calendar",
+      "notes": "Legacy id — use live.show_calendar. Prior miss [300,1045] opened LABLAB HOUSEHOLD CALENDAR"
     },
     "live.calendar_close_x": {
       "role": "DISMISS_CALENDAR_MODAL",
@@ -69,49 +218,611 @@
     "live.household_portrait_0": {
       "role": "SELECT_HOUSEHOLD_SIM",
       "roster_index": 0,
-      "client_xy": [350, 1055],
-      "status": "CANDIDATE",
-      "notes": "Luminance edges ~320–380 on 1920x1080; avoid calendar ~300"
+      "roster_key_hint": "EVIL_P0",
+      "display_name_hint": "Evil",
+      "client_xy": [354, 1055],
+      "hitbox_x": [320, 379],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Avoid calendar/phone x<330; prove identity via BR panel name after click"
     },
     "live.household_portrait_1": {
       "role": "SELECT_HOUSEHOLD_SIM",
       "roster_index": 1,
-      "client_xy": [405, 1055],
-      "status": "CANDIDATE",
-      "notes": "Luminance edges ~381–430"
+      "roster_key_hint": "BERNICE_P1",
+      "display_name_hint": "Bernice",
+      "client_xy": [404, 1055],
+      "hitbox_x": [379, 429],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Mood color is NOT selection"
     },
     "live.household_portrait_2": {
       "role": "SELECT_HOUSEHOLD_SIM",
       "roster_index": 2,
-      "client_xy": [472, 1055],
-      "status": "CANDIDATE",
+      "roster_key_hint": "OLGA_P2",
       "display_name_hint": "Olga",
-      "notes": "Luminance edges ~431–513; 485 hovered Charlee; 415 hit Bernice band"
+      "client_xy": [454, 1055],
+      "hitbox_x": [429, 488],
+      "live_proven_xy": [472, 1055],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Primary Olga select; live_proven_xy also opened Olga panel earlier; prove via Satisfaction/work/skills name"
     },
     "live.household_portrait_3": {
       "role": "SELECT_HOUSEHOLD_SIM",
       "roster_index": 3,
-      "client_xy": [560, 1055],
-      "status": "CANDIDATE",
+      "roster_key_hint": "CHARLEE_P3",
       "display_name_hint": "Charlee",
-      "notes": "Luminance edges from ~514; briefcase overlay"
+      "client_xy": [522, 1055],
+      "hitbox_x": [488, 560],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Rightmost portrait; prove identity after click"
+    },
+    "live.panel_aspirations": {
+      "role": "TOGGLE_BOTTOM_RIGHT_PANEL",
+      "panel_id": "aspirations",
+      "hotkey_id": "PANEL_ASPIRATIONS",
+      "hotkey": "G",
+      "client_xy": [1607, 1045],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Hex aspiration tray icon; PrintWindow live-20261109; prefer hotkey G"
+    },
+    "live.panel_career": {
+      "role": "TOGGLE_BOTTOM_RIGHT_PANEL",
+      "panel_id": "career",
+      "aliases": ["work", "school"],
+      "hotkey_id": "PANEL_CAREER",
+      "hotkey": "J",
+      "client_xy": [1654, 1045],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Briefcase work/career tray icon; prefer hotkey J"
+    },
+    "live.panel_skills": {
+      "role": "TOGGLE_BOTTOM_RIGHT_PANEL",
+      "panel_id": "skills",
+      "hotkey_id": "PANEL_SKILLS",
+      "hotkey": "L",
+      "client_xy": [1679, 1045],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Lightbulb skills tray icon; supersedes live.skills_lightbulb; prefer hotkey L"
     },
     "live.skills_lightbulb": {
       "role": "TOGGLE_SKILLS_PANEL",
-      "client_xy": [1680, 1033],
-      "status": "CANDIDATE"
+      "panel_id": "skills",
+      "hotkey_id": "PANEL_SKILLS",
+      "hotkey": "L",
+      "client_xy": [1679, 1045],
+      "status": "SUPERSEDED_ALIAS",
+      "alias_of": "live.panel_skills",
+      "notes": "Kept for older callers; use live.panel_skills"
+    },
+    "live.panel_relationships": {
+      "role": "TOGGLE_BOTTOM_RIGHT_PANEL",
+      "panel_id": "relationships",
+      "hotkey_id": "PANEL_RELATIONSHIPS",
+      "hotkey": "R",
+      "client_xy": [1713, 1045],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Two-person relationships tray icon; prefer hotkey R"
+    },
+    "live.panel_inventory": {
+      "role": "TOGGLE_BOTTOM_RIGHT_PANEL",
+      "panel_id": "personal_inventory",
+      "hotkey_id": "PANEL_INVENTORY",
+      "hotkey": "I",
+      "client_xy": [1757, 1045],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Box inventory tray icon; prefer hotkey I"
+    },
+    "live.panel_simology": {
+      "role": "TOGGLE_BOTTOM_RIGHT_PANEL",
+      "panel_id": "simology",
+      "hotkey_id": "PANEL_SIMOLOGY",
+      "hotkey": "Y",
+      "client_xy": [1786, 1045],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Head silhouette simology tray icon; prefer hotkey Y"
+    },
+    "live.panel_needs": {
+      "role": "TOGGLE_BOTTOM_RIGHT_PANEL",
+      "panel_id": "needs",
+      "hotkey_id": "PANEL_NEEDS",
+      "hotkey": "O",
+      "client_xy": [1820, 1045],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Motive/needs face tray icon; prefer hotkey O"
+    },
+    "live.panel_clubs": {
+      "role": "TOGGLE_BOTTOM_RIGHT_PANEL",
+      "panel_id": "clubs",
+      "hotkey_id": "PANEL_CLUBS",
+      "hotkey": "U",
+      "client_xy": [1859, 1045],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Speech-bubble clubs tray icon; pack-gated; prefer hotkey U"
+    },
+    "live.panel_retail": {
+      "role": "TOGGLE_BOTTOM_RIGHT_PANEL",
+      "panel_id": "retail",
+      "client_xy": [1896, 1045],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Cash-register retail/business icon; no stable letter hotkey catalogued"
+    },
+    "live.rewards_store": {
+      "role": "OPEN_REWARDS_STORE",
+      "client_xy": [1745, 1003],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "White Rewards Store pill above BR tray; aspiration-adjacent"
     },
     "live.cheat_console_strip": {
       "role": "REFOCUS_CHEAT_CONSOLE",
       "client_xy": [400, 20],
       "status": "CANDIDATE",
-      "notes": "White strip click before type_text"
+      "notes": "White strip click before type_text; overlays top-left/top-right HUD band (y≈0–40) when open — click precision required"
     },
     "live.skills_burger_grip": {
       "role": "EXPAND_SKILLS_LIST",
-      "client_xy": [1721, 810],
-      "status": "CANDIDATE"
+      "client_xy": [1722, 810],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "alias_of": "live.skills_burger_grip_min",
+      "notes": "MIN height burger (default flyout). Prefer live.skills_burger_grip_min/max; drag min→max to expand"
+    },
+    "live.skills_burger_grip_min": {
+      "role": "SKILLS_BURGER_MIN",
+      "client_xy": [1722, 810],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Two-line burger above SKILL MASTERY PERKS at minimum panel height (green ~y818)"
+    },
+    "live.skills_burger_grip_max": {
+      "role": "SKILLS_BURGER_MAX",
+      "client_xy": [1722, 225],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Two-line burger above SKILL MASTERY PERKS at maximum expanded height (green ~y234)"
+    },
+    "live.whim_slot_0_bubble": {
+      "role": "WHIM_SLOT_0_BUBBLE",
+      "client_xy": [145, 833],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Leftmost usual whim bubble center (above HAPPY / viewer-left of avatar head)"
+    },
+    "live.whim_slot_0_pin": {
+      "role": "WHIM_SLOT_0_PIN",
+      "client_xy": [170, 847],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Thumbtack on lower-right rim of thought-bubble outline (not content thumbnail); green when pinned"
+    },
+    "live.whim_slot_1_bubble": {
+      "role": "WHIM_SLOT_1_BUBBLE",
+      "client_xy": [203, 827],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "profile": "1920x1080",
+      "notes": "Second usual thought-cloud bubble center (above avatar head)"
+    },
+    "live.whim_slot_1_pin": {
+      "role": "WHIM_SLOT_1_PIN",
+      "client_xy": [233, 833],
+      "status": "OFFSET_FROM_BUBBLE_CENTER",
+      "profile": "1920x1080",
+      "notes": "Thumbtack lower-right rim; offset (+30,+6) from bubble center"
+    },
+    "live.whim_slot_2_bubble": {
+      "role": "WHIM_SLOT_2_BUBBLE",
+      "client_xy": [255, 830],
+      "status": "ABSENT_NOW_ESTIMATED_WHEN_PRESENT",
+      "profile": "1920x1080",
+      "notes": "Third whim when present (often); remeasure Live with three bubbles"
+    },
+    "live.whim_slot_2_pin": {
+      "role": "WHIM_SLOT_2_PIN",
+      "client_xy": [285, 836],
+      "status": "ABSENT_NOW_ESTIMATED_WHEN_PRESENT",
+      "profile": "1920x1080",
+      "notes": "Thumbtack lower-right rim; offset (+30,+6)"
+    },
+    "live.whim_slot_3_shoulder_bubble": {
+      "role": "WHIM_SLOT_3_SHOULDER_BUBBLE",
+      "client_xy": [278, 900],
+      "status": "PRINTWINDOW_MEASURED_JAGGED_20261109",
+      "profile": "1920x1080",
+      "bubble_shape": "JAGGED_STARBURST_RARE_FOURTH",
+      "notes": "Rare 4th whim — jagged/spiky outline (not scalloped thought-cloud) by Sim left shoulder / viewer-right of avatar. Inner art is content thumbnail; pin is separate."
+    },
+    "live.whim_slot_3_shoulder_pin": {
+      "role": "WHIM_SLOT_3_SHOULDER_PIN",
+      "client_xy": [308, 906],
+      "status": "OFFSET_FROM_JAGGED_BUBBLE_CENTER",
+      "profile": "1920x1080",
+      "notes": "Thumbtack badge on lower-right rim of jagged bubble; offset (+30,+6) from bubble center — NOT the inner flame/content thumbnail"
+    },
+    "live.center_pause": {
+      "role": "SPEED_PAUSE",
+      "client_xy": [889, 1033],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "hotkey_prefer": ["P", "0"]
+    },
+    "live.center_play_1x": {
+      "role": "SPEED_1X",
+      "client_xy": [920, 1033],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "hotkey_prefer": ["1"]
+    },
+    "live.center_fast_2x": {
+      "role": "SPEED_2X",
+      "client_xy": [952, 1033],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "hotkey_prefer": ["2"]
+    },
+    "live.center_ultra_3x": {
+      "role": "SPEED_3X",
+      "client_xy": [984, 1033],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "hotkey_prefer": ["3"]
+    },
+    "live.center_camera_shutter": {
+      "role": "CENTER_CAMERA_SHUTTER",
+      "client_xy": [1040, 1033],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "notes": "Right of speed divider on top console row"
+    },
+    "live.center_day_night": {
+      "role": "DAY_NIGHT_CYCLE",
+      "client_xy": [860, 1065],
+      "status": "PRINTWINDOW_MEASURED_20261109"
+    },
+    "live.center_clock_calendar": {
+      "role": "CENTER_CLOCK_CALENDAR",
+      "client_xy": [930, 1065],
+      "status": "PRINTWINDOW_MEASURED_20261109",
+      "notes": "Season leaf + clock text; distinct from BL show_calendar (305,1055)"
+    },
+    "live.center_weather": {
+      "role": "WEATHER",
+      "client_xy": [1010, 1065],
+      "status": "PRINTWINDOW_MEASURED_20261109"
+    },
+    "live.center_thermometer": {
+      "role": "TEMPERATURE",
+      "client_xy": [1045, 1065],
+      "status": "PRINTWINDOW_MEASURED_20261109"
+    },
+    "live.center_eco_footprint": {
+      "role": "ECO_FOOTPRINT",
+      "client_xy": [1075, 1065],
+      "status": "PRINTWINDOW_MEASURED_20261109"
     }
+  },
+  "center_console_1920x1080": {
+    "capture_ref": "dist/game-host/household-skill-cert/live-20261109/printwindow-center-console-whim4-now.png",
+    "measure_receipt": "dist/game-host/household-skill-cert/live-20261109/center-console-whim4-measure.json",
+    "measured_at": "2026-11-09T23:28:00-05:00",
+    "process_id": 78240,
+    "location": "Bottom-center Live time/speed + environment pill",
+    "prefer_hotkey_speed": true,
+    "speed_row_y": 1033,
+    "env_row_y": 1065,
+    "order_speed_left_to_right": ["pause", "play_1x", "fast_2x", "ultra_3x", "camera_shutter"],
+    "order_env_left_to_right": ["day_night", "clock_calendar", "weather", "thermometer", "eco_footprint"],
+    "targets": {
+      "pause": {"target_id": "live.center_pause", "client_xy": [889, 1033], "hotkey_prefer": ["P", "0"]},
+      "play_1x": {"target_id": "live.center_play_1x", "client_xy": [920, 1033], "hotkey_prefer": ["1"]},
+      "fast_2x": {"target_id": "live.center_fast_2x", "client_xy": [952, 1033], "hotkey_prefer": ["2"]},
+      "ultra_3x": {"target_id": "live.center_ultra_3x", "client_xy": [984, 1033], "hotkey_prefer": ["3"]},
+      "camera_shutter": {"target_id": "live.center_camera_shutter", "client_xy": [1040, 1033]},
+      "day_night": {"target_id": "live.center_day_night", "client_xy": [860, 1065]},
+      "clock_calendar": {"target_id": "live.center_clock_calendar", "client_xy": [930, 1065]},
+      "weather": {"target_id": "live.center_weather", "client_xy": [1010, 1065]},
+      "thermometer": {"target_id": "live.center_thermometer", "client_xy": [1045, 1065]},
+      "eco_footprint": {"target_id": "live.center_eco_footprint", "client_xy": [1075, 1065]}
+    },
+    "not": [
+      "PREFER_MOUSE_OVER_SPEED_HOTKEY",
+      "CONFUSE_CENTER_CLOCK_WITH_BL_SHOW_CALENDAR"
+    ]
+  },
+  "whims_pin_slots_1920x1080": {
+    "capture_ref": "dist/game-host/household-skill-cert/live-20261109/printwindow-whims-now.png",
+    "measure_receipt": "dist/game-host/household-skill-cert/live-20261109/whims-pin-slots-measure.json",
+    "measured_at": "2026-11-09T23:25:00-05:00",
+    "process_id": 78240,
+    "location": "Far-left selected-Sim whims — left of household portraits, above notebook (258,1055)",
+    "owner": "betterinstincts/whim_pinning.py",
+    "input": "MOUSE_ONLY_NO_HOTKEY",
+    "usual_count": "2_OR_3",
+    "occasional_fourth": "Sim left shoulder / viewer-right of avatar",
+    "geometry": {
+      "bubble_outline": "Thought-cloud (usual) OR jagged starburst (rare 4th) — the whim container",
+      "content_thumbnail": "Circular art centered INSIDE the bubble — subject of the whim; NOT the pin control",
+      "pin_thumbtack": "Small circular thumbtack badge on the LOWER-RIGHT RIM of the bubble outline — pin/unpin target"
+    },
+    "pin_affordance": "Thumbtack badge on lower-right rim of bubble outline; green = pinned (click toggles unpin). Do NOT click content thumbnail center or mood plate.",
+    "pin_offset_from_bubble_center_px": [30, 6],
+    "order_left_to_right": [
+      "slot_0_left",
+      "slot_1_mid",
+      "slot_2_right_third",
+      "slot_3_shoulder_far"
+    ],
+    "targets": {
+      "slot_0_left": {
+        "bubble_target_id": "live.whim_slot_0_bubble",
+        "pin_target_id": "live.whim_slot_0_pin",
+        "bubble_xy": [145, 833],
+        "pin_xy": [170, 847],
+        "status": "PRESENT",
+        "pin_state_at_measure": "PINNED_GREEN_BADGE"
+      },
+      "slot_1_mid": {
+        "bubble_target_id": "live.whim_slot_1_bubble",
+        "pin_target_id": "live.whim_slot_1_pin",
+        "bubble_xy": [203, 827],
+        "pin_xy": [233, 833],
+        "status": "PRESENT",
+        "pin_state_at_measure": "UNPINNED"
+      },
+      "slot_2_right_third": {
+        "bubble_target_id": "live.whim_slot_2_bubble",
+        "pin_target_id": "live.whim_slot_2_pin",
+        "bubble_xy": [255, 830],
+        "pin_xy": [285, 836],
+        "status": "ABSENT_NOW_ESTIMATED_WHEN_PRESENT"
+      },
+      "slot_3_shoulder_far": {
+        "bubble_target_id": "live.whim_slot_3_shoulder_bubble",
+        "pin_target_id": "live.whim_slot_3_shoulder_pin",
+        "bubble_xy": [278, 900],
+        "pin_xy": [308, 906],
+        "bubble_shape": "JAGGED_STARBURST_RARE_FOURTH",
+        "status": "PRINTWINDOW_MEASURED_JAGGED_20261109",
+        "notes": "Rare 4th — jagged outline at Sim left shoulder / viewer-right; paused capture 2026-11-09"
+      }
+    },
+    "not": [
+      "CLICK_BUBBLE_CENTER_AS_PIN",
+      "CLICK_CONTENT_THUMBNAIL_AS_PIN",
+      "TREAT_MOOD_GREEN_AS_PIN_BADGE",
+      "ASSUME_FOURTH_SLOT_ALWAYS_PRESENT",
+      "TREAT_JAGGED_AS_NORMAL_THOUGHT_CLOUD",
+      "PIN_EXECUTE_FROM_SLOT_SEED_ALONE",
+      "HOTKEY_PIN"
+    ]
+  },
+  "skills_burger_bar_1920x1080": {
+    "capture_ref_max": "dist/game-host/household-skill-cert/live-20261109/printwindow-skills-burger-max.png",
+    "capture_ref_min": "dist/game-host/household-skill-cert/live-20261109/printwindow-skills-burger-min.png",
+    "measure_receipt": "dist/game-host/household-skill-cert/live-20261109/burger-endpoints-measure.json",
+    "measured_at": "2026-11-09T23:20:00-05:00",
+    "process_id": 78240,
+    "open_hotkey": "L",
+    "location": "Two short horizontal lines centered on thin grey strip directly above green SKILL MASTERY PERKS",
+    "x_center": 1722,
+    "endpoints": {
+      "min": {
+        "target_id": "live.skills_burger_grip_min",
+        "client_xy": [1722, 810],
+        "green_header_y_top": 818
+      },
+      "max": {
+        "target_id": "live.skills_burger_grip_max",
+        "client_xy": [1722, 225],
+        "green_header_y_top": 234
+      }
+    },
+    "expand_drag": {
+      "from_target": "live.skills_burger_grip_min",
+      "to_target": "live.skills_burger_grip_max",
+      "from_xy": [1722, 810],
+      "to_xy": [1722, 225],
+      "input": "LEFT_BUTTON_STEPPED_DRAG",
+      "owner": "scripts.win32_input.left_drag",
+      "planner": "betterinstincts.fixed_ui_click_map.plan_skills_burger_expand"
+    },
+    "collapse_drag": {
+      "from_target": "live.skills_burger_grip_max",
+      "to_target": "live.skills_burger_grip_min",
+      "from_xy": [1722, 225],
+      "to_xy": [1722, 810],
+      "input": "LEFT_BUTTON_STEPPED_DRAG"
+    },
+    "not": [
+      "SCROLLBAR_ALONE_AS_FULL_PANEL_READ",
+      "TREAT_BURGER_DRAG_AS_SKILLS_PANEL_PASS",
+      "SENDINPUT_FROM_MAP_MODULE"
+    ]
+  },
+  "top_right_hud_1920x1080": {
+    "capture_ref": "dist/game-host/household-skill-cert/live-20261109/printwindow-top-right-now.png",
+    "measured_at": "2026-11-09T23:12:00-05:00",
+    "process_id": 78240,
+    "location": "Top-right Live HUD chrome pill",
+    "y_row": 22,
+    "cheat_console_collision": "Cheat console white strip overlays y≈0–40 when open — clicks here must be precise; refocus live.cheat_console_strip before type_text",
+    "prefer_hotkey_when_equivalent": true,
+    "order_left_to_right": [
+      "build_buy",
+      "manage_worlds",
+      "gallery",
+      "ea_store",
+      "floor_story",
+      "walls_view",
+      "camera_lot_house",
+      "lessons_help",
+      "video_capture",
+      "notification_inbox",
+      "options_ellipsis"
+    ],
+    "targets": {
+      "build_buy": {
+        "target_id": "live.top_build_buy",
+        "client_xy": [1504, 22],
+        "hotkey_prefer": "F3",
+        "role": "ENTER_BUILD_BUY"
+      },
+      "manage_worlds": {
+        "target_id": "live.top_manage_worlds",
+        "client_xy": [1562, 22],
+        "role": "OPEN_MANAGE_WORLDS"
+      },
+      "gallery": {
+        "target_id": "live.top_gallery",
+        "client_xy": [1609, 22],
+        "hotkey_prefer": "F4",
+        "role": "OPEN_GALLERY"
+      },
+      "ea_store": {
+        "target_id": "live.top_ea_store",
+        "client_xy": [1650, 22],
+        "role": "OPEN_EA_STORE"
+      },
+      "floor_story": {
+        "target_id": "live.top_floor_story",
+        "client_xy": [1707, 22],
+        "role": "FLOOR_STORY_CONTROL"
+      },
+      "walls_view": {
+        "target_id": "live.top_walls_view",
+        "client_xy": [1740, 22],
+        "role": "WALLS_VIEW_CONTROL"
+      },
+      "camera_lot_house": {
+        "target_id": "live.top_camera_lot_house",
+        "client_xy": [1768, 22],
+        "role": "CAMERA_LOT_HOUSE"
+      },
+      "lessons_help": {
+        "target_id": "live.top_lessons_help",
+        "client_xy": [1801, 22],
+        "role": "OPEN_LESSONS_HELP"
+      },
+      "video_capture": {
+        "target_id": "live.top_video_capture",
+        "client_xy": [1838, 22],
+        "role": "TOGGLE_VIDEO_CAPTURE",
+        "notes": "Distinct from Live hotkey V while unfocused; still dangerous near cheat typing"
+      },
+      "notification_inbox": {
+        "target_id": "live.top_notification_inbox",
+        "client_xy": [1859, 22],
+        "role": "OPEN_NOTIFICATION_INBOX"
+      },
+      "options_ellipsis": {
+        "target_id": "live.top_options",
+        "client_xy": [1898, 22],
+        "role": "OPEN_OPTIONS_MENU"
+      },
+      "live_people_from_build": {
+        "target_id": "live.top_live_people",
+        "client_xy": [1585, 35],
+        "status": "DOCUMENTED_CANDIDATE_BUILD_EXIT",
+        "hotkey_prefer": "F1",
+        "role": "EXIT_BUILD_BUY_TO_LIVE",
+        "notes": "Not a distinct Live-HUD icon in current capture; prefer F1"
+      }
+    }
+  },
+  "top_left_discovery_tabs_1920x1080": {
+    "capture_ref": "dist/game-host/household-skill-cert/live-20261109/printwindow-top-left-now.png",
+    "measured_at": "2026-11-09T23:10:00-05:00",
+    "process_id": 78240,
+    "location": "Top-left Discovery Quest gift-box tab pill",
+    "owner": "betterinstincts/discovery_hud.py",
+    "y_row": 34,
+    "pitch_px_approx": 37,
+    "order_left_to_right": [
+      "lifelong_aspirations",
+      "navigating_needs",
+      "you_and_your_phone",
+      "event_context_slot"
+    ],
+    "targets": {
+      "lifelong_aspirations": {
+        "target_id": "live.discovery_tab_lifelong_aspirations",
+        "display_name": "Lifelong Aspirations",
+        "client_xy": [26, 34],
+        "status": "PRESENT"
+      },
+      "navigating_needs": {
+        "target_id": "live.discovery_tab_navigating_needs",
+        "display_name": "Navigating Needs",
+        "client_xy": [60, 34],
+        "status": "PRESENT"
+      },
+      "you_and_your_phone": {
+        "target_id": "live.discovery_tab_you_and_your_phone",
+        "display_name": "You and Your Phone",
+        "client_xy": [99, 34],
+        "status": "PRESENT"
+      },
+      "event_context_slot": {
+        "target_id": "live.discovery_tab_event_context",
+        "display_name": "Work/School/Party event quest",
+        "client_xy": [135, 34],
+        "status": "ABSENT_NOW_ESTIMATED_WHEN_PRESENT",
+        "notes": "Appears during work, school, parties, or similar events; not in current capture"
+      }
+    },
+    "not": [
+      "QUEST_COMPLETION_FROM_TAB_CLICK",
+      "ASSUME_FOURTH_TAB_ALWAYS_PRESENT"
+    ]
+  },
+  "bottom_left_utility_tray_1920x1080": {
+    "capture_ref": "dist/game-host/household-skill-cert/live-20261109/printwindow-bl-tray-now.png",
+    "measured_at": "2026-11-09T23:05:00-05:00",
+    "process_id": 78240,
+    "location": "Grey pill immediately LEFT of household portraits",
+    "order_left_to_right": ["notebook", "phone", "show_calendar"],
+    "targets": {
+      "notebook": {
+        "target_id": "live.notebook",
+        "client_xy": [258, 1055]
+      },
+      "phone": {
+        "target_id": "live.phone",
+        "client_xy": [282, 1055],
+        "hotkey": "M"
+      },
+      "show_calendar": {
+        "target_id": "live.show_calendar",
+        "client_xy": [305, 1055]
+      }
+    },
+    "portrait_collision": "x<330 risks WRONG_CONTROL when intending household portraits; calendar miss historically [300,1045]",
+    "close_calendar": "live.calendar_close_x"
+  },
+  "bottom_right_tray_1920x1080": {
+    "capture_ref": "dist/game-host/household-skill-cert/live-20261109/printwindow-br-tray-now.png",
+    "measured_at": "2026-11-09T22:56:00-05:00",
+    "process_id": 78240,
+    "order_left_to_right": [
+      "aspirations",
+      "career",
+      "skills",
+      "relationships",
+      "personal_inventory",
+      "simology",
+      "needs",
+      "clubs",
+      "retail"
+    ],
+    "y_row": 1045,
+    "prefer_hotkey": true,
+    "note": "Icon centers PrintWindow-measured; y=1045 mid-glyph. Prefer letter hotkeys; keep clicks so agents are never dark."
   },
   "guarantees": [
     "Every fixed-UI click attempt is append-recorded with intended target_id and client_xy",

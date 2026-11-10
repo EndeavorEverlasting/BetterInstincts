@@ -978,6 +978,18 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
             observed_selected_roster_key="OLGA_P2",
         )
         self.assertEqual(proven["state"], "SELECTION_PROVEN")
+        satisfaction = assess_selection_identity(
+            expected_display_name="Olga",
+            observed_panel_header_name="Olga's Satisfaction: 150",
+            cue_source="ASPIRATION_SATISFACTION_NAME",
+        )
+        self.assertEqual(satisfaction["state"], "SELECTION_PROVEN")
+        self.assertIn("MOOD_COLOR_AS_SELECTION", satisfaction["forbidden"])
+        unproven = assess_selection_identity(
+            expected_display_name="Olga",
+            observed_panel_header_name=None,
+        )
+        self.assertEqual(unproven["preferred_panel_hotkeys"]["career_work"], "J")
         ready = plan_target_sim_skill_algorithm(
             session_id="household-n4-20261109",
             member_key="OLGA_P2",
@@ -997,7 +1009,14 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         self.assertIn("Major_Robotics", " ".join(ready["force_plan"]["commands"]))
 
     def test_contract_pins_target_sim_algorithm_guards(self):
-        from betterinstincts.diy_skill_force import catalog_snapshot, load_contract
+        from betterinstincts.diy_skill_force import (
+            canonical_skill_commands,
+            catalog_snapshot,
+            gap_targets_from_observed_levels,
+            load_contract,
+            plan_skills_panel_inventory,
+            plan_skills_panel_scroll,
+        )
 
         cfg = load_contract()
         algo = cfg["target_sim_algorithm"]
@@ -1005,9 +1024,254 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         self.assertTrue(algo["v_starts_video_recording"])
         self.assertTrue(algo["space_cycle_without_header_proof_forbidden"])
         self.assertTrue(algo["space_recovery_requires_live_hotkey_arm"])
+        cues = algo["selection_cues"]
+        self.assertTrue(cues["identity_requires_panel_name"])
+        self.assertEqual(cues["preferred_identity_panel"], "J_WORK_CAREER")
+        self.assertEqual(cues["progress_panel"], "L_SKILLS")
+        self.assertIn("WHITE_PORTRAIT_BOUNDARIES", cues["corroboration_only"])
+        self.assertIn("WORK_OR_CAREER_PANEL_NAME", cues["accepted_identity"])
+        self.assertIn("MOOD_COLOR_AS_SELECTION", cues["forbidden"])
+        self.assertIn("WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY", cues["forbidden"])
+        self.assertIn("J=work/career", cues["bottom_right_open"])
+        self.assertFalse(algo["lean_panel_sequence"]["fresh_arm_before_every_panel_letter"])
+        self.assertTrue(algo["lean_panel_sequence"]["arm_once_per_skill_beat"])
+        self.assertEqual(
+            algo["lean_panel_sequence"]["order"][:5],
+            [
+                "BORROW_SIMS",
+                "ONE_PINNED_TERRAIN_ARM",
+                "ENTER_CENTER_ACTIVE_SIM",
+                "LEFT_CLICK_PORTRAIT",
+                "J_WORK_NAME_PROOF",
+            ],
+        )
+        self.assertEqual(
+            algo["lean_panel_sequence"]["active_sim_camera"]["refocus_hotkey"],
+            "Enter",
+        )
+        inv = algo["lean_panel_sequence"]["skills_panel_inventory"]
+        self.assertEqual(inv["gap_cue"], "NON_YELLOW_ROW_BELOW_TARGET")
+        self.assertIn("REPEATED_TERRAIN_RMB_PER_HOTKEY", algo["lean_skill_beat_forbidden"])
+        self.assertIn("ARM_BEFORE_EVERY_PANEL_LETTER", algo["lean_skill_beat_forbidden"])
+        self.assertTrue(algo["console_field_focused_after_open"])
+        self.assertEqual(
+            algo["skill_progress_extrapolator"]["owner"],
+            "betterinstincts.diy_skill_force.extrapolate_skill_iterations",
+        )
+        lean_forbid = algo.get("lean_skill_beat_forbidden") or []
+        self.assertIn("PORTRAIT_RIGHT_CLICK", lean_forbid)
+        self.assertIn("RIGHT_CLICK_VIEW_DURING_SKILL_FORCE", lean_forbid)
+        self.assertIn("CAMERA_ZOOM_LADDER_DURING_SKILL_FORCE", lean_forbid)
+        self.assertIn("WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY", lean_forbid)
+        self.assertIn("MAP_CLICK_WANDER", lean_forbid)
         snap = catalog_snapshot()
         self.assertIn("target_sim_algorithm", snap)
         self.assertIn("live_hotkey_arm", snap)
+        self.assertIn("canonical_commands", snap)
+        cmds = canonical_skill_commands(bundle="remote_income")
+        self.assertGreaterEqual(cmds["count"], 10)
+        media = next(c for c in cmds["commands"] if c["skill_id"] == "media_production")
+        self.assertEqual(media["skill_stat"], "Major_MediaProduction")
+        self.assertIn("Major_MediaProduction 10", media["command"])
+        self.assertNotIn("MediaProducton", media["command"])
+        scroll = plan_skills_panel_scroll(direction="DOWN", pages=2)
+        self.assertEqual(scroll["direction"], "DOWN")
+        self.assertLess(scroll["total_wheel_notches"], 0)
+        inv_plan = plan_skills_panel_inventory(pages=3)
+        self.assertEqual(inv_plan["state"], "SKILLS_PANEL_INVENTORY_READY")
+        gaps = gap_targets_from_observed_levels(
+            {"programming": 10, "photography": 5, "writing": 10},
+            bundle="remote_income",
+        )
+        self.assertIn("photography", [g["skill_id"] for g in gaps["gaps"]])
+        self.assertNotIn("programming", [g["skill_id"] for g in gaps["gaps"]])
+        self.assertTrue(
+            any("Major_Photography 10" in c for c in gaps["commands"])
+        )
+        from betterinstincts.diy_skill_force import (
+            plan_force_gaps_beat,
+            resolve_force_gap_commands,
+        )
+
+        forced = resolve_force_gap_commands(
+            bundle="remote_income",
+            observed_levels={"programming": 10},
+            always_include=["media_production"],
+        )
+        self.assertTrue(
+            any("Major_MediaProduction 10" in c for c in forced["commands"])
+        )
+        self.assertEqual(
+            forced["media_production_canonical"],
+            "stats.set_skill_level Major_MediaProduction 10",
+        )
+        beat = plan_force_gaps_beat(
+            member_key="CHARLEE_P3",
+            portrait_client_xy=(522, 1055),
+            bundle="full_unlock",
+            redo=True,
+            always_include=["media_production"],
+        )
+        self.assertEqual(beat["state"], "FORCE_GAPS_BEAT_READY")
+        self.assertGreaterEqual(beat["gaps"]["count"], 40)
+        self.assertIn("CONSOLE_STRIP_THEN_TYPE_GAP_COMMANDS", beat["order"])
+
+    def test_extrapolate_skill_iterations_and_white_bounds(self):
+        from pathlib import Path
+        from PIL import Image, ImageDraw
+
+        from betterinstincts.diy_skill_force import (
+            assess_selection_identity,
+            detect_selected_portrait_by_white_boundaries,
+            extrapolate_skill_iterations,
+        )
+
+        done = extrapolate_skill_iterations(baseline_level=3, after_level=10, target_level=10)
+        self.assertEqual(done["state"], "SKILL_AT_TARGET")
+        self.assertEqual(done["remaining_iterations"], 0)
+        mid = extrapolate_skill_iterations(baseline_level=2, after_level=4, target_level=10)
+        self.assertEqual(mid["state"], "SKILL_PROGRESS_EXTRAPOLATED")
+        self.assertEqual(mid["delta"], 2)
+        self.assertEqual(mid["remaining_iterations"], 3)  # ceil(6/2)
+        bad = extrapolate_skill_iterations(baseline_level=3, after_level=3, target_level=10)
+        self.assertEqual(bad["state"], "SKILL_PROGRESS_FALSIFIED")
+        self.assertIn("GUESS_ITERATION_COUNT", bad["forbidden"])
+
+        wb = assess_selection_identity(
+            expected_display_name="Olga",
+            observed_panel_header_name=None,
+            white_bounds_roster_index=2,
+            expected_roster_index=2,
+        )
+        self.assertEqual(wb["state"], "SELECTION_UNPROVEN")
+        self.assertTrue(wb["white_bounds_corroborates_index"])
+        self.assertIn("WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY", wb["forbidden"])
+        named = assess_selection_identity(
+            expected_display_name="Olga",
+            observed_panel_header_name="Olga — Unemployed",
+            cue_source="WORK_OR_CAREER_PANEL_NAME",
+            white_bounds_roster_index=2,
+            expected_roster_index=2,
+        )
+        self.assertEqual(named["state"], "SELECTION_PROVEN")
+        self.assertEqual(named["gate"], "PROCEED_SKILLS_PANEL_THEN_CONSOLE")
+
+        from betterinstincts.diy_skill_force import plan_lean_olga_skill_beat
+
+        from betterinstincts.diy_skill_force import plan_arm_then_panel_letter
+
+        arm_j = plan_arm_then_panel_letter("J", purpose="NAME_IDENTITY")
+        self.assertEqual(arm_j["order"][0], "ARM_LIVE_HOTKEYS")
+        self.assertEqual(arm_j["letter"], "J")
+        self.assertIn("PANEL_LETTER_WITHOUT_FRESH_ARM", arm_j["forbidden"])
+
+        lean = plan_lean_olga_skill_beat()
+        self.assertEqual(lean["state"], "LEAN_OLGA_SKILL_BEAT_READY")
+        step_names = [s["step"] for s in lean["steps"]]
+        self.assertEqual(step_names[0], "ONE_PINNED_TERRAIN_ARM")
+        self.assertEqual(step_names[1], "ENTER_CENTER_ACTIVE_SIM")
+        self.assertEqual(step_names[3], "J_WORK_NAME")
+        self.assertEqual(step_names[5], "L_SKILLS")
+        self.assertIn("PLAY_BRIEF_THEN_PAUSE", step_names)
+        self.assertIn("ASPIRATION_G_AS_DEFAULT_IDENTITY", lean["forbidden"])
+        self.assertIn("REPEATED_TERRAIN_RMB_PER_HOTKEY", lean["forbidden"])
+        self.assertIn("ARM_BEFORE_EVERY_PANEL_LETTER", lean["forbidden"])
+        self.assertIn("MEASURE_WITHOUT_PLAY_BRIEF", lean["forbidden"])
+        self.assertIn("MAP_CLICK_WANDER", lean["forbidden"])
+        self.assertIn("MAP_ROAM_TO_REFOCUS", lean["forbidden"])
+        self.assertIn("CAMERA_ZOOM_LADDER_DURING_SKILL_FORCE", lean["forbidden"])
+        self.assertEqual(
+            lean.get("camera_during_skill_force"),
+            "ACTIVE_SIM_ONLY_ENTER_REFOCUS",
+        )
+        self.assertEqual(lean.get("arm_world_client_xy"), [880, 480])
+        self.assertEqual(lean["invariant"], "ONE_ARM_ENTER_RECENTER_THEN_HOTKEYS")
+        play_step = next(
+            s for s in lean["steps"] if s["step"] == "PLAY_BRIEF_THEN_PAUSE"
+        )
+        self.assertEqual(
+            play_step["plan"]["order"],
+            ["PRESS_PLAY_1", "WAIT_7S", "PRESS_PAUSE_0", "THEN_MEASURE_OR_EXTRAPOLATE"],
+        )
+        self.assertIn("REPEATED_TERRAIN_RMB_PER_HOTKEY", play_step["plan"]["forbidden"])
+
+        from betterinstincts.diy_skill_force import plan_arm_then_play_brief
+
+        brief = plan_arm_then_play_brief(play_seconds=5)
+        self.assertEqual(brief["state"], "PLAY_BRIEF_READY")
+        self.assertTrue(brief["measure_requires_play_brief"])
+        self.assertEqual(brief["play_seconds"], 5)
+        self.assertEqual(
+            brief["order"],
+            [
+                "PRESS_PLAY_1",
+                "WAIT_5S",
+                "PRESS_PAUSE_0",
+                "THEN_MEASURE_OR_EXTRAPOLATE",
+            ],
+        )
+
+        # Synthetic strip: two white walls bracketing Olga center x=454
+        tmp = Path("dist/game-host/household-skill-cert/live-20261109/_white-bound-fixture.png")
+        tmp.parent.mkdir(parents=True, exist_ok=True)
+        im = Image.new("RGB", (1920, 1080), (40, 40, 40))
+        d = ImageDraw.Draw(im)
+        for x in (430, 478):
+            d.rectangle([x, 1010, x + 2, 1065], fill=(240, 240, 240))
+        im.save(tmp)
+        slots = [
+            {"roster_index": 0, "client_xy": [354, 1055]},
+            {"roster_index": 1, "client_xy": [404, 1055]},
+            {"roster_index": 2, "client_xy": [454, 1055]},
+            {"roster_index": 3, "client_xy": [522, 1055]},
+        ]
+        det = detect_selected_portrait_by_white_boundaries(
+            image_path=tmp, portrait_slots=slots
+        )
+        self.assertEqual(det["state"], "WHITE_BOUNDARIES_SELECTED")
+        self.assertEqual(det["selected_roster_index"], 2)
+        self.assertIn("MOOD_COLOR_AS_SELECTION", det["forbidden"])
+
+        from betterinstincts.diy_skill_force import (
+            plan_skill_progress_loop,
+            resolve_skill_progress_after_probe,
+        )
+
+        probe = plan_skill_progress_loop(
+            skill_id="fishing",
+            skill_stat="Major_Fishing",
+            baseline_level=2,
+            target_level=10,
+        )
+        self.assertEqual(probe["state"], "SKILL_PROGRESS_PROBE_READY")
+        self.assertIn("stats.set_skill_level Major_Fishing 10", probe["probe_command"])
+        resolved = resolve_skill_progress_after_probe(
+            skill_id="fishing",
+            skill_stat="Major_Fishing",
+            baseline_level=2,
+            after_level=4,
+            target_level=10,
+        )
+        self.assertEqual(resolved["state"], "SKILL_PROGRESS_REMAINING_READY")
+        self.assertEqual(resolved["remaining_iterations"], 3)
+        self.assertEqual(len(resolved["remaining_commands"]), 3)
+        falsified = resolve_skill_progress_after_probe(
+            skill_id="robotics",
+            skill_stat="Major_Robotics",
+            baseline_level=3,
+            after_level=3,
+            target_level=10,
+        )
+        self.assertEqual(falsified["state"], "SKILL_PROGRESS_FALSIFIED")
+        maxed = resolve_skill_progress_after_probe(
+            skill_id="cooking",
+            skill_stat="Major_HomestyleCooking",
+            baseline_level=3,
+            after_level=10,
+            target_level=10,
+        )
+        self.assertEqual(maxed["state"], "SKILL_PROGRESS_CONFIRMED_MAX")
+        self.assertEqual(maxed["remaining_commands"], [])
 
     def test_live_hotkey_arm_plan_and_household_traverse_pin(self):
         from betterinstincts.diy_skill_force import load_contract, plan_live_hotkey_arm
@@ -1016,18 +1280,67 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         arm_cfg = cfg["live_hotkey_arm"]
         self.assertEqual(
             arm_cfg["operator_rule"],
-            "Left-click ensures that the focus is in the game, and then "
-            "right-click cancels the options so that the hotkeys work.",
+            "Borrow Sims briefly, right-click exposed world/terrain to arm Live "
+            "hotkeys, then restore the operator's foreground app.",
         )
+        self.assertEqual(
+            arm_cfg["order"],
+            [
+                "WAIT_TRUSTED_IDLE_GE_15S",
+                "SNAPSHOT_OPERATOR_FOREGROUND",
+                "BORROW_SIMS_FOREGROUND",
+                "RIGHT_CLICK_EXPOSED_WORLD_TERRAIN",
+                "RESTORE_OPERATOR_FOREGROUND",
+            ],
+        )
+        self.assertIn("LEAVE_OPERATOR_TRAPPED_IN_SIMS", arm_cfg["not"])
         self.assertTrue(cfg["household_traverse"]["arm_before_space"])
+        from betterinstincts.diy_skill_force import (
+            DiySkillForceError,
+            assess_arm_world_point,
+        )
+
         plan = plan_live_hotkey_arm()
         self.assertEqual(plan["step"], "ARM_LIVE_HOTKEYS")
-        self.assertEqual(plan["order"], ["LEFT_CLICK_WORLD", "RIGHT_CLICK_CANCEL_OPTIONS"])
-        self.assertEqual(plan["world_client_xy"], [200, 200])
-        self.assertIn("TREAT_CANCEL_RMB_AS_PORTRAIT_FOLLOW", plan["forbidden"])
+        self.assertEqual(
+            plan["order"],
+            [
+                "WAIT_TRUSTED_IDLE_GE_15S",
+                "SNAPSHOT_OPERATOR_FOREGROUND",
+                "BORROW_SIMS_FOREGROUND",
+                "RIGHT_CLICK_EXPOSED_WORLD_TERRAIN",
+                "RESTORE_OPERATOR_FOREGROUND",
+            ],
+        )
+        self.assertTrue(plan["interruptible"])
+        self.assertEqual(plan["world_client_xy"], [880, 480])
+        self.assertEqual(plan["world_point_rule"], "EXPOSED_WORLD_TERRAIN_ONLY")
+        self.assertIn("ARM_ON_MAPPED_FIXED_UI_COORD", plan["forbidden"])
+        self.assertIn("LEAVE_OPERATOR_TRAPPED_IN_SIMS", plan["forbidden"])
         self.assertNotIn("RIGHT_CLICK_VIEW", plan["order"])
         custom = plan_live_hotkey_arm(world_client_xy=[800, 400])
         self.assertEqual(custom["world_client_xy"], [800, 400])
+        self.assertFalse(assess_arm_world_point([200, 200])["ok"])
+        self.assertFalse(assess_arm_world_point([454, 1055])["ok"])  # Olga portrait seed
+        self.assertTrue(assess_arm_world_point([880, 480])["ok"])
+        with self.assertRaises(DiySkillForceError):
+            plan_live_hotkey_arm(world_client_xy=[454, 1055])
+
+        interop = __import__("json").loads(
+            Path("contracts/workflow-interoperability.v1.json").read_text(encoding="utf-8")
+        )
+        borrow = interop["game_input_borrow_restore"]
+        self.assertEqual(
+            borrow["order"][0],
+            "WAIT_TRUSTED_IDLE_GE_15S",
+        )
+        self.assertEqual(
+            borrow["order"][1],
+            "SNAPSHOT_OPERATOR_FOREGROUND",
+        )
+        self.assertIn("LEAVE_OPERATOR_TRAPPED_IN_SIMS", borrow["forbidden"])
+        self.assertIn("INSTALL_OS_CRON_FOR_GAME_RESUME", borrow["forbidden"])
+        self.assertIn("OS_CRON", borrow["resume_mechanism"]["not"])
 
 
 if __name__ == "__main__":

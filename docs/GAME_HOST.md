@@ -67,7 +67,7 @@ python -m scripts.game_baseline --run-id bi002-quiz-boot
 
 ### Relocate / HUD click notes (1920×1080 borderless, LOCAL_OBSERVED)
 
-- Top-right HUD icons sit near **y≈22** (not y≈40). Options `…` ≈ `(1898, 22)`. Live HUD **Manage Worlds pin** ≈ `(1558, 22)` (Gallery is ~`(1608, 22)` — do not confuse).
+- Top-right HUD icons sit near **y≈22** (not y≈40). PrintWindow-measured 2026-11-09 (also `contracts/fixed-ui-click-map.v1.json#top_right_hud_1920x1080`): Build/Buy `(1504, 22)`, Manage Worlds `(1562, 22)`, Gallery `(1609, 22)`, EA Store `(1650, 22)`, Options `…` `(1898, 22)`. Prefer F3/F4/F1 over clicks. **Cheat console strip overlays this band** when open.
 - Options → **Manage Worlds** menu row ≈ `y=713`. Welcome Wagon can grey this out until cleared. **Save and Go to Manage Worlds** blue text ≈ `y=556` (question body is ~`y=492` — miss that).
 - Modal buttons (Save and Go / Exit Create A Sim / overwrite / etc.): click the **blue text row**, not the tall white panel body.
 - Permanent empty home: Manage Worlds → select home lot → expand lot actions → **Move Household** truck ≈ `(1692, 1000)` → select empty lot (**Bargain Bend** tip hover ≈ `(1400, 840)`, 30×20 §2,000) → BR confirm truck ≈ `(1840, 1017)` → moving modal check ≈ `(1240, 740)`. Travel/visit alone is not permanent home.

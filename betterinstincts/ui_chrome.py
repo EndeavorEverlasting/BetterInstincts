@@ -342,6 +342,63 @@ def plan_catalog_to_inventory(
     }
 
 
+def bottom_right_panel_hotkey_rows(*, cfg: Optional[dict] = None) -> list[dict]:
+    """All LIVE bottom-right panel letter hotkeys (G/J/L/R/I/Y/O/U)."""
+    cfg = cfg or load_contract()
+    rows = []
+    for row in hotkeys_for_mode("LIVE", cfg=cfg):
+        if row.get("family") == "BOTTOM_RIGHT_LIVE_PANEL":
+            rows.append(dict(row))
+    return rows
+
+
+def resolve_bottom_right_panel_hotkey(
+    panel_id: str, *, cfg: Optional[dict] = None
+) -> dict:
+    """Map panel id (or alias work/school/inventory/…) to catalogued BR hotkey.
+
+    Prefer this over clicking bottom-right tray icons. Does not prove the panel
+    opened and does not authorize SendInput by itself.
+    """
+    cfg = cfg or load_contract()
+    raw = str(panel_id or "").strip().casefold()
+    if not raw:
+        raise UIChromeError("BOTTOM_RIGHT_PANEL_ID_REQUIRED")
+    aliases = {
+        "work": "career",
+        "school": "career",
+        "inventory": "personal_inventory",
+        "motives": "needs",
+        "groups": "clubs",
+    }
+    canonical = aliases.get(raw, raw)
+    for row in bottom_right_panel_hotkey_rows(cfg=cfg):
+        pid = str(row.get("panel_id") or "").casefold()
+        row_aliases = {
+            str(a).casefold() for a in (row.get("aliases") or []) if isinstance(a, str)
+        }
+        if canonical == pid or raw in row_aliases or canonical in row_aliases:
+            return {
+                "panel_id": str(row.get("panel_id")),
+                "hotkey_id": str(row.get("id")),
+                "chord": list(row.get("chord") or []),
+                "channel": "HOTKEY",
+                "requires_live_hotkey_arm": bool(row.get("requires_live_hotkey_arm", True)),
+                "requires_entitlement_attestation": bool(
+                    row.get("requires_entitlement_attestation", False)
+                ),
+                "status": str(row.get("status") or ""),
+                "effect": str(row.get("effect") or ""),
+                "execute_allowed": False,
+                "proof_ceiling": "BR_PANEL_HOTKEY_CATALOG_NOT_LIVE_PANEL_PROOF",
+                "forbidden": [
+                    "CLICK_BR_ICON_WHEN_HOTKEY_EXISTS",
+                    "CLAIM_PANEL_OPEN_FROM_HOTKEY_ALONE",
+                ],
+            }
+    raise UIChromeError("UNKNOWN_BOTTOM_RIGHT_PANEL:" + raw)
+
+
 def glossary_snapshot(cfg: Optional[dict] = None) -> dict:
     """Compact hotkey + panel glossary for docs/CLI."""
     cfg = cfg or load_contract()
@@ -359,6 +416,7 @@ def glossary_snapshot(cfg: Optional[dict] = None) -> dict:
         "default_profile": cfg["default_profile"],
         "input_preference": cfg.get("input_preference"),
         "modes": modes,
+        "bottom_right_panel_hotkeys": bottom_right_panel_hotkey_rows(cfg=cfg),
         "catalog_items": {
             k: {
                 "display_name": v.get("display_name"),

@@ -9,7 +9,8 @@ from betterinstincts.screen_atlas import (
     resolved_calibration,
 )
 from betterinstincts.ui_microsystems import (
-    UIMicrosystemError, inventory, load_contract, resolve_action,
+    UIMicrosystemError, inventory, load_contract, plan_open_bottom_right_panel,
+    resolve_action,
 )
 from betterinstincts.workflow_interop import CooperativeScreenQueue
 
@@ -91,10 +92,29 @@ class MicrosystemContractTests(unittest.TestCase):
         self.assertEqual(rows["skills_and_needs"]["actions"], [])
         self.assertIn("career.inspect_schedule",
                       [f"career.{x}" for x in rows["career"]["actions"]])
+        self.assertEqual(rows["career"]["open_chord"], ["J"])
+        self.assertEqual(rows["aspirations"]["open_chord"], ["G"])
+        self.assertEqual(rows["skills"]["open_chord"], ["L"])
+        self.assertIn("clubs", rows)
         atlas = atlas_inventory()
         self.assertIn("career", atlas["screen_maps"][
             next(i for i, row in enumerate(atlas["screen_maps"])
                  if row["scene_id"] == "live_mode")]["microsystem_ids"])
+
+    def test_plan_open_work_panel_uses_j_not_g(self):
+        work = plan_open_bottom_right_panel("work")
+        self.assertEqual(work["panel_id"], "career")
+        self.assertEqual(work["chord"], ["J"])
+        self.assertEqual(work["hotkey_id"], "PANEL_CAREER")
+        self.assertEqual(work["channel"], "HOTKEY")
+        self.assertEqual(work["mouse_fallback"], "FORBIDDEN_WHILE_HOTKEY_CATALOGUED")
+        self.assertFalse(work["execute_allowed"])
+        aspirations = plan_open_bottom_right_panel("aspirations")
+        self.assertEqual(aspirations["chord"], ["G"])
+        skills = plan_open_bottom_right_panel("skills")
+        self.assertEqual(skills["chord"], ["L"])
+        with self.assertRaisesRegex(UIMicrosystemError, "UNKNOWN_BOTTOM_RIGHT_PANEL"):
+            plan_open_bottom_right_panel("interaction_queue")
 
     def test_targets_are_never_interchangeable_across_panels(self):
         for panel, target, mode, reason in [

@@ -274,3 +274,62 @@ def plan_arm_to_console_handoff(*, cfg: Optional[dict] = None) -> dict:
         "execute_allowed": False,
         "proof_ceiling": cfg["proof_ceiling"],
     }
+
+
+def plan_skills_burger_expand(*, cfg: Optional[dict] = None) -> dict:
+    """Plan L → locate MIN burger → stepped LMB drag to MAX for full Skills list.
+
+    Endpoints are PrintWindow-measured on 1920×1080. This plan never SendInputs;
+    live drag requires ACTIVE host session + screen admit outside this module.
+    """
+    cfg = cfg or load_contract()
+    block = cfg.get("skills_burger_bar_1920x1080") or {}
+    if not isinstance(block, Mapping):
+        raise FixedUiClickMapError("SKILLS_BURGER_BAR_BLOCK_REQUIRED")
+    endpoints = block.get("endpoints") if isinstance(block.get("endpoints"), Mapping) else {}
+    amin = endpoints.get("min") if isinstance(endpoints.get("min"), Mapping) else {}
+    amax = endpoints.get("max") if isinstance(endpoints.get("max"), Mapping) else {}
+    expand = block.get("expand_drag") if isinstance(block.get("expand_drag"), Mapping) else {}
+    from_xy = list(expand.get("from_xy") or amin.get("client_xy") or [])
+    to_xy = list(expand.get("to_xy") or amax.get("client_xy") or [])
+    if len(from_xy) != 2 or len(to_xy) != 2:
+        raise FixedUiClickMapError("SKILLS_BURGER_ENDPOINTS_REQUIRED")
+    if from_xy == to_xy:
+        raise FixedUiClickMapError("SKILLS_BURGER_MIN_MAX_MUST_DIFFER")
+    return {
+        "schema": "betterinstincts.skills-burger-expand/v1",
+        "step": "EXPAND_SKILLS_BURGER",
+        "order": [
+            "ARM_LIVE_HOTKEYS",
+            "OPEN_SKILLS_HOTKEY_L",
+            "LOCATE_BURGER_MIN",
+            "LEFT_DRAG_MIN_TO_MAX",
+            "CONFIRM_GREEN_HEADER_NEAR_MAX_Y",
+        ],
+        "open_hotkey": str(block.get("open_hotkey") or "L"),
+        "min": {
+            "target_id": str(amin.get("target_id") or "live.skills_burger_grip_min"),
+            "client_xy": [int(from_xy[0]), int(from_xy[1])],
+        },
+        "max": {
+            "target_id": str(amax.get("target_id") or "live.skills_burger_grip_max"),
+            "client_xy": [int(to_xy[0]), int(to_xy[1])],
+        },
+        "drag": {
+            "from_xy": [int(from_xy[0]), int(from_xy[1])],
+            "to_xy": [int(to_xy[0]), int(to_xy[1])],
+            "input": str(expand.get("input") or "LEFT_BUTTON_STEPPED_DRAG"),
+            "owner": str(expand.get("owner") or "scripts.win32_input.left_drag"),
+        },
+        "forbidden": [
+            "SCROLLBAR_ALONE_AS_FULL_PANEL_READ",
+            "TREAT_BURGER_DRAG_AS_SKILLS_PANEL_PASS",
+            "SENDINPUT_FROM_MAP_MODULE",
+        ],
+        "execute_allowed": False,
+        "proof_ceiling": cfg["proof_ceiling"],
+        "note": (
+            "Grab the two-line burger above SKILL MASTERY PERKS at MIN height and "
+            "drag upward to MAX before panel-record. Remeasure if green header Y drifts."
+        ),
+    }

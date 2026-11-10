@@ -61,21 +61,47 @@
     "owner": "betterinstincts/diy_skill_force.py",
     "helper": "scripts/diy_skill_force.py::_arm_live_hotkeys",
     "repository_skill": ".cursor/skills/live-hotkey-arm",
-    "purpose": "Put keyboard focus in the Live game client before hotkeys",
+    "purpose": "Interruptibly borrow Sims, terrain-RMB arm Live hotkeys, restore the operator's app",
     "order": [
+      "WAIT_TRUSTED_IDLE_GE_15S",
+      "SNAPSHOT_OPERATOR_FOREGROUND",
+      "BORROW_SIMS_FOREGROUND",
+      "RIGHT_CLICK_EXPOSED_WORLD_TERRAIN",
+      "RESTORE_OPERATOR_FOREGROUND"
+    ],
+    "order_legacy_also_works": [
       "LEFT_CLICK_WORLD",
       "RIGHT_CLICK_CANCEL_OPTIONS"
     ],
-    "operator_rule": "Left-click ensures that the focus is in the game, and then right-click cancels the options so that the hotkeys work.",
-    "operator_detail": "You have to left-click in the world and right-click to cancel the options, then the hotkeys work.",
+    "operator_rule": "Borrow Sims briefly, right-click exposed world/terrain to arm Live hotkeys, then restore the operator's foreground app.",
+    "operator_detail": "Terrain RMB arms hotkeys. The operator may be in YouTube or any other app — snapshot → borrow → RMB → restore so they keep control of their computer. Prior LMB→RMB also worked but left-click is not required. Composes with ASYNC_INTEROP 15s idle.",
+    "interruptibility": {
+      "contract": "contracts/workflow-interoperability.v1.json#game_input_borrow_restore",
+      "owner": "scripts.diy_skill_force._with_sims_input_borrow",
+      "note": "Play-brief waits with operator app restored; never leave user trapped in Sims"
+    },
     "default_world_client_xy": [
-      200,
-      200
+      880,
+      480
     ],
-    "world_point_note": "Prefer empty sky/wall/floor away from desks and Sims. Left-click on interactables opens pie options (e.g. Clean Lightly) that block hotkeys until right-click cancel.",
+    "pin_arm_point_during_skill_force": true,
+    "world_point_rule": "EXPOSED_WORLD_TERRAIN_ONLY",
+    "world_point_note": "Skill-force uses ONE pinned terrain arm point (default [880,480]). Do not roam street corners, zoom out, pan the lot, or click around the map — that disrupts the operator and does not level skills. Never a fixed-ui-click-map seed (portraits, trays, strip, burger, TR HUD, calendar, …).",
+    "forbid_mapped_fixed_ui_coordinates": true,
+    "mapped_exclusion_radius_px": 36,
+    "hud_exclusion_bands_1920x1080": {
+      "top_y_max": 70,
+      "bottom_y_min": 980,
+      "left_x_max": 320,
+      "right_x_min": 1520,
+      "note": "Bands cover top chrome, household/portrait/console strip, whims, BR trays"
+    },
+    "assessor": "betterinstincts.diy_skill_force.assess_arm_world_point",
     "required_before": [
       "SPACE_HOUSEHOLD_TRAVERSE",
-      "LIVE_HOTKEYS_WHEN_FOCUS_AMBIGUOUS"
+      "LIVE_HOTKEYS_WHEN_FOCUS_AMBIGUOUS",
+      "PANEL_LETTER_J_L_G",
+      "CTRL_SHIFT_C_WHEN_FOCUS_AMBIGUOUS"
     ],
     "handoff_next": "ARM_TO_CHEAT_CONSOLE",
     "console_microsystem": {
@@ -86,28 +112,119 @@
       "require_white_strip_before_type": true
     },
     "fixed_ui_click_map": "contracts/fixed-ui-click-map.v1.json",
+    "operator_corrections": [
+      "2026-11-10: arm LMB/RMB must not use mapped fixed-ui coordinates — only remaining exposed world/terrain",
+      "2026-11-10: terrain right-click alone arms hotkeys; left-click before RMB is not required",
+      "2026-11-10: focus loss is any operator app (YouTube, browser, IDE) — arm must borrow Sims then restore; never monopolize the desktop"
+    ],
     "not": [
       "RIGHT_CLICK_VIEW",
       "PRIMARY_TARGET_SIM_SELECT",
-      "CONSOLE_TYPE_AUTHORITY"
+      "CONSOLE_TYPE_AUTHORITY",
+      "ARM_ON_MAPPED_FIXED_UI_COORD",
+      "MONOPOLIZE_FOREGROUND_FOR_AGENT_SESSION",
+      "LEAVE_OPERATOR_TRAPPED_IN_SIMS"
     ]
   },
   "target_sim_algorithm": {
     "owner": "betterinstincts/diy_skill_force.py",
     "cli": "scripts/diy_skill_force.py target-sim",
-    "purpose": "Select one Sim by portrait, prove identity from Skills/Dynasty header, center+zoom camera, open console only with strip proof, force gap skills, panel-record",
+    "purpose": "Select one Sim by portrait, prove identity from work/Skills header, open console with strip proof, force gap skills, panel-record. No camera/zoom/map wandering — that is noise for skill level-ups.",
     "order": [
       "EVALUATE",
       "SELECT_PORTRAIT",
       "PROVE_IDENTITY",
-      "CAMERA_CENTER_ZOOM",
       "CONSOLE_CONFIRM",
       "DISPATCH",
       "PLAY_BRIEF",
       "PANEL_RECORD"
     ],
+    "camera_during_skill_force": "FORBIDDEN",
+    "map_click_during_skill_force": "FORBIDDEN_EXCEPT_ONE_FIXED_ARM_POINT",
     "select_control": "LEFT_CLICK_HOUSEHOLD_PORTRAIT",
-    "select_note": "Do not Space-cycle as the primary select. Click the target portrait, then prove the panel header embeds their name before any type_text.",
+    "select_note": "Do not Space-cycle as the primary select. Click the target portrait, then prove identity before any type_text.",
+    "selection_cues": {
+      "owner": "betterinstincts.diy_skill_force.assess_selection_identity",
+      "identity_requires_panel_name": true,
+      "preferred_identity_panel": "J_WORK_CAREER",
+      "progress_panel": "L_SKILLS",
+      "accepted_identity": [
+        "WORK_OR_CAREER_PANEL_NAME",
+        "SKILLS_OR_DYNASTY_HEADER_NAME",
+        "ASPIRATION_SATISFACTION_NAME"
+      ],
+      "corroboration_only": [
+        "WHITE_PORTRAIT_BOUNDARIES"
+      ],
+      "examples": [
+        "work/career panel embeds Olga",
+        "Olga hasn't earned any perks yet",
+        "Olga's Satisfaction (valid, not preferred for skill-force)"
+      ],
+      "forbidden": [
+        "MOOD_COLOR_AS_SELECTION",
+        "SPACE_CYCLE_WITHOUT_NAME_PROOF",
+        "WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY",
+        "ASPIRATION_G_AS_DEFAULT_IDENTITY"
+      ],
+      "note": "Identical Servo portraits: white bounds prove a chip is selected, never which Sim. Open J for name, then L for skill progress.",
+      "bottom_right_open": "HOTKEY_FIRST via ui_microsystems.plan_open_bottom_right_panel (J=work/career preferred identity, L=skills progress, G=aspirations valid-not-preferred)"
+    },
+    "lean_panel_sequence": {
+      "owner": "betterinstincts.diy_skill_force.plan_lean_olga_skill_beat",
+      "arm_then_letter_owner": "betterinstincts.diy_skill_force.plan_arm_then_panel_letter",
+      "fresh_arm_before_every_panel_letter": false,
+      "arm_once_per_skill_beat": true,
+      "rearm_only_if_hotkey_miss": true,
+      "order": [
+        "BORROW_SIMS",
+        "ONE_PINNED_TERRAIN_ARM",
+        "ENTER_CENTER_ACTIVE_SIM",
+        "LEFT_CLICK_PORTRAIT",
+        "J_WORK_NAME_PROOF",
+        "L_SKILLS_PROGRESS_SIGHT",
+        "CTRL_SHIFT_C",
+        "TYPE_PROBE",
+        "CLOSE_CONSOLE",
+        "PLAY_BRIEF_THEN_PAUSE",
+        "RESTORE_OPERATOR",
+        "MEASURE_EXTRAPOLATE_CONFIRM",
+        "NEXT_SKILL_OR_PANEL_RECORD"
+      ],
+      "play_brief_owner": "betterinstincts.diy_skill_force.plan_arm_then_play_brief",
+      "measure_requires_play_brief": true,
+      "skills_panel_inventory": {
+        "owner": "betterinstincts.diy_skill_force.plan_skills_panel_inventory",
+        "canonical_commands_owner": "betterinstincts.diy_skill_force.canonical_skill_commands",
+        "cheat_template": "stats.set_skill_level {skill_stat} {level}",
+        "burger_expand_first": true,
+        "scroll": {
+          "list_client_xy_1920x1080": [1700, 520],
+          "wheel_notches_per_page": 6,
+          "max_pages": 10,
+          "directions": ["DOWN", "UP"],
+          "helper": "scripts.win32_input.send_wheel",
+          "note": "Scroll the Skills list to see every row; non-yellow (non-gold) rows are gap targets"
+        },
+        "maxed_cue": "GOLD_ROW_CHECKMARK_LEVEL_10",
+        "gap_cue": "NON_YELLOW_ROW_BELOW_TARGET",
+        "gap_resolver": "betterinstincts.diy_skill_force.gap_targets_from_observed_levels",
+        "force_gaps_owner": "betterinstincts.diy_skill_force.plan_force_gaps_beat",
+        "force_gaps_cli": "python -m scripts.diy_skill_force force-gaps --member-key CHARLEE_P3 --portrait-xy 522,1055 --bundle full_unlock --redo --always-include media_production --execute --process-id PID --console-strip-observed",
+        "never_forget": "skill_catalog is the canonical id→skill_stat→cheat list; full_unlock must cover adult majors; CLI: python -m scripts.diy_skill_force commands",
+        "media_production_canonical": "stats.set_skill_level Major_MediaProduction 10",
+        "inherited_all_listed_max_is_not_fresh_panel_proof": true
+      },
+      "active_sim_camera": {
+        "keep_focused": true,
+        "refocus_hotkey": "Enter",
+        "refocus_owner": "ui-chrome native Enter centers active Sim (not Shift+Enter lot center)",
+        "when": "After terrain arm, after noticing camera/selection switch away from active Sim, before measure if view drifted",
+        "forbidden": ["MAP_ROAM_TO_REFOCUS", "WHEEL_ZOOM_OUT_TO_REFOCUS", "SHIFT_ENTER_LOT_CENTER_AS_SKILL_FORCE_DEFAULT"]
+      },
+      "why_one_arm_only": "Terrain RMB can displace the camera. Operator 2026-11-10: arm once, then Enter to recenter on the active Sim, then hotkeys — never roam/zoom the lot",
+      "why_play_brief": "Skills panel levels only refresh after a few seconds of actual Live play; paused-only reads are STALE and must not drive extrapolate/panel-record"
+    },
     "space_recovery_requires_live_hotkey_arm": true,
     "camera_mode": "RIGHT_CLICK_VIEW",
     "camera_pullback_from_max_close": 0.15,
@@ -123,8 +240,50 @@
       "2026-11-09: burger-bar expand Skills list before full read",
       "2026-11-09: unfocused type_text presses V and starts video recording",
       "2026-11-09: selection drift — prove Olga/Bernice/… from panel header, not Space guesses",
-      "2026-11-09: Space does nothing until left-click world then right-click cancel options (live-hotkey-arm)"
-    ]
+      "2026-11-09: Space does nothing until left-click world then right-click cancel options (live-hotkey-arm)",
+      "2026-11-09: selected Sim = white portrait boundaries and/or BR work/aspiration name text; mood color is not selection",
+      "2026-11-09: BR panels open by letter — G aspirations, J career/work, L skills, R relationships, I inventory, Y simology, O needs, U clubs",
+      "2026-11-09: after Ctrl+Shift+C the cheat field is focused — type the batch without per-line strip reclick or re-arm",
+      "2026-11-09: per skill measure one progress delta, extrapolate remaining iterations, confirm panel, then next skill",
+      "2026-11-09 lean skill beat FORBIDDEN: portrait RMB / RIGHT_CLICK_VIEW / wheel zoom / camera ladder / portrait probe loop — arm RMB is world cancel-options only; select is LEFT_CLICK portrait once then Ctrl+Shift+C",
+      "2026-11-10: white bounds insufficient among identical Servos — identity = panel name (prefer J work); then L skills; play brief before measuring progress",
+      "2026-11-10: J/L/G did not register because arm was skipped — fresh terrain RMB arm immediately before every panel letter and Ctrl+Shift+C",
+      "2026-11-10: arm is terrain right-click only — prior LMB→RMB also worked but left-click is not required",
+      "2026-11-10: Skills levels do not update until Live actually plays a few seconds — arm→1 play→wait≥5s→arm→0 pause before every measure/extrapolate; play/pause without fresh arm leaves the game paused so the panel stays stale",
+      "2026-11-10: stop clicking around the map and zooming out during skill force — camera/pan/zoom/map wander is noise; one fixed terrain arm point only, then hotkeys",
+      "2026-11-10: repeated terrain RMB before every J/L/1/0 still moves the map — arm ONCE per skill beat at the pinned point; hotkeys only after that; re-arm only on proven miss",
+      "2026-11-10: keep camera on the active Sim — after any arm that displaces the view, press Enter (native center-active-Sim) to refocus; notice selection/camera switches and recenter; do not roam/zoom the lot (immersion break)"
+    ],
+    "lean_skill_beat_forbidden": [
+      "PORTRAIT_RIGHT_CLICK",
+      "RIGHT_CLICK_VIEW_DURING_SKILL_FORCE",
+      "CAMERA_ZOOM_LADDER_DURING_SKILL_FORCE",
+      "CAMERA_PAN_DURING_SKILL_FORCE",
+      "WHEEL_ZOOM_DURING_SKILL_FORCE",
+      "MAP_CLICK_WANDER",
+      "STREET_CORNER_ARM_ROAM",
+      "REPEATED_TERRAIN_RMB_PER_HOTKEY",
+      "ARM_BEFORE_EVERY_PANEL_LETTER",
+      "PORTRAIT_PROBE_LOOP",
+      "REARM_BETWEEN_CHEAT_LINES",
+      "WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY",
+      "ASPIRATION_G_AS_DEFAULT_IDENTITY",
+      "MEASURE_WITHOUT_PLAY_BRIEF",
+      "PAUSED_ONLY_SKILLS_PANEL_AS_PROGRESS_PROOF"
+    ],
+    "skill_progress_extrapolator": {
+      "owner": "betterinstincts.diy_skill_force.extrapolate_skill_iterations",
+      "formula": "remaining = ceil((target - after) / delta) when delta > 0",
+      "falsify_when_delta_le_0": true,
+      "forbidden": ["GUESS_ITERATION_COUNT", "BLIND_RETRY_SAME_COMMAND"]
+    },
+    "white_boundary_detector": {
+      "owner": "betterinstincts.diy_skill_force.detect_selected_portrait_by_white_boundaries",
+      "seed_receipt": "dist/game-host/household-skill-cert/live-20261109/portrait-measure.json",
+      "role": "CORROBORATE_CHIP_SELECTED_NOT_IDENTITY",
+      "forbidden": ["MOOD_COLOR_AS_SELECTION", "WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY"]
+    },
+    "console_field_focused_after_open": true
   },
   "panel_record": {
     "owner": "betterinstincts/diy_skill_force.py",
@@ -263,19 +422,26 @@
       "play_brief_for_fresh_panel": {
         "enabled_by_default_for_verify": true,
         "requires_skills_panel_open": true,
+        "requires_live_hotkey_arm_before_play": false,
+        "requires_live_hotkey_arm_before_pause": false,
+        "owner": "betterinstincts.diy_skill_force.plan_arm_then_play_brief",
         "min_play_seconds": 5,
         "max_play_seconds": 10,
         "default_play_seconds": 7,
         "play_key": "1",
         "pause_key": "0",
-        "purpose": "Bounded Live tick so Skills panel refreshes; capture/analyze; immediately re-pause",
+        "purpose": "Bounded Live tick so Skills panel refreshes; capture/analyze; immediately re-pause — no terrain RMB (map noise)",
         "always_repause": true,
+        "measure_without_play_brief": "FORBIDDEN",
+        "paused_only_measure": "UNPROVEN_STALE",
         "not": [
           "leave_sim_running",
           "main_menu_Resume",
           "permanent_speed_change",
           "live_cert_proof",
-          "unbounded_unpause"
+          "unbounded_unpause",
+          "measure_skills_while_still_paused_without_play",
+          "repeated_terrain_rmb_before_play_pause"
         ]
       },
       "dispatch_while_paused_allowed": true
@@ -659,7 +825,12 @@
       "skill_stat": "Major_MediaProduction",
       "pack_hint": "Get Famous",
       "diy_role": "media_unlocks",
-      "useful_at": "Video production"
+      "useful_at": "Video production",
+      "cheat_command": "stats.set_skill_level Major_MediaProduction 10",
+      "typo_guard": [
+        "Major_MediaProducton"
+      ],
+      "notes": "Spelling is MediaProduction (with i). Major_MediaProducton is a no-op typo."
     },
     {
       "id": "parenting",
@@ -800,6 +971,28 @@
       ],
       "default_level": 10,
       "notes": "Creative activity unlocks."
+    },
+    "remote_income": {
+      "display_name": "Remote / home money skills",
+      "skill_ids": [
+        "handiness",
+        "programming",
+        "writing",
+        "painting",
+        "fabrication",
+        "photography",
+        "media_production",
+        "video_gaming",
+        "flower_arranging",
+        "comedy",
+        "piano",
+        "guitar",
+        "violin",
+        "singing",
+        "dj_mixing"
+      ],
+      "default_level": 10,
+      "notes": "Home/remote earn order for Olga: programming/writing/painting/fabrication first, then photo/media/gaming, then craft-sell and creative tip skills."
     },
     "social": {
       "display_name": "Social unlocks",

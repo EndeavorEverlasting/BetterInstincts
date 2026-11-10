@@ -1,0 +1,21 @@
+{
+  "schema": "betterinstincts.consultation/v1",
+  "id": "BI-GAME-INPUT-BORROW-RESTORE-20261110",
+  "date": "2026-11-10",
+  "proposed_capability": "Interruptible Sims input borrow/restore: when Live keyboard/mouse effects need Sims foreground, snapshot the operator's current foreground app (YouTube, browser, IDE, anything), briefly borrow Sims for one armed effect, then restore the operator app. Never monopolize the desktop or leave the user trapped in Sims. Complements ASYNC_INTEROP 15s idle — idle still gates takeover; borrow/restore prevents permanent focus theft during authorized game ticks (including play-brief waits while the user watches another app).",
+  "motivation": "Operator correction 2026-11-10: focus loss is not Cursor-specific; users watch YouTube while the game runs. Agent must control Sims without the user losing control of their computer.",
+  "owners": [
+    "docs/ASYNC_INTEROP.md",
+    "contracts/workflow-interoperability.v1.json",
+    "contracts/diy-skill-force.v1.json",
+    "scripts/diy_skill_force.py",
+    ".cursor/skills/live-hotkey-arm/SKILL.md"
+  ],
+  "forbidden": [
+    "MONOPOLIZE_FOREGROUND_FOR_AGENT_SESSION",
+    "LEAVE_OPERATOR_TRAPPED_IN_SIMS",
+    "CURSOR_SPECIFIC_FOCUS_THEFT_FRAMING",
+    "SKIP_15S_IDLE_GATE"
+  ],
+  "expected_outcome": "Arm and play-brief use SNAPSHOT → BORROW_SIMS → EFFECT → RESTORE_OPERATOR_FOREGROUND; play-brief wait occurs while operator app remains foreground."
+}

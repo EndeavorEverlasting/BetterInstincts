@@ -1,58 +1,79 @@
 ---
 name: live-hotkey-arm
 description: >-
-  Arms The Sims 4 Live hotkeys by left-clicking in the world then right-clicking
-  to cancel options. Use when Space, Ctrl+Shift+C, or other Live hotkeys fail to
-  register, when household sim cycling does nothing, or before any Live hotkey
-  after focus may have left the game.
+  Arms The Sims 4 Live hotkeys by briefly borrowing the Sims window, right-clicking
+  exposed world/terrain, then restoring the operator's foreground app. Use when
+  Space, Ctrl+Shift+C, J/L/G, play/pause, or other Live hotkeys fail to register,
+  when household sim cycling does nothing, or before any Live hotkey after the
+  operator has been in another app (YouTube, browser, IDE, …).
 ---
 
-# Live hotkey arm
+# Live hotkey arm (interruptible)
 
-## Rule (operator, verbatim)
+## Rule (operator, 2026-11-10)
 
-Left-click ensures that the focus is in the game, and then right-click cancels the options so that the hotkeys work.
+1. **Snapshot** the operator's current foreground app (YouTube, browser, IDE — anything).
+2. **Borrow** Sims briefly so Live can receive input.
+3. **Right-click exposed world/terrain** to arm Live hotkeys.
+4. **Restore** the operator's app so they keep control of their computer.
 
-You have to left-click in the world and right-click to cancel the options, then the hotkeys work.
+A terrain right-click is enough for the arm itself. Earlier guidance used left-click then right-click; that also worked, but the left-click is **not required**. Focus loss is **not** IDE-specific — users watch YouTube while the game runs.
+
+Composes with ASYNC_INTEROP: 15s trusted idle still gates new screen leases. Borrow/restore does not shorten idle and must never monopolize the desktop.
 
 ## When
 
-- Before `Space` (next household Sim) or any other Live hotkey after focus may have left the game client.
-- When Space appears to do nothing (selection does not advance).
-- After agent soft-focus / Alt / HUD clicks that leave keyboard focus ambiguous.
+- **Once** at the start of a skill beat (pinned `[880,480]`), then send `J` / `L` / console / `1` / `0` without more world clicks.
+- Re-arm **only** if a hotkey clearly fails to register — repeated terrain RMB moves the map and is forbidden during skill force.
+- Before `Space` (next household Sim) when focus may have left the client.
 
 ## Sequence
 
-1. **LEFT_CLICK** an **empty** world/viewport point (sky/wall/clear floor — not desks, Sims, HUD portraits, or the cheat strip). Left-click on interactables opens pie options (e.g. Clean Lightly) that block hotkeys.
-2. **RIGHT_CLICK** the same point to **cancel** the pie/options menu that the left-click opened.
-3. Only then send Live hotkeys (`Space`, `Ctrl+Shift+C`, etc.).
-4. Prefer PrintWindow over desktop screenshots when the game window sets `WDA_EXCLUDEFROMCAPTURE`.
+1. SNAPSHOT_OPERATOR_FOREGROUND
+2. BORROW_SIMS_FOREGROUND (AttachThreadInput dance; fail closed if Sims cannot borrow)
+3. RIGHT_CLICK the **one pinned** terrain point `[880, 480]` — not street-corner roaming
+4. Press **Enter** to recenter on the **active Sim** (terrain arm can displace the camera; immersion requires staying on the selected Sim). If selection/camera switches later, Enter again. Never Shift+Enter (lot) and never roam/zoom to refocus.
+5. RESTORE_OPERATOR_FOREGROUND when yielding the desktop
+6. Then send Live hotkeys (`J`, `L`, `G`, `1`/`0`, `Space`, `Ctrl+Shift+C`, …)
+7. Prefer PrintWindow over desktop screenshots when the game window sets `WDA_EXCLUDEFROMCAPTURE`
+
+**Skill-force camera (operator 2026-11-10):** keep focus on the active Sim. Ban lot roam / wheel zoom-out / street top-down as “refocus.” Use native Enter after arm or whenever the view drifts.
+
+Assessor: `assess_arm_world_point` — rejects HUD bands and points within 36px of any mapped seed. Pinned terrain point: `[880, 480]`.
+
+## Play-brief (Skills measure)
+
+1. Borrow → arm → press `1` → restore operator app
+2. Wait ≥5s while they keep YouTube/other apps
+3. Borrow → arm → press `0` → restore
+4. Only then measure Skills panel
+
+Paused-only panel reads are STALE (`plan_arm_then_play_brief`).
 
 ## Do not
 
-- Treat the cancel right-click as `RIGHT_CLICK_VIEW` portrait follow / camera arm.
+- Monopolize foreground for the agent session or leave the operator trapped in Sims.
+- Arm on mapped fixed-UI coordinates or HUD bands.
+- Treat terrain RMB as `RIGHT_CLICK_VIEW` portrait follow / camera arm.
+- **Never right-click a household portrait during the lean skill-force beat** (select is LEFT_CLICK only).
 - Skip this arm and “Space until lucky.”
-- Use this as a substitute for **LEFT_CLICK the target portrait** when selecting a particular Sim for skill force — portrait click + Skills/Dynasty header proof remain required for target-sim.
 - `type_text` cheats without a confirmed white console strip (unfocused typing is Live hotkeys; `V` starts video recording).
+- Open console with SendInput chords — use `keybd_event` Ctrl+Shift+C after a Sims borrow (operator 2026-11-10).
 
 ## Handoff to cheat console
 
-After arm, hand off to the **CHEAT_CONSOLE** microsystem — do not invent a second console opener:
+1. `ARM_LIVE_HOTKEYS` (borrow → terrain RMB → restore, or held borrow for type batch)
+2. LEFT_CLICK target portrait (under borrow if needed)
+3. Arm → **J** work for name identity (Servos collide on white bounds)
+4. Arm → **L** skills for progress sight
+5. Held borrow → `Ctrl+Shift+C` → type batch → close → **restore operator**
+6. Interruptible play-brief before any Skills measure/extrapolate
 
-1. `ARM_LIVE_HOTKEYS` (this skill)
-2. Optional fixed select (portrait click from `fixed-ui-click-map`, with header proof)
-3. `Ctrl+Shift+C` via `scripts.diy_skill_force._toggle_cheat_console`
-4. Refocus `live.cheat_console_strip` and confirm white strip before any `type_text`
-
-Plan: `python -m scripts.fixed_ui_click_map handoff` / `plan_arm_to_console_handoff`.
-
-## Fixed-UI click tracking
-
-Record every fixed-HUD click (`python -m scripts.fixed_ui_click_map record …`). Known miss: clicking ~`(300,1045)` opens the household **calendar**, not a Sim portrait.
+Plan: `plan_lean_olga_skill_beat` / `plan_arm_then_panel_letter` / `plan_arm_then_play_brief` / `_with_sims_input_borrow`.
 
 ## Code owners
 
-- Plan step: `betterinstincts.diy_skill_force.plan_live_hotkey_arm` → `ARM_LIVE_HOTKEYS`
-- Live helper: `scripts.diy_skill_force._arm_live_hotkeys` (called before Space in household traverse)
-- Handoff: `plan_arm_to_console_handoff` / `contracts/fixed-ui-click-map.v1.json`
-- Contract: `contracts/diy-skill-force.v1.json` → `live_hotkey_arm` / `household_traverse.arm_before_space`
+- Plan: `betterinstincts.diy_skill_force.plan_live_hotkey_arm` → `ARM_LIVE_HOTKEYS`
+- Live helper: `scripts.diy_skill_force._arm_live_hotkeys` / `_with_sims_input_borrow`
+- Interop: `contracts/workflow-interoperability.v1.json` → `game_input_borrow_restore`
+- Contract: `contracts/diy-skill-force.v1.json` → `live_hotkey_arm`

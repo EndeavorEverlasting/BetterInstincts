@@ -113,6 +113,26 @@ P83 resolved as Moonwake's **Agent Work Verifier & Iterative Advancer** from the
 
 The bounded screen-action extension is [SCREEN_ATLAS.md](SCREEN_ATLAS.md), `contracts/screen-atlas.v1.json` and `betterinstincts/screen_atlas.py`. It **composes**, not replaces, the existing `ui_chrome` target map, `scenes`, `camera_traverse.safe_rest_point`, hidden-object console glossary and this cooperative queue. Use `python -m scripts.screen_atlas inventory` to inspect available screen/action names. Exact-build target calibration, independent scene cues, an already-owned Playwright-hosted game page and fresh 15s idle are mandatory before a click. A second admitted effect parks the cursor in the interior; after human interruption, no cursor fight or blind replay. The additional injected `enqueue_native_game_click` port accepts exact native PID/session, foreground PID and window origin while reusing the same queue. It does not bypass `screen_admit` or dispatch Win32 on its own. Live Win32 caller adoption and observed no-pan game proof remain P08/local-agent work. Do not assume that Playwright automatically sees a native Sims game.
 
+## 2026-11-10 — Game input borrow / restore (watch YouTube while Sims ticks)
+
+Authorized Live effects still need Sims focused for a moment (Windows delivers keyboard/mouse to the foreground window). That must **not** mean the agent monopolizes the desktop or leaves the operator trapped in Sims while they watch YouTube or use any other app.
+
+Contract: `workflow-interoperability.v1.json` → `game_input_borrow_restore`. Live helper: `scripts.diy_skill_force._with_sims_input_borrow`.
+
+```text
+WAIT trusted idle >= 15s (any mouse/key activity restarts the wait; work retained)
+  -> SNAPSHOT operator foreground (YouTube / browser / IDE / …)
+  -> BORROW Sims briefly
+  -> one armed effect (terrain RMB, panel letter, play/pause, console chord, …)
+  -> RESTORE operator foreground
+```
+
+**Resume ≠ OS cron.** When the operator is busy, host_listener ticks and skill-force helpers yield and keep the intent. Continuation happens when `GetLastInputInfo` age again clears 15s — via `CooperativeScreenQueue.drain`, host_listener tick, or `_wait_for_input_idle`. Do **not** install Task Scheduler, cron, autostart, or a keylogger daemon. Play-brief waits with the operator app restored so Skills can refresh while they keep watching. Typed cheat batches may hold the borrow until console close, then restore.
+
+**Speaking to the agent (2026-11-10 regression):** voice/chat with the operator is operator activity even when Sims looks idle. Do **not** keep a Live SendInput job running while the operator is talking to the agent. Mark work retained / `WAITING_FOR_USER`, stop mid-beat actuation, and resume only after trusted idle (cooperative waiter). Explicit `operator_busy` covers dictation that emits no keyboard events.
+
+**Away ≠ busy (2026-11-10 correction):** operator absence from the desk is not a blocker. Do **not** invent `operator_busy` / yield / “wait for user” from a quiet chat, a prior kill of an overlapping job, or agent uncertainty. Use OS last-input idle (≥15s) as the gate; when the machine is idle, continue Live certs (full catalog gaps — mischief, logic, wellness, robotics, gardening, etc.). Do not stop short of the canonical skill list.
+
 ## 2026-11-09 — Foreground PID diagnostics and voice-safe input handoff
 
 The canonical `player_presence.probe_windows` now reports only the foreground PID and executable **basename** as ephemeral diagnostic hints, while the actual desktop control gate still depends on trustworthy system-wide `GetLastInputInfo` age. It never captures or persists window titles, process paths, outside-app keystrokes, speech, or an application-usage history. Being in a non-Sims PID is not itself proof of user activity; a recent mouse/key event anywhere blocks takeover. Call `python -m scripts.control_handoff --session-id SESSION --process-id PID --idle-ms 30000 --operator-busy` for explicit voice dictation / hands-free activity that does not produce input events. The busy state must be provided to each new decision and does not install a watcher. Idle thresholds 30/60/120s are supported (canonical minimum remains 15s). The cooperative in-memory queue retains intentions; screen input still requires fresh two-probe step admission.

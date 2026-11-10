@@ -1,3 +1,140 @@
+## 2026-11-10 — Charlee force-gaps + MediaProduction codified
+
+**Operator:** Finish skills for the main human Sim (Charlee); keep `stats.set_skill_level Major_MediaProduction 10`; after many Live forces, codify so agents stop one-shot scripting.
+
+**CHANGED:** `plan_force_gaps_beat` / `resolve_force_gap_commands` / CLI `force-gaps`; MediaProduction canonical pinned; DIY docs. Live: Charlee P3 `(522,1055)` `--redo` full_unlock 46 commands dispatched (`charlee-force-gaps.json`).
+
+**PROVED offline:** unit + plan emit MediaProduction. **PROVED live dispatch:** FORCE_GAPS_DISPATCHED typed_count=46. **NEXT:** scroll Charlee Skills panel → panel-record yellow vs gaps (inherited all-listed-max ≠ fresh proof).
+
+## 2026-11-10 — Skills scroll inventory + canonical cheat list
+
+**Operator:** Scroll the Skills list so every row is seen; non-yellow rows are gap targets; keep a canonical skill→command list so spelling/commands are never forgotten.
+
+**CHANGED:** `skills_panel_inventory` (burger + wheel UP/DOWN); `canonical_skill_commands` / `gap_targets_from_observed_levels`; CLI `commands` + `skills-inventory-plan`; `Major_MediaProduction` typo_guard; DIY/ASYNC docs; tests.
+
+**PROVED offline:** unit + CLI (`remote_income` 15 commands; MediaProduction spelling). **NEXT:** after ≥15s idle, Live L → invent scroll → force non-yellow gaps (correct MediaProduction) → panel-record. No Live while operator speaking.
+
+## 2026-11-10 — Arm is terrain right-click only (LMB optional)
+
+**Operator correction:** You do not have to left-click then right-click — a right-click on exposed world/terrain is enough. Prior LMB→RMB was close but over-specified.
+
+**CHANGED:** `live_hotkey_arm.order` → `RIGHT_CLICK_EXPOSED_WORLD_TERRAIN`; `_arm_live_hotkeys` RMB-only; skill/docs/tests. Still forbid mapped UI arm points. Handiness remains priority skill for Olga.
+
+**NEXT:** Olga Handiness via terrain-RMB arm + keybd Ctrl+Shift+C → measure.
+
+## 2026-11-10 — Ctrl+Shift+C must use keybd_event (not SendInput)
+
+**Operator correction:** Everything else lined up; Ctrl+Shift+C was wrong — manual chord works, agent SendInput miss (same class as J). Fishing stayed L2 after purported force.
+
+**CHANGED:** `send_key_chord(..., via='keybd_event')` default; `_toggle_cheat_console(process_id=)` SetForeground + keybd_event Ctrl+Shift+C.
+
+**NEXT:** Live arm → Olga → console (fixed) → fishing probe → play → measure.
+
+## 2026-11-10 — Panel letters need Sims foreground + keybd_event
+
+**Operator correction:** Manual J worked immediately; agent SendInput often missed because Cursor held focus. Live fix: `SetForegroundWindow` Sims, terrain arm, then `keybd_event` for J/L (same path as cheat `type_text`).
+
+**PROVED live:** Work panel `Olga doesn't have a Job` after keybd_event J; fishing+handiness typed; play-brief ran. **NEXT:** Skills-panel LOCAL_OBSERVE levels → panel-record / extrapolate.
+
+## 2026-11-10 — Arm on exposed terrain only (never mapped UI coords)
+
+**Operator correction:** LMB→RMB arm must not use fixed-ui-click-map coordinates. Click the remaining exposed world/terrain; mapped HUD/portrait/tray points interact with the interface instead of arming.
+
+**CHANGED:** `assess_arm_world_point` (HUD bands + mapped-seed exclusion); default arm `[880,480]`; contract `world_point_rule=EXPOSED_WORLD_TERRAIN_ONLY`; skill/docs/tests.
+
+**PROVED offline:** `[200,200]` and portrait seeds reject; default terrain point accepts. **NEXT:** Live arm-on-terrain → J → L → console.
+
+## 2026-11-10 — Fresh arm before every panel letter (J/L/G)
+
+**Operator correction:** J did not register because the agent skipped world LMB→RMB arm. Common sense / already taught: arm immediately before every Live panel letter and before Ctrl+Shift+C when focus may be ambiguous.
+
+**CHANGED:** `plan_arm_then_panel_letter`; lean beat steps `ARM_THEN_J` / `ARM_THEN_L` / `ARM_THEN_CTRL_SHIFT_C`; forbid `PANEL_LETTER_WITHOUT_FRESH_ARM`; live-hotkey-arm + DIY docs.
+
+**PROVED offline:** planner emits arm-before-letter. **NEXT:** Live arm→J (Olga work name)→arm→L→arm→console→probe→play→measure.
+
+## 2026-11-10 — Lean panels: J name → L skills → play → measure (Servos)
+
+**Operator correction:** White bounds cannot tell identical Servos apart. Aspiration G works but is the wrong default for skill-force. Prefer **J work** for the Sim name, then **L skills** for progress sight. Levels update only after a few seconds of play — sequence must include play-brief before measure/extrapolate.
+
+**CHANGED:** `assess_selection_identity` requires panel name (white bounds corroborate only); `plan_lean_olga_skill_beat`; contract `lean_panel_sequence` + selection_cues; plan/docs/tests.
+
+**PROVED offline:** unit tests deny white-bounds-alone; lean order J then L. **NEXT:** Live lean beat with J name proof on Olga.
+
+## 2026-11-09 — Lean skill beat: no portrait RMB / camera improvisation
+
+**Operator correction:** Agent abandoned lean Olga skill path — re-armed, portrait-probed, **right-clicked Olga's portrait** (camera/`RIGHT_CLICK_VIEW`), zoomed out to street. Forbidden. Happy path is only: cancel → world LMB+RMB arm once → LEFT_CLICK Olga → Ctrl+Shift+C → type. Arm RMB ≠ portrait RMB; camera ladder is a separate beat.
+
+**CHANGED:** plan `olga_skill-max_sequence` failure note; `diy-skill-force` `lean_skill_beat_forbidden`; live-hotkey-arm / DIY docs pin.
+
+**PROVED:** violation observed live (street top-down + Video-55.avi side effect). **NEXT:** one disciplined lean beat only — no camera, no portrait RMB, no probe loop.
+
+## 2026-11-09 — Center console + rare jagged 4th whim (mapping wrap)
+
+**Operator:** Map bottom-center speed/env console; capture rare paused jagged 4th whim (viewer-right / Sim left shoulder); clarify bubble vs content-thumbnail vs pin-thumbtack; then Olga skill max.
+
+**CHANGED:** `fixed-ui-click-map` v5 `center_console_1920x1080` — pause `(889,1033)` … ultra `(984,1033)`, camera `(1040,1033)`, env row y1065; whim slot3 jagged `(278,900)` pin `(308,906)` offset `(+30,+6)`; geometry triad documented; consultation `BI-CENTER-CONSOLE-WHIM4-20261109`.
+
+**PROVED offline:** console seeds + jagged shape distinct from thought-cloud. **NEXT:** Olga portrait skill-force max (strip-gated).
+
+## 2026-11-09 — Whim pin/unpin slot map (selected-Sim far-left)
+
+**Operator:** Map pin/unpin for whims above the far-left Sim (left of portraits, above notebook). Usually 2–3; occasional 4th by Sim left shoulder (viewer-right).
+
+**CHANGED:** `fixed-ui-click-map` v4 `whims_pin_slots_1920x1080` — slot0 bubble `(145,833)` pin `(170,847)` measured green; slot1 `(203,827)`/`(228,841)`; slots 2–3 estimated; ui-microsystems `unpin_whim`; consultation `BI-WHIM-PIN-UNPIN-SLOTS-20261109`; docs UI_CHROME.
+
+**PROVED offline:** pin badge ≠ bubble center; mood green excluded. **NOT proved:** live pin/unpin HIT; third-slot Live remasure.
+
+## 2026-11-09 — Skills burger-bar MIN+MAX endpoints (pre-console)
+
+**Operator:** Codify burger at full expand (already up), collapse to minimum, measure both so expand drag is durable before cheat console / Olga skill cert.
+
+**CHANGED:** `fixed-ui-click-map` v3 `skills_burger_bar_1920x1080` — MIN `(1722,810)`, MAX `(1722,225)`; `plan_skills_burger_expand`; `win32_input.left_drag`; ui-microsystems `skills.expand_burger_bar`; consultation `BI-SKILLS-BURGER-BAR-EXPAND-20261109`; captures `printwindow-skills-burger-max/min.png`; docs DIY/UI_CHROME.
+
+**PROVED offline:** two-line burger PrintWindow endpoints differ; expand plan `execute_allowed=false`. **PROVED live measure:** MAX then collapse→MIN on PID 78240. **NEXT:** L → expand min→max → Olga panel-record / strip-gated force.
+
+## 2026-11-09 — Top-right Live HUD click map (pre-console precision)
+
+**Operator:** Codify top-right before cheat console — strip overlays this band; clicks must be precise.
+
+**CHANGED:** `fixed-ui-click-map.top_right_hud_1920x1080` — Build `(1504,22)`, Manage Worlds `(1562,22)`, Gallery `(1609,22)`, Store `(1650,22)`, floor/walls/camera/lessons/video/notifications, Options `(1898,22)`; consultation `BI-TOP-RIGHT-HUD-CLICK-MAP-20261109`; docs UI_CHROME/GAME_HOST.
+
+**NEXT:** Olga skill-force live cert (evaluate max gaps → strip-gated force → panel-record).
+
+## 2026-11-09 — Top-left Discovery Quest tab click map
+
+**Operator:** Codify Lifelong Aspirations, Navigating Needs, You and Your Phone gift-box tabs; reserve fourth slot for work/school/party events.
+
+**CHANGED:** `fixed-ui-click-map` seeds `(26,34)` / `(60,34)` / `(99,34)` + estimated event `(135,34)`; `discovery-hud.tab_slots_1920x1080`; consultation `BI-TOP-LEFT-DISCOVERY-TABS-20261109`; docs.
+
+**PROVED offline:** three present tabs PrintWindow-aligned. **NOT proved:** fourth event-slot Live HIT.
+
+## 2026-11-09 — Bottom-left notebook / phone / Show Calendar click map
+
+**Operator:** Codify where to click notebook, phone, and Show Calendar so agents stop rediscovering the left tray.
+
+**CHANGED:** `fixed-ui-click-map` seeds `live.notebook` **(258,1055)**, `live.phone` **(282,1055)**, `live.show_calendar` **(305,1055)** on 1920×1080; `bottom_left_utility_tray_1920x1080` block; docs UI_CHROME. Capture `printwindow-bl-tray-now.png`.
+
+**PROVED offline:** coords PrintWindow-measured; calendar aligns with prior WRONG_CONTROL miss ~300. **NEXT:** portrait centers + Olga skill force.
+
+## 2026-11-09 — Bottom-right panel letter hotkeys (G/J/L/R/I/Y/O/U)
+
+**Operator:** Panel was on G (aspirations); switch to work with J. Codify **all** BR tray letters so agents never rediscover them. Prefer hotkey over icon click; improve semantic switch plan.
+
+**CHANGED:** `contracts/ui-chrome.v1.json` LIVE `BOTTOM_RIGHT_LIVE_PANEL` hotkeys + panel `hotkey_id`s; `contracts/ui-microsystems.v1.json` `bottom_right_panel_hotkeys` + per-panel `open_chord`; `plan_open_bottom_right_panel` / `resolve_bottom_right_panel_hotkey`; `scene_ui_semantics` attaches preferred chord on `RIGHT_PANEL_SWITCH_REQUIRED`; diy `selection_cues` (work/aspiration name + forbid mood-as-select); consultation `BI-BOTTOM-RIGHT-PANEL-HOTKEYS-20261109`; docs/tests.
+
+| Panel | Key |
+| --- | --- |
+| Aspirations | G |
+| Career / work | J |
+| Skills | L |
+| Relationships | R |
+| Inventory | I |
+| Simology | Y |
+| Needs | O |
+| Clubs | U |
+
+**PROVED offline:** `plan_open_bottom_right_panel('work')` → J; glossary lists 8 BR hotkeys. **NEXT:** Arm → J live for Olga career/work readback → skill force.
+
 ## 2026-11-09 — Fixed-UI click map + arm→console handoff (P95/P124/Trifecta)
 
 **Operator:** Codify world focus (LMB+RMB) and seamless handoff to Ctrl+Shift+C console microsystem. Track every fixed-HUD click so targets are learned; calendar miss (intended Sim portrait) must be recorded. Moving targets are a different system.

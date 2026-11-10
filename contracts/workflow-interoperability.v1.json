@@ -19,6 +19,35 @@
   ],
   "priority": "Human input in any app, explicit operator override, or player-directed queue always blocks; absent/stale probe blocks; idle alone never overrides app-specific scene/save/consent or locks.",
   "interruption": "Do not cancel a queued task; no new UI effects until two fresh trusted idle probes >=15s. An active callback must cooperatively checkpoint between side effects. A result after human interruption requires reconciliation to avoid blind replay.",
+  "game_input_borrow_restore": {
+    "rule": "Authorized Sims keyboard/mouse effects may briefly borrow the Sims window, then MUST restore the operator's prior foreground app (YouTube, browser, IDE, anything). Never monopolize the desktop or leave the operator trapped in Sims. Play-brief waits happen while the operator app remains foreground.",
+    "order": [
+      "WAIT_TRUSTED_IDLE_GE_15S",
+      "SNAPSHOT_OPERATOR_FOREGROUND",
+      "BORROW_SIMS_FOREGROUND",
+      "ONE_ARMED_EFFECT",
+      "RESTORE_OPERATOR_FOREGROUND"
+    ],
+    "owner": "scripts.diy_skill_force._with_sims_input_borrow",
+    "composes_with": "15s idle admission still gates every new screen lease; borrow/restore does not shorten idle",
+    "operator_activity": "Any mouse move or key press resets last-input age; listeners and skill-force helpers MUST wait (not cancel work) until trusted idle again",
+    "resume_mechanism": {
+      "in_process": "CooperativeScreenQueue drain / host_listener tick / _wait_for_input_idle poll",
+      "not": [
+        "OS_CRON",
+        "TASK_SCHEDULER",
+        "AUTOSTART_SERVICE",
+        "BACKGROUND_KEYLOGGER"
+      ],
+      "note": "Operator 'cron resume' maps to the cooperative waiter re-checking idle — never install a scheduled task"
+    },
+    "forbidden": [
+      "MONOPOLIZE_FOREGROUND_FOR_AGENT_SESSION",
+      "LEAVE_OPERATOR_TRAPPED_IN_SIMS",
+      "SKIP_15S_IDLE_GATE",
+      "INSTALL_OS_CRON_FOR_GAME_RESUME"
+    ]
+  },
   "persistence": "While caller session/process lives only; receipts contain IDs and states, never entered text or arbitrary URL; process restart requires rehydrating and revalidating intent. No background service installed.",
   "lock": "Global desktop file lock shared with per-Sims-PID host executors at bootstrap.paths().locks under the canonical user profile, independent of development checkout/worktree. Existing locks fail closed and are never auto-stolen.",
   "forbidden": [

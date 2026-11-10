@@ -119,32 +119,179 @@
           "status": "EA_DOCUMENTED_NATIVE",
           "proves_mode": false,
           "risk": "EXPLICIT_SIM_SELECTION_ONLY"
+        },
+        {
+          "id": "PANEL_ASPIRATIONS",
+          "chord": [
+            "G"
+          ],
+          "effect": "Toggle bottom-right Aspiration / Satisfaction panel",
+          "panel_id": "aspirations",
+          "family": "BOTTOM_RIGHT_LIVE_PANEL",
+          "status": "COMMUNITY_DOCUMENTED_NATIVE",
+          "proves_mode": false,
+          "requires_live_hotkey_arm": true,
+          "note": "Operator 2026-11-09: G opens aspirations (Satisfaction). Prefer over BR icon click."
+        },
+        {
+          "id": "PANEL_CAREER",
+          "chord": [
+            "J"
+          ],
+          "effect": "Toggle bottom-right Career / work / school panel",
+          "panel_id": "career",
+          "aliases": [
+            "work",
+            "school"
+          ],
+          "family": "BOTTOM_RIGHT_LIVE_PANEL",
+          "status": "COMMUNITY_DOCUMENTED_NATIVE",
+          "proves_mode": false,
+          "requires_live_hotkey_arm": true,
+          "note": "Operator 2026-11-09: J opens work/career. Prefer over BR briefcase icon click."
+        },
+        {
+          "id": "PANEL_SKILLS",
+          "chord": [
+            "L"
+          ],
+          "effect": "Toggle bottom-right Skills panel",
+          "panel_id": "skills",
+          "family": "BOTTOM_RIGHT_LIVE_PANEL",
+          "status": "COMMUNITY_DOCUMENTED_NATIVE",
+          "proves_mode": false,
+          "requires_live_hotkey_arm": true
+        },
+        {
+          "id": "PANEL_RELATIONSHIPS",
+          "chord": [
+            "R"
+          ],
+          "effect": "Toggle bottom-right Relationships panel",
+          "panel_id": "relationships",
+          "family": "BOTTOM_RIGHT_LIVE_PANEL",
+          "status": "COMMUNITY_DOCUMENTED_NATIVE",
+          "proves_mode": false,
+          "requires_live_hotkey_arm": true
+        },
+        {
+          "id": "PANEL_INVENTORY",
+          "chord": [
+            "I"
+          ],
+          "effect": "Toggle bottom-right personal Inventory panel",
+          "panel_id": "personal_inventory",
+          "family": "BOTTOM_RIGHT_LIVE_PANEL",
+          "status": "COMMUNITY_DOCUMENTED_NATIVE",
+          "proves_mode": false,
+          "requires_live_hotkey_arm": true
+        },
+        {
+          "id": "PANEL_SIMOLOGY",
+          "chord": [
+            "Y"
+          ],
+          "effect": "Toggle bottom-right Simology (traits/age) panel",
+          "panel_id": "simology",
+          "family": "BOTTOM_RIGHT_LIVE_PANEL",
+          "status": "COMMUNITY_DOCUMENTED_NATIVE",
+          "proves_mode": false,
+          "requires_live_hotkey_arm": true
+        },
+        {
+          "id": "PANEL_NEEDS",
+          "chord": [
+            "O"
+          ],
+          "effect": "Toggle bottom-right Needs / motives panel",
+          "panel_id": "needs",
+          "family": "BOTTOM_RIGHT_LIVE_PANEL",
+          "status": "COMMUNITY_DOCUMENTED_NATIVE",
+          "proves_mode": false,
+          "requires_live_hotkey_arm": true
+        },
+        {
+          "id": "PANEL_CLUBS",
+          "chord": [
+            "U"
+          ],
+          "effect": "Toggle bottom-right Clubs / groups panel when Get Together entitlement is present",
+          "panel_id": "clubs",
+          "family": "BOTTOM_RIGHT_LIVE_PANEL",
+          "status": "COMMUNITY_DOCUMENTED_CANDIDATE",
+          "proves_mode": false,
+          "requires_live_hotkey_arm": true,
+          "requires_entitlement_attestation": true,
+          "note": "Pack-gated; fail closed without entitlement evidence"
         }
       ],
       "panels": {
-        "needs": {
-          "status": "UNCALIBRATED_STUB",
-          "role": "Bottom-right / motive strip tandem with Navigating Needs",
-          "extension": "Map exact motive cells after Live P08 screenshots"
+        "aspirations": {
+          "status": "HOTKEY_CATALOGUED_UNCALIBRATED_HITBOX",
+          "role": "Bottom-right Aspiration / Satisfaction panel",
+          "hotkey_id": "PANEL_ASPIRATIONS",
+          "preferred_open": "HOTKEY",
+          "extension": "Hitboxes still require Live P08 attestation; open with G"
         },
         "career": {
-          "status": "UNCALIBRATED_STUB",
-          "role": "Career / work panel",
-          "extension": "Map after Live P08 screenshots"
+          "status": "HOTKEY_CATALOGUED_UNCALIBRATED_HITBOX",
+          "role": "Career / work / school panel",
+          "aliases": [
+            "work",
+            "school"
+          ],
+          "hotkey_id": "PANEL_CAREER",
+          "preferred_open": "HOTKEY",
+          "extension": "Open with J; name embed used for selection identity"
         },
         "skills": {
-          "status": "UNCALIBRATED_STUB",
+          "status": "HOTKEY_CATALOGUED_UNCALIBRATED_HITBOX",
           "role": "Skills panel",
-          "extension": "Map after Live P08 screenshots"
+          "hotkey_id": "PANEL_SKILLS",
+          "preferred_open": "HOTKEY",
+          "extension": "Open with L; burger expand still needed for full list read"
+        },
+        "relationships": {
+          "status": "HOTKEY_CATALOGUED_UNCALIBRATED_HITBOX",
+          "role": "Relationships panel",
+          "hotkey_id": "PANEL_RELATIONSHIPS",
+          "preferred_open": "HOTKEY",
+          "extension": "Open with R"
+        },
+        "personal_inventory": {
+          "status": "HOTKEY_CATALOGUED_UNCALIBRATED_HITBOX",
+          "role": "Personal Inventory panel",
+          "hotkey_id": "PANEL_INVENTORY",
+          "preferred_open": "HOTKEY",
+          "extension": "Open with I"
+        },
+        "simology": {
+          "status": "HOTKEY_CATALOGUED_UNCALIBRATED_HITBOX",
+          "role": "Simology / traits panel",
+          "hotkey_id": "PANEL_SIMOLOGY",
+          "preferred_open": "HOTKEY",
+          "extension": "Open with Y"
+        },
+        "needs": {
+          "status": "HOTKEY_CATALOGUED_UNCALIBRATED_HITBOX",
+          "role": "Bottom-right / motive strip tandem with Navigating Needs",
+          "hotkey_id": "PANEL_NEEDS",
+          "preferred_open": "HOTKEY",
+          "extension": "Open with O; map exact motive cells after Live P08 screenshots"
+        },
+        "clubs": {
+          "status": "HOTKEY_CATALOGUED_CANDIDATE",
+          "role": "Clubs / groups panel",
+          "hotkey_id": "PANEL_CLUBS",
+          "preferred_open": "HOTKEY",
+          "requires_entitlement_attestation": true,
+          "extension": "Open with U when pack present"
         },
         "phone": {
           "status": "UNCALIBRATED_STUB",
           "role": "Sim phone experiences (travel, household, etc.)",
+          "hotkey_id": "PHONE",
           "extension": "Per-app chrome maps after Live P08 screenshots"
-        },
-        "simology": {
-          "status": "UNCALIBRATED_STUB",
-          "role": "Simology / traits panel"
         },
         "interaction_queue": {
           "status": "UNCALIBRATED_STUB",
