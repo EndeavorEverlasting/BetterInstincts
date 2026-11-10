@@ -1019,3 +1019,90 @@ def plan_acquisition_routes(
         "interop": "screen_admit_only_no_computer_use_fallback",
         "proof_ceiling": cfg["proof_ceiling"],
     }
+
+
+def plan_computer_order_domain(
+    *,
+    portraits: Sequence[Mapping],
+    domain: str,
+    item_labels: Sequence[str],
+    selected_slots: Optional[Sequence[int]] = None,
+    player_directed: bool = False,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Generic Order journey when the domain and items are *goals*, not assumed UI.
+
+    The interactive adapter must use next_observed_menu_choice for each page
+    and only dispatch per-effect after fresh player, scene, portrait, and
+    shared-desktop admission. This function NEVER issues purchases.
+    """
+    cfg = cfg or load_contract()
+    if player_directed:
+        return {
+            "schema": "betterinstincts.observed-computer-order.plan/v1",
+            "state": "YIELD_TO_PLAYER", "steps": [], "execute_allowed": False,
+            "not_bi002": True,
+        }
+    people = _observed_portraits(portraits)
+    wanted = _normalize_menu_label(domain)
+    if not wanted or wanted in {_normalize_menu_label("Order"), _normalize_menu_label("More Choices")}:
+        raise UpgradePartsForceError("SPECIFIC_ORDER_DOMAIN_REQUIRED")
+    if not isinstance(item_labels, (list, tuple)) or not 1 <= len(item_labels) <= 32:
+        raise UpgradePartsForceError("ORDER_ITEMS_REQUIRED")
+    if any(not isinstance(v, str) or not _normalize_menu_label(v) or len(v) > 120 for v in item_labels):
+        raise UpgradePartsForceError("ORDER_ITEM_LABEL_INVALID")
+    if selected_slots is not None:
+        if not isinstance(selected_slots, (list, tuple)) or not selected_slots or any(type(s) is not int for s in selected_slots):
+            raise UpgradePartsForceError("SELECTED_SLOTS_REQUIRED")
+        if len(set(selected_slots)) != len(selected_slots):
+            raise UpgradePartsForceError("DUPLICATE_SELECTED_SLOTS")
+        chosen = [p for p in people if p["slot"] in selected_slots]
+        if len(chosen) != len(selected_slots):
+            raise UpgradePartsForceError("SELECTED_PORTRAIT_NOT_OBSERVED")
+    else:
+        chosen = people
+    model = acquisition_source_catalog(cfg=cfg)["menu_model"]
+    steps = [{"op": "REQUIRE_LIVE_MODE_AND_FRESH_SCENE"},
+             {"op": "REQUIRE_CURRENT_OBSERVED_PORTRAIT_SET",
+              "portrait_ids": [p["portrait_id"] for p in people]}]
+    for person in chosen:
+        actor = {"slot": person["slot"], "portrait_id": person["portrait_id"]}
+        steps.extend([
+            {"op": "SELECT_OBSERVED_PORTRAIT", **actor,
+             "method": "CURRENT_ATTESTED_PORTRAIT_HITBOX"},
+            {"op": "VERIFY_ACTIVE_PORTRAIT", **actor},
+            {"op": "OBSERVE_SOURCE_OBJECT", "object": "computer_or_laptop", **actor},
+            {"op": "REQUIRE_FRESH_PLAYER_SCENE_EFFECT_ADMISSION", **actor},
+            {"op": "LEFT_CLICK_OBSERVED_COMPUTER", "requires_sim_at_computer": False, **actor},
+            {"op": "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES", "choice": "Order",
+             "max_pages": model["max_page_explorations"], **actor},
+            {"op": "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES", "choice": domain,
+             "max_pages": model["max_page_explorations"], **actor},
+            {"op": "OPEN_OBSERVED_PURCHASE_PICKER", "domain": domain, **actor},
+        ])
+        for item in item_labels:
+            steps.extend([
+                {"op": "REQUIRE_VISIBLE_PURCHASE_ITEM", "text": item, **actor},
+                {"op": "CONFIRM_ONLY_AFTER_FRESH_ADMISSION_AND_SPEND_APPROVAL",
+                 "text": item, "effect_class": "UNKNOWN", **actor},
+                {"op": "OBSERVE_ACTUAL_DESTINATION_AND_CURRENCY_CHANGE",
+                 "text": item, "fail": "PURCHASE_UNPROVEN", **actor},
+                {"op": "IF_PICKER_CLOSED_REOBSERVE_AND_REOPEN_DOMAIN",
+                 "choice": domain, **actor},
+            ])
+    return {
+        "schema": "betterinstincts.observed-computer-order.plan/v1",
+        "state": "OBSERVED_ORDER_DOMAIN_PLAN_READY",
+        "domain_goal": domain,
+        "item_goals": list(item_labels),
+        "portraits_observed": len(people),
+        "portraits_selected": [p["portrait_id"] for p in chosen],
+        "steps": steps,
+        "bounded_choice_resolver": "next_observed_menu_choice",
+        "known_item_availability": "NOT_PROVEN_UNTIL_VISIBLE",
+        "purchase_proof": "INVENTORY_OR_RESOURCE_AND_FUNDS_DELTA_REQUIRED",
+        "execute_allowed": False,
+        "interop": "screen_admit_only_no_computer_use_fallback",
+        "not_bi002": True,
+        "proof_ceiling": cfg["proof_ceiling"],
+    }
