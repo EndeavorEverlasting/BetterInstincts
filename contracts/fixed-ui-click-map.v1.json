@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 6,
+  "version": 7,
   "authority": "docs/UI_CHROME.md",
   "owners": {
     "map": "betterinstincts/fixed_ui_click_map.py",
@@ -177,6 +177,20 @@
       "status": "LIVE_MEASURED_20261110",
       "profile": "1920x1080",
       "notes": "Only 2px below Save — verify row highlight before click"
+    },
+    "live.save_game_add_new_save": {
+      "role": "SAVE_GAME_ADD_NEW_SAVE",
+      "client_xy": [850, 360],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "notes": "SAVE GAME dialog top green+ row only; never existing save rows"
+    },
+    "live.save_game_add_new_save_ok": {
+      "role": "SAVE_GAME_ADD_NEW_SAVE_OK",
+      "client_xy": [957, 603],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "notes": "OK on ADD NEW SAVE name modal; keep default name"
     },
     "live.top_live_people": {
       "role": "EXIT_BUILD_BUY_TO_LIVE",
@@ -879,12 +893,25 @@
       "targets": {
         "add_new_save": {
           "target_id": "live.save_game_add_new_save",
-          "client_xy": null,
-          "status": "UNMEASURED_PLACEHOLDER",
-          "notes": "Top green+ ADD NEW SAVE row — remeasure before execute"
+          "client_xy": [850, 360],
+          "status": "LIVE_MEASURED_20261110",
+          "evidence": "dist/game-host/horizon-exec-20261110/new-save-receipt.json",
+          "notes": "Top green+ ADD NEW SAVE row; proved creating My Saved Game 6 / Slot_00000007"
+        },
+        "add_new_save_ok": {
+          "target_id": "live.save_game_add_new_save_ok",
+          "client_xy": [957, 603],
+          "status": "LIVE_MEASURED_20261110",
+          "notes": "OK on ADD NEW SAVE name modal; default name left unchanged; Enter also works when name field focused"
+        },
+        "save_game_close_x": {
+          "target_id": "live.save_game_dialog_x",
+          "client_xy": [1342, 238],
+          "status": "LIVE_MEASURED_20261110",
+          "notes": "SAVE GAME modal X — prefer over Esc when Delete is exposed on a highlighted row"
         }
       },
-      "allowed_click": ["ADD_NEW_SAVE_ROW_ONLY"],
+      "allowed_click": ["ADD_NEW_SAVE_ROW_ONLY", "ADD_NEW_SAVE_OK", "SAVE_GAME_CLOSE_X"],
       "forbidden": [
         "CLICK_EXISTING_SAVE_ROW",
         "DELETE",

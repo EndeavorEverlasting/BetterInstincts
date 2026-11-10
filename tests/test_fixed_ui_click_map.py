@@ -182,7 +182,7 @@ class FixedUiClickMapTests(unittest.TestCase):
 
     def test_escape_menu_save_and_save_as_distinct_with_dialog_policy(self):
         cfg = load_contract()
-        self.assertEqual(cfg["version"], 6)
+        self.assertEqual(cfg["version"], 7)
         coords = load_escape_menu_coords()
         self.assertEqual(coords["menu_options"], (1898, 22))
         self.assertEqual(coords["save"], (960, 420))
@@ -199,8 +199,11 @@ class FixedUiClickMapTests(unittest.TestCase):
         self.assertIn("DELETE", plan["dialog_forbidden"])
         self.assertIn("OVERWRITE", plan["dialog_forbidden"])
         add_new = plan["save_game_dialog"]["add_new_save"]
-        self.assertIsNone(add_new.get("client_xy"))
-        self.assertEqual(add_new.get("status"), "UNMEASURED_PLACEHOLDER")
+        self.assertEqual(add_new.get("client_xy"), [850, 360])
+        self.assertEqual(add_new.get("status"), "LIVE_MEASURED_20261110")
+        dialog = cfg["escape_menu_1920x1080"]["save_game_dialog_1920x1080"]["targets"]
+        self.assertEqual(dialog["add_new_save_ok"]["client_xy"], [957, 603])
+        self.assertEqual(dialog["save_game_close_x"]["client_xy"], [1342, 238])
         self.assertIn("USE_MENU_SAVE_FOR_NEW_SLOT", plan["forbidden"])
 
 
