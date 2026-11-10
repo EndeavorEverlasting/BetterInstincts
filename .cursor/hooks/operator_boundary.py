@@ -89,8 +89,14 @@ def _scope(path: Any, root: str | Path) -> tuple[bool, str]:
         return False, "OUTSIDE_REPOSITORY_OR_SYMLINK_ESCAPE"
     if rel in POLICY_FILES:
         return False, "GUARD_POLICY_SELF_MUTATION"
-    if rel.startswith(".cursor/hooks/") or rel.startswith(".cursor/rules/"):
-        return False, "HARNESS_POLICY_MUTATION"
+    # Protect local execution controls and secrets, not just this hook file.
+    # A path must remain inside the repo AND outside protected subtrees.
+    if (rel == ".git" or rel.startswith(".git/")
+            or rel == ".cursor" or rel.startswith(".cursor/")
+            or rel.startswith(".github/workflows/")
+            or any(part == ".env" or part.startswith(".env.") for part in rel.split("/"))
+            or rel.endswith((".pem", ".p12", ".pfx", ".key"))):
+        return False, "HARNESS_OR_SECRET_MUTATION"
     return True, "REPOSITORY_SCOPED_WRITE"
 
 
@@ -115,7 +121,9 @@ def evaluate(payload: dict[str, Any], *, root: str | Path = ROOT) -> dict[str, s
             target = next((arguments[k] for k in ("file_path", "path", "target_path") if k in arguments), None)
             allowed, reason = _scope(target, root)
             return _decision(allowed, reason)
-        return _decision(True, "UNRELATED_TOOL")
+        # This hook only subscribes to effectful tool classes. Unrecognized
+        # names (including WriteFile or a renamed executor) cannot bypass it.
+        return _decision(False, "UNRECOGNIZED_EFFECTFUL_TOOL")
     return _decision(False, "UNRECOGNIZED_HOOK_EVENT")
 
 
