@@ -43,6 +43,10 @@ jobs:
         run: |
           python -m scripts.host_eval --out dist/host-eval/ci.json > /dev/null
           python -m unittest tests.test_host_eval -v
+      - name: Spatial topology perception eval (P67 P62)
+        run: |
+          python -m scripts.spatial_perception_eval --out dist/spatial-perception-eval/ci.json > /dev/null
+          python -m unittest tests.test_spatial_perception -v
       - name: Progression rate and CI honesty eval (P67 P62)
         run: |
           python -m scripts.progression_eval --out dist/progression-eval/ci.json > /dev/null
