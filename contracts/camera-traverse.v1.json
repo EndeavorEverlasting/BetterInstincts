@@ -457,8 +457,19 @@
       "travel_afar_zoom": "zoom_mode_observed TRAVEL_AFAR without VERIFIED_LONG_DISTANCE_TRAVEL goal",
       "operator_tokens": "lot_focus_cues[] with source operator",
       "host_tokens": "lot_focus_cues[] with source host; camera_lot_kind; camera_on_active_household_lot",
-      "scenery_tokens": "landmark_tokens / scenery_off_active_lot from host capture"
+      "scenery_tokens": "landmark_tokens / scenery_off_active_lot from host capture",
+      "neighboring_houses": "NEIGHBOR* scenery tokens are decisive OFF_LOT",
+      "neighborhood_zoom": "camera_altitude / zoom_mode_observed NEIGHBORHOOD_HIGH|NEIGHBORHOOD_ZOOM|FULL_ZOOM_OUT|STREET_TOPDOWN|WORLD_MAP, or lot_fraction_of_frame < 0.45",
+      "edge_scenery": "sidewalk/streetlamp/road alone is NOT off-lot; 2+ families dominate to OFF_LOT, lone cue needs Live HUD or household interior corroboration else AMBIGUOUS",
+      "household_fixtures": "SINK_WATER, BATHTUB_WATER, WATER_COOLER and similar fixtures never count as canal/water",
+      "missing_household_cues": "on-lot claim without Live HUD or household interior cue is AMBIGUOUS (UNKNOWN), never ON_LOT"
     },
+    "classification": {
+      "ON_LOT": "state ON_LOT",
+      "OFF_LOT": "state OFF_LOT_STREET | OFF_LOT_WATER",
+      "AMBIGUOUS": "state UNKNOWN; no restore, reobserve with a second independent cue"
+    },
+    "stale_follow_flag": "Off-lot scenery outranks camera_follow_sim_id == active sim; restore effect is still Enter (plan_sim_camera would otherwise return NO_EFFECT)",
     "restore_plan": {
       "command": "CENTER_ACTIVE_SIM",
       "hotkey_id": "CENTER_ACTIVE_SIM",

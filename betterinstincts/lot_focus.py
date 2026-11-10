@@ -2,6 +2,13 @@
 
 Policy only — no input, saves, or street roam. Restore plans use Enter
 (CENTER_ACTIVE_SIM), never Shift+Enter as the default Sim restore.
+
+Classification (``classification`` field):
+  ON_LOT     household lot attested by >=2 agreeing cues (flag/kind + Live HUD
+             or household interior cue) and no decisive off-lot scenery.
+  OFF_LOT    neighboring houses, canal/water, neighborhood/Travel Afar zoom,
+             small lot fraction, or dominant sidewalk/streetlamp scenery.
+  AMBIGUOUS  insufficient or uncorroborated cues; reobserve, no restore.
 """
 from __future__ import annotations
 
@@ -25,34 +32,130 @@ _WATER_KINDS = frozenset({"water", "canal", "river", "pond", "ocean", "dock"})
 _WATER_TOKENS = frozenset(
     {"water", "canal", "river", "pond", "dock", "ocean", "lagoon", "marina"}
 )
-_STREET_TOKENS = frozenset(
+# Decisive off-lot scenery: neighboring houses, neighborhood/world zoom classes.
+_STRONG_STREET_TOKENS = frozenset(
     {
-        "street",
-        "road",
-        "crosswalk",
-        "sidewalk",
         "neighborhood",
         "neighbor",
-        "streetlight",
-        "streetlights",
+        "neighbors",
+        "neighboring",
         "world_map",
         "off_lot",
+        "street_topdown",
+        "full_zoom_out",
+        "travel_afar",
+        "street_scenery",
+        "neighborhood_view",
     }
 )
+# Lot-edge furniture (sidewalk, streetlamp, road) also appears on a healthy
+# on-lot frame. It forces OFF_LOT only when it dominates (2+ families) or when
+# on-lot is not corroborated. Each token is counted in one family only.
+_EDGE_FAMILIES: tuple[tuple[str, frozenset[str]], ...] = (
+    (
+        "lighting",
+        frozenset({"streetlight", "streetlights", "streetlamp", "streetlamps", "lamppost"}),
+    ),
+    ("sidewalk", frozenset({"sidewalk", "curb", "pavement", "crosswalk"})),
+    ("street", frozenset({"street", "road"})),
+)
+_STREET_TOKENS = _STRONG_STREET_TOKENS | frozenset().union(*(k for _, k in _EDGE_FAMILIES))
+# Household fixtures/rooms that merely contain words like "water" or "street".
+_FIXTURE_PARTS = frozenset(
+    {
+        "sink",
+        "faucet",
+        "bathtub",
+        "tub",
+        "shower",
+        "toilet",
+        "cooler",
+        "aquarium",
+        "dishwasher",
+        "fridge",
+        "kitchen",
+        "bathroom",
+    }
+)
+_HOUSEHOLD_PARTS = frozenset(
+    {
+        "interior",
+        "kitchen",
+        "living",
+        "bedroom",
+        "bathroom",
+        "household",
+        "furniture",
+        "sofa",
+        "counter",
+        "room",
+    }
+)
+_NEIGHBORHOOD_ALTITUDES = frozenset(
+    {
+        "NEIGHBORHOOD_HIGH",
+        "NEIGHBORHOOD",
+        "NEIGHBORHOOD_ZOOM",
+        "TRAVEL_AFAR",
+        "FULL_ZOOM_OUT",
+        "STREET_TOPDOWN",
+        "WORLD_MAP",
+        "WORLD",
+    }
+)
+_MAX_TOKENS = 64
+_MAX_TOKEN_LEN = 80
+
+
+def _parts(token: str) -> set[str]:
+    return {p for p in token.replace("-", "_").replace(" ", "_").split("_") if p}
+
+
+def _is_fixture(token: str) -> bool:
+    return bool(_parts(token) & _FIXTURE_PARTS)
+
+
+def _token_hits(token: str, keywords: frozenset[str]) -> bool:
+    if token in keywords or _parts(token) & keywords:
+        return True
+    return any(key in token for key in keywords)
 
 
 def _scenery_hits(tokens: set[str], keywords: frozenset[str]) -> bool:
-    """Match exact tokens or compound labels like CANAL_LEFT / STREET_RIGHT."""
-    if tokens & keywords:
-        return True
+    """Match exact tokens or compound labels like CANAL_LEFT / STREET_RIGHT.
+
+    Household fixtures (SINK_WATER, BATHROOM_STREETLIGHT_DECOR) never count as
+    outdoor scenery.
+    """
+    return any(_token_hits(t, keywords) for t in tokens if not _is_fixture(t))
+
+
+def _edge_families(tokens: set[str]) -> set[str]:
+    found: set[str] = set()
     for token in tokens:
-        parts = {p for p in token.replace("-", "_").split("_") if p}
-        if parts & keywords:
-            return True
-        for key in keywords:
-            if key in token:
-                return True
-    return False
+        if _is_fixture(token):
+            continue
+        for name, keys in _EDGE_FAMILIES:
+            if _token_hits(token, keys):
+                found.add(name)
+                break
+    return found
+
+
+def _household_cues(tokens: set[str], observation: Mapping[str, Any]) -> bool:
+    if observation.get("active_sim_in_frame") is True:
+        return True
+    return any(_parts(t) & _HOUSEHOLD_PARTS for t in tokens)
+
+
+def _bounded_tokens(raw: Any) -> list[str]:
+    if not isinstance(raw, list):
+        return []
+    out: list[str] = []
+    for item in raw[:_MAX_TOKENS]:
+        if isinstance(item, str):
+            out.append(item.lower().strip()[:_MAX_TOKEN_LEN])
+    return out
 
 
 class LotFocusError(ValueError):
@@ -110,6 +213,10 @@ def should_assess_lot_focus(
         return True
     if observation.get("scenery_off_active_lot") is True:
         return True
+    if observation.get("landmark_tokens") or observation.get("scenery_tokens"):
+        return True
+    if observation.get("camera_altitude") or observation.get("lot_fraction_of_frame") is not None:
+        return True
     return observation.get("source") == "HOST_CAPTURE"
 
 
@@ -130,9 +237,11 @@ def assess_lot_focus(
         return {
             **base,
             "state": "UNKNOWN",
+            "classification": "AMBIGUOUS",
             "gate": gate,
             "reason": reason,
             "restore": None,
+            "next": "REOBSERVE_WITH_SECOND_INDEPENDENT_CUE",
             **extra,
         }
 
@@ -157,7 +266,13 @@ def assess_lot_focus(
 
     travel_afar_without_goal = False
     zoom_observed = observation.get("zoom_mode_observed")
+    neighborhood_zoom_label = False
     if zoom_observed is not None:
+        label = str(zoom_observed).upper().replace("-", "_").replace(" ", "_")
+        # TRAVEL_AFAR is decided by the verified-goal check below, not by label.
+        neighborhood_zoom_label = (
+            label in _NEIGHBORHOOD_ALTITUDES and label != "TRAVEL_AFAR"
+        )
         try:
             if resolve_zoom_mode_alias(str(zoom_observed)) == "TRAVEL_AFAR":
                 travel_afar_without_goal = not _verified_travel_goal(travel_goal)
@@ -166,90 +281,111 @@ def assess_lot_focus(
     if not travel_afar_without_goal and observation.get("scenery_off_active_lot") is True:
         travel_afar_without_goal = not _verified_travel_goal(travel_goal)
 
-    cues = observation.get("lot_focus_cues")
     host_tokens: list[str] = []
+    cues = observation.get("lot_focus_cues")
     if isinstance(cues, list):
-        for item in cues:
+        for item in cues[:_MAX_TOKENS]:
             if isinstance(item, Mapping) and isinstance(item.get("token"), str):
-                host_tokens.append(item["token"])
+                host_tokens.append(item["token"][:_MAX_TOKEN_LEN])
 
     landmarks = observation.get("landmark_tokens") or observation.get("scenery_tokens")
-    scenery_tokens: set[str] = set()
-    if isinstance(landmarks, list):
-        scenery_tokens = {str(x).lower() for x in landmarks}
+    scenery_tokens = set(_bounded_tokens(landmarks))
+    host_token_set = {t.lower() for t in host_tokens}
+    all_tokens = scenery_tokens | host_token_set
 
-    host_token_set = {str(t).lower() for t in host_tokens}
     water_hint = (
         lot_kind in _WATER_KINDS
-        or _scenery_hits(scenery_tokens, _WATER_TOKENS)
-        or _scenery_hits(host_token_set, _WATER_TOKENS)
-        or "water_scenery" in host_tokens
-        or "canal_view" in host_tokens
+        or _scenery_hits(all_tokens, _WATER_TOKENS)
+        or "water_scenery" in host_token_set
+        or "canal_view" in host_token_set
     )
     lot_fraction = observation.get("lot_fraction_of_frame")
-    altitude = str(observation.get("camera_altitude") or "").upper()
-    neighborhood_high = altitude in {
-        "NEIGHBORHOOD_HIGH",
-        "NEIGHBORHOOD",
-        "TRAVEL_AFAR",
-        "WORLD",
-    } or (
-        isinstance(lot_fraction, (int, float)) and 0 < float(lot_fraction) < 0.45
+    altitude = (
+        str(observation.get("camera_altitude") or "").upper().replace("-", "_").replace(" ", "_")
     )
-    street_hint = (
+    small_lot_fraction = (
+        isinstance(lot_fraction, (int, float))
+        and not isinstance(lot_fraction, bool)
+        and 0 < float(lot_fraction) < 0.45
+    )
+    neighborhood_high = (
+        altitude in _NEIGHBORHOOD_ALTITUDES or neighborhood_zoom_label or small_lot_fraction
+    )
+    strong_street = (
         lot_kind in _STREET_KINDS
-        or _scenery_hits(scenery_tokens, _STREET_TOKENS)
-        or _scenery_hits(host_token_set, _STREET_TOKENS)
-        or "street_scenery" in host_tokens
-        or "neighborhood_view" in host_tokens
+        or _scenery_hits(all_tokens, _STRONG_STREET_TOKENS)
         or neighborhood_high
         or (travel_afar_without_goal and not live_hud)
         or (travel_afar_without_goal and on_lot_flag is False)
     )
+    edge_families = _edge_families(all_tokens)
+    household = _household_cues(all_tokens, observation)
+    corroborated = live_hud or household
 
-    on_lot = False
+    # Dominant lot-edge scenery (e.g. sidewalk + streetlamp) is off-lot.
+    street_hint = strong_street or len(edge_families) >= 2
+
+    evidence = {
+        "live_hud_attested": live_hud,
+        "household_cues": household,
+        "edge_scenery_families": sorted(edge_families),
+        "camera_lot_kind": lot_kind or None,
+    }
+
     if travel_afar_without_goal or street_hint or water_hint:
-        on_lot = False
-    elif on_lot_flag is True:
-        on_lot = True
-    elif on_lot_flag is False:
-        on_lot = False
-    elif lot_kind in _ON_LOT_KINDS and live_hud:
-        on_lot = True
-    elif live_hud and lot_kind in _ON_LOT_KINDS:
-        on_lot = True
-    else:
+        pass  # off-lot; handled below
+    elif len(edge_families) == 1 and on_lot_flag is not False:
+        # A lone sidewalk/streetlamp/road cue is normal at a lot edge: on-lot
+        # only with corroboration, otherwise ask for another cue.
+        if corroborated and (on_lot_flag is True or lot_kind in _ON_LOT_KINDS):
+            return _on_lot(base, evidence, edge_scenery_ignored=True)
+        return hold(
+            "LOT_FOCUS_UNKNOWN",
+            "LONE_EDGE_SCENERY_WITHOUT_HOUSEHOLD_CORROBORATION",
+            cues_observed=host_tokens,
+            **evidence,
+        )
+    elif len(edge_families) == 1:
+        street_hint = True  # explicit off-lot flag + street furniture
+    elif on_lot_flag is True or (on_lot_flag is None and lot_kind in _ON_LOT_KINDS):
+        if corroborated:
+            return _on_lot(base, evidence)
+        return hold(
+            "LOT_FOCUS_UNKNOWN",
+            "ON_LOT_CLAIM_WITHOUT_LIVE_HUD_OR_HOUSEHOLD_CUE",
+            cues_observed=host_tokens,
+            **evidence,
+        )
+    elif on_lot_flag is not False:
         return hold(
             "LOT_FOCUS_UNKNOWN",
             "INSUFFICIENT_LOT_FOCUS_CUES",
-            live_hud_attested=live_hud,
             cues_observed=host_tokens,
+            **evidence,
         )
 
-    if on_lot and not street_hint and not water_hint:
-        return {
-            **base,
-            "state": "ON_LOT",
-            "gate": "LOT_FOCUS_ON_ACTIVE_HOUSEHOLD_LOT",
-            "live_hud_attested": live_hud,
-            "camera_lot_kind": lot_kind or None,
-            "restore": None,
-            "forbidden": ["UNBOUNDED_CAMERA_PAN", "STREET_ROAM"],
-        }
+    if not (travel_afar_without_goal or street_hint or water_hint):
+        street_hint = True  # on_lot_flag False with no scenery detail
 
     state = "OFF_LOT_WATER" if water_hint and not street_hint else "OFF_LOT_STREET"
-    if water_hint and street_hint:
-        state = "OFF_LOT_STREET"
 
-    restore = plan_sim_camera(CENTER_SIM, capture_ref=capture_ref, observation=observation)
+    # Off-lot scenery outranks a stale "already following the Sim" flag: a
+    # follow lock that is not framing the lot would otherwise plan NO_EFFECT.
+    restore_obs = dict(observation)
+    follow_overridden = restore_obs.get("camera_follow_sim_id") is not None
+    restore_obs["camera_follow_sim_id"] = None
+    restore_obs["camera_displaced"] = True
+    restore = plan_sim_camera(CENTER_SIM, capture_ref=capture_ref, observation=restore_obs)
     zoom = assess_agent_zoom_mode(observation=observation, travel_goal=travel_goal)
     return {
         **base,
         "state": state,
+        "classification": "OFF_LOT",
         "gate": "LOT_OFF_FOCUS_RESTORE_REQUIRED",
         "reason": "CAMERA_SCENERY_NOT_ON_ACTIVE_HOUSEHOLD_LOT",
-        "live_hud_attested": live_hud,
-        "camera_lot_kind": lot_kind or None,
+        "conflict": "ON_LOT_FLAG_CONTRADICTED_BY_SCENERY" if on_lot_flag is True else None,
+        "follow_flag_overridden": follow_overridden,
+        **evidence,
         "travel_afar_without_goal": travel_afar_without_goal,
         "zoom_policy": zoom if zoom.get("state") == "AGENT_ZOOM_RESTORE_REQUIRED" else None,
         "restore_plan": {
@@ -261,4 +397,17 @@ def assess_lot_focus(
         "restore": restore,
         "next": "ADMITTED_ENTER_CENTER_ACTIVE_SIM_THEN_REOBSERVE",
         "forbidden": ["SHIFT_ENTER_AS_DEFAULT_SIM_RESTORE", "UNBOUNDED_CAMERA_PAN", "STREET_ROAM"],
+    }
+
+
+def _on_lot(base: dict[str, Any], evidence: dict[str, Any], **extra: object) -> dict[str, Any]:
+    return {
+        **base,
+        "state": "ON_LOT",
+        "classification": "ON_LOT",
+        "gate": "LOT_FOCUS_ON_ACTIVE_HOUSEHOLD_LOT",
+        **evidence,
+        **extra,
+        "restore": None,
+        "forbidden": ["UNBOUNDED_CAMERA_PAN", "STREET_ROAM"],
     }

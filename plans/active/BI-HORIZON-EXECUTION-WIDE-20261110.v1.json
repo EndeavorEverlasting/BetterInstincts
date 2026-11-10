@@ -99,7 +99,14 @@
         "live": "OFF_LOT_WATER canal observed then restored to on-lot Build T via arm+Enter",
         "live_gap_20261110": "Camera still too zoomed out during fridge HIT; outdoor pie opened instead of fridge. Detector/zoom discipline not live-certified.",
         "contract": "contracts/camera-traverse.v1.json#lot_focus",
-        "module": "betterinstincts/lot_focus.py"
+        "module": "betterinstincts/lot_focus.py",
+        "offline_hardening_20261110": {
+          "state": "OFFLINE_TESTED_NOT_LIVE_CERTIFIED",
+          "adds": ["neighboring_houses", "dominant_sidewalk_streetlamp", "neighborhood_zoom_labels", "household_fixture_water_exclusion", "uncorroborated_on_lot_AMBIGUOUS", "stale_follow_flag_override_enter_restore"],
+          "classification": ["ON_LOT", "OFF_LOT", "AMBIGUOUS"],
+          "tests": "tests/test_lot_focus.py",
+          "proof_ceiling": "OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
+        }
       }
     },
     {

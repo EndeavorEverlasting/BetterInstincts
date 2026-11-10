@@ -227,6 +227,8 @@ When the camera shows **scenery off the active household lot** (street, canal, n
 
 **Cues:** missing Live HUD, `zoom_mode_observed` = `TRAVEL_AFAR` without travel goal, `camera_lot_kind`, `camera_on_active_household_lot`, `lot_focus_cues` from host/operator.
 
+**Hardening (offline):** assessments also carry `classification` = `ON_LOT` | `OFF_LOT` | `AMBIGUOUS` (UNKNOWN). Neighboring-house tokens, canal/water, neighborhood zoom labels/altitudes and `lot_fraction_of_frame` < 0.45 are decisive OFF_LOT. Sidewalk/streetlamp/road is lot-edge furniture: two families dominate to OFF_LOT; a lone cue needs Live HUD or a household interior cue, otherwise AMBIGUOUS. Household fixtures (`SINK_WATER`, `WATER_COOLER`) are never canal scenery. An on-lot claim with neither Live HUD nor a household cue is AMBIGUOUS. Off-lot scenery outranks a stale `camera_follow_sim_id`, so the restore plan stays Enter instead of `NO_EFFECT`.
+
 **Restore:** `CENTER_ACTIVE_SIM` via **Enter** only in the default plan. **Shift+Enter** (lot center) is forbidden as the default Sim restore. `host_stack.evaluate_turn` emits `lot_focus` and gates `LOT_OFF_FOCUS_RESTORE_REQUIRED` ahead of discretionary camera work.
 
 Proof ceiling: `OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED`. Consultation: `contracts/consultations/BI-LOT-OFF-FOCUS-20261110.v1.json`.
