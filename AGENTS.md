@@ -8,7 +8,7 @@ Ontology revision 4 embraces any user-chosen game/mod, mouse, keyboard, voice/as
 
 ## Windows peripheral authority boundary
 
-`contracts/peripheral-authority.v1.json` and `scripts/check_peripheral_boundary.py` guard this repository: no game host agent may change Windows Bluetooth service state, PnP drivers, pairing records, mouse/keyboard preferences or Print Screen settings. Even when game input is idle, OS repairs route to SysAdminSuite Bluetooth Field Workflow; keep user hardware under the operator's control. Run `python -m scripts.check_peripheral_boundary` and `python -m unittest tests.test_peripheral_boundary` with the ontology preflight before changing related source. See `docs/PERIPHERAL_INCIDENT.md`.
+`contracts/peripheral-authority.v1.json` and `scripts/check_peripheral_boundary.py` deny game agents Windows Bluetooth service, driver, pairing and input-preference changes. Idle/player permits never grant OS repair authority: route incidents to SysAdminSuite Field Workflow. Run the checker and `tests.test_peripheral_boundary` with ontology preflight; see `docs/PERIPHERAL_INCIDENT.md`.
 
 ## Invariants
 
@@ -23,8 +23,7 @@ Ontology revision 4 embraces any user-chosen game/mod, mouse, keyboard, voice/as
 
 ## Existing operator/agent handoffs
 
-- Judgment-learning P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md` (preserve earlier certified handoff paths when compacting governance).
-- Project Cursor shell/file effect interception is separately owned by PR #161; the source peripheral checker is an additional layer, not a substitute for activated hooks.
+- Judgment P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`. Cursor shell/file hooks belong to PR #161, not the source scanner.
 
 ## Trajectory and proof
 
