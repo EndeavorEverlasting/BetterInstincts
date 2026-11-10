@@ -233,7 +233,7 @@ class UpgradePartsForceTests(unittest.TestCase):
             "DUPLICATE_VISIBLE_TARGET")
         self.assertEqual(next_observed_menu_choice(
             visible_options=["Browse", "More Choices"], desired_choice="Order",
-            visited_signatures=[str(i) for i in range(8)])["reason"], "MENU_PAGE_LIMIT_OR_AMBIGUITY")
+            visited_signatures=[str(i) for i in range(load_contract()["computer_purchase_menu"]["max_menu_pages"])])["reason"], "MENU_PAGE_LIMIT_OR_AMBIGUITY")
         self.assertEqual(next_observed_menu_choice(
             visible_options=[], desired_choice="Order")["reason"], "MENU_OPTIONS_NOT_OBSERVED")
 
