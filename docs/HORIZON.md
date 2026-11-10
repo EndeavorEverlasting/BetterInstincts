@@ -6,6 +6,23 @@ This is the long-term product outcome, not a command to implement everything imm
 
 **Material acquisition routing (supporting infrastructure):** `docs/ACQUISITION_ROUTING.md` covers observed computer Order domains for arbitrary household/portrait identities, Fabricator eco parts, Recycler/generator fuel and insect-farm biofuel, with instant-candidate versus queued/time-gated effect classes. Its read-only plans **do not** advance the Horizon stage gates; BI-002 hunger remains active and requires actual Sims gameplay certification.
 
+## Next supporting priority — P04 world-highlight sensor (2026-11-10)
+
+**Canonical machine owner:** [`plans/horizon.v1.json#next_supporting_priority`](../plans/horizon.v1.json). **Existing P04 dispatch (not a second orchestration source):** [`plans/active/BI-HORIZON.dispatch.v1.json`](../plans/active/BI-HORIZON.dispatch.v1.json), with the authoritative repo-wide execution pointer in [`BI-HORIZON-EXECUTION-WIDE-20261110.v1.json`](../plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json). Details and local permission boundaries: [Closers P04 world traversal runbook](../plans/active/BI-WORLD-TRAVERSAL-CLOSERS-P04-20261110.md).
+
+The next **supporting runtime proof** is `BI-WORLD-TRAVERSAL-P08-SENSOR`: validate real-game world-object highlight detection, including loss of highlight identity, object occlusion and frame/camera continuity. This is **not** a new BI-003 phase, a mandatory prerequisite to the BI-002 hunger trial, or a substitute for the needs → income → skills → careers trajectory. **BI-002 remains the current product-certification gate (ACTIVE_GAME_UNPROVEN).** Continue any already authorized BI-002 vanilla/modified/rollback trial; the world-sensor lane may be scheduled separately when the same local game's shared screen is free.
+
+A local agent can discover the next priority without relying on chat context:
+
+```sh
+python -m scripts.horizon_status
+python -m scripts.check_horizon
+python -m unittest tests.test_world_traversal_learning -v
+python -m scripts.world_traversal_eval
+```
+
+Run order: **WORLD_SENSOR** (passive actual-game cue calibration, operator-approved disposable state and two independent signals) → **WORLD_OUTCOME** (only after successful sensor-only P08 and a new, independent player/lot/screen permit, one reversible click and observed result) → **WORLD_INTEGRATE** (after PR #159's separate owner is reconciled, new isolated PR and CI). The two local lanes are **serial with BI-002 gameplay and with each other** on a single Sims desktop; no parallel cursor agents, stale-coordinate reuse, save edits, Build/Buy mutations, peripheral service/driver changes, or autonomous data collection. `scripts.check_horizon` fails if the routing or collision guarantees disappear. GitHub CI proves only this local-agent route exists and is internally consistent; it does not activate a Windows local agent or certify a real screenshot detector.
+
 ## Delivery trajectory
 1. **BI-002: Hunger** — finish the first actual reversible Sims tuning package, >=5 vanilla and >=5 modified gameplay trials, rollback and maintainer review. Cannot close based on offline CI.
 2. **BI-003A–E: The other five adult needs** — bladder, energy, hygiene, fun and social. Each module needs its own real tuning resource, reversible package, valid full game-version profile, observed A/B comparison, and no player command interruption. After the BI-002 mechanism is live-proven, these five *investigations* may proceed as independent branches if actual workers and collision-free tuning ownership are established. Never reuse the hunger resource ID for another need.
