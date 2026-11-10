@@ -1,0 +1,39 @@
+{
+  "schema": "betterinstincts.consultation/v1",
+  "id": "BI-TARGET-SIM-SKILL-ALGORITHM-20261109",
+  "created_at": "2026-11-10T03:15:00Z",
+  "operator_request": "Codify how a particular Sim is selected by evaluating whether their skills are leveled; when not, highlight portrait, center+zoom camera, open console, update skills — make it an algorithm.",
+  "operator_corrections": [
+    "Do not Space-guess selection; prove identity from Skills/Dynasty header",
+    "Unfocused type_text sends Live hotkeys; V starts video recording — never tap V to cancel",
+    "Expand Skills via burger bar before claiming a full panel read",
+    "DISPATCHED is not Skills-panel PASS"
+  ],
+  "selected_owner": "betterinstincts/diy_skill_force.py",
+  "cli": "scripts/diy_skill_force.py target-sim",
+  "contract": "contracts/diy-skill-force.v1.json#target_sim_algorithm",
+  "algorithm_order": [
+    "EVALUATE",
+    "SELECT_PORTRAIT",
+    "PROVE_IDENTITY",
+    "CAMERA_CENTER_ZOOM",
+    "CONSOLE_CONFIRM",
+    "DISPATCH",
+    "PLAY_BRIEF",
+    "PANEL_RECORD"
+  ],
+  "peers": [
+    "betterinstincts/camera_traverse.py",
+    "betterinstincts/portrait_follow.py",
+    "scripts/win32_input.py"
+  ],
+  "not": [
+    "second_skill_daemon",
+    "BI-005",
+    "space_cycle_as_primary_select",
+    "type_without_console_strip",
+    "pass_from_DISPATCHED"
+  ],
+  "proof_ceiling": "HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT",
+  "execute_allowed_default": false
+}

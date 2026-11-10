@@ -40,7 +40,7 @@ class DiySkillForceTests(unittest.TestCase):
         self.assertEqual(seq["default_level"], 10)
         self.assertIn("diy_maker", cfg["bundles"])
         self.assertIn("full_unlock", cfg["bundles"])
-        self.assertEqual(cfg["version"], 10)
+        self.assertEqual(cfg["version"], 11)
         self.assertFalse(cfg["execution_policy"]["detached_worker"])
         self.assertTrue(cfg["completion_ledger"]["space_to_next_needing"])
         self.assertIn("skip_skills_already_recorded_complete", cfg["invariants"])
@@ -253,7 +253,7 @@ class DiySkillForceTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(raw["version"], 10)
+        self.assertEqual(raw["version"], 11)
         self.assertEqual(
             raw["completion_ledger"]["schema"],
             "betterinstincts.diy-skill-force.completion/v1",
@@ -925,6 +925,109 @@ class SkillsPanelRosterRecordTests(unittest.TestCase):
         ]
         self.assertEqual(len(evil_robotics), 1)
         self.assertFalse(evil_robotics[0]["skip_dispatch"])
+
+
+class TargetSimSkillAlgorithmTests(unittest.TestCase):
+    def test_evaluate_gaps_and_gated_plan_for_olga(self):
+        from betterinstincts.diy_skill_force import (
+            assess_console_type_safety,
+            assess_selection_identity,
+            empty_completion_ledger,
+            plan_target_sim_skill_algorithm,
+            record_member_panel_snapshot,
+            completion_member_key,
+        )
+
+        ledger = empty_completion_ledger()
+        mkey = completion_member_key("household-n4-20261109", 2, "OLGA_P2")
+        record_member_panel_snapshot(
+            ledger,
+            member_key=mkey,
+            observed_skills={"cooking": 10, "robotics": 3, "charisma": 1},
+            display_name="Olga Chabenvenutzki",
+        )
+        plan = plan_target_sim_skill_algorithm(
+            session_id="household-n4-20261109",
+            member_key="OLGA_P2",
+            display_name="Olga Chabenvenutzki",
+            roster_index=2,
+            members=4,
+            roster_keys=["EVIL_P0", "BERNICE_P1", "OLGA_P2", "CHARLEE_P3"],
+            bundle="diy_maker",
+            ledger=ledger,
+            observed_panel_header_name=None,
+            console_strip_observed=False,
+        )
+        self.assertEqual(plan["state"], "TARGET_SIM_FORCE_PLAN_GATED")
+        self.assertTrue(plan["evaluation"]["needs_work"])
+        self.assertFalse(plan["live_dispatch_ready"])
+        self.assertFalse(plan["execute_allowed"])
+        self.assertIn("PROVE_SELECTION_IDENTITY", [s["step"] for s in plan["steps"]])
+        denied = assess_console_type_safety(console_strip_observed=False)
+        self.assertEqual(denied["state"], "CONSOLE_TYPE_DENIED")
+        self.assertIn("TYPE_WITHOUT_CONSOLE_STRIP", denied["forbidden"])
+        mismatch = assess_selection_identity(
+            expected_display_name="Olga Chabenvenutzki",
+            observed_panel_header_name="Bernice hasn't earned any perks yet.",
+        )
+        self.assertEqual(mismatch["state"], "SELECTION_MISMATCH")
+        proven = assess_selection_identity(
+            expected_display_name="Olga Chabenvenutzki",
+            observed_panel_header_name="Olga hasn't earned any perks yet. Keep practicing!",
+            expected_roster_key="OLGA_P2",
+            observed_selected_roster_key="OLGA_P2",
+        )
+        self.assertEqual(proven["state"], "SELECTION_PROVEN")
+        ready = plan_target_sim_skill_algorithm(
+            session_id="household-n4-20261109",
+            member_key="OLGA_P2",
+            display_name="Olga Chabenvenutzki",
+            roster_index=2,
+            members=4,
+            roster_keys=["EVIL_P0", "BERNICE_P1", "OLGA_P2", "CHARLEE_P3"],
+            bundle="diy_maker",
+            ledger=ledger,
+            observed_panel_header_name="Olga hasn't earned any perks yet.",
+            observed_selected_roster_key="OLGA_P2",
+            console_strip_observed=True,
+            portrait_client_xy=[420, 1000],
+        )
+        self.assertEqual(ready["state"], "TARGET_SIM_FORCE_READY")
+        self.assertTrue(ready["live_dispatch_ready"])
+        self.assertIn("Major_Robotics", " ".join(ready["force_plan"]["commands"]))
+
+    def test_contract_pins_target_sim_algorithm_guards(self):
+        from betterinstincts.diy_skill_force import catalog_snapshot, load_contract
+
+        cfg = load_contract()
+        algo = cfg["target_sim_algorithm"]
+        self.assertTrue(algo["console_strip_required_before_type"])
+        self.assertTrue(algo["v_starts_video_recording"])
+        self.assertTrue(algo["space_cycle_without_header_proof_forbidden"])
+        self.assertTrue(algo["space_recovery_requires_live_hotkey_arm"])
+        snap = catalog_snapshot()
+        self.assertIn("target_sim_algorithm", snap)
+        self.assertIn("live_hotkey_arm", snap)
+
+    def test_live_hotkey_arm_plan_and_household_traverse_pin(self):
+        from betterinstincts.diy_skill_force import load_contract, plan_live_hotkey_arm
+
+        cfg = load_contract()
+        arm_cfg = cfg["live_hotkey_arm"]
+        self.assertEqual(
+            arm_cfg["operator_rule"],
+            "Left-click ensures that the focus is in the game, and then "
+            "right-click cancels the options so that the hotkeys work.",
+        )
+        self.assertTrue(cfg["household_traverse"]["arm_before_space"])
+        plan = plan_live_hotkey_arm()
+        self.assertEqual(plan["step"], "ARM_LIVE_HOTKEYS")
+        self.assertEqual(plan["order"], ["LEFT_CLICK_WORLD", "RIGHT_CLICK_CANCEL_OPTIONS"])
+        self.assertEqual(plan["world_client_xy"], [200, 200])
+        self.assertIn("TREAT_CANCEL_RMB_AS_PORTRAIT_FOLLOW", plan["forbidden"])
+        self.assertNotIn("RIGHT_CLICK_VIEW", plan["order"])
+        custom = plan_live_hotkey_arm(world_client_xy=[800, 400])
+        self.assertEqual(custom["world_client_xy"], [800, 400])
 
 
 if __name__ == "__main__":

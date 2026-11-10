@@ -1,3 +1,23 @@
+## 2026-11-09 — Fixed-UI click map + arm→console handoff (P95/P124/Trifecta)
+
+**Operator:** Codify world focus (LMB+RMB) and seamless handoff to Ctrl+Shift+C console microsystem. Track every fixed-HUD click so targets are learned; calendar miss (intended Sim portrait) must be recorded. Moving targets are a different system.
+
+**CHANGED:** `contracts/fixed-ui-click-map.v1.json`; `betterinstincts/fixed_ui_click_map.py` + CLI; seed targets (calendar avoid, portraits, console strip, skills); `plan_arm_to_console_handoff`; diy-skill-force `live_hotkey_arm.handoff_next`; docs UI_CHROME/DIY/LEDGER; consultation `BI-FIXED-UI-CLICK-MAP-20261109`; tests.
+
+**PROVED offline:** WRONG_CONTROL does not rewrite portrait coords; handoff requires strip before type. **NOT proved live:** calendar X dismiss HIT; Olga portrait HIT / header proof.
+
+**NEXT:** Dismiss calendar via attested close-X; click `live.household_portrait_2` with ledger record; Skills header “Olga…”; arm→console strip→gap force→panel-record.
+
+## 2026-11-09 — Live hotkey arm (LMB world → RMB cancel → hotkeys)
+
+**Operator correction:** Space wasn't changing the Sim because focus wasn't in the game. Left-click ensures that the focus is in the game, and then right-click cancels the options so that the hotkeys work. You have to left-click in the world and right-click to cancel the options, then the hotkeys work. Repository skill required.
+
+**CHANGED:** `.cursor/skills/live-hotkey-arm/SKILL.md`; contract `live_hotkey_arm` + `household_traverse.arm_before_space`; `plan_live_hotkey_arm`; `_arm_live_hotkeys` before Space; docs HOUSEHOLD/DIY; consultation `BI-LIVE-HOTKEY-ARM-20261109`; tests.
+
+**PROVED offline:** plan step + contract pins. **NOT proved live:** Space advances after arm on exact host (P08 OPEN).
+
+**NEXT:** Arm then select Olga (portrait click primary; Space only after arm + header proof).
+
 ## 2026-11-09 — Life & Death inheritance Free money (P124 + Fifth Gear live-first)
 
 **Operator:** Standing host policy — pick Free money when there are no risks; inheritance popup on screen for live cert; invoke P124 + `/fifth-gear`.
@@ -9,6 +29,16 @@
 **Fifth Gear:** did **not** emit another P05 pack. S2 remains `ACTIVE_BLOCKED_CHEAT_EFFECT` (Evil/Olga robotics panel still L3 after DISPATCHED). Overlay preflight cleared.
 
 **PROVED offline:** inheritance catalog + no-risk policy unit tests. **PROVED live:** Free money funds delta + dialog clear. **NOT proved:** bulk N=4 skill maximize; BI-002/BI-005 remain open.
+
+## 2026-11-09 — Target-Sim skill algorithm (select→evaluate→camera→console)
+
+**Operator:** Codify selecting a particular Sim by evaluating whether skills are leveled; if not, highlight portrait, center+zoom, open console, update skills. Also: stop pressing `V` (video record) — unfocused cheat typing.
+
+**CHANGED:** `target_sim_algorithm` in `contracts/diy-skill-force.v1.json` v11; `evaluate_member_skill_levels` / `assess_selection_identity` / `assess_console_type_safety` / `plan_target_sim_skill_algorithm`; CLI `target-sim`; tests `TargetSimSkillAlgorithmTests`; consultation `BI-TARGET-SIM-SKILL-ALGORITHM-20261109`; Olga plan receipt `dist/game-host/household-skill-cert/live-20261109/target-sim-olga-plan.json`.
+
+**PROVED offline:** unit gates deny Space-without-header, type-without-console-strip, Bernice-header≠Olga. **NOT proved live:** Olga panel PASS / full_unlock after algorithm execute.
+
+**NEXT:** Live `target-sim` on Olga with header+strip attested; no unfocused `type_text`; burger-expand Skills before panel-record.
 
 ## 2026-11-09 — Skills burger-bar expand + Olga canary panel (Fifth Gear)
 

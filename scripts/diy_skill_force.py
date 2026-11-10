@@ -48,11 +48,14 @@ from betterinstincts.household_judgment import (
 )
 from betterinstincts.diy_skill_force import (
     DiySkillForceError,
+    assess_console_type_safety,
+    assess_selection_identity,
     catalog_snapshot,
     completed_skill_ids_for_member,
     decide_reward_dialog,
     plan_trait_repair,
     trait_repair_commands,
+    evaluate_member_skill_levels,
     evaluate_ui_action,
     completion_member_key,
     default_completion_ledger_path,
@@ -60,6 +63,7 @@ from betterinstincts.diy_skill_force import (
     load_completion_ledger,
     plan_household_skill_force,
     plan_skill_force,
+    plan_target_sim_skill_algorithm,
     record_member_panel_snapshot,
     record_skill_dispatched,
     record_skill_panel_observed,
@@ -541,13 +545,41 @@ def _type_cheat_line(cmd: str) -> None:
     time.sleep(0.45)
 
 
+def _arm_live_hotkeys(*, world_xy: tuple[int, int] | None = None) -> dict:
+    """Left-click world, then right-click cancel options so Live hotkeys work.
+
+    Operator rule (repository skill live-hotkey-arm): left-click ensures focus
+    is in the game; right-click cancels the options so that the hotkeys work.
+    Cancel RMB is NOT RIGHT_CLICK_VIEW portrait follow.
+    """
+    from betterinstincts.diy_skill_force import plan_live_hotkey_arm
+    from scripts.win32_input import send_click, send_right_click
+
+    plan = plan_live_hotkey_arm(
+        world_client_xy=list(world_xy) if world_xy is not None else None,
+    )
+    x, y = int(plan["world_client_xy"][0]), int(plan["world_client_xy"][1])
+    # Keep cursor on the world point between LMB and RMB so cancel hits the pie.
+    send_click(x, y, between_sec=0.05, safe_rest_after=False)
+    time.sleep(0.2)
+    send_right_click(x, y, between_sec=0.05, safe_rest_after=True)
+    time.sleep(0.15)
+    return {
+        "step": "ARM_LIVE_HOTKEYS",
+        "world_xy": [x, y],
+        "order": list(plan["order"]),
+        "repository_skill": plan.get("repository_skill"),
+        "note": plan.get("select_note"),
+    }
+
+
 def _select_next_household_member(
     *, process_id: int | None, session_id: str | None, idle_ms: int,
 ) -> dict:
-    """Space only under a fresh admitted screen lease; console is already closed.
+    """Arm Live hotkeys, then Space under a fresh admitted screen lease.
 
-    Selection was previously an unguarded keypress between per-cell leases.
-    A competing Cursor/Playwright agent must never cause a blind Space press.
+    Console must already be closed. Bare Space without left-click world +
+    right-click cancel does nothing when focus is not in the game.
     """
     from betterinstincts.control_handoff import HandoffError
     from betterinstincts.player_presence import probe_windows
@@ -562,11 +594,17 @@ def _select_next_household_member(
             probe_fn=lambda: probe_windows(int(process_id)),
         ) as ensure_ready:
             ensure_ready()
+            arm = _arm_live_hotkeys()
             tap_vk(0x20)  # VK_SPACE: select next household portrait
     except HandoffError as exc:
         raise GateError(str(exc)) from exc
     time.sleep(0.55)
-    return {"step": "SELECT_NEXT_HOUSEHOLD_SIM", "key": "SPACE", "admitted": True}
+    return {
+        "step": "SELECT_NEXT_HOUSEHOLD_SIM",
+        "key": "SPACE",
+        "admitted": True,
+        "arm": arm,
+    }
 
 
 def _execute_household(
@@ -949,6 +987,41 @@ def main(argv: list[str] | None = None) -> int:
     rs.add_argument("--target-level", type=int, default=10)
     rs.add_argument("--bundle", default="full_unlock")
 
+    ts = sub.add_parser(
+        "target-sim",
+        help=(
+            "Plan select→evaluate→camera→console→force for one portrait. "
+            "Evaluate-only unless identity header + console strip are attested "
+            "(never type without strip; V starts video recording)."
+        ),
+    )
+    ts.add_argument("--session-id", required=True)
+    ts.add_argument("--members", type=int, required=True)
+    ts.add_argument("--roster-key", action="append", default=[])
+    ts.add_argument("--member-key", required=True)
+    ts.add_argument("--display-name", required=True)
+    ts.add_argument("--roster-index", type=int, required=True)
+    ts.add_argument("--bundle", default="full_unlock")
+    ts.add_argument("--target-level", type=int, default=10)
+    ts.add_argument("--completion-ledger", type=Path, default=None)
+    ts.add_argument(
+        "--observed-panel-header",
+        default=None,
+        help="Exact Skills/Dynasty header text proving selection (e.g. \"Olga hasn't earned…\")",
+    )
+    ts.add_argument("--observed-selected-roster-key", default=None)
+    ts.add_argument(
+        "--console-strip-observed",
+        action="store_true",
+        help="Attest white cheat strip is open+focused before any type_text",
+    )
+    ts.add_argument(
+        "--portrait-client-xy",
+        default=None,
+        help="Optional client X,Y for LEFT_CLICK portrait (two ints)",
+    )
+    ts.add_argument("--receipt", type=Path, default=None)
+
     args = p.parse_args(argv)
     try:
         if args.command == "catalog":
@@ -1075,6 +1148,79 @@ def main(argv: list[str] | None = None) -> int:
                 ),
                 "execute": False,
             }
+        elif args.command == "target-sim":
+            if len(args.roster_key) != int(args.members):
+                raise GateError("EXACT_OBSERVED_PORTRAIT_ROSTER_REQUIRED")
+            ledger_path = (
+                Path(args.completion_ledger)
+                if args.completion_ledger is not None
+                else default_completion_ledger_path()
+            )
+            if not ledger_path.is_absolute():
+                ledger_path = ROOT / ledger_path
+            ledger = load_completion_ledger(ledger_path)
+            portrait_xy = None
+            if args.portrait_client_xy:
+                parts = [p.strip() for p in str(args.portrait_client_xy).split(",")]
+                if len(parts) != 2:
+                    raise GateError("PORTRAIT_CLIENT_XY_MUST_BE_X_COMMA_Y")
+                portrait_xy = [int(parts[0]), int(parts[1])]
+            plan = plan_target_sim_skill_algorithm(
+                session_id=args.session_id,
+                member_key=args.member_key,
+                display_name=args.display_name,
+                roster_index=int(args.roster_index),
+                members=int(args.members),
+                roster_keys=list(args.roster_key),
+                bundle=args.bundle,
+                target_level=int(args.target_level),
+                ledger=ledger,
+                observed_panel_header_name=args.observed_panel_header,
+                observed_selected_roster_key=args.observed_selected_roster_key,
+                console_strip_observed=bool(args.console_strip_observed),
+                portrait_client_xy=portrait_xy,
+            )
+            result = {
+                "plan": plan,
+                "execute": False,
+                "identity_check": assess_selection_identity(
+                    expected_display_name=args.display_name,
+                    observed_panel_header_name=args.observed_panel_header,
+                    observed_selected_roster_key=args.observed_selected_roster_key,
+                    expected_roster_key=args.roster_key[int(args.roster_index)],
+                ),
+                "console_check": assess_console_type_safety(
+                    console_strip_observed=bool(args.console_strip_observed),
+                ),
+                "evaluation": evaluate_member_skill_levels(
+                    ledger,
+                    member_key=(
+                        args.member_key
+                        if "::key::" in args.member_key
+                        else completion_member_key(
+                            args.session_id, int(args.roster_index), args.member_key
+                        )
+                    ),
+                    skill_ids=list(
+                        (
+                            (catalog_snapshot().get("bundles") or {})
+                            .get(args.bundle or "full_unlock", {})
+                            .get("skill_ids")
+                        )
+                        or []
+                    ),
+                    target_level=int(args.target_level),
+                ),
+                "note": (
+                    "Evaluate-only plan. Live force requires proven panel header + "
+                    "console strip; unfocused typing starts video via V."
+                ),
+            }
+            if args.receipt is not None:
+                args.receipt.parent.mkdir(parents=True, exist_ok=True)
+                args.receipt.write_text(
+                    json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+                )
         elif args.command == "household":
             if args.detach:
                 raise GateError("DETACHED_HOUSEHOLD_UI_UNSAFE_USE_FOREGROUND_SERIAL")

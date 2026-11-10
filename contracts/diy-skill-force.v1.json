@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.diy-skill-force/v1",
-  "version": 10,
+  "version": 11,
   "authority": "docs/DIY_SKILL_FORCE.md",
   "proof_ceiling": "HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT",
   "design_brief": {
@@ -53,8 +53,78 @@
       "household": "python -m scripts.diy_skill_force household --members N --bundle full_unlock --execute --roster-key PORTRAIT_1 [--roster-key PORTRAIT_2 ...] --first-portrait-attested --process-id PID --session-id ID",
       "bootstrap_household_skills": "python bootstrap.py household-skills -- --members N --bundle full_unlock --execute --roster-key PORTRAIT_1 [--roster-key PORTRAIT_2 ...] --first-portrait-attested --process-id PID --session-id ID",
       "panel_record": "python -m scripts.diy_skill_force panel-record --session-id ID --members N --roster-key P0 --roster-key P1 --member-key P0 --skill-level cooking=10 --skill-level robotics=3",
-      "roster_status": "python -m scripts.diy_skill_force roster-status --session-id ID"
+      "roster_status": "python -m scripts.diy_skill_force roster-status --session-id ID",
+      "target_sim": "python -m scripts.diy_skill_force target-sim --session-id ID --members N --roster-key P0 --roster-key P1 --member-key P1 --display-name NAME --roster-index 1 --bundle full_unlock"
     }
+  },
+  "live_hotkey_arm": {
+    "owner": "betterinstincts/diy_skill_force.py",
+    "helper": "scripts/diy_skill_force.py::_arm_live_hotkeys",
+    "repository_skill": ".cursor/skills/live-hotkey-arm",
+    "purpose": "Put keyboard focus in the Live game client before hotkeys",
+    "order": [
+      "LEFT_CLICK_WORLD",
+      "RIGHT_CLICK_CANCEL_OPTIONS"
+    ],
+    "operator_rule": "Left-click ensures that the focus is in the game, and then right-click cancels the options so that the hotkeys work.",
+    "operator_detail": "You have to left-click in the world and right-click to cancel the options, then the hotkeys work.",
+    "default_world_client_xy": [
+      200,
+      200
+    ],
+    "world_point_note": "Prefer empty sky/wall/floor away from desks and Sims. Left-click on interactables opens pie options (e.g. Clean Lightly) that block hotkeys until right-click cancel.",
+    "required_before": [
+      "SPACE_HOUSEHOLD_TRAVERSE",
+      "LIVE_HOTKEYS_WHEN_FOCUS_AMBIGUOUS"
+    ],
+    "handoff_next": "ARM_TO_CHEAT_CONSOLE",
+    "console_microsystem": {
+      "hotkey_id": "CHEAT_CONSOLE",
+      "chord": ["CTRL", "SHIFT", "C"],
+      "owner": "scripts.diy_skill_force._toggle_cheat_console",
+      "fixed_ui_refocus_target": "live.cheat_console_strip",
+      "require_white_strip_before_type": true
+    },
+    "fixed_ui_click_map": "contracts/fixed-ui-click-map.v1.json",
+    "not": [
+      "RIGHT_CLICK_VIEW",
+      "PRIMARY_TARGET_SIM_SELECT",
+      "CONSOLE_TYPE_AUTHORITY"
+    ]
+  },
+  "target_sim_algorithm": {
+    "owner": "betterinstincts/diy_skill_force.py",
+    "cli": "scripts/diy_skill_force.py target-sim",
+    "purpose": "Select one Sim by portrait, prove identity from Skills/Dynasty header, center+zoom camera, open console only with strip proof, force gap skills, panel-record",
+    "order": [
+      "EVALUATE",
+      "SELECT_PORTRAIT",
+      "PROVE_IDENTITY",
+      "CAMERA_CENTER_ZOOM",
+      "CONSOLE_CONFIRM",
+      "DISPATCH",
+      "PLAY_BRIEF",
+      "PANEL_RECORD"
+    ],
+    "select_control": "LEFT_CLICK_HOUSEHOLD_PORTRAIT",
+    "select_note": "Do not Space-cycle as the primary select. Click the target portrait, then prove the panel header embeds their name before any type_text.",
+    "space_recovery_requires_live_hotkey_arm": true,
+    "camera_mode": "RIGHT_CLICK_VIEW",
+    "camera_pullback_from_max_close": 0.15,
+    "console_strip_required_before_type": true,
+    "unfocused_typing_is_live_hotkeys": true,
+    "v_starts_video_recording": true,
+    "never_tap_v_to_cancel_video": true,
+    "space_cycle_without_header_proof_forbidden": true,
+    "dispatched_is_not_panel_pass": true,
+    "execute_allowed_default": false,
+    "proof_ceiling": "HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT",
+    "operator_corrections": [
+      "2026-11-09: burger-bar expand Skills list before full read",
+      "2026-11-09: unfocused type_text presses V and starts video recording",
+      "2026-11-09: selection drift — prove Olga/Bernice/… from panel header, not Space guesses",
+      "2026-11-09: Space does nothing until left-click world then right-click cancel options (live-hotkey-arm)"
+    ]
   },
   "panel_record": {
     "owner": "betterinstincts/diy_skill_force.py",
@@ -77,6 +147,9 @@
     "next_member_chord": [
       "SPACE"
     ],
+    "arm_before_space": true,
+    "arm_step": "ARM_LIVE_HOTKEYS",
+    "arm_note": "Left-click in the world, right-click to cancel options, then Space. Bare Space without arm fails when focus is not in the game.",
     "ui_chrome_hotkey_id": "SELECT_NEXT_HOUSEHOLD_SIM",
     "min_members": 1,
     "sanity_max_members": 100,

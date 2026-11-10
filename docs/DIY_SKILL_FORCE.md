@@ -49,6 +49,36 @@ Library plans keep `execute_allowed=false`. Live execute requires an ACTIVE `hos
 
 **PASS ceiling:** only a Skills-panel `LOCAL_OBSERVED` read after play-brief may support a live skill-force PASS. Console text, reward/trait dialogs, and mid-cascade `LEVEL UP` / `MAXED SKILL` toasts are **not** PASS. Open the console with `send_key_chord(['CTRL','SHIFT','C'])` (not a bare `send_vk`/`tap` sequence that can drop SHIFT and screenshot). Each cheat line: re-click the console strip → `type_text(cmd + "\n")`.
 
+**Console focus before typing (operator correction 2026-11-09):** never `type_text` cheat lines unless the white cheat strip is visually confirmed open and focused. Unfocused typing is Live hotkeys — **`V` starts video recording** (skills like `Major_VideoGaming` are especially dangerous). Do not tap `V` to “cancel” recording (it toggles). Selection: click the target portrait, then prove identity from the Skills/Dynasty header name (`Olga hasn't…` / `Olga is not in a Dynasty`) before any skill dispatch. Space-cycle without that readback is forbidden for P08 cells.
+
+**Live hotkey arm (operator correction 2026-11-09):** Left-click ensures that the focus is in the game, and then right-click cancels the options so that the hotkeys work. You have to left-click in the world and right-click to cancel the options, then the hotkeys work. Repository skill: `.cursor/skills/live-hotkey-arm`. Code: `plan_live_hotkey_arm` / `_arm_live_hotkeys` (runs before Space in household traverse). Cancel RMB is not `RIGHT_CLICK_VIEW`.
+
+**Arm → cheat-console handoff:** after arm, hand off to the existing `CHEAT_CONSOLE` microsystem (`Ctrl+Shift+C` via `_toggle_cheat_console`), refocus `live.cheat_console_strip`, require white-strip proof before any `type_text`. Plan: `plan_arm_to_console_handoff` / `python -m scripts.fixed_ui_click_map handoff`.
+
+**Fixed-UI click tracking:** record every HUD click (`python -m scripts.fixed_ui_click_map record --target-id … --client-xy X,Y --classification …`). Portrait vs calendar adjacency is a known WRONG_CONTROL — do not click ~`(300,1045)` when selecting Sims.
+
+**Target-Sim algorithm (codified 2026-11-09):** one portrait at a time —
+
+1. **EVALUATE** ledger/panel gaps (`evaluate_member_skill_levels`)
+2. If gaps: **SELECT** via LEFT_CLICK portrait (not Space-as-primary)
+3. **PROVE_IDENTITY** from Skills/Dynasty header
+4. **CAMERA** center + `RIGHT_CLICK_VIEW` (15% pullback)
+5. **CONSOLE** Ctrl+Shift+C + white-strip confirm
+6. **DISPATCH** gap `stats.set_skill_level` lines
+7. **PLAY_BRIEF** → **PANEL_RECORD**
+
+CLI (evaluate-only until gates attested):
+
+```sh
+python -m scripts.diy_skill_force target-sim \
+  --session-id household-n4-20261109 --members 4 \
+  --roster-key EVIL_P0 --roster-key BERNICE_P1 --roster-key OLGA_P2 --roster-key CHARLEE_P3 \
+  --member-key OLGA_P2 --display-name "Olga Chabenvenutzki" --roster-index 2 \
+  --bundle full_unlock
+```
+
+Pass `--observed-panel-header "Olga hasn't…"` and `--console-strip-observed` only after live proof; `live_dispatch_ready` stays false otherwise. Owner: `plan_target_sim_skill_algorithm` / contract `target_sim_algorithm`.
+
 ## CLI
 
 ```text
