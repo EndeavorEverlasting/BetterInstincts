@@ -1,0 +1,123 @@
+{
+  "schema": "betterinstincts.fixed-ui-click-map/v1",
+  "version": 1,
+  "authority": "docs/UI_CHROME.md",
+  "owners": {
+    "map": "betterinstincts/fixed_ui_click_map.py",
+    "chrome_names": "contracts/ui-chrome.v1.json",
+    "miss_scoring": "contracts/click-error-eval.v1.json",
+    "arm_console_handoff": "contracts/diy-skill-force.v1.json"
+  },
+  "purpose": "Track every agent click against named FIXED HUD targets so coordinates are learned over time. Moving world/Sim targets are out of scope.",
+  "scope": {
+    "in": ["FIXED_HUD", "FIXED_MODAL_CHROME", "FIXED_PANEL_CONTROLS"],
+    "out": ["MOVING_WORLD_OBJECTS", "MOVING_SIM_BODIES", "CAMERA_DEPENDENT_WORLD_PIXELS"]
+  },
+  "coordinate_space": {
+    "kind": "CLIENT_PIXELS",
+    "origin": "top_left",
+    "profile_default": "1920x1080"
+  },
+  "classifications": [
+    "HIT",
+    "NEAR_MISS",
+    "MISS",
+    "WRONG_CONTROL",
+    "OUT_OF_SCOPE_MOVING_TARGET"
+  ],
+  "proof_ceiling": "FIXED_UI_CLICK_LEDGER_OFFLINE_AND_CANDIDATE_COORDS_NO_LIVE_HIT_CERTIFICATION",
+  "execute_allowed_default": false,
+  "ledger_path_default": "dist/game-host/fixed-ui-click-ledger.json",
+  "thresholds_px": {
+    "hit_radius": 12,
+    "near_miss_radius": 36
+  },
+  "handoff": {
+    "id": "ARM_TO_CHEAT_CONSOLE",
+    "order": [
+      "ARM_LIVE_HOTKEYS",
+      "OPTIONAL_FIXED_SELECT",
+      "CHEAT_CONSOLE_CTRL_SHIFT_C",
+      "CONFIRM_WHITE_STRIP",
+      "TYPE_TEXT_GATED"
+    ],
+    "arm_owner": "betterinstincts.diy_skill_force.plan_live_hotkey_arm",
+    "console_hotkey_id": "CHEAT_CONSOLE",
+    "console_chord": ["CTRL", "SHIFT", "C"],
+    "console_strip_required_before_type": true,
+    "note": "Left-click ensures focus in the game; right-click cancels options so hotkeys work; then hand off to the CHEAT_CONSOLE microsystem."
+  },
+  "seed_targets_1920x1080": {
+    "live.world_arm_empty": {
+      "role": "LEFT_CLICK_WORLD_FOCUS_POINT",
+      "client_xy": [200, 200],
+      "status": "CANDIDATE",
+      "notes": "Empty top-left viewport; avoid desks/Sims that open pie menus"
+    },
+    "live.calendar_icon": {
+      "role": "AVOID_WHEN_SELECTING_PORTRAIT",
+      "client_xy": [300, 1045],
+      "status": "MISS_OBSERVED_20261109",
+      "notes": "Agent intended household portrait; opened LABLAB HOUSEHOLD CALENDAR"
+    },
+    "live.calendar_close_x": {
+      "role": "DISMISS_CALENDAR_MODAL",
+      "client_xy": [1445, 255],
+      "status": "CANDIDATE",
+      "notes": "Top-right of calendar white header band (~y 239–349, x≈1457)"
+    },
+    "live.household_portrait_0": {
+      "role": "SELECT_HOUSEHOLD_SIM",
+      "roster_index": 0,
+      "client_xy": [350, 1055],
+      "status": "CANDIDATE",
+      "notes": "Luminance edges ~320–380 on 1920x1080; avoid calendar ~300"
+    },
+    "live.household_portrait_1": {
+      "role": "SELECT_HOUSEHOLD_SIM",
+      "roster_index": 1,
+      "client_xy": [405, 1055],
+      "status": "CANDIDATE",
+      "notes": "Luminance edges ~381–430"
+    },
+    "live.household_portrait_2": {
+      "role": "SELECT_HOUSEHOLD_SIM",
+      "roster_index": 2,
+      "client_xy": [472, 1055],
+      "status": "CANDIDATE",
+      "display_name_hint": "Olga",
+      "notes": "Luminance edges ~431–513; 485 hovered Charlee; 415 hit Bernice band"
+    },
+    "live.household_portrait_3": {
+      "role": "SELECT_HOUSEHOLD_SIM",
+      "roster_index": 3,
+      "client_xy": [560, 1055],
+      "status": "CANDIDATE",
+      "display_name_hint": "Charlee",
+      "notes": "Luminance edges from ~514; briefcase overlay"
+    },
+    "live.skills_lightbulb": {
+      "role": "TOGGLE_SKILLS_PANEL",
+      "client_xy": [1680, 1033],
+      "status": "CANDIDATE"
+    },
+    "live.cheat_console_strip": {
+      "role": "REFOCUS_CHEAT_CONSOLE",
+      "client_xy": [400, 20],
+      "status": "CANDIDATE",
+      "notes": "White strip click before type_text"
+    },
+    "live.skills_burger_grip": {
+      "role": "EXPAND_SKILLS_LIST",
+      "client_xy": [1721, 810],
+      "status": "CANDIDATE"
+    }
+  },
+  "guarantees": [
+    "Every fixed-UI click attempt is append-recorded with intended target_id and client_xy",
+    "WRONG_CONTROL does not promote miss coordinates onto the intended target",
+    "Moving targets never update this map",
+    "HIT attestation still requires independent PrintWindow/header proof for selection claims",
+    "Never SendInput from the map module itself"
+  ]
+}

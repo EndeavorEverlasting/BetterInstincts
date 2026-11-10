@@ -23,6 +23,12 @@ Normalized client fractions `[0,1]×[0,1]`, origin top-left, keyed by resolution
 
 Search field candidate (1920×1080) is client **(140, 864)** (`nx=0.0729`, `ny=0.8000`). After every chrome click, score with `python -m scripts.click_error_eval against-chrome …`; **NEAR_MISS/MISS → Escape-cancel** (do not continue the recipe into the lot). Cursor computer-use canvas coords are not client pixels — convert before scoring.
 
+## Fixed-UI click map (learn coordinates over time)
+
+**Owner:** `contracts/fixed-ui-click-map.v1.json`, `betterinstincts/fixed_ui_click_map.py`, CLI `python -m scripts.fixed_ui_click_map`.
+**Rule:** every agent click on **fixed HUD** must be recorded with `target_id` + `client_xy` + classification (`HIT` / `NEAR_MISS` / `MISS` / `WRONG_CONTROL`). Wrong-control misses (e.g. intended household portrait → opened calendar at ~`(300,1045)`) must not rewrite the intended target’s attested coords. **Moving** world/Sim bodies are out of scope — separate system.
+**Handoff:** `ARM_LIVE_HOTKEYS` (left-click world focus, right-click cancel options) → `CHEAT_CONSOLE` (`Ctrl+Shift+C`) → white-strip confirm before `type_text`. Plan: `python -m scripts.fixed_ui_click_map handoff`.
+
 ## Hotkeys (intent / glossary)
 
 | Mode | Chord | Effect | Notes |

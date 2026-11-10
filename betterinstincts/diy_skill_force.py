@@ -461,6 +461,443 @@ def member_needs_skill_work(
     return False
 
 
+def evaluate_member_skill_levels(
+    ledger: Mapping[str, object],
+    *,
+    member_key: str,
+    skill_ids: Sequence[str],
+    target_level: int = 10,
+) -> dict:
+    """Evaluate whether a portrait still has skill gaps (ledger LOCAL_OBSERVED).
+
+    PANEL_OBSERVED_MAX / complete DISPATCHED skips are treated as leveled for
+    planning only — DISPATCHED alone never authorizes a Skills-panel PASS claim.
+    """
+    key = str(member_key).strip()
+    if not key:
+        raise DiySkillForceError("MEMBER_KEY_REQUIRED")
+    target = int(target_level)
+    members = ledger.get("members") if isinstance(ledger, Mapping) else None
+    row = members.get(key) if isinstance(members, Mapping) else None
+    skills = row.get("skills") if isinstance(row, Mapping) else {}
+    if not isinstance(skills, Mapping):
+        skills = {}
+    leveled: list[dict] = []
+    gaps: list[dict] = []
+    unknown: list[str] = []
+    for raw in skill_ids:
+        sid = str(raw).strip().lower()
+        if not sid:
+            continue
+        entry = skills.get(sid)
+        if not isinstance(entry, Mapping):
+            unknown.append(sid)
+            gaps.append(
+                {
+                    "skill_id": sid,
+                    "observed_level": None,
+                    "status": "UNPROVEN",
+                    "reason": "NO_PANEL_OR_DISPATCH_ROW",
+                }
+            )
+            continue
+        status = str(entry.get("status") or "")
+        level = entry.get("level")
+        observed = int(level) if isinstance(level, int) else None
+        complete = skill_is_complete(entry, target_level=target)
+        item = {
+            "skill_id": sid,
+            "observed_level": observed,
+            "status": status,
+            "skill_stat": str(entry.get("skill_stat") or ""),
+        }
+        if complete:
+            leveled.append(item)
+        else:
+            gaps.append({**item, "reason": "BELOW_TARGET_OR_FALSIFIED"})
+    return {
+        "member_key": key,
+        "display_name": str((row or {}).get("display_name") or "") if isinstance(row, Mapping) else "",
+        "target_level": target,
+        "leveled_count": len(leveled),
+        "gap_count": len(gaps),
+        "unknown_count": len(unknown),
+        "leveled": leveled,
+        "gaps": gaps,
+        "all_leveled": len(gaps) == 0 and len(leveled) > 0,
+        "needs_work": len(gaps) > 0,
+        "proof_ceiling": "LEDGER_EVALUATION_NOT_SKILLS_PANEL_PASS",
+        "note": (
+            "Gaps drive target-sim select→force. DISPATCHED rows may skip typing "
+            "but never authorize maximized / Skills-panel PASS narration."
+        ),
+    }
+
+
+def assess_selection_identity(
+    *,
+    expected_display_name: str,
+    observed_panel_header_name: str | None,
+    observed_selected_roster_key: str | None = None,
+    expected_roster_key: str | None = None,
+) -> dict:
+    """Prove the highlighted portrait matches the intended Sim before cheats.
+
+    Prefer Skills/Dynasty header text (``Olga hasn't…`` / ``Olga is not in a Dynasty``).
+    Space-cycle without this readback is rejected for target-sim cells.
+    """
+    expected = str(expected_display_name or "").strip()
+    observed = str(observed_panel_header_name or "").strip()
+    if not expected:
+        raise DiySkillForceError("EXPECTED_DISPLAY_NAME_REQUIRED")
+    if not observed:
+        return {
+            "state": "SELECTION_UNPROVEN",
+            "match": False,
+            "gate": "READ_SKILLS_OR_DYNASTY_HEADER_NAME",
+            "expected_display_name": expected,
+            "observed_panel_header_name": None,
+            "forbidden": ["SPACE_CYCLE_WITHOUT_HEADER_PROOF", "TYPE_CHEATS_ON_UNPROVEN_SELECTION"],
+        }
+    # Header often embeds the first name: "Olga hasn't earned…" / "Bernice hasn't…"
+    expected_token = expected.split()[0].casefold()
+    observed_l = observed.casefold()
+    name_ok = expected_token in observed_l or expected.casefold() in observed_l
+    key_ok = True
+    if expected_roster_key and observed_selected_roster_key:
+        key_ok = (
+            str(expected_roster_key).strip() == str(observed_selected_roster_key).strip()
+        )
+    if name_ok and key_ok:
+        return {
+            "state": "SELECTION_PROVEN",
+            "match": True,
+            "gate": "PROCEED_CAMERA_THEN_CONSOLE",
+            "expected_display_name": expected,
+            "observed_panel_header_name": observed,
+            "expected_roster_key": expected_roster_key,
+            "observed_selected_roster_key": observed_selected_roster_key,
+        }
+    return {
+        "state": "SELECTION_MISMATCH",
+        "match": False,
+        "gate": "RECLICK_TARGET_PORTRAIT_THEN_REREAD_HEADER",
+        "expected_display_name": expected,
+        "observed_panel_header_name": observed,
+        "expected_roster_key": expected_roster_key,
+        "observed_selected_roster_key": observed_selected_roster_key,
+        "forbidden": ["DISPATCH_ON_WRONG_SIM", "SPACE_UNTIL_LUCKY"],
+    }
+
+
+def assess_console_type_safety(*, console_strip_observed: bool) -> dict:
+    """Fail closed before type_text: unfocused typing is Live hotkeys (V = video)."""
+    if console_strip_observed is True:
+        return {
+            "state": "CONSOLE_TYPE_ALLOWED",
+            "console_strip_observed": True,
+            "gate": "TYPE_CHEAT_LINES_VIA_WIN32_TYPE_TEXT",
+            "forbidden_hotkeys_if_unfocused": ["V_VIDEO_RECORD"],
+        }
+    return {
+        "state": "CONSOLE_TYPE_DENIED",
+        "console_strip_observed": False,
+        "gate": "OPEN_CTRL_SHIFT_C_AND_CONFIRM_WHITE_STRIP",
+        "reason": "UNFOCUSED_TYPE_TEXT_IS_LIVE_HOTKEYS",
+        "forbidden": [
+            "TYPE_WITHOUT_CONSOLE_STRIP",
+            "TAP_V_TO_CANCEL_VIDEO",
+            "Major_VideoGaming_WHILE_CONSOLE_CLOSED",
+        ],
+        "note": (
+            "Sims Live maps V to video recording. type_text of VideoGaming or any "
+            "cheat while the strip is closed starts recording. V toggles — do not "
+            "tap V to cancel."
+        ),
+    }
+
+
+def plan_arm_to_console_handoff(cfg: Optional[dict] = None) -> dict:
+    """Handoff: ARM_LIVE_HOTKEYS → CHEAT_CONSOLE microsystem (Ctrl+Shift+C).
+
+    Seamless bridge from world focus arm into the existing console toggle /
+    white-strip typing gate. Does not authorize type_text by itself.
+    """
+    from betterinstincts.fixed_ui_click_map import plan_arm_to_console_handoff as _plan
+
+    return _plan(cfg=None)
+
+
+def plan_live_hotkey_arm(
+    *,
+    world_client_xy: Sequence[int] | None = None,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Plan LEFT_CLICK world → RIGHT_CLICK cancel so Live hotkeys register.
+
+    Operator rule: left-click focuses the game; right-click cancels the options
+    so hotkeys work. Required before Space / other Live hotkeys when focus may
+    have left the client. Not portrait follow; not cheat typing authority.
+    """
+    cfg = cfg or load_contract()
+    arm = cfg.get("live_hotkey_arm") if isinstance(cfg.get("live_hotkey_arm"), Mapping) else {}
+    default_xy = arm.get("default_world_client_xy") if isinstance(arm, Mapping) else None
+    if world_client_xy is not None:
+        if (
+            not isinstance(world_client_xy, (list, tuple))
+            or len(world_client_xy) != 2
+            or any(type(v) is not int for v in world_client_xy)
+        ):
+            raise DiySkillForceError("WORLD_CLIENT_XY_MUST_BE_TWO_INTS")
+        point = [int(world_client_xy[0]), int(world_client_xy[1])]
+    elif (
+        isinstance(default_xy, (list, tuple))
+        and len(default_xy) == 2
+        and all(isinstance(v, int) for v in default_xy)
+    ):
+        point = [int(default_xy[0]), int(default_xy[1])]
+    else:
+        point = [960, 520]
+    return {
+        "step": "ARM_LIVE_HOTKEYS",
+        "schema": "betterinstincts.live-hotkey-arm/v1",
+        "order": ["LEFT_CLICK_WORLD", "RIGHT_CLICK_CANCEL_OPTIONS"],
+        "world_client_xy": point,
+        "select_note": str(
+            arm.get("operator_rule")
+            if isinstance(arm, Mapping) and arm.get("operator_rule")
+            else (
+                "Left-click ensures that the focus is in the game, and then "
+                "right-click cancels the options so that the hotkeys work."
+            )
+        ),
+        "repository_skill": ".cursor/skills/live-hotkey-arm",
+        "forbidden": [
+            "BARE_HOTKEY_WITHOUT_ARM",
+            "TREAT_CANCEL_RMB_AS_PORTRAIT_FOLLOW",
+            "SPACE_WITHOUT_ARM_WHEN_FOCUS_AMBIGUOUS",
+        ],
+        "not": [
+            "RIGHT_CLICK_VIEW",
+            "CONSOLE_TYPE_AUTHORITY",
+            "PRIMARY_TARGET_SIM_SELECT",
+        ],
+        "next": "SEND_LIVE_HOTKEY",
+    }
+
+
+def plan_target_sim_skill_algorithm(
+    *,
+    session_id: str,
+    member_key: str,
+    display_name: str,
+    roster_index: int,
+    members: int,
+    roster_keys: Sequence[str],
+    bundle: str = "full_unlock",
+    target_level: int = 10,
+    ledger: Mapping[str, object] | None = None,
+    observed_panel_header_name: str | None = None,
+    observed_selected_roster_key: str | None = None,
+    console_strip_observed: bool = False,
+    portrait_client_xy: Sequence[int] | None = None,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Central algorithm: evaluate → select portrait → camera → console → force → panel.
+
+    Library plans only (``execute_allowed=False``). Live typing stays in
+    ``scripts/diy_skill_force.py`` behind identity + console-strip gates.
+    """
+    cfg = cfg or load_contract()
+    algo = cfg.get("target_sim_algorithm") or {}
+    if not isinstance(algo, Mapping):
+        raise DiySkillForceError("TARGET_SIM_ALGORITHM_REQUIRED")
+    sid = str(session_id or "").strip()
+    if not sid:
+        raise DiySkillForceError("SESSION_ID_REQUIRED")
+    keys = [str(k).strip() for k in roster_keys]
+    n = int(members)
+    if n < 1 or len(keys) != n:
+        raise DiySkillForceError("EXACT_OBSERVED_PORTRAIT_ROSTER_REQUIRED")
+    idx = int(roster_index)
+    if idx < 0 or idx >= n:
+        raise DiySkillForceError("ROSTER_INDEX_OUT_OF_RANGE")
+    label = str(member_key).strip()
+    if not label:
+        raise DiySkillForceError("MEMBER_KEY_REQUIRED")
+    expected_key = keys[idx]
+    if "::key::" in label:
+        mkey = label
+        bare = label.split("::key::", 1)[-1]
+        if bare not in keys:
+            raise DiySkillForceError("MEMBER_KEY_NOT_IN_ROSTER")
+        if bare != expected_key:
+            raise DiySkillForceError("ROSTER_INDEX_MEMBER_KEY_MISMATCH")
+    else:
+        if label not in keys:
+            raise DiySkillForceError("MEMBER_KEY_NOT_IN_ROSTER")
+        if label != expected_key:
+            raise DiySkillForceError("ROSTER_INDEX_MEMBER_KEY_MISMATCH")
+        mkey = completion_member_key(sid, idx, label)
+
+    skill_rows = resolve_skills(bundle=str(bundle or "full_unlock"), cfg=cfg)
+    skill_ids = [str(r["id"]) for r in skill_rows]
+    book = dict(ledger) if isinstance(ledger, Mapping) else empty_completion_ledger()
+    evaluation = evaluate_member_skill_levels(
+        book, member_key=mkey, skill_ids=skill_ids, target_level=int(target_level),
+    )
+    identity = assess_selection_identity(
+        expected_display_name=str(display_name),
+        observed_panel_header_name=observed_panel_header_name,
+        observed_selected_roster_key=observed_selected_roster_key,
+        expected_roster_key=expected_key,
+    )
+    console = assess_console_type_safety(console_strip_observed=bool(console_strip_observed))
+
+    steps: list[dict] = [
+        {
+            "step": "EVALUATE_SKILLS_LEDGER_OR_PANEL",
+            "evaluation": evaluation,
+            "owner": "betterinstincts.diy_skill_force.evaluate_member_skill_levels",
+        }
+    ]
+    if not evaluation["needs_work"]:
+        return {
+            "schema": "betterinstincts.target-sim-skill-algorithm/v1",
+            "state": "TARGET_SIM_ALREADY_LEVELED",
+            "execute_allowed": False,
+            "session_id": sid,
+            "member_key": mkey,
+            "roster_key": expected_key,
+            "roster_index": idx,
+            "display_name": str(display_name),
+            "evaluation": evaluation,
+            "steps": steps + [{"step": "SKIP_SELECT_AND_FORCE", "reason": "NO_GAPS"}],
+            "proof_ceiling": str(algo.get("proof_ceiling") or cfg["proof_ceiling"]),
+            "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
+            "next": "ADVANCE_TO_NEXT_GAP_MEMBER_OR_STOP",
+        }
+
+    gap_ids = [g["skill_id"] for g in evaluation["gaps"] if g.get("skill_id")]
+    force_plan = plan_skill_force(
+        skill_ids=gap_ids,
+        level=int(target_level),
+        cfg=cfg,
+    )
+    force_commands = steps_to_commands(force_plan)
+
+    point = None
+    if portrait_client_xy is not None:
+        if (
+            not isinstance(portrait_client_xy, (list, tuple))
+            or len(portrait_client_xy) != 2
+            or any(type(v) is not int for v in portrait_client_xy)
+        ):
+            raise DiySkillForceError("PORTRAIT_CLIENT_XY_MUST_BE_TWO_INTS")
+        point = [int(portrait_client_xy[0]), int(portrait_client_xy[1])]
+
+    steps.extend(
+        [
+            {
+                "step": "SELECT_TARGET_PORTRAIT_CLICK",
+                "roster_index": idx,
+                "roster_key": expected_key,
+                "control": "LEFT_CLICK_HOUSEHOLD_PORTRAIT",
+                "client_xy": point,
+                "forbidden": ["SPACE_CYCLE_WITHOUT_HEADER_PROOF", "GUESS_SELECTION"],
+                "recovery_if_portrait_miss": (
+                    "ARM_LIVE_HOTKEYS (left-click world, right-click cancel) then SPACE; "
+                    "reopen Skills/Dynasty and require header match before any type_text"
+                ),
+                "prerequisite_for_space_recovery": "ARM_LIVE_HOTKEYS",
+                "note": str(algo.get("select_note") or ""),
+            },
+            {
+                "step": "PROVE_SELECTION_IDENTITY",
+                "identity": identity,
+                "read": "Skills or Dynasty panel header must embed target display name",
+            },
+            {
+                "step": "CAMERA_CENTER_RIGHT_CLICK_VIEW",
+                "mode": "RIGHT_CLICK_VIEW",
+                "preferred_control": "RIGHT_CLICK_ACTIVE_SIM_PORTRAIT",
+                "pullback_from_max_close": 0.15,
+                "owner": "betterinstincts.camera_traverse.plan_agent_default_view",
+                "note": "Center on selected Sim, then durable agent zoom (15% pullback).",
+            },
+            {
+                "step": "OPEN_CHEAT_CONSOLE",
+                "chord": ["CTRL", "SHIFT", "C"],
+                "require_white_strip_observed": True,
+                "console_safety": console,
+            },
+            {
+                "step": "DISPATCH_GAP_SKILLS",
+                "commands": list(force_commands),
+                "skills": gap_ids,
+                "typing_gate": console,
+                "forbidden_unless_console_strip": True,
+            },
+            {
+                "step": "PLAY_BRIEF_OBSERVE_REPAUSE",
+                "policy": skills_panel_observation_policy(purpose="verify", cfg=cfg),
+            },
+            {
+                "step": "PANEL_RECORD_LOCAL_OBSERVED",
+                "cli": "python -m scripts.diy_skill_force panel-record …",
+                "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
+            },
+        ]
+    )
+
+    ready = identity.get("match") is True and console.get("state") == "CONSOLE_TYPE_ALLOWED"
+    return {
+        "schema": "betterinstincts.target-sim-skill-algorithm/v1",
+        "state": (
+            "TARGET_SIM_FORCE_READY"
+            if ready
+            else "TARGET_SIM_FORCE_PLAN_GATED"
+        ),
+        "execute_allowed": False,
+        "live_dispatch_ready": bool(ready),
+        "session_id": sid,
+        "member_key": mkey,
+        "roster_key": expected_key,
+        "roster_index": idx,
+        "display_name": str(display_name),
+        "evaluation": evaluation,
+        "identity": identity,
+        "console_safety": console,
+        "live_hotkey_arm": plan_live_hotkey_arm(cfg=cfg),
+        "force_plan": {
+            "commands": list(force_commands),
+            "skills": list(force_plan.get("skills") or []),
+            "level": int(target_level),
+        },
+        "steps": steps,
+        "algorithm_order": list(
+            algo.get("order")
+            or [
+                "EVALUATE",
+                "SELECT_PORTRAIT",
+                "PROVE_IDENTITY",
+                "CAMERA_CENTER_ZOOM",
+                "CONSOLE_CONFIRM",
+                "DISPATCH",
+                "PLAY_BRIEF",
+                "PANEL_RECORD",
+            ]
+        ),
+        "proof_ceiling": str(algo.get("proof_ceiling") or cfg["proof_ceiling"]),
+        "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
+        "next": (
+            "scripts.diy_skill_force target-sim --execute only after identity+console gates"
+            if ready
+            else identity.get("gate") or console.get("gate")
+        ),
+    }
+
+
 def skills_panel_observation_policy(
     *,
     purpose: str = "verify",
@@ -570,6 +1007,17 @@ def load_contract(path: Path = CONTRACT) -> dict:
         raise DiySkillForceError("DETACHED_HOUSEHOLD_EXECUTION_FORBIDDEN")
     if (cfg.get("execution_policy") or {}).get("model") != "SINGLE_FOREGROUND_SERIAL_UI_OWNER":
         raise DiySkillForceError("HOUSEHOLD_FOREGROUND_SERIAL_OWNER_REQUIRED")
+    algo = cfg.get("target_sim_algorithm")
+    if not isinstance(algo, Mapping):
+        raise DiySkillForceError("TARGET_SIM_ALGORITHM_REQUIRED")
+    if algo.get("console_strip_required_before_type") is not True:
+        raise DiySkillForceError("TARGET_SIM_CONSOLE_STRIP_GATE_REQUIRED")
+    if algo.get("space_cycle_without_header_proof_forbidden") is not True:
+        raise DiySkillForceError("TARGET_SIM_SPACE_WITHOUT_PROOF_FORBIDDEN")
+    if algo.get("v_starts_video_recording") is not True:
+        raise DiySkillForceError("TARGET_SIM_V_VIDEO_GUARD_REQUIRED")
+    if algo.get("dispatched_is_not_panel_pass") is not True:
+        raise DiySkillForceError("TARGET_SIM_DISPATCHED_NOT_PASS_REQUIRED")
     _validate_trait_safety(cfg)
     return cfg
 
@@ -984,6 +1432,8 @@ def catalog_snapshot(cfg: Optional[dict] = None) -> dict:
         "bundles": dict(cfg["bundles"]),
         "required_residual_skills": required_residual_skills(cfg),
         "household_traverse": dict(cfg.get("household_traverse") or {}),
+        "live_hotkey_arm": dict(cfg.get("live_hotkey_arm") or {}),
+        "target_sim_algorithm": dict(cfg.get("target_sim_algorithm") or {}),
         "default_level": int(seq["default_level"]),
         "close_console_key": seq.get("close_console_key"),
         "cheat_line_submit": seq.get("cheat_line_submit"),
