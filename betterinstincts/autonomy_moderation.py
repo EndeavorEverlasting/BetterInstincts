@@ -190,3 +190,167 @@ def evaluate_autonomy_moderation(
         result["positive_whim_candidate"] = positive
         return finish("POSITIVE_WHIM_QUEUE_CANDIDATE")
     return finish("PRESERVE_QUEUE_OR_GOAL")
+
+
+# Mod-importable, game-native policy seam. The Sims 4 adapter must provide
+# attested interaction identities and estimates from the installed build.
+# This module never invokes the game's action queue or desktop controls.
+NATIVE_SCHEMA = "betterinstincts.native-household-autonomy/v1"
+MAX_HOUSEHOLD_SIMS = 32
+YIELD_DOMAINS = frozenset({
+    "hunger", "bladder", "energy", "hygiene", "fun", "social",
+    "career", "income", "skill", "aspiration", "obligation",
+    "relationship", "recovery",
+})
+
+
+def _native_yield(row: Mapping) -> float | None:
+    """Evidence-qualified, normalized positive utility; unknown is not zero."""
+    if not isinstance(row, Mapping) or not _ref(row.get("yield_proof_ref")):
+        return None
+    values = row.get("yield_by_domain")
+    if not isinstance(values, Mapping) or not values or set(values) - YIELD_DOMAINS:
+        return None
+    if any(type(v) not in (int, float) or not math.isfinite(v) or not 0 <= v <= 1
+           for v in values.values()):
+        return None
+    # Equal weighting is a deterministic baseline, not learned authority.
+    return round(sum(values.values()), 6)
+
+
+def evaluate_native_household_autonomy(
+    observation: Mapping, *, now: float | None = None,
+) -> dict:
+    """Evaluate EVERY supplied household Sim without selected-portrait coupling.
+
+    Suppression and replacement are recommendations for a future version-pinned
+    EA-native interaction adapter, never an executed cancellation or enqueue.
+    A player command, unknown ownership, missing measurement, or stale capture
+    denies intervention. Positive leisure/social yields count as productive.
+    """
+    if not isinstance(observation, Mapping) or observation.get("schema") != NATIVE_SCHEMA:
+        raise AutonomyModerationError("NATIVE_AUTONOMY_SCHEMA_INVALID")
+    if not all(_ref(observation.get(k)) for k in ("household_ref", "game_build", "capture_ref")):
+        raise AutonomyModerationError("NATIVE_AUTONOMY_IDENTITY_INVALID")
+    sims = observation.get("sims")
+    if not isinstance(sims, list) or not 1 <= len(sims) <= MAX_HOUSEHOLD_SIMS:
+        raise AutonomyModerationError("NATIVE_HOUSEHOLD_BOUNDS_INVALID")
+    instant = time.time() if now is None else now
+    stamp = observation.get("observed_at_unix")
+    fresh = (
+        type(stamp) in (int, float) and type(instant) in (int, float)
+        and math.isfinite(stamp) and math.isfinite(instant)
+        and 0 <= instant - stamp <= MAX_AGE
+    )
+    result = {
+        "schema": "betterinstincts.native-household-autonomy-result/v1",
+        "household_ref": observation["household_ref"],
+        "capture_ref": observation["capture_ref"],
+        "game_build": observation["game_build"],
+        "decisions": [],
+        "cancel_allowed": False,
+        "enqueue_allowed": False,
+        "desktop_input_allowed": False,
+        "proof_ceiling": "OFFLINE_NATIVE_POLICY_NOT_EA_HOOK_OR_GAME_EFFECT",
+    }
+    seen = set()
+    for sim in sims:
+        if not isinstance(sim, Mapping) or not _ref(sim.get("sim_ref")):
+            raise AutonomyModerationError("NATIVE_SIM_IDENTITY_INVALID")
+        sim_id = sim["sim_ref"]
+        if sim_id in seen:
+            raise AutonomyModerationError("NATIVE_DUPLICATE_SIM")
+        seen.add(sim_id)
+        decision = {
+            "sim_ref": sim_id, "state": "PRESERVE_UNKNOWN",
+            "suppress_candidate": None, "replacement_candidate": None,
+        }
+        result["decisions"].append(decision)
+        if not fresh or sim.get("capture_ref") != observation["capture_ref"]:
+            decision["state"] = "REOBSERVE_SIM"
+            continue
+        if (observation.get("player_active") is not False
+                or sim.get("player_command_present") is not False
+                or sim.get("player_owned") is not False):
+            decision["state"] = "PLAYER_OR_UNKNOWN_OWNER_PROTECTED"
+            continue
+        if sim.get("queue_verified") is not True:
+            decision["state"] = "QUEUE_NOT_VERIFIED"
+            continue
+        queue = sim.get("queue", [])
+        alternatives = sim.get("available_actions", [])
+        if (not isinstance(queue, list) or len(queue) > MAX_QUEUE
+                or not isinstance(alternatives, list) or len(alternatives) > MAX_REPAIRS):
+            raise AutonomyModerationError("NATIVE_ACTION_BOUNDS_INVALID")
+        # A protected player action anywhere in this Sim's queue blocks all
+        # optimization of that queue. It never depends on the active portrait.
+        if any(not isinstance(a, Mapping) or a.get("origin") == "PLAYER"
+               or a.get("origin") not in ORIGINS for a in queue):
+            decision["state"] = "PLAYER_QUEUE_PROTECTED"
+            continue
+        active_goal = sim.get("active_goal")
+        goal_score = None
+        if isinstance(active_goal, Mapping) and active_goal.get("active") is True:
+            goal_score = _native_yield(active_goal)
+            if not _ref(active_goal.get("action_id")) or goal_score is None:
+                decision["state"] = "GOAL_EVIDENCE_UNKNOWN"
+                continue
+        best = None
+        for candidate in alternatives:
+            if not isinstance(candidate, Mapping):
+                raise AutonomyModerationError("NATIVE_ALTERNATIVE_INVALID")
+            score = _native_yield(candidate)
+            if (score is not None and score > 0
+                    and candidate.get("available") is True
+                    and candidate.get("native_affordance_verified") is True
+                    and _ref(candidate.get("action_id"))
+                    and (best is None or score > best[0])):
+                best = (score, candidate)
+        for action in queue:
+            if not all(_ref(action.get(k)) for k in ("action_id", "queue_slot_ref",
+                                                     "origin_proof_ref")):
+                decision["state"] = "ACTION_PROVENANCE_UNKNOWN"
+                break
+            if action["origin"] != "SIM_AUTONOMY":
+                continue
+            action_score = _native_yield(action)
+            if action_score is None:
+                decision["state"] = "ACTION_YIELD_UNKNOWN"
+                break
+            if active_goal is not None and action.get("action_id") == active_goal.get("action_id"):
+                continue
+            if active_goal is not None and active_goal.get("active") is True:
+                # The expected *loss of ongoing goal progress* must be attested.
+                if action.get("interrupts_goal") is not True or goal_score is None:
+                    continue
+                better = goal_score > action_score
+                replacement = {"action_id": active_goal["action_id"],
+                               "kind": "RESUME_ATTESTED_GOAL"}
+            else:
+                better = action_score == 0 and best is not None
+                replacement = ({"action_id": best[1]["action_id"],
+                                "kind": "NATIVE_AFFORDANCE_CANDIDATE"} if best else None)
+            if not better or replacement is None:
+                continue
+            if action.get("effect_proof_ref") is None or not _ref(action["effect_proof_ref"]):
+                decision["state"] = "ACTION_EFFECT_UNKNOWN"
+                break
+            if sim.get("policy_opt_in") is not True:
+                decision["state"] = "OPT_IN_REQUIRED"
+                break
+            decision["state"] = "NATIVE_SUPPRESSION_CANDIDATE"
+            decision["suppress_candidate"] = {
+                "queue_slot_ref": action["queue_slot_ref"],
+                "action_id": action["action_id"],
+                "observed_yield": action_score,
+                "protected_goal_yield": goal_score,
+                "requires": ["EA_NATIVE_QUEUE_IDENTITY", "EXACT_PATCH_ADAPTER",
+                             "RECHECK_PLAYER_CONTROL", "RECHECK_GOAL_AND_YIELD",
+                             "OBSERVE_EFFECT_BEFORE_NEXT_DECISION"],
+            }
+            decision["replacement_candidate"] = replacement
+            break
+        else:
+            if decision["state"] == "PRESERVE_UNKNOWN":
+                decision["state"] = "PRESERVE_QUEUE_OR_YIELD"
+    return result
