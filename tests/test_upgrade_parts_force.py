@@ -8,6 +8,7 @@ from betterinstincts.upgrade_parts_force import (
     acquisition_source_catalog,
     next_observed_menu_choice,
     plan_acquisition_routes,
+    plan_computer_order_domain,
     budget_snapshot,
     catalog_snapshot,
     evaluate_diy_parts_cert,
@@ -290,6 +291,37 @@ class UpgradePartsForceTests(unittest.TestCase):
                 portraits=profiles + profiles, requests=[{"item": "common parts"}])
         with self.assertRaisesRegex(UpgradePartsForceError, "UNKNOWN_ACQUISITION_ITEM"):
             plan_acquisition_routes(portraits=profiles, requests=[{"item": "unseen titanium coolant"}])
+
+    def test_generic_order_domain_is_not_hardcoded_to_upgrade_parts(self):
+        portraits = [
+            {"slot": 7, "portrait_id": "scanned:7", "observed": True},
+            {"slot": 2, "portrait_id": "scanned:2", "observed": True},
+        ]
+        plan = plan_computer_order_domain(
+            portraits=portraits, selected_slots=[7],
+            domain="Order Books", item_labels=["Observed Book A", "Observed Book B"],
+        )
+        self.assertEqual(plan["domain_goal"], "Order Books")
+        self.assertEqual(plan["portraits_selected"], ["scanned:7"])
+        self.assertEqual([s["choice"] for s in plan["steps"]
+                          if s["op"] == "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES"],
+                         ["Order", "Order Books"])
+        self.assertEqual(len([s for s in plan["steps"]
+                              if s["op"] == "LEFT_CLICK_OBSERVED_COMPUTER"]), 1)
+        self.assertEqual(len([s for s in plan["steps"]
+                              if s["op"] == "REQUIRE_VISIBLE_PURCHASE_ITEM"]), 2)
+        self.assertFalse(plan["execute_allowed"])
+        self.assertEqual(plan["known_item_availability"], "NOT_PROVEN_UNTIL_VISIBLE")
+
+    def test_generic_order_domain_blocks_unspecific_or_unobserved_roster(self):
+        p = [{"slot": 0, "portrait_id": "screen:0", "observed": True}]
+        with self.assertRaisesRegex(UpgradePartsForceError, "SPECIFIC_ORDER_DOMAIN_REQUIRED"):
+            plan_computer_order_domain(portraits=p, domain="Order", item_labels=["upgrade parts"])
+        with self.assertRaisesRegex(UpgradePartsForceError, "ORDER_ITEMS_REQUIRED"):
+            plan_computer_order_domain(portraits=p, domain="Books", item_labels=[])
+        with self.assertRaisesRegex(UpgradePartsForceError, "SELECTED_PORTRAIT_NOT_OBSERVED"):
+            plan_computer_order_domain(
+                portraits=p, domain="Books", item_labels=["book"], selected_slots=[9])
 
     def test_player_override_refuses_all_acquisition_steps(self):
         plan = plan_acquisition_routes(
