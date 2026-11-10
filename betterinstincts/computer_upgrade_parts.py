@@ -132,13 +132,14 @@ def propose_computer_purchase_step(
     stage = str(stage).upper()
     if stage not in STAGES:
         raise UpgradePartsForceError("UNKNOWN_COMPUTER_MENU_STAGE")
-    if not explicit_command:
+    if explicit_command is not True:
         return _hold("EXPLICIT_USER_COMMAND_REQUIRED")
-    if human_active_or_unknown:
+    if human_active_or_unknown is not False:
         return _hold("PLAYER_CONTROL_TAKES_PRIORITY", state="YIELD_TO_PLAYER")
-    if str(game_mode).upper() != "LIVE" or not paused_verified:
+    if str(game_mode).upper() != "LIVE" or paused_verified is not True:
         return _hold("PAUSED_LIVE_MODE_REQUIRED")
-    if not active_sim_observed or not inside_lot_verified or not computer_observed:
+    if (active_sim_observed is not True or inside_lot_verified is not True
+            or computer_observed is not True):
         return _hold("FRESH_INSIDE_LOT_SIM_COMPUTER_EVIDENCE_REQUIRED")
     channel = assess_interaction_channel(
         native_capability_verified=native_capability_verified,
@@ -161,7 +162,7 @@ def propose_computer_purchase_step(
             if preferred in options and preferred not in seen:
                 return _ready("SELECT_VISIBLE_LABEL", options[preferred])
         for key, original in options.items():
-            if key in MORE_CHOICES and key not in seen:
+            if key in MORE_CHOICES:
                 return _ready("SELECT_VISIBLE_LABEL", original)
         return _hold("NO_RECOGNIZED_OBSERVED_MENU_BRANCH")
     if stage == "PART_PICKER":
@@ -171,7 +172,7 @@ def propose_computer_purchase_step(
             return _hold("REQUESTED_PART_NOT_VISIBLE_IN_PICKER")
         return _ready("SELECT_VISIBLE_LABEL", options[_norm(label)])
     if stage == "CONFIRM":
-        if not spending_authorized:
+        if spending_authorized is not True:
             return _hold("PURCHASE_SPENDING_AUTHORIZATION_REQUIRED")
         amounts = (unit_price_observed, funds_observed, approved_spend_cap)
         if any(type(n) is not int or n < 0 for n in amounts):
