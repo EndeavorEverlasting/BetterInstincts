@@ -464,6 +464,11 @@ def resolve_force_gap_commands(
     }
 
 
+
+# Compatibility route: old callers must now supply an explicitly observed target.
+# Do not resurrect name, portrait-index, or pixel defaults here.
+plan_lean_olga_skill_beat = plan_lean_selected_sim_skill_beat
+
 def plan_force_gaps_beat(
     *,
     member_key: str,
@@ -1277,14 +1282,14 @@ def assess_selection_identity(
     """Prove the highlighted portrait matches the intended Sim before cheats.
 
     Identity requires a panel name embed (Servos look alike — white bounds alone
-    cannot tell Olga from Bernice). Preferred lean order: **J work/career** name,
+    cannot tell one same-looking Servo from another). Preferred lean order: **J work/career** name,
     then **L skills** for progress sight. Aspiration G also embeds the name but
     is not the preferred identity panel for skill-force.
 
     Accepted name embeds (open BR panels via letter hotkeys, not mood color):
     - Career/work panel name text — hotkey **J** (preferred)
-    - Skills/Dynasty header (``Olga hasn't…``) — hotkey **L**
-    - Aspiration Satisfaction (``Olga's Satisfaction``) — hotkey G (valid, not preferred)
+    - Skills/Dynasty header (``Sim A hasn't…``) — hotkey **L**
+    - Aspiration Satisfaction (``Sim A's Satisfaction``) — hotkey G (valid, not preferred)
 
     White portrait boundaries only corroborate that *some* chip is selected.
     Mood glow behind a chip is NOT selection. Space-cycle without name is rejected.
@@ -1329,7 +1334,7 @@ def assess_selection_identity(
                 "indistinguishable — open J (work) or L (skills) for the Sim name."
             )
         return out
-    # Header often embeds the first name: "Olga hasn't…" / work panel / Satisfaction
+    # Header often embeds an observed first name in work/Skills/Satisfaction panels
     expected_token = expected.split()[0].casefold()
     observed_l = observed.casefold()
     name_ok = expected_token in observed_l or expected.casefold() in observed_l
@@ -1472,26 +1477,36 @@ def plan_arm_then_play_brief(
     }
 
 
-def plan_lean_olga_skill_beat(
+def plan_lean_selected_sim_skill_beat(
     *,
-    portrait_client_xy: Sequence[int] = (454, 1055),
-    roster_index: int = 2,
+    portrait_client_xy: Sequence[int],
+    roster_index: int,
+    expected_display_name: str,
 ) -> dict:
-    """Lean Olga skill-force: one pinned arm, Enter recenter, then hotkeys.
+    """Lean active-Sim skill-force: observed portrait first, then hotkeys.
 
     Operator 2026-11-10: keep the camera on the active Sim. Arm once may
     displace the view — press Enter (native center-active-Sim) to refocus.
     Notice selection/camera switches and Enter again. Never roam/zoom the lot.
     Then J → L → console → type → close → play/pause. Re-arm only on hotkey miss.
     """
+    if not isinstance(expected_display_name, str) or not expected_display_name.strip():
+        raise DiySkillForceError("OBSERVED_TARGET_NAME_REQUIRED")
+    if isinstance(roster_index, bool) or not isinstance(roster_index, int) or roster_index < 0:
+        raise DiySkillForceError("OBSERVED_ROSTER_INDEX_REQUIRED")
+    if len(portrait_client_xy) != 2 or any(
+        isinstance(x, bool) or not isinstance(x, int) or x < 0 for x in portrait_client_xy
+    ):
+        raise DiySkillForceError("OBSERVED_PORTRAIT_COORDS_REQUIRED")
     xy = [int(portrait_client_xy[0]), int(portrait_client_xy[1])]
     arm_xy = list(
         (load_contract().get("live_hotkey_arm") or {}).get("default_world_client_xy")
         or [880, 480]
     )
     return {
-        "schema": "betterinstincts.lean-olga-skill-beat/v1",
-        "state": "LEAN_OLGA_SKILL_BEAT_READY",
+        "schema": "betterinstincts.lean-selected-sim-skill-beat/v1",
+        "state": "LEAN_SELECTED_SIM_SKILL_BEAT_READY",
+        "expected_display_name": expected_display_name.strip(),
         "execute_allowed": False,
         "roster_index": int(roster_index),
         "portrait_client_xy": xy,
@@ -1524,7 +1539,7 @@ def plan_lean_olga_skill_beat(
                 ],
             },
             {
-                "step": "LEFT_CLICK_OLGA_PORTRAIT",
+                "step": "LEFT_CLICK_SELECTED_PORTRAIT",
                 "detail": "LEFT_CLICK portrait only (no portrait RMB, no world roam)",
                 "client_xy": xy,
                 "forbidden": ["PORTRAIT_RIGHT_CLICK", "PORTRAIT_PROBE_LOOP"],
@@ -1533,7 +1548,7 @@ def plan_lean_olga_skill_beat(
                 "step": "J_WORK_NAME",
                 "hotkey": "J",
                 "purpose": "NAME_IDENTITY",
-                "read": "Panel must embed Olga (work/career name text)",
+                "read": "Work/career panel must corroborate the locally observed target name",
             },
             {
                 "step": "PROVE_SELECTION_IDENTITY",
