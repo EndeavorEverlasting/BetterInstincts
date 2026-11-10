@@ -143,6 +143,84 @@ class WaiterTests(unittest.IsolatedAsyncioTestCase):
 
 
 
+class UserInteractionSovereigntyTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.age, self.busy, self.active = 0, False, True
+        self.effects = []
+
+        async def no_wait(seconds):
+            pass
+
+        self.queue = CooperativeScreenQueue(
+            lambda: PresenceProbe(False, False, last_input_age_ms=self.age, operator_busy=self.busy),
+            lambda: self.active, lock_root=Path(self.tmp.name), sleep=no_wait)
+
+    async def valid(self):
+        return True
+
+    async def effect(self):
+        self.effects.append('effect')
+
+    async def test_atomic_effect_waits_for_any_app_then_resumes(self):
+        self.queue.enqueue_effect('intent', self.valid, self.effect)
+        self.assertEqual((await self.queue.run_once())['state'], 'WAITING_FOR_USER')
+        self.assertEqual(self.effects, [])
+        self.age = 16000
+        self.busy = True  # Voice/assistive interaction without fresh OS input.
+        self.assertEqual((await self.queue.run_once())['state'], 'WAITING_FOR_USER')
+        self.busy = False
+        self.active = False
+        self.assertEqual((await self.queue.run_once())['state'], 'WAITING_FOR_USER')
+        self.active = True
+        self.assertEqual((await self.queue.run_once())['state'], 'COMPLETED')
+        self.assertEqual(self.effects, ['effect'])
+
+    async def test_new_input_during_context_validation_prevents_effect(self):
+        self.age = 16000
+
+        async def validate():
+            self.age = 0
+            return True
+
+        self.queue.enqueue_effect('intent', validate, self.effect)
+        self.assertEqual((await self.queue.run_once())['state'], 'WAITING_FOR_USER')
+        self.assertEqual(self.effects, [])
+        self.assertEqual(len(self.queue.pending), 1)
+
+    async def test_partial_interruption_retains_intent_and_only_rebuilt_remainder_resumes(self):
+        self.age = 16000
+
+        async def action(checkpoint):
+            await checkpoint()
+            self.effects.append('first')
+            self.age = 0
+            await checkpoint()
+            self.effects.append('second')
+
+        original = QueuedStep('intent', self.valid, action)
+        self.queue.enqueue(original)
+        self.assertEqual((await self.queue.run_once())['state'], 'NEEDS_RECONCILIATION')
+        self.assertIs(self.queue.suspended['intent'], original)
+        with self.assertRaisesRegex(ValueError, 'OBSERVED_OUTCOME_REQUIRED'):
+            self.queue.reconcile('intent', outcome_observed=False, completed=True)
+        with self.assertRaisesRegex(ValueError, 'SUPPLY_REMAINDER'):
+            self.queue.reconcile('intent', outcome_observed=True)
+
+        async def remainder(checkpoint):
+            await checkpoint()
+            self.effects.append('second')
+
+        self.queue.reconcile('intent', outcome_observed=True,
+                             remainder=QueuedStep('intent', self.valid, remainder))
+        self.assertEqual((await self.queue.run_once())['state'], 'WAITING_FOR_USER')
+        self.age = 16000
+        self.assertEqual((await self.queue.run_once())['state'], 'COMPLETED')
+        self.assertEqual(self.effects, ['first', 'second'])
+        self.assertFalse(self.queue.suspended)
+
+
 class CanonicalScreenLockTests(unittest.TestCase):
     def test_default_lock_location_is_shared_outside_repository_checkouts(self):
         import bootstrap

@@ -3,6 +3,21 @@ from __future__ import annotations
 
 import unittest
 
+from betterinstincts.live_host_ops import assess_interaction_channel
+
+
+class InteractionChannelTests(unittest.TestCase):
+    def test_verified_native_channel_is_preferred_without_granting_input(self):
+        result = assess_interaction_channel(native_capability_verified=True, desktop_fallback_opt_in=True)
+        self.assertEqual(result['channel'], 'NATIVE_SEMANTIC_API')
+        self.assertFalse(result['execute_allowed'])
+        self.assertFalse(result['peripheral_changes_allowed'])
+
+    def test_desktop_fallback_requires_explicit_operator_choice(self):
+        self.assertIsNone(assess_interaction_channel(native_capability_verified=False)['channel'])
+        self.assertEqual(assess_interaction_channel(native_capability_verified=False,
+            desktop_fallback_opt_in=True)['channel'], 'DESKTOP_FALLBACK')
+
 from betterinstincts.camera_traverse import assess_edge_creek_regression, load_contract as load_cam
 from betterinstincts.live_host_ops import (
     LiveHostOpsError,

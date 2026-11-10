@@ -100,6 +100,7 @@ class CooperativeScreenQueue:
         self.pending: deque[QueuedStep] = deque()
         self.completed: list[str] = []
         self.needs_review: set[str] = set()
+        self.suspended: dict[str, QueuedStep] = {}
         self.events: deque[dict[str, str]] = deque(maxlen=128)
         self._running = False
 
@@ -112,10 +113,58 @@ class CooperativeScreenQueue:
             p.work_id == step.work_id for p in self.pending
         ):
             raise ValueError("WORK_ID_ALREADY_REGISTERED")
-        if len(self.pending) >= MAX_QUEUE:
+        if len(self.pending) + len(self.suspended) >= MAX_QUEUE:
             raise ValueError("QUEUE_FULL")
         self.pending.append(step)
         self._event("ENQUEUED", step.work_id)
+
+    def enqueue_effect(self, work_id: str, validate: Validate,
+                       effect: Callable[[], Awaitable[Any]]) -> None:
+        """Preferred adapter API: one effect with a mandatory fresh checkpoint.
+
+        Native game/mod/CLI effects use the same human-first gate as desktop
+        input. The effect must be atomic and bounded; split sequences into
+        separate work items. This cannot preempt an already executing call.
+        """
+        if not callable(effect):
+            raise ValueError("CALLBACKS_REQUIRED")
+
+        async def action(checkpoint: Checkpoint) -> Any:
+            await checkpoint()
+            return await effect()
+
+        self.enqueue(QueuedStep(work_id, validate, action))
+
+    def _suspend(self, item: QueuedStep, state: str) -> None:
+        self.needs_review.add(item.work_id)
+        self.suspended[item.work_id] = item
+        self.pending.popleft()
+        self._event(state, item.work_id)
+
+    def reconcile(self, work_id: str, *, outcome_observed: bool,
+                  completed: bool = False, remainder: QueuedStep | None = None) -> None:
+        """Resolve observed partial work; never replay the original callback.
+
+        The adapter supplies either confirmed completion or a freshly rebuilt
+        remainder with the same intent ID. Requeued work still passes ordinary
+        scene validation, exclusive ownership and two fresh idle probes.
+        """
+        if work_id not in self.suspended:
+            raise ValueError("SUSPENDED_WORK_NOT_FOUND")
+        if outcome_observed is not True:
+            raise ValueError("OBSERVED_OUTCOME_REQUIRED")
+        if completed is True and remainder is None:
+            self.completed.append(work_id)
+            self._event("COMPLETED", work_id)
+        elif completed is False and isinstance(remainder, QueuedStep):
+            if remainder.work_id != work_id or not callable(remainder.validate) or not callable(remainder.action):
+                raise ValueError("INVALID_REMAINDER")
+            self.pending.appendleft(remainder)
+            self._event("REVALIDATION_QUEUED", work_id)
+        else:
+            raise ValueError("CONFIRM_COMPLETION_OR_SUPPLY_REMAINDER")
+        del self.suspended[work_id]
+        self.needs_review.remove(work_id)
 
     def _event(self, state: str, work_id: str) -> None:
         # Never log callbacks, keystrokes, URLs, player saves, or work payloads.
@@ -153,9 +202,7 @@ class CooperativeScreenQueue:
                     # ownership must be freshly checked by the adapter.
                     valid = await item.validate()
                     if valid is not True:
-                        self.needs_review.add(item.work_id)
-                        self.pending.popleft()
-                        self._event("NEEDS_REVALIDATION", item.work_id)
+                        self._suspend(item, "NEEDS_REVALIDATION")
                         return {"state": "NEEDS_REVALIDATION", "pending": len(self.pending)}
                     await self.checkpoint()
                     # Action is expected to await checkpoint before each
@@ -179,18 +226,14 @@ class CooperativeScreenQueue:
             return {"state": "COMPLETED", "pending": len(self.pending)}
         except DeferredForHuman:
             if effect_started:
-                self.needs_review.add(item.work_id)
-                self.pending.popleft()
-                self._event("NEEDS_RECONCILIATION", item.work_id)
+                self._suspend(item, "NEEDS_RECONCILIATION")
                 return {"state": "NEEDS_RECONCILIATION", "pending": len(self.pending)}
             self._event("WAITING_FOR_USER", item.work_id)
             return {"state": "WAITING_FOR_USER", "pending": len(self.pending)}
         except Exception as exc:
             # Unknown outcome must NOT be automatically replayed: a click may
             # have completed before an adapter error or post-action human input.
-            self.needs_review.add(item.work_id)
-            self.pending.popleft()
-            self._event("NEEDS_RECONCILIATION", item.work_id)
+            self._suspend(item, "NEEDS_RECONCILIATION")
             return {"state": "NEEDS_RECONCILIATION", "pending": len(self.pending), "error_type": type(exc).__name__}
         finally:
             self._running = False

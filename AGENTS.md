@@ -42,3 +42,7 @@ Report CHANGED | PROVED | NEXT with checks, SHA, push/PR/merge, patch, live stat
 P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`; ontology: `docs/handoff/BI-SEMANTIC-ONTOLOGY-P04-2026-11-07.md`.
 Interop: `docs/ASYNC_INTEROP.md` (15s idle). Likes: `docs/PREFERENCE_PROMPTS.md`.
 Skills: `docs/HOUSEHOLD_JUDGMENT.md` (fixed roster; serial/offline).
+
+## P00/P01 user interaction sovereignty
+
+Ontology revision 4 (`contracts/ontology.v1.json#interaction_policy`) embraces any user-chosen interaction in game, mod, voice/assistive tools or other apps. Autonomous effects yield on activity/unknown presence; retained work resumes only after two fresh idle probes and target validation. Prefer verified native semantic APIs. Desktop fallback is explicit opt-in and uses existing cooperative ownership; observations never steal focus. New adapters use `CooperativeScreenQueue.enqueue_effect`; partial callbacks retain intent and require `reconcile` with observed outcome and a rebuilt remainder. Never change peripheral preferences or UAC for game automation. Existing raw/unadopted callers are not intercepted by this library.

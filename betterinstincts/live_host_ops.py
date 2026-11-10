@@ -19,6 +19,28 @@ class LiveHostOpsError(ValueError):
     pass
 
 
+def assess_interaction_channel(*, native_capability_verified: bool,
+                               desktop_fallback_opt_in: bool = False) -> dict:
+    """Choose a transport, never grant control or change user peripherals.
+
+    Native semantic game/mod APIs are preferred when independently verified.
+    Desktop fallback is an explicit operator choice, with the same fresh
+    human-idle and game-context checks. Neither route bypasses the queue.
+    """
+    if native_capability_verified is True:
+        channel, reason = "NATIVE_SEMANTIC_API", "VERIFIED_NATIVE_CAPABILITY"
+    elif desktop_fallback_opt_in is True:
+        channel, reason = "DESKTOP_FALLBACK", "EXPLICIT_OPERATOR_OPT_IN"
+    else:
+        channel, reason = None, "NATIVE_CAPABILITY_UNAVAILABLE_NO_DESKTOP_OPT_IN"
+    return {
+        "channel": channel, "reason": reason, "execute_allowed": False,
+        "next_gate": "COOPERATIVE_QUEUE_AND_FRESH_CONTEXT" if channel else "WAIT_FOR_SUPPORTED_CAPABILITY",
+        "peripheral_changes_allowed": False,
+        "proof_ceiling": "CHANNEL_SELECTION_NOT_CONTROL_AUTHORITY",
+    }
+
+
 def load_contract(path: Path = CONTRACT) -> dict:
     path = Path(path)
     if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_BYTES:
