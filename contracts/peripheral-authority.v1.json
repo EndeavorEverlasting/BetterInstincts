@@ -1,0 +1,61 @@
+{
+  "schema": "betterinstincts.peripheral-authority/v1",
+  "owner": "BetterInstincts",
+  "windows_repair_owner": "SysAdminSuite",
+  "windows_repair_route": "EndeavorEverlasting/SysAdminSuite/docs/field/BLUETOOTH-PERIPHERAL-RECOVERY.md",
+  "linked_pr": "EndeavorEverlasting/SysAdminSuite#562",
+  "effect_classes": {
+    "GAME_OBSERVATION": {
+      "decision": "PASSIVE_ONLY",
+      "conditions": [
+        "NO_FOCUS_STEAL",
+        "NO_INPUT_WITHOUT_PLAYER_ADMISSION"
+      ]
+    },
+    "GAME_AUTONOMY": {
+      "decision": "INDEPENDENT_PLAYER_AND_SCENE_ADMISSION",
+      "conditions": [
+        "NO_PERIPHERAL_CONFIGURATION",
+        "NO_OS_REPAIR_SIDE_EFFECT"
+      ]
+    },
+    "OS_BLUETOOTH_SERVICE": {
+      "decision": "DENY_AND_REFER_SYSADMINSUITE",
+      "operations": [
+        "Start-Service",
+        "Stop-Service",
+        "Restart-Service",
+        "Set-Service",
+        "sc.exe"
+      ]
+    },
+    "OS_DRIVER_OR_ADAPTER": {
+      "decision": "DENY_AND_REFER_SYSADMINSUITE",
+      "operations": [
+        "pnputil.exe",
+        "Disable-PnpDevice",
+        "Enable-PnpDevice",
+        "Remove-PnpDevice"
+      ]
+    },
+    "OS_INPUT_PREFERENCE": {
+      "decision": "DENY",
+      "operations": [
+        "PrintScreenKeyForSnippingEnabled",
+        "BlockInput",
+        "ClipCursor"
+      ]
+    }
+  },
+  "unknown_effect": "DENY_UNTIL_CLASSIFIED",
+  "authority_rule": "A player idle permit or P00/P01 /fifth-gear invocation never authorizes Windows service, driver, pairing, or peripheral preference mutation.",
+  "evidence_separation": [
+    "BT_CONNECTED_USER_REPORTED",
+    "RCA_HYPOTHESIS_SERVICE",
+    "ROOT_CAUSE_NOT_ISOLATED",
+    "BI_CAPTURE_INTERFERENCE_PROVEN_SEPARATELY",
+    "NO_CURSOR_ATTRIBUTION"
+  ],
+  "enforcement": "scripts/check_peripheral_boundary.py, tests/test_peripheral_boundary.py",
+  "safety_limit": "Source scan is a regression guard; external agents/tools must independently honor repo policy and cannot be forcibly intercepted."
+}
