@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.upgrade-parts-force/v1",
-  "version": 2,
+  "version": 3,
   "authority": "docs/UPGRADE_PARTS_FORCE.md",
   "proof_ceiling": "HOST_DIY_PARTS_BUDGET_PLAN_AND_CERT_SCHEMA_NOT_BI002",
   "architecture": {
@@ -46,7 +46,9 @@
     "interop": {
       "require_screen_admit": true,
       "forbid_computer_use_fallback": true,
-      "note": "Library plans stay evaluate-only. Live acquire/observe requires screen_admit + disposable lab."
+      "note": "Library plans stay evaluate-only. Live acquire/observe requires screen_admit + disposable lab.",
+      "computer_command": "DISCOVER_ON_DEMAND_ONLY; live adapter uses CooperativeScreenQueue.enqueue_effect per observed one-step action",
+      "human_first": "NO_AUTOSTART_NO_FOCUS_STEAL; two fresh idle probes + explicit opt-in + scene and spend validation; operator reclaim wins"
     }
   },
   "quantity": {
@@ -116,20 +118,24 @@
   },
   "how_to_buy": {
     "robot_salvage_parts": {
-      "summary": "Phone or computer → Order → Purchase Upgrade Parts → Robot Salvage Parts (Sim pocket).",
+      "summary": "Computer/laptop → explore currently observed interactions → Purchase Upgrade Parts → Robot Salvage Parts (personal inventory). Intermediate menu labels and depth must be observed, not assumed.",
       "steps": [
-        "Select the Sim who needs the parts.",
-        "Open phone or click any computer/laptop.",
-        "Choose Order.",
-        "Choose Purchase Upgrade Parts.",
-        "Select Robot Salvage Parts and confirm purchase.",
-        "Repeat for each additional unit; parts land in personal inventory immediately."
+        "Select the Sim who needs the parts and keep Live Mode paused.",
+        "Find an observed computer/laptop inside the active lot.",
+        "On user command and with player-control admission, open that computer's interactions.",
+        "Explore observed nested options (such as Order or More Choices only if actually visible) until Purchase Upgrade Parts appears.",
+        "Choose Robot Salvage Parts in the observed picker.",
+        "After explicit funds/price/spend-cap approval, confirm ONE purchase.",
+        "Verify the part increased in the selected Sim's personal inventory before considering another purchase."
       ],
-      "lab_bulk_alternative": "With testingcheats enabled, Shift+click Dr. F's Official Robotics Workstation → Spawn Crafting Supplies (~50 of each robotics / common upgrade material).",
+      "lab_bulk_alternative": "In a disposable lab, the existing optional testingcheats robotics-workstation Spawn Crafting Supplies path remains separate; never activate cheats automatically.",
       "not_this": [
-        "Build/Buy catalog search as the primary stock path",
-        "Hallucinated objects.gsi_create_obj hex",
-        "Household Inventory deposit (these are pocket crafting materials)"
+        "Hardcoded field XY or assumed menu depth",
+        "Automatic screen control on boot",
+        "Unverified phone Order as the observed route",
+        "Blind retries, Bluetooth/driver/service changes",
+        "EA Connect",
+        "Household Inventory deposit"
       ]
     }
   },
@@ -254,7 +260,7 @@
     },
     "computer": {
       "id": "computer_purchase_spam",
-      "display_name": "Computer/laptop Order → Purchase Upgrade Parts (spam)",
+      "display_name": "Computer/laptop interactions → dynamically discover Purchase Upgrade Parts",
       "required_mode": "LIVE",
       "destination": "sim_pocket_inventory",
       "mutating_action": "PURCHASE_UPGRADE_PART",
@@ -271,8 +277,10 @@
           "op": "REQUIRE_ACTIVE_SIM_SELECTION"
         },
         {
-          "op": "VERIFY_SELECTED_OBSERVED_PORTRAIT",
-          "fail": "PORTRAIT_STALE_OR_UNKNOWN"
+          "op": "REQUIRE_EXPLICIT_USER_COMMAND"
+        },
+        {
+          "op": "REQUIRE_INSIDE_LOT_AND_PAUSED"
         },
         {
           "op": "OBSERVE",
@@ -280,43 +288,29 @@
           "fail": "COMPUTER_NOT_OBSERVED"
         },
         {
-          "op": "LEFT_CLICK_OBSERVED_COMPUTER",
-          "target": "computer_or_laptop",
-          "preferred_channel": "MOUSE_FALLBACK",
-          "requires_sim_at_computer": false,
-          "fresh_observation_required": true
+          "op": "OPEN_OBSERVED_COMPUTER",
+          "target": "computer",
+          "fail": "COMPUTER_MENU_NOT_OBSERVED"
         },
         {
-          "op": "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES",
-          "choice": "Order",
-          "fail": "ORDER_MENU_MISSING",
-          "max_pages": 8,
-          "observation_required": true,
-          "no_blind_click": true
-        },
-        {
-          "op": "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES",
-          "choice": "Purchase Upgrade Parts",
-          "fail": "PURCHASE_UPGRADE_PARTS_MISSING",
-          "max_pages": 8,
-          "observation_required": true,
-          "no_blind_click": true
-        },
-        {
-          "op": "REQUIRE_FRESH_PURCHASE_PICKER_OBSERVATION",
-          "fail": "PURCHASE_PICKER_NOT_OBSERVED"
+          "op": "DISCOVER_NESTED_MENU",
+          "target_label": "Purchase Upgrade Parts",
+          "max_menu_pages": 16,
+          "choose_only_observed_labels": true,
+          "fail": "PURCHASE_MENU_NOT_OBSERVED"
         },
         {
           "op": "SELECT_PART",
           "from_recipe_field": "display_name",
-          "fail": "PART_ROW_MISSING",
-          "observed_picker_item_required": true,
-          "no_assumed_row_position": true
+          "fail": "PART_ROW_MISSING"
         },
         {
-          "op": "CONFIRM_PURCHASE",
-          "fresh_player_and_screen_admission": true,
-          "effect_class": "INSTANT_UI_CANDIDATE"
+          "op": "REQUIRE_SPENDING_AUTHORIZATION",
+          "funds_and_price_observed": true,
+          "inventory_baseline_required": true
+        },
+        {
+          "op": "CONFIRM_PURCHASE"
         },
         {
           "op": "OBSERVE",
@@ -326,10 +320,10 @@
         {
           "op": "REPEAT_PURCHASE",
           "times_from": "quantity_remaining_after_first",
-          "requires_picker_reobservation": true,
-          "never_replay_unobserved_purchase": true
+          "requires_fresh_observation_per_unit": true
         }
-      ]
+      ],
+      "evidence": "OPERATOR_REPORTED_PURCHASE_UPGRADE_PARTS_DEEP_IN_COMPUTER_INTERACTIONS; INTERMEDIATE_MENU_SEQUENCE_NOT_ATTESTED"
     }
   },
   "part_catalog": [
@@ -411,7 +405,7 @@
       ],
       "diy_kit": true,
       "computer_buyable": true,
-      "default_path": "phone",
+      "default_path": "computer",
       "allowed_paths": [
         "phone",
         "computer",
@@ -546,8 +540,49 @@
     "Buy Mode debug is never the preferred stock path",
     "Cert MET requires attested observed counts, never plan issuance alone",
     "Player-directed observations yield without steps",
-    "Never press EA Connect; Stay Offline only on CONNECTION IS REQUIRED"
+    "Never press EA Connect; Stay Offline only on CONNECTION IS REQUIRED",
+    "Computer purchase-menu items have a separate exact five-item catalog anchored to operator observation",
+    "Deep computer menu traversals require fresh semantic observation and a bounded per-effect cooperative queue",
+    "No boot-time UI, no OS peripheral mutations and no unobserved repeated purchases"
   ],
+  "computer_purchase_menu": {
+    "schema": "betterinstincts.computer-upgrade-menu/v1",
+    "evidence_source": "OPERATOR_REPORTED_COMPUTER_PURCHASE_MENU_2026-11-10",
+    "part_ids": [
+      "common_upgrade_parts",
+      "electronic_upgrade_parts",
+      "kitchen_upgrade_parts",
+      "plumbing_upgrade_parts",
+      "robot_salvage_parts"
+    ],
+    "verified_entry": "CLICK_AN_OBSERVED_COMPUTER_IN_LIVE_MODE",
+    "target_label": "Purchase Upgrade Parts",
+    "intermediate_labels": "UNKNOWN_UNTIL_FRESHLY_OBSERVED",
+    "candidate_semantic_labels": [
+      "Order",
+      "More Choices..."
+    ],
+    "fixed_menu_depth": null,
+    "max_menu_pages": 16,
+    "discovery": "OBSERVE_EACH_MENU_SCREEN_AND_ONLY_SELECT_CURRENTLY_VISIBLE_LABELS",
+    "cycle_guard": "CURRENT_PAGE_SIGNATURE_MUST_NOT_REPEAT; MORE_CHOICES_LABEL_MAY_REPEAT_ON_DIFFERENT_PAGES",
+    "availability": "CONDITIONAL_ON_GAME_BUILD_PACKS_MODS_AND_SCENE",
+    "session_authority": "EXPLICIT_USER_COMMAND_THEN_COOPERATIVE_QUEUE; NO_AUTORUN",
+    "purchasing": "REQUIRE_FRESH_PRICE_FUNDS_SPEND_CAP_AND_POCKET_INVENTORY_BASELINE; VERIFY_DELTA_BEFORE_REPEATING",
+    "transport": "VERIFIED_NATIVE_SEMANTIC_API_PREFERRED; DESKTOP_FALLBACK_EXPLICIT_OPT_IN",
+    "prohibited_effects": [
+      "BLUETOOTH_SERVICE_CHANGE",
+      "OS_SERVICE_CHANGE",
+      "DRIVER_ADAPTER_CHANGE",
+      "PAIRING_CHANGE",
+      "INPUT_PREFERENCE_CHANGE",
+      "UAC_CHANGE",
+      "HARDCODED_XY",
+      "EA_CONNECT",
+      "SAVE_MUTATION"
+    ],
+    "proof_ceiling": "OFFLINE_COMPUTER_MENU_QUEUE_NOT_LIVE_PURCHASE_PROOF"
+  },
   "acquisition_routing": {
     "schema": "betterinstincts.household-acquisition-routes/v1",
     "owner": "betterinstincts/upgrade_parts_force.py",
@@ -626,7 +661,7 @@
       "domain_goal": "Purchase Upgrade Parts",
       "candidate_pagination_label": "More Choices",
       "expected_more_choices_from_order": "ABOUT_TWO_BUT_NOT_FIXED",
-      "max_page_explorations": 8,
+      "max_page_explorations": 16,
       "max_total_menu_actions": 32,
       "resolve_by": "EXACT_OBSERVED_LABEL_NOT_HARDCODED_COORDINATES",
       "choice_routing": "Check currently visible choices before any More Choices; advance only if observed and unseen; deny cycles/exhausted options.",
@@ -696,7 +731,10 @@
       "NO_CHEATS_FOR_ECO_SOURCE_DISCOVERY",
       "NO_ONLINE_CONNECT",
       "NO_CLAIM_FROM_PLAN_ONLY",
-      "BI002_LIVE_CERT_NOT_ADVANCED"
-    ]
+      "BI002_LIVE_CERT_NOT_ADVANCED",
+      "USE_EXISTING_COMPUTER_UPGRADE_PARTS_DISPATCH_ADMISSION_NOT_SECOND_CLICKER"
+    ],
+    "canonical_existing_dispatch": "betterinstincts/computer_upgrade_parts.py#propose_computer_purchase_step + enqueue_computer_menu_step",
+    "planner_role": "READ_ONLY_SOURCE_AND_PORTRAIT_INTENT_SUPPORTS_EXISTING_COOPERATIVE_DISPATCH"
   }
 }
