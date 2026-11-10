@@ -10,9 +10,9 @@ Ontology revision 4 embraces any user-chosen game/mod, mouse, keyboard, voice/as
 
 `contracts/peripheral-authority.v1.json` and `scripts/check_peripheral_boundary.py` deny game agents Windows Bluetooth service, driver, pairing and input-preference changes. Idle/player permits never grant OS repair authority: route incidents to SysAdminSuite Field Workflow. Run the checker and `tests.test_peripheral_boundary` with ontology preflight; see `docs/PERIPHERAL_INCIDENT.md`.
 
-## Upgrade-parts purchase menu (on-demand only)
+## Computer upgrade parts
 
-Use `python -m scripts.upgrade_parts_force computer-menu` / `computer-intent` and `docs/UPGRADE_PARTS_FORCE.md`. Five observed purchase options are separate from the larger DIY kit. Never assume a fixed computer pie-menu depth: only currently observed semantic labels may lead to `Purchase Upgrade Parts`. Every active step is explicit-command + paused Live + observed inside-lot computer + spending gate + `CooperativeScreenQueue.enqueue_effect`, with player reclaim winning. No Bluetooth, Windows-service, driver, pairing, UAC or input-preference changes; no autorun, blind purchase replay or EA Connect. P08 live purchase evidence remains independent of offline tests.
+Five-part on-demand computer menu: `docs/UPGRADE_PARTS_FORCE.md`. Only observed labels; cooperative per-effect queue, player reclaim, spending gate, no OS/peripheral changes, autorun or blind replay. P08 live proof remains separate.
 
 ## Invariants
 
