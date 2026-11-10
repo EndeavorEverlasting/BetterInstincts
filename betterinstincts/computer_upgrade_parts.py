@@ -16,8 +16,8 @@ from betterinstincts.upgrade_parts_force import (
 from betterinstincts.workflow_interop import CooperativeScreenQueue
 
 PROOF = "OFFLINE_COMPUTER_MENU_QUEUE_NOT_LIVE_PURCHASE_PROOF"
-STAGES = frozenset({"COMPUTER", "MENU", "PART_PICKER", "CONFIRM", "VERIFY"})
-EFFECT_KINDS = frozenset({"OPEN_OBSERVED_COMPUTER", "SELECT_VISIBLE_LABEL", "CONFIRM_OBSERVED_PURCHASE"})
+STAGES = frozenset({"PORTRAIT", "COMPUTER", "MENU", "PART_PICKER", "CONFIRM", "VERIFY"})
+EFFECT_KINDS = frozenset({"SELECT_OBSERVED_PORTRAIT", "OPEN_OBSERVED_COMPUTER", "SELECT_VISIBLE_LABEL", "CONFIRM_OBSERVED_PURCHASE"})
 MORE_CHOICES = frozenset({"more choices", "more choices...", "more choices…"})
 
 
@@ -118,6 +118,10 @@ def propose_computer_purchase_step(
     approved_spend_cap: int | None = None,
     inventory_before: int | None = None,
     inventory_after: int | None = None,
+    target_portrait_id: str | None = None,
+    observed_portrait_ids: Sequence[str] = (),
+    target_portrait_hitbox_verified: bool = False,
+    current_selected_portrait_id: str | None = None,
     cfg: dict | None = None,
 ) -> dict:
     """Propose ONE action from fresh observations. Never grant screen control.
@@ -148,6 +152,25 @@ def propose_computer_purchase_step(
     if not channel["channel"]:
         return _hold("VERIFIED_NATIVE_CHANNEL_OR_EXPLICIT_DESKTOP_OPT_IN_REQUIRED")
 
+    if stage == "PORTRAIT":
+        # No stale roster index or inferred click position. The downstream
+        # adapter independently resolves a fresh on-screen portrait hitbox
+        # under the existing cooperative queue's scene/player admission.
+        if (not isinstance(target_portrait_id, str) or not target_portrait_id
+                or len(target_portrait_id) > 128):
+            return _hold("TARGET_PORTRAIT_ID_REQUIRED")
+        if (not isinstance(observed_portrait_ids, (list, tuple))
+                or len(observed_portrait_ids) > 100
+                or not all(isinstance(v, str) and v for v in observed_portrait_ids)
+                or len(set(observed_portrait_ids)) != len(observed_portrait_ids)):
+            return _hold("OBSERVED_PORTRAIT_ROSTER_REQUIRED")
+        if target_portrait_id not in observed_portrait_ids:
+            return _hold("TARGET_PORTRAIT_NOT_IN_FRESH_ROSTER")
+        if target_portrait_hitbox_verified is not True:
+            return _hold("PORTRAIT_HITBOX_NOT_FRESHLY_VERIFIED")
+        if current_selected_portrait_id == target_portrait_id:
+            return _hold("PORTRAIT_ALREADY_SELECTED", state="ALREADY_SELECTED")
+        return _ready("SELECT_OBSERVED_PORTRAIT", target_portrait_id)
     if stage == "COMPUTER":
         return _ready("OPEN_OBSERVED_COMPUTER")
     if stage == "MENU":

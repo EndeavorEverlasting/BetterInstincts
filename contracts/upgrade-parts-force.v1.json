@@ -582,5 +582,159 @@
       "SAVE_MUTATION"
     ],
     "proof_ceiling": "OFFLINE_COMPUTER_MENU_QUEUE_NOT_LIVE_PURCHASE_PROOF"
+  },
+  "acquisition_routing": {
+    "schema": "betterinstincts.household-acquisition-routes/v1",
+    "owner": "betterinstincts/upgrade_parts_force.py",
+    "entrypoint": "python -m scripts.upgrade_parts_force acquisition",
+    "scope": "EVALUATE_ONLY_NEVER_SIMULATED_LIVE_MOUSE_CLICKS",
+    "route_catalog": {
+      "common_upgrade_parts": {
+        "source": "computer_order",
+        "action_effect": "INSTANT_UI_CANDIDATE",
+        "destination": "sim_pocket_inventory",
+        "pack": "base"
+      },
+      "electronic_upgrade_parts": {
+        "source": "computer_order",
+        "action_effect": "INSTANT_UI_CANDIDATE",
+        "destination": "sim_pocket_inventory",
+        "pack": "base"
+      },
+      "plumbing_upgrade_parts": {
+        "source": "computer_order",
+        "action_effect": "INSTANT_UI_CANDIDATE",
+        "destination": "sim_pocket_inventory",
+        "pack": "base"
+      },
+      "kitchen_upgrade_parts": {
+        "source": "computer_order",
+        "action_effect": "INSTANT_UI_CANDIDATE",
+        "destination": "sim_pocket_inventory",
+        "pack": "base"
+      },
+      "robot_salvage_parts": {
+        "source": "computer_order",
+        "action_effect": "INSTANT_UI_CANDIDATE",
+        "destination": "sim_pocket_inventory",
+        "pack": "Discover University"
+      },
+      "eco_upgrade_parts": {
+        "source": "eco_fabricator",
+        "action_effect": "SIM_QUEUED_AND_POSSIBLY_FAILED",
+        "destination": "sim_pocket_inventory",
+        "pack": "Eco Lifestyle",
+        "requirements": {
+          "bits_per_attempt": 15,
+          "pieces_per_attempt": 10
+        },
+        "alternate": "DUMPSTER_RANDOM_NO_GUARANTEE"
+      },
+      "generator_fuel": {
+        "source": "recycler_generator",
+        "action_effect": "RESOURCE_CONVERSION_THEN_REFILL",
+        "destination": "generator_fuel_level",
+        "pack": "Eco Lifestyle",
+        "requirements": {
+          "recycled_bits_pieces": "OBSERVE_RESOURCE_BALANCE",
+          "generator": "OBSERVE_TARGET_OBJECT"
+        },
+        "source_hypothesis": "Fuel may be refilled directly from recycled bits/pieces; do not assert inventory can or eco-fabrication"
+      },
+      "insect_biofuel_filled_can": {
+        "source": "insect_farm",
+        "action_effect": "TIME_GATED_HARVEST",
+        "destination": "sim_pocket_inventory_unverified",
+        "pack": "Eco Lifestyle",
+        "requirements": {
+          "farm_condition": "READY_AND_HEALTHY",
+          "collection_interval": "OBSERVED_OR_APPROX_24_GAME_HOURS"
+        },
+        "source_hypothesis": "Insect farm produces biofuel for generator; exact canned item label and delivery require patch-specific live observation"
+      }
+    },
+    "menu_model": {
+      "entry_object": "computer_or_laptop",
+      "entry_action": "LEFT_CLICK_OBJECT",
+      "entry_mode": "LIVE",
+      "top_level_goal": "Order",
+      "domain_goal": "Purchase Upgrade Parts",
+      "candidate_pagination_label": "More Choices",
+      "expected_more_choices_from_order": "ABOUT_TWO_BUT_NOT_FIXED",
+      "max_page_explorations": 16,
+      "max_total_menu_actions": 32,
+      "resolve_by": "EXACT_OBSERVED_LABEL_NOT_HARDCODED_COORDINATES",
+      "choice_routing": "Check currently visible choices before any More Choices; advance only if observed and unseen; deny cycles/exhausted options.",
+      "purchase": "After opening picker, iterate requested items; if picker closes, re-observe and reopen the same domain before next item; never assume item rows or bulk-quantity support",
+      "current_household": "SELECT_EXACT_OBSERVED_PORTRAIT_AND_REVALIDATE_EACH_EFFECT",
+      "distance_to_computer": "NOT_ASSUMED_REQUIRED_FOR_INSTANT_ORDER_UI; SIM_MAY_BE_REMOTE_IF_GAME_PERMITS",
+      "safety": "PLAYER_PRESENCE_AND_SCREEN_LEASE_REQUIRED_BY_DOWNSTREAM_LIVE_ADAPTER",
+      "default_goal_resolution": "CURRENT_OBSERVED_CHOICES_FIRST"
+    },
+    "effect_classes": {
+      "INSTANT_UI_CANDIDATE": {
+        "queue_expectation": "NOT_REQUIRED_UNTIL_OBSERVED",
+        "claim": "MAY_APPLY_IMMEDIATELY_AFTER_CONFIRM",
+        "proof": "FUNDS_AND_SELECTED_SIM_INVENTORY_DELTA"
+      },
+      "SIM_QUEUED_AND_POSSIBLY_FAILED": {
+        "queue_expectation": "EXPECTED",
+        "claim": "CRAFT_ACTION_NOT_IMMEDIATE",
+        "proof": "COMPLETION_AND_INVENTORY_DELTA"
+      },
+      "TIME_GATED_HARVEST": {
+        "queue_expectation": "POSSIBLE",
+        "claim": "WAIT_FOR_READINESS_AND_COLLECTION",
+        "proof": "FARM_COLLECTION_AND_INVENTORY_DELTA"
+      },
+      "RESOURCE_CONVERSION_THEN_REFILL": {
+        "queue_expectation": "UNKNOWN",
+        "claim": "RESOURCE_CONSUMPTION_AND_TARGET_REFILL_NOT_ORDER_PURCHASE",
+        "proof": "RECYCLER_BALANCE_AND_GENERATOR_FUEL_LEVEL"
+      },
+      "UNKNOWN": {
+        "queue_expectation": "UNKNOWN",
+        "claim": "DO_NOT_ASSUME_INSTANT",
+        "proof": "OBSERVED_EFFECT_REQUIRED"
+      }
+    },
+    "source_evidence": [
+      {
+        "source": "EA help Civil Designer career",
+        "url": "https://help.ea.com/en/articles/the-sims/the-sims-4/the-sims-4-civil-designer-career/",
+        "supports": "fabricator 15 bits and 10 pieces for eco part"
+      },
+      {
+        "source": "EA Eco Lifestyle gameplay",
+        "url": "https://www.ea.com/games/battlefield/news/eco-lifestyle-gameplay",
+        "supports": "insect farm biofuel for generator"
+      },
+      {
+        "source": "EA community generator fuel discussion",
+        "url": "https://forums.ea.com/discussions/the-sims-4-general-discussion-en/where-do-i-get-the-fuel-for-the-generators/2668272",
+        "supports": "recycled bits/pieces generator fuel path, community report, not per-build proof"
+      },
+      {
+        "source": "Operator UI observation",
+        "supports": "Computer Order/Purchase Upgrade Parts; often two More Choices after Order; Order itself can require More Choices"
+      }
+    ],
+    "guardrails": [
+      "NO_BLIND_PAGINATION",
+      "NO_FIXED_CLICK_COORDINATES",
+      "NO_FIXED_HOUSEHOLD_ROSTER",
+      "NO_UNKNOWN_DLC_CLAIM",
+      "NO_ASSUMED_ECO_PARTS_IN_COMPUTER",
+      "NO_ASSUMED_FUEL_IN_COMPUTER",
+      "NO_AUTOMATIC_PURCHASE_OR_CURRENCY_SPEND",
+      "NO_SCREEN_CLICK_WITHOUT_ADMISSION",
+      "NO_CHEATS_FOR_ECO_SOURCE_DISCOVERY",
+      "NO_ONLINE_CONNECT",
+      "NO_CLAIM_FROM_PLAN_ONLY",
+      "BI002_LIVE_CERT_NOT_ADVANCED",
+      "USE_EXISTING_COMPUTER_UPGRADE_PARTS_DISPATCH_ADMISSION_NOT_SECOND_CLICKER"
+    ],
+    "canonical_existing_dispatch": "betterinstincts/computer_upgrade_parts.py#propose_computer_purchase_step + enqueue_computer_menu_step",
+    "planner_role": "READ_ONLY_SOURCE_AND_PORTRAIT_INTENT_SUPPORTS_EXISTING_COOPERATIVE_DISPATCH"
   }
 }

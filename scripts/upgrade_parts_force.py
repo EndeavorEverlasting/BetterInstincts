@@ -28,6 +28,10 @@ if str(ROOT) not in sys.path:
 from betterinstincts.computer_upgrade_parts import menu_catalog, plan_computer_purchase
 from betterinstincts.upgrade_parts_force import (
     UpgradePartsForceError,
+    acquisition_source_catalog,
+    next_observed_menu_choice,
+    plan_acquisition_routes,
+    plan_computer_order_domain,
     budget_snapshot,
     catalog_snapshot,
     evaluate_diy_parts_cert,
@@ -51,6 +55,26 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("catalog", help="List upgrade-part catalog + path summaries")
     sub.add_parser("budget", help="Show DIY kit pocket-stock targets")
+    sub.add_parser("sources", help="List typed eco/fuel/computer acquisition sources")
+    acquire = sub.add_parser("acquisition", help="Preview mixed-source household plans (NO clicks)")
+    acquire.add_argument("--portraits", required=True, help="Observed portrait identities JSON array")
+    acquire.add_argument("--requests", required=True, help="Requested item and quantity JSON array")
+    acquire.add_argument("--selected-slots", type=int, nargs="*", default=None)
+    acquire.add_argument("--packs-observed", nargs="*", default=None)
+    acquire.add_argument("--player-directed", action="store_true")
+
+    general = sub.add_parser("order-domain", help="Plan any observed computer Order domain")
+    general.add_argument("--portraits", required=True)
+    general.add_argument("--domain", required=True)
+    general.add_argument("--item", action="append", required=True)
+    general.add_argument("--selected-slots", type=int, nargs="*", default=None)
+    general.add_argument("--player-directed", action="store_true")
+
+    menu = sub.add_parser("menu-next", help="Evaluate one fresh observed menu page (NO clicks)")
+    menu.add_argument("--options", required=True)
+    menu.add_argument("--goal", required=True)
+    menu.add_argument("--visited", help="JSON array of prior page signatures")
+
     sub.add_parser("computer-menu", help="Passive verified five-part menu and on-demand interaction guide")
     cp = sub.add_parser("computer-intent", help="Passive one-step-at-a-time computer purchase command plan; no UI effects")
     cp.add_argument("--part", default="robot_salvage_parts")
@@ -99,6 +123,32 @@ def main(argv: list[str] | None = None) -> int:
             return _print(catalog_snapshot())
         if args.cmd == "budget":
             return _print(budget_snapshot())
+        if args.cmd == "sources":
+            return _print(acquisition_source_catalog())
+        if args.cmd == "acquisition":
+            portraits = json.loads(Path(args.portraits).read_text(encoding="utf-8"))
+            requests = json.loads(Path(args.requests).read_text(encoding="utf-8"))
+            return _print(plan_acquisition_routes(
+                portraits=portraits, requests=requests,
+                selected_slots=args.selected_slots,
+                packs_observed=args.packs_observed,
+                player_directed=bool(args.player_directed),
+            ))
+        if args.cmd == "order-domain":
+            portraits = json.loads(Path(args.portraits).read_text(encoding="utf-8"))
+            return _print(plan_computer_order_domain(
+                portraits=portraits, domain=args.domain, item_labels=args.item,
+                selected_slots=args.selected_slots,
+                player_directed=bool(args.player_directed),
+            ))
+        if args.cmd == "menu-next":
+            options = json.loads(Path(args.options).read_text(encoding="utf-8"))
+            seen = (json.loads(Path(args.visited).read_text(encoding="utf-8"))
+                    if args.visited else ())
+            return _print(next_observed_menu_choice(
+                visible_options=options, desired_choice=args.goal,
+                visited_signatures=seen,
+            ))
         if args.cmd == "computer-menu":
             return _print(menu_catalog())
         if args.cmd == "computer-intent":

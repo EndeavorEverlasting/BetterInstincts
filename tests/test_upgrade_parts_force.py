@@ -5,6 +5,10 @@ from pathlib import Path
 
 from betterinstincts.upgrade_parts_force import (
     UpgradePartsForceError,
+    acquisition_source_catalog,
+    next_observed_menu_choice,
+    plan_acquisition_routes,
+    plan_computer_order_domain,
     budget_snapshot,
     catalog_snapshot,
     evaluate_diy_parts_cert,
@@ -179,6 +183,160 @@ class UpgradePartsForceTests(unittest.TestCase):
         blob = " | ".join(lines)
         self.assertIn("SPACE", blob)
         self.assertIn("Spawn Crafting Supplies", blob)
+
+    def test_catalog_sources_separate_instant_eco_and_biofuel(self):
+        catalog = acquisition_source_catalog()
+        sources = catalog["route_catalog"]
+        self.assertEqual(sources["common_upgrade_parts"]["source"], "computer_order")
+        self.assertEqual(sources["eco_upgrade_parts"]["source"], "eco_fabricator")
+        self.assertEqual(sources["eco_upgrade_parts"]["requirements"]["bits_per_attempt"], 15)
+        self.assertEqual(sources["eco_upgrade_parts"]["requirements"]["pieces_per_attempt"], 10)
+        self.assertEqual(sources["generator_fuel"]["source"], "recycler_generator")
+        self.assertEqual(sources["insect_biofuel_filled_can"]["source"], "insect_farm")
+        self.assertNotEqual(sources["generator_fuel"]["action_effect"],
+                            sources["insect_biofuel_filled_can"]["action_effect"])
+        self.assertFalse(catalog["execute_allowed"])
+
+    def test_menu_first_visible_choice_zero_more_choices(self):
+        decision = next_observed_menu_choice(
+            visible_options=["Browse Web", "Order", "More Choices..."],
+            desired_choice="Order",
+        )
+        self.assertEqual(decision["state"], "CHOICE_OBSERVED")
+        self.assertEqual(decision["choice"], "Order")
+        self.assertEqual(decision["page_depth"], 0)
+
+    def test_menu_paginates_two_pages_observationally(self):
+        seen = []
+        for options in (["Browse Web", "More Choices"],
+                        ["Play Game", "More Choices..."]):
+            decision = next_observed_menu_choice(
+                visible_options=options, desired_choice="Purchase Upgrade Parts", visited_signatures=seen)
+            self.assertEqual(decision["state"], "MORE_CHOICES_OBSERVED")
+            seen = decision["next_history"]
+        goal = next_observed_menu_choice(
+            visible_options=["Purchase Upgrade Parts...", "More Choices"],
+            desired_choice="Purchase Upgrade Parts", visited_signatures=seen)
+        self.assertEqual(goal["state"], "CHOICE_OBSERVED")
+        self.assertEqual(goal["page_depth"], 2)
+
+    def test_menu_stops_on_cycle_missing_more_ambiguous_and_depth(self):
+        first = next_observed_menu_choice(visible_options=["Browse", "More Choices"], desired_choice="Order")
+        self.assertEqual(next_observed_menu_choice(
+            visible_options=["Browse", "More Choices"], desired_choice="Order",
+            visited_signatures=first["next_history"])["reason"], "MENU_LOOP_DETECTED")
+        self.assertEqual(next_observed_menu_choice(
+            visible_options=["Browse"], desired_choice="Order")["reason"],
+            "TARGET_NOT_IN_OBSERVED_MENU")
+        self.assertEqual(next_observed_menu_choice(
+            visible_options=["Order", "Order"], desired_choice="Order")["reason"],
+            "DUPLICATE_VISIBLE_TARGET")
+        self.assertEqual(next_observed_menu_choice(
+            visible_options=["Browse", "More Choices"], desired_choice="Order",
+            visited_signatures=[str(i) for i in range(load_contract()["computer_purchase_menu"]["max_menu_pages"])])["reason"], "MENU_PAGE_LIMIT_OR_AMBIGUITY")
+        self.assertEqual(next_observed_menu_choice(
+            visible_options=[], desired_choice="Order")["reason"], "MENU_OPTIONS_NOT_OBSERVED")
+
+    def test_no_hardcoded_household_and_actor_selection(self):
+        portraits = [
+            {"slot": 4, "portrait_id": "observed:alpha", "observed": True},
+            {"slot": 1, "portrait_id": "observed:beta", "observed": True},
+            {"slot": 8, "portrait_id": "observed:gamma", "observed": True},
+        ]
+        plan = plan_acquisition_routes(
+            portraits=portraits, selected_slots=[8, 1],
+            requests=[{"item": "Robot Salvage Parts", "quantity": 2},
+                      {"item": "Electronic Upgrade Parts", "quantity": 3}],
+            packs_observed=["Discover University"],
+        )
+        self.assertEqual(plan["portraits_observed"], 3)
+        self.assertEqual(plan["portraits_selected"], ["observed:beta", "observed:gamma"])
+        opens = [s for s in plan["steps"] if s["op"] == "LEFT_CLICK_OBSERVED_COMPUTER"]
+        self.assertEqual(len(opens), 2)  # once per chosen actor, NOT once per item
+        self.assertTrue(all(s["requires_sim_at_computer"] is False for s in opens))
+        self.assertEqual(len([s for s in plan["steps"] if s["op"] == "CONFIRM_PURCHASE_WITH_FRESH_ADMISSION"]), 4)
+        self.assertTrue(all(not x["is_instant_proved"] for x in plan["action_classification"]))
+        self.assertFalse(plan["execute_allowed"])
+        self.assertNotIn("Charlee", json.dumps(plan))
+        self.assertNotIn('"xy":', json.dumps(plan))
+
+    def test_eco_and_fuels_never_route_through_purchase_upgrade_parts(self):
+        plan = plan_acquisition_routes(
+            portraits=[{"slot": 0, "portrait_id": "sim:0", "observed": True}],
+            requests=[{"item": "Eco-Upgrade Parts", "quantity": 1},
+                      {"item": "fuel", "quantity": 1},
+                      {"item": "Insect Biofuel-Filled Can", "quantity": 1}],
+            packs_observed=["Eco Lifestyle"],
+        )
+        ops = [s["op"] for s in plan["steps"]]
+        self.assertIn("OBSERVE_HOUSEHOLD_BITS_PIECES", ops)
+        self.assertIn("REQUIRE_FARM_READY_AND_HEALTHY", ops)
+        self.assertIn("OBSERVE_GENERATOR_REFILL_AFFORDANCE", ops)
+        self.assertNotIn("LEFT_CLICK_OBSERVED_COMPUTER", ops)
+        self.assertNotIn("CONFIRM_PURCHASE_WITH_FRESH_ADMISSION", ops)
+        self.assertTrue(all(not x["is_instant_proved"] for x in plan["action_classification"]))
+
+    def test_pack_and_roster_fail_closed(self):
+        profiles = [{"slot": 0, "portrait_id": "screen:0", "observed": True}]
+        with self.assertRaisesRegex(UpgradePartsForceError, "PACK_NOT_OBSERVED"):
+            plan_acquisition_routes(portraits=profiles, requests=[{"item": "eco parts"}],
+                                    packs_observed=["base"])
+        with self.assertRaisesRegex(UpgradePartsForceError, "SELECTED_PORTRAIT_NOT_OBSERVED"):
+            plan_acquisition_routes(portraits=profiles, requests=[{"item": "common parts"}],
+                                    selected_slots=[1])
+        with self.assertRaisesRegex(UpgradePartsForceError, "PORTRAIT_NOT_ATTESTED"):
+            plan_acquisition_routes(
+                portraits=[{"slot": 0, "portrait_id": "screen:0", "observed": False}],
+                requests=[{"item": "common parts"}])
+        with self.assertRaisesRegex(UpgradePartsForceError, "DUPLICATE_PORTRAIT"):
+            plan_acquisition_routes(
+                portraits=profiles + profiles, requests=[{"item": "common parts"}])
+        with self.assertRaisesRegex(UpgradePartsForceError, "UNKNOWN_ACQUISITION_ITEM"):
+            plan_acquisition_routes(portraits=profiles, requests=[{"item": "unseen titanium coolant"}])
+
+    def test_generic_order_domain_is_not_hardcoded_to_upgrade_parts(self):
+        portraits = [
+            {"slot": 7, "portrait_id": "scanned:7", "observed": True},
+            {"slot": 2, "portrait_id": "scanned:2", "observed": True},
+        ]
+        plan = plan_computer_order_domain(
+            portraits=portraits, selected_slots=[7],
+            domain="Order Books", item_labels=["Observed Book A", "Observed Book B"],
+        )
+        self.assertEqual(plan["domain_goal"], "Order Books")
+        self.assertEqual(plan["portraits_selected"], ["scanned:7"])
+        self.assertEqual([s["choice"] for s in plan["steps"]
+                          if s["op"] == "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES"],
+                         ["Order", "Order Books"])
+        self.assertEqual(len([s for s in plan["steps"]
+                              if s["op"] == "LEFT_CLICK_OBSERVED_COMPUTER"]), 1)
+        self.assertEqual(len([s for s in plan["steps"]
+                              if s["op"] == "REQUIRE_VISIBLE_PURCHASE_ITEM"]), 2)
+        self.assertFalse(plan["execute_allowed"])
+        self.assertEqual(plan["known_item_availability"], "NOT_PROVEN_UNTIL_VISIBLE")
+
+    def test_generic_order_domain_blocks_unspecific_or_unobserved_roster(self):
+        p = [{"slot": 0, "portrait_id": "screen:0", "observed": True}]
+        with self.assertRaisesRegex(UpgradePartsForceError, "SPECIFIC_ORDER_DOMAIN_REQUIRED"):
+            plan_computer_order_domain(portraits=p, domain="Order", item_labels=["upgrade parts"])
+        with self.assertRaisesRegex(UpgradePartsForceError, "ORDER_ITEMS_REQUIRED"):
+            plan_computer_order_domain(portraits=p, domain="Books", item_labels=[])
+        with self.assertRaisesRegex(UpgradePartsForceError, "SELECTED_PORTRAIT_NOT_OBSERVED"):
+            plan_computer_order_domain(
+                portraits=p, domain="Books", item_labels=["book"], selected_slots=[9])
+
+    def test_player_override_refuses_all_acquisition_steps(self):
+        plan = plan_acquisition_routes(
+            portraits=[], requests=[], player_directed=True)
+        self.assertEqual(plan["state"], "YIELD_TO_PLAYER")
+        self.assertEqual(plan["steps"], [])
+
+    def test_legacy_computer_path_preserves_PR163_observed_dispatch(self):
+        plan = plan_parts_force(part_id="common_upgrade_parts", path="computer", quantity=2)
+        ops = [step["op"] for step in plan["steps"]]
+        self.assertIn("DISCOVER_NESTED_MENU", ops)
+        self.assertFalse(plan["execute_allowed"])
+        self.assertEqual(load_contract()["version"], 3)
 
     def test_cli_script_compiles(self):
         script = Path(__file__).resolve().parents[1] / "scripts" / "upgrade_parts_force.py"

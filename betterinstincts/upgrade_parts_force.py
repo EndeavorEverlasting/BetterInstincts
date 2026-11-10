@@ -222,6 +222,18 @@ def how_to_buy(part_id: str = "robot_salvage_parts", *, cfg: Optional[dict] = No
     cfg = cfg or load_contract()
     part = resolve_part(part_id, cfg=cfg)
     guide = (cfg.get("how_to_buy") or {}).get(part["id"])
+    if part["id"] == "eco_upgrade_parts":
+        guide = {
+            "summary": "Eco Lifestyle Fabricator → Fabricate → Fabricated Eco-Upgrade Part",
+            "steps": [
+                "Verify Eco Lifestyle and a Fabricator are present.",
+                "Observe at least 15 bits and 10 pieces for each fabrication attempt.",
+                "Select Fabricate then the exact observed Eco-Upgrade Part recipe.",
+                "Wait for successful crafting and attest the selected Sim pocket inventory.",
+            ],
+            "lab_bulk_alternative": "Not a normal computer Order picker purchase",
+            "not_this": ["COMPUTER_ECO_PARTS_NOT_OBSERVED", "CRAFT_NOT_INSTANT"],
+        }
     if not isinstance(guide, dict):
         guide = {
             "summary": (
@@ -744,3 +756,380 @@ def steps_to_operator_checklist(plan: Mapping) -> list[str]:
         else:
             lines.append(str(op))
     return lines
+
+# Canonical cross-source acquisition routing. Preserve the existing DIY-kit
+# budget planner; these routines are observational decisions only.
+def acquisition_source_catalog(*, cfg: Optional[dict] = None) -> dict:
+    """Typed sources, action semantics, and observed-menu contract."""
+    cfg = cfg or load_contract()
+    route = cfg.get("acquisition_routing")
+    if not isinstance(route, dict) or route.get("schema") != "betterinstincts.household-acquisition-routes/v1":
+        raise UpgradePartsForceError("ACQUISITION_ROUTING_CONTRACT_MISSING")
+    return {
+        "schema": route["schema"],
+        "route_catalog": dict(route["route_catalog"]),
+        "effect_classes": dict(route["effect_classes"]),
+        "menu_model": dict(route["menu_model"]),
+        "source_evidence": list(route.get("source_evidence") or []),
+        "execute_allowed": False,
+        "proof_ceiling": cfg["proof_ceiling"],
+    }
+
+
+def _normalize_menu_label(value: object) -> str:
+    """Normalize punctuation differences, never use substring matching."""
+    import re
+    value = str(value or "").strip().casefold().replace("\u2026", "...")
+    return " ".join(re.sub(r"[^\w\s]", " ", value).split())
+
+
+def next_observed_menu_choice(
+    *,
+    visible_options: Sequence[str],
+    desired_choice: str,
+    visited_signatures: Sequence[str] = (),
+    cfg: Optional[dict] = None,
+) -> dict:
+    """One pure next-choice decision; NEVER repeatedly click an unseen option.
+
+    Call again with a *fresh observed menu* after every More Choices click.
+    Signatures prevent loops and support variable page depth (including zero).
+    """
+    settings = acquisition_source_catalog(cfg=cfg)["menu_model"]
+    limit = int(settings["max_page_explorations"])
+    if not isinstance(visible_options, (list, tuple)) or not visible_options:
+        return {"state": "BLOCKED", "reason": "MENU_OPTIONS_NOT_OBSERVED", "execute_allowed": False}
+    if not isinstance(visited_signatures, (list, tuple)):
+        raise UpgradePartsForceError("INVALID_MENU_HISTORY")
+    if len(visible_options) > 64 or len(visited_signatures) > limit:
+        return {"state": "BLOCKED", "reason": "MENU_BOUND_EXCEEDED", "execute_allowed": False}
+    choices = [_normalize_menu_label(opt) for opt in visible_options]
+    if not all(choices):
+        return {"state": "BLOCKED", "reason": "EMPTY_OBSERVED_LABEL", "execute_allowed": False}
+    signature = "|".join(sorted(choices))
+    if signature in visited_signatures:
+        return {"state": "BLOCKED", "reason": "MENU_LOOP_DETECTED", "execute_allowed": False}
+    history = list(visited_signatures) + [signature]
+    needle = _normalize_menu_label(desired_choice)
+    if not needle:
+        raise UpgradePartsForceError("MENU_GOAL_REQUIRED")
+    matches = [i for i, name in enumerate(choices) if name == needle]
+    if len(matches) > 1:
+        return {"state": "BLOCKED", "reason": "DUPLICATE_VISIBLE_TARGET", "execute_allowed": False}
+    if len(matches) == 1:
+        return {
+            "state": "CHOICE_OBSERVED",
+            "choice": visible_options[matches[0]],
+            "next_history": history,
+            "page_depth": len(visited_signatures),
+            "execute_allowed": False,
+            "requires_fresh_effect_admission": True,
+        }
+    more = _normalize_menu_label(settings["candidate_pagination_label"])
+    more_matches = [i for i, name in enumerate(choices) if name == more]
+    if not more_matches:
+        return {"state": "BLOCKED", "reason": "TARGET_NOT_IN_OBSERVED_MENU", "execute_allowed": False}
+    if len(more_matches) != 1 or len(history) >= limit:
+        return {"state": "BLOCKED", "reason": "MENU_PAGE_LIMIT_OR_AMBIGUITY", "execute_allowed": False}
+    return {
+        "state": "MORE_CHOICES_OBSERVED",
+        "choice": visible_options[more_matches[0]],
+        "next_history": history,
+        "page_depth": len(visited_signatures),
+        "execute_allowed": False,
+        "requires_fresh_effect_admission": True,
+    }
+
+
+def _resolve_acquisition_id(item: str, cfg: dict) -> str:
+    catalog = acquisition_source_catalog(cfg=cfg)["route_catalog"]
+    name = _normalize_menu_label(item)
+    if not name:
+        raise UpgradePartsForceError("ACQUISITION_ITEM_REQUIRED")
+    local_aliases = {
+        "generator fuel": "generator_fuel",
+        "fuel": "generator_fuel",
+        "recycled fuel": "generator_fuel",
+        "insect biofuel filled can": "insect_biofuel_filled_can",
+        "biofuel filled can": "insect_biofuel_filled_can",
+        "insect biofuel": "insect_biofuel_filled_can",
+        "biofuel": "insect_biofuel_filled_can",
+    }
+    candidate = local_aliases.get(name)
+    if candidate is None:
+        try:
+            candidate = resolve_part(item, cfg=cfg)["id"]
+        except UpgradePartsForceError as exc:
+            raise UpgradePartsForceError("UNKNOWN_ACQUISITION_ITEM:" + str(item)) from exc
+    if candidate not in catalog:
+        raise UpgradePartsForceError("NO_VERIFIED_SOURCE_ROUTE:" + candidate)
+    return candidate
+
+
+def _observed_portraits(portraits: Sequence[Mapping]) -> list[dict]:
+    if not isinstance(portraits, (list, tuple)) or not 1 <= len(portraits) <= 100:
+        raise UpgradePartsForceError("OBSERVED_PORTRAIT_ROSTER_REQUIRED")
+    result: list[dict] = []
+    keys: set[str] = set()
+    slots: set[int] = set()
+    for row in portraits:
+        if not isinstance(row, Mapping) or row.get("observed") is not True:
+            raise UpgradePartsForceError("PORTRAIT_NOT_ATTESTED")
+        slot = row.get("slot")
+        identity = row.get("portrait_id")
+        if type(slot) is not int or slot < 0 or slot >= 100:
+            raise UpgradePartsForceError("INVALID_PORTRAIT_SLOT")
+        if not isinstance(identity, str) or not identity.strip() or len(identity) > 128:
+            raise UpgradePartsForceError("PORTRAIT_ID_REQUIRED")
+        if slot in slots or identity in keys:
+            raise UpgradePartsForceError("DUPLICATE_PORTRAIT")
+        slots.add(slot)
+        keys.add(identity)
+        result.append({"slot": slot, "portrait_id": identity})
+    return result
+
+
+def plan_acquisition_routes(
+    *,
+    portraits: Sequence[Mapping],
+    requests: Sequence[Mapping],
+    selected_slots: Optional[Sequence[int]] = None,
+    packs_observed: Optional[Sequence[str]] = None,
+    player_directed: bool = False,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Actor-agnostic, read-only call stack for computer and non-computer sources.
+
+    Portrait identities and DLC/stock observations come from the caller,
+    NEVER from names, static pixel coordinates, or a fixed example household.
+    """
+    cfg = cfg or load_contract()
+    route = acquisition_source_catalog(cfg=cfg)
+    if player_directed:
+        return {
+            "schema": "betterinstincts.household-acquisition-plan/v1",
+            "state": "YIELD_TO_PLAYER", "steps": [], "execute_allowed": False,
+            "not_bi002": True, "proof_ceiling": cfg["proof_ceiling"],
+        }
+    actor_roster = _observed_portraits(portraits)
+    if selected_slots is not None:
+        if not isinstance(selected_slots, (tuple, list)) or not selected_slots:
+            raise UpgradePartsForceError("SELECTED_SLOTS_REQUIRED")
+        if any(type(v) is not int for v in selected_slots) or len(set(selected_slots)) != len(selected_slots):
+            raise UpgradePartsForceError("INVALID_SELECTED_SLOTS")
+        chosen = [p for p in actor_roster if p["slot"] in selected_slots]
+        if len(chosen) != len(selected_slots):
+            raise UpgradePartsForceError("SELECTED_PORTRAIT_NOT_OBSERVED")
+    else:
+        chosen = actor_roster
+    if not isinstance(requests, (list, tuple)) or not 1 <= len(requests) <= 32:
+        raise UpgradePartsForceError("ACQUISITION_REQUESTS_REQUIRED")
+    items = []
+    for row in requests:
+        if not isinstance(row, Mapping):
+            raise UpgradePartsForceError("ACQUISITION_REQUEST_INVALID")
+        item_id = _resolve_acquisition_id(str(row.get("item") or ""), cfg)
+        qty = _clamp_quantity(row.get("quantity", 1), cfg)
+        entry = dict(route["route_catalog"][item_id])
+        items.append({"item_id": item_id, "quantity": qty, **entry})
+    if packs_observed is not None:
+        if not isinstance(packs_observed, (tuple, list)) or not all(isinstance(p, str) for p in packs_observed):
+            raise UpgradePartsForceError("PACK_OBSERVATIONS_INVALID")
+        installed = {p.casefold() for p in packs_observed}
+        for entry in items:
+            if entry["pack"].casefold() not in installed and entry["pack"] != "base":
+                raise UpgradePartsForceError("PACK_NOT_OBSERVED:" + entry["pack"])
+    steps: list[dict] = [{
+        "op": "REQUIRE_PAUSED_INSIDE_LOT",
+        "reason": "Preserve PR163 observed computer purchase gate",
+    }, {
+        "op": "REQUIRE_LIVE_MODE_AND_FRESH_SCENE",
+        "reason": "No Build/Buy, no camera/desktop lease bypass",
+    }, {
+        "op": "REQUIRE_CURRENT_OBSERVED_PORTRAIT_SET",
+        "count": len(actor_roster),
+        "portrait_ids": [p["portrait_id"] for p in actor_roster],
+    }]
+    for actor in chosen:
+        slot, portrait_id = actor["slot"], actor["portrait_id"]
+        steps.append({
+            "op": "SELECT_OBSERVED_PORTRAIT",
+            "slot": slot, "portrait_id": portrait_id,
+            "method": "CURRENT_ATTESTED_PORTRAIT_HITBOX",
+            "note": "No Sim names, house roster, or pixel coordinates assumed",
+        })
+        steps.append({"op": "VERIFY_ACTIVE_PORTRAIT", "portrait_id": portrait_id})
+        computer_picker_open = False
+        for item in items:
+            source = item["source"]
+            identity = {"slot": slot, "portrait_id": portrait_id, "item_id": item["item_id"]}
+            steps.append({
+                "op": "REQUIRE_FRESH_PLAYER_SCENE_EFFECT_ADMISSION",
+                **identity,
+                "fail": "PLAYER_OR_SCENE_CHANGED",
+            })
+            if item["pack"] != "base":
+                steps.append({"op": "REQUIRE_PACK_OBSERVED", "pack": item["pack"], **identity})
+            if source == "computer_order":
+                if not computer_picker_open:
+                    steps += [
+                        {"op": "OBSERVE_SOURCE_OBJECT", "object": "computer_or_laptop", **identity},
+                        {"op": "LEFT_CLICK_OBSERVED_COMPUTER", "requires_sim_at_computer": False, **identity},
+                        {"op": "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES",
+                         "choice": "Order", "max_pages": route["menu_model"]["max_page_explorations"], **identity},
+                        {"op": "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES",
+                         "choice": "Purchase Upgrade Parts",
+                         "max_pages": route["menu_model"]["max_page_explorations"], **identity},
+                        {"op": "OPEN_OBSERVED_PURCHASE_PICKER", **identity},
+                    ]
+                    computer_picker_open = True
+                steps.extend([
+                    {"op": "REQUIRE_VISIBLE_PURCHASE_ITEM", "text": item["item_id"].replace("_", " ").title(),
+                     **identity, "fail": "PART_ROW_NOT_OBSERVED"},
+                    {"op": "SET_OBSERVED_PICKER_QUANTITY_OR_REPEAT", "quantity": item["quantity"],
+                     **identity, "fail": "BULK_CONTROLS_NOT_OBSERVED"},
+                    {"op": "REQUIRE_SPEND_AUTHORIZATION_AND_FRESH_PRICE_FUNDS_CAP_POCKET_BASELINE",
+                     **identity, "fail": "PURCHASE_SPENDING_OR_BASELINE_UNPROVEN"},
+                    {"op": "CONFIRM_PURCHASE_WITH_FRESH_ADMISSION", **identity,
+                     "effect_class": item["action_effect"]},
+                    {"op": "OBSERVE_FUNDS_AND_POCKET_DELTA", **identity,
+                     "quantity": item["quantity"], "fail": "PURCHASE_UNPROVEN"},
+                    {"op": "IF_PICKER_CLOSED_REOBSERVE_AND_REOPEN_DOMAIN",
+                     "choice": "Purchase Upgrade Parts", **identity},
+                ])
+            else:
+                computer_picker_open = False
+                source_ops = {
+                    "eco_fabricator": [
+                        {"op": "OBSERVE_SOURCE_OBJECT", "object": "fabricator"},
+                        {"op": "OBSERVE_HOUSEHOLD_BITS_PIECES", "bits_per_attempt": 15, "pieces_per_attempt": 10},
+                        {"op": "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES", "choice": "Fabricate"},
+                        {"op": "SELECT_OBSERVED_RECIPE", "recipe": "Fabricated Eco-Upgrade Part"},
+                        {"op": "QUEUE_CRAFT_AND_WAIT_FOR_RESULT", "failure_possible": True},
+                        {"op": "OBSERVE_COMPLETION_AND_POCKET_DELTA", "fail": "ECO_PART_UNPROVEN"},
+                    ],
+                    "insect_farm": [
+                        {"op": "OBSERVE_SOURCE_OBJECT", "object": "insect_farm"},
+                        {"op": "REQUIRE_FARM_READY_AND_HEALTHY"},
+                        {"op": "SELECT_OBSERVED_COLLECT_BIO_FUEL"},
+                        {"op": "WAIT_FOR_COLLECTION_AND_OBSERVE_POCKET", "fail": "BIOFUEL_UNPROVEN"},
+                    ],
+                    "recycler_generator": [
+                        {"op": "OBSERVE_GENERATOR_AND_RESOURCE_BALANCE"},
+                        {"op": "IF_SHORT_OBSERVE_RECYCLER_AND_APPROVED_RECYCLABLES",
+                         "forbidden": "UNAPPROVED_ITEM_RECYCLE"},
+                        {"op": "OBSERVE_GENERATOR_REFILL_AFFORDANCE"},
+                        {"op": "REFILL_AFTER_PLAYER_ADMISSION_AND_OBSERVE_FUEL_LEVEL",
+                         "fail": "GENERATOR_FUEL_UNPROVEN"},
+                    ],
+                }
+                if source not in source_ops:
+                    raise UpgradePartsForceError("ACQUISITION_SOURCE_UNSUPPORTED:" + source)
+                steps += [dict(s, **identity, effect_class=item["action_effect"]) for s in source_ops[source]]
+    return {
+        "schema": "betterinstincts.household-acquisition-plan/v1",
+        "state": "OBSERVATIONAL_ACQUISITION_PLAN_READY",
+        "portraits_observed": len(actor_roster),
+        "portraits_selected": [a["portrait_id"] for a in chosen],
+        "requests": items,
+        "steps": steps,
+        "action_classification": [
+            {"item_id": p["item_id"], "class": p["action_effect"],
+             "is_instant_proved": False} for p in items
+        ],
+        "order_entry": "LEFT_CLICK_COMPUTER__ORDER__RESOLVE_PAGED_DOMAIN__PICKER__ITERATE_ITEMS",
+        "menu_choices_are_observational": True,
+        "no_fixed_more_choices_count": True,
+        "execute_allowed": False,
+        "not_bi002": True,
+        "interop": "screen_admit_only_no_computer_use_fallback",
+        "proof_ceiling": cfg["proof_ceiling"],
+    }
+
+
+def plan_computer_order_domain(
+    *,
+    portraits: Sequence[Mapping],
+    domain: str,
+    item_labels: Sequence[str],
+    selected_slots: Optional[Sequence[int]] = None,
+    player_directed: bool = False,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Generic Order journey when the domain and items are *goals*, not assumed UI.
+
+    The interactive adapter must use next_observed_menu_choice for each page
+    and only dispatch per-effect after fresh player, scene, portrait, and
+    shared-desktop admission. This function NEVER issues purchases.
+    """
+    cfg = cfg or load_contract()
+    if player_directed:
+        return {
+            "schema": "betterinstincts.observed-computer-order.plan/v1",
+            "state": "YIELD_TO_PLAYER", "steps": [], "execute_allowed": False,
+            "not_bi002": True,
+        }
+    people = _observed_portraits(portraits)
+    wanted = _normalize_menu_label(domain)
+    if not wanted or wanted in {_normalize_menu_label("Order"), _normalize_menu_label("More Choices")}:
+        raise UpgradePartsForceError("SPECIFIC_ORDER_DOMAIN_REQUIRED")
+    if not isinstance(item_labels, (list, tuple)) or not 1 <= len(item_labels) <= 32:
+        raise UpgradePartsForceError("ORDER_ITEMS_REQUIRED")
+    if any(not isinstance(v, str) or not _normalize_menu_label(v) or len(v) > 120 for v in item_labels):
+        raise UpgradePartsForceError("ORDER_ITEM_LABEL_INVALID")
+    if selected_slots is not None:
+        if not isinstance(selected_slots, (list, tuple)) or not selected_slots or any(type(s) is not int for s in selected_slots):
+            raise UpgradePartsForceError("SELECTED_SLOTS_REQUIRED")
+        if len(set(selected_slots)) != len(selected_slots):
+            raise UpgradePartsForceError("DUPLICATE_SELECTED_SLOTS")
+        chosen = [p for p in people if p["slot"] in selected_slots]
+        if len(chosen) != len(selected_slots):
+            raise UpgradePartsForceError("SELECTED_PORTRAIT_NOT_OBSERVED")
+    else:
+        chosen = people
+    model = acquisition_source_catalog(cfg=cfg)["menu_model"]
+    steps = [{"op": "REQUIRE_PAUSED_INSIDE_LOT"},
+             {"op": "REQUIRE_LIVE_MODE_AND_FRESH_SCENE"},
+             {"op": "REQUIRE_CURRENT_OBSERVED_PORTRAIT_SET",
+              "portrait_ids": [p["portrait_id"] for p in people]}]
+    for person in chosen:
+        actor = {"slot": person["slot"], "portrait_id": person["portrait_id"]}
+        steps.extend([
+            {"op": "SELECT_OBSERVED_PORTRAIT", **actor,
+             "method": "CURRENT_ATTESTED_PORTRAIT_HITBOX"},
+            {"op": "VERIFY_ACTIVE_PORTRAIT", **actor},
+            {"op": "OBSERVE_SOURCE_OBJECT", "object": "computer_or_laptop", **actor},
+            {"op": "REQUIRE_FRESH_PLAYER_SCENE_EFFECT_ADMISSION", **actor},
+            {"op": "LEFT_CLICK_OBSERVED_COMPUTER", "requires_sim_at_computer": False, **actor},
+            {"op": "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES", "choice": "Order",
+             "max_pages": model["max_page_explorations"], **actor},
+            {"op": "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES", "choice": domain,
+             "max_pages": model["max_page_explorations"], **actor},
+            {"op": "OPEN_OBSERVED_PURCHASE_PICKER", "domain": domain, **actor},
+        ])
+        for item in item_labels:
+            steps.extend([
+                {"op": "REQUIRE_VISIBLE_PURCHASE_ITEM", "text": item, **actor},
+                {"op": "CONFIRM_ONLY_AFTER_FRESH_ADMISSION_AND_SPEND_APPROVAL",
+                 "text": item, "effect_class": "UNKNOWN", **actor},
+                {"op": "OBSERVE_ACTUAL_DESTINATION_AND_CURRENCY_CHANGE",
+                 "text": item, "fail": "PURCHASE_UNPROVEN", **actor},
+                {"op": "IF_PICKER_CLOSED_REOBSERVE_AND_REOPEN_DOMAIN",
+                 "choice": domain, **actor},
+            ])
+    return {
+        "schema": "betterinstincts.observed-computer-order.plan/v1",
+        "state": "OBSERVED_ORDER_DOMAIN_PLAN_READY",
+        "domain_goal": domain,
+        "item_goals": list(item_labels),
+        "portraits_observed": len(people),
+        "portraits_selected": [p["portrait_id"] for p in chosen],
+        "steps": steps,
+        "bounded_choice_resolver": "next_observed_menu_choice",
+        "known_item_availability": "NOT_PROVEN_UNTIL_VISIBLE",
+        "purchase_proof": "INVENTORY_OR_RESOURCE_AND_FUNDS_DELTA_REQUIRED",
+        "execute_allowed": False,
+        "interop": "screen_admit_only_no_computer_use_fallback",
+        "not_bi002": True,
+        "proof_ceiling": cfg["proof_ceiling"],
+    }

@@ -266,6 +266,21 @@
       "kind": "authority",
       "definition": "Windows Bluetooth service, radio, driver, pairing and input-preference control belongs to the SysAdminSuite Windows repair boundary, never to an autonomous Sims game action or idle host permit.",
       "canonical_owner": "contracts/peripheral-authority.v1.json"
+    },
+    "OBSERVED_MENU_ROUTE": {
+      "kind": "interaction_path",
+      "definition": "Observed, bounded, source- and scene-scoped sequence of object left-click, Order and optional More Choices pages to an exact visible UI choice; no fixed page count, coordinates or automatic pointer authority.",
+      "canonical_owner": "contracts/upgrade-parts-force.v1.json"
+    },
+    "ACQUISITION_SOURCE": {
+      "kind": "resource_route",
+      "definition": "Specific witnessed or research-supported producer of desired stock or fuel; differentiates computer purchase, Fabricator craft, recycler generator-refill resources and insect-farm biofuel harvest.",
+      "canonical_owner": "contracts/upgrade-parts-force.v1.json"
+    },
+    "ACTION_EFFECT_CLASS": {
+      "kind": "action_semantics",
+      "definition": "Explicit hypothesis about whether an observed in-game interaction is a possibly immediate UI change, queued production, time-gated harvest, resource conversion or unknown; a label never proves completion or grants permission.",
+      "canonical_owner": "contracts/upgrade-parts-force.v1.json"
     }
   },
   "relations": [
@@ -558,6 +573,26 @@
       "from": "INCIDENT",
       "predicate": "MAY_REQUIRE_OS_OWNER_ROUTING",
       "to": "OS_PERIPHERAL_AUTHORITY"
+    },
+    {
+      "from": "GAME_OBJECT",
+      "predicate": "OFFERS_OBSERVED_ROUTE",
+      "to": "OBSERVED_MENU_ROUTE"
+    },
+    {
+      "from": "OBSERVED_MENU_ROUTE",
+      "predicate": "MAY_ACCESS_RESOURCE_SOURCE",
+      "to": "ACQUISITION_SOURCE"
+    },
+    {
+      "from": "AFFORDANCE",
+      "predicate": "CLASSIFIED_AS_ACTION_EFFECT",
+      "to": "ACTION_EFFECT_CLASS"
+    },
+    {
+      "from": "OBSERVATION",
+      "predicate": "MUST_CONFIRM_EFFECT_CLASS",
+      "to": "ACTION_EFFECT_CLASS"
     }
   ],
   "invariants": [
@@ -771,6 +806,24 @@
       "owned_by": [
         "contracts/peripheral-authority.v1.json",
         "scripts/check_peripheral_boundary.py"
+      ]
+    },
+    {
+      "id": "BI-ONT-026",
+      "term": "MENU_PAGINATION_NEVER_BLIND",
+      "rule": "Reinspect a menu after each More Choices; choose an exact observed option, bound depth and reject repeated menu signatures. A historical two-click observation never authorizes an unseen option or hardcoded screen coordinate.",
+      "owned_by": [
+        "contracts/upgrade-parts-force.v1.json",
+        "betterinstincts/upgrade_parts_force.py"
+      ]
+    },
+    {
+      "id": "BI-ONT-027",
+      "term": "ACQUISITION_ACTOR_SOURCE_AND_EFFECT_PROOF",
+      "rule": "Every acquisition is scoped to a freshly observed portrait and available source/pack; no instant-class promotion or inventory/fuel credit without observed destination delta. Crafting, recycling, fuel refill, and insect harvest are distinct from computer Order; user screen control and unrelated saves remain sovereign.",
+      "owned_by": [
+        "contracts/upgrade-parts-force.v1.json",
+        "betterinstincts/upgrade_parts_force.py"
       ]
     }
   ],
