@@ -1156,7 +1156,7 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         self.assertEqual(named["state"], "SELECTION_PROVEN")
         self.assertEqual(named["gate"], "PROCEED_SKILLS_PANEL_THEN_CONSOLE")
 
-        from betterinstincts.diy_skill_force import plan_lean_olga_skill_beat
+        from betterinstincts.diy_skill_force import plan_lean_selected_sim_skill_beat
 
         from betterinstincts.diy_skill_force import plan_arm_then_panel_letter
 
@@ -1165,8 +1165,16 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         self.assertEqual(arm_j["letter"], "J")
         self.assertIn("PANEL_LETTER_WITHOUT_FRESH_ARM", arm_j["forbidden"])
 
-        lean = plan_lean_olga_skill_beat()
-        self.assertEqual(lean["state"], "LEAN_OLGA_SKILL_BEAT_READY")
+        lean = plan_lean_selected_sim_skill_beat(
+            portrait_client_xy=(454, 1055),
+            roster_index=2,
+            expected_display_name="Sim Gamma",
+        )
+        with self.assertRaises(TypeError):
+            plan_lean_selected_sim_skill_beat()
+        self.assertEqual(lean["state"], "LEAN_SELECTED_SIM_SKILL_BEAT_READY")
+        self.assertEqual(lean["expected_display_name"], "Sim Gamma")
+        self.assertEqual(lean["steps"][2]["step"], "LEFT_CLICK_SELECTED_PORTRAIT")
         step_names = [s["step"] for s in lean["steps"]]
         self.assertEqual(step_names[0], "ONE_PINNED_TERRAIN_ARM")
         self.assertEqual(step_names[1], "ENTER_CENTER_ACTIVE_SIM")
