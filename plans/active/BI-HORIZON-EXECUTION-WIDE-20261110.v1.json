@@ -1,0 +1,182 @@
+{
+  "schema": "betterinstincts.horizon-execution-wide/v1",
+  "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
+  "created_at": "2026-11-10T09:14:00Z",
+  "updated_at": "2026-11-10T21:30:00Z",
+  "repo_wide_execution_owner": true,
+  "authority": [
+    "docs/HORIZON.md",
+    "plans/horizon.v1.json",
+    "plans/active/BI-002.execution.v1.json",
+    "plans/active/BI-003.execution.v1.json",
+    "plans/active/BI-CLOSERS-HORIZON-20261110.v1.json",
+    "plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json",
+    "docs/LIVE_CERT.md",
+    "docs/COMPATIBILITY.md",
+    "AGENTS.md"
+  ],
+  "parent_objective": "Needs stability -> income -> skills -> career under Horizon; never fake-close a later stage.",
+  "current_gate": "BI-002",
+  "unknown_patch_rule": "UNKNOWN patch is UNKNOWN; never substitute latest or infer game build from Git status.",
+  "honest_completion_rule": "A stage is COMPLETE only with its named live proof. Offline contracts/unit tests/PRs are not game certification. diy_skill_force is not BI-005.",
+  "proof_ceiling": {
+    "default": "OFFLINE_OR_REPO_NOT_HORIZON_STAGE_CLOSE",
+    "topology_only": "check_horizon PASS is not game_certification",
+    "bi002": "five_vanilla + five_modified + rollback + maintainer_review on exact patch",
+    "fifth_gear_s2": "LOCAL_OBSERVED skill panel is lab infra; NOT_BI005",
+    "floor_map": "LOCAL_OBSERVED_MAP_NOT_HORIZON_STAGE_CLOSE",
+    "lot_focus": "OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
+  },
+  "forbidden": [
+    "delete_user_saves",
+    "overwrite_user_saves",
+    "migrate_unknown_saves",
+    "close_BI-002_from_plans_or_CI",
+    "close_BI-003_from_plans_or_CI",
+    "mutate_certified_compatibility_profiles",
+    "mutate_live_cert_evidence_artifacts",
+    "treat_UNKNOWN_patch_as_certified"
+  ],
+  "operator_addenda_20261110": {
+    "new_save_before_work": "Create NEW save with default name; never delete or overwrite existing saves",
+    "lot_off_focus_detection": "Recognize when scenery/camera leaves active household lot; restore via Enter (active Sim) not street roam",
+    "map_scope": "menus + active household lot floors/rooms/outside",
+    "screen": "one LOCAL_AGENT screen owner; host_listener cues cooperative work",
+    "dispatch": "expert sub-agents for parallel offline/repo lanes only"
+  },
+  "execution_order": [
+    "H0",
+    "H1",
+    "MAP",
+    "BI-002",
+    "BI-003A-E",
+    "BI-003F",
+    "BI-004",
+    "BI-005",
+    "BI-006"
+  ],
+  "closers_pack_role": "plans/active/BI-CLOSERS-HORIZON-20261110.v1.json owns P02 closeout map + launch_order only; this file is the durable repo-wide execution owner after chat migration.",
+  "stages": [
+    {
+      "id": "H0",
+      "title": "Safety save + lot-focus detector",
+      "status": "PROVED_PARTIAL",
+      "depends_on": [],
+      "proof": ["LOT_OFF_FOCUS_CONTRACT_AND_TESTS", "NEW_SAVE_SLOT_ATTESTED"],
+      "proof_ceiling": "NEW_SLOT_CREATED_NOT_HORIZON_STAGE_CLOSE",
+      "live_save": {
+        "state": "PROVED",
+        "default_name": "My Saved Game 6",
+        "disk_slot": "Slot_00000007.save",
+        "disk_mtime": "2026-11-10T04:29:10",
+        "receipt": "dist/game-host/horizon-exec-20261110/new-save-receipt.json",
+        "ui_proof": "dist/game-host/horizon-exec-20261110/verify-save-list.png",
+        "coords": {
+          "MENU_OPTIONS": [1898, 22],
+          "MENU_SAVE_AS": [960, 422],
+          "ADD_NEW_SAVE": [850, 360],
+          "ADD_NEW_SAVE_OK": [957, 603]
+        },
+        "note": "NEW slot only; never Delete/Overwrite; MENU_SAVE [960,420] forbidden for new-slot intent (2px from Save As)"
+      },
+      "lot_focus": {
+        "state": "OFF_LOT_OBSERVED_OFFLINE_OK",
+        "live": "OFF_LOT_WATER canal observed then restored to on-lot Build T via arm+Enter",
+        "contract": "contracts/camera-traverse.v1.json#lot_focus",
+        "module": "betterinstincts/lot_focus.py"
+      }
+    },
+    {
+      "id": "H1",
+      "title": "Land harness PR / main integration",
+      "status": "ACTIVE",
+      "depends_on": ["H0"],
+      "proof": ["COMMITTED_VALIDATED_HARNESS", "PR_OR_MAIN_READBACK"],
+      "proof_ceiling": "CI_GREEN_NOT_BI002_LIVE_CERT"
+    },
+    {
+      "id": "MAP",
+      "title": "Lot/floors/rooms/outside + menus graph",
+      "status": "ACTIVE_PARTIAL",
+      "depends_on": ["H0"],
+      "parallel_with": ["H1", "BI-002"],
+      "proof": ["LOT_FLOOR_MAP_CONTRACT", "ESCAPE_MENU_TARGETS_PROMOTED"],
+      "proof_ceiling": "LOCAL_OBSERVED_MAP_NOT_HORIZON_STAGE_CLOSE",
+      "escape_menu_findings_20261110": {
+        "source": "explore subagent + scripts/cas_place_live.py",
+        "live.top_options": [1898, 22],
+        "MENU_SAVE": [960, 420],
+        "MENU_SAVE_AS": [960, 422],
+        "note": "Save vs Save As only 2px apart — promote distinct targets into fixed-ui-click-map; never use MENU_SAVE for new-slot intent",
+        "gap": "No first-class escape-menu contract yet; coords still orphaned in scripts/cas_place_live.py"
+      }
+    },
+    {
+      "id": "BI-002",
+      "title": "Hunger live cert (Horizon gate)",
+      "status": "ACTIVE_GAME_UNPROVEN",
+      "depends_on": ["H0"],
+      "run": "plans/active/BI-002.execution.v1.json",
+      "proof": ["five_vanilla", "five_modified", "rollback", "maintainer_review"],
+      "proof_ceiling": "LIVE_CERT_ONLY; CI cannot close"
+    },
+    {
+      "id": "BI-003A-E",
+      "title": "Other five needs",
+      "status": "WAITING_BI002",
+      "depends_on": ["BI-002"],
+      "run": "plans/active/BI-003.execution.v1.json",
+      "proof_ceiling": "WAITING_HUNGER_CERT"
+    },
+    {
+      "id": "BI-003F",
+      "title": "Six-need balance",
+      "status": "WAITING",
+      "depends_on": ["BI-003A-E"]
+    },
+    {
+      "id": "BI-004",
+      "title": "Income",
+      "status": "WAITING",
+      "depends_on": ["BI-003F"]
+    },
+    {
+      "id": "BI-005",
+      "title": "Skills autonomy",
+      "status": "WAITING",
+      "depends_on": ["BI-004"],
+      "note": "Fifth Gear S2 diy_skill_force is lab infra (LOCAL_OBSERVED panel roster), not this Horizon stage"
+    },
+    {
+      "id": "BI-006",
+      "title": "Career",
+      "status": "WAITING",
+      "depends_on": ["BI-005"]
+    },
+    {
+      "id": "FG-S2",
+      "title": "Fifth Gear Skills-panel LOCAL_OBSERVED",
+      "status": "ACTIVE",
+      "parallel_with": ["BI-002", "MAP"],
+      "run": "plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json",
+      "proof_ceiling": "NOT_BI005; NOT_HORIZON_STAGE_CLOSE"
+    }
+  ],
+  "next_commands": [
+    "python -m scripts.check_horizon",
+    "python -m scripts.semantic_preflight --consultation contracts/consultations/BI-LOT-OFF-FOCUS-20261110.v1.json --operation offline_experiment",
+    "python -m scripts.live_cert status --run-id <hunger-run-id>",
+    "git add plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json plans/active/BI-CLOSERS-HORIZON-20261110.v1.json docs/HORIZON.md docs/LEDGER.md docs/handoff/BI-CLOSERS-HORIZON-P12-2026-11-10.md",
+    "git commit -m \"docs/plans: canonical Horizon execution-wide owner + closers handoff pointers\""
+  ],
+  "receipt_lane": "dist/game-host/horizon-exec-20261110/plan-lane-receipt.json",
+  "owners": {
+    "horizon_topology": "plans/horizon.v1.json",
+    "this_pack": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+    "closers_handoff": "plans/active/BI-CLOSERS-HORIZON-20261110.v1.json + docs/handoff/BI-CLOSERS-HORIZON-P12-2026-11-10.md",
+    "lot_focus": "contracts/camera-traverse.v1.json#lot_focus + betterinstincts/lot_focus.py",
+    "floor_map": "contracts/lot-floor-map.v1.json",
+    "save_safety": "docs/LIVE_CERT.md + AGENTS.md save-safe",
+    "bi002": "plans/active/BI-002.execution.v1.json"
+  }
+}

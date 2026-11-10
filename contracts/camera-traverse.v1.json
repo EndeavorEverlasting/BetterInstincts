@@ -132,8 +132,211 @@
     "STREET_TOPDOWN_AS_DEFAULT",
     "TRAVEL_AFAR_WITHOUT_LONG_DISTANCE_GOAL",
     "ENVIRONMENT_NAV_WITHOUT_PLANNING_GOAL",
-    "CLAIM_SKILL_MAX_FROM_DISPATCHED_ONLY"
+    "CLAIM_SKILL_MAX_FROM_DISPATCHED_ONLY",
+    "RIGHT_CLICK_AS_ZOOM_ACTUATOR",
+    "STREET_TOPDOWN_OBJECT_IDENTIFY",
+    "IDENTIFY_WORLD_OBJECT_FROM_ZOOMED_OUT_CAPTURE"
   ],
+  "zoom_controls": {
+    "owner": "contracts/ui-chrome.v1.json#modes.LIVE.hotkeys",
+    "semantic_split": "ZOOM_MODE_IS_NOT_ZOOM_CONTROL",
+    "operator_correction_20261110": "Zooming in is not a right-click. Zooming in is a hotkey (Z). X zooms out. Scroll wheel also zooms.",
+    "preferred_channel": "KEY",
+    "controls": {
+      "CAMERA_ZOOM_IN": {
+        "hotkey_id": "CAMERA_ZOOM_IN",
+        "chord": ["Z"],
+        "wheel": "SCROLL_WHEEL_ZOOM_IN",
+        "helper": "scripts.win32_input.send_key_chord|send_wheel"
+      },
+      "CAMERA_ZOOM_OUT": {
+        "hotkey_id": "CAMERA_ZOOM_OUT",
+        "chord": ["X"],
+        "wheel": "SCROLL_WHEEL_ZOOM_OUT",
+        "helper": "scripts.win32_input.send_key_chord|send_wheel"
+      }
+    },
+    "not_zoom_controls": [
+      "RIGHT_CLICK",
+      "PORTRAIT_RMB",
+      "RIGHT_CLICK_VIEW",
+      "ENTER",
+      "SHIFT_ENTER"
+    ],
+    "right_click_view_note": "RIGHT_CLICK_VIEW names a zoom-ladder mode (0.85 of max close) plus portrait-follow posture. Achieving that distance uses CAMERA_ZOOM_IN / wheel — never RMB as the zoom actuator."
+  },
+  "object_pick_identify": {
+    "id": "OBJECT_PICK_IDENTIFY",
+    "owner": "betterinstincts/camera_traverse.py",
+    "when": "WORLD_OBJECT_PICK_OR_INTERACT",
+    "not_when": [
+      "LEAN_SKILL_FORCE_TYPING",
+      "FIXED_UI_CHROME_CLICK"
+    ],
+    "steps": [
+      "REQUIRE_NAMED_WORLD_OBJECT_GOAL",
+      "LEAVE_TRAVEL_AFAR_IF_OBSERVED",
+      "BOUNDED_TRAVERSE_OR_CENTER_ACTIVE_SIM",
+      "ZOOM_IN_VIA_CAMERA_ZOOM_IN_OR_WHEEL",
+      "PRINTWINDOW_OR_HOST_CAPTURE_AT_CURRENT_CAMERA_REVISION",
+      "IDENTIFY_OBJECT_FROM_ZOOMED_CAPTURE",
+      "CLICK_ONLY_AFTER_IDENTIFY",
+      "SAFE_CURSOR_REST"
+    ],
+    "zoom_actuator": ["CAMERA_ZOOM_IN", "SCROLL_WHEEL_ZOOM_IN"],
+    "forbidden_zoom_actuator": ["RIGHT_CLICK", "PORTRAIT_RMB"],
+    "identify_requires": "ZOOMED_IN_CAPTURE_SAME_CAMERA_REVISION",
+    "planner": "plan_object_pick_identify",
+    "cli": "python -m scripts.camera_traverse object-pick-plan --target-id ID",
+    "proof_ceiling": "OFFLINE_OBJECT_PICK_IDENTIFY_PLAN_NOT_LIVE_OBJECT_CLICK_CERT"
+  },
+  "room_map_traverse": {
+    "id": "ROOM_MAP_TRAVERSE",
+    "owner": "betterinstincts/room_map_traverse.py",
+    "when": "NAMED_MAP_LEASE_ROOM_OBJECT_SEARCH",
+    "operator_correction_20261110": "Default centers on active Sim; rare named map lease may leave Sim. Preferred census: Build (F3) → T top-down → room-fit BUILD_TOP_DOWN_MAP zoom (operator-centered; do not re-zoom once attested) → Select-click one item → read bottom-right params → document name+client_xy → Escape → next. Needs-investigation opportunistic map remains preferred when Live. Offline only — no Gallery/EA Connect. If grabbed/held: ESCAPE immediately (never place/sell/inventory). Do not pan/zoom away from the operator-centered frame during census.",
+    "parallel_with": [
+      "active_sim_camera_lock",
+      "object_pick_identify",
+      "lot_floor_map",
+      "build_library_checkpoint",
+      "agent_zoom_policy"
+    ],
+    "primary_census": "BUILD_TOP_DOWN_T",
+    "zoom_mode_target": "BUILD_TOP_DOWN_MAP",
+    "build_entry": {
+      "hotkey_id": "MODE_BUILD",
+      "chord": ["F3"],
+      "top_down_hotkey_id": "CAMERA_BUILD_TOP_DOWN",
+      "top_down_chord": ["T"],
+      "zoom_out": ["X", "SCROLL_WHEEL_ZOOM_OUT"],
+      "once_room_fit": "PRESERVE_OPERATOR_FRAME_NO_FURTHER_ZOOM",
+      "status": "OPERATOR_OBSERVED_20261110"
+    },
+    "map_lease_ms_max": 30000,
+    "max_pan_steps": 8,
+    "observe_only": true,
+    "census_inspect": {
+      "id": "BUILD_SELECT_INSPECT_ESCAPE",
+      "loop": [
+        "ENSURE_SELECT_TOOL",
+        "LMB_CLICK_ONE_OBJECT",
+        "READ_BOTTOM_RIGHT_PARAMS",
+        "DOCUMENT_CATALOG_NAME_AND_CLIENT_XY",
+        "ESCAPE",
+        "NEXT_OBJECT"
+      ],
+      "capture": "PRINTWINDOW_NOT_DESKTOP_SCREENSHOT",
+      "preserve_camera": true,
+      "forbid_after_room_fit": ["X", "Z", "SCROLL_WHEEL_ZOOM", "PAN", "MIDDLE_DRAG", "EDGE_PAN"]
+    },
+    "input_policy": {
+      "preferred_channel": "SELECT_INSPECT_THEN_ESCAPE",
+      "camera_and_mode": ["F3", "T", "X", "Z", "F1", "ESCAPE", "SCROLL_WHEEL_AT_SAFE_INTERIOR_ONLY"],
+      "allow_during_census": ["LMB_SELECT_INSPECT", "ESCAPE", "SELECT_TOOL_HOTKEY"],
+      "forbid_during_census": [
+        "LMB_DRAG_MOVE",
+        "RMB_WORLD_OBJECT",
+        "DRAG_OBJECT",
+        "CATALOG_PURCHASE",
+        "SLEDGEHAMMER",
+        "EYEDROPPER_APPLY",
+        "GALLERY",
+        "PAN_OR_REZOOM_AFTER_ROOM_FIT"
+      ],
+      "note": "Operator 2026-11-10 (revised): Select-click → bottom-right params → document → Escape is the safe cohesive census. Preserve centered room-fit zoom. Escape on grab/hold."
+    },
+    "on_erroneous_grab": {
+      "detect": ["OBJECT_HELD", "OBJECT_SELECTED_FOR_MOVE", "PLACE_SELL_INVENTORY_STRIP", "CANCEL_ESC_STRIP"],
+      "action": ["ESCAPE", "ESCAPE_AGAIN_IF_STILL_HELD", "RESUME_SELECT_INSPECT_ESCAPE_MAPPING"],
+      "forbidden_followups": ["PLACE", "SELL", "PLACE_IN_INVENTORY", "ROTATE_IN_PLACE", "CLICK_WORLD_TO_DESELECT", "CTRL_Z_AS_FIRST_CHOICE_WHEN_ESCAPE_SUFFICES"]
+    },
+    "default_seed_landmarks": [
+      "LANDMARK_DINING_TABLE",
+      "LANDMARK_RUG_CLUSTER"
+    ],
+    "default_adjacency_note": "Corner: overlapping rugs + dinner table → robotics workbench",
+    "steps": [
+      "REQUIRE_NAMED_MAP_GOAL",
+      "LOAD_MEMORIALIZED_GRAPH",
+      "DISMISS_BLOCKING_OVERLAY",
+      "ENTER_BUILD_OBSERVE_ONLY",
+      "CAMERA_BUILD_TOP_DOWN_T",
+      "ATTEST_OR_REACH_BUILD_TOP_DOWN_MAP_ROOM_FIT",
+      "PRESERVE_OPERATOR_CENTERED_FRAME",
+      "CLOSE_CATALOG_WITH_ESCAPE_IF_OBSCURING_PARAMS",
+      "SELECT_CLICK_INSPECT_LOOP",
+      "UPSERT_GRAPH_NODES_EDGES",
+      "MEMORIALIZE_NEW_MAPPED_ITEMS",
+      "ON_ERRONEOUS_GRAB_ESCAPE_AND_RESUME",
+      "OPTIONAL_LOCAL_LIBRARY_SAVE_FOLDER_ONLY_NO_GALLERY",
+      "EXIT_BUILD_F1_RESTORE_LIVE",
+      "SAFE_CURSOR_REST",
+      "AT_INTERACT_TIME_ASSESS_EXPECTED_INTERACTIONS",
+      "IF_EXPECTED_MISSING_INVALIDATE_AND_REMAP_NODE"
+    ],
+    "forbidden": [
+      "UNBOUNDED_CAMERA_PAN",
+      "LEAVE_CAMERA_ON_STREET",
+      "MAP_TRAVERSE_WITHOUT_NAMED_GOAL",
+      "FORGET_RESTORE_AFTER_MAP_LEASE",
+      "EDGE_MOUSE_PARK",
+      "REZOOM_OR_PAN_AWAY_FROM_OPERATOR_CENTERED_ROOM_FIT",
+      "MUTATE_LOT_WHILE_MAPPING",
+      "GRAB_MOVE_PLACE_SELL_OR_INVENTORY_DURING_CENSUS",
+      "CONTINUE_AFTER_GRAB_WITHOUT_ESCAPE",
+      "LMB_DRAG_OR_PURCHASE_DURING_MAP_CENSUS",
+      "MOUSE_DESELECT_INSTEAD_OF_ESCAPE",
+      "GALLERY_SHARE_OR_EA_CONNECT",
+      "ONLINE_FEATURES",
+      "ARBITRARY_LIVE_PERSPECTIVE_CLICK_AS_GRAPH_AUTHORITY"
+    ],
+    "planner": "plan_room_map_traverse",
+    "cli": "python -m scripts.lot_floor_map room-traverse-plan --goal-id ID --target-kind ROBOTICS_WORKSTATION",
+    "proof_ceiling": "OFFLINE_ROOM_MAP_TRAVERSE_PLAN_PLUS_LOCAL_GRAPH_STORE_NOT_LIVE_CLICK_CERT"
+  },
+  "lot_focus": {
+    "id": "LOT_FOCUS",
+    "owner": "betterinstincts/lot_focus.py",
+    "states": [
+      "ON_LOT",
+      "OFF_LOT_STREET",
+      "OFF_LOT_WATER",
+      "LOT_FOCUS_UNKNOWN",
+      "LOT_FOCUS_YIELD"
+    ],
+    "cues": [
+      "live_hud_visible",
+      "on_active_lot",
+      "zoom_mode_observed",
+      "scenery_kind",
+      "independent_cues",
+      "camera_displaced",
+      "active_sim_in_frame"
+    ],
+    "off_lot_tokens": [
+      "STREET",
+      "CANAL",
+      "WATER",
+      "NEIGHBORHOOD",
+      "WORLD_MAP",
+      "OFF_LOT",
+      "TRAVEL_AFAR",
+      "FULL_ZOOM_OUT",
+      "STREET_TOPDOWN"
+    ],
+    "restore_preferred": "CENTER_ACTIVE_SIM",
+    "restore_hotkey": "ENTER",
+    "forbidden_restore": [
+      "UNBOUNDED_PAN",
+      "STREET_ROAM",
+      "SHIFT_ENTER_AS_SIM_CENTER",
+      "WHEEL_ZOOM_OUT_TO_FIND_LOT"
+    ],
+    "operator_correction_20261110": "When the map is way off the lot (canal/street), recognize OFF_LOT and restore with Enter to the active Sim — do not roam the neighborhood.",
+    "helper": "assess_lot_focus",
+    "proof_ceiling": "OFFLINE_LOT_FOCUS_ASSESS_NOT_LIVE_CAMERA_CERT"
+  },
   "agent_zoom_policy": {
     "owner": "betterinstincts/camera_traverse.py",
     "axis": "ZOOM_IN_FRACTION_OF_MAX_WHERE_1_0_IS_MAX_CLOSE",
@@ -144,7 +347,9 @@
       "active_sim_camera_lock",
       "scene_ui_semantics",
       "host_stack",
-      "ASYNC_INTEROP_15S_IDLE"
+      "ASYNC_INTEROP_15S_IDLE",
+      "zoom_controls",
+      "object_pick_identify"
     ],
     "modes": {
       "RIGHT_CLICK_VIEW": {
@@ -156,7 +361,10 @@
         "zoom_in_fraction_of_max": 0.85,
         "pullback_from_max_fraction": 0.15,
         "required_follow": "RIGHT_CLICK_ACTIVE_SIM_PORTRAIT",
-        "use_when": "DEFAULT_AGENT_WORK_AND_RIGHT_CLICK_INTERACTION",
+        "zoom_distance_via": ["CAMERA_ZOOM_IN", "SCROLL_WHEEL_ZOOM_IN"],
+        "follow_via": "PORTRAIT_RMB",
+        "not_zoom_via": ["RIGHT_CLICK_AS_ZOOM", "PORTRAIT_RMB_AS_ZOOM"],
+        "use_when": "DEFAULT_AGENT_WORK_AND_OBJECT_INTERACTION",
         "screenshot_refs": [
           "SCREENSHOT_2"
         ]
@@ -198,10 +406,86 @@
         "screenshot_refs": [
           "SCREENSHOT_3"
         ]
+      },
+      "BUILD_TOP_DOWN_MAP": {
+        "aliases": [
+          "ROOM_CENSUS_ZOOM",
+          "FLOOR_MAP_ZOOM",
+          "BUILD_T_ROOM_FIT",
+          "OPERATOR_CENTERED_CENSUS"
+        ],
+        "zoom_in_fraction_of_max": 0.35,
+        "camera": "BUILD_MODE_T_TOP_DOWN",
+        "preserve_operator_centered_frame": true,
+        "forbid_rezoom_once_room_fit": true,
+        "requires": "NAMED_FLOOR_MAP_OR_ROOM_CENSUS_GOAL",
+        "use_when": "LOT_FLOOR_MAP_CENSUS_AND_ROOM_GRAPH",
+        "default_for": [
+          "lot_floor_map",
+          "room_map_traverse",
+          "host_stack_build_census",
+          "BUILD_SELECT_INSPECT_ESCAPE"
+        ],
+        "applies_across": [
+          "ALL_AGENTS",
+          "HOST_STACK",
+          "LIVE_ADAPTERS"
+        ],
+        "note": "Operator 2026-11-10: pin this room-fit Build T zoom for census. Do not X/Z/wheel away from the operator-centered frame once attested.",
+        "screenshot_refs": [
+          "dist/game-host/floor-census-20261110/frame-centered.png"
+        ]
       }
     },
     "wheel_calibration": "LIVE_P08_REQUIRED_NOTCH_DISTANCE_FROM_OBSERVED_CLASS",
     "proof_ceiling": "OFFLINE_ZOOM_POLICY_NOT_LIVE_CAMERA_PROOF"
+  },
+  "lot_focus": {
+    "id": "LOT_OFF_FOCUS",
+    "owner": "betterinstincts/lot_focus.py",
+    "evaluator": "assess_lot_focus",
+    "when": "HOST_CAPTURE_OR_CAMERA_RECOVERY_WITH_LOT_FOCUS_CUES",
+    "operator_correction_20261110": "Detect when scenery/camera leaves the active household lot (street, canal, neighborhood). Restore via Enter (CENTER_ACTIVE_SIM); never default to street roam or unbounded pan.",
+    "states": {
+      "ON_LOT": "Camera and scenery attested on the active household lot.",
+      "OFF_LOT_STREET": "Street/neighborhood/top-down scenery without a verified travel goal.",
+      "OFF_LOT_WATER": "Canal/water/off-lot waterfront scenery without lot framing.",
+      "UNKNOWN": "Insufficient or conflicting lot-focus cues; reobserve."
+    },
+    "cues": {
+      "missing_live_hud": "live_hud absent from independent visual cue or live_hud_present false while zoomed out",
+      "travel_afar_zoom": "zoom_mode_observed TRAVEL_AFAR without VERIFIED_LONG_DISTANCE_TRAVEL goal",
+      "operator_tokens": "lot_focus_cues[] with source operator",
+      "host_tokens": "lot_focus_cues[] with source host; camera_lot_kind; camera_on_active_household_lot",
+      "scenery_tokens": "landmark_tokens / scenery_off_active_lot from host capture"
+    },
+    "restore_plan": {
+      "command": "CENTER_ACTIVE_SIM",
+      "hotkey_id": "CENTER_ACTIVE_SIM",
+      "chord": ["ENTER"],
+      "forbid_default": [
+        "SHIFT_ENTER",
+        "CENTER_CURRENT_LOT",
+        "UNBOUNDED_CAMERA_PAN",
+        "STREET_ROAM"
+      ],
+      "note": "Shift+Enter centers the lot once — not the default Sim restore. Portrait follow remains preferred after Enter recenters."
+    },
+    "parallel_with": [
+      "active_sim_camera_lock",
+      "agent_zoom_policy",
+      "scenery_memory",
+      "drift_recovery",
+      "host_stack"
+    ],
+    "forbidden": [
+      "STREET_ROAM",
+      "UNBOUNDED_CAMERA_PAN",
+      "SHIFT_ENTER_AS_DEFAULT_SIM_RESTORE",
+      "TRAVEL_AFAR_WITHOUT_LONG_DISTANCE_GOAL",
+      "ENVIRONMENT_NAV_WITHOUT_PLANNING_GOAL"
+    ],
+    "proof_ceiling": "OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
   },
   "zoomed_in_overlay_clear": {
     "owner": "betterinstincts/scene_ui_semantics.py",
@@ -220,8 +504,10 @@
     "never_auto_clear": [
       "UNRESOLVED_DECISION_OVERLAY",
       "PLAYER_OWNED_MODAL",
-      "UNKNOWN_OVERLAY"
+      "UNKNOWN_OVERLAY",
+      "PEER_LEASED_HUD_SURFACE"
     ],
+    "peer_lease_rule": "If observation.peer_hud_leases lists a clearable_kind held by another session/work_id, withhold that kind (WAITING_FOR_AGENT / OVERLAY_CLEAR_PEER_LEASE). Skills vs phone exclusivity lives in workflow-interoperability live_hud_surface_lease.",
     "proof_ceiling": "OFFLINE_OVERLAY_CLEAR_POLICY_NOT_LIVE_DISMISS_PROOF"
   },
   "house_state_actions": [
@@ -240,6 +526,7 @@
     "admission": "betterinstincts/screen_admit.py",
     "world_framing_host": "betterinstincts/host_stack.py",
     "active_sim_lock": "betterinstincts/active_sim_camera_lock.py",
+    "lot_focus": "betterinstincts/lot_focus.py",
     "portrait_follow": "betterinstincts/portrait_follow.py"
   },
   "prior_art": {

@@ -910,9 +910,18 @@ def assess_drift_recovery(
 
 
 ZOOM_MODES = frozenset({
-    "RIGHT_CLICK_VIEW", "ENVIRONMENT_NAV", "TRAVEL_AFAR", "MAX_CLOSE",
+    "RIGHT_CLICK_VIEW",
+    "ENVIRONMENT_NAV",
+    "TRAVEL_AFAR",
+    "MAX_CLOSE",
+    "BUILD_TOP_DOWN_MAP",
 })
 ZOOM_PROOF = "OFFLINE_ZOOM_POLICY_NOT_LIVE_CAMERA_PROOF"
+_FLOOR_CENSUS_GOAL_KINDS = frozenset({
+    "LOT_FLOOR_MAP_CENSUS",
+    "BUILD_ROOM_CENSUS",
+    "FLOOR_MAP_ZOOM",
+})
 
 
 def _zoom_policy(cfg: Mapping[str, object] | None = None) -> dict:
@@ -1004,6 +1013,42 @@ def assess_agent_zoom_mode(
                 mode=mode,
             )
 
+    if mode == "BUILD_TOP_DOWN_MAP":
+        if not isinstance(planning_goal, Mapping):
+            return hold(
+                "BUILD_TOP_DOWN_MAP_GOAL_REQUIRED",
+                "NAMED_FLOOR_MAP_OR_ROOM_CENSUS_GOAL_REQUIRED",
+                mode=mode,
+            )
+        goal_id = planning_goal.get("goal_id")
+        kind = planning_goal.get("kind")
+        if (
+            not isinstance(goal_id, str)
+            or not 1 <= len(goal_id) <= 96
+            or kind not in _FLOOR_CENSUS_GOAL_KINDS
+            or planning_goal.get("source") != "HOST_TASK"
+        ):
+            return hold(
+                "BUILD_TOP_DOWN_MAP_GOAL_REQUIRED",
+                "UNVERIFIED_FLOOR_MAP_OR_ROOM_CENSUS_GOAL",
+                mode=mode,
+            )
+        # Once the operator/host attested room-fit, never plan further X/Z.
+        if isinstance(observation, Mapping) and observation.get(
+            "build_top_down_map_room_fit_attested"
+        ) is True:
+            return {
+                **base,
+                "state": "AGENT_ZOOM_READY_FOR_ADMISSION",
+                "gate": "BUILD_TOP_DOWN_MAP_PRESERVE_OPERATOR_FRAME",
+                "mode": mode,
+                "zoom_in_fraction_of_max": float(fraction),
+                "preserve_operator_centered_frame": True,
+                "forbid_rezoom": True,
+                "forbidden_as_default": bool(row.get("forbidden_as_default", False)),
+                "census_inspect": "BUILD_SELECT_INSPECT_ESCAPE",
+            }
+
     if mode == "TRAVEL_AFAR":
         if not isinstance(travel_goal, Mapping):
             return hold(
@@ -1064,7 +1109,7 @@ def assess_agent_zoom_mode(
             "next": "PORTRAIT_RIGHT_CLICK_THEN_BOUNDED_WHEEL_IN_TO_0_85",
         }
 
-    return {
+    ready = {
         **base,
         "state": "AGENT_ZOOM_READY_FOR_ADMISSION",
         "gate": "AGENT_ZOOM_POLICY_READY",
@@ -1084,6 +1129,21 @@ def assess_agent_zoom_mode(
         },
         "next": "ADMITTED_HOST_FOLLOW_AND_WHEEL_THEN_SAFE_REST",
     }
+    if mode == "BUILD_TOP_DOWN_MAP":
+        ready["gate"] = "BUILD_TOP_DOWN_MAP_ROOM_FIT"
+        ready["preserve_operator_centered_frame"] = True
+        ready["forbid_rezoom_once_room_fit"] = True
+        ready["census_inspect"] = "BUILD_SELECT_INSPECT_ESCAPE"
+        ready["next"] = "ATTEST_ROOM_FIT_THEN_SELECT_INSPECT_ESCAPE_NO_REZOOM"
+        ready["wheel"] = {
+            "kind": "WHEEL_ZOOM",
+            "direction": "HOLD_ONCE_ROOM_FIT",
+            "until_fraction": fraction,
+            "notches": None,
+            "requires_live_calibration": True,
+            "forbid_after_attested": True,
+        }
+    return ready
 
 
 def plan_agent_default_view(
@@ -1095,3 +1155,67 @@ def plan_agent_default_view(
     return assess_agent_zoom_mode(
         intent="RIGHT_CLICK_VIEW", observation=observation, cfg=cfg,
     )
+
+
+def zoom_controls(*, cfg: Mapping[str, object] | None = None) -> dict:
+    """Catalogued Live zoom actuators (Z / X / wheel) — not right-click."""
+    data = dict(cfg or load_contract())
+    row = data.get("zoom_controls")
+    if not isinstance(row, Mapping):
+        raise CameraTraverseError("ZOOM_CONTROLS_MISSING")
+    return dict(row)
+
+
+def plan_object_pick_identify(
+    *,
+    target_id: str,
+    observation: Mapping[str, object] | None = None,
+    cfg: Mapping[str, object] | None = None,
+) -> dict:
+    """Plan: traverse → zoom in via Z/wheel → capture → identify → click.
+
+    Operator 2026-11-10: zoom-in is hotkey/scroll, never right-click. Identify
+    only from a zoomed-in PrintWindow/HOST_CAPTURE at the current camera revision.
+    """
+    cfg = cfg or load_contract()
+    procedure = cfg.get("object_pick_identify")
+    if not isinstance(procedure, Mapping):
+        raise CameraTraverseError("OBJECT_PICK_IDENTIFY_MISSING")
+    if not isinstance(target_id, str) or not 1 <= len(target_id) <= 96:
+        raise CameraTraverseError("WORLD_OBJECT_TARGET_ID_REQUIRED")
+
+    controls = zoom_controls(cfg=cfg)
+    zoom_in = dict((controls.get("controls") or {}).get("CAMERA_ZOOM_IN") or {})
+    default_view = plan_agent_default_view(observation=observation, cfg=cfg)
+    observed = None
+    if isinstance(observation, Mapping):
+        observed = observation.get("zoom_mode_observed")
+
+    steps = list(procedure.get("steps") or [])
+    restore_first = observed in {"TRAVEL_AFAR", "FULL_ZOOM_OUT", "STREET_TOPDOWN"}
+    return {
+        "schema": "betterinstincts.object-pick-identify.plan/v1",
+        "state": "OBJECT_PICK_IDENTIFY_PLAN_READY",
+        "gate": "OBJECT_PICK_IDENTIFY",
+        "target_id": target_id,
+        "execute_allowed": False,
+        "proof_ceiling": procedure.get("proof_ceiling") or PROOF_CEILING,
+        "zoom_mode_target": "RIGHT_CLICK_VIEW",
+        "zoom_in_fraction_of_max": 0.85,
+        "zoom_actuator": {
+            "preferred_channel": "KEY",
+            "hotkey_id": "CAMERA_ZOOM_IN",
+            "chord": list(zoom_in.get("chord") or ["Z"]),
+            "wheel_equivalent": zoom_in.get("wheel") or "SCROLL_WHEEL_ZOOM_IN",
+            "forbidden": list(procedure.get("forbidden_zoom_actuator") or []),
+        },
+        "leave_travel_afar_first": bool(restore_first),
+        "default_view": default_view,
+        "steps": steps,
+        "identify_requires": procedure.get("identify_requires"),
+        "capture_owner": "scripts.game_capture.capture_sims",
+        "note": (
+            "RIGHT_CLICK_VIEW is the mode/distance target; CAMERA_ZOOM_IN (Z) "
+            "or scroll reaches it. Portrait RMB is follow only — never zoom."
+        ),
+    }

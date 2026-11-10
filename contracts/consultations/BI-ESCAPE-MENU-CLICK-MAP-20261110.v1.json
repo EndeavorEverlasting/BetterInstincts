@@ -1,0 +1,74 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-ESCAPE-MENU-CLICK-MAP-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "Promote live-measured escape/options MENU Save and Save As client coords from scripts/cas_place_live.py into fixed-ui-click-map escape_menu_1920x1080. Document 2px Save vs Save As collision (within default hit radius). SAVE GAME dialog policy: ADD NEW SAVE only; forbid Delete, Overwrite, and existing-row clicks until ADD_NEW_SAVE is remeasured.",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "OBSERVATION",
+    "CLAIM",
+    "PLAYER_PRESENCE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/UI_CHROME.md",
+    "docs/GAME_HOST.md",
+    "contracts/fixed-ui-click-map.v1.json",
+    "betterinstincts/fixed_ui_click_map.py",
+    "scripts/cas_place_live.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "ESCAPE_MENU_LIVE_MEASURED_20261110_NOT_SAVE_DIALOG_COORD_CERT",
+  "player_save_control_impact": "Records fixed MENU coordinates and save-dialog click policy only. No save edits in this change. Forbid Delete/Overwrite/existing-row clicks by contract.",
+  "expected_outcome": "fixed-ui-click-map v6 escape_menu block + seeds; load_escape_menu_coords; cas_place_live imports contract; unit test; UI_CHROME hazard note; receipt under horizon-exec-20261110.",
+  "negative_tests": [
+    "Save and Save As client_xy differ",
+    "2px vertical separation within hit radius flagged",
+    "ADD_NEW_SAVE client_xy null until measured",
+    "DELETE and OVERWRITE in save_game_dialog forbidden list"
+  ],
+  "rollback_path": "Revert contract v6 block and script import; restore inline constants in cas_place_live.",
+  "unresolved_unknowns": [
+    "live.save_game_add_new_save exact client_xy on SAVE GAME dialog",
+    "Row highlight verification policy live attestation"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-ESCAPE-MENU-CLICK-MAP-20261110.v1.json",
+    "contracts/fixed-ui-click-map.v1.json",
+    "betterinstincts/fixed_ui_click_map.py",
+    "scripts/cas_place_live.py",
+    "tests/test_fixed_ui_click_map.py",
+    "docs/UI_CHROME.md",
+    "dist/game-host/horizon-exec-20261110/menu-contract-receipt.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decided_at": "2026-11-10T09:30:00Z",
+  "decided_by": "cursor-local-agent",
+  "decision_rationale": "Horizon MAP lane: orphan MENU coords in cas_place_live blocked durable save-as policy. Offline contract + loader precedes next live ADD NEW SAVE measurement."
+}

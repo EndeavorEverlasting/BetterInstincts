@@ -1,0 +1,71 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-LOT-OFF-FOCUS-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "LOT_OFF_FOCUS recognition: classify when scenery/camera leaves the active household lot (street, canal, neighborhood) via contracts/camera-traverse.v1.json#lot_focus and betterinstincts/lot_focus.py. Restore plan is Enter (CENTER_ACTIVE_SIM); forbid Shift+Enter as default Sim restore and forbid unbounded street pan. host_stack.evaluate_turn emits lot_focus when observation or camera_recovery carries lot_focus cues or TRAVEL_AFAR without travel goal.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "CLAIM",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "VIEW_SCENE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "docs/CAMERA_TRAVERSE.md",
+    "contracts/camera-traverse.v1.json",
+    "betterinstincts/lot_focus.py",
+    "betterinstincts/host_stack.py",
+    "betterinstincts/active_sim_camera_lock.py",
+    "betterinstincts/sim_camera.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED",
+  "player_save_control_impact": "No save edits, no EA Connect, no autonomous SendInput. Plans remain execute_allowed false until admitted host screen queue with fresh observation.",
+  "expected_outcome": "lot_focus contract section; assess_lot_focus; host_stack gate LOT_OFF_FOCUS_RESTORE_REQUIRED; unit tests; CAMERA_TRAVERSE + LEDGER note.",
+  "negative_tests": [
+    "OFF_LOT without verified travel goal requires Enter restore plan not street roam",
+    "Shift+Enter listed in forbid_default for Sim restore",
+    "UNKNOWN when lot cues insufficient",
+    "execute_allowed remains false"
+  ],
+  "rollback_path": "Revert lot_focus module/contract/host_stack wiring; prior active_sim_camera_lock and agent_zoom_policy remain authoritative for zoom; BI-002 ACTIVE.",
+  "unresolved_unknowns": [
+    "Exact-build live attestation of canal vs street scenery tokens",
+    "P08 calibration of TRAVEL_AFAR vs off-lot scenery on operator lots"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-LOT-OFF-FOCUS-20261110.v1.json",
+    "contracts/camera-traverse.v1.json",
+    "betterinstincts/lot_focus.py",
+    "betterinstincts/host_stack.py",
+    "tests/test_lot_focus.py",
+    "docs/CAMERA_TRAVERSE.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator 2026-11-10 horizon H0: agents must recognize off-lot scenery and restore via Enter on the active Sim, not street roam. Offline policy and tests precede live P08 camera proof."
+}

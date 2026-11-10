@@ -1,0 +1,78 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-LOT-FLOOR-MAP-PROFILE-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "27850d1d749f99cd69b2d20237ff6bc31263533b",
+  "proposed_capability": "P95 LOT_FLOOR_MAP: every local installation profile owns a private lot floor object map (computers, laptops, robotics workstations, paths, miss causes). Auto-ensure/seed when Build mode is entered (host_stack build_or_buy) and when OBJECT_PICK_IDENTIFY observes objects. Operator: map the floor over time; profile-local not repo; auto-populate on build. P124: peer module beside installation_profiles household paths + click_miss_cause + camera_traverse — never Sims saves, never tracked dist as canonical.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "CLAIM",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "docs/INSTALLATION_PROFILES.md",
+    "docs/HOUSEHOLD_SCOPE.md",
+    "docs/CAMERA_TRAVERSE.md",
+    "docs/ASYNC_INTEROP.md",
+    "betterinstincts/installation_profiles.py",
+    "betterinstincts/host_stack.py",
+    "betterinstincts/click_miss_cause.py",
+    "betterinstincts/camera_traverse.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_PLUS_LOCAL_PROFILE_STORE",
+  "evidence_ceiling": "PROFILE_FLOOR_MAP_OFFLINE_AND_LOCAL_STORE_NOT_LIVE_OBJECT_HIT_CERT",
+  "player_save_control_impact": "Writes only under LOCALAPPDATA/BetterInstincts/households/<profile>/floors/. Never touches Sims saves/install. Build-mode trigger ensures empty skeleton + known kinds; does not SendInput. Live clicks still require HUD lease + idle + ACTIVE session.",
+  "expected_outcome": "contracts/lot-floor-map.v1.json + betterinstincts/lot_floor_map.py + CLI; path helper on installation_profiles; learning.lot_floor_map_auto default true; host_stack BUILD trigger; seed from parts-buy observations; tests/docs; Fifth Gear S2d.",
+  "negative_tests": [
+    "Repo/checkout path refused as floor map root",
+    "Unknown object kind fails closed",
+    "Auto trigger skipped when learning.lot_floor_map_auto false",
+    "Camera-revision bound client_xy never promoted to ATTESTED_HIT without label",
+    "No execute_allowed / SendInput from map module"
+  ],
+  "rollback_path": "Revert feature files; installation_profiles + host_stack prior behavior; delete local floors/ optional; BI-002 ACTIVE.",
+  "unresolved_unknowns": [
+    "Stable lot identity across save reloads still operator/scope-bound",
+    "Live Order pie path on computer still open after More Choices"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-LOT-FLOOR-MAP-PROFILE-20261110.v1.json",
+    "contracts/lot-floor-map.v1.json",
+    "contracts/installation-profiles.v1.json",
+    "betterinstincts/lot_floor_map.py",
+    "betterinstincts/installation_profiles.py",
+    "betterinstincts/host_stack.py",
+    "scripts/lot_floor_map.py",
+    "tests/test_lot_floor_map.py",
+    "docs/INSTALLATION_PROFILES.md",
+    "docs/HOUSEHOLD_SCOPE.md",
+    "docs/LEDGER.md",
+    "plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json"
+  ],
+  "decision": "ADMIT_PROFILE_LOCAL_FLOOR_MAP_WITH_BUILD_AUTO_ENSURE",
+  "decision_rationale": "Operator: floor mapping is process; belongs in every user local profile; auto-populate/trigger when building. Ephemeral dist/ ledgers are not the owner."
+}

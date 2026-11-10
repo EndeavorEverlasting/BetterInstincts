@@ -1,0 +1,34 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-OBJECT-PICK-ZOOM-HOTKEYS-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "d1a28027a38d2a256a3d32c1d143695d2c5fa390834dfbf2a62b720f8ce17a3d",
+  "proposed_capability": "Codify semantic split ZOOM_MODE vs ZOOM_CONTROL and OBJECT_PICK_IDENTIFY: when picking world objects, traverse then zoom in via catalogued Live hotkeys Z / X or scroll wheel (not right-click), PrintWindow/screenshot at that zoom, identify objects, then click. RIGHT_CLICK_VIEW remains a zoom-ladder mode / follow posture name — never the zoom actuator.",
+  "operator_corrections": [
+    "Zooming in is not a right-click. Zooming in is a hotkey (Z); X zooms out; scroll wheel also zooms.",
+    "When picking an object, traverse the space, zoom in, screenshot, then identify — do not click blind from street top-down.",
+    "Codify the semantic layer so hotkeys, meanings, and functionalities are not lost; do not rediscover in chat."
+  ],
+  "owners": [
+    "contracts/ui-chrome.v1.json",
+    "contracts/camera-traverse.v1.json",
+    "betterinstincts/camera_traverse.py",
+    "betterinstincts/ui_chrome.py",
+    "docs/CAMERA_TRAVERSE.md",
+    "docs/UI_CHROME.md",
+    "contracts/glossary.v1.json"
+  ],
+  "peers": [
+    "portrait_follow",
+    "active_sim_camera_lock",
+    "HOTKEY_FIRST_WHEN_EQUIVALENT",
+    "diy_skill_force"
+  ],
+  "rejected": [
+    "RIGHT_CLICK_AS_ZOOM_ACTUATOR",
+    "STREET_TOPDOWN_OBJECT_IDENTIFY",
+    "CHAT_ONLY_ZOOM_RECIPE"
+  ],
+  "proof_ceiling": "OFFLINE_ZOOM_CONTROL_AND_OBJECT_PICK_SEMANTICS_NOT_LIVE_WHEEL_CALIBRATION",
+  "not_bi002": true
+}

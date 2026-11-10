@@ -95,6 +95,7 @@ from betterinstincts.camera_traverse import (
 from betterinstincts.viewport import ViewportError, predict_risk
 from betterinstincts.sim_camera import SimCameraError, plan_sim_camera
 from betterinstincts.active_sim_camera_lock import evaluate_active_sim_camera_lock
+from betterinstincts.lot_focus import LotFocusError, assess_lot_focus, should_assess_lot_focus
 from betterinstincts.scene_ui_semantics import assess_live_hud, SceneUISemanticsError
 from betterinstincts.scenery_memory import record_scenery, SceneryMemoryError
 
@@ -163,6 +164,8 @@ def evaluate_turn(
     build_budget: Optional[float] = None,
     build_panels: int = 1,
     build_or_buy_mode: bool = False,
+    lot_floor_profile_id: Optional[str] = None,
+    lot_floor_key: Optional[str] = None,
     lot_model: Optional[Mapping[str, object]] = None,
     scenario_active: bool = False,
     scenario_goals_incomplete: Sequence[str] = (),
@@ -723,6 +726,24 @@ def evaluate_turn(
         except (BuildIntegrityError, BuildSpatialError, BuildLibraryCheckpointError) as exc:
             raise HostStackError(str(exc)) from exc
 
+    lot_floor_map = None
+    if build_or_buy_mode and lot_floor_profile_id and lot_floor_key:
+        try:
+            from betterinstincts.installation_profiles import InstallationProfileError
+            from betterinstincts.lot_floor_map import LotFloorMapError, on_build_mode_entered
+
+            lot_floor_map = on_build_mode_entered(
+                profile_id=str(lot_floor_profile_id),
+                lot_key=str(lot_floor_key),
+            )
+        except (LotFloorMapError, InstallationProfileError, OSError, ValueError) as exc:
+            lot_floor_map = {
+                "state": "FLOOR_MAP_TRIGGER_FAILED",
+                "error": str(exc),
+                "execute_allowed": False,
+                "proof_ceiling": "PROFILE_FLOOR_MAP_OFFLINE_AND_LOCAL_STORE_NOT_LIVE_OBJECT_HIT_CERT",
+            }
+
     drift_recovery = None
     if camera_recovery is not None:
         if not isinstance(camera_recovery, Mapping):
@@ -755,6 +776,7 @@ def evaluate_turn(
             raise HostStackError(str(exc)) from exc
 
     target_framing = None
+    needs_floor_map = None
     if world_target is not None:
         if not isinstance(world_target, Mapping):
             raise HostStackError("WORLD_TARGET_REQUEST_INVALID")
@@ -769,6 +791,45 @@ def evaluate_turn(
             )
         except (CameraTraverseError, TypeError) as exc:
             raise HostStackError(str(exc)) from exc
+        # Opportunistic floor map while investigating a needs/world object —
+        # preferred continuous path vs Build T sampling sprints.
+        if lot_floor_profile_id and lot_floor_key and world_target.get("target_id"):
+            try:
+                from betterinstincts.installation_profiles import InstallationProfileError
+                from betterinstincts.lot_floor_map import (
+                    LotFloorMapError,
+                    opportunistic_needs_map,
+                )
+
+                obs = world_target.get("observation")
+                if isinstance(obs, Mapping) and not obs.get("capture_ref"):
+                    obs = dict(obs)
+                    obs["capture_ref"] = capture_ref
+                needs_floor_map = opportunistic_needs_map(
+                    profile_id=str(lot_floor_profile_id),
+                    lot_key=str(lot_floor_key),
+                    target_id=str(world_target.get("target_id")),
+                    observation=obs if isinstance(obs, Mapping) else None,
+                    need_id=(
+                        str(world_target["need_id"])
+                        if world_target.get("need_id") is not None
+                        else None
+                    ),
+                    kind=(
+                        str(world_target["object_kind"])
+                        if world_target.get("object_kind") is not None
+                        else None
+                    ),
+                    expected_interactions=world_target.get("expected_interactions"),
+                    observed_interactions=world_target.get("observed_interactions"),
+                )
+            except (LotFloorMapError, InstallationProfileError, OSError, ValueError, TypeError) as exc:
+                needs_floor_map = {
+                    "state": "NEEDS_MAP_TRIGGER_FAILED",
+                    "error": str(exc),
+                    "execute_allowed": False,
+                    "proof_ceiling": "PROFILE_FLOOR_MAP_OFFLINE_AND_LOCAL_STORE_NOT_LIVE_OBJECT_HIT_CERT",
+                }
 
     # The overlay/panel microsystem shares capture and selected-Sim revisions.
     # A resolved event is not a permit to resume an unverified queued action.
@@ -823,6 +884,25 @@ def evaluate_turn(
                 now_ms=camera_clock_ms,
             )
         except (SimCameraError, CameraTraverseError, TypeError) as exc:
+            raise HostStackError(str(exc)) from exc
+
+    lot_focus = None
+    lot_focus_observation = sim_camera_observation
+    if lot_focus_observation is None and isinstance(camera_recovery, Mapping):
+        rec_obs = camera_recovery.get("observation")
+        if isinstance(rec_obs, Mapping):
+            lot_focus_observation = rec_obs
+    if should_assess_lot_focus(
+        observation=lot_focus_observation if isinstance(lot_focus_observation, Mapping) else None,
+        camera_recovery=camera_recovery if isinstance(camera_recovery, Mapping) else None,
+    ):
+        try:
+            lot_focus = assess_lot_focus(
+                capture_ref=capture_ref,
+                observation=lot_focus_observation,
+                travel_goal=camera_travel_goal,
+            )
+        except (LotFocusError, SimCameraError, TypeError) as exc:
             raise HostStackError(str(exc)) from exc
 
     # Pointer context is an optional observed phase, never a control permit.
@@ -949,6 +1029,18 @@ def evaluate_turn(
             "scene": scenery_receipt,
             "execute_allowed": False,
             "next": "REOBSERVE_SELECTED_SIM_PORTRAIT_THEN_REVALIDATE_TARGET",
+        }
+    elif lot_focus is not None and lot_focus.get("state") in {"OFF_LOT_STREET", "OFF_LOT_WATER"}:
+        next_gate = str(lot_focus.get("gate") or "LOT_OFF_FOCUS_RESTORE_REQUIRED")
+        fallback = {
+            "mechanism": "LOT_OFF_FOCUS_RESTORE",
+            "owner": "betterinstincts/lot_focus.py",
+            "contract": "contracts/camera-traverse.v1.json#lot_focus",
+            "lot_focus": lot_focus,
+            "execute_allowed": False,
+            "next": lot_focus.get("next"),
+            "forbidden": list(lot_focus.get("forbidden") or [])
+            + ["STREET_ROAM", "UNBOUNDED_CAMERA_PAN"],
         }
     elif drift_recovery is not None:
         # Recovery outranks generic scan/target clicks. Physical actions still
@@ -1622,10 +1714,13 @@ def evaluate_turn(
         "build_integrity": build_integrity,
         "build_spatial": build_spatial,
         "build_library": build_library,
+        "lot_floor_map": lot_floor_map,
+        "needs_floor_map": needs_floor_map,
         "camera_traverse": camera_traverse,
         "live_hud_semantics": live_hud,
         "scenery_discovery": scenery_receipt,
         "active_sim_camera_lock": camera_lock,
+        "lot_focus": lot_focus,
         "camera_recovery": drift_recovery,
         "world_target_framing": target_framing,
         "sim_camera": sim_camera_intent,

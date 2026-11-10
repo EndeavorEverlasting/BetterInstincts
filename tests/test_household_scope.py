@@ -12,16 +12,22 @@ from betterinstincts.diy_skill_force import (
     DiySkillForceError,
     completed_skill_ids_for_member,
     empty_completion_ledger,
+    export_household_skills_list,
     load_completion_ledger,
     plan_household_skill_force,
+    record_member_panel_snapshot,
     record_skill_dispatched,
     save_completion_ledger,
+    set_household_roster,
 )
 from betterinstincts.household_judgment import (
     HouseholdJudgmentError, bind_household_scope,
 )
 from betterinstincts.installation_profiles import (
-    InstallationProfileError, create_profile, household_ledger_path,
+    InstallationProfileError,
+    create_profile,
+    household_ledger_path,
+    household_skills_export_path,
 )
 from scripts import diy_skill_force as cli
 
@@ -183,6 +189,65 @@ class HouseholdScopeTests(unittest.TestCase):
                 portrait_xy=(100, 100), session_id="host-session",
                 console_strip_observed=True, completion_ledger_path=None,
             )
+
+    def test_skills_export_is_per_profile_and_lists_each_member(self):
+        scope_a = self.scope(profile="default", save="save-a", household="house-a")
+        scope_b = self.scope(profile="default", save="save-b", household="house-b")
+        self.assertNotEqual(scope_a["scope_id"], scope_b["scope_id"])
+        ledger = empty_completion_ledger()
+        ledger["scope_id"] = scope_a["scope_id"]
+        ledger["roster_fingerprint"] = scope_a["roster_fingerprint"]
+        set_household_roster(
+            ledger,
+            session_id="synthetic-session",
+            members=2,
+            roster_keys=["portrait-001", "portrait-002"],
+            display_names=["Sim Alpha", "Sim Beta"],
+        )
+        record_member_panel_snapshot(
+            ledger,
+            member_key=scope_a["member_keys"][0],
+            observed_skills={"handiness": 10, "robotics": 3},
+            display_name="Sim Alpha",
+        )
+        record_skill_dispatched(
+            ledger,
+            member_key=scope_a["member_keys"][1],
+            skill_id="cooking",
+            skill_stat="Major_HomestyleCooking",
+            level=10,
+        )
+        exported = export_household_skills_list(
+            ledger,
+            bundle="full_unlock",
+            household_scope=scope_a,
+            profile_id="default",
+        )
+        self.assertEqual(exported["state"], "HOUSEHOLD_SKILLS_EXPORT_READY")
+        self.assertEqual(exported["member_count"], 2)
+        self.assertEqual(exported["members"][0]["roster_key"], "portrait-001")
+        self.assertEqual(exported["members"][0]["skills_count"], 2)
+        self.assertTrue(
+            any(s["skill_id"] == "handiness" and s["panel_proven"] for s in exported["members"][0]["skills"])
+        )
+        self.assertIn("cooking", exported["members"][1]["panel_or_dispatched_complete"])
+        self.assertEqual(exported["proof_ceiling"], "LOCAL_LEDGER_EXPORT_NOT_LIVE_PANEL_PROOF")
+        with tempfile.TemporaryDirectory() as tmp:
+            settings = Path(tmp) / "settings.v1.json"
+            path_a = household_skills_export_path(
+                profile_id="default", scope_id=scope_a["scope_id"], settings_file=settings, stamp="t1"
+            )
+            path_b = household_skills_export_path(
+                profile_id="default", scope_id=scope_b["scope_id"], settings_file=settings, stamp="t1"
+            )
+            self.assertNotEqual(path_a, path_b)
+            self.assertIn("exports", str(path_a))
+            self.assertTrue(str(path_a).endswith("-skills-t1.json"))
+            create_profile("another", settings)
+            path_other = household_skills_export_path(
+                profile_id="another", scope_id=scope_a["scope_id"], settings_file=settings, stamp="t1"
+            )
+            self.assertNotEqual(path_a.parent.parent, path_other.parent.parent)
 
 
 if __name__ == "__main__":

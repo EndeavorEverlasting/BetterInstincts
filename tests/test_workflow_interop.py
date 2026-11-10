@@ -6,11 +6,18 @@ from pathlib import Path
 from unittest.mock import patch
 
 from betterinstincts.control_handoff import (
-    HandoffError, exclusive_desktop_owner, exclusive_screen_owner,
+    HandoffError,
+    exclusive_desktop_owner,
+    exclusive_live_hud_surface,
+    exclusive_screen_owner,
 )
 from betterinstincts.player_presence import PresenceProbe
 from betterinstincts.workflow_interop import (
-    CooperativeScreenQueue, QueuedStep, MAX_QUEUE,
+    CooperativeScreenQueue,
+    QueuedStep,
+    MAX_QUEUE,
+    assess_live_hud_surface_claim,
+    peer_hud_leases_for_overlay_clear,
 )
 
 
@@ -168,6 +175,18 @@ class CanonicalScreenLockTests(unittest.TestCase):
                 lambda: PresenceProbe(False, False, last_input_age_ms=100000),
                 lambda: True, idle_ms=14999,
             )
+
+    def test_skills_lease_blocks_phone_claim(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with exclusive_live_hud_surface("BOTTOM_RIGHT_PANEL", lock_root=root):
+                out = assess_live_hud_surface_claim("PHONE", lock_root=root)
+                self.assertEqual(out["state"], "WAITING_FOR_AGENT")
+                self.assertEqual(out["gate"], "PEER_HUD_SURFACE_LEASED")
+                self.assertTrue(out["retain_work"])
+                self.assertIn("BOTTOM_RIGHT_PANEL", out["peer_surfaces"])
+                leases = peer_hud_leases_for_overlay_clear(lock_root=root)
+                self.assertEqual(leases[0]["clearable_kind"], "BOTTOM_RIGHT_PANEL_EXPANDED")
 
 
 if __name__ == "__main__":

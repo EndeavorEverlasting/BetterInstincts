@@ -841,6 +841,27 @@ class DispatchedIsNotMaximizedTests(unittest.TestCase):
         )
         self.assertEqual(plan["cells_needing_work"], 1)
         self.assertEqual(plan["state"], "HOUSEHOLD_SKILL_FORCE_PLAN_READY")
+        from betterinstincts.diy_skill_force import resolve_force_gap_commands
+
+        skipped = resolve_force_gap_commands(
+            bundle="full_unlock",
+            observed_levels={"handiness": 0, "cooking": 10},
+            skip_skill_ids=["handiness"],
+        )
+        self.assertNotIn(
+            "handiness",
+            {r["skill_id"] for r in skipped["rows"]},
+        )
+        self.assertIn("handiness", skipped["skipped_panel_falsified"])
+        servo = resolve_force_gap_commands(
+            bundle="full_unlock",
+            observed_levels={"dancing": 0, "cooking": 10, "media_production": 0},
+            life_state="servo",
+        )
+        ids = {r["skill_id"] for r in servo["rows"]}
+        self.assertNotIn("dancing", ids)
+        self.assertNotIn("media_production", ids)
+        self.assertIn("dancing", servo["skipped_life_state_unavailable"])
 
     def test_contract_pins_claim_language_guard(self):
         cfg = load_contract()
@@ -1035,8 +1056,9 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         self.assertIn("J=work/career", cues["bottom_right_open"])
         self.assertFalse(algo["lean_panel_sequence"]["fresh_arm_before_every_panel_letter"])
         self.assertTrue(algo["lean_panel_sequence"]["arm_once_per_skill_beat"])
+        lean_order = algo["lean_panel_sequence"]["order"]
         self.assertEqual(
-            algo["lean_panel_sequence"]["order"][:5],
+            lean_order[:5],
             [
                 "BORROW_SIMS",
                 "ONE_PINNED_TERRAIN_ARM",
@@ -1045,12 +1067,22 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
                 "J_WORK_NAME_PROOF",
             ],
         )
+        self.assertLess(
+            lean_order.index("L_SCROLL_FULL_LIST_INVENTORY"),
+            lean_order.index("TYPE_ONLY_ATTESTED_NON_YELLOW"),
+        )
+        self.assertTrue(algo["lean_panel_sequence"]["inventory_before_type"])
         self.assertEqual(
             algo["lean_panel_sequence"]["active_sim_camera"]["refocus_hotkey"],
             "Enter",
         )
         inv = algo["lean_panel_sequence"]["skills_panel_inventory"]
         self.assertEqual(inv["gap_cue"], "NON_YELLOW_ROW_BELOW_TARGET")
+        self.assertTrue(inv["inventory_before_type"])
+        self.assertIn("TYPE_BEFORE_L_INVENTORY_THIS_BEAT", inv["forbidden_waste"])
+        self.assertIn("INVENTORY_WHILE_WORK_CAREER_SELECTED", inv["forbidden_waste"])
+        self.assertIn("TYPE_BEFORE_YELLOW_LIST_CHECKED", inv["forbidden_waste"])
+        self.assertIn("CAMERA_ZOOM_OUT_DURING_SKILLS_INVENTORY", inv["forbidden_waste"])
         self.assertIn("REPEATED_TERRAIN_RMB_PER_HOTKEY", algo["lean_skill_beat_forbidden"])
         self.assertIn("ARM_BEFORE_EVERY_PANEL_LETTER", algo["lean_skill_beat_forbidden"])
         self.assertTrue(algo["console_field_focused_after_open"])
@@ -1099,6 +1131,8 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         self.assertEqual(pet["max_level"], 5)
         self.assertIn("Skill_Dog 5", pet["command"])
         from betterinstincts.diy_skill_force import (
+            assess_inventory_before_type,
+            assess_skills_panel_not_work,
             plan_force_gaps_beat,
             resolve_force_gap_commands,
         )
@@ -1115,16 +1149,85 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
             forced["media_production_canonical"],
             "stats.set_skill_level Major_MediaProduction 10",
         )
-        beat = plan_force_gaps_beat(
+        work_open = assess_skills_panel_not_work(
+            skills_panel_attested=True, work_or_career_panel_open=True
+        )
+        self.assertFalse(work_open["allowed"])
+        self.assertEqual(work_open["state"], "SKILLS_PANEL_DENIED_WORK_CAREER_OPEN")
+        denied_work = assess_inventory_before_type(
+            l_inventory_attested=True,
+            skills_panel_attested=True,
+            yellow_list_checked_first=True,
+            observed_levels_this_beat={"programming": 10},
+            work_or_career_panel_open=True,
+        )
+        self.assertFalse(denied_work["allowed"])
+        self.assertEqual(denied_work["state"], "TYPE_DENIED_WRONG_PANEL")
+        denied = assess_inventory_before_type(
+            l_inventory_attested=False,
+            skills_panel_attested=True,
+            yellow_list_checked_first=True,
+            observed_levels_this_beat={"programming": 10},
+        )
+        self.assertFalse(denied["allowed"])
+        self.assertEqual(denied["state"], "TYPE_DENIED_INVENTORY_NOT_ATTESTED")
+        denied_yellow = assess_inventory_before_type(
+            l_inventory_attested=True,
+            skills_panel_attested=True,
+            yellow_list_checked_first=False,
+            observed_levels_this_beat={"programming": 10},
+        )
+        self.assertFalse(denied_yellow["allowed"])
+        self.assertEqual(denied_yellow["state"], "TYPE_DENIED_YELLOW_LIST_NOT_CHECKED_FIRST")
+        denied_empty = assess_inventory_before_type(
+            l_inventory_attested=True,
+            skills_panel_attested=True,
+            yellow_list_checked_first=True,
+            observed_levels_this_beat=None,
+        )
+        self.assertFalse(denied_empty["allowed"])
+        admitted = assess_inventory_before_type(
+            l_inventory_attested=True,
+            skills_panel_attested=True,
+            yellow_list_checked_first=True,
+            observed_levels_this_beat={"programming": 10, "media_production": 0},
+        )
+        self.assertTrue(admitted["allowed"])
+        blocked_beat = plan_force_gaps_beat(
             member_key="SIM_D_P3",
             portrait_client_xy=(522, 1055),
             bundle="full_unlock",
             redo=True,
             always_include=["media_production"],
         )
+        self.assertEqual(blocked_beat["state"], "FORCE_GAPS_BEAT_READY")
+        self.assertIsNone(blocked_beat["gaps"])
+        self.assertFalse(blocked_beat["type_admit"]["allowed"])
+        self.assertIn("READ_YELLOW_MAXED_ROWS_FIRST", blocked_beat["order"])
+        self.assertIn("CLOSE_WORK_CAREER_PANEL", blocked_beat["order"])
+        self.assertLess(
+            blocked_beat["order"].index("READ_YELLOW_MAXED_ROWS_FIRST"),
+            blocked_beat["order"].index(
+                "CONSOLE_STRIP_THEN_TYPE_GAP_COMMANDS_ONLY_IF_NON_YELLOW"
+            ),
+        )
+        self.assertIn("TYPE_BEFORE_YELLOW_LIST_CHECKED", blocked_beat["forbidden"])
+        self.assertIn("INVENTORY_WHILE_WORK_CAREER_SELECTED", blocked_beat["forbidden"])
+        beat = plan_force_gaps_beat(
+            member_key="SIM_D_P3",
+            portrait_client_xy=(522, 1055),
+            bundle="full_unlock",
+            redo=True,
+            always_include=["media_production"],
+            l_inventory_attested=True,
+            skills_panel_attested=True,
+            yellow_list_checked_first=True,
+            observed_levels={"programming": 10, "media_production": 0},
+        )
         self.assertEqual(beat["state"], "FORCE_GAPS_BEAT_READY")
+        self.assertTrue(beat["type_admit"]["allowed"])
         self.assertGreaterEqual(beat["gaps"]["count"], 40)
-        self.assertIn("CONSOLE_STRIP_THEN_TYPE_GAP_COMMANDS", beat["order"])
+        self.assertTrue(beat["inventory_before_type"])
 
     def test_extrapolate_skill_iterations_and_white_bounds(self):
         from pathlib import Path

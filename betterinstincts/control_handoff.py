@@ -211,3 +211,48 @@ def screen_owner_busy(process_id: int, *, lock_root: Path | None = None) -> bool
     root = _lock_dir(lock_root)
     lock = root / ("screen-" + str(process_id) + ".lock")
     return desktop_owner_busy(lock_root=lock_root) or lock.exists() or lock.is_symlink()
+
+
+_HUD_SURFACES = frozenset({"BOTTOM_RIGHT_PANEL", "PHONE", "CHEAT_CONSOLE"})
+
+
+def _hud_lock_name(surface: str) -> str:
+    if surface not in _HUD_SURFACES:
+        raise HandoffError("UNKNOWN_LIVE_HUD_SURFACE")
+    return "hud-" + surface + ".lock"
+
+
+@contextmanager
+def exclusive_live_hud_surface(
+    surface: str,
+    *,
+    lock_root: Path | None = None,
+) -> Iterator[None]:
+    """One exclusive Live HUD surface (Skills/phone/console) across agents.
+
+    Nested under the desktop lock. Peer claim → SCREEN_OWNER_BUSY / WAITING_FOR_AGENT.
+    Never auto-steals. Operator 2026-11-10: phone vs Skills reset each other.
+    """
+    name = _hud_lock_name(str(surface))
+    with exclusive_desktop_owner(lock_root=lock_root):
+        with _named_screen_lock(name, lock_root=lock_root):
+            yield
+
+
+def live_hud_surface_busy(surface: str, *, lock_root: Path | None = None) -> bool:
+    """Advisory: True when another agent holds this surface or the desktop."""
+    name = _hud_lock_name(str(surface))
+    root = _lock_dir(lock_root)
+    lock = root / name
+    return desktop_owner_busy(lock_root=lock_root) or lock.exists() or lock.is_symlink()
+
+
+def list_busy_live_hud_surfaces(*, lock_root: Path | None = None) -> list[str]:
+    """Surfaces with an existing lease file (advisory; exclusive_* is authority)."""
+    root = _lock_dir(lock_root)
+    busy: list[str] = []
+    for surface in sorted(_HUD_SURFACES):
+        lock = root / _hud_lock_name(surface)
+        if lock.exists() or lock.is_symlink():
+            busy.append(surface)
+    return busy

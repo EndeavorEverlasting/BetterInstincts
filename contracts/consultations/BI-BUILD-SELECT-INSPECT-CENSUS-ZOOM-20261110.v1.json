@@ -1,0 +1,75 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-BUILD-SELECT-INSPECT-CENSUS-ZOOM-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "P95 BUILD_SELECT_INSPECT_ESCAPE + BUILD_TOP_DOWN_MAP: pin operator-centered Build T room-fit zoom as the default census zoom across agents/host_stack/live adapters. Census loop is Select-click one object → read bottom-right params → document catalog name + client_xy → Escape → next. Preserve the centered frame (no rezoom/pan once attested). Needs-investigation opportunistic map remains preferred in Live; Build Select-inspect is the cohesive unknown/stale census. P124: extends camera-traverse zoom ladder + lot_floor_map; no purchase/Gallery; Escape on grab.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "CLAIM",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "VIEW_SCENE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "docs/CAMERA_TRAVERSE.md",
+    "contracts/camera-traverse.v1.json",
+    "contracts/lot-floor-map.v1.json",
+    "betterinstincts/camera_traverse.py",
+    "betterinstincts/lot_floor_map.py",
+    "betterinstincts/room_map_traverse.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_ZOOM_AND_CENSUS_CONTRACT_PLUS_LOCAL_FLOOR_STORE_NOT_FULL_ROOM_HIT_CERT",
+  "player_save_control_impact": "Writes only profile floor map under LOCALAPPDATA. Live Select-inspect clicks are observe/document only; Escape clears selection; never purchase, place, sell, inventory, Gallery, or save edit. Camera frame preserved.",
+  "expected_outcome": "BUILD_TOP_DOWN_MAP zoom mode default_for lot_floor_map/room_map_traverse; BUILD_SELECT_INSPECT_ESCAPE loop; record_build_select_inspect + BUILD_CENSUS_ITEM; tests/docs; live documentation of centered-frame objects.",
+  "negative_tests": [
+    "BUILD_TOP_DOWN_MAP without named floor-census goal fails closed",
+    "Unknown object kind fails closed",
+    "Missing catalog name / client_xy / capture_ref fails closed",
+    "execute_allowed remains false"
+  ],
+  "rollback_path": "Revert feature files; prior KEY-only census + zoom modes without BUILD_TOP_DOWN_MAP; BI-002 ACTIVE; Fifth Gear S2 panel still open.",
+  "unresolved_unknowns": [
+    "Full room object catalog still incomplete until Select-inspect loop finishes",
+    "Skills-panel LOCAL_OBSERVED (Fifth Gear S2) still open"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-BUILD-SELECT-INSPECT-CENSUS-ZOOM-20261110.v1.json",
+    "contracts/camera-traverse.v1.json",
+    "contracts/lot-floor-map.v1.json",
+    "betterinstincts/camera_traverse.py",
+    "betterinstincts/lot_floor_map.py",
+    "betterinstincts/room_map_traverse.py",
+    "tests/test_camera_zoom_policy.py",
+    "tests/test_lot_floor_map.py",
+    "tests/test_room_map_traverse.py",
+    "docs/CAMERA_TRAVERSE.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator 2026-11-10: centered room-fit zoom is the census default; Select→params→document→Escape is safer and more cohesive than blind hotkey sampling or Build purchases. Live Select-inspect sampling still needs exact-build consultation before SendInput."
+}

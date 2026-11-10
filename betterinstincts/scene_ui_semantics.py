@@ -592,6 +592,17 @@ def assess_overlay_clear_after_metadata(
         if item.get("player_owned") is True:
             withheld.append({"kind": kind, "reason": "PLAYER_OWNED_MODAL"})
             continue
+        # Peer Live HUD lease (Skills vs phone): never clear their surface.
+        peer_leases = observation.get("peer_hud_leases")
+        if isinstance(peer_leases, list):
+            peer_kinds = {
+                row.get("clearable_kind")
+                for row in peer_leases
+                if isinstance(row, Mapping)
+            }
+            if kind in peer_kinds:
+                withheld.append({"kind": kind, "reason": "PEER_LEASED_HUD_SURFACE"})
+                continue
         dismiss = item.get("dismiss_target")
         if (
             not isinstance(dismiss, Mapping)

@@ -1,0 +1,167 @@
+{
+  "schema": "betterinstincts.lot-floor-map/v1",
+  "version": 1,
+  "authority": "docs/HOUSEHOLD_SCOPE.md",
+  "owners": {
+    "map": "betterinstincts/lot_floor_map.py",
+    "profile_paths": "betterinstincts/installation_profiles.py",
+    "build_trigger": "betterinstincts/host_stack.py",
+    "miss_causes": "betterinstincts/click_miss_cause.py",
+    "object_pick": "contracts/camera-traverse.v1.json#OBJECT_PICK_IDENTIFY",
+    "room_traverse": "betterinstincts/room_map_traverse.py"
+  },
+  "purpose": "Per-installation-profile lot floor map: computers, laptops, robotics workstations, landmarks, traversable notes, click paths, and a relative graph of room adjacencies. Agents accumulate observations over time. Private local store only.",
+  "execute_allowed_default": false,
+  "proof_ceiling": "PROFILE_FLOOR_MAP_OFFLINE_AND_LOCAL_STORE_NOT_LIVE_OBJECT_HIT_CERT",
+  "storage": {
+    "windows": "%LOCALAPPDATA%/BetterInstincts/households/<profile-id>/floors/<lot-key>.json",
+    "linux": "$XDG_CONFIG_HOME/betterinstincts/households/<profile-id>/floors/<lot-key>.json",
+    "forbidden": ["REPO_CHECKOUT", "DIST_GAME_HOST_AS_CANONICAL", "SIMS_SAVES", "SIMS_INSTALL"]
+  },
+  "lot_key_pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+  "object_kinds": [
+    "COMPUTER_DESKTOP",
+    "COMPUTER_LAPTOP",
+    "ROBOTICS_WORKSTATION",
+    "PHONE_HUD",
+    "PATH_NOTE",
+    "AVOID_LIGHT_DECO",
+    "AVOID_SERVO_BODY",
+    "LANDMARK_DINING_TABLE",
+    "LANDMARK_RUG_CLUSTER",
+    "BUILD_CENSUS_ITEM"
+  ],
+  "build_select_inspect": {
+    "id": "BUILD_SELECT_INSPECT_ESCAPE",
+    "zoom_mode": "BUILD_TOP_DOWN_MAP",
+    "loop": [
+      "ENSURE_SELECT_TOOL",
+      "LMB_CLICK_ITEM_CENTER",
+      "READ_BOTTOM_RIGHT_PARAMS",
+      "DOCUMENT_CATALOG_NAME_AND_BBOX_CENTER",
+      "ESCAPE_MANDATORY",
+      "NEXT_OBJECT"
+    ],
+    "click_target": "BBOX_CENTER_NOT_CORNER_OR_GUESS",
+    "on_grab_or_held": ["ESCAPE", "ESCAPE_AGAIN_IF_STILL_HELD", "DO_NOT_PLACE_SELL_OR_INVENTORY"],
+    "preserve_operator_centered_frame": true,
+    "capture": "PRINTWINDOW",
+    "helper": "record_build_select_inspect",
+    "operator_correction_20261110": "Census click must hit the measured item center (bbox center). Escape is mandatory after every inspect. Grab without Escape is a regression. Do not re-zoom/pan away from operator-centered room-fit."
+  },
+  "builder_placement_auto_map": {
+    "id": "BUILD_PLACEMENT_AUTO_MAP",
+    "setting_key": "learning.build_placement_auto_map",
+    "default": true,
+    "runtime": "HOST_LISTENER_COOPERATIVE_TICK",
+    "not_runtime": [
+      "OS_TASK_SCHEDULER",
+      "CRON",
+      "DAEMON",
+      "AUTOSTART_SERVICE"
+    ],
+    "install": "bootstrap.py install → managed host_listener launcher",
+    "uninstall": "bootstrap.py uninstall removes launcher; auto-map stops",
+    "when": "BUILD_OR_BUY_MODE_AND_PLAYER_OR_BUILDER_PLACES_OBJECT",
+    "trigger": "LMB_PLACE_CONFIRM",
+    "note": "Builders place with LMB (not Escape). While BetterInstincts is installed, host_listener Build ticks record placed objects into the profile floor graph automatically. No OS cron — cooperative host ticks only; uninstallable with the toolkit.",
+    "require_bbox_center": true,
+    "graph_links": [
+      "ON_TOP_OF",
+      "SEATED_AT",
+      "SLOTTED_TO",
+      "PARENT_SURFACE",
+      "LINKED_WITH"
+    ],
+    "helper": "record_builder_placement",
+    "host_hooks": [
+      "betterinstincts/host_listener.py",
+      "betterinstincts/host_stack.py"
+    ]
+  },
+  "graph": {
+    "schema": "betterinstincts.lot-floor-map-graph/v1",
+    "node_roles": ["LANDMARK", "TARGET", "AVOID", "PATH_ANCHOR", "SURFACE", "SLOTTED_CHILD"],
+    "edge_relations": [
+      "COLOCATED_LANDMARK",
+      "CORNER_OF",
+      "ADJACENT",
+      "PAN_HINT",
+      "ON_TOP_OF",
+      "SEATED_AT",
+      "SLOTTED_TO",
+      "PARENT_SURFACE",
+      "LINKED_WITH"
+    ],
+    "note": "Relative camera/graph edges; chairs-on-desks and slotted furniture use ON_TOP_OF/SEATED_AT/SLOTTED_TO. client_xy is bbox-center, camera-revision bound."
+  },
+  "object_statuses": [
+    "SKELETON",
+    "CANDIDATE",
+    "OBSERVED",
+    "HIT_ATTESTED",
+    "MEMORIALIZED",
+    "STALE_NEEDS_REMAP",
+    "WRONG_CONTROL",
+    "MISS"
+  ],
+  "memorialization": {
+    "id": "FLOOR_MAP_MEMORIALIZE",
+    "operator_correction_20261110": "Once an item is mapped it is memorialized and only updated if it changes. Example: interact and the expected interaction is absent → object changed → remap that node. Continuous algorithm: reuse memorialized graph; remap only invalidated nodes.",
+    "promote_from": ["HIT_ATTESTED", "OBSERVED"],
+    "frozen_fields": [
+      "kind",
+      "client_xy",
+      "path_ids",
+      "expected_interactions",
+      "graph_node_id",
+      "memorialized_at"
+    ],
+    "update_when": [
+      "EXPECTED_INTERACTION_MISSING",
+      "WRONG_CONTROL_ON_MEMORIALIZED_TARGET",
+      "EXPLICIT_OPERATOR_REMAP",
+      "OBJECT_GONE_FROM_TOP_DOWN_CENSUS"
+    ],
+    "on_invalidation_status": "STALE_NEEDS_REMAP",
+    "refuse_blind_overwrite": true,
+    "continuous_loop": [
+      "LOAD_MEMORIALIZED_GRAPH",
+      "PREFER_NEEDS_INVESTIGATION_OPPORTUNITY_OVER_BUILD_SAMPLING",
+      "ATTEMPT_KNOWN_PATH_OR_INTERACT",
+      "IF_EXPECTED_INTERACTION_PRESENT_KEEP",
+      "IF_EXPECTED_INTERACTION_MISSING_INVALIDATE",
+      "REMAP_ONLY_STALE_NODES",
+      "MEMORIALIZE_NEW_OR_UPDATED"
+    ],
+    "needs_opportunity": {
+      "id": "NEEDS_INVESTIGATION_FLOOR_MAP",
+      "owner": "betterinstincts/lot_floor_map.py",
+      "host": "betterinstincts/host_stack.py",
+      "when": "HOST_WORLD_TARGET_OR_NEED_OBJECT_INVESTIGATION",
+      "why": "Operator 2026-11-10: while satisfying needs, mapping the investigated item is faster than Build-mode sampling sprints.",
+      "behavior": "On framed world_target / need-object observation, upsert OBSERVED candidate (or assess memorial). Never SendInput. Build T census remains fallback for unknowns/stale-only.",
+      "helper": "opportunistic_needs_map"
+    }
+  },
+  "paths": [
+    "computer_order_upgrade_parts",
+    "spawn_crafting_supplies",
+    "phone_order_upgrade_parts"
+  ],
+  "auto_on_build": {
+    "setting_key": "learning.lot_floor_map_auto",
+    "default": true,
+    "behavior": "When host observes Build/Buy mode, ensure floor map skeleton for active profile + lot_key exists and record BUILD_ENSURE trigger. Does not scan game files or SendInput."
+  },
+  "coordinate_space": {
+    "kind": "CLIENT_PIXELS_CAMERA_REVISION_BOUND",
+    "note": "client_xy valid only with matching capture_ref/camera_revision; never treat stale pixels as HIT. MEMORIALIZED xy is durable until invalidation — not rewritten by casual OBSERVED noise."
+  },
+  "seed_kinds_on_ensure": [
+    "COMPUTER_DESKTOP",
+    "COMPUTER_LAPTOP",
+    "ROBOTICS_WORKSTATION",
+    "PHONE_HUD"
+  ]
+}

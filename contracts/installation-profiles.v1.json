@@ -8,6 +8,8 @@
     "learning.hover_observations": false,
     "learning.hotkey_observations": false,
     "learning.cheat_observations": false,
+    "learning.lot_floor_map_auto": true,
+    "learning.build_placement_auto_map": true,
     "automation.cooperative_screen_queue": false,
     "automation.host_suggestions": false,
     "privacy.local_evaluation_receipts": false

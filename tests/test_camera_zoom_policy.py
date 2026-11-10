@@ -6,8 +6,10 @@ import unittest
 from betterinstincts.camera_traverse import (
     assess_agent_zoom_mode,
     plan_agent_default_view,
+    plan_object_pick_identify,
     resolve_zoom_mode_alias,
     load_contract,
+    zoom_controls,
 )
 from betterinstincts.active_sim_camera_lock import evaluate_active_sim_camera_lock
 from betterinstincts.scene_ui_semantics import assess_overlay_clear_after_metadata
@@ -114,6 +116,28 @@ class AgentZoomPolicyTests(unittest.TestCase):
         self.assertEqual(ok["mode"], "ENVIRONMENT_NAV")
         self.assertEqual(ok["zoom_in_fraction_of_max"], 0.5)
 
+    def test_build_top_down_map_is_default_census_zoom(self):
+        self.assertEqual(resolve_zoom_mode_alias("ROOM_CENSUS_ZOOM"), "BUILD_TOP_DOWN_MAP")
+        self.assertEqual(resolve_zoom_mode_alias("FLOOR_MAP_ZOOM"), "BUILD_TOP_DOWN_MAP")
+        blocked = assess_agent_zoom_mode(intent="BUILD_TOP_DOWN_MAP", observation=obs())
+        self.assertEqual(blocked["gate"], "BUILD_TOP_DOWN_MAP_GOAL_REQUIRED")
+        ok = assess_agent_zoom_mode(
+            intent="BUILD_TOP_DOWN_MAP",
+            observation=obs(build_top_down_map_room_fit_attested=True),
+            planning_goal={
+                "goal_id": "goal:floor-census-n4",
+                "kind": "LOT_FLOOR_MAP_CENSUS",
+                "source": "HOST_TASK",
+            },
+        )
+        self.assertEqual(ok["mode"], "BUILD_TOP_DOWN_MAP")
+        self.assertEqual(ok["zoom_in_fraction_of_max"], 0.35)
+        self.assertTrue(ok["preserve_operator_centered_frame"])
+        self.assertTrue(ok["forbid_rezoom"])
+        self.assertEqual(ok["census_inspect"], "BUILD_SELECT_INSPECT_ESCAPE")
+        row = load_contract()["agent_zoom_policy"]["modes"]["BUILD_TOP_DOWN_MAP"]
+        self.assertIn("lot_floor_map", row["default_for"])
+
     def test_camera_lock_blocks_parked_street_topdown(self):
         out = evaluate_active_sim_camera_lock(
             capture_ref=CAPTURE,
@@ -138,6 +162,39 @@ class OverlayClearAfterMetadataTests(unittest.TestCase):
         )
         self.assertEqual(out["state"], "OVERLAY_CLEAR_WITHHELD")
         self.assertEqual(out["withheld"][0]["reason"], "METADATA_NOT_TRACKED")
+
+    def test_withholds_peer_leased_phone_surface(self):
+        out = assess_overlay_clear_after_metadata(
+            capture_ref=CAPTURE,
+            zoom_mode="RIGHT_CLICK_VIEW",
+            observation=obs(
+                peer_hud_leases=[{
+                    "surface": "PHONE",
+                    "clearable_kind": "PHONE_INTERFACE_EXPANDED",
+                    "reason": "PEER_LEASED_HUD_SURFACE",
+                }],
+                clearable_overlays=[{
+                    "kind": "PHONE_INTERFACE_EXPANDED",
+                    "capture_ref": CAPTURE,
+                    "visible": True,
+                    "metadata_tracked": True,
+                    "accounted_by": "BETTER_INSTINCTS",
+                    "dismiss_target": {
+                        "capture_ref": CAPTURE,
+                        "visible": True,
+                        "enabled": True,
+                        "obscured": False,
+                        "hitbox": [200, 800, 260, 860],
+                        "cues": [
+                            {"source": "visual", "token": "tracked_overlay_dismiss_control"},
+                            {"source": "operator", "token": "tracked_overlay_dismiss_confirmed"},
+                        ],
+                    },
+                }],
+            ),
+        )
+        self.assertEqual(out["state"], "OVERLAY_CLEAR_WITHHELD")
+        self.assertEqual(out["withheld"][0]["reason"], "PEER_LEASED_HUD_SURFACE")
 
     def test_ready_only_after_accounted_metadata_and_hitbox(self):
         out = assess_overlay_clear_after_metadata(
@@ -186,6 +243,29 @@ class OverlayClearAfterMetadataTests(unittest.TestCase):
             observation=obs(),
         )
         self.assertEqual(out["gate"], "OVERLAY_CLEAR_NOT_APPLICABLE")
+
+    def test_zoom_controls_are_hotkey_not_right_click(self):
+        zc = zoom_controls()
+        self.assertEqual(zc["semantic_split"], "ZOOM_MODE_IS_NOT_ZOOM_CONTROL")
+        self.assertEqual(zc["controls"]["CAMERA_ZOOM_IN"]["chord"], ["Z"])
+        self.assertEqual(zc["controls"]["CAMERA_ZOOM_OUT"]["chord"], ["X"])
+        self.assertIn("RIGHT_CLICK", zc["not_zoom_controls"])
+        self.assertIn("RIGHT_CLICK_VIEW", zc["not_zoom_controls"])
+        forbid = set(load_contract().get("forbidden") or [])
+        self.assertIn("RIGHT_CLICK_AS_ZOOM_ACTUATOR", forbid)
+
+    def test_object_pick_identify_plans_z_or_wheel(self):
+        plan = plan_object_pick_identify(
+            target_id="desk_computer",
+            observation={"zoom_mode_observed": "TRAVEL_AFAR"},
+        )
+        self.assertEqual(plan["state"], "OBJECT_PICK_IDENTIFY_PLAN_READY")
+        self.assertTrue(plan["leave_travel_afar_first"])
+        self.assertEqual(plan["zoom_actuator"]["chord"], ["Z"])
+        self.assertIn("RIGHT_CLICK", plan["zoom_actuator"]["forbidden"])
+        self.assertFalse(plan["execute_allowed"])
+        self.assertIn("ZOOM_IN_VIA_CAMERA_ZOOM_IN_OR_WHEEL", plan["steps"])
+        self.assertIn("IDENTIFY_OBJECT_FROM_ZOOMED_CAPTURE", plan["steps"])
 
 
 if __name__ == "__main__":

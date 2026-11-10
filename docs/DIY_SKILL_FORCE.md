@@ -47,7 +47,7 @@ Library plans keep `execute_allowed=false`. Live execute requires an ACTIVE `hos
 
 **Canonical cheat list:** `skill_catalog` owns every `skill_id` → `skill_stat` → `stats.set_skill_level …` spelling. Print with `python -m scripts.diy_skill_force commands` (optional `--bundle remote_income|full_unlock`). Never invent stats — e.g. `stats.set_skill_level Major_MediaProduction 10` (with **i**); `Major_MediaProducton` is a no-op typo.
 
-**Force gaps (codified Live path):** prefer `python -m scripts.diy_skill_force force-gaps` over one-shot agent scripts. A live invocation must supply the *observed* portrait key and location, exact `--members N` / ordered `--roster-key` list, existing `--profile-id` (or active profile), observed `--save-key` / `--household-key`, `--session-id`, PID, console proof and screen admission. **Always L-inventory first** on the intended Sim (J name proof). Type **only** non-yellow / absent rows — never re-type gold max rows; Photography and Pet Training max at 5. Never confuse Servo Olga (`OLGA_P2`) with human Charlee (`CHARLEE_P3`). Inherited `--all-listed-max` ledger rows are **not** fresh panel proof.
+**Force gaps (codified Live path):** prefer `python -m scripts.diy_skill_force force-gaps` over one-shot agent scripts. A live invocation must supply the *observed* portrait key and location, exact `--members N` / ordered `--roster-key` list, existing `--profile-id` (or active profile), observed `--save-key` / `--household-key`, `--session-id`, PID, console proof and screen admission. **Order of operations is mandatory:** J name proof → **close Work** → L Skills (lightbulb, never Career) → read **yellow list first** → full scroll colored/gray → `--skills-panel-attested --yellow-list-checked-first --l-inventory-attested` + this-beat `--observed-level skill=N` → type **only** non-yellow / absent → play → L confirm / panel-record. Without attestation, execute scrolls L and returns `FORCE_GAPS_INVENTORY_ONLY_TYPE_DENIED` (no cheat typing). Stale ledger L0/missing is not proof absent. Never re-type gold max rows; Photography and Pet Training max at 5. After L confirm still-absent → `PANEL_FALSIFIED` and **stop retyping** (skip unless `--redo`). Never zoom/roam during inventory. Never confuse Servo Olga (`OLGA_P2`) with human Charlee (`CHARLEE_P3`). Inherited `--all-listed-max` ledger rows are **not** fresh panel proof.
 
 **Scroll the full Skills list (operator 2026-11-10):** after burger-expand, wheel-scroll the list (`plan_skills_panel_inventory` / `skills-inventory-plan`) so every row is seen. Gold/yellow checkmark rows are maxed; **non-yellow** rows are gap targets. Do not trust the first viewport alone. Resolve gaps with `gap_targets_from_observed_levels` or `commands --gaps-from levels.json`.
 
@@ -127,7 +127,12 @@ python -m scripts.diy_skill_force panel-record --session-id example-local-sessio
   --display-name "Sim Alpha" --display-name "Sim Beta" --display-name "Sim Gamma" --display-name Sim Delta \
   --member-key sim-002 --member-display-name "Sim Beta" --all-listed-max --skill-level cooking=10
 python -m scripts.diy_skill_force roster-status --session-id example-local-session
+python -m scripts.diy_skill_force skills-export \
+  --profile-id default --save-key example-save --household-key example-household \
+  --members 4 --roster-key sim-001 --roster-key sim-002 --roster-key sim-003 --roster-key sim-004
 ```
+
+`skills-export` writes a per-Sim skills list JSON under the **local installation profile** (`households/<profile-id>/exports/…`). Another user installing the app gets their own private profile/household data — never share or commit those exports. `DISPATCHED` rows are listed but `panel_proven` is false until `PANEL_OBSERVED*`.
 
 `PANEL_OBSERVED_MAX` skips maximize cells; `PANEL_OBSERVED` stores gaps below 10. `household_roster.members` is exact Live portrait count — **N** must be observed for each user's current household; example N=4 is synthetic. Never invent any portrait. Scoped ledger path: local user configuration under `households/<profile-id>/<scope-id>.json` (never a tracked repository fixture).
 

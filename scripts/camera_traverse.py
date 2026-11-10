@@ -6,6 +6,8 @@ Examples:
   python -m scripts.camera_traverse plan --dir E --dir N
   python -m scripts.camera_traverse plan --capture-only
   python -m scripts.camera_traverse rest --execute --session-id SID --process-id PID
+  python -m scripts.camera_traverse object-pick-plan --target-id desk_computer
+  python -m scripts.camera_traverse zoom-controls
 """
 from __future__ import annotations
 
@@ -25,8 +27,10 @@ from betterinstincts.camera_traverse import (
     assess_edge_interaction,
     evaluate_cursor_risk,
     load_contract,
+    plan_object_pick_identify,
     plan_traverse,
     safe_rest_point,
+    zoom_controls,
 )
 
 
@@ -297,10 +301,42 @@ def main(argv=None) -> int:
     risk.add_argument("--dir", action="append", default=[], dest="dirs")
     risk.set_defaults(handler="evaluate")
 
+    zc = sub.add_parser("zoom-controls", help="Show ZOOM_CONTROL actuators (Z/X/wheel; not RMB)")
+    zc.set_defaults(handler="zoom-controls")
+
+    opp = sub.add_parser(
+        "object-pick-plan",
+        help="Plan traverse→Z/wheel zoom-in→capture→identify→click (offline)",
+    )
+    opp.add_argument("--target-id", required=True)
+    opp.add_argument(
+        "--zoom-observed",
+        default=None,
+        help="Optional observed zoom class (e.g. TRAVEL_AFAR) to force leave-street-first",
+    )
+    opp.set_defaults(handler="object-pick-plan")
+
     args = p.parse_args(argv)
     try:
         if args.handler == "show":
             print(json.dumps(load_contract(), indent=2))
+            return 0
+        if args.handler == "zoom-controls":
+            print(json.dumps(zoom_controls(), indent=2))
+            return 0
+        if args.handler == "object-pick-plan":
+            obs = None
+            if args.zoom_observed:
+                obs = {"zoom_mode_observed": str(args.zoom_observed)}
+            print(
+                json.dumps(
+                    plan_object_pick_identify(
+                        target_id=str(args.target_id),
+                        observation=obs,
+                    ),
+                    indent=2,
+                )
+            )
             return 0
         if args.handler == "classify":
             print(

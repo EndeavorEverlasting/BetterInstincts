@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 5,
+  "version": 6,
   "authority": "docs/UI_CHROME.md",
   "owners": {
     "map": "betterinstincts/fixed_ui_click_map.py",
@@ -163,6 +163,20 @@
       "status": "PRINTWINDOW_MEASURED_20261109",
       "profile": "1920x1080",
       "notes": "Ellipsis …"
+    },
+    "live.escape_menu_save": {
+      "role": "ESCAPE_MENU_SAVE",
+      "client_xy": [960, 420],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "notes": "Pause/options MENU Save row — overwrites in-place; not for new disposable slots"
+    },
+    "live.escape_menu_save_as": {
+      "role": "ESCAPE_MENU_SAVE_AS",
+      "client_xy": [960, 422],
+      "status": "LIVE_MEASURED_20261110",
+      "profile": "1920x1080",
+      "notes": "Only 2px below Save — verify row highlight before click"
     },
     "live.top_live_people": {
       "role": "EXIT_BUILD_BUY_TO_LIVE",
@@ -823,6 +837,71 @@
     "y_row": 1045,
     "prefer_hotkey": true,
     "note": "Icon centers PrintWindow-measured; y=1045 mid-glyph. Prefer letter hotkeys; keep clicks so agents are never dark."
+  },
+  "escape_menu_1920x1080": {
+    "capture_ref": "dist/game-host/horizon-exec-20261110/",
+    "measured_at": "2026-11-10T04:00:00-05:00",
+    "profile": "1920x1080",
+    "location": "Centered pause/options MENU after ESC or top-right options gear",
+    "owner": "betterinstincts/fixed_ui_click_map.py",
+    "open_via": {
+      "options_gear_target_id": "live.top_options",
+      "notes": "Ellipsis opens options chrome; Save/Save As rows are in the centered MENU list"
+    },
+    "targets": {
+      "options_gear": {
+        "target_id": "live.top_options",
+        "client_xy": [1898, 22],
+        "role": "OPEN_OPTIONS_MENU",
+        "status": "LIVE_MEASURED_20261110"
+      },
+      "save": {
+        "target_id": "live.escape_menu_save",
+        "client_xy": [960, 420],
+        "role": "ESCAPE_MENU_SAVE",
+        "status": "LIVE_MEASURED_20261110"
+      },
+      "save_as": {
+        "target_id": "live.escape_menu_save_as",
+        "client_xy": [960, 422],
+        "role": "ESCAPE_MENU_SAVE_AS",
+        "status": "LIVE_MEASURED_20261110"
+      }
+    },
+    "save_vs_save_as_hazard": {
+      "vertical_separation_px": 2,
+      "within_default_hit_radius": true,
+      "hit_radius_px_ref": "thresholds_px.hit_radius",
+      "policy": "Never click SAVE when intent is SAVE_AS or ADD_NEW_SAVE path; distinct target_id and row highlight required",
+      "never_use_menu_save_for_new_slot": true
+    },
+    "save_game_dialog_1920x1080": {
+      "targets": {
+        "add_new_save": {
+          "target_id": "live.save_game_add_new_save",
+          "client_xy": null,
+          "status": "UNMEASURED_PLACEHOLDER",
+          "notes": "Top green+ ADD NEW SAVE row — remeasure before execute"
+        }
+      },
+      "allowed_click": ["ADD_NEW_SAVE_ROW_ONLY"],
+      "forbidden": [
+        "CLICK_EXISTING_SAVE_ROW",
+        "DELETE",
+        "OVERWRITE"
+      ],
+      "policy": "Disposable lab boots: new slot via ADD NEW SAVE only; never Delete or overwrite personal saves"
+    },
+    "forbidden": [
+      "USE_MENU_SAVE_FOR_NEW_SLOT",
+      "DELETE",
+      "OVERWRITE_EXISTING_SAVE",
+      "CONFUSE_SAVE_WITH_SAVE_AS"
+    ],
+    "not": [
+      "TREAT_SAVE_AND_SAVE_AS_AS_INTERCHANGEABLE",
+      "CLICK_EXISTING_SAVE_THUMBNAIL_IN_SAVE_GAME_DIALOG"
+    ]
   },
   "guarantees": [
     "Every fixed-UI click attempt is append-recorded with intended target_id and client_xy",

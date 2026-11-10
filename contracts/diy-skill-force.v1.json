@@ -54,6 +54,10 @@
       "bootstrap_household_skills": "python bootstrap.py household-skills -- --members N --bundle full_unlock --execute --roster-key PORTRAIT_1 [--roster-key PORTRAIT_2 ...] --first-portrait-attested --process-id PID --session-id ID",
       "panel_record": "python -m scripts.diy_skill_force panel-record --session-id ID --members N --roster-key P0 --roster-key P1 --member-key P0 --skill-level cooking=10 --skill-level robotics=3",
       "roster_status": "python -m scripts.diy_skill_force roster-status --session-id ID",
+      "skills_export": "python -m scripts.diy_skill_force skills-export --profile-id default --save-key observed-save --household-key observed-household --members N --roster-key P0 [--roster-key P1 ...]",
+      "skills_export_owner": "betterinstincts.diy_skill_force.export_household_skills_list",
+      "skills_export_path_owner": "betterinstincts.installation_profiles.household_skills_export_path",
+      "skills_export_note": "Per local installation profile only. Another installer has different private household data. Never commit exports to git.",
       "target_sim": "python -m scripts.diy_skill_force target-sim --session-id ID --members N --roster-key P0 --roster-key P1 --member-key P1 --display-name NAME --roster-index 1 --bundle full_unlock"
     }
   },
@@ -182,14 +186,26 @@
         "ENTER_CENTER_ACTIVE_SIM",
         "LEFT_CLICK_PORTRAIT",
         "J_WORK_NAME_PROOF",
-        "L_SKILLS_PROGRESS_SIGHT",
+        "L_SKILLS_BURGER_EXPAND",
+        "L_SCROLL_FULL_LIST_INVENTORY",
+        "RECORD_THIS_BEAT_OBSERVED_LEVELS",
+        "RESOLVE_NON_YELLOW_GAPS_FROM_THIS_BEAT_ONLY",
         "CTRL_SHIFT_C",
-        "TYPE_PROBE",
+        "TYPE_ONLY_ATTESTED_NON_YELLOW",
         "CLOSE_CONSOLE",
         "PLAY_BRIEF_THEN_PAUSE",
         "RESTORE_OPERATOR",
+        "L_CONFIRM_THEN_PANEL_RECORD",
         "MEASURE_EXTRAPOLATE_CONFIRM",
         "NEXT_SKILL_OR_PANEL_RECORD"
+      ],
+      "inventory_before_type": true,
+      "type_requires": ["l_inventory_attested", "observed_levels_this_beat"],
+      "forbidden_type_without_inventory": [
+        "TYPE_BEFORE_L_INVENTORY_THIS_BEAT",
+        "TYPE_FROM_STALE_LEDGER_GAPS",
+        "INFER_ABSENT_FROM_LEDGER_L0_ALONE",
+        "RETYPE_ALREADY_YELLOW_LEVEL_10"
       ],
       "play_brief_owner": "betterinstincts.diy_skill_force.plan_arm_then_play_brief",
       "measure_requires_play_brief": true,
@@ -206,18 +222,37 @@
           "helper": "scripts.win32_input.send_wheel",
           "note": "Scroll the Skills list to see every row; non-yellow (non-gold) rows are gap targets"
         },
-        "maxed_cue": "GOLD_ROW_CHECKMARK_LEVEL_10",
+        "maxed_cue": "YELLOW_GOLD_ROW_CHECKMARK",
         "gap_cue": "NON_YELLOW_ROW_BELOW_TARGET",
+        "absent_cue": "GRAY_OR_MISSING_AFTER_FULL_SCROLL",
+        "row_classes": ["YELLOW_MAXED", "NON_YELLOW_BELOW_TARGET", "GRAY_OR_ABSENT"],
         "gap_resolver": "betterinstincts.diy_skill_force.gap_targets_from_observed_levels",
         "force_gaps_owner": "betterinstincts.diy_skill_force.plan_force_gaps_beat",
-        "force_gaps_cli": "python -m scripts.diy_skill_force force-gaps --member-key portrait-001 --portrait-xy OBSERVED_X,OBSERVED_Y --bundle full_unlock --save-key observed-save --household-key observed-household --members 1 --roster-key portrait-001 --session-id active-host-session",
+        "force_gaps_cli": "python -m scripts.diy_skill_force force-gaps --member-key portrait-001 --portrait-xy OBSERVED_X,OBSERVED_Y --bundle full_unlock --skills-panel-attested --yellow-list-checked-first --l-inventory-attested --observed-level programming=10 --observed-level media_production=0 --save-key observed-save --household-key observed-household --members 1 --roster-key portrait-001 --session-id active-host-session",
+        "force_gaps_type_admit_owner": "betterinstincts.diy_skill_force.assess_inventory_before_type",
+        "skills_panel_not_work_owner": "betterinstincts.diy_skill_force.assess_skills_panel_not_work",
         "inventory_before_type": true,
         "inventory_hotkey": "L",
-        "inventory_rule": "Operator 2026-11-10: open Skills with L, burger-expand, scroll the FULL list, and type ONLY non-yellow / absent rows. Never re-type skills that already show gold Level 10. Photography and Pet Training max at 5.",
+        "inventory_rule": "P62 2026-11-10: J for name only, then CLOSE Work/Career. Open Skills with L. Read YELLOW maxed rows first. Then non-yellow below target and gray/absent. Type ONLY non-yellow/gray gaps. Never treat Work as Skills. Never zoom/roam the lot during inventory. Photography and Pet Training max at 5.",
+        "inventory_before_type_hard_gate": "Order: J name → close Work → L Skills → yellow list first → record levels → type non-yellow/gray only. CLI typing requires --skills-panel-attested --yellow-list-checked-first --l-inventory-attested --observed-level skill=N.",
         "never_forget": "skill_catalog is the canonical id→skill_stat→cheat list; full_unlock must cover adult majors; CLI: python -m scripts.diy_skill_force commands",
         "media_production_canonical": "stats.set_skill_level Major_MediaProduction 10",
         "inherited_all_listed_max_is_not_fresh_panel_proof": true,
-        "forbidden_waste": ["RETYPE_ALREADY_YELLOW_LEVEL_10", "FULL_BUNDLE_REDO_WITHOUT_L_INVENTORY", "FORCE_PHOTOGRAPHY_OR_PET_TRAINING_TO_10"]
+        "forbidden_waste": [
+          "RETYPE_ALREADY_YELLOW_LEVEL_10",
+          "RETYPE_AFTER_PANEL_FALSIFIED_ABSENT",
+          "FULL_BUNDLE_REDO_WITHOUT_L_INVENTORY",
+          "FORCE_PHOTOGRAPHY_OR_PET_TRAINING_TO_10",
+          "TYPE_BEFORE_L_INVENTORY_THIS_BEAT",
+          "TYPE_BEFORE_YELLOW_LIST_CHECKED",
+          "TYPE_FROM_STALE_LEDGER_GAPS",
+          "INFER_ABSENT_FROM_LEDGER_L0_ALONE",
+          "INVENTORY_WHILE_WORK_CAREER_SELECTED",
+          "TREAT_CAREER_PANEL_AS_SKILLS_LIST",
+          "TYPE_WHILE_WORK_CAREER_PANEL_OPEN",
+          "CAMERA_ZOOM_OUT_DURING_SKILLS_INVENTORY",
+          "MAP_ROAM_DURING_SKILLS_INVENTORY"
+        ]
       },
       "active_sim_camera": {
         "keep_focused": true,
@@ -270,6 +305,7 @@
       "ARM_BEFORE_EVERY_PANEL_LETTER",
       "PORTRAIT_PROBE_LOOP",
       "REARM_BETWEEN_CHEAT_LINES",
+      "MOOD_COLOR_AS_SELECTION",
       "WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY",
       "ASPIRATION_G_AS_DEFAULT_IDENTITY",
       "MEASURE_WITHOUT_PLAY_BRIEF",
@@ -757,7 +793,9 @@
       "skill_stat": "Major_Dancing",
       "pack_hint": "Get Together",
       "diy_role": "dance_unlocks",
-      "useful_at": "Dance styles"
+      "useful_at": "Dance styles",
+      "unavailable_for_life_states": ["servo"],
+      "notes": "LOCAL_OBSERVED Olga Servo household-n4-20261109: DJ Mixing yellow; Dancing absent after Major_Dancing force — do not retype on Servo."
     },
     {
       "id": "video_gaming",
@@ -799,7 +837,9 @@
       "skill_stat": "Major_VampireLore",
       "pack_hint": "Vampires",
       "diy_role": "occult_unlocks",
-      "useful_at": "Vampire research"
+      "useful_at": "Vampire research",
+      "unavailable_for_life_states": ["servo"],
+      "notes": "LOCAL_OBSERVED Olga Servo household-n4-20261109: absent after Major_VampireLore force — do not retype on Servo."
     },
     {
       "id": "archaeology",
@@ -815,7 +855,9 @@
       "skill_stat": "Major_SelvadoradianCulture",
       "pack_hint": "Jungle Adventure",
       "diy_role": "culture_unlocks",
-      "useful_at": "Local interactions"
+      "useful_at": "Local interactions",
+      "unavailable_for_life_states": ["servo"],
+      "notes": "LOCAL_OBSERVED Olga Servo household-n4-20261109: Archaeology yellow; Selvadoradian Culture absent after force — do not retype on Servo."
     },
     {
       "id": "acting",
@@ -836,7 +878,8 @@
       "typo_guard": [
         "Major_MediaProducton"
       ],
-      "notes": "Spelling is MediaProduction (with i). Major_MediaProducton is a no-op typo."
+      "unavailable_for_life_states": ["servo"],
+      "notes": "Spelling is MediaProduction (with i). Major_MediaProducton is a no-op typo. LOCAL_OBSERVED Olga Servo household-n4-20261109: Acting yellow; Media Production absent after force — do not retype on Servo."
     },
     {
       "id": "parenting",
@@ -910,7 +953,9 @@
       "skill_stat": "Major_NectarMaking",
       "pack_hint": "Horse Ranch",
       "diy_role": "nectar_unlocks",
-      "useful_at": "Nectar recipes"
+      "useful_at": "Nectar recipes",
+      "unavailable_for_life_states": ["servo"],
+      "notes": "LOCAL_OBSERVED Olga Servo household-n4-20261109: Equestrian yellow; Nectar Making absent after force — do not retype on Servo."
     },
     {
       "id": "equestrian",

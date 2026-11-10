@@ -48,6 +48,14 @@ class UIChromeTests(unittest.TestCase):
         with self.assertRaisesRegex(UIChromeError, "UNKNOWN_RESOLUTION_PROFILE"):
             resolve_target("catalog.search_field", mode="BUILD", profile="800x600", cfg=self.cfg)
 
+    def test_live_camera_zoom_hotkeys_catalogued(self) -> None:
+        by_id = {h["id"]: h for h in glossary_snapshot(self.cfg)["modes"]["LIVE"]["hotkeys"]}
+        self.assertEqual(by_id["CAMERA_ZOOM_IN"]["chord"], ["Z"])
+        self.assertEqual(by_id["CAMERA_ZOOM_OUT"]["chord"], ["X"])
+        self.assertEqual(by_id["CAMERA_ZOOM_IN"]["preferred_channel"], "KEY")
+        self.assertIn("RIGHT_CLICK", by_id["CAMERA_ZOOM_IN"]["not"])
+        self.assertEqual(by_id["CAMERA_ZOOM_IN"]["wheel_equivalent"], "SCROLL_WHEEL_ZOOM_IN")
+
     def test_bottom_right_panel_hotkeys_catalogued(self) -> None:
         rows = bottom_right_panel_hotkey_rows(cfg=self.cfg)
         by_panel = {r["panel_id"]: r["chord"] for r in rows}
@@ -83,7 +91,14 @@ class UIChromeTests(unittest.TestCase):
     def test_live_panels_are_stubs_without_click_points(self) -> None:
         panels = glossary_snapshot(self.cfg)["modes"]["LIVE"]["panels"]
         for name in ("needs", "career", "skills", "phone"):
-            self.assertEqual(panels[name]["status"], "UNCALIBRATED_STUB")
+            status = panels[name]["status"]
+            # Hotkeys may be catalogued; hitboxes stay uncalibrated — no click points.
+            self.assertTrue(
+                status.startswith("UNCALIBRATED") or "UNCALIBRATED" in status,
+                msg=f"{name}={status}",
+            )
+            self.assertNotIn("client_xy", panels[name])
+            self.assertNotIn("hitbox", panels[name])
         self.assertEqual(glossary_snapshot(self.cfg)["modes"]["LIVE"]["targets"], [])
 
     def test_aok_plan_types_AOK_and_forbids_placement(self) -> None:

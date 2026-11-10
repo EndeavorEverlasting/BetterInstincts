@@ -11,6 +11,7 @@ import re
 import stat
 import sys
 import tempfile
+import time
 from pathlib import Path
 from typing import Callable
 
@@ -241,3 +242,42 @@ def household_ledger_path(
     _safe_path(settings_file)
     view(settings_file, profile_id=profile_id)  # Existing named profile only.
     return settings_file.parent / "households" / profile_id / (scope_id + ".json")
+
+
+def household_skills_export_path(
+    *,
+    profile_id: str,
+    scope_id: str,
+    settings_file: Path | None = None,
+    stamp: str | None = None,
+) -> Path:
+    """Private per-profile export path for one household skills snapshot.
+
+    Lives under the same local config root as the household ledger. Never a
+    tracked repository path — each installer/profile has its own data.
+    """
+    ledger = household_ledger_path(
+        profile_id=profile_id, scope_id=scope_id, settings_file=settings_file
+    )
+    label = str(stamp or time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()))
+    if not re.fullmatch(r"[0-9A-Za-z._-]{1,64}", label):
+        raise InstallationProfileError("HOUSEHOLD_SKILLS_EXPORT_STAMP_INVALID")
+    return ledger.parent / "exports" / f"{scope_id}-skills-{label}.json"
+
+
+def household_floor_map_path(
+    *,
+    profile_id: str,
+    lot_key: str,
+    settings_file: Path | None = None,
+) -> Path:
+    """Private per-profile lot floor map path (computers, workstations, paths).
+
+    Owned by betterinstincts.lot_floor_map; this helper only exposes the
+    installation-profile path convention. Never a tracked repository path.
+    """
+    from betterinstincts.lot_floor_map import floor_map_path
+
+    return floor_map_path(
+        profile_id=profile_id, lot_key=lot_key, settings_file=settings_file
+    )

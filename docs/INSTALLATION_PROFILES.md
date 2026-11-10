@@ -48,4 +48,6 @@ Linux location: XDG_CONFIG_HOME/betterinstincts/settings.v1.json (default home/.
 
 Preferences are not permissions. Mandatory save, player-presence, scene, version and minimum 15-second idle controls stay independent. Unknown settings/future schema versions are rejected rather than coerced or silently migrated. Local preferences are never included in repository commits, CI fixtures, screenshots or telemetry. New runtime consumers require explicit wiring and regression tests; settings alone never trigger collection.
 
+**Lot floor maps (2026-11-10):** each installation profile owns a private floor object map under `households/<profile-id>/floors/<lot-key>.json` (computers, laptops, robotics workstations, avoid-notes, Order/spawn paths). Toggle `learning.lot_floor_map_auto` defaults **true** — when the host observes Build/Buy with `lot_floor_profile_id` + `lot_floor_key`, `on_build_mode_entered` ensures the skeleton. Agents populate via OBJECT_PICK_IDENTIFY / `python -m scripts.lot_floor_map ingest-parts-buy`. Never Sims saves; never repo/dist as canonical. See `contracts/lot-floor-map.v1.json`.
+
 **Next proof gate:** local Windows/Linux settings GUI launch, persistence/rollback proof, then individually connect additional toggle consumers under their existing authority boundaries.

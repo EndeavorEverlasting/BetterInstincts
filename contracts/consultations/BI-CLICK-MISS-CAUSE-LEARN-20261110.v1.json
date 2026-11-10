@@ -1,0 +1,81 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-CLICK-MISS-CAUSE-LEARN-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "27850d1d749f99cd69b2d20237ff6bc31263533b",
+  "proposed_capability": "P95 CLICK_MISS_CAUSE_LEARN: classify every non-HIT fixed/world-adjacent click with a durable miss_cause (PEER_HUD_COLLISION, OVERLAY_CLEAR_WIPE, WRONG_CONTROL, STALE_SURFACE, ZOOM_INSUFFICIENT, HITBOX_DRIFT, LOT_PUNCH_THROUGH, UNKNOWN) plus a stable numeric feature vector for future ML. Operator: peer Skills vs phone fights caused false misses; overlay-clear wiped phone; learning must separate interop failures from hitbox drift. P124: peer module beside fixed_ui_click_map + click_error_eval + LIVE_HUD_SURFACE_LEASE — rule classifier first, export features; no SendInput, no second daemon, no claimed trained model until labeled corpus + offline eval.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "CLAIM",
+    "PLAYER_PRESENCE",
+    "ACTIVITY",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT",
+    "HOST_SESSION"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/ONTOLOGY.md",
+    "docs/UI_CHROME.md",
+    "docs/ASYNC_INTEROP.md",
+    "docs/LEDGER.md",
+    "contracts/fixed-ui-click-map.v1.json",
+    "contracts/click-error-eval.v1.json",
+    "contracts/workflow-interoperability.v1.json",
+    "betterinstincts/fixed_ui_click_map.py",
+    "betterinstincts/click_error_eval.py",
+    "betterinstincts/workflow_interop.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "RULE_CLASSIFIER_AND_FEATURE_CORPUS_OFFLINE_NOT_TRAINED_MODEL_NOT_LIVE_CLICK_CERT",
+  "player_save_control_impact": "Evaluate/record only. Seeds from existing parts-buy click ledger. No autorun. Live input still requires HUD lease + idle + ACTIVE session. Does not authorize competing phone/skills inserts.",
+  "expected_outcome": "contracts/click-miss-cause.v1.json + betterinstincts/click_miss_cause.py + CLI + fixtures/tests; seed peer-collision and wrong-control rows from parts-buy 20261110; Fifth Gear plan notes S2 live remains peer-owned while this lane lands offline learning; docs/LEDGER + UI_CHROME + GLOSSARY.",
+  "negative_tests": [
+    "HIT outcomes never get a miss_cause other than NONE",
+    "peer_hud_busy + non-HIT => PEER_HUD_COLLISION before HITBOX_DRIFT",
+    "overlay_clear_during_peer_lease + non-HIT => OVERLAY_CLEAR_WIPE",
+    "wrong observed_control_id => WRONG_CONTROL",
+    "Feature vector length/order pinned by contract; unknown cause fails closed",
+    "No execute_allowed / SendInput from this module"
+  ],
+  "rollback_path": "Revert feature files; fixed_ui_click_map + click_error_eval + HUD lease remain; BI-002 ACTIVE.",
+  "unresolved_unknowns": [
+    "Supervised model weights not trained — need larger labeled corpus before promoting beyond RULE_V1",
+    "World-object miss geometry still OBJECT_PICK_IDENTIFY scoped separately"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-CLICK-MISS-CAUSE-LEARN-20261110.v1.json",
+    "contracts/click-miss-cause.v1.json",
+    "betterinstincts/click_miss_cause.py",
+    "scripts/click_miss_cause.py",
+    "tests/test_click_miss_cause.py",
+    "tests/fixtures/click-miss-cause-seed.v1.json",
+    "docs/UI_CHROME.md",
+    "docs/LEDGER.md",
+    "docs/GLOSSARY.md",
+    "plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json"
+  ],
+  "decision": "ADMIT_OFFLINE_RULE_CLASSIFIER_AND_FEATURE_EXPORT",
+  "decision_rationale": "Operator asked to classify misses so peer-agent conflicts are learned separately from hitbox error; existing HIT/NEAR_MISS/MISS labels lack cause. Deterministic rules + pinned features are the ML floor; trained models later."
+}

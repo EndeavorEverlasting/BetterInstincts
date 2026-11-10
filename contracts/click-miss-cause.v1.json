@@ -1,0 +1,90 @@
+{
+  "schema": "betterinstincts.click-miss-cause/v1",
+  "version": 1,
+  "authority": "docs/UI_CHROME.md",
+  "owners": {
+    "classifier": "betterinstincts/click_miss_cause.py",
+    "hit_geometry": "contracts/click-error-eval.v1.json",
+    "fixed_ledger": "contracts/fixed-ui-click-map.v1.json",
+    "interop": "contracts/workflow-interoperability.v1.json#live_hud_surface_lease"
+  },
+  "purpose": "Label every non-HIT click with a miss_cause and a stable feature vector so agents learn interop failures vs geometry errors over time. Rule classifier (RULE_V1) first; features are ML-ready.",
+  "execute_allowed_default": false,
+  "proof_ceiling": "RULE_CLASSIFIER_AND_FEATURE_CORPUS_OFFLINE_NOT_TRAINED_MODEL_NOT_LIVE_CLICK_CERT",
+  "corpus_path_default": "dist/game-host/click-miss-cause-corpus.json",
+  "classifications_geometry": ["HIT", "NEAR_MISS", "MISS", "WRONG_CONTROL", "OUT_OF_SCOPE_MOVING_TARGET"],
+  "miss_causes": [
+    "NONE",
+    "PEER_HUD_COLLISION",
+    "OVERLAY_CLEAR_WIPE",
+    "WRONG_CONTROL",
+    "STALE_SURFACE",
+    "ZOOM_INSUFFICIENT",
+    "HITBOX_DRIFT",
+    "LOT_PUNCH_THROUGH",
+    "UNKNOWN"
+  ],
+  "cause_priority": [
+    "PEER_HUD_COLLISION",
+    "OVERLAY_CLEAR_WIPE",
+    "STALE_SURFACE",
+    "WRONG_CONTROL",
+    "ZOOM_INSUFFICIENT",
+    "LOT_PUNCH_THROUGH",
+    "HITBOX_DRIFT",
+    "UNKNOWN"
+  ],
+  "recommended_practice": {
+    "PEER_HUD_COLLISION": "WAITING_FOR_AGENT; claim exclusive_live_hud_surface before insert; do not rewrite hitbox from peer fight",
+    "OVERLAY_CLEAR_WIPE": "Withhold PEER_LEASED_HUD_SURFACE on overlay-clear; re-observe before next click",
+    "WRONG_CONTROL": "Do not update intended target coords; record observed_control_id",
+    "STALE_SURFACE": "Re-open surface in same burst or abort; phone auto-close is not a hitbox miss",
+    "ZOOM_INSUFFICIENT": "OBJECT_PICK_IDENTIFY: Z/wheel zoom-in then capture before world click",
+    "HITBOX_DRIFT": "Score via click_error_eval; Escape-cancel; only HIT may attest coords",
+    "LOT_PUNCH_THROUGH": "ESCAPE_CANCEL via CANCEL_HOLD; never continue recipe into lot",
+    "UNKNOWN": "Quarantine; require operator/host label before learning update"
+  },
+  "feature_schema": {
+    "order": [
+      "error_px",
+      "dx",
+      "dy",
+      "geom_HIT",
+      "geom_NEAR_MISS",
+      "geom_MISS",
+      "geom_WRONG_CONTROL",
+      "peer_hud_busy",
+      "overlay_clear_during_peer_lease",
+      "intended_surface_absent",
+      "wrong_control_flag",
+      "zoom_fraction",
+      "object_pick_identify_used",
+      "lot_punch_through_risk",
+      "idle_ms_at_click",
+      "seconds_since_peer_lease"
+    ],
+    "dtypes": {
+      "error_px": "float",
+      "dx": "float",
+      "dy": "float",
+      "geom_HIT": "binary",
+      "geom_NEAR_MISS": "binary",
+      "geom_MISS": "binary",
+      "geom_WRONG_CONTROL": "binary",
+      "peer_hud_busy": "binary",
+      "overlay_clear_during_peer_lease": "binary",
+      "intended_surface_absent": "binary",
+      "wrong_control_flag": "binary",
+      "zoom_fraction": "float_0_1_or_neg1",
+      "object_pick_identify_used": "binary",
+      "lot_punch_through_risk": "binary",
+      "idle_ms_at_click": "float_or_neg1",
+      "seconds_since_peer_lease": "float_or_neg1"
+    },
+    "missing_numeric": -1.0
+  },
+  "classifier": {
+    "id": "RULE_V1",
+    "note": "Deterministic priority rules. Future ML must consume the same feature_schema and may not silently drop PEER_HUD_COLLISION / OVERLAY_CLEAR_WIPE."
+  }
+}

@@ -24,6 +24,21 @@ The scoped completion ledger lives under the existing user configuration parent:
 - Windows: `%LOCALAPPDATA%/BetterInstincts/households/<profile-id>/<opaque-scope-id>.json`
 - Linux: `$XDG_CONFIG_HOME/betterinstincts/households/<profile-id>/<opaque-scope-id>.json` (or `~/.config/betterinstincts/...`)
 
+Per-Sim skills list export (same private root; each installer/profile has different data):
+
+- Windows: `%LOCALAPPDATA%/BetterInstincts/households/<profile-id>/exports/<scope-id>-skills-<stamp>.json`
+- Linux: `$XDG_CONFIG_HOME/betterinstincts/households/<profile-id>/exports/<scope-id>-skills-<stamp>.json`
+- Floor maps (per lot): `%LOCALAPPDATA%/BetterInstincts/households/<profile-id>/floors/<lot-key>.json` (Linux under the same `households/<profile-id>/floors/` root). Auto-ensure on Build when `learning.lot_floor_map_auto` is true; agents map computers/workstations/paths over time (`scripts.lot_floor_map`).
+
+```sh
+python -m scripts.diy_skill_force skills-export \
+  --profile-id default \
+  --save-key observed-save --household-key observed-household \
+  --members N --roster-key portrait-001 [--roster-key portrait-002 ...]
+```
+
+Owner: `export_household_skills_list` / `household_skills_export_path`. Export is ledger-backed (`PANEL_OBSERVED*` vs `DISPATCHED`); it is not live Skills-panel proof and must not be committed to git.
+
 Existing installation preference settings are not relocated or reset. Scoping is opt-in when planning; **a live household execute now requires explicit profile/save/household/portrait evidence**. It rejects populated legacy ledgers and foreign scopes rather than importing their completed-cell claims. Existing unscoped offline plans remain compatible, but their progress cannot silently become scoped live authority.
 
 Example planning (synthetic IDs only):

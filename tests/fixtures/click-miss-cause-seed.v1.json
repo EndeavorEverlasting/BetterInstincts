@@ -1,0 +1,32 @@
+{
+  "schema": "betterinstincts.parts-buy.click-ledger/v1",
+  "session_id": "parts-buy-fixture-20261110",
+  "steps": [
+    {
+      "op": "NOTE",
+      "note": "PRIOR_phone.shopping_bag_216_857_MISS_PHONE_ALREADY_CLOSED",
+      "classification": "MISS_STALE_PHONE"
+    },
+    {
+      "op": "NOTE",
+      "note": "PRIOR_live.desk_computer_980_520_MISS_SIM_OR_FLOOR_PIE",
+      "classification": "MISS",
+      "target_id": "live.desk_computer",
+      "client_xy": [980, 520]
+    }
+  ],
+  "targets": {
+    "phone.shopping_bag": {
+      "client_xy": [216, 857],
+      "status": "WRONG_CONTROL_GIFTS_PLOPSY_20261110",
+      "note": "Vanilla shopping bag opens gifts — not Upgrade Parts"
+    },
+    "live.desk_computer": {
+      "client_xy": [1120, 470],
+      "prior_miss": {
+        "client_xy": [980, 520],
+        "classification": "MISS_SIM_OR_FLOOR_PIE"
+      }
+    }
+  }
+}

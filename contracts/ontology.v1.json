@@ -802,9 +802,10 @@
     "scales": "sim, household, world or future actor scope are optional, extensible labels; no central actor class is exclusive."
   },
   "semantic_viewpoint_extension": {
-    "revision": 4,
+    "revision": 5,
     "created_for": "P01_P95_CAMERA_ZOOM_LADDER_AND_OVERLAY_CLEAR_20261109",
-    "distinction": "GAME_SCENE_NOT_EQUAL_VIEW_SCENE_NOT_EQUAL_HUD_PANEL_NOT_EQUAL_ZOOM_MODE",
+    "amended_for": "OBJECT_PICK_ZOOM_HOTKEYS_20261110",
+    "distinction": "GAME_SCENE_NOT_EQUAL_VIEW_SCENE_NOT_EQUAL_HUD_PANEL_NOT_EQUAL_ZOOM_MODE_NOT_EQUAL_ZOOM_CONTROL",
     "camera_default": "RIGHT_CLICK_VIEW_FOLLOW_PLUS_ZOOM_0_85_OF_MAX",
     "zoom_ladder": {
       "RIGHT_CLICK_VIEW": 0.85,
@@ -812,12 +813,19 @@
       "TRAVEL_AFAR": 0.0,
       "MAX_CLOSE": 1.0
     },
+    "zoom_controls": {
+      "CAMERA_ZOOM_IN": ["Z", "SCROLL_WHEEL_ZOOM_IN"],
+      "CAMERA_ZOOM_OUT": ["X", "SCROLL_WHEEL_ZOOM_OUT"],
+      "not": ["RIGHT_CLICK", "PORTRAIT_RMB", "RIGHT_CLICK_VIEW_AS_ACTUATOR"]
+    },
+    "object_pick_identify": "TRAVERSE_THEN_ZOOM_IN_THEN_CAPTURE_THEN_IDENTIFY_THEN_CLICK",
     "travel_afar_only_when": "VERIFIED_LONG_DISTANCE_TRAVEL_GOAL",
     "overlay_clear_when_zoomed_in": "AFTER_METADATA_TRACKED_AND_ACCOUNTED",
     "evidence": "OFFLINE_CONTRACTS_NOT_LIVE_SIMS_PROOF",
     "canonical_owners": [
       "contracts/portrait-follow.v1.json",
       "contracts/camera-traverse.v1.json",
+      "contracts/ui-chrome.v1.json",
       "contracts/scenery-memory.v1.json",
       "contracts/ui-microsystems.v1.json"
     ]

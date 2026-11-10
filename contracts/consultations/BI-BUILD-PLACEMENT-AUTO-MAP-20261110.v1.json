@@ -1,0 +1,74 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-BUILD-PLACEMENT-AUTO-MAP-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "P95 BUILD_PLACEMENT_AUTO_MAP: while BetterInstincts is installed, cooperative host_listener Build/Buy ticks auto-record builder LMB placements into the profile floor graph (bbox center + linked edges like chairs SEATED_AT desks). Uninstall removes the managed launcher so auto-map stops. Explicitly NOT OS Task Scheduler/cron/daemon. Census Select-inspect remains Escape-mandatory with bbox-center clicks. P124: extends lot_floor_map + host_listener; preference learning.build_placement_auto_map default true.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "CLAIM",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "VIEW_SCENE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "contracts/lot-floor-map.v1.json",
+    "contracts/installation-profiles.v1.json",
+    "betterinstincts/lot_floor_map.py",
+    "betterinstincts/host_listener.py",
+    "bootstrap.py",
+    "docs/CAMERA_TRAVERSE.md",
+    "docs/ASYNC_INTEROP.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_BUILD_PLACEMENT_AUTO_MAP_CONTRACT_NOT_LIVE_BUILDER_SENSOR_CERT",
+  "player_save_control_impact": "Writes only profile floor map under LOCALAPPDATA when host observes Build placements. No OS scheduled tasks. No Sims save edits. Uninstall removes managed host_listener launcher.",
+  "expected_outcome": "builder_placement_auto_map contract + record_builder_placement + graph link relations + host_listener Build tick wiring + preference toggle + Escape/center census corrections + tests/docs.",
+  "negative_tests": [
+    "Missing bbox fails closed",
+    "Unknown link relation fails closed",
+    "Preference false skips auto-map",
+    "execute_allowed remains false",
+    "not_runtime includes OS_TASK_SCHEDULER"
+  ],
+  "rollback_path": "Revert feature files; prior Build ensure-only behavior; BI-002 ACTIVE; Fifth Gear S2 still open.",
+  "unresolved_unknowns": [
+    "Live builder placement sensor/HUD name readout still OPEN",
+    "Agent census still must not grab without Escape; prior grab was a regression"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-BUILD-PLACEMENT-AUTO-MAP-20261110.v1.json",
+    "contracts/lot-floor-map.v1.json",
+    "contracts/installation-profiles.v1.json",
+    "betterinstincts/lot_floor_map.py",
+    "betterinstincts/host_listener.py",
+    "tests/test_lot_floor_map.py",
+    "docs/CAMERA_TRAVERSE.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator wants installed-host auto-map on builder LMB place with uninstallable continuous coverage and graph links; doctrine forbids OS cron — use managed host_listener instead."
+}

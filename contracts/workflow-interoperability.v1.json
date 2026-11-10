@@ -50,6 +50,46 @@
   },
   "persistence": "While caller session/process lives only; receipts contain IDs and states, never entered text or arbitrary URL; process restart requires rehydrating and revalidating intent. No background service installed.",
   "lock": "Global desktop file lock shared with per-Sims-PID host executors at bootstrap.paths().locks under the canonical user profile, independent of development checkout/worktree. Existing locks fail closed and are never auto-stolen.",
+  "live_hud_surface_lease": {
+    "owner": "betterinstincts/workflow_interop.py",
+    "lock_owner": "betterinstincts/control_handoff.py",
+    "operator_correction_20261110": "Skills panel and phone are exclusive Live HUD surfaces. Agents opening both reset each other; overlay-clear that dismisses a peer-leased phone/panel is an interop failure. Queue and WAITING_FOR_AGENT — do not fight.",
+    "rule": "At most one named Live HUD surface lease per desktop lock root. Peer agents observe WAITING_FOR_AGENT and retain their work_id. Overlay-clear must withhold peer-leased surfaces.",
+    "surfaces": {
+      "BOTTOM_RIGHT_PANEL": {
+        "aliases": ["PANEL_SKILLS", "PANEL_CAREER", "PANEL_ASPIRATIONS", "PANEL_RELATIONSHIPS", "PANEL_INVENTORY", "PANEL_SIMOLOGY", "PANEL_NEEDS", "PANEL_CLUBS"],
+        "hotkeys": ["G", "J", "L", "R", "I", "Y", "O", "U"],
+        "clearable_kind": "BOTTOM_RIGHT_PANEL_EXPANDED"
+      },
+      "PHONE": {
+        "aliases": ["PHONE_INTERFACE", "live.phone"],
+        "hotkeys": ["M"],
+        "clearable_kind": "PHONE_INTERFACE_EXPANDED"
+      },
+      "CHEAT_CONSOLE": {
+        "aliases": ["CONSOLE"],
+        "hotkeys": ["CTRL+SHIFT+C"],
+        "clearable_kind": "CHEAT_CONSOLE"
+      }
+    },
+    "mutual_exclusion": "ANY_TWO_DISTINCT_SURFACES_CONFLICT",
+    "filename_pattern": "hud-{SURFACE}.lock",
+    "claim_helper": "claim_live_hud_surface",
+    "busy_helper": "live_hud_surface_busy",
+    "assess_helper": "assess_live_hud_surface_claim",
+    "overlay_clear_rule": "NEVER_CLEAR_PEER_LEASED_SURFACE",
+    "composes_with": [
+      "exclusive_desktop_owner",
+      "CooperativeScreenQueue",
+      "zoomed_in_overlay_clear"
+    ],
+    "forbidden": [
+      "PARALLEL_PHONE_AND_SKILLS_PANEL",
+      "OVERLAY_CLEAR_OF_PEER_LEASED_SURFACE",
+      "AUTO_STEAL_PEER_HUD_LEASE",
+      "SECOND_HUD_DAEMON"
+    ]
+  },
   "forbidden": [
     "CANCEL_WORK_ON_HUMAN_INPUT",
     "BACKGROUND_KEYLOGGER",
@@ -59,7 +99,10 @@
     "AUTOMATIC_REPLAY_AFTER_UNKNOWN_OUTCOME",
     "AUTO_CLEAN_USER_DATA",
     "START_DAEMON_OR_CRON",
-    "PLAYWRIGHT_BYPASS_OF_CHECKPOINT"
+    "PLAYWRIGHT_BYPASS_OF_CHECKPOINT",
+    "PARALLEL_PHONE_AND_SKILLS_PANEL",
+    "OVERLAY_CLEAR_OF_PEER_LEASED_SURFACE",
+    "AUTO_STEAL_PEER_HUD_LEASE"
   ],
   "evidence_ceiling": "OFFLINE_COOPERATIVE_ADAPTER_NOT_LIVE_DESKTOP_OR_GAME_CERT",
   "idle_ms_minimum": 15000,

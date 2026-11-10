@@ -1,3 +1,163 @@
+## 2026-11-10 — Horizon H0 new save PROVED
+
+**Operator:** Create NEW save with default name before Horizon live work; never delete/overwrite.
+
+**PROVED live:** `My Saved Game 6` / `Slot_00000007.save` (2026-11-10 04:29); UI list `verify-save-list.png`; receipt `dist/game-host/horizon-exec-20261110/new-save-receipt.json`. Coords: Options `[1898,22]`, Save As `[960,422]`, ADD NEW SAVE `[850,360]`, OK `[957,603]`. Forbid MENU_SAVE `[960,420]` for new-slot intent (2px gap).
+
+**NOT proved:** BI-002 hunger trials; Horizon stage close; Skills LOCAL_OBSERVED; full lot/menu map complete.
+
+## 2026-11-10 — Horizon execution-wide canonical owner (plan lane)
+
+**Operator:** After chat migration, agents read `plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json` for H0(save)→H1(map land)→BI-002→Horizon stages; proof ceilings; escape-menu Save/Save As 2px gap; lot_focus OFF_LOT; forbid delete/overwrite saves; Fifth Gear S2 ≠ BI-005.
+
+**CHANGED:** execution-wide pack repair + pointers in `docs/HORIZON.md`, closers pack `durable_execution_owner`, P12 handoff; receipt `dist/game-host/horizon-exec-20261110/plan-lane-receipt.json`.
+
+**PROVED offline:** `python -m scripts.check_horizon` topology; semantic preflight for offline lane. **H0 new-save:** PROVED (see entry above). **NOT proved:** BI-002 live trials; any Horizon stage close beyond planning.
+
+## 2026-11-10 — Lot off-focus (LOT_OFF_FOCUS)
+
+**Operator (Horizon H0):** Recognize when scenery/camera leaves the active household lot (street, canal, neighborhood); restore via **Enter** on the active Sim — never street roam or unbounded pan.
+
+**CHANGED:** `contracts/camera-traverse.v1.json#lot_focus`; `betterinstincts/lot_focus.py` (`assess_lot_focus`, `execute_allowed` false); `host_stack.evaluate_turn` emits `lot_focus` and gates `LOT_OFF_FOCUS_RESTORE_REQUIRED`; consultation `BI-LOT-OFF-FOCUS-20261110`; tests `tests/test_lot_focus.py`; `docs/CAMERA_TRAVERSE.md`.
+
+**PROVED offline:** unit tests ON_LOT / OFF_LOT_STREET / UNKNOWN + host_stack wiring. **Proof ceiling:** `OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED`. Live P08 scenery token calibration OPEN.
+
+## 2026-11-10 — Horizon-wide execution pack + lot-off-focus
+
+**Operator:** Execute Horizon accurately (BI-002 gate first; do not fake-close later stages). New save before work (default name; never delete). Recognize camera off lot (canal/street). Map menus + lot floors. Dispatch expert agents for parallel offline lanes.
+
+**CHANGED:** `plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json`; `lot_focus` contract + `betterinstincts/lot_focus.py` + tests; closers pack is P02/P12 handoff only (execution-wide is durable owner). Live: off-lot canal detected; Enter+arm restored Build T on-lot; Options/Save path still OPEN (Help/notifications click misses).
+
+**PROVED offline:** `tests.test_lot_focus`. **NOT proved:** new save created; BI-002 trials; Horizon stages beyond BI-002.
+
+## 2026-11-10 — Closers pack (Horizon-aware)
+
+**Operator:** `/closers` with Horizon contract. Gate remains **BI-002**; diy_skill_force ≠ BI-005; floor-map offline ≠ hunger cert.
+
+**CHANGED:** durable pack `plans/active/BI-CLOSERS-HORIZON-20261110.v1.json` + P12 `docs/handoff/BI-CLOSERS-HORIZON-P12-2026-11-10.md`. Launch: C1 land harness PR → C2 BI-002 live → C3 needs→map → C4 FG S2 panel → C5 builder live sensor → C6 horizon converge.
+
+**PROVED:** `check_horizon` topology PASS, game cert NOT_PROVED. Pack is planning+handoff, not live cert.
+
+## 2026-11-10 — Builder placement auto-map (installed host, not OS cron)
+
+**Operator:** When builders place items, auto-map them while BI is installed; uninstallable with the uninstaller. Builder confirm is LMB place (not Escape). Graph links (chair↔desk). Agent census must Escape on grab and click measured item center — prior grab without Escape was a regression.
+
+**CHANGED:** `BUILD_PLACEMENT_AUTO_MAP` via cooperative `host_listener` Build ticks (`learning.build_placement_auto_map`); `record_builder_placement` + bbox-center + graph `ON_TOP_OF`/`SEATED_AT`/`SLOTTED_TO`/`PARENT_SURFACE`/`LINKED_WITH`; explicitly **not** Task Scheduler/cron/daemon; Escape-mandatory + bbox-center for Select-inspect; consultation `BI-BUILD-PLACEMENT-AUTO-MAP-20261110`.
+
+**PROVED offline:** placement+link unit tests. Live builder sensor OPEN. Camera drifted to neighborhood after bad census grab — Escape issued; room-fit frame not restored by agent.
+
+## 2026-11-10 — Build Select-inspect census + pinned room-fit zoom
+
+**Operator:** Keep the centered Build T zoom; default that zoom for census across agents/host. Click item → bottom-right params → document location → Escape → next.
+
+**CHANGED:** `BUILD_TOP_DOWN_MAP` zoom mode (0.35 room-fit, preserve frame); `BUILD_SELECT_INSPECT_ESCAPE` census loop; `record_build_select_inspect` + `BUILD_CENSUS_ITEM`; room_map input policy allows Select-inspect LMB, forbids drag/purchase/rezoom; consultation `BI-BUILD-SELECT-INSPECT-CENSUS-ZOOM-20261110`.
+
+**PROVED offline:** zoom + census unit tests. Live Select-inspect documentation OPEN on operator-centered frame.
+
+## 2026-11-10 — Needs-investigation opportunistic floor map
+
+**Operator:** When host logic investigates an item to satisfy needs, map that item then — natural interact is faster than Build T sampling sprints.
+
+**CHANGED:** `opportunistic_needs_map` + `NEEDS_INVESTIGATION_FLOOR_MAP`; `host_stack.evaluate_turn` emits `needs_floor_map` on `world_target` when profile+lot_key set; memorial reuse/invalidation on the same path; Build T remains unknown/stale fallback. Fifth Gear: not another P05 pack; S2 Skills LOCAL_OBSERVED still open.
+
+**PROVED offline:** needs-map unit test + host field wiring. Live needs→map OPEN.
+
+## 2026-11-10 — Floor map memorialization (continuous remap)
+
+**Operator:** Once mapped, memorialize; update only when it changes. Interact with expected pie missing ⇒ remap that node. Keeps the algorithm continuous over time.
+
+**CHANGED:** `MEMORIALIZED` / `STALE_NEEDS_REMAP`; `memorialize_object` / `invalidate_memorial` / `assess_interaction_against_memorial` / `list_remap_targets`; CLI `memorialize|invalidate|assess-interaction|remap-queue`; memorial refuses casual OBSERVED xy overwrite; ROOM_MAP steps load memorials first.
+
+**PROVED offline:** unit tests freeze+invalidation+remap. Live interact attest OPEN.
+
+## 2026-11-10 — ROOM_MAP_TRAVERSE: Build T + hotkeys only; grab→Escape
+
+**Operator:** Map via Build top-down (`T`); zoom out; observe one-by-one. Hotkeys safer than mouse — LMB grabs/mutates (rug grab = regression). Escape on grab; resume observe-only. No online/Gallery. Local library save later if needed.
+
+**CHANGED:** `room_map_traverse` primary_census=`BUILD_TOP_DOWN_T`; `input_policy` KEY-only during census; `on_erroneous_grab` Escape→resume; forbid lot LMB / Gallery; planner/docs/LEDGER aligned.
+
+**PROVED live:** Build+`T` top-down reached; Escape cancels grabs. Graph census still open (observe captures). Order pie / BI-002 still open.
+
+## 2026-11-10 — Lot floor map in every local profile (auto on Build)
+
+**Operator:** floor mapping is the process; belongs in every user's local profile; auto-populate/trigger when building; agents accumulate computers/workstations/paths over time.
+
+**CHANGED:** `LOT_FLOOR_MAP` contract + `lot_floor_map.py`; path under `households/<profile>/floors/`; `learning.lot_floor_map_auto` default true; `host_stack` Build trigger via `lot_floor_profile_id`+`lot_floor_key`; CLI ensure/on-build/ingest-parts-buy; consultation `BI-LOT-FLOOR-MAP-PROFILE-20261110`. Live: computer pie HIT at ~(1299,280) (Write/Play/Career/More); Order path still open.
+
+**PROVED offline:** unit tests ensure/build-skip/ingest. Not live Order cert. BI-002 open.
+
+## 2026-11-10 — Click miss-cause learning (Fifth Gear offline lane)
+
+**Operator:** peer Skills vs phone fights produced false misses; classify misses so interop failures are not “learned” as hitbox drift; enable ML-ready features over time.
+
+**CHANGED:** `CLICK_MISS_CAUSE` contract + `betterinstincts/click_miss_cause.py` RULE_V1 + feature export; CLI `classify|ingest-parts-buy|summarize`; fixture seeded from parts-buy ledger; consultation `BI-CLICK-MISS-CAUSE-LEARN-20261110`. Fifth Gear: S2 live remains peer-owned (Olga falsified five; Evil gaps); this chat did not emit another P05 pack as completion.
+
+**PROVED offline:** unit tests for peer/overlay/wrong-control/zoom priority + parts-buy ingest. Not a trained model; not live click cert. BI-002 open.
+
+## 2026-11-10 — Live HUD surface lease (Skills vs phone interop)
+
+**Operator:** Skills agent opens Skills; phone agent opens phone — exclusive HUD; overlay-clear can wipe the peer. Agents must queue / WAITING_FOR_AGENT, not fight inserts.
+
+**CHANGED:** `workflow-interoperability` `#live_hud_surface_lease`; `exclusive_live_hud_surface` / assess helpers; overlay-clear withholds `PEER_LEASED_HUD_SURFACE`; ASYNC_INTEROP docs; tests; consultation `BI-LIVE-HUD-SURFACE-LEASE-20261110`. Yielded phone parts-buy while skills holds BR panel.
+
+**PROVED offline:** skills-lease blocks phone claim; overlay-clear peer withhold. Live two-agent P08 OPEN. Not BI-002.
+
+## 2026-11-10 — ZOOM_MODE ≠ ZOOM_CONTROL; OBJECT_PICK_IDENTIFY
+
+**Operator corrections:** Zoom-in is hotkey **Z** (out **X**) or scroll — **not** right-click. Object pick: traverse → zoom in → screenshot → identify. Codify semantics so they are not chat-lost.
+
+**CHANGED:** LIVE `CAMERA_ZOOM_IN`/`OUT` in `ui-chrome`; `camera-traverse` `#zoom_controls` + `#object_pick_identify`; `plan_object_pick_identify` + CLI `object-pick-plan` / `zoom-controls`; glossary + ontology viewpoint rev 5; docs CAMERA/UI; tests; consultation `BI-OBJECT-PICK-ZOOM-HOTKEYS-20261110`.
+
+**PROVED offline:** zoom-control + object-pick unit tests; ui-chrome glossary rows. Live Z/wheel notch calibration P08 OPEN. Not BI-002.
+
+## 2026-11-10 — Servo life-state: Olga five catalog-unavailable
+
+**PROVED live:** Olga J identity + white bounds; 41 yellow max; sibling pack skills yellow while dancing/media/vampire/selv/nectar absent after force.
+
+**CHANGED:** catalog `unavailable_for_life_states: ["servo"]` on those five; `skill_unavailable_for_life_state` + force-gaps `--life-state servo` skip; `_close_work_open_skills_inventory` no longer taps L after Skills click (toggle was closing Skills → Work regression).
+
+**NEXT:** Live re-admit Skills tray with fixed opener; Olga raiseable set complete at 41; Charlee contrast optional. BI-002 still open.
+
+## 2026-11-10 — P62+/fifth-gear: Olga yellow confirm; five PANEL_FALSIFIED
+
+**Operator correction:** Work≠Skills; yellow list first; no zoom/roam; stop wasting retypes.
+
+**CHANGED/PROVED live (S2 Olga):** Skills lightbulb open; yellow scroll Cooking→DJ / Logic→Mischief / Singing→Writing. 41 yellow `PANEL_OBSERVED_MAX` (photo/pet@5). Force gray-five DISPATCHED then L confirm still absent → `PANEL_FALSIFIED` dancing/media/vampire/selv/nectar (no further type). Receipts: `olga-force-gray-five.json`, `olga-post-force-yellow-confirm.json`, `olga-confirm-*.png`. Private `skills-export` under local profile. Harness: skip `PANEL_FALSIFIED` unless `--redo`; forbid `RETYPE_AFTER_PANEL_FALSIFIED_ABSENT`.
+
+**NEXT:** Evil gaps under same yellow-first Skills path. Five Olga rows remain pack/Servo-unreachable unless operator `--redo`. BI-002 still open.
+
+## 2026-11-10 — P62: Skills≠Work; yellow list before type; no zoom
+
+**Operator correction:** Work/Career was selected instead of Skills; camera zoomed/roamed; yellow list not checked before commands — regression / wasted force.
+
+**CHANGED:** `assess_skills_panel_not_work`; `assess_inventory_before_type` requires skills panel + yellow-first; force-gaps order closes Work then L; execute drops portrait RMB; CLI `--skills-panel-attested` `--yellow-list-checked-first`; contract row_classes + forbidden_waste; lean forbids MOOD_COLOR.
+
+**NEXT:** Live L-only yellow inventory on Olga (Enter recenter; no type/zoom); then force only attested non-yellow/gray.
+
+## 2026-11-10 — Per-profile household skills-export
+
+**Operator:** Export skills lists for each Sim of a household for the local profile; another installer has different private data.
+
+**CHANGED:** `export_household_skills_list` + `household_skills_export_path`; CLI `skills-export` (scoped, writes under `households/<profile>/exports/`, refuses repo paths); HOUSEHOLD_SCOPE/DIY docs; contract CLI pointer; tests.
+
+**PROVED offline:** synthetic two-member export + distinct save scopes. **NEXT:** run `skills-export` against this host's scoped n4 ledger; Olga five still DISPATCHED≠panel.
+
+## 2026-11-10 — Olga scoped panel-record; five remain unproven
+
+**Operator goal:** Select Olga (white bounds + J name) then raise skills via strip-gated force + panel-record.
+
+**CHANGED/PROVED live:** Olga `(404,1055)` white-bounds + J career name; L inventory gate; force-gaps typed dancing/media/vampire/selv/nectar twice (`FORCE_GAPS_DISPATCHED`); scoped panel-record 41 `PANEL_OBSERVED_MAX` under default profile save/household keys (photo/pet at 5). L neighbors still skip those five rows after type → remaining_for_bundle.
+
+**NEXT:** Diagnose Servo/pack reject vs console miss for the five; then Evil gaps. DISPATCHED ≠ panel pass.
+
+## 2026-11-10 — Force-gaps order: L inventory before type
+
+**Operator:** Codify that order. Order of operations matters. Verify with L first — do not type from stale ledger gaps.
+
+**CHANGED:** `assess_inventory_before_type` hard gate; `plan_force_gaps_beat` order J→L→record→resolve→type; `execute_force_gaps` always scrolls L before typing; CLI `--l-inventory-attested` + `--observed-level skill=N`; contract lean_panel_sequence + forbidden_waste; DIY docs/tests.
+
+**PROVED offline:** unattested beat → `gaps=None` / TYPE_DENIED; attested + levels → gaps resolve; L precedes type in order. **NEXT:** Olga Live L verify → attest non-yellow only → force those → panel-record.
+
 ## 2026-11-10 — Photography + Pet Training max at 5
 
 **Operator:** Common sense — Pet Training and Photography max out at Level 5; gold at 5 is done, stop forcing to 10.

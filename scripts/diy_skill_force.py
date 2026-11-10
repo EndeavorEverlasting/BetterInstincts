@@ -50,7 +50,10 @@ from betterinstincts.household_judgment import (
     require_skill_action,
 )
 from betterinstincts.installation_profiles import (
-    InstallationProfileError, household_ledger_path, view as view_installation_profile,
+    InstallationProfileError,
+    household_ledger_path,
+    household_skills_export_path,
+    view as view_installation_profile,
 )
 from betterinstincts.diy_skill_force import (
     DiySkillForceError,
@@ -65,6 +68,8 @@ from betterinstincts.diy_skill_force import (
     empty_completion_ledger,
     evaluate_member_skill_levels,
     evaluate_ui_action,
+    assess_inventory_before_type,
+    export_household_skills_list,
     gap_targets_from_observed_levels,
     load_completion_ledger,
     member_observed_levels_from_ledger,
@@ -1258,6 +1263,39 @@ def _keybd_tap(vk: int) -> None:
     time.sleep(0.12)
 
 
+def _close_work_open_skills_inventory() -> None:
+    """Close Work/Career if open, open Skills (not Work), burger+scroll list only.
+
+    Click measured Skills tray icon (never Career). Do NOT also tap L after the
+    click — L toggles the panel and would close Skills again (P62 regression).
+    Wheel is locked to Skills list client coords — never camera zoom/roam.
+    """
+    from scripts.win32_input import left_drag, park_safe_cursor_rest, send_click, send_wheel
+
+    # fixed-ui-click-map live.panel_skills @ 1920x1080 — never click Career/Work.
+    skills_xy = (1679, 1045)
+
+    for _ in range(2):
+        _keybd_tap(0x1B)  # Escape — dismiss pie / Work overlays
+        time.sleep(0.12)
+    # Open Skills once via tray click. Never follow with L (toggle closes it).
+    send_click(int(skills_xy[0]), int(skills_xy[1]), between_sec=0.04, safe_rest_after=False)
+    time.sleep(0.45)
+    left_drag(1722, 810, 1722, 225, steps=12, step_sec=0.018, safe_rest_after=False)
+    time.sleep(0.1)
+    # Keep cursor on the Skills list; wheel here scrolls rows, not the lot camera.
+    send_click(1700, 520, between_sec=0.04, safe_rest_after=False)
+    send_wheel(-30, x=1700, y=520, safe_rest_after=False)
+    time.sleep(0.2)
+    send_wheel(12, x=1700, y=520, safe_rest_after=False)
+    park_safe_cursor_rest()
+
+
+def _scroll_skills_panel_inventory() -> None:
+    """Backward-compatible alias: Skills inventory only (closes Work first)."""
+    _close_work_open_skills_inventory()
+
+
 def execute_force_gaps(
     *,
     process_id: int,
@@ -1272,27 +1310,27 @@ def execute_force_gaps(
     idle_ms: int = 15000,
     play_seconds: int = 7,
     scroll_inventory: bool = True,
+    l_inventory_attested: bool = False,
+    skills_panel_attested: bool = False,
+    yellow_list_checked_first: bool = False,
+    observed_levels_this_beat: dict[str, int] | None = None,
     completion_ledger_path: Path | None = None,
+    life_state: str | None = None,
 ) -> dict:
-    """Select portrait, type gap cheats (canonical spelling), play, optional scroll.
+    """Select → J name → close Work → L Skills yellow inventory → type gaps only.
 
-    Codifies the Live force path so agents stop re-authoring one-shot scripts.
+    Order of operations is mandatory. Work/Career is never the skills list.
+    Stale ledger gaps never authorize typing. No camera zoom/roam.
     Never presses lone V (video). Away desk is not a busy invent.
+    ``life_state=servo`` skips catalog unavailable rows (Olga's five).
     """
     from scripts.win32_input import (
-        left_drag,
-        park_safe_cursor_rest,
         send_click,
-        send_right_click,
-        send_wheel,
         type_text,
     )
 
     if not session_id or completion_ledger_path is None:
         raise GateError("SCOPED_LOCAL_SESSION_AND_LEDGER_REQUIRED_FOR_FORCE_GAPS")
-    safety = assess_console_type_safety(console_strip_observed=console_strip_observed)
-    if safety.get("state") != "CONSOLE_TYPE_ALLOWED":
-        raise GateError("CONSOLE_STRIP_REQUIRED_BEFORE_FORCE_GAPS")
 
     ledger_path = Path(completion_ledger_path)
     ledger = load_completion_ledger(ledger_path)
@@ -1300,7 +1338,14 @@ def execute_force_gaps(
     if not scope_id or not str(member_key).startswith(scope_id + "::key::"):
         raise GateError("FORCE_GAPS_MEMBER_MUST_MATCH_SCOPED_LEDGER")
     mk = str(member_key)
-    observed = member_observed_levels_from_ledger(ledger, mk)
+    this_beat = dict(observed_levels_this_beat or {})
+    type_admit = assess_inventory_before_type(
+        l_inventory_attested=bool(l_inventory_attested),
+        observed_levels_this_beat=this_beat if this_beat else None,
+        skills_panel_attested=bool(skills_panel_attested),
+        yellow_list_checked_first=bool(yellow_list_checked_first),
+        work_or_career_panel_open=False,
+    )
     plan = plan_force_gaps_beat(
         member_key=member_key,
         portrait_client_xy=portrait_xy,
@@ -1308,15 +1353,27 @@ def execute_force_gaps(
         target_level=target_level,
         redo=redo,
         always_include=always_include,
-        observed_levels=observed,
+        observed_levels=this_beat if this_beat else None,
+        l_inventory_attested=bool(l_inventory_attested),
+        skills_panel_attested=bool(skills_panel_attested),
+        yellow_list_checked_first=bool(yellow_list_checked_first),
+        completion_ledger=ledger,
+        life_state=life_state,
     )
-    rows = list((plan.get("gaps") or {}).get("rows") or [])
-    if not rows:
+    may_type = bool(type_admit.get("allowed"))
+    if may_type:
+        safety = assess_console_type_safety(console_strip_observed=console_strip_observed)
+        if safety.get("state") != "CONSOLE_TYPE_ALLOWED":
+            raise GateError("CONSOLE_STRIP_REQUIRED_BEFORE_FORCE_GAPS")
+
+    rows = list((plan.get("gaps") or {}).get("rows") or []) if may_type else []
+    if may_type and not rows:
         return {
             "state": "FORCE_GAPS_EMPTY",
             "member_key": member_key,
+            "type_admit": type_admit,
             "plan": plan,
-            "note": "No gap commands — ledger already PANEL_OBSERVED_MAX for bundle",
+            "note": "No gap commands — this-beat L inventory already at target for bundle",
         }
 
     idle = _wait_for_input_idle(int(process_id), idle_ms=int(idle_ms), timeout_sec=180.0)
@@ -1327,18 +1384,41 @@ def execute_force_gaps(
     borrow = _borrow_sims_foreground(int(process_id), settle_for_interop_idle=False, retries=2)
     hwnd = int(borrow["hwnd"])
     typed: list[str] = []
+    inventory_done = False
     try:
         _arm_live_hotkeys(process_id=int(process_id), restore_operator=False)
-        _keybd_tap(0x0D)  # Enter recenter
+        _keybd_tap(0x0D)  # Enter recenter — no zoom/roam
         time.sleep(0.2)
         send_click(int(portrait_xy[0]), int(portrait_xy[1]), between_sec=0.05, safe_rest_after=False)
         time.sleep(0.25)
-        send_right_click(int(portrait_xy[0]), int(portrait_xy[1]), between_sec=0.05, safe_rest_after=False)
-        time.sleep(0.45)
         _keybd_tap(0x0D)
         time.sleep(0.15)
-        _keybd_tap(0x4A)  # J name proof
+        _keybd_tap(0x4A)  # J name proof only
         time.sleep(0.35)
+        # Close Work/Career, open Skills, yellow-list inventory BEFORE typing.
+        _close_work_open_skills_inventory()
+        inventory_done = True
+        time.sleep(0.2)
+        if not may_type:
+            return {
+                "state": "FORCE_GAPS_INVENTORY_ONLY_TYPE_DENIED",
+                "member_key": member_key,
+                "portrait_xy": list(portrait_xy),
+                "typed_count": 0,
+                "commands": [],
+                "inventory_scrolled": inventory_done,
+                "type_admit": type_admit,
+                "plan": plan,
+                "proof_ceiling": "L_SKILLS_YELLOW_INVENTORY_REQUIRED_BEFORE_TYPE",
+                "next": (
+                    "Confirm Skills (not Work) is open; read YELLOW maxed first, then "
+                    "non-yellow/gray; re-run with --skills-panel-attested "
+                    "--yellow-list-checked-first --l-inventory-attested "
+                    "--observed-level skill_id=N"
+                ),
+            }
+        _keybd_tap(0x4C)  # close L before console
+        time.sleep(0.2)
         _toggle_cheat_console(process_id=int(process_id), restore_operator=False)
         _refocus_cheat_console()
         time.sleep(0.12)
@@ -1359,7 +1439,6 @@ def execute_force_gaps(
 
     _play_brief_observe_repause(process_id=int(process_id), play_seconds=int(play_seconds))
 
-    inventory_done = False
     if scroll_inventory:
         idle2 = _wait_for_input_idle(int(process_id), idle_ms=int(idle_ms), timeout_sec=180.0)
         if idle2.get("state") != "INPUT_IDLE_READY":
@@ -1371,20 +1450,8 @@ def execute_force_gaps(
             _keybd_tap(0x0D)
             send_click(int(portrait_xy[0]), int(portrait_xy[1]), between_sec=0.05, safe_rest_after=False)
             time.sleep(0.2)
-            send_right_click(
-                int(portrait_xy[0]), int(portrait_xy[1]), between_sec=0.05, safe_rest_after=False
-            )
-            time.sleep(0.4)
             _keybd_tap(0x0D)
-            _keybd_tap(0x4C)  # L skills
-            time.sleep(0.4)
-            left_drag(1722, 810, 1722, 225, steps=12, step_sec=0.018, safe_rest_after=False)
-            time.sleep(0.1)
-            send_click(1700, 520, between_sec=0.04, safe_rest_after=False)
-            send_wheel(-30, x=1700, y=520, safe_rest_after=False)
-            time.sleep(0.2)
-            send_wheel(12, x=1700, y=520, safe_rest_after=False)
-            park_safe_cursor_rest()
+            _close_work_open_skills_inventory()
             inventory_done = True
         finally:
             _restore_operator_foreground(snap2.get("hwnd"), sims_hwnd=int(borrow2["hwnd"]))
@@ -1396,10 +1463,11 @@ def execute_force_gaps(
         "typed_count": len(typed),
         "commands": typed,
         "inventory_scrolled": inventory_done,
+        "type_admit": type_admit,
         "plan": plan,
         "proof_ceiling": "HOST_TYPED_NOT_PANEL_OBSERVED_MAX",
         "media_production_canonical": "stats.set_skill_level Major_MediaProduction 10",
-        "next": "LOCAL_OBSERVE Skills panel (scroll); panel-record yellow vs non-yellow",
+        "next": "LOCAL_OBSERVE Skills (not Work): yellow vs non-yellow vs gray; panel-record",
     }
 
 
@@ -1428,9 +1496,9 @@ def main(argv: list[str] | None = None) -> int:
     fg = sub.add_parser(
         "force-gaps",
         help=(
-            "Durable select→type canonical gap cheats→play→scroll inventory. "
-            "Use --redo for full bundle on a locally observed target Sim. "
-            "Canonical Media Production: stats.set_skill_level Major_MediaProduction 10"
+            "Durable order: J name → close Work → L Skills → yellow list first → type non-yellow/gray only. "
+            "Typing requires --skills-panel-attested --yellow-list-checked-first "
+            "--l-inventory-attested and --observed-level skill=N. Never invent Work as Skills."
         ),
     )
     fg.add_argument("--member-key", required=True, help="Stable locally observed portrait key; never display name")
@@ -1445,23 +1513,58 @@ def main(argv: list[str] | None = None) -> int:
     fg.add_argument("--roster-key", action="append", default=[])
     fg.add_argument("--bundle", default="full_unlock")
     fg.add_argument("--level", type=int, default=10)
-    fg.add_argument("--redo", action="store_true", help="Force entire bundle even if ledger MAX")
+    fg.add_argument(
+        "--redo",
+        action="store_true",
+        help="Force entire bundle from THIS-beat observed levels only (still needs L attestation)",
+    )
     fg.add_argument(
         "--always-include",
         action="append",
         default=[],
-        help="Repeatable skill_id to force even if ledger says max (e.g. media_production)",
+        help="Repeatable skill_id to force even if this-beat levels say max (requires L attestation)",
+    )
+    fg.add_argument(
+        "--l-inventory-attested",
+        action="store_true",
+        help="Hard gate: full L Skills scroll inventory THIS beat before typing",
+    )
+    fg.add_argument(
+        "--skills-panel-attested",
+        action="store_true",
+        help="Hard gate: Skills panel (L) is open — not Work/Career (J)",
+    )
+    fg.add_argument(
+        "--yellow-list-checked-first",
+        action="store_true",
+        help="Hard gate: yellow/gold maxed rows were read before any cheat typing",
+    )
+    fg.add_argument(
+        "--life-state",
+        default=None,
+        help="Member life state (e.g. servo). Skips catalog unavailable_for_life_states rows",
+    )
+    fg.add_argument(
+        "--observed-level",
+        action="append",
+        default=[],
+        metavar="SKILL=N",
+        help="Repeatable this-beat L Skills level (e.g. photography=5). Yellow=max; gaps=below/absent",
     )
     fg.add_argument("--process-id", type=int, default=None)
     fg.add_argument("--execute", action="store_true")
     fg.add_argument(
         "--console-strip-observed",
         action="store_true",
-        help="Required with --execute: white cheat strip open+focused before type",
+        help="Required when typing: white cheat strip open+focused before type",
     )
     fg.add_argument("--idle-ms", type=int, default=15000)
     fg.add_argument("--play-seconds", type=int, default=7)
-    fg.add_argument("--no-scroll-inventory", action="store_true")
+    fg.add_argument(
+        "--no-scroll-inventory",
+        action="store_true",
+        help="Skip post-play L confirm scroll only; pre-type L inventory always runs",
+    )
     fg.add_argument("--completion-ledger", type=Path, default=None)
     fg.add_argument("--receipt", type=Path, default=None)
 
@@ -1575,6 +1678,33 @@ def main(argv: list[str] | None = None) -> int:
     rs.add_argument("--target-level", type=int, default=10)
     rs.add_argument("--bundle", default="full_unlock")
 
+    sx = sub.add_parser(
+        "skills-export",
+        help=(
+            "Export per-Sim skills lists for the scoped local-profile household. "
+            "Writes under LOCALAPPDATA/BetterInstincts/households/<profile>/exports/ "
+            "(each installer has different private data; never commit exports)."
+        ),
+    )
+    sx.add_argument("--session-id", default=None)
+    _add_household_scope_flags(sx)
+    sx.add_argument("--members", type=int, required=True)
+    sx.add_argument("--roster-key", action="append", default=[], required=False)
+    sx.add_argument("--completion-ledger", type=Path, default=None)
+    sx.add_argument("--target-level", type=int, default=10)
+    sx.add_argument("--bundle", default="full_unlock")
+    sx.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="Optional override path; default is private profile exports/ under local config",
+    )
+    sx.add_argument(
+        "--stdout-only",
+        action="store_true",
+        help="Do not write a file; print JSON only",
+    )
+
     ts = sub.add_parser(
         "target-sim",
         help=(
@@ -1649,7 +1779,15 @@ def main(argv: list[str] | None = None) -> int:
                 mk = scope["member_keys"][args.roster_key.index(args.member_key)]
             else:
                 mk = completion_member_key(args.session_id, 0, args.member_key)
-            observed = member_observed_levels_from_ledger(ledger, mk)
+            this_beat_levels: dict[str, int] = {}
+            for raw in list(args.observed_level or []):
+                if "=" not in str(raw):
+                    raise GateError("OBSERVED_LEVEL_MUST_BE_SKILL_EQ_N")
+                sid, _, lvl = str(raw).partition("=")
+                sid = sid.strip()
+                if not sid:
+                    raise GateError("OBSERVED_LEVEL_SKILL_ID_REQUIRED")
+                this_beat_levels[sid] = int(lvl.strip())
             if args.execute:
                 if args.process_id is None:
                     raise GateError("PROCESS_ID_REQUIRED_FOR_EXECUTE")
@@ -1667,17 +1805,27 @@ def main(argv: list[str] | None = None) -> int:
                     idle_ms=int(args.idle_ms),
                     play_seconds=int(args.play_seconds),
                     scroll_inventory=not bool(args.no_scroll_inventory),
+                    l_inventory_attested=bool(args.l_inventory_attested),
+                    skills_panel_attested=bool(args.skills_panel_attested),
+                    yellow_list_checked_first=bool(args.yellow_list_checked_first),
+                    observed_levels_this_beat=this_beat_levels or None,
                     completion_ledger_path=ledger_path,
+                    life_state=(str(args.life_state).strip().lower() if args.life_state else None),
                 )
             else:
                 result = plan_force_gaps_beat(
-                    member_key=str(args.member_key),
+                    member_key=mk,
                     portrait_client_xy=portrait_xy,
                     bundle=str(args.bundle),
                     target_level=int(args.level),
                     redo=bool(args.redo),
                     always_include=list(args.always_include or []),
-                    observed_levels=observed,
+                    observed_levels=this_beat_levels or None,
+                    l_inventory_attested=bool(args.l_inventory_attested),
+                    skills_panel_attested=bool(args.skills_panel_attested),
+                    yellow_list_checked_first=bool(args.yellow_list_checked_first),
+                    completion_ledger=ledger,
+                    life_state=(str(args.life_state).strip().lower() if args.life_state else None),
                 )
             if args.receipt is not None:
                 Path(args.receipt).parent.mkdir(parents=True, exist_ok=True)
@@ -1779,6 +1927,39 @@ def main(argv: list[str] | None = None) -> int:
                 "bundle": bundle,
                 "members": members_out,
             }
+        elif args.command == "skills-export":
+            if len(args.roster_key or []) != int(args.members):
+                raise GateError("EXACT_OBSERVED_PORTRAIT_ROSTER_REQUIRED_FOR_SCOPE")
+            scope, scoped_path = _scoped_household_ledger(args, required=True)
+            assert scope is not None and scoped_path is not None
+            ledger_path = _resolve_ledger_path(args, scoped_path)
+            ledger = load_completion_ledger(ledger_path)
+            _validate_scope_ledger(ledger, scope)
+            profile = str(args.profile_id or view_installation_profile()["profile_id"])
+            result = export_household_skills_list(
+                ledger,
+                bundle=str(args.bundle or "full_unlock"),
+                target_level=int(args.target_level),
+                household_scope=scope,
+                profile_id=profile,
+            )
+            if not args.stdout_only:
+                out_path = Path(args.out) if args.out is not None else household_skills_export_path(
+                    profile_id=profile,
+                    scope_id=str(scope["scope_id"]),
+                )
+                if scoped_path is not None and out_path.resolve().is_relative_to(ROOT.resolve()):
+                    raise GateError("SKILLS_EXPORT_MUST_REMAIN_OUTSIDE_REPOSITORY")
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text(
+                    json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+                )
+                result = {
+                    **result,
+                    "state": "HOUSEHOLD_SKILLS_EXPORTED",
+                    "export_path": str(out_path),
+                    "ledger": str(ledger_path),
+                }
         elif args.command == "trait-repair":
             plan = plan_trait_repair(
                 remove_traits=list(args.trait) or None,

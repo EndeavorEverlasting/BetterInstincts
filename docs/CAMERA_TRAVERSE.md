@@ -136,6 +136,29 @@ The camera-drift recovery sequence now **freezes game simulation time before tar
 
 **Important limitations:** pausing gameplay does **not** freeze the movable camera, user cursor, player input, or every UI refresh. Earlier camera-revision/safe-rest/foreground and player ownership gates still apply. The Skills panel may remain stale while paused; the existing skill-force PLAY_BRIEF_OBSERVE_REPAUSE owner (5–10s 1x, inspect, re-pause) is preserved and must not be replaced by a paused-only screenshot. The host needs physical P08 validation of Sims patch, clock/pause sensor, known paused vs running cases, safe agent-initiated pause, and post-camera target click before live certification.
 
+## ROOM_MAP_TRAVERSE — leave Sim center to map a room (2026-11-10)
+
+**Operator corrections:** default active-Sim center stays. For room graph census: **Build F3 → T top-down → `BUILD_TOP_DOWN_MAP` room-fit zoom (default across agents/host; preserve the operator-centered frame — do not re-zoom/pan once attested) → Select-click one item → read bottom-right params → document name + `client_xy` → Escape → next**. Capture via PrintWindow. Offline only (no Gallery/EA Connect). On grab/hold: **Escape immediately**; never place/sell/inventory.
+
+**Algorithm (offline plan → admitted live):**
+1. `REQUIRE_NAMED_MAP_GOAL` (`goal_id` + `target_kind`).
+2. Escape overlays; **hotkey** `F3` Build (observe-only — no catalog place).
+3. Hotkey `T` Build top-down; hotkey `X` / safe-interior wheel zoom out until the room fits.
+4. Capture/observe furniture one-by-one; upsert floor-map **graph** (landmarks → edges → targets). No LMB on objects.
+5. On erroneous grab: Escape (repeat if still held) → resume hotkey-only census.
+6. Optional: local **Save to My Library** folder control only — never Gallery share.
+7. Hotkey `F1` restore Live + `SAFE_CURSOR_REST`.
+
+Live `OBJECT_PICK_IDENTIFY` remains a separate path for Order/pie after the graph exists — not the census authority.
+
+**Memorialization (continuous):** once mapped, an object is `MEMORIALIZED` with `expected_interactions` and frozen durable fields. Casual re-observations do not rewrite it. At interact time, if an expected interaction is absent (e.g. Order missing → Online Charity instead), mark `STALE_NEEDS_REMAP` and remap **only that node**. Owners: `contracts/lot-floor-map.v1.json#memorialization`, `memorialize_object` / `assess_interaction_against_memorial`.
+
+**Needs opportunity (preferred):** when `host_stack` investigates a `world_target` for needs, `opportunistic_needs_map` records/assesses that object in the profile floor map. Prefer this natural path over Build-mode sampling sprints; Build `T` stays the fallback for unknowns/stale-only nodes.
+
+**Builder placement auto-map (installed host):** while BetterInstincts is installed, cooperative `host_listener` Build/Buy ticks record builder **LMB place** events into the floor graph (`record_builder_placement`, bbox **center**, optional `SEATED_AT`/`ON_TOP_OF` links). This is **not** OS cron/Task Scheduler; `bootstrap uninstall` removes the managed launcher and stops it. Agent Select-inspect still requires **bbox-center click + Escape**; grab without Escape is a regression.
+
+**Owners:** `contracts/camera-traverse.v1.json#room_map_traverse`, `betterinstincts/room_map_traverse.py`, graph writeback `betterinstincts/lot_floor_map.py`. CLI: `python -m scripts.lot_floor_map room-traverse-plan` / `record-room-landmarks`. Proof ceiling offline plan + local graph store — not live click cert.
+
 ## Active-Sim-only camera invariant (2026-11-09)
 
 After repeated observed agent drift toward a top-down street, the **default camera frame is the active Sim**, not an arbitrary place. During admitted host control, `host_stack.evaluate_turn(..., sim_camera_observation=...)` now requests `CAMERA_ACTIVE_SIM_CENTER_REQUIRED` unless observation proves the active Sim is already centered or followed. Native `Enter` centers the active Sim; `Shift+Enter` centers a lot, not a Sim. Neither keystroke alone establishes continuous game API follow.
@@ -176,3 +199,34 @@ Operator-attested ladder for **every** agent (P01 harness, not chat preference):
 Machine owner: `contracts/camera-traverse.v1.json#agent_zoom_policy`, `assess_agent_zoom_mode` / `plan_agent_default_view`. `active_sim_camera_lock` fails closed when the observed view is street top-down without a travel goal. Wheel notch distances require local P08 calibration; offline plans set `requires_live_calibration=true` and never grant input.
 
 **Zoomed-in overlay clear:** at RIGHT_CLICK_VIEW or MAX_CLOSE, after BetterInstincts has `metadata_tracked` + `accounted_by=BETTER_INSTINCTS`, propose dismiss for expanded opportunity panel, expanded bottom-right panels, cheat console, expanded phone (extensible). Unresolved decision overlays never clear as clutter. Owner: `scene_ui_semantics.assess_overlay_clear_after_metadata`.
+
+## 2026-11-10 — ZOOM_MODE ≠ ZOOM_CONTROL; OBJECT_PICK_IDENTIFY
+
+**Operator corrections:** Zooming in is **not** a right-click. Zooming in is Live hotkey **Z** (zoom out **X**); **scroll wheel** also zooms. When picking a world object, **traverse → zoom in → screenshot → identify → click**. Do not identify from street top-down.
+
+| Semantic | Meaning | Actuator |
+| --- | --- | --- |
+| **ZOOM_MODE** `RIGHT_CLICK_VIEW` | Target distance 0.85 of max close (+ follow posture) | Not an input |
+| **ZOOM_CONTROL** `CAMERA_ZOOM_IN` | Zoom closer | **Z** (KEY) or scroll wheel |
+| **ZOOM_CONTROL** `CAMERA_ZOOM_OUT` | Zoom farther | **X** (KEY) or scroll wheel |
+| Portrait RMB | Follow active Sim | Not zoom |
+| Enter / Shift+Enter | Center Sim / lot once | Not zoom |
+
+Catalog: `contracts/ui-chrome.v1.json` LIVE `CAMERA_ZOOM_IN` / `CAMERA_ZOOM_OUT`; `contracts/camera-traverse.v1.json#zoom_controls` + `#object_pick_identify`. Planner: `plan_object_pick_identify` / `python -m scripts.camera_traverse object-pick-plan --target-id ID`. Lean skill-force typing still forbids mid-beat zoom (separate beat).
+
+## 2026-11-10 — lot focus (LOT_OFF_FOCUS)
+
+When the camera shows **scenery off the active household lot** (street, canal, neighborhood top-down), agents must **not** street-roam or pan without bound. Classify with `betterinstincts/lot_focus.assess_lot_focus`; machine policy in `contracts/camera-traverse.v1.json#lot_focus`.
+
+| State | Meaning |
+| --- | --- |
+| **ON_LOT** | Camera/scenery on the active household lot |
+| **OFF_LOT_STREET** | Street/neighborhood view; often `TRAVEL_AFAR` without a verified long-distance travel goal |
+| **OFF_LOT_WATER** | Canal/waterfront off-lot scenery |
+| **UNKNOWN** | Insufficient host/operator lot-focus cues — reobserve |
+
+**Cues:** missing Live HUD, `zoom_mode_observed` = `TRAVEL_AFAR` without travel goal, `camera_lot_kind`, `camera_on_active_household_lot`, `lot_focus_cues` from host/operator.
+
+**Restore:** `CENTER_ACTIVE_SIM` via **Enter** only in the default plan. **Shift+Enter** (lot center) is forbidden as the default Sim restore. `host_stack.evaluate_turn` emits `lot_focus` and gates `LOT_OFF_FOCUS_RESTORE_REQUIRED` ahead of discretionary camera work.
+
+Proof ceiling: `OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED`. Consultation: `contracts/consultations/BI-LOT-OFF-FOCUS-20261110.v1.json`.

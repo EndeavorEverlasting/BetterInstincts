@@ -905,6 +905,60 @@
         "docs/CAMERA_TRAVERSE.md"
       ]
     },
+    "ZOOM_MODE": {
+      "definition": "Target zoom ladder rung (RIGHT_CLICK_VIEW 0.85, ENVIRONMENT_NAV 0.50, TRAVEL_AFAR 0.0, MAX_CLOSE 1.0). A mode name is not a zoom actuator.",
+      "owners": [
+        "contracts/camera-traverse.v1.json",
+        "docs/CAMERA_TRAVERSE.md"
+      ]
+    },
+    "ZOOM_CONTROL": {
+      "definition": "Live camera zoom actuator: hotkey Z zoom-in, X zoom-out, or scroll wheel. Never right-click / portrait RMB as zoom.",
+      "owners": [
+        "contracts/ui-chrome.v1.json",
+        "contracts/camera-traverse.v1.json#zoom_controls",
+        "docs/UI_CHROME.md",
+        "docs/CAMERA_TRAVERSE.md"
+      ]
+    },
+    "CAMERA_ZOOM_IN": {
+      "definition": "Live hotkey Z (KEY preferred) or scroll-wheel zoom-in. Distinct from RIGHT_CLICK_VIEW mode and from portrait follow RMB.",
+      "owners": [
+        "contracts/ui-chrome.v1.json",
+        "contracts/camera-traverse.v1.json#zoom_controls"
+      ]
+    },
+    "CAMERA_ZOOM_OUT": {
+      "definition": "Live hotkey X (KEY preferred) or scroll-wheel zoom-out. Forbidden as default object-pick posture (street top-down).",
+      "owners": [
+        "contracts/ui-chrome.v1.json",
+        "contracts/camera-traverse.v1.json#zoom_controls"
+      ]
+    },
+    "OBJECT_PICK_IDENTIFY": {
+      "definition": "World-object pick process: traverse → zoom in via CAMERA_ZOOM_IN/wheel → PrintWindow at that revision → identify → click. Never identify from zoomed-out street capture; never use RMB as zoom.",
+      "owners": [
+        "contracts/camera-traverse.v1.json#object_pick_identify",
+        "betterinstincts/camera_traverse.py",
+        "docs/CAMERA_TRAVERSE.md"
+      ]
+    },
+    "ROOM_MAP_TRAVERSE": {
+      "definition": "Build T top-down hotkey census into the lot-floor graph (observe-only; Escape on grab; no Gallery). Continuous: memorialize mapped items; remap a node only when expected interactions go missing or other invalidation fires.",
+      "owners": [
+        "contracts/camera-traverse.v1.json#room_map_traverse",
+        "betterinstincts/room_map_traverse.py",
+        "betterinstincts/lot_floor_map.py",
+        "docs/CAMERA_TRAVERSE.md"
+      ]
+    },
+    "MEMORIALIZED": {
+      "definition": "Floor-map object status: durable mapping frozen until change evidence (expected interaction missing, wrong control on memorialized target, operator remap, or gone from top-down census) marks STALE_NEEDS_REMAP.",
+      "owners": [
+        "contracts/lot-floor-map.v1.json#memorialization",
+        "betterinstincts/lot_floor_map.py"
+      ]
+    },
     "QUEUE_TEEN_HOMEWORK": {
       "definition": "Queue DO_HOMEWORK / WORK_ON_HOMEWORK when teen inventory_has_homework=true at home.",
       "owners": [

@@ -276,6 +276,105 @@ def plan_arm_to_console_handoff(*, cfg: Optional[dict] = None) -> dict:
     }
 
 
+def load_escape_menu_coords(*, cfg: Optional[dict] = None) -> dict[str, tuple[int, int]]:
+    """Return escape-menu client_xy tuples (1920x1080) for script consumers."""
+    cfg = cfg or load_contract()
+    block = cfg.get("escape_menu_1920x1080")
+    if not isinstance(block, Mapping):
+        raise FixedUiClickMapError("ESCAPE_MENU_BLOCK_REQUIRED")
+    targets = block.get("targets")
+    if not isinstance(targets, Mapping):
+        raise FixedUiClickMapError("ESCAPE_MENU_TARGETS_REQUIRED")
+    key_map = {
+        "menu_options": "options_gear",
+        "save": "save",
+        "save_as": "save_as",
+    }
+    out: dict[str, tuple[int, int]] = {}
+    for out_key, block_key in key_map.items():
+        row = targets.get(block_key)
+        if not isinstance(row, Mapping):
+            raise FixedUiClickMapError(f"ESCAPE_MENU_TARGET_MISSING:{block_key}")
+        xy = row.get("client_xy")
+        if not (
+            isinstance(xy, (list, tuple))
+            and len(xy) == 2
+            and all(isinstance(v, int) for v in xy)
+        ):
+            raise FixedUiClickMapError(f"ESCAPE_MENU_XY_REQUIRED:{block_key}")
+        out[out_key] = (int(xy[0]), int(xy[1]))
+    return out
+
+
+def plan_escape_menu_save(*, intent: str = "SAVE_AS", cfg: Optional[dict] = None) -> dict:
+    """Plan centered MENU save path; guard Save vs Save As 2px collision."""
+    cfg = cfg or load_contract()
+    block = cfg.get("escape_menu_1920x1080")
+    if not isinstance(block, Mapping):
+        raise FixedUiClickMapError("ESCAPE_MENU_BLOCK_REQUIRED")
+    intent_u = str(intent or "").strip().upper()
+    if intent_u not in {"SAVE", "SAVE_AS"}:
+        raise FixedUiClickMapError("ESCAPE_MENU_INTENT_UNKNOWN")
+    coords = load_escape_menu_coords(cfg=cfg)
+    thr = cfg.get("thresholds_px") or {}
+    hit_r = int(thr.get("hit_radius") or 12)
+    hazard = block.get("save_vs_save_as_hazard")
+    if not isinstance(hazard, Mapping):
+        raise FixedUiClickMapError("ESCAPE_MENU_HAZARD_REQUIRED")
+    sep = int(hazard.get("vertical_separation_px") or 2)
+    save_dialog = block.get("save_game_dialog_1920x1080")
+    if not isinstance(save_dialog, Mapping):
+        raise FixedUiClickMapError("SAVE_GAME_DIALOG_BLOCK_REQUIRED")
+    sd_targets = save_dialog.get("targets")
+    if not isinstance(sd_targets, Mapping):
+        raise FixedUiClickMapError("SAVE_GAME_DIALOG_TARGETS_REQUIRED")
+    add_new = sd_targets.get("add_new_save")
+    if not isinstance(add_new, Mapping):
+        raise FixedUiClickMapError("ADD_NEW_SAVE_TARGET_REQUIRED")
+    row_key = "save" if intent_u == "SAVE" else "save_as"
+    target_block = (block.get("targets") or {}).get(row_key)
+    if not isinstance(target_block, Mapping):
+        raise FixedUiClickMapError(f"ESCAPE_MENU_TARGET_MISSING:{row_key}")
+    menu_forbidden = list(block.get("forbidden") or [])
+    dialog_forbidden = list(save_dialog.get("forbidden") or [])
+    return {
+        "schema": "betterinstincts.escape-menu-save/v1",
+        "intent": intent_u,
+        "options_gear": {
+            "target_id": str(
+                (block.get("open_via") or {}).get("options_gear_target_id")
+                or "live.top_options"
+            ),
+            "client_xy": list(coords["menu_options"]),
+        },
+        "menu_row": {
+            "target_id": str(target_block.get("target_id") or f"live.escape_menu_{row_key}"),
+            "client_xy": list(coords[row_key]),
+            "role": str(target_block.get("role") or ""),
+        },
+        "save_vs_save_as_hazard": {
+            "vertical_separation_px": sep,
+            "within_default_hit_radius": sep <= hit_r,
+            "never_use_menu_save_for_new_slot": bool(
+                hazard.get("never_use_menu_save_for_new_slot", True)
+            ),
+        },
+        "save_game_dialog": {
+            "add_new_save": dict(add_new),
+            "forbidden": dialog_forbidden,
+            "allowed_click": list(save_dialog.get("allowed_click") or []),
+        },
+        "forbidden": menu_forbidden,
+        "dialog_forbidden": dialog_forbidden,
+        "execute_allowed": False,
+        "proof_ceiling": cfg["proof_ceiling"],
+        "note": (
+            "Save and Save As are only 2px apart — use SAVE_AS target for new slots; "
+            "SAVE GAME dialog: ADD NEW SAVE only; never Delete or overwrite rows."
+        ),
+    }
+
+
 def plan_skills_burger_expand(*, cfg: Optional[dict] = None) -> dict:
     """Plan L → locate MIN burger → stepped LMB drag to MAX for full Skills list.
 

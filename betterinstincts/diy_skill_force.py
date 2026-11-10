@@ -143,6 +143,23 @@ def save_completion_ledger(ledger: Mapping[str, object], path: Path | None = Non
     return path
 
 
+def _catalog_row(
+    skill_id: str | Mapping | None,
+    *,
+    cfg: Optional[dict] = None,
+) -> Mapping | None:
+    cfg = cfg or load_contract()
+    if isinstance(skill_id, Mapping):
+        return skill_id
+    if not skill_id:
+        return None
+    sid = str(skill_id).strip().lower()
+    for cand in cfg.get("skill_catalog") or []:
+        if isinstance(cand, Mapping) and str(cand.get("id") or "").strip().lower() == sid:
+            return cand
+    return None
+
+
 def skill_max_level(
     skill_id: str | Mapping | None = None,
     *,
@@ -152,21 +169,50 @@ def skill_max_level(
     """Per-skill ceiling from catalog (Photography / Pet Training = 5)."""
     cfg = cfg or load_contract()
     default_i = int(default)
-    row: Mapping | None = None
-    if isinstance(skill_id, Mapping):
-        row = skill_id
-    elif skill_id:
-        sid = str(skill_id).strip().lower()
-        for cand in cfg.get("skill_catalog") or []:
-            if isinstance(cand, Mapping) and str(cand.get("id") or "").strip().lower() == sid:
-                row = cand
-                break
+    row = _catalog_row(skill_id, cfg=cfg)
     if row is not None and row.get("max_level") is not None:
         try:
             return max(1, min(10, int(row["max_level"])))
         except (TypeError, ValueError):
             return default_i
     return default_i
+
+
+def skill_unavailable_for_life_state(
+    skill_id: str | Mapping | None,
+    *,
+    life_state: str | None,
+    cfg: Optional[dict] = None,
+) -> bool:
+    """True when catalog marks the skill unavailable for this life state (e.g. Servo)."""
+    if not life_state:
+        return False
+    row = _catalog_row(skill_id, cfg=cfg)
+    if row is None:
+        return False
+    blocked = row.get("unavailable_for_life_states") or []
+    if not isinstance(blocked, list):
+        return False
+    want = str(life_state).strip().lower()
+    return any(str(x).strip().lower() == want for x in blocked)
+
+
+def skills_unavailable_for_life_state(
+    *,
+    life_state: str | None,
+    cfg: Optional[dict] = None,
+) -> set[str]:
+    cfg = cfg or load_contract()
+    if not life_state:
+        return set()
+    out: set[str] = set()
+    for cand in cfg.get("skill_catalog") or []:
+        if not isinstance(cand, Mapping):
+            continue
+        sid = str(cand.get("id") or "").strip().lower()
+        if sid and skill_unavailable_for_life_state(cand, life_state=life_state, cfg=cfg):
+            out.add(sid)
+    return out
 
 
 def skill_is_complete(entry: object, *, target_level: int) -> bool:
@@ -337,6 +383,7 @@ def gap_targets_from_observed_levels(
     *,
     target_level: int = 10,
     bundle: str | None = "full_unlock",
+    life_state: str | None = None,
     cfg: Optional[dict] = None,
 ) -> dict:
     """Non-yellow / below-skill-max Skills-panel rows → force targets + cheat lines.
@@ -345,20 +392,26 @@ def gap_targets_from_observed_levels(
     Missing catalog skills are treated as unknown gaps (level 0) so we never
     forget an unlisted row after a full scroll inventory.
     Photography and Pet Training max at 5 — gold at 5 is not a gap.
+    Skills marked ``unavailable_for_life_states`` for ``life_state`` are skipped.
     """
     cfg = cfg or load_contract()
     target = int(target_level)
     canon = canonical_skill_commands(
         target_level=target, bundle=bundle, cfg=cfg
     )
+    blocked = skills_unavailable_for_life_state(life_state=life_state, cfg=cfg)
     observed: dict[str, int] = {}
     for key, level in (observed_levels or {}).items():
         ref = resolve_skill_ref(str(key), cfg=cfg)
         observed[str(ref["skill_id"])] = int(level)
     gaps: list[dict] = []
     maxed: list[str] = []
+    skipped_life_state: list[str] = []
     for row in canon["commands"]:
         sid = str(row["skill_id"])
+        if sid in blocked:
+            skipped_life_state.append(sid)
+            continue
         ceiling = int(row.get("max_level") or skill_max_level(sid, cfg=cfg, default=target))
         need = min(target, ceiling)
         level = int(observed.get(sid, 0))
@@ -382,15 +435,18 @@ def gap_targets_from_observed_levels(
         "state": "SKILLS_GAP_TARGETS_READY",
         "target_level": target,
         "bundle": bundle,
+        "life_state": life_state,
         "maxed_count": len(maxed),
         "gap_count": len(gaps),
         "maxed_skill_ids": maxed,
+        "skipped_life_state_unavailable": sorted(skipped_life_state),
         "gaps": gaps,
         "commands": [g["command"] for g in gaps],
         "note": (
             "Scroll the Skills panel (burger expand + wheel) so every row is "
             "seen; gold/yellow checkmark rows are maxed (Photography and Pet "
-            "Training max at 5); non-yellow below that skill's max are gaps."
+            "Training max at 5); non-yellow below that skill's max are gaps; "
+            "life-state unavailable rows are not gaps."
         ),
     }
 
@@ -417,6 +473,27 @@ def member_observed_levels_from_ledger(
     return out
 
 
+def panel_falsified_skill_ids(
+    ledger: Mapping[str, object] | None,
+    member_key: str | None,
+) -> set[str]:
+    """Skills already PANEL_FALSIFIED for this member — do not retype without redo."""
+    if not isinstance(ledger, Mapping) or not member_key:
+        return set()
+    members = ledger.get("members")
+    if not isinstance(members, Mapping):
+        return set()
+    row = members.get(str(member_key))
+    skills = row.get("skills") if isinstance(row, Mapping) else None
+    if not isinstance(skills, Mapping):
+        return set()
+    out: set[str] = set()
+    for sid, cell in skills.items():
+        if isinstance(cell, Mapping) and str(cell.get("status") or "") == "PANEL_FALSIFIED":
+            out.add(str(sid).strip().lower())
+    return out
+
+
 def resolve_force_gap_commands(
     *,
     bundle: str = "full_unlock",
@@ -424,28 +501,44 @@ def resolve_force_gap_commands(
     observed_levels: Mapping[str, int] | None = None,
     redo: bool = False,
     always_include: Sequence[str] | None = None,
+    skip_skill_ids: Sequence[str] | None = None,
+    life_state: str | None = None,
     cfg: Optional[dict] = None,
 ) -> dict:
     """Canonical cheat lines for gaps (or full bundle when ``redo``).
 
     ``always_include`` forces named skill_ids even if ledger says max
     (e.g. sticky Major_MediaProduction / Major_Photography).
+    ``skip_skill_ids`` drops PANEL_FALSIFIED / unreachable rows unless ``redo``.
+    ``life_state`` skips catalog ``unavailable_for_life_states`` (Servo).
     """
     cfg = cfg or load_contract()
     always = {
         str(resolve_skill_ref(s, cfg=cfg)["skill_id"])
         for s in (always_include or [])
     }
+    skip = {
+        str(resolve_skill_ref(s, cfg=cfg)["skill_id"])
+        for s in (skip_skill_ids or [])
+    }
+    life_skip = skills_unavailable_for_life_state(life_state=life_state, cfg=cfg)
+    if not redo:
+        skip |= life_skip
     if redo:
         canon = canonical_skill_commands(
             target_level=target_level, bundle=bundle, cfg=cfg
         )
-        rows = list(canon["commands"])
+        rows = [
+            r for r in canon["commands"]
+            if str(r.get("skill_id") or "") not in life_skip
+        ]
+        skip = set(life_skip)
     else:
         gaps = gap_targets_from_observed_levels(
             observed_levels or {},
             target_level=target_level,
             bundle=bundle,
+            life_state=life_state,
             cfg=cfg,
         )
         rows = [
@@ -458,11 +551,12 @@ def resolve_force_gap_commands(
                 "observed_level": g["observed_level"],
             }
             for g in gaps["gaps"]
+            if str(g["skill_id"]) not in skip
         ]
         if always:
             have = {r["skill_id"] for r in rows}
             for sid in sorted(always):
-                if sid in have:
+                if sid in have or sid in skip:
                     continue
                 ref = resolve_skill_ref(sid, cfg=cfg)
                 rows.append(
@@ -480,7 +574,12 @@ def resolve_force_gap_commands(
                 )
     seen: set[str] = set()
     deduped: list[dict] = []
+    skipped_falsified: list[str] = []
     for row in rows:
+        sid = str(row.get("skill_id") or "").strip().lower()
+        if sid in skip:
+            skipped_falsified.append(sid)
+            continue
         stat = str(row["skill_stat"])
         if stat in seen:
             continue
@@ -495,11 +594,123 @@ def resolve_force_gap_commands(
         "count": len(deduped),
         "commands": [r["command"] for r in deduped],
         "rows": deduped,
+        "skipped_panel_falsified": sorted(set(skipped_falsified) | (skip - life_skip if not redo else set())),
+        "skipped_life_state_unavailable": sorted(life_skip),
+        "life_state": life_state,
         "media_production_canonical": "stats.set_skill_level Major_MediaProduction 10",
         "note": (
             "Never invent skill_stat spelling. Media Production is "
-            "Major_MediaProduction (with i)."
+            "Major_MediaProduction (with i). PANEL_FALSIFIED absent rows "
+            "are not retyped without --redo. Servo life-state unavailable "
+            "rows are never force targets."
         ),
+    }
+
+
+def assess_skills_panel_not_work(
+    *,
+    skills_panel_attested: bool,
+    work_or_career_panel_open: bool = False,
+) -> dict:
+    """P62: Skills inventory must be on L Skills, never Work/Career (J)."""
+    if work_or_career_panel_open is True:
+        return {
+            "state": "SKILLS_PANEL_DENIED_WORK_CAREER_OPEN",
+            "allowed": False,
+            "gate": "CLOSE_WORK_CAREER_THEN_OPEN_L_SKILLS",
+            "forbidden": [
+                "INVENTORY_WHILE_WORK_CAREER_SELECTED",
+                "TYPE_WHILE_WORK_CAREER_PANEL_OPEN",
+                "TREAT_CAREER_PANEL_AS_SKILLS_LIST",
+            ],
+        }
+    if skills_panel_attested is not True:
+        return {
+            "state": "SKILLS_PANEL_DENIED_NOT_ATTESTED",
+            "allowed": False,
+            "gate": "OPEN_L_SKILLS_AND_ATTEST_YELLOW_LIST_VISIBLE",
+            "forbidden": [
+                "INVENTORY_WHILE_WORK_CAREER_SELECTED",
+                "CAMERA_ZOOM_OUT_DURING_SKILLS_INVENTORY",
+                "MAP_ROAM_DURING_SKILLS_INVENTORY",
+            ],
+        }
+    return {
+        "state": "SKILLS_PANEL_READY_FOR_YELLOW_INVENTORY",
+        "allowed": True,
+        "gate": "READ_YELLOW_THEN_NON_YELLOW_THEN_GRAY_ABSENT",
+        "row_classes": ["YELLOW_MAXED", "NON_YELLOW_BELOW_TARGET", "GRAY_OR_ABSENT"],
+    }
+
+
+def assess_inventory_before_type(
+    *,
+    l_inventory_attested: bool,
+    observed_levels_this_beat: Mapping[str, int] | None,
+    skills_panel_attested: bool = False,
+    work_or_career_panel_open: bool = False,
+    yellow_list_checked_first: bool = False,
+) -> dict:
+    """Hard gate: L Skills yellow-list inventory this beat before any cheat typing.
+
+    Stale ledger gaps / missing rows are not proof a skill is absent.
+    Work/Career (J) is never the skills list.
+    """
+    panel = assess_skills_panel_not_work(
+        skills_panel_attested=bool(skills_panel_attested),
+        work_or_career_panel_open=bool(work_or_career_panel_open),
+    )
+    if panel.get("allowed") is not True:
+        return {
+            "state": "TYPE_DENIED_WRONG_PANEL",
+            "allowed": False,
+            "gate": panel.get("gate"),
+            "panel": panel,
+            "forbidden": list(panel.get("forbidden") or [])
+            + ["TYPE_BEFORE_L_INVENTORY_THIS_BEAT", "RETYPE_ALREADY_YELLOW_LEVEL_10"],
+        }
+    if l_inventory_attested is not True:
+        return {
+            "state": "TYPE_DENIED_INVENTORY_NOT_ATTESTED",
+            "allowed": False,
+            "gate": "OPEN_L_BURGER_SCROLL_FULL_LIST_THEN_ATTEST",
+            "panel": panel,
+            "forbidden": [
+                "TYPE_FROM_STALE_LEDGER_GAPS",
+                "TYPE_BEFORE_L_INVENTORY_THIS_BEAT",
+                "RETYPE_ALREADY_YELLOW_LEVEL_10",
+                "TYPE_BEFORE_YELLOW_LIST_CHECKED",
+            ],
+        }
+    if yellow_list_checked_first is not True:
+        return {
+            "state": "TYPE_DENIED_YELLOW_LIST_NOT_CHECKED_FIRST",
+            "allowed": False,
+            "gate": "ATTEST_YELLOW_MAXED_ROWS_BEFORE_ANY_CHEAT_TYPE",
+            "panel": panel,
+            "forbidden": [
+                "TYPE_BEFORE_YELLOW_LIST_CHECKED",
+                "RETYPE_ALREADY_YELLOW_LEVEL_10",
+                "TYPE_FROM_STALE_LEDGER_GAPS",
+            ],
+        }
+    if not isinstance(observed_levels_this_beat, Mapping) or not observed_levels_this_beat:
+        return {
+            "state": "TYPE_DENIED_NO_THIS_BEAT_OBSERVED_LEVELS",
+            "allowed": False,
+            "gate": "PASS_OBSERVED_LEVELS_FROM_L_SCROLL_THIS_BEAT",
+            "panel": panel,
+            "forbidden": [
+                "TYPE_FROM_STALE_LEDGER_GAPS",
+                "INFER_ABSENT_FROM_LEDGER_L0_ALONE",
+            ],
+        }
+    return {
+        "state": "TYPE_ALLOWED_AFTER_L_INVENTORY",
+        "allowed": True,
+        "gate": "FORCE_ONLY_NON_YELLOW_OR_GRAY_ABSENT_FROM_THIS_BEAT",
+        "panel": panel,
+        "observed_count": len(observed_levels_this_beat),
     }
 
 
@@ -512,52 +723,110 @@ def plan_force_gaps_beat(
     redo: bool = False,
     always_include: Sequence[str] | None = None,
     observed_levels: Mapping[str, int] | None = None,
+    l_inventory_attested: bool = False,
+    skills_panel_attested: bool = False,
+    yellow_list_checked_first: bool = False,
+    work_or_career_panel_open: bool = False,
+    completion_ledger: Mapping[str, object] | None = None,
+    life_state: str | None = None,
     cfg: Optional[dict] = None,
 ) -> dict:
-    """Durable lean beat: select portrait → force gap cheats → play → scroll inventory."""
+    """Durable lean beat: J name → close Work → L Skills yellow inventory → type gaps.
+
+    Order of operations is mandatory. Yellow list before any typing.
+    PANEL_FALSIFIED absent rows are skipped unless redo.
+    ``life_state=servo`` skips catalog unavailable_for_life_states rows.
+    """
     cfg = cfg or load_contract()
     if not isinstance(portrait_client_xy, (list, tuple)) or len(portrait_client_xy) != 2:
         raise DiySkillForceError("PORTRAIT_CLIENT_XY_REQUIRED")
-    gaps = resolve_force_gap_commands(
-        bundle=bundle,
-        target_level=target_level,
-        observed_levels=observed_levels,
-        redo=redo,
-        always_include=always_include,
-        cfg=cfg,
+    type_admit = assess_inventory_before_type(
+        l_inventory_attested=bool(l_inventory_attested),
+        observed_levels_this_beat=observed_levels,
+        skills_panel_attested=bool(skills_panel_attested),
+        work_or_career_panel_open=bool(work_or_career_panel_open),
+        yellow_list_checked_first=bool(yellow_list_checked_first),
     )
+    skip_falsified = panel_falsified_skill_ids(completion_ledger, member_key)
+    gaps = None
+    if type_admit.get("allowed"):
+        gaps = resolve_force_gap_commands(
+            bundle=bundle,
+            target_level=target_level,
+            observed_levels=observed_levels,
+            redo=redo,
+            always_include=always_include,
+            skip_skill_ids=sorted(skip_falsified),
+            life_state=life_state,
+            cfg=cfg,
+        )
     return {
         "schema": "betterinstincts.force-gaps-beat/v1",
         "state": "FORCE_GAPS_BEAT_READY",
         "execute_allowed": False,
         "member_key": str(member_key),
         "portrait_client_xy": [int(portrait_client_xy[0]), int(portrait_client_xy[1])],
+        "type_admit": type_admit,
         "gaps": gaps,
+        "skipped_panel_falsified": sorted(skip_falsified),
+        "life_state": life_state,
+        "skipped_life_state_unavailable": sorted(
+            skills_unavailable_for_life_state(life_state=life_state, cfg=cfg)
+        ),
         "order": [
             "IDLE_15S",
             "BORROW_SIMS",
             "ONE_PINNED_TERRAIN_ARM",
             "ENTER_CENTER_ACTIVE_SIM",
             "LEFT_CLICK_PORTRAIT",
-            "PORTRAIT_RMB_FOLLOW_IF_STREET_DRIFT",
             "ENTER_RECENTER",
             "J_WORK_NAME_PROOF",
-            "CONSOLE_STRIP_THEN_TYPE_GAP_COMMANDS",
+            "CLOSE_WORK_CAREER_PANEL",
+            "L_SKILLS_PANEL_NOT_WORK",
+            "L_SKILLS_BURGER_EXPAND",
+            "READ_YELLOW_MAXED_ROWS_FIRST",
+            "L_SCROLL_FULL_LIST_NON_YELLOW_AND_GRAY_ABSENT",
+            "RECORD_THIS_BEAT_OBSERVED_LEVELS",
+            "RESOLVE_NON_YELLOW_OR_GRAY_ABSENT_ONLY",
+            "CONSOLE_STRIP_THEN_TYPE_GAP_COMMANDS_ONLY_IF_NON_YELLOW",
             "CLOSE_CONSOLE",
             "RESTORE_OPERATOR",
             "PLAY_BRIEF",
-            "L_SKILLS_BURGER_SCROLL_INVENTORY",
-            "PANEL_RECORD_NON_YELLOW_GAPS",
+            "L_CONFIRM_THEN_PANEL_RECORD",
         ],
+        "row_classes": {
+            "YELLOW_MAXED": "Gold/yellow checkmark — never retype",
+            "NON_YELLOW_BELOW_TARGET": "Colored below max — force gap",
+            "GRAY_OR_ABSENT": "Missing/gray row after full scroll — force only if catalog skill",
+        },
         "forbidden": [
             "MAP_CLICK_WANDER",
+            "MAP_ROAM_DURING_SKILLS_INVENTORY",
+            "CAMERA_ZOOM_OUT_DURING_SKILLS_INVENTORY",
+            "WHEEL_ZOOM_OUT_TO_REFOCUS",
             "V_VIDEO_RECORD",
             "TYPE_WITHOUT_CONSOLE_STRIP",
+            "TYPE_BEFORE_L_INVENTORY_THIS_BEAT",
+            "TYPE_BEFORE_YELLOW_LIST_CHECKED",
+            "INVENTORY_WHILE_WORK_CAREER_SELECTED",
+            "TREAT_CAREER_PANEL_AS_SKILLS_LIST",
+            "TYPE_WHILE_WORK_CAREER_PANEL_OPEN",
+            "TYPE_FROM_STALE_LEDGER_GAPS",
+            "INFER_ABSENT_FROM_LEDGER_L0_ALONE",
             "INVENTED_OPERATOR_BUSY_WHEN_AWAY",
             "FIRST_VIEWPORT_ONLY_SKILLS_READ",
+            "RETYPE_ALREADY_YELLOW_LEVEL_10",
+            "RETYPE_AFTER_PANEL_FALSIFIED_ABSENT",
+            "PORTRAIT_RIGHT_CLICK",
         ],
         "inventory": plan_skills_panel_inventory(cfg=cfg),
+        "inventory_before_type": True,
         "owner": "scripts.diy_skill_force.execute_force_gaps",
+        "note": (
+            "P62 2026-11-10: Skills panel only (not Work). Check yellow list first. "
+            "Never zoom/roam the lot during inventory. Do not type from stale ledger. "
+            "After yellow confirm still-absent → PANEL_FALSIFIED; do not retype without --redo."
+        ),
     }
 
 
@@ -786,6 +1055,115 @@ def record_member_panel_snapshot(
         "skills_written": sorted(written),
         "panel_max_count": sum(1 for e in written.values() if e.get("status") == "PANEL_OBSERVED_MAX"),
         "panel_partial_count": sum(1 for e in written.values() if e.get("status") == "PANEL_OBSERVED"),
+    }
+
+
+def export_household_skills_list(
+    ledger: Mapping[str, object],
+    *,
+    bundle: str = "full_unlock",
+    target_level: int = 10,
+    household_scope: Mapping[str, object] | None = None,
+    profile_id: str | None = None,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Export per-Sim skills lists from a local-profile household ledger.
+
+    Portable across installers: each local profile/save/household has its own
+    ledger and export. Never invents members or levels. DISPATCHED is not PASS.
+    """
+    cfg = cfg or load_contract()
+    catalog = catalog_snapshot(cfg=cfg)
+    skill_ids = list((catalog.get("bundles") or {}).get(bundle, {}).get("skill_ids") or [])
+    members_raw = ledger.get("members") if isinstance(ledger.get("members"), Mapping) else {}
+    roster = ledger.get("household_roster") if isinstance(ledger.get("household_roster"), Mapping) else {}
+    scope_keys: list[str] | None = None
+    roster_labels: list[str] = []
+    if isinstance(household_scope, Mapping) and household_scope.get("member_keys"):
+        scope_keys = [str(k) for k in list(household_scope.get("member_keys") or [])]
+    if isinstance(roster.get("roster_keys"), list):
+        roster_labels = [str(k) for k in roster.get("roster_keys") or []]
+
+    ordered_keys: list[str]
+    if scope_keys:
+        ordered_keys = list(scope_keys)
+    else:
+        ordered_keys = sorted(str(k) for k in members_raw.keys())
+
+    members_out: list[dict] = []
+    for index, member_key in enumerate(ordered_keys):
+        row = members_raw.get(member_key) if isinstance(members_raw, Mapping) else None
+        skills_map = (row or {}).get("skills") if isinstance(row, Mapping) else {}
+        if not isinstance(skills_map, Mapping):
+            skills_map = {}
+        skills_list: list[dict] = []
+        for sid in sorted(skills_map.keys()):
+            entry = skills_map.get(sid)
+            if not isinstance(entry, Mapping):
+                continue
+            ceiling = skill_max_level(str(sid), cfg=cfg, default=int(target_level))
+            skills_list.append(
+                {
+                    "skill_id": str(sid),
+                    "display_name": str(entry.get("display_name") or sid),
+                    "skill_stat": str(entry.get("skill_stat") or ""),
+                    "level": int(entry.get("level") or 0),
+                    "max_level": int(entry.get("max_level") or ceiling),
+                    "status": str(entry.get("status") or "UNPROVEN"),
+                    "evidence": str(entry.get("evidence") or ""),
+                    "recorded_at": entry.get("recorded_at"),
+                    "panel_proven": str(entry.get("status") or "")
+                    in {"PANEL_OBSERVED", "PANEL_OBSERVED_MAX"},
+                    "complete_for_bundle": skill_is_complete(
+                        entry, target_level=min(int(target_level), ceiling)
+                    ),
+                }
+            )
+        done = completed_skill_ids_for_member(
+            ledger, member_key, target_level=int(target_level), cfg=cfg
+        )
+        remaining = [sid for sid in skill_ids if sid not in done]
+        roster_key = roster_labels[index] if index < len(roster_labels) else None
+        members_out.append(
+            {
+                "member_key": member_key,
+                "roster_key": roster_key,
+                "display_name": (row or {}).get("display_name") if isinstance(row, Mapping) else None,
+                "skills": skills_list,
+                "skills_count": len(skills_list),
+                "panel_max_count": sum(
+                    1 for s in skills_list if s.get("status") == "PANEL_OBSERVED_MAX"
+                ),
+                "panel_or_dispatched_complete": sorted(done),
+                "remaining_for_bundle": remaining,
+            }
+        )
+
+    return {
+        "schema": "betterinstincts.household-skills-export/v1",
+        "state": "HOUSEHOLD_SKILLS_EXPORT_READY",
+        "profile_id": profile_id,
+        "scope_id": (
+            str(household_scope.get("scope_id"))
+            if isinstance(household_scope, Mapping) and household_scope.get("scope_id")
+            else ledger.get("scope_id")
+        ),
+        "roster_fingerprint": (
+            household_scope.get("roster_fingerprint")
+            if isinstance(household_scope, Mapping)
+            else ledger.get("roster_fingerprint")
+        ),
+        "household_roster": dict(roster) if roster else None,
+        "bundle": bundle,
+        "target_level": int(target_level),
+        "member_count": len(members_out),
+        "members": members_out,
+        "proof_ceiling": "LOCAL_LEDGER_EXPORT_NOT_LIVE_PANEL_PROOF",
+        "note": (
+            "Each installer keeps private skills data under their local profile. "
+            "DISPATCHED is not Skills-panel PASS. Do not commit this export to git."
+        ),
+        "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
 
 
@@ -1641,6 +2019,7 @@ def plan_lean_selected_sim_skill_beat(
             or []
         )
         + [
+            "MOOD_COLOR_AS_SELECTION",
             "WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY",
             "ASPIRATION_G_AS_DEFAULT_IDENTITY",
             "REPEATED_TERRAIN_RMB_PER_HOTKEY",

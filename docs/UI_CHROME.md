@@ -27,6 +27,8 @@ Search field candidate (1920×1080) is client **(140, 864)** (`nx=0.0729`, `ny=0
 
 **Owner:** `contracts/fixed-ui-click-map.v1.json`, `betterinstincts/fixed_ui_click_map.py`, CLI `python -m scripts.fixed_ui_click_map`.
 **Rule:** every agent click on **fixed HUD** must be recorded with `target_id` + `client_xy` + classification (`HIT` / `NEAR_MISS` / `MISS` / `WRONG_CONTROL`). Wrong-control misses (e.g. intended household portrait → opened calendar at ~`(300,1045)`) must not rewrite the intended target’s attested coords. **Moving** world/Sim bodies are out of scope — separate system.
+
+**Miss causes (learn over time):** geometry alone is not enough — also label `miss_cause` via `python -m scripts.click_miss_cause classify|ingest-parts-buy|summarize` (`contracts/click-miss-cause.v1.json`). Priority: `PEER_HUD_COLLISION` → `OVERLAY_CLEAR_WIPE` → `STALE_SURFACE` → `WRONG_CONTROL` → `ZOOM_INSUFFICIENT` → `LOT_PUNCH_THROUGH` → `HITBOX_DRIFT`. Feature vectors are pinned for future ML; RULE_V1 is not a trained model. Peer Skills vs phone fights must not be “learned” as hitbox drift.
 **Handoff:** `ARM_LIVE_HOTKEYS` (left-click world focus, right-click cancel options) → `CHEAT_CONSOLE` (`Ctrl+Shift+C`) → white-strip confirm before `type_text`. Plan: `python -m scripts.fixed_ui_click_map handoff`.
 
 ## Hotkeys (intent / glossary)
@@ -41,6 +43,12 @@ Search field candidate (1920×1080) is client **(140, 864)** (`nx=0.0729`, `ny=0
 | Any | Ctrl+Shift+C | Cheat console | One command per line |
 | BUY/BUILD | Ctrl+Z | Undo | |
 | LIVE | M | Phone (candidate) | Unverified / locale-sensitive |
+| LIVE | **Z** | **CAMERA_ZOOM_IN** | KEY preferred; scroll wheel also zooms in. **Not** right-click. |
+| LIVE | **X** | **CAMERA_ZOOM_OUT** | KEY preferred; scroll wheel also zooms out. |
+| LIVE | Enter | Center active Sim once | Not zoom |
+| LIVE | Shift+Enter | Center lot once | Not zoom |
+
+**ZOOM_MODE ≠ ZOOM_CONTROL (operator 2026-11-10):** `RIGHT_CLICK_VIEW` is a zoom-*ladder mode* (0.85 of max close) plus portrait-follow posture. Reaching that distance uses **Z** / wheel — never RMB as the zoom actuator. World-object pick: traverse → zoom in → screenshot → identify (`OBJECT_PICK_IDENTIFY` in `docs/CAMERA_TRAVERSE.md`).
 
 ## AOK Bloomer recipe
 
@@ -123,6 +131,18 @@ PrintWindow-measured 1920×1080 (`fixed-ui-click-map.top_right_hud_1920x1080`). 
 | Notifications | `live.top_notification_inbox` | **(1859, 22)** | — |
 | Options … | `live.top_options` | **(1898, 22)** | Esc (careful) |
 | Live people (Build exit) | `live.top_live_people` | **(1585, 35)** | F1 |
+
+## Escape menu Save / Save As (1920×1080)
+
+Owner: `fixed-ui-click-map.escape_menu_1920x1080`, loader `load_escape_menu_coords` / `plan_escape_menu_save`. Live-measured 2026-11-10 (`dist/game-host/horizon-exec-20261110/`).
+
+| Row | target_id | client_xy | Hazard |
+| --- | --- | --- | --- |
+| Options gear | `live.top_options` | **(1898, 22)** | Opens MENU chrome |
+| Save | `live.escape_menu_save` | **(960, 420)** | In-place save — not for new lab slots |
+| Save As | `live.escape_menu_save_as` | **(960, 422)** | **Only 2px below Save** — inside default hit radius; never confuse intents |
+
+**SAVE GAME dialog:** click **ADD NEW SAVE** (top green+ row) only. **Never** click existing save rows, **Delete**, or **Overwrite**. `live.save_game_add_new_save` coords remain **UNMEASURED** until next capture.
 
 ## Top-left Discovery Quest tabs
 

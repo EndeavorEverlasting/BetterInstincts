@@ -16,9 +16,38 @@ from pathlib import Path
 from typing import Any
 
 from betterinstincts.control_handoff import (
-    HandoffError, MIN_IDLE_MS, decide, exclusive_desktop_owner,
+    HandoffError,
+    MIN_IDLE_MS,
+    decide,
+    exclusive_desktop_owner,
+    exclusive_live_hud_surface,
+    list_busy_live_hud_surfaces,
+    live_hud_surface_busy,
 )
 from betterinstincts.player_presence import PresenceProbe
+
+HUD_SURFACE_ALIASES = {
+    "BOTTOM_RIGHT_PANEL": "BOTTOM_RIGHT_PANEL",
+    "PANEL_SKILLS": "BOTTOM_RIGHT_PANEL",
+    "PANEL_CAREER": "BOTTOM_RIGHT_PANEL",
+    "PANEL_ASPIRATIONS": "BOTTOM_RIGHT_PANEL",
+    "PANEL_RELATIONSHIPS": "BOTTOM_RIGHT_PANEL",
+    "PANEL_INVENTORY": "BOTTOM_RIGHT_PANEL",
+    "PANEL_SIMOLOGY": "BOTTOM_RIGHT_PANEL",
+    "PANEL_NEEDS": "BOTTOM_RIGHT_PANEL",
+    "PANEL_CLUBS": "BOTTOM_RIGHT_PANEL",
+    "PHONE": "PHONE",
+    "PHONE_INTERFACE": "PHONE",
+    "live.phone": "PHONE",
+    "CHEAT_CONSOLE": "CHEAT_CONSOLE",
+    "CONSOLE": "CHEAT_CONSOLE",
+}
+
+SURFACE_CLEARABLE_KIND = {
+    "BOTTOM_RIGHT_PANEL": "BOTTOM_RIGHT_PANEL_EXPANDED",
+    "PHONE": "PHONE_INTERFACE_EXPANDED",
+    "CHEAT_CONSOLE": "CHEAT_CONSOLE",
+}
 
 DEFAULT_IDLE_MS = 15_000
 MAX_QUEUE = 32
@@ -180,3 +209,73 @@ class CooperativeScreenQueue:
             if last["state"].startswith("WAITING"):
                 await self.sleep(self.poll_seconds)
         return {"state": "WAIT_BUDGET_REACHED", "pending": len(self.pending)}
+
+
+def resolve_live_hud_surface(token: str) -> str:
+    """Map panel/phone/console aliases to the exclusive surface id."""
+    if not isinstance(token, str) or not token:
+        raise ValueError("LIVE_HUD_SURFACE_REQUIRED")
+    surface = HUD_SURFACE_ALIASES.get(token) or HUD_SURFACE_ALIASES.get(token.upper())
+    if not surface:
+        raise ValueError("UNKNOWN_LIVE_HUD_SURFACE")
+    return surface
+
+
+def assess_live_hud_surface_claim(
+    surface_token: str,
+    *,
+    lock_root: Path | None = None,
+) -> dict:
+    """Decide whether this agent may open a Live HUD surface without fighting a peer.
+
+    Skills (BOTTOM_RIGHT) vs phone are mutually exclusive. Busy peer → WAITING_FOR_AGENT;
+    work must be retained, never cancelled. Plans never grant SendInput.
+    """
+    surface = resolve_live_hud_surface(surface_token)
+    busy_others = [
+        s for s in list_busy_live_hud_surfaces(lock_root=lock_root) if s != surface
+    ]
+    this_busy = live_hud_surface_busy(surface, lock_root=lock_root)
+    if busy_others:
+        return {
+            "state": "WAITING_FOR_AGENT",
+            "gate": "PEER_HUD_SURFACE_LEASED",
+            "surface": surface,
+            "peer_surfaces": busy_others,
+            "execute_allowed": False,
+            "retain_work": True,
+            "reason": "LIVE_HUD_MUTUAL_EXCLUSION",
+            "note": "Do not open phone while Skills (or another exclusive HUD) is peer-leased.",
+        }
+    if this_busy:
+        return {
+            "state": "WAITING_FOR_AGENT",
+            "gate": "SAME_HUD_SURFACE_BUSY",
+            "surface": surface,
+            "execute_allowed": False,
+            "retain_work": True,
+            "reason": "SCREEN_OWNER_BUSY",
+        }
+    return {
+        "state": "HUD_SURFACE_CLAIM_READY",
+        "gate": "LIVE_HUD_SURFACE_AVAILABLE",
+        "surface": surface,
+        "clearable_kind": SURFACE_CLEARABLE_KIND[surface],
+        "execute_allowed": False,
+        "claim_helper": "exclusive_live_hud_surface",
+        "proof_ceiling": "OFFLINE_HUD_SURFACE_LEASE_POLICY_NOT_LIVE_TWO_AGENT_CERT",
+    }
+
+
+def peer_hud_leases_for_overlay_clear(*, lock_root: Path | None = None) -> list[dict]:
+    """Observation fragment: withhold overlay-clear of these peer-leased kinds."""
+    out: list[dict] = []
+    for surface in list_busy_live_hud_surfaces(lock_root=lock_root):
+        out.append(
+            {
+                "surface": surface,
+                "clearable_kind": SURFACE_CLEARABLE_KIND[surface],
+                "reason": "PEER_LEASED_HUD_SURFACE",
+            }
+        )
+    return out

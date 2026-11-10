@@ -113,6 +113,28 @@ P83 resolved as Moonwake's **Agent Work Verifier & Iterative Advancer** from the
 
 The bounded screen-action extension is [SCREEN_ATLAS.md](SCREEN_ATLAS.md), `contracts/screen-atlas.v1.json` and `betterinstincts/screen_atlas.py`. It **composes**, not replaces, the existing `ui_chrome` target map, `scenes`, `camera_traverse.safe_rest_point`, hidden-object console glossary and this cooperative queue. Use `python -m scripts.screen_atlas inventory` to inspect available screen/action names. Exact-build target calibration, independent scene cues, an already-owned Playwright-hosted game page and fresh 15s idle are mandatory before a click. A second admitted effect parks the cursor in the interior; after human interruption, no cursor fight or blind replay. The additional injected `enqueue_native_game_click` port accepts exact native PID/session, foreground PID and window origin while reusing the same queue. It does not bypass `screen_admit` or dispatch Win32 on its own. Live Win32 caller adoption and observed no-pan game proof remain P08/local-agent work. Do not assume that Playwright automatically sees a native Sims game.
 
+## 2026-11-10 — Live HUD surface lease (Skills vs phone)
+
+**Operator correction:** One agent opening Skills (`L`) and another opening the phone resets each other. Overlay-clear that dismisses a peer phone/panel is an interop failure. Desktop lock alone is not enough — Live exclusive HUD surfaces must be leased.
+
+| Surface | Examples | Lock file |
+| --- | --- | --- |
+| `BOTTOM_RIGHT_PANEL` | Skills, Career, Needs, … | `hud-BOTTOM_RIGHT_PANEL.lock` |
+| `PHONE` | Sim phone / Order UI | `hud-PHONE.lock` |
+| `CHEAT_CONSOLE` | Ctrl+Shift+C | `hud-CHEAT_CONSOLE.lock` |
+
+**Rule:** any two distinct surfaces conflict → `WAITING_FOR_AGENT` (retain work_id). Claim via `exclusive_live_hud_surface` under the same profile lock root as `desktop-shared.lock`. Assess first: `assess_live_hud_surface_claim("PHONE")` / `"PANEL_SKILLS"`. Overlay-clear withholds `peer_hud_leases` kinds (`PEER_LEASED_HUD_SURFACE`).
+
+Owners: `workflow-interoperability.v1.json#live_hud_surface_lease`, `control_handoff.exclusive_live_hud_surface`, `workflow_interop.assess_live_hud_surface_claim`, `scene_ui_semantics.assess_overlay_clear_after_metadata`. Consultation `BI-LIVE-HUD-SURFACE-LEASE-20261110`.
+
+```text
+skills agent claims BOTTOM_RIGHT_PANEL
+  -> phone agent assess_live_hud_surface_claim("PHONE")
+  -> WAITING_FOR_AGENT (work retained; do not open phone / do not clear skills)
+  -> skills completes / releases lease
+  -> phone drain resumes after 15s idle + claim PHONE
+```
+
 ## 2026-11-10 — Game input borrow / restore (watch YouTube while Sims ticks)
 
 Authorized Live effects still need Sims focused for a moment (Windows delivers keyboard/mouse to the foreground window). That must **not** mean the agent monopolizes the desktop or leaves the operator trapped in Sims while they watch YouTube or use any other app.

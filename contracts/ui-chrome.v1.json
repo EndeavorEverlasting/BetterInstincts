@@ -111,6 +111,42 @@
           "proves_mode": false
         },
         {
+          "id": "CAMERA_ZOOM_IN",
+          "chord": [
+            "Z"
+          ],
+          "effect": "Zoom camera in one step toward the subject",
+          "family": "CAMERA_ZOOM_CONTROL",
+          "status": "EA_DOCUMENTED_NATIVE",
+          "proves_mode": false,
+          "preferred_channel": "KEY",
+          "wheel_equivalent": "SCROLL_WHEEL_ZOOM_IN",
+          "not": [
+            "RIGHT_CLICK",
+            "PORTRAIT_RMB",
+            "RIGHT_CLICK_VIEW_AS_ACTUATOR"
+          ],
+          "note": "Operator 2026-11-10: zoom-in is hotkey Z (or scroll). RIGHT_CLICK_VIEW is a zoom-ladder mode name / follow posture — not this control."
+        },
+        {
+          "id": "CAMERA_ZOOM_OUT",
+          "chord": [
+            "X"
+          ],
+          "effect": "Zoom camera out one step",
+          "family": "CAMERA_ZOOM_CONTROL",
+          "status": "EA_DOCUMENTED_NATIVE",
+          "proves_mode": false,
+          "preferred_channel": "KEY",
+          "wheel_equivalent": "SCROLL_WHEEL_ZOOM_OUT",
+          "not": [
+            "RIGHT_CLICK",
+            "PORTRAIT_RMB",
+            "RIGHT_CLICK_VIEW_AS_ACTUATOR"
+          ],
+          "note": "Operator 2026-11-10: zoom-out is hotkey X (or scroll). Do not use street top-down as object-pick posture."
+        },
+        {
           "id": "SELECT_NEXT_HOUSEHOLD_SIM",
           "chord": [
             "SPACE"

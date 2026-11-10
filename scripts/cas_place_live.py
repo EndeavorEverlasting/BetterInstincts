@@ -16,6 +16,8 @@ import json
 import sys
 import time
 
+from betterinstincts.fixed_ui_click_map import load_escape_menu_coords
+
 # Offline-calibrated against PrintWindow bitmaps (1920x1080 borderless).
 SEASON_SUMMER = (850, 520)
 SEASON_CONTINUE = (1877, 1058)  # green check lower edge; not Cancel X
@@ -27,11 +29,12 @@ HUD_MANAGE_WORLDS = (1558, 22)  # Live top-right pin (Gallery is ~1608)
 LOT_MOVE_HOUSEHOLD = (1692, 1000)  # expanded lot-action truck (after Streamlet selected)
 MOVE_TRUCK = (1840, 1017)  # confirm destination truck (move mode)
 MOVE_CONFIRM = (1240, 740)  # blue check on "household is moving" modal
-MENU_OPTIONS = (1898, 22)  # top-right ellipsis (icons sit at y≈22, not y≈40)
+_ESCAPE_MENU = load_escape_menu_coords()
+MENU_OPTIONS = _ESCAPE_MENU["menu_options"]  # live.top_options @ y≈22
 MENU_MANAGE_WORLDS = (960, 713)  # Options MENU row; click blue text
 MENU_SAVE_AND_GO_MW = (960, 556)  # Save and Go to Manage Worlds (not question ~y492)
-MENU_SAVE = (960, 420)  # Options MENU Save row
-MENU_SAVE_AS = (960, 422)
+MENU_SAVE = _ESCAPE_MENU["save"]  # contracts/fixed-ui-click-map escape_menu_1920x1080
+MENU_SAVE_AS = _ESCAPE_MENU["save_as"]  # 2px below Save — use distinct target_id
 MENU_X = (1085, 330)
 LAB_SAVE_ROW = (720, 550)  # LabLab / My Saved Game 3 thumbnail
 LAB_SAVE_PILL = (1225, 500)  # row Save (above Delete)

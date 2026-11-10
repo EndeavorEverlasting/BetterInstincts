@@ -8,15 +8,25 @@
       "role": "This ordered pack; /fifth-gear"
     },
     "P83": {
-      "role": "N=4 panel truth; DISPATCHED≠maximized; sequential upgrade remaining gaps"
+      "role": "N=4 panel truth; DISPATCHED\u2260maximized; sequential upgrade remaining gaps"
     }
   },
   "floor": {
     "repo": "EndeavorEverlasting/BetterInstincts",
     "primary_local_path": "C:/Users/CheeksMcClappeth/dev/BetterInstincts",
     "observed_n": 4,
-    "roster_keys": ["EVIL_P0", "BERNICE_P1", "OLGA_P2", "CHARLEE_P3"],
-    "display_names": ["Evil Fagbot", "Bernice Thermidor", "Olga Chabenvenutzki", "Charlee"],
+    "roster_keys": [
+      "EVIL_P0",
+      "BERNICE_P1",
+      "OLGA_P2",
+      "CHARLEE_P3"
+    ],
+    "display_names": [
+      "Evil Fagbot",
+      "Bernice Thermidor",
+      "Olga Chabenvenutzki",
+      "Charlee"
+    ],
     "panel_truth": {
       "BERNICE_P1": "ALL_LISTED_SKILLS_LEVEL_10",
       "CHARLEE_P3": "ALL_LISTED_SKILLS_LEVEL_10",
@@ -38,12 +48,15 @@
     },
     "rejected_lie": "N=5 Handiness maximized",
     "session_id": "household-n4-20261109",
-    "mechanism": "python -m scripts.diy_skill_force panel-record|roster-status"
+    "mechanism": "python -m scripts.diy_skill_force panel-record|roster-status|skills-export",
+    "skills_export_note": "Per local installation profile only; another installer has different private household data under households/<profile>/exports/"
   },
   "parent_outcome": "Track Skills-panel levels in the completion ledger (N=4); skip Bernice+Charlee; sequentially skill-round-robin upgrade Evil+Olga remaining gaps to 10; RIGHT_CLICK_VIEW camera; clear overlays after metadata",
   "runtime_partition": {
     "host": "LOCAL_AGENT_RUNTIME_FOR_DISPATCH",
-    "provider_routes": ["GITHUB_ORIGIN"],
+    "provider_routes": [
+      "GITHUB_ORIGIN"
+    ],
     "current_chat_safe_work": "panel-record mechanism + seed ledger + pack + PR"
   },
   "fifth_gear_rule": "When game PID + session household-n4-20261109 + N=4 roster exist, S2 live cert is the first incomplete sprint. Emitting another P05 pack alone is not Fifth Gear completion.",
@@ -72,15 +85,94 @@
       "focus_20261110": {
         "member": "OLGA_P2",
         "bundle": "remote_income",
-        "panel_max_so_far": ["handiness", "fishing", "charisma", "cooking"],
-        "next_skills": ["programming", "writing", "painting", "fabrication", "photography", "media_production", "video_gaming", "flower_arranging", "comedy", "piano", "guitar", "violin", "singing", "dj_mixing"],
+        "order_of_ops": "J \u2192 L full scroll \u2192 --l-inventory-attested + --observed-level \u2192 type non-yellow only \u2192 play \u2192 L confirm/panel-record",
+        "inventory_before_type": true,
+        "l_inventory_evidence": [
+          "dist/game-host/household-skill-cert/live-20261109/olga-verify-top.png",
+          "dist/game-host/household-skill-cert/live-20261109/olga-verify-mid.png",
+          "dist/game-host/household-skill-cert/live-20261109/olga-verify-low.png",
+          "dist/game-host/household-skill-cert/live-20261109/olga-skills-media-band.png",
+          "dist/game-host/household-skill-cert/live-20261109/olga-skills-logic-media.png"
+        ],
+        "panel_max_so_far": [
+          "acting",
+          "apothecary",
+          "archaeology",
+          "baking",
+          "charisma",
+          "comedy",
+          "cooking",
+          "dj_mixing",
+          "fabrication",
+          "fishing",
+          "fitness",
+          "flower_arranging",
+          "gardening",
+          "gourmet_cooking",
+          "guitar",
+          "handiness",
+          "herbalism",
+          "horse_riding",
+          "logic",
+          "mischief",
+          "mixology",
+          "natural_living",
+          "painting",
+          "parenting",
+          "pet_training",
+          "photography",
+          "piano",
+          "pipe_organ",
+          "programming",
+          "research_and_debate",
+          "robotics",
+          "rock_climbing",
+          "rocket_science",
+          "singing",
+          "skiing",
+          "snowboarding",
+          "veterinarian",
+          "video_gaming",
+          "violin",
+          "wellness",
+          "writing"
+        ],
+        "photo_pet_max_at_5": true,
+        "panel_record_scoped": "dist/game-host/household-skill-cert/live-20261109/olga-panel-record-scoped.json",
+        "panel_max_count_recorded": 41,
+        "remaining_for_bundle": [
+          "dancing",
+          "media_production",
+          "vampire_lore",
+          "selvadoradian_culture",
+          "nectar_making"
+        ],
+        "remaining_evidence": {
+          "l_neighbors_still_skip_rows": true,
+          "force_dispatched_twice": [
+            "dist/game-host/household-skill-cert/live-20261109/olga-force-five-absent.json",
+            "dist/game-host/household-skill-cert/live-20261109/olga-force-five-retry.json"
+          ],
+          "proof_ceiling": "HOST_TYPED_NOT_PANEL_OBSERVED_MAX",
+          "hypothesis": "Pack/Servo may reject these five; DISPATCHED is not panel pass"
+        },
+        "gate": "Do not retype gold. Diagnose why those five stay absent after strip-gated type; then Evil gaps",
+        "next_skills": [
+          "dancing",
+          "media_production",
+          "vampire_lore",
+          "selvadoradian_culture",
+          "nectar_making"
+        ],
         "interruptibility": "wait trusted idle >=15s on mouse/key; borrow Sims; restore operator app; resume via cooperative waiter not OS cron"
       },
       "canary": {
         "skill": "robotics",
         "member": "EVIL_P0",
         "dispatch": "DIY_SKILL_FORCE_DISPATCHED",
-        "skills_panel_local_observed": {"robotics": 3},
+        "skills_panel_local_observed": {
+          "robotics": 3
+        },
         "proof_ceiling": "DISPATCHED_NOT_PANEL_PASS",
         "receipt": "dist/game-host/household-skill-cert/live-20261109/canary-evil-robotics.json"
       },
@@ -100,13 +192,73 @@
       "owner": "LOCAL_AGENT",
       "status": "ACTIVE",
       "depends_on": [],
-      "safe_parallel_with": ["S2"],
-      "mission": "Every game-input borrow waits GetLastInputInfo idle>=15s; mouse/key activity restarts wait; retained work resumes via CooperativeScreenQueue/host_listener/_wait_for_input_idle — never Task Scheduler/cron/daemon",
+      "safe_parallel_with": [
+        "S2"
+      ],
+      "mission": "Every game-input borrow waits GetLastInputInfo idle>=15s; mouse/key activity restarts wait; retained work resumes via CooperativeScreenQueue/host_listener/_wait_for_input_idle \u2014 never Task Scheduler/cron/daemon",
       "owners": [
         "contracts/workflow-interoperability.v1.json#game_input_borrow_restore",
         "scripts/diy_skill_force.py::_with_sims_input_borrow",
         "docs/ASYNC_INTEROP.md"
       ]
+    },
+    {
+      "id": "S2c",
+      "title": "Click miss-cause learning (interop vs geometry)",
+      "owner": "REPO_AGENT",
+      "status": "DONE_OFFLINE_RULE_V1",
+      "depends_on": [],
+      "safe_parallel_with": [
+        "S2",
+        "S2b"
+      ],
+      "mission": "Classify non-HIT clicks with miss_cause + pinned feature vectors; seed PEER_HUD_COLLISION / OVERLAY_CLEAR_WIPE / WRONG_CONTROL from parts-buy; never rewrite hitbox from peer fights. RULE_V1 now; trained ML later on corpus.",
+      "owners": [
+        "contracts/click-miss-cause.v1.json",
+        "betterinstincts/click_miss_cause.py",
+        "scripts/click_miss_cause.py",
+        "contracts/consultations/BI-CLICK-MISS-CAUSE-LEARN-20261110.v1.json"
+      ],
+      "proof_ceiling": "RULE_CLASSIFIER_AND_FEATURE_CORPUS_OFFLINE_NOT_TRAINED_MODEL_NOT_LIVE_CLICK_CERT",
+      "command": "python -m scripts.click_miss_cause ingest-parts-buy && python -m unittest tests.test_click_miss_cause -v"
+    },
+    {
+      "id": "S2d",
+      "title": "Per-profile lot floor map + Build auto-ensure",
+      "owner": "REPO_AGENT",
+      "status": "DONE_OFFLINE_STORE_PLUS_NEEDS_OPPORTUNITY",
+      "depends_on": [],
+      "safe_parallel_with": [
+        "S2",
+        "S2b",
+        "S2c"
+      ],
+      "mission": "Every installation profile owns households/<profile>/floors/<lot>.json; learning.lot_floor_map_auto default true; host_stack Build trigger ensures skeleton; ingest parts-buy computers/laptop/phone/avoid notes; agents map paths over time.",
+      "owners": [
+        "contracts/lot-floor-map.v1.json",
+        "betterinstincts/lot_floor_map.py",
+        "scripts/lot_floor_map.py",
+        "contracts/consultations/BI-LOT-FLOOR-MAP-PROFILE-20261110.v1.json"
+      ],
+      "proof_ceiling": "PROFILE_FLOOR_MAP_OFFLINE_AND_LOCAL_STORE_NOT_LIVE_OBJECT_HIT_CERT",
+      "command": "python -m scripts.lot_floor_map ingest-parts-buy --lot-key household-n4-lab && python -m unittest tests.test_lot_floor_map -v",
+      "notes": " Opportunistic needs_floor_map on world_target; Build T fallback; memorial continuous. Builder placement auto-map via host_listener (NOT OS cron); bbox-center+Escape census corrections."
+    },
+    {
+      "id": "S2e",
+      "title": "Builder placement auto-map (host_listener, uninstallable)",
+      "owner": "REPO_AGENT",
+      "status": "DONE_OFFLINE_CONTRACT",
+      "depends_on": [],
+      "safe_parallel_with": [
+        "S2",
+        "S2b",
+        "S2c",
+        "S2d"
+      ],
+      "mission": "Auto-map builder LMB placements into floor graph while BI installed; graph links; no OS cron; uninstall stops launcher.",
+      "proof_ceiling": "OFFLINE_BUILD_PLACEMENT_AUTO_MAP_CONTRACT_NOT_LIVE_BUILDER_SENSOR_CERT",
+      "command": "python -m unittest tests.test_lot_floor_map -v"
     },
     {
       "id": "S3",

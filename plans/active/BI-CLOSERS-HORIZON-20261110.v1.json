@@ -1,0 +1,105 @@
+{
+  "schema": "betterinstincts.closers-pack/v1",
+  "id": "BI-CLOSERS-HORIZON-20261110",
+  "created_at": "2026-11-10T09:07:00Z",
+  "source": "P02_Conversation_Closeout + P12_Handoff; Horizon contract considered",
+  "durable_execution_owner": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+  "p02_closeout_map": {
+    "conversation_scope": "Horizon-wide execution + harness land-before-live",
+    "preserved_gate": "BI-002 ACTIVE_GAME_UNPROVEN",
+    "durable_owner_after_migration": "BI-HORIZON-EXECUTION-WIDE-20261110",
+    "handoff_doc": "docs/handoff/BI-CLOSERS-HORIZON-P12-2026-11-10.md"
+  },
+  "repo": "EndeavorEverlasting/BetterInstincts",
+  "primary_local_path": "C:/Users/CheeksMcClappeth/dev/BetterInstincts",
+  "verified_floor": {
+    "branch": "main",
+    "head": "a94f114",
+    "origin_main": "a94f11439cfea6a0fbe5ed9dbfbf08c9e5135ee7",
+    "dirty_worktree": true,
+    "open_prs": [149],
+    "horizon": {
+      "current_gate": "BI-002",
+      "check_horizon": "PASS_TOPOLOGY",
+      "game_certification": "NOT_PROVED",
+      "order": [
+        "BI-002 hunger",
+        "BI-003A-E other needs",
+        "BI-003F six-need balance",
+        "BI-004 income",
+        "BI-005 skills",
+        "BI-006 career"
+      ]
+    }
+  },
+  "proof_ceiling": "OFFLINE_CONTRACT_AND_UNIT_TESTS_NOT_BI002_LIVE_CERT_NOT_BI005",
+  "invariants": [
+    "HORIZON_GATE_REMAINS_BI002",
+    "DIY_SKILL_FORCE_IS_NOT_BI005",
+    "FLOOR_MAP_OFFLINE_IS_NOT_HUNGER_CERT",
+    "NO_OS_CRON_FOR_BUILD_PLACEMENT",
+    "DISPATCHED_IS_NOT_SKILLS_PANEL_PASS",
+    "ONE_SIMS_SCREEN_OWNER"
+  ],
+  "launch_order": [
+    {
+      "id": "C1",
+      "title": "Land floor-map / camera / placement harness PR",
+      "runtime": "REPO_AGENT",
+      "why_first": "Dirty main holds unfinished contracts/code; land before live lanes collide or work is lost"
+    },
+    {
+      "id": "C2",
+      "title": "BI-002 hunger live cert (Horizon gate)",
+      "runtime": "LOCAL_AGENT",
+      "why": "plans/horizon.v1.json current_gate; CI cannot close"
+    },
+    {
+      "id": "C3",
+      "title": "Needs-investigation opportunistic floor map during hunger remedy",
+      "runtime": "LOCAL_AGENT",
+      "depends_on": ["C1"],
+      "serial_with": ["C2"],
+      "why": "Maps fridge/food while satisfying hunger — accelerates BI-002 object path without Build sampling"
+    },
+    {
+      "id": "C4",
+      "title": "Fifth Gear S2 Skills-panel LOCAL_OBSERVED",
+      "runtime": "LOCAL_AGENT",
+      "depends_on": ["C1"],
+      "serial_with": ["C2", "C3"],
+      "why": "Lab N=4 skill cert; NOT horizon BI-005"
+    },
+    {
+      "id": "C5",
+      "title": "Builder placement live sensor + graph links",
+      "runtime": "LOCAL_AGENT",
+      "depends_on": ["C1"],
+      "serial_with": ["C2", "C3", "C4"],
+      "why": "Prove host_listener build_placements observation; Escape/center census discipline"
+    },
+    {
+      "id": "C6",
+      "title": "Horizon convergence + ledger",
+      "runtime": "REPO_AGENT",
+      "depends_on": ["C1"],
+      "soft_depends_on": ["C2"],
+      "why": "check_horizon; refuse BI-003 promotion until BI-002 live-certified"
+    }
+  ],
+  "rejected": [
+    "Closing BI-002 from offline floor-map or Fifth Gear S2",
+    "Treating diy_skill_force as BI-005",
+    "OS Task Scheduler/cron for builder auto-map",
+    "Another full P05 pack as Fifth Gear completion",
+    "Blind Build census without bbox center + Escape"
+  ],
+  "owners": {
+    "execution_wide": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+    "horizon": "docs/HORIZON.md + plans/horizon.v1.json",
+    "bi002": "plans/active/BI-002.execution.v1.json + docs/LIVE_CERT.md",
+    "fifth_gear_s2": "plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json",
+    "floor_map": "contracts/lot-floor-map.v1.json + betterinstincts/lot_floor_map.py",
+    "this_pack": "plans/active/BI-CLOSERS-HORIZON-20261110.v1.json"
+  }
+}

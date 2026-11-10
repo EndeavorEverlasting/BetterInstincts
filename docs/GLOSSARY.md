@@ -79,6 +79,14 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **EDGE_MOUSE_PARK** / **CONTINUOUS_EDGE_HOLD** | Forbidden: leave/hold cursor on screen edge while scanning or coding. |
 | **CAPTURE_BEFORE_EDGE_SCAN** | Prefer PrintWindow + lot-model observe before any pan. |
 | **CAMERA_SAFE_REST** | Host gate that parks to SAFE_CURSOR_REST when edge-park is detected. |
+| **ZOOM_MODE** | Ladder rung (RIGHT_CLICK_VIEW 0.85 / ENVIRONMENT_NAV 0.50 / TRAVEL_AFAR 0.0). Mode ≠ actuator. |
+| **ZOOM_CONTROL** / **CAMERA_ZOOM_IN** / **CAMERA_ZOOM_OUT** | Live Z zoom-in, X zoom-out, or scroll wheel. Never right-click as zoom. |
+| **OBJECT_PICK_IDENTIFY** | Traverse → Z/wheel zoom-in → screenshot → identify → click. |
+| **ROOM_MAP_TRAVERSE** | Build `T` top-down + hotkey zoom-out observe-only census into the floor graph; Escape on grab; no Gallery. |
+| **MEMORIALIZED** | Mapped floor object frozen until change evidence (e.g. expected interaction missing) → `STALE_NEEDS_REMAP` then remap that node only. |
+| **LIVE_HUD_SURFACE_LEASE** | Exclusive Live HUD claim (BOTTOM_RIGHT / PHONE / CONSOLE). Peer → WAITING_FOR_AGENT; overlay-clear must not wipe peer lease. |
+| **CLICK_MISS_CAUSE** | Cause label on non-HIT clicks (`PEER_HUD_COLLISION`, `OVERLAY_CLEAR_WIPE`, …) + ML-ready feature vector; RULE_V1 first. |
+| **LOT_FLOOR_MAP** | Per-profile private floor object map (computers, workstations, paths); auto-ensure on Build. |
 | **CURIOUS_CATALOG** | Opt-in hidden Buy shelves for rare/money gardening; never on startup; never touch game speed. |
 | **SHOW_HIDDEN_OBJECTS** | Console line `bb.showhiddenobjects` only — never type `buydebug` or slash-join. Elementary unlock for household useful-item catalog/hidden rows. |
 | **HOUSEHOLD_OBJECT_FORCE** | Durable useful-item catalog + planner to force named objects into any household; career promote and catalog paths; no hallucinated hex spawn. |

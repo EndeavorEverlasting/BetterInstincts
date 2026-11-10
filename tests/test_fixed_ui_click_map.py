@@ -9,7 +9,9 @@ from betterinstincts.fixed_ui_click_map import (
     empty_ledger,
     ensure_seeded_ledger,
     load_contract,
+    load_escape_menu_coords,
     plan_arm_to_console_handoff,
+    plan_escape_menu_save,
     plan_skills_burger_expand,
     record_click_attempt,
     resolve_target_xy,
@@ -177,6 +179,29 @@ class FixedUiClickMapTests(unittest.TestCase):
     def test_resolve_unknown_fails(self):
         with self.assertRaises(FixedUiClickMapError):
             resolve_target_xy(empty_ledger(), "live.does_not_exist")
+
+    def test_escape_menu_save_and_save_as_distinct_with_dialog_policy(self):
+        cfg = load_contract()
+        self.assertEqual(cfg["version"], 6)
+        coords = load_escape_menu_coords()
+        self.assertEqual(coords["menu_options"], (1898, 22))
+        self.assertEqual(coords["save"], (960, 420))
+        self.assertEqual(coords["save_as"], (960, 422))
+        self.assertNotEqual(coords["save"], coords["save_as"])
+        dy = abs(coords["save_as"][1] - coords["save"][1])
+        self.assertEqual(dy, 2)
+        seeds = cfg["seed_targets_1920x1080"]
+        self.assertEqual(seeds["live.escape_menu_save"]["client_xy"], [960, 420])
+        self.assertEqual(seeds["live.escape_menu_save_as"]["client_xy"], [960, 422])
+        plan = plan_escape_menu_save(intent="SAVE_AS")
+        self.assertEqual(plan["menu_row"]["client_xy"], [960, 422])
+        self.assertTrue(plan["save_vs_save_as_hazard"]["within_default_hit_radius"])
+        self.assertIn("DELETE", plan["dialog_forbidden"])
+        self.assertIn("OVERWRITE", plan["dialog_forbidden"])
+        add_new = plan["save_game_dialog"]["add_new_save"]
+        self.assertIsNone(add_new.get("client_xy"))
+        self.assertEqual(add_new.get("status"), "UNMEASURED_PLACEHOLDER")
+        self.assertIn("USE_MENU_SAVE_FOR_NEW_SLOT", plan["forbidden"])
 
 
 if __name__ == "__main__":

@@ -1,0 +1,76 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-ROOM-MAP-TRAVERSE-GRAPH-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "P95 ROOM_MAP_TRAVERSE: named-goal camera-away room scan that builds a lot-floor graph (landmark nodes + relative direction edges), then OBJECT_PICK_IDENTIFY on the target. Operator 2026-11-10: default active-Sim center remains; rare map lease may leave Sim to traverse/analyze until target fits. Graph preferred for dining→rugs→corner workbench adjacency. P124: peer planner beside camera_traverse + lot_floor_map; no second mouse daemon; restore Enter after lease.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "CLAIM",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "VIEW_SCENE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "docs/CAMERA_TRAVERSE.md",
+    "docs/HOUSEHOLD_SCOPE.md",
+    "contracts/camera-traverse.v1.json",
+    "contracts/lot-floor-map.v1.json",
+    "betterinstincts/camera_traverse.py",
+    "betterinstincts/active_sim_camera_lock.py",
+    "betterinstincts/lot_floor_map.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_ROOM_MAP_TRAVERSE_PLAN_PLUS_LOCAL_GRAPH_STORE_NOT_LIVE_CLICK_CERT",
+  "player_save_control_impact": "Writes only profile floor map graph under LOCALAPPDATA. Camera pans are non-mutating house_state CAMERA_PAN_ZOOM under existing map lease + SAFE_REST. Never touches Sims saves. Clicks still require separate admission.",
+  "expected_outcome": "room_map_traverse planner + lot-floor-map graph nodes/edges + landmark kinds + CLI record-node/room-traverse-plan + tests/docs; live N4 lab workbench OBSERVED via dining/rugs adjacency.",
+  "negative_tests": [
+    "Missing named map goal fails closed",
+    "Unknown landmark kind fails closed",
+    "Ring scan without terminal SAFE_REST rejected",
+    "Graph edge without both endpoints rejected",
+    "execute_allowed remains false"
+  ],
+  "rollback_path": "Revert feature files; prior lot_floor_map + camera_traverse behavior; optional delete graph keys in local floors/; BI-002 ACTIVE; Fifth Gear S2 panel still open.",
+  "unresolved_unknowns": [
+    "Exact client_xy for workbench still camera-revision bound until HIT_ATTESTED pie",
+    "Live Order… → Purchase Upgrade Parts path still open"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-ROOM-MAP-TRAVERSE-GRAPH-20261110.v1.json",
+    "contracts/lot-floor-map.v1.json",
+    "contracts/camera-traverse.v1.json",
+    "betterinstincts/room_map_traverse.py",
+    "betterinstincts/lot_floor_map.py",
+    "scripts/lot_floor_map.py",
+    "tests/test_room_map_traverse.py",
+    "docs/CAMERA_TRAVERSE.md",
+    "docs/GLOSSARY.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator: leave active-Sim center for room analysis; codify traverse→identify→map; graph fits overlapping-rugs/dinner-table→corner workbench grounding. Live click cert remains separate."
+}

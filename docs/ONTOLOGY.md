@@ -77,6 +77,10 @@ Repository CI runs the Git-history consultation gate, and `scripts/semantic_pref
 ## Local agent preflight before mutation, sampling or experiment
 Before changing a behavioral file, run `python -m scripts.semantic_preflight --consultation contracts/consultations/BI-SEMANTIC-ORCHESTRATION-20261107.v1.json --operation repo_mutation --file betterinstincts/semantic_advisory.py` with the **actual** proposed paths and a consultation that predates their first mutation. For read-only offline experiments use `--operation offline_experiment`. For real game sampling or experimentation use `--operation game_sampling` or `game_experiment` and a *new* consultation scoped to `EXACT_GAME_BUILD:<version>` and `--exact-game-build <version>`; the current offline receipt must fail these operations. Independently observe player/presence/save/scene/control admission before any real UI input. P04 passes these requirements into the local game-capable agent rather than manufacturing live proof here.
 
+## 2026-11-10 — revision 5: ZOOM_MODE ≠ ZOOM_CONTROL + OBJECT_PICK_IDENTIFY
+
+Operator: zoom-in is **Z** / scroll (out **X**), never right-click; world-object pick must traverse → zoom in → capture → identify. Semantic viewpoint extension revision 5 appends `zoom_controls` and `object_pick_identify` without replacing the zoom ladder. Owners: `ui-chrome` LIVE hotkeys + `camera-traverse` `#zoom_controls` / `#object_pick_identify`. Consultation `BI-OBJECT-PICK-ZOOM-HOTKEYS-20261110`.
+
 ## 2026-11-09 — revision 4: zoom ladder + overlay clear after metadata
 
 Semantic viewpoint extension revision 4 binds the agent zoom ladder on top of revision 3: default `RIGHT_CLICK_VIEW` (0.85 of max close / 15% pullback + portrait follow), `ENVIRONMENT_NAV` at 0.50 for named planning only, `TRAVEL_AFAR` at 0.0 only for verified long-distance travel, and zoomed-in overlay clear after `metadata_tracked` + `accounted_by=BETTER_INSTINCTS`. Canonical owner remains `contracts/camera-traverse.v1.json` with HUD clear via `scene_ui_semantics`. Consultation: `BI-CAMERA-ZOOM-LADDER-OVERLAY-CLEAR-20261109`.

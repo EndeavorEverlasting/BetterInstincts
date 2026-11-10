@@ -1,0 +1,34 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-LIVE-HUD-SURFACE-LEASE-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "d1a28027a38d2a256a3d32c1d143695d2c5fa390834dfbf2a62b720f8ce17a3d",
+  "proposed_capability": "Cross-agent Live HUD exclusivity under existing ASYNC_INTEROP: one named surface lease (BOTTOM_RIGHT_PANEL / PHONE / CHEAT_CONSOLE) at a time via the shared user-profile lock root. Peer agents WAITING_FOR_AGENT instead of opening a second exclusive overlay. Overlay-clear must never dismiss a peer-leased surface (phone wipe while skills owns BR panel).",
+  "operator_corrections": [
+    "Skills agent opens Skills; phone agent opens phone — only one exclusive Live HUD surface works; agents reset each other.",
+    "Overlay clear that dismisses phone while another agent holds a panel is an interop failure.",
+    "Agents must queue and decide who performs the insert via cooperative admission — not fight over the same HUD."
+  ],
+  "owners": [
+    "contracts/workflow-interoperability.v1.json",
+    "betterinstincts/workflow_interop.py",
+    "betterinstincts/control_handoff.py",
+    "betterinstincts/scene_ui_semantics.py",
+    "contracts/camera-traverse.v1.json#zoomed_in_overlay_clear",
+    "docs/ASYNC_INTEROP.md"
+  ],
+  "peers": [
+    "CooperativeScreenQueue",
+    "screen_admit",
+    "diy_skill_force",
+    "ui_chrome"
+  ],
+  "rejected": [
+    "SECOND_HUD_DAEMON",
+    "AUTO_STEAL_PEER_HUD_LEASE",
+    "OVERLAY_CLEAR_OF_PEER_LEASED_SURFACE",
+    "PARALLEL_PHONE_AND_SKILLS_PANEL"
+  ],
+  "proof_ceiling": "OFFLINE_HUD_SURFACE_LEASE_POLICY_NOT_LIVE_TWO_AGENT_CERT",
+  "not_bi002": true
+}

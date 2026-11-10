@@ -777,22 +777,96 @@ def tick(
             )
         except BuildFloorActivityError as exc:
             raise HostListenerError(str(exc)) from exc
+        placement_receipts: list[dict] = []
+        if mode_context["mode"] in {"BUY", "BUILD"}:
+            from betterinstincts.lot_floor_map import (
+                LotFloorMapError,
+                record_builder_placement,
+            )
+
+            profile_id = obs.get("lot_floor_profile_id") or obs.get("profile_id")
+            lot_key = obs.get("lot_floor_key") or obs.get("lot_key")
+            placements = obs.get("build_placements") or ()
+            if (
+                isinstance(profile_id, str)
+                and isinstance(lot_key, str)
+                and isinstance(placements, (list, tuple))
+            ):
+                for event in placements:
+                    if not isinstance(event, Mapping):
+                        continue
+                    try:
+                        placement_receipts.append(
+                            record_builder_placement(
+                                profile_id=profile_id,
+                                lot_key=lot_key,
+                                catalog_name=str(event.get("catalog_name") or ""),
+                                bbox_client=event.get("bbox_client") or (),
+                                capture_ref=str(
+                                    event.get("capture_ref") or obs.get("capture_ref") or ""
+                                ),
+                                camera_revision=str(
+                                    event.get("camera_revision")
+                                    or obs.get("camera_revision")
+                                    or ""
+                                ),
+                                object_id=(
+                                    str(event["object_id"])
+                                    if event.get("object_id") is not None
+                                    else None
+                                ),
+                                kind=str(event.get("kind") or "BUILD_CENSUS_ITEM"),
+                                parent_object_id=(
+                                    str(event["parent_object_id"])
+                                    if event.get("parent_object_id") is not None
+                                    else None
+                                ),
+                                link_relation=str(event.get("link_relation") or "ON_TOP_OF"),
+                                linked_object_ids=event.get("linked_object_ids") or (),
+                                price=(
+                                    str(event["price"])
+                                    if event.get("price") is not None
+                                    else None
+                                ),
+                                category=(
+                                    str(event["category"])
+                                    if event.get("category") is not None
+                                    else None
+                                ),
+                                note=str(event.get("note") or "host_listener_build_placement"),
+                            )
+                        )
+                    except (LotFloorMapError, TypeError, ValueError) as exc:
+                        placement_receipts.append(
+                            {
+                                "state": "BUILD_PLACEMENT_TICK_FAILED",
+                                "error": str(exc),
+                                "execute_allowed": False,
+                            }
+                        )
         ticks += 1
         listener_action = (
             "MODE_CONTEXT_ONLY" if mode_context["mode"] in {"BUY", "BUILD"}
             else "MODE_UNVERIFIED"
         )
+        if placement_receipts:
+            listener_action = "BUILD_PLACEMENT_AUTO_MAP"
         receipt = {
             "schema": "betterinstincts.host-listener.tick/v1",
             "session_id": session_id, "tick": ticks,
             "presence": presence, "handoff": handoff,
             "ui_mode": mode_context,
             "build_floor_activity": floor_activity,
+            "build_placements": placement_receipts,
             "opportunity_survey": survey,
             "listener_action": listener_action,
             "execute_clicks": False,
             "proof_ceiling": cfg.get("proof_ceiling"),
-            "next": "Observe the game mode again; do not dispatch Live actions.",
+            "next": (
+                "Builder placements recorded into profile floor graph; no Live dispatch."
+                if placement_receipts
+                else "Observe the game mode again; do not dispatch Live actions."
+            ),
         }
         meta["ticks"] = ticks
         meta["last_tick_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
