@@ -7,14 +7,36 @@
     "state": "CONTRACT_LANDED_LIVE_AABB_CANDIDATE_WS_CLICK_MISS",
     "owner": "contracts/lot-boundary.v1.json",
     "library": "betterinstincts/lot_boundary.py",
-    "api": ["assess_lot_boundary", "admit_world_click_in_footprint"],
+    "api": [
+      "assess_lot_boundary",
+      "admit_world_click_in_footprint"
+    ],
     "host_stack": "lot_boundary + world_click_footprint deny",
     "consultation": "contracts/consultations/BI-LOT-BOUNDARY-FOOTPRINT-ADMIT-20261110.v1.json",
     "rule": "Street/asphalt/neighbor/canal/Buy-without-census = OUTSIDE house; world clicks DENY until ON_LOT + inside footprint AABB or INTERIOR/YARD zone",
-    "recovery": ["ESC", "F1_IF_BUY", "SHIFT_ENTER", "REOBSERVE_ON_LOT"],
+    "recovery": [
+      "ESC",
+      "F1_IF_BUY",
+      "SHIFT_ENTER",
+      "REOBSERVE_ON_LOT"
+    ],
     "live_20261110": {
-      "candidate_aabb": {"x0": 60, "y0": 120, "x1": 1400, "y1": 980, "camera_revision": "horizon-goal-continue"},
-      "gray_ws_click": {"client_xy": [697, 612], "admit": true, "result": "MISS_OR_CAMERA_EDGE_TOPDOWN_STREET", "receipt": "dist/game-host/horizon-exec-20261110/order-upgrade-parts/gray-ws-click-receipt.json"},
+      "candidate_aabb": {
+        "x0": 60,
+        "y0": 120,
+        "x1": 1400,
+        "y1": 980,
+        "camera_revision": "horizon-goal-continue"
+      },
+      "gray_ws_click": {
+        "client_xy": [
+          697,
+          612
+        ],
+        "admit": true,
+        "result": "MISS_OR_CAMERA_EDGE_TOPDOWN_STREET",
+        "receipt": "dist/game-host/horizon-exec-20261110/order-upgrade-parts/gray-ws-click-receipt.json"
+      },
       "note": "White lot line visible; street RIGHT of line is OUTSIDE. Gardener-Bot on gray WS visible pre-click. Post-click top-down street — restore Shift+Enter; do not click asphalt."
     },
     "proof_ceiling": "CONTRACT_HARNESS_NOT_LIVE_FOOTPRINT_MEASURE_NOT_BI002_CLOSE"
@@ -35,7 +57,10 @@
       "STREET_SIDE": "asphalt/sidewalk OFF_LOT risk; drift TOWARD_STREET",
       "CREEK_SIDE": "canal/water OFF_LOT risk; drift TOWARD_CREEK",
       "helper": "assess_camera_side_drift",
-      "recovery": ["SAFE_CURSOR_REST", "SHIFT_ENTER"]
+      "recovery": [
+        "SAFE_CURSOR_REST",
+        "SHIFT_ENTER"
+      ]
     },
     "seed_relations": {
       "bathtub": "SAME_SIDE_AS hydroponic_garden",
@@ -89,13 +114,50 @@
     "proof_ceiling": "CONTRACT_HARNESS_NOT_LIVE_PARTS_HIT_NOT_BI002_CLOSE"
   },
   "live_truth_20261110": {
-    "host": {"pid": 78240, "exe": "TS4_x64_fpb", "game_version": "1.121.361.1020"},
+    "host": {
+      "pid": 78240,
+      "exe": "TS4_x64_fpb",
+      "game_version": "1.121.361.1020"
+    },
     "live_cert_run": "bi002-game1-20261107",
-    "live_cert_status": {"baseline": 2, "modified": 0, "rollback": 0, "state": "INCOMPLETE", "next_gate": "CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3", "cli_next_gate_until_new_record": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS", "note": "Horizon operational next_gate stays CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3 until a new live_cert record exists; CLI still reports RECORD_OR_REPAIR while baseline=2/5 modified=0/5"},
+    "live_cert_status": {
+      "baseline": 2,
+      "modified": 0,
+      "rollback": 0,
+      "state": "INCOMPLETE",
+      "next_gate": "CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3",
+      "cli_next_gate_until_new_record": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS",
+      "note": "Horizon operational next_gate stays CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3 until a new live_cert record exists; CLI still reports RECORD_OR_REPAIR while baseline=2/5 modified=0/5"
+    },
     "recovery_path_20261110": {
-      "ask_for_help_cleaning_modal_x": {"client_xy_approx": [1138, 222], "action": "dismiss X only", "forbidden": ["Sell", "Ask for Help Cleaning accept"]},
-      "charlee_portrait": {"client_xy": [450, 1055], "target_id": "live.household_portrait_3"},
-      "buy_exit": {"keys": ["F1"], "live_top_live_people": [1585, 35], "never": "Sell"},
+      "ask_for_help_cleaning_modal_x": {
+        "client_xy_approx": [
+          1138,
+          222
+        ],
+        "action": "dismiss X only",
+        "forbidden": [
+          "Sell",
+          "Ask for Help Cleaning accept"
+        ]
+      },
+      "charlee_portrait": {
+        "client_xy": [
+          450,
+          1055
+        ],
+        "target_id": "live.household_portrait_3"
+      },
+      "buy_exit": {
+        "keys": [
+          "F1"
+        ],
+        "live_top_live_people": [
+          1585,
+          35
+        ],
+        "never": "Sell"
+      },
       "saves": "NEVER delete or overwrite My Saved Game 6 / Slot_00000007",
       "bi003": "no BI-003 claim while BI-002 open"
     },
@@ -104,7 +166,15 @@
       "charlee_lablab": "RELOADED living from My Saved Game 6 — Needs 6-bar Hunger attested (living-subject-attestation.json). Prior ghost session was not saved over Slot_00000007.",
       "olga": "also living human on recovered LabLab load (portrait tray); death modal previously DISMISSED on ghost session",
       "living_hunger_subject": "RECOVERED — LabLab Play via map Play [1811,1033]; never Create Household / CAS blue person+arrow [1883,1040]",
-      "living_subject_gate_20261110": {"bernice": "SERVO (Durability) — not hunger subject", "charlee_olga_recovered": "living humans with commodity Hunger after load of Slot_00000007", "prove_via": "Needs panel 6-bar Hunger (vs Servo Durability / ghost Ethereal)", "receipts": ["dist/game-host/horizon-exec-20261110/bi002/living-subject-recovery-receipt.json", "dist/game-host/horizon-exec-20261110/bi002/living-subject-attestation.json"]},
+      "living_subject_gate_20261110": {
+        "bernice": "SERVO (Durability) — not hunger subject",
+        "charlee_olga_recovered": "living humans with commodity Hunger after load of Slot_00000007",
+        "prove_via": "Needs panel 6-bar Hunger (vs Servo Durability / ghost Ethereal)",
+        "receipts": [
+          "dist/game-host/horizon-exec-20261110/bi002/living-subject-recovery-receipt.json",
+          "dist/game-host/horizon-exec-20261110/bi002/living-subject-attestation.json"
+        ]
+      },
       "adverse_bernice_death": "dist/game-host/horizon-exec-20261110/bi002/adverse-bernice-death.json",
       "lot_focus_offlot_street": "PROVED assess_lot_focus OFF_LOT_STREET when camera/Sim on sidewalk/canal; restore Shift+Enter lot center when Enter alone leaves water/street; terrain-arm RMB [880,480] can displace to canal — avoid while OFF_LOT. Receipt: offlot-street-recognition.json",
       "off_lot_scenery_not_in_focus": "After Manage Worlds travel-cancel, camera on street/rooftop needs Enter recenter. scenery-not-in-focus when Manage Worlds map or street fills viewport without household lot interior.",
@@ -125,7 +195,16 @@
           "MANAGE_WORLDS_MAP": "exit/cancel unintended map; if TRAVELING WITH banner use cancel X; do not Enter-roam",
           "VIEWPORT_BLACK_OR_WHITE": "viewport.py ladder (distinct from scenery)"
         },
-        "forbidden": ["CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "CLICK_VOID", "SWITCH_CONTROL_EMPTY_STREET_ABOVE_STRIP", "WORLD_GLOBE_WHILE_TRAVELING", "PLAY_OR_LOT_PIN_WHILE_MAPPING"],
+        "forbidden": [
+          "CROWN",
+          "FOOTPRINT",
+          "SELL",
+          "DELETE_SAVE",
+          "CLICK_VOID",
+          "SWITCH_CONTROL_EMPTY_STREET_ABOVE_STRIP",
+          "WORLD_GLOBE_WHILE_TRAVELING",
+          "PLAY_OR_LOT_PIN_WHILE_MAPPING"
+        ],
         "tests": "tests/test_lot_focus.py::SceneryFocusHardeningTests",
         "fixtures": "tests/fixtures/scenery_focus/ (crops from horizon-exec-20261110/bi002; originals preserved)",
         "consultation": "contracts/consultations/BI-SCENERY-FOCUS-20261110.v1.json",
@@ -135,12 +214,68 @@
     "travel_cancel_20261110_morning": {
       "state": "PROVED_LIVE_MEASURED",
       "stuck_surface": "Manage Worlds dual TRAVELING WITH: LabLab banners (Willow Creek then Sulani after accidental world nav)",
-      "cancel_hit": {"client_xy": [1055, 22], "printwindow_remeasure_20261110": true, "prior_computer_use_scale_xy": [1055, 33], "canvas_1456x840_xy": [800, 25], "first_white_circle_cluster_approx": [1050, 20], "target_id": "host.manage_worlds_travel_party_cancel_x", "alias": "manage_worlds.travel_party_cancel_x"},
-      "text_miss": {"canvas_1456x840_xy": [556, 34], "client_xy_approx": [733, 44], "note": "hits banner TEXT not X"},
-      "forbidden": {"footprint_icon": [1090, 22], "crown_icon": [1131, 22], "note": "PrintWindow: footprint ~1090; crown ~1131 FORBIDDEN"},
-      "kingdom_modal_close": {"canvas_1456x840_xy": [924, 217], "client_family": [1138, 255], "target_id": "host.manage_worlds_kingdom_modal_close_x"},
+      "cancel_hit": {
+        "client_xy": [
+          1055,
+          22
+        ],
+        "printwindow_remeasure_20261110": true,
+        "prior_computer_use_scale_xy": [
+          1055,
+          33
+        ],
+        "canvas_1456x840_xy": [
+          800,
+          25
+        ],
+        "first_white_circle_cluster_approx": [
+          1050,
+          20
+        ],
+        "target_id": "host.manage_worlds_travel_party_cancel_x",
+        "alias": "manage_worlds.travel_party_cancel_x"
+      },
+      "text_miss": {
+        "canvas_1456x840_xy": [
+          556,
+          34
+        ],
+        "client_xy_approx": [
+          733,
+          44
+        ],
+        "note": "hits banner TEXT not X"
+      },
+      "forbidden": {
+        "footprint_icon": [
+          1090,
+          22
+        ],
+        "crown_icon": [
+          1131,
+          22
+        ],
+        "note": "PrintWindow: footprint ~1090; crown ~1131 FORBIDDEN"
+      },
+      "kingdom_modal_close": {
+        "canvas_1456x840_xy": [
+          924,
+          217
+        ],
+        "client_family": [
+          1138,
+          255
+        ],
+        "target_id": "host.manage_worlds_kingdom_modal_close_x"
+      },
       "esc_while_traveling": "zooms neighborhood; does NOT cancel travel",
-      "after_cancel": {"returned_to": "Live household lot", "funds": 649897, "clock": "Fri 8:54 AM", "active": "Servo", "charlee": "REMOTE_BRIEFCASE"},
+      "after_cancel": {
+        "returned_to": "Live household lot",
+        "funds": 649897,
+        "clock": "Fri 8:54 AM",
+        "active": "Servo",
+        "charlee": "REMOTE_BRIEFCASE"
+      },
       "contract": "contracts/fixed-ui-click-map.v1.json v15 manage_worlds_travel_party_1920x1080 + switch_control_chip_trap",
       "next_gate": "Charlee Switch Control → Eat → live_cert trial 3+ on run bi002-game1-20261107 (baseline still 2/5)"
     },
@@ -151,14 +286,78 @@
       "evidence": "dist/game-host/horizon-exec-20261110/order-upgrade-parts/op-frame-traveling-with-willow-creek-upscaled.png",
       "live_at_map_time": "Live+PAUSED street (pw-traveling-with-map.png) — did not re-enter travel to measure",
       "seeds": {
-        "cancel_x_top": {"id": "host.manage_worlds_travel_party_cancel_x", "xy": [1055, 22]},
-        "cancel_x_bottom": {"id": "host.manage_worlds_travel_party_cancel_x_bottom", "xy": [351, 1053]},
-        "forbidden_footprint": {"id": "host.forbidden_manage_worlds_travel_party_footprint", "xy": [1096, 20], "prior": [1090, 22]},
-        "forbidden_crown": {"id": "host.forbidden_manage_worlds_travel_party_crown", "xy": [1136, 20], "prior": [1131, 22]},
-        "forbidden_globe": {"id": "host.forbidden_manage_worlds_world_globe", "xy": [1860, 1010]},
-        "forbidden_play_while_mapping": {"id": "host.forbidden_manage_worlds_travel_confirm_play", "xy": [1811, 1033]},
-        "forbidden_lot_pin": {"id": "host.forbidden_manage_worlds_selected_lot_pin", "xy": [1643, 780], "camera_dependent": true},
-        "portraits": [[70, 930], [145, 930], [295, 960]]
+        "cancel_x_top": {
+          "id": "host.manage_worlds_travel_party_cancel_x",
+          "xy": [
+            1055,
+            22
+          ]
+        },
+        "cancel_x_bottom": {
+          "id": "host.manage_worlds_travel_party_cancel_x_bottom",
+          "xy": [
+            351,
+            1053
+          ]
+        },
+        "forbidden_footprint": {
+          "id": "host.forbidden_manage_worlds_travel_party_footprint",
+          "xy": [
+            1096,
+            20
+          ],
+          "prior": [
+            1090,
+            22
+          ]
+        },
+        "forbidden_crown": {
+          "id": "host.forbidden_manage_worlds_travel_party_crown",
+          "xy": [
+            1136,
+            20
+          ],
+          "prior": [
+            1131,
+            22
+          ]
+        },
+        "forbidden_globe": {
+          "id": "host.forbidden_manage_worlds_world_globe",
+          "xy": [
+            1860,
+            1010
+          ]
+        },
+        "forbidden_play_while_mapping": {
+          "id": "host.forbidden_manage_worlds_travel_confirm_play",
+          "xy": [
+            1811,
+            1033
+          ]
+        },
+        "forbidden_lot_pin": {
+          "id": "host.forbidden_manage_worlds_selected_lot_pin",
+          "xy": [
+            1643,
+            780
+          ],
+          "camera_dependent": true
+        },
+        "portraits": [
+          [
+            70,
+            930
+          ],
+          [
+            145,
+            930
+          ],
+          [
+            295,
+            960
+          ]
+        ]
       },
       "search_filter_chrome": false,
       "next": "Stay PAUSED; footprint-admit gray WS/computer Order parts; cancel X only if travel returns"
@@ -168,13 +367,31 @@
       "charlee": "REMOTE_BRIEFCASE after travel-cancel; must Switch Control before Eat",
       "charlee_portrait": {
         "target_id": "live.household_portrait_3",
-        "magenta_bbox_printwindow": {"x": [431, 480], "y": [1060, 1075]},
-        "face_hover_approx": [455, 1035],
-        "seed_client_xy": [450, 1055]
+        "magenta_bbox_printwindow": {
+          "x": [
+            431,
+            480
+          ],
+          "y": [
+            1060,
+            1075
+          ]
+        },
+        "face_hover_approx": [
+          455,
+          1035
+        ],
+        "seed_client_xy": [
+          450,
+          1055
+        ]
       },
       "switch_control_chip": {
         "when_visible": "just above the portrait strip after hovering Charlee remote portrait",
-        "computer_use_band_y_approx": [898, 922],
+        "computer_use_band_y_approx": [
+          898,
+          922
+        ],
         "click": "PILL_TEXT (Switch Control label)",
         "forbidden": [
           "EMPTY_STREET_HIGH_ABOVE_STRIP",
@@ -182,7 +399,10 @@
         ]
       },
       "proved_miss": {
-        "after_hover_charlee_click_xy": [455, 900],
+        "after_hover_charlee_click_xy": [
+          455,
+          900
+        ],
         "result": "MISSED chip; re-entered Manage Worlds TRAVELING WITH LabLab",
         "rule": "Do NOT click that high above the portrait strip; aim pill text in the chip band, not empty street"
       },
@@ -221,7 +441,12 @@
           "slot_00000007_size_bytes": 10315773,
           "tray_file_count": 10,
           "tray_building_blueprint_extensions_present": false,
-          "tray_extensions_present": [".householdbinary", ".trayitem", ".sgi", ".hhi"],
+          "tray_extensions_present": [
+            ".householdbinary",
+            ".trayitem",
+            ".sgi",
+            ".hhi"
+          ],
           "sims_path_env_overrides": null
         },
         "dbpf_dry_run": {
@@ -236,10 +461,17 @@
     },
     "fridge_scout_wide_20261110": {
       "kitchen_scout_png": "dist/game-host/horizon-exec-20261110/bi002/kitchen-scout.png",
-      "wide_fridge_click_candidate": [392, 158],
+      "wide_fridge_click_candidate": [
+        392,
+        158
+      ],
       "live_probe_392_158": {
         "result": "MISS_NEIGHBOR_LOT",
-        "pie_seen": ["Break In", "Move In Household from the Gallery", "…Household…"],
+        "pie_seen": [
+          "Break In",
+          "Move In Household from the Gallery",
+          "…Household…"
+        ],
         "evidence": "dist/game-host/horizon-exec-20261110/bi002/fridge-392-pie.png",
         "rule": "When camera/scenery is street/neighbor, [392,158] is NOT fridge — Esc dismiss; never Break In / Gallery Move In; Enter then Shift+Enter if still OFF_LOT; only then Z+Enter and use zoomed [500,560]"
       },
@@ -247,7 +479,10 @@
     },
     "fridge_hit_zoomed_20261110": "HIT_PIE_MENU at client [500,560] after Z-zoom (~14) + Enter recenter; snack NOT queued; single frame; contracts/fixed-ui-click-map.v1.json camera_dependent_seeds_1920x1080",
     "fridge_hit": "WIDE [465,595] MISS (outdoor Upgrade/Possess); ZOOMED [500,560] HIT once then camera/story drift made re-HIT unstable",
-    "notebook_close_x": [1338, 276],
+    "notebook_close_x": [
+      1338,
+      276
+    ],
     "fg_s2_skills": "LOCAL_OBSERVED (done); not BI-005; not BI-002 closure",
     "evidence_root": "dist/game-host/horizon-exec-20261110/ (gitignored, local-only)",
     "bi002_closed": false
@@ -262,7 +497,9 @@
     "plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json",
     "docs/LIVE_CERT.md",
     "docs/COMPATIBILITY.md",
-    "AGENTS.md"
+    "AGENTS.md",
+    "plans/active/BI-HORIZON.dispatch.v1.json",
+    "plans/active/BI-WORLD-TRAVERSAL-CLOSERS-P04-20261110.md"
   ],
   "parent_objective": "Needs stability -> income -> skills -> career under Horizon; never fake-close a later stage.",
   "current_gate": "BI-002",
@@ -311,7 +548,10 @@
       "title": "Safety save + lot-focus detector",
       "status": "SAVE_DONE_LOT_FOCUS_PARTIAL",
       "depends_on": [],
-      "proof": ["LOT_OFF_FOCUS_CONTRACT_AND_TESTS", "NEW_SAVE_SLOT_ATTESTED"],
+      "proof": [
+        "LOT_OFF_FOCUS_CONTRACT_AND_TESTS",
+        "NEW_SAVE_SLOT_ATTESTED"
+      ],
       "proof_ceiling": "NEW_SLOT_CREATED_NOT_HORIZON_STAGE_CLOSE",
       "live_save": {
         "state": "PROVED",
@@ -321,10 +561,22 @@
         "receipt": "dist/game-host/horizon-exec-20261110/new-save-receipt.json",
         "ui_proof": "dist/game-host/horizon-exec-20261110/verify-save-list.png",
         "coords": {
-          "MENU_OPTIONS": [1898, 22],
-          "MENU_SAVE_AS": [960, 422],
-          "ADD_NEW_SAVE": [850, 360],
-          "ADD_NEW_SAVE_OK": [957, 603]
+          "MENU_OPTIONS": [
+            1898,
+            22
+          ],
+          "MENU_SAVE_AS": [
+            960,
+            422
+          ],
+          "ADD_NEW_SAVE": [
+            850,
+            360
+          ],
+          "ADD_NEW_SAVE_OK": [
+            957,
+            603
+          ]
         },
         "note": "NEW slot only; never Delete/Overwrite; MENU_SAVE [960,420] forbidden for new-slot intent (2px from Save As)"
       },
@@ -351,9 +603,34 @@
         },
         "offline_hardening_20261110": {
           "state": "OFFLINE_TESTED_NOT_LIVE_CERTIFIED",
-          "adds": ["neighboring_houses", "dominant_sidewalk_streetlamp", "neighborhood_zoom_labels", "household_fixture_water_exclusion", "uncorroborated_on_lot_AMBIGUOUS", "stale_follow_flag_override_enter_restore", "scenery_focus_classes", "traveling_with_banner", "manage_worlds_map", "viewport_black_or_white_distinct", "rooftop_overlook", "shift_enter_escalation_only", "off_intent_view_miss_off_lot"],
-          "classification": ["ON_LOT", "OFF_LOT", "AMBIGUOUS", "MISS_OFF_LOT"],
-          "scenery_focus": ["ON_LOT_INTERIOR_OR_YARD", "STREET_OR_ROOFTOP_OFF_FOCUS", "MANAGE_WORLDS_MAP", "TRAVELING_WITH_BANNER", "VIEWPORT_BLACK_OR_WHITE"],
+          "adds": [
+            "neighboring_houses",
+            "dominant_sidewalk_streetlamp",
+            "neighborhood_zoom_labels",
+            "household_fixture_water_exclusion",
+            "uncorroborated_on_lot_AMBIGUOUS",
+            "stale_follow_flag_override_enter_restore",
+            "scenery_focus_classes",
+            "traveling_with_banner",
+            "manage_worlds_map",
+            "viewport_black_or_white_distinct",
+            "rooftop_overlook",
+            "shift_enter_escalation_only",
+            "off_intent_view_miss_off_lot"
+          ],
+          "classification": [
+            "ON_LOT",
+            "OFF_LOT",
+            "AMBIGUOUS",
+            "MISS_OFF_LOT"
+          ],
+          "scenery_focus": [
+            "ON_LOT_INTERIOR_OR_YARD",
+            "STREET_OR_ROOFTOP_OFF_FOCUS",
+            "MANAGE_WORLDS_MAP",
+            "TRAVELING_WITH_BANNER",
+            "VIEWPORT_BLACK_OR_WHITE"
+          ],
           "tests": "tests/test_lot_focus.py",
           "proof_ceiling": "OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
         }
@@ -363,8 +640,13 @@
       "id": "H1",
       "title": "Land harness PR / main integration",
       "status": "PROVED_PARTIAL",
-      "depends_on": ["H0"],
-      "proof": ["COMMITTED_VALIDATED_HARNESS", "PR_OR_MAIN_READBACK"],
+      "depends_on": [
+        "H0"
+      ],
+      "proof": [
+        "COMMITTED_VALIDATED_HARNESS",
+        "PR_OR_MAIN_READBACK"
+      ],
       "proof_ceiling": "CI_GREEN_NOT_BI002_LIVE_CERT",
       "git": {
         "sha": "e81a06782eed37e4ef5980be4d723f537f72f853",
@@ -377,16 +659,39 @@
       "id": "MAP",
       "title": "Lot/floors/rooms/outside + menus graph",
       "status": "ACTIVE_PARTIAL",
-      "depends_on": ["H0"],
-      "parallel_with": ["H1", "BI-002"],
-      "proof": ["LOT_FLOOR_MAP_CONTRACT", "ESCAPE_MENU_TARGETS_PROMOTED"],
+      "depends_on": [
+        "H0"
+      ],
+      "parallel_with": [
+        "H1",
+        "BI-002"
+      ],
+      "proof": [
+        "LOT_FLOOR_MAP_CONTRACT",
+        "ESCAPE_MENU_TARGETS_PROMOTED"
+      ],
       "proof_ceiling": "LOCAL_OBSERVED_MAP_NOT_HORIZON_STAGE_CLOSE",
       "live_20261110": {
         "floor_map": "ENSURED bargain-bendh; dining/rug/robotics landmarks recorded",
-        "floors_seen": ["FLOOR_1", "stair_to_FLOOR_2"],
-        "outside_seen": ["garden_glow_plants", "canal_LEFT", "street_RIGHT"],
+        "floors_seen": [
+          "FLOOR_1",
+          "stair_to_FLOOR_2"
+        ],
+        "outside_seen": [
+          "garden_glow_plants",
+          "canal_LEFT",
+          "street_RIGHT"
+        ],
         "lot_focus_live": "OFF_LOT_NEIGHBORHOOD_HIGH after arm+Enter — compound scenery recognition strengthened",
-        "menus_mapped": ["Options", "MENU", "Save As", "ADD NEW SAVE", "Needs", "Skill Mastery Perks", "Help Center"]
+        "menus_mapped": [
+          "Options",
+          "MENU",
+          "Save As",
+          "ADD NEW SAVE",
+          "Needs",
+          "Skill Mastery Perks",
+          "Help Center"
+        ]
       },
       "order_upgrade_parts_gate_20261110": {
         "state": "OFFLINE_HARNESS_PREPARED_LIVE_NOT_ATTEMPTED",
@@ -396,17 +701,62 @@
         "receipt_dir": "dist/game-host/horizon-exec-20261110/order-upgrade-parts/ (gitignored, local-only)",
         "receipt_template": "dist/game-host/horizon-exec-20261110/order-upgrade-parts/receipt.template.json",
         "runbook": "dist/game-host/horizon-exec-20261110/order-upgrade-parts/README.md",
-        "owners": ["contracts/upgrade-parts-force.v1.json", "betterinstincts/upgrade_parts_force.py", "contracts/lot-floor-map.v1.json#paths.computer_order_upgrade_parts", "dist/game-host/parts-buy/click-ledger.v1.json (local prior attempts)"],
+        "owners": [
+          "contracts/upgrade-parts-force.v1.json",
+          "betterinstincts/upgrade_parts_force.py",
+          "contracts/lot-floor-map.v1.json#paths.computer_order_upgrade_parts",
+          "dist/game-host/parts-buy/click-ledger.v1.json (local prior attempts)"
+        ],
         "measured_single_frame": {
-          "computer_pie_open_xy": [1299, 280],
-          "pie_seen": ["Write", "Play Game", "Career", "University", "Household", "Networking", "Computer Security", "Donate to Online Charity", "More Choices"],
+          "computer_pie_open_xy": [
+            1299,
+            280
+          ],
+          "pie_seen": [
+            "Write",
+            "Play Game",
+            "Career",
+            "University",
+            "Household",
+            "Networking",
+            "Computer Security",
+            "Donate to Online Charity",
+            "More Choices"
+          ],
           "order_row_seen": false,
           "more_choices": "Donate subtree only",
-          "wrong_control": {"phone_shopping_bag": [216, 857], "laptop_counter": [1000, 378]},
-          "miss_wide_camera": [[980, 520], [1120, 470]],
-          "phone_hud_fixed_seed": [282, 1055]
+          "wrong_control": {
+            "phone_shopping_bag": [
+              216,
+              857
+            ],
+            "laptop_counter": [
+              1000,
+              378
+            ]
+          },
+          "miss_wide_camera": [
+            [
+              980,
+              520
+            ],
+            [
+              1120,
+              470
+            ]
+          ],
+          "phone_hud_fixed_seed": [
+            282,
+            1055
+          ]
         },
-        "unknown": ["order_wedge_xy", "purchase_upgrade_parts_xy", "part_row_xy", "confirm_xy", "which pie branch (Household... candidate) exposes Order"],
+        "unknown": [
+          "order_wedge_xy",
+          "purchase_upgrade_parts_xy",
+          "part_row_xy",
+          "confirm_xy",
+          "which pie branch (Household... candidate) exposes Order"
+        ],
         "offline_commands": [
           "python -m scripts.upgrade_parts_force plan --part robot_salvage_parts --quantity 1 --path computer --checklist",
           "python -m scripts.lot_floor_map show"
@@ -421,12 +771,30 @@
       },
       "escape_menu_findings_20261110": {
         "source": "live + fixed-ui-click-map + BI-ESCAPE-MENU consultation",
-        "live.top_options": [1898, 22],
-        "MENU_SAVE": [960, 420],
-        "MENU_SAVE_AS": [960, 422],
-        "ADD_NEW_SAVE": [850, 360],
-        "ADD_NEW_SAVE_OK": [957, 603],
-        "SAVE_GAME_X": [1342, 238],
+        "live.top_options": [
+          1898,
+          22
+        ],
+        "MENU_SAVE": [
+          960,
+          420
+        ],
+        "MENU_SAVE_AS": [
+          960,
+          422
+        ],
+        "ADD_NEW_SAVE": [
+          850,
+          360
+        ],
+        "ADD_NEW_SAVE_OK": [
+          957,
+          603
+        ],
+        "SAVE_GAME_X": [
+          1342,
+          238
+        ],
         "note": "Save vs Save As only 2px apart — never use MENU_SAVE for new-slot intent"
       }
     },
@@ -434,18 +802,52 @@
       "id": "BI-002",
       "title": "Hunger live cert (Horizon gate)",
       "status": "ACTIVE_GAME_UNPROVEN",
-      "depends_on": ["H0"],
+      "depends_on": [
+        "H0"
+      ],
       "run": "plans/active/BI-002.execution.v1.json",
-      "proof": ["five_vanilla", "five_modified", "rollback", "maintainer_review"],
+      "proof": [
+        "five_vanilla",
+        "five_modified",
+        "rollback",
+        "maintainer_review"
+      ],
       "proof_ceiling": "LIVE_CERT_ONLY; CI cannot close",
       "live_20261110": {
         "needs_panel": "Charlee hunger ~0.5 with marker; Servo needs distinct",
         "trial1": "PARTIAL_BLOCKED_CAMERA_OFF_LOT — no seconds-to-eat recorded",
         "receipt": "dist/game-host/horizon-exec-20261110/bi002/trial1-partial.json",
-        "live_cert": {"run_id": "bi002-game1-20261107", "baseline": "2/5", "modified": "0/5", "rollback": 0, "state": "INCOMPLETE", "next_gate": "CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3", "cli_next_gate_until_new_record": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS"},
-        "fridge_hit": {"state": "MISS", "receipt": "dist/game-host/horizon-exec-20261110/bi002/fridge-hit-receipt.json", "xy": [465, 595], "observed": "outdoor Upgrade/Possess pie (satellite/garden); camera too zoomed out", "wide_zoom_only": true, "zoomed_hit_xy": [500, 560], "zoomed_hit_state": "HIT_PIE_MENU", "zoom_precondition": "ZOOMED_IN_RECENTERED via Z/wheel (never RMB) + Enter"},
+        "live_cert": {
+          "run_id": "bi002-game1-20261107",
+          "baseline": "2/5",
+          "modified": "0/5",
+          "rollback": 0,
+          "state": "INCOMPLETE",
+          "next_gate": "CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3",
+          "cli_next_gate_until_new_record": "RECORD_OR_REPAIR_HUNGER_GAMEPLAY_TRIALS"
+        },
+        "fridge_hit": {
+          "state": "MISS",
+          "receipt": "dist/game-host/horizon-exec-20261110/bi002/fridge-hit-receipt.json",
+          "xy": [
+            465,
+            595
+          ],
+          "observed": "outdoor Upgrade/Possess pie (satellite/garden); camera too zoomed out",
+          "wide_zoom_only": true,
+          "zoomed_hit_xy": [
+            500,
+            560
+          ],
+          "zoomed_hit_state": "HIT_PIE_MENU",
+          "zoom_precondition": "ZOOMED_IN_RECENTERED via Z/wheel (never RMB) + Enter"
+        },
         "living_subject_gate": "RECOVERED living Charlee/Olga via Load My Saved Game 6 → Willow Creek → LabLab Play [1811,1033]; Bernice remains Servo",
-        "adverse": {"event": "CHARLEE_STARVATION_DEATH -> playable ghost", "receipt": "dist/game-host/horizon-exec-20261110/bi002/adverse-charlee-starvation.json", "baseline_effect": "none; stays 2/5; ghost session not saved over Slot_00000007"},
+        "adverse": {
+          "event": "CHARLEE_STARVATION_DEATH -> playable ghost",
+          "receipt": "dist/game-host/horizon-exec-20261110/bi002/adverse-charlee-starvation.json",
+          "baseline_effect": "none; stays 2/5; ghost session not saved over Slot_00000007"
+        },
         "olga_modal": "CLEARED (followup-olga-cleared.png)",
         "living_hunger_subject": "ATTESTED (living-subject-attestation.json) — snack still NOT queued; fridge re-HIT open",
         "prevention": "No stats.set_stat hunger drain unless fridge/food interaction is already admitted and queued; pause after set_stat until food queued",
@@ -456,9 +858,39 @@
           "snack_queued": false,
           "baseline_still": "2/5",
           "hunger_needs_panel": "CRITICAL red bar + X LOCAL_OBSERVED (needs-open.png / bar-zoom.png / live-needs-check.png)",
-          "funds": {"from": 649163, "to": 649897, "delta": 734, "note": "649163→649657 (+494) then →649897 (+240) during Build thrash — never Sell again; treat Sell as live risk"},
+          "funds": {
+            "from": 649163,
+            "to": 649897,
+            "delta": 734,
+            "note": "649163→649657 (+494) then →649897 (+240) during Build thrash — never Sell again; treat Sell as live risk"
+          },
           "buy_trap": "Esc and some tray clicks re-enter Buy/Build; F2 alone does not exit; prefer F1 + live.top_live_people [1585,35]; top-bar wander opens Owned Expansion Packs / Help Center / Gallery — Build hammer is LEFTMOST of top-right cluster, Gallery is lightbulb",
-          "modal_close_x": {"pack_detail": [1543, 197], "options_menu": [1081, 330], "build_cancel": [1013, 1028], "gallery_my_library": [1819, 48], "lessons": [1466, 185], "help_center_candidate": [1071, 53]},
+          "modal_close_x": {
+            "pack_detail": [
+              1543,
+              197
+            ],
+            "options_menu": [
+              1081,
+              330
+            ],
+            "build_cancel": [
+              1013,
+              1028
+            ],
+            "gallery_my_library": [
+              1819,
+              48
+            ],
+            "lessons": [
+              1466,
+              185
+            ],
+            "help_center_candidate": [
+              1071,
+              53
+            ]
+          },
           "cook_together_miss": "Counter Cook Together With… modal opened instead of fridge Have Breakfast (bar-fridge-opt.png) — dismiss without Esc when possible",
           "household_inventory_fridge_object": "Fridge + Growfruit + bowl still in household inventory; Place attempts failed (wrong item / Can't intersect / outside lot). Inventory fridge click target ~[1310,940] when zoomed interior; Growfruit ~[720,940]. Never Sell / REMOVE_FLOOR",
           "clear_household_inv": "Needs tray [1820,1058] closes household Sell panel without Esc (proved needs-open.png)",
@@ -503,19 +935,55 @@
           "cancel_x": {
             "target_id": "host.manage_worlds_travel_party_cancel_x",
             "alias": "manage_worlds.travel_party_cancel_x",
-            "client_xy": [1055, 22],
+            "client_xy": [
+              1055,
+              22
+            ],
             "printwindow_remeasure": true,
-            "prior_computer_use_scale_xy": [1055, 33],
-            "first_white_circle_cluster_approx": [1050, 20],
-            "canvas_1456x840_xy": [800, 25],
+            "prior_computer_use_scale_xy": [
+              1055,
+              33
+            ],
+            "first_white_circle_cluster_approx": [
+              1050,
+              20
+            ],
+            "canvas_1456x840_xy": [
+              800,
+              25
+            ],
             "prefer": "TOP_BANNER_X_FIRST_OF_THREE_ICONS"
           },
-          "text_miss": {"canvas_1456x840_xy": [556, 34], "client_xy_approx": [733, 44]},
-          "forbidden_icons": {"footprint": [1090, 22], "crown": [1131, 22]},
+          "text_miss": {
+            "canvas_1456x840_xy": [
+              556,
+              34
+            ],
+            "client_xy_approx": [
+              733,
+              44
+            ]
+          },
+          "forbidden_icons": {
+            "footprint": [
+              1090,
+              22
+            ],
+            "crown": [
+              1131,
+              22
+            ]
+          },
           "kingdom_modal": {
             "opened_by": "miss travel X / hit near crown",
-            "close_x_canvas_1456x840_xy": [924, 217],
-            "close_x_client_family": [1138, 255],
+            "close_x_canvas_1456x840_xy": [
+              924,
+              217
+            ],
+            "close_x_client_family": [
+              1138,
+              255
+            ],
             "target_id": "host.manage_worlds_kingdom_modal_close_x"
           },
           "esc_while_traveling": "zooms neighborhood; does NOT cancel travel",
@@ -538,17 +1006,38 @@
           "charlee_remote": "REMOTE_BRIEFCASE — Switch Control required before Eat",
           "charlee_portrait": {
             "target_id": "live.household_portrait_3",
-            "magenta_bbox_printwindow": {"x": [431, 480], "y": [1060, 1075]},
-            "face_hover_approx": [455, 1035]
+            "magenta_bbox_printwindow": {
+              "x": [
+                431,
+                480
+              ],
+              "y": [
+                1060,
+                1075
+              ]
+            },
+            "face_hover_approx": [
+              455,
+              1035
+            ]
           },
           "chip": {
             "location": "just above portrait strip when visible after Charlee hover",
-            "computer_use_band_y_approx": [898, 922],
+            "computer_use_band_y_approx": [
+              898,
+              922
+            ],
             "click": "PILL_TEXT",
-            "forbidden": ["EMPTY_STREET_HIGH_ABOVE_STRIP", "LIGHTNING_ICON_ALONE_IF_OPENS_TRAVEL"]
+            "forbidden": [
+              "EMPTY_STREET_HIGH_ABOVE_STRIP",
+              "LIGHTNING_ICON_ALONE_IF_OPENS_TRAVEL"
+            ]
           },
           "proved_miss": {
-            "xy": [455, 900],
+            "xy": [
+              455,
+              900
+            ],
             "result": "MISSED chip → re-entered Manage Worlds TRAVELING WITH LabLab",
             "rule": "Do NOT click that high above the strip"
           },
@@ -557,10 +1046,20 @@
           "next": "Switch Control to Charlee (pill text, not empty street / lightning-alone) → Eat → live_cert trial 3+. Never Sell/delete saves. No BI-003 claim."
         },
         "recovery_path_20261110_offline_sync": {
-          "ask_for_help_cleaning_modal_x": [1138, 222],
-          "charlee_portrait": [450, 1055],
+          "ask_for_help_cleaning_modal_x": [
+            1138,
+            222
+          ],
+          "charlee_portrait": [
+            450,
+            1055
+          ],
           "buy_exit": "F1 + live.top_live_people [1585,35]",
-          "never": ["Sell", "delete_saves", "BI-003_claim"],
+          "never": [
+            "Sell",
+            "delete_saves",
+            "BI-003_claim"
+          ],
           "next_gate": "CHARLEE_LIVE_FRIDGE_HAVE_BREAKFAST_SURVIVE_UNPAUSE_THEN_LIVE_CERT_TRIAL_3"
         }
       }
@@ -569,7 +1068,9 @@
       "id": "BI-003A-E",
       "title": "Other five needs",
       "status": "WAITING_BI002",
-      "depends_on": ["BI-002"],
+      "depends_on": [
+        "BI-002"
+      ],
       "run": "plans/active/BI-003.execution.v1.json",
       "proof_ceiling": "WAITING_HUNGER_CERT"
     },
@@ -577,32 +1078,43 @@
       "id": "BI-003F",
       "title": "Six-need balance",
       "status": "WAITING",
-      "depends_on": ["BI-003A-E"]
+      "depends_on": [
+        "BI-003A-E"
+      ]
     },
     {
       "id": "BI-004",
       "title": "Income",
       "status": "WAITING",
-      "depends_on": ["BI-003F"]
+      "depends_on": [
+        "BI-003F"
+      ]
     },
     {
       "id": "BI-005",
       "title": "Skills autonomy",
       "status": "WAITING",
-      "depends_on": ["BI-004"],
+      "depends_on": [
+        "BI-004"
+      ],
       "note": "Fifth Gear S2 diy_skill_force is lab infra (LOCAL_OBSERVED panel roster), not this Horizon stage"
     },
     {
       "id": "BI-006",
       "title": "Career",
       "status": "WAITING",
-      "depends_on": ["BI-005"]
+      "depends_on": [
+        "BI-005"
+      ]
     },
     {
       "id": "FG-S2",
       "title": "Fifth Gear Skills-panel LOCAL_OBSERVED",
       "status": "LOCAL_OBSERVED_DONE",
-      "parallel_with": ["BI-002", "MAP"],
+      "parallel_with": [
+        "BI-002",
+        "MAP"
+      ],
       "run": "plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json",
       "proof_ceiling": "NOT_BI005; NOT_HORIZON_STAGE_CLOSE"
     }
@@ -689,5 +1201,26 @@
       "Resume Horizon's already-selected local BI-002 hunger live-cert workflow only through the existing save, scene, player-presence and per-effect lease gates. Do not close BI-002, modify protected Slot_00000007, change OS services, or promote later stages from these offline and repository proofs."
     ],
     "routing_decision": "No new Horizon stage or dependency inserted. Active current gate remains BI-002; desktop interop safety is a local runtime preflight, not a gameplay certification or a permanent blocker to approved alternate harnesses."
+  },
+  "supporting_next_priority_20261110": {
+    "id": "BI-WORLD-TRAVERSAL-P08-SENSOR",
+    "classification": "SUPPORTING_INFRASTRUCTURE_NOT_HORIZON_STAGE",
+    "priority": "NEXT_SUPPORTING_LOCAL_PROOF",
+    "canonical_horizon": "plans/horizon.v1.json#next_supporting_priority",
+    "dispatch": "plans/active/BI-HORIZON.dispatch.v1.json#WORLD_SENSOR",
+    "runbook": "plans/active/BI-WORLD-TRAVERSAL-CLOSERS-P04-20261110.md",
+    "local_agent_entry": "python -m scripts.horizon_status",
+    "launch_order": [
+      "WORLD_SENSOR",
+      "WORLD_OUTCOME",
+      "WORLD_INTEGRATE"
+    ],
+    "dependency": "Merged #168/#169 offline floor; local exact-patch lab authorization + independent sensor cues required",
+    "game_host_exclusivity": "WORLD_SENSOR/WORLD_OUTCOME serial with BI-002 game input; any foreground player activity yields; do not preempt existing live hunger experiments",
+    "current_product_gate": "BI-002",
+    "current_product_gate_status": "ACTIVE_GAME_UNPROVEN",
+    "source_mainline_floor": "91bea7b05313b42662489be1b21b2c078d82d02f",
+    "independent_writer": "PR159 spatial-perception open, not part of this dispatch mutation",
+    "proof_ceiling": "TRACKED_P04_LOCAL_HOST_UNRUN"
   }
 }
