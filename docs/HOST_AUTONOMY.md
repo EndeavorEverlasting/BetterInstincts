@@ -194,3 +194,55 @@ Use a **real observed** disposable session, exact PID, and a valid bounded `host
 needs modules retain scoring, and the gardening peer retains action selection.
 See [HOST_TANDEM.md](HOST_TANDEM.md) for ports, bounded coroutine overlap, exact
 host ownership, safe preemption, outcome requirements and current proof ceiling.
+
+## 2026-11-10 — Native household autonomy vs cursor cancellation
+
+The existing \`autonomy_moderation.evaluate_autonomy_moderation\` preserves its
+single selected-Sim **host observational** contract. Its separate
+\`evaluate_native_household_autonomy\` seam is a **pure policy candidate**
+for use inside an EA-version-pinned gameplay mod; it neither clicks the UI nor
+mutates a game queue. Input is an explicitly observed per-household set of
+stable Sim IDs, native interaction identities, queue provenance, live player
+command ownership, attested goal continuity, and normalized measured
+benefits. A single evaluation covers every supplied household Sim, regardless
+of the currently selected portrait.
+
+For each Sim, player commands, unknown ownership, stale captures and
+unsupported yields preserve the queue. When a native autonomous interaction
+provably diverts progress from a higher-yield continuing goal, it proposes
+suppression and goal resumption. When idle, it only proposes replacing
+zero-yield autonomous behavior when an available and attested positive
+native affordance is known. Fun, social, relationships, aspiration, skill
+and recovery are **productive domains** too: this is not a career-only
+throughput optimizer, and it must not eliminate personality or free play.
+Player override and unknown evidence always win. Per-Sim opt-in does not
+grant game-effect authority.
+
+### EA-file-first local P08 research and install gate
+
+1. Confirm exact Sims 4 game build, platform, installed packs and a safe
+   disposable testing household. Keep original EA files unchanged.
+2. Inspect game-shipped interaction/autonomy scoring, tests, commodity
+   changes, queue insertion and cancellation paths with Sims 4 Studio and
+   version-correct script API inspection. Export **one user-selected XML**
+   at a time to a private scratch location; run
+   \`python -m scripts.tuning_audit --xml "EXPORTED.xml"\`.
+   Its fingerprint and metadata are not behavioral proof; do not commit EA
+   tuning contents, proprietary game files or private save bytes.
+3. Choose narrow XML autonomy-test or weight adjustments **first** where
+   sufficient, preserving manually selected interactions. If the actual
+   cancellation/replacement needs script lifecycle APIs, use a
+   version-pinned game-native Python adapter feeding this pure policy.
+   Verify calls, scheduling and cancellation authority **in-game**, never
+   infer an EA hook from an offline test. The adapter must recheck player
+   command and goal state immediately before each effect.
+4. On a permitted test save, exercise at least two nonselected Sims, active
+   goal protection, idle zero-yield substitution, legitimate social/fun
+   activity, live player overrides, urgent needs, missing evidence and
+   patch mismatch; verify concrete queue transitions and post-action
+   results. Roll back the mod and verify vanilla behavior remains.
+   Preserve BI-002 hunger 5+5 and rollback as its independent parent gate.
+
+Current result: policy and offline regression coverage only.
+No installed mod, in-game hook, EA file mutation or real cancellation is
+asserted. See \`contracts/autonomy-moderation.v1.json#native_household_policy\`.

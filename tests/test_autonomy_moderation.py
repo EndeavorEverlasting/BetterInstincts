@@ -176,4 +176,140 @@ class AutonomyHostIntegrationTests(unittest.TestCase):
                 tick("autonomy-policy-test",{**obs,"autonomy_observation":[]})
 
 
+class NativeHouseholdAutonomyTests(unittest.TestCase):
+    """P82 falsifiers for EA-native policy; no UI or installed-game effects."""
+
+    def household(self, sims=None, **overrides):
+        data = {
+            "schema": "betterinstincts.native-household-autonomy/v1",
+            "household_ref": "house:random", "game_build": "1.118.0",
+            "capture_ref": CAP, "observed_at_unix": NOW,
+            "player_active": False,
+            "sims": sims if sims is not None else [self.sim("sim:1")],
+        }
+        data.update(overrides)
+        return data
+
+    def yield_row(self, **overrides):
+        row = {"action_id": "work", "yield_proof_ref": "proof:measured",
+               "yield_by_domain": {"career": .9}}
+        row.update(overrides)
+        return row
+
+    def sim(self, sim_id, **overrides):
+        row = {
+            "sim_ref": sim_id, "capture_ref": CAP,
+            "queue_verified": True, "player_owned": False,
+            "player_command_present": False, "policy_opt_in": True,
+            "active_goal": self.yield_row(active=True),
+            "queue": [{
+                "action_id": "idle", "queue_slot_ref": "slot:1",
+                "origin": "SIM_AUTONOMY", "origin_proof_ref": "proof:autonomy",
+                "effect_proof_ref": "proof:effect", "yield_proof_ref": "proof:zero",
+                "yield_by_domain": {"fun": 0},
+                "interrupts_goal": True,
+            }],
+            "available_actions": [],
+        }
+        row.update(overrides)
+        return row
+
+    def evaluate(self, obs):
+        from betterinstincts.autonomy_moderation import evaluate_native_household_autonomy
+        return evaluate_native_household_autonomy(obs, now=NOW)
+
+    def test_all_household_sims_independent_of_active_portrait(self):
+        obs = self.household(sims=[self.sim("sim:one"), self.sim("sim:two"),
+                                   self.sim("sim:three", player_command_present=True)])
+        obs["selected_sim_ref"] = "sim:three"
+        decisions = self.evaluate(obs)["decisions"]
+        self.assertEqual([x["sim_ref"] for x in decisions],
+                         ["sim:one", "sim:two", "sim:three"])
+        self.assertEqual([x["state"] for x in decisions], [
+            "NATIVE_SUPPRESSION_CANDIDATE", "NATIVE_SUPPRESSION_CANDIDATE",
+            "PLAYER_OR_UNKNOWN_OWNER_PROTECTED"])
+        self.assertEqual(decisions[0]["replacement_candidate"]["kind"],
+                         "RESUME_ATTESTED_GOAL")
+        self.assertFalse(self.evaluate(obs)["cancel_allowed"])
+        self.assertFalse(self.evaluate(obs)["desktop_input_allowed"])
+
+    def test_social_and_fun_yield_stays_when_no_goal_derailment(self):
+        leisure = self.sim("sim:one", active_goal=None)
+        leisure["queue"][0]["yield_by_domain"] = {"fun": .2, "social": .3}
+        r = self.evaluate(self.household(sims=[leisure]))
+        self.assertIsNone(r["decisions"][0]["suppress_candidate"])
+        self.assertEqual(r["decisions"][0]["state"], "PRESERVE_QUEUE_OR_YIELD")
+
+    def test_unproductive_autonomy_can_prefer_verified_native_affordance(self):
+        idle = self.sim("sim:one", active_goal=None, available_actions=[
+            self.yield_row(action_id="eat", yield_by_domain={"hunger": .7},
+                           native_affordance_verified=True, available=True)])
+        decision = self.evaluate(self.household(sims=[idle]))["decisions"][0]
+        self.assertEqual(decision["state"], "NATIVE_SUPPRESSION_CANDIDATE")
+        self.assertEqual(decision["replacement_candidate"]["action_id"], "eat")
+        self.assertEqual(decision["replacement_candidate"]["kind"],
+                         "NATIVE_AFFORDANCE_CANDIDATE")
+
+    def test_bad_provenance_missing_optin_and_stale_queue_fail_closed(self):
+        cases = [
+            (self.sim("sim:1", player_owned=None), "PLAYER_OR_UNKNOWN_OWNER_PROTECTED"),
+            (self.sim("sim:1", player_command_present=True), "PLAYER_OR_UNKNOWN_OWNER_PROTECTED"),
+            (self.sim("sim:1", policy_opt_in=False), "OPT_IN_REQUIRED"),
+            (self.sim("sim:1", queue_verified=False), "QUEUE_NOT_VERIFIED"),
+            (self.sim("sim:1", active_goal={"action_id": "work", "active": True}),
+             "GOAL_EVIDENCE_UNKNOWN"),
+        ]
+        for sim, state in cases:
+            with self.subTest(state=state):
+                self.assertEqual(self.evaluate(self.household(sims=[sim]))["decisions"][0]["state"], state)
+        stale = self.evaluate(self.household(observed_at_unix=NOW-181))
+        self.assertEqual(stale["decisions"][0]["state"], "REOBSERVE_SIM")
+        self.assertTrue(all(not stale[x] for x in ("cancel_allowed", "enqueue_allowed")))
+
+    def test_player_queue_blocks_other_autonomous_entry(self):
+        sim = self.sim("sim:1")
+        sim["queue"].insert(0, dict(sim["queue"][0], origin="PLAYER",
+                                    queue_slot_ref="slot:player"))
+        r = self.evaluate(self.household(sims=[sim]))
+        self.assertEqual(r["decisions"][0]["state"], "PLAYER_QUEUE_PROTECTED")
+        self.assertIsNone(r["decisions"][0]["suppress_candidate"])
+
+
+    def test_unknown_or_host_queue_blocks_autonomy_mutation(self):
+        for origin in ("UNKNOWN", "HOST", "PLAYER"):
+            sim = self.sim("sim:1")
+            sim["queue"].insert(0, dict(sim["queue"][0], origin=origin,
+                                        queue_slot_ref="slot:other"))
+            with self.subTest(origin=origin):
+                decision = self.evaluate(self.household(sims=[sim]))["decisions"][0]
+                self.assertEqual(decision["state"], "PLAYER_QUEUE_PROTECTED")
+                self.assertIsNone(decision["suppress_candidate"])
+
+    def test_urgent_needs_and_obligation_do_not_get_trampled(self):
+        for field in ("urgent_need", "imminent_obligation"):
+            sim = self.sim("sim:1", **{field: True})
+            decision = self.evaluate(self.household(sims=[sim]))["decisions"][0]
+            self.assertEqual(decision["state"], "URGENT_NEED_OR_OBLIGATION_PROTECTED")
+        with self.assertRaisesRegex(AutonomyModerationError, "NATIVE_AUTONOMY_IDENTITY_INVALID"):
+            self.evaluate(self.household(game_build="UNKNOWN"))
+
+    def test_unverified_autonomous_yield_and_duplicate_id_rejected(self):
+        sim = self.sim("sim:1")
+        sim["queue"][0]["yield_proof_ref"] = None
+        self.assertEqual(self.evaluate(self.household(sims=[sim]))["decisions"][0]["state"],
+                         "ACTION_YIELD_UNKNOWN")
+        with self.assertRaisesRegex(AutonomyModerationError, "NATIVE_DUPLICATE_SIM"):
+            self.evaluate(self.household(sims=[sim, sim]))
+
+    def test_positive_leisure_can_still_be_less_than_proven_protected_goal(self):
+        sim = self.sim("sim:1")
+        sim["queue"][0]["yield_by_domain"] = {"fun": .1}
+        d = self.evaluate(self.household(sims=[sim]))["decisions"][0]
+        self.assertEqual(d["state"], "NATIVE_SUPPRESSION_CANDIDATE")
+        # But never for a non-interrupting interaction.
+        sim["queue"][0]["interrupts_goal"] = False
+        self.assertEqual(self.evaluate(self.household(sims=[sim]))["decisions"][0]["state"],
+                         "PRESERVE_QUEUE_OR_YIELD")
+
+
 if __name__=="__main__": unittest.main()

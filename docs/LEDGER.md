@@ -1400,3 +1400,31 @@ Operator-observed Cursor defect: the skill-first N-portrait assignment was expan
 **Safety:** User activity or unknown presence yields. Unknown menu, repeated page, invalid context or unsafe funds state waits. No service, Bluetooth, adapter, driver, keyboard, UAC, EA Connect, unpause, save or Build/Buy mutations authorized. One observed purchase receipt is not automatic inventory success; each purchase must increase the selected Sim's observed pocket count before another is considered.
 
 **Proof separation:** Code tests/PR checks are offline only. A live P08 acceptance requires disposable authorized Live Mode, observed menu discovery, explicit single-unit purchase within spend cap, inventory delta, human-reclaim interruption, and protected Bluetooth/peripheral controls unaffected. Do not claim local install, gameplay certification, or BI-002 closure from a repository merge.
+
+## 2026-11-10 — Native household autonomy goal-yield policy (Fifth Gear)
+
+**Operator intent:** Suppress low-value Sim-autonomy derailments of quantifiably
+productive ongoing tasks across all household members, without using
+desktop mouse actions or overriding human choices. The source is native
+EA interaction/autonomy tuning and script interfaces, not GUI queue clicks.
+
+**P95:** Existing \`autonomy_moderation\` remains canonical. Added
+\`evaluate_native_household_autonomy\` to score each supplied Sim, protect
+player-command/unknown queues, preserve legitimate needs, leisure, social,
+career, income, skill and aspiration yields, and recommend exactly one
+evidence-qualified suppression/replacement per Sim. Selection is by
+stable Sim identity, not the active portrait or a named household roster.
+
+**P82:** Paired tests cover multiple Sims, active player ownership,
+unknown/stale evidence, non-interrupting beneficial leisure, zero-yield
+with a verified native alternative, lower-yield goal interruptions and
+nonexecution authority. Consulted before mutation:
+\`contracts/consultations/BI-NATIVE-AUTONOMY-GOAL-YIELD-20261110.v1.json\`.
+
+**P08:** Exact-game-build EA file and hook reconnaissance, installed
+native adapter, live per-Sim queue transitions, interruption recovery and
+rollback are NOT OBSERVED. A standalone policy cannot cancel an in-game
+action. Do not promote this offline feature to a shipped playable mod.
+**P07/P124:** Extend current owners; do not start a duplicate host daemon,
+fixed-pixel queue canceller or mutate EA files/saves. Preserve BI-002
+hunger certification as a separate active game-host gate.
