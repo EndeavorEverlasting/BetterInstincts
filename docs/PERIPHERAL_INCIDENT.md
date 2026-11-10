@@ -17,3 +17,9 @@ The Bluetooth per-user service was stopped while the main Bluetooth service ran.
 Before this change, capture restored Sims and called SetForegroundWindow, introduced in commit 7fa277b8. This is a confirmed interference mechanism, not proof of the Bluetooth cause. Regression tests protect passive capture and minimized-window refusal. Live capture quality remains unverified.
 
 Do not repair capture failures by altering OS screenshot preferences or resetting peripherals. Human activity in Cursor, Codex or any other app takes precedence over game automation. Other game-input adapters still require their existing fresh player-presence and admission checks; passive capture does not grant input authority.
+
+## P00/P01 and portable CLI follow-through
+
+The operator later paired a second mouse and intentionally powered it off while retaining the connected ProtoArc. SysAdminSuite now lists paired-connected, paired-disconnected and unknown separately, prepares a portable runtime without a target SDK, and reports existing/delegated service rights versus required elevation. BetterInstincts ontology revision 4 and the existing cooperative queue preserve arbitrary user interaction, atomic effects and observed reconciliation of partial work.
+
+Validation: 84 focused interop/admission/capture/ontology tests passed; six doctrine tests pass after compacting root routing while preserving detailed mandatory rules. Full CI also exposed UI-microsystem contract failures. The original dcfa26a baseline reproduced the same UI failures (the selected doctrine/UI test group failed with 10 failures and 15 errors before this branch); the pre-existing governance budget failure in that group is now fixed. UI-contract failures remain an integration blocker; the new focused checks are not presented as a green full suite.
