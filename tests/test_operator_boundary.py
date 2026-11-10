@@ -32,6 +32,15 @@ class OperatorBoundaryTests(unittest.TestCase):
         self.assertEqual(result["permission"], "deny", (payload, result))
         self.assertTrue(result["user_message"].startswith("OPERATOR_DESKTOP_BOUNDARY:"))
 
+    def test_governance_and_contract_both_route_to_effect_guard(self):
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn(".cursor/hooks/operator_boundary.py", agents)
+        self.assertIn("No agent may disable, dodge or remove the guard", agents)
+        contract = json.loads((ROOT / "contracts/operator-desktop-boundary.v1.json").read_text(encoding="utf-8"))
+        self.assertEqual(contract["project_hook"]["mode"], "FAIL_CLOSED")
+        self.assertEqual(contract["project_hook"]["file_actions"]["delete"], "DENY_ALL_AGENT_DELETE")
+        self.assertEqual(contract["project_hook"]["file_actions"]["unknown_effectful_tools"], "DENY")
+
     def test_read_only_diagnostics_and_offline_tests_allowed(self):
         for command in ("git status --short", "git diff --check", "git rev-parse HEAD",
                         "git branch --show-current", "python -m unittest discover -s tests -v",
