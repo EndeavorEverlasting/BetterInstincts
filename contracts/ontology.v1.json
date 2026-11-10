@@ -261,6 +261,11 @@
       "kind": "evidence",
       "definition": "Deduplicated metadata-only, evidence-labeled viewpoint discovery requiring review before serving as a future navigation hint.",
       "canonical_owner": "contracts/scenery-memory.v1.json"
+    },
+    "OS_PERIPHERAL_AUTHORITY": {
+      "kind": "authority",
+      "definition": "Windows Bluetooth service, radio, driver, pairing and input-preference control belongs to the SysAdminSuite Windows repair boundary, never to an autonomous Sims game action or idle host permit.",
+      "canonical_owner": "contracts/peripheral-authority.v1.json"
     }
   },
   "relations": [
@@ -543,6 +548,16 @@
       "from": "OBSERVATION",
       "predicate": "PROVES_PANEL_CONTEXT",
       "to": "HUD_PANEL"
+    },
+    {
+      "from": "CONTROL_PERMIT",
+      "predicate": "DOES_NOT_GRANT_OS_REPAIR_AUTHORITY",
+      "to": "OS_PERIPHERAL_AUTHORITY"
+    },
+    {
+      "from": "INCIDENT",
+      "predicate": "MAY_REQUIRE_OS_OWNER_ROUTING",
+      "to": "OS_PERIPHERAL_AUTHORITY"
     }
   ],
   "invariants": [
@@ -748,6 +763,15 @@
         "scripts/game_capture.py",
         "docs/PERIPHERAL_INCIDENT.md"
       ]
+    },
+    {
+      "id": "BI-ONT-025",
+      "term": "GAME_AGENT_MUST_NOT_MUTATE_WINDOWS_PERIPHERALS",
+      "rule": "Game-side agents, native APIs, capture and screen permits cannot configure Bluetooth services, radio/driver PnP, pairing or OS input preferences. Unknown effects fail closed and authorized Windows diagnosis routes to SysAdminSuite, with cause hypotheses separate from observed recovery.",
+      "owned_by": [
+        "contracts/peripheral-authority.v1.json",
+        "scripts/check_peripheral_boundary.py"
+      ]
     }
   ],
   "interpretation_rules": [
@@ -830,8 +854,8 @@
     "zoom_ladder": {
       "RIGHT_CLICK_VIEW": 0.85,
       "ENVIRONMENT_NAV": 0.5,
-      "TRAVEL_AFAR": 0.0,
-      "MAX_CLOSE": 1.0
+      "TRAVEL_AFAR": 0,
+      "MAX_CLOSE": 1
     },
     "zoom_controls": {
       "CAMERA_ZOOM_IN": [
@@ -876,6 +900,7 @@
       "Cooperative adapters only; external raw input is not intercepted.",
       "Already executing native calls cannot be forcibly preempted.",
       "No new global hooks, UAC changes, scheduler or background service."
-    ]
+    ],
+    "peripheral_authority_owner": "contracts/peripheral-authority.v1.json"
   }
 }

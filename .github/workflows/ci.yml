@@ -7,6 +7,31 @@ on:
 permissions:
   contents: read
 jobs:
+  peripheral-authority:
+    name: Independent desktop peripheral safety gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Guard source against Windows service/driver/input configuration
+        run: python -m scripts.check_peripheral_boundary
+      - name: Synthetic hostile and permitted host effects
+        run: python -m unittest tests.test_peripheral_boundary -v
+      - name: Ontology schema and consultation chronology
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          python -m scripts.check_ontology
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            python -m scripts.check_ontology --base-ref "$PR_BASE_SHA"
+          fi
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10

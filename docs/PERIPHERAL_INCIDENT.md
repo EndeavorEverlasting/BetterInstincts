@@ -24,6 +24,16 @@ The operator later paired a second mouse and intentionally powered it off while 
 
 Validation: 84 focused interop/admission/capture/ontology tests passed; six doctrine tests pass after compacting root routing while preserving detailed mandatory rules. Full CI also exposed UI-microsystem contract failures. The original dcfa26a baseline reproduced the same UI failures (the selected doctrine/UI test group failed with 10 failures and 15 errors before this branch); the pre-existing governance budget failure in that group is now fixed. UI-contract failures remain an integration blocker; the new focused checks are not presented as a green full suite.
 
+## P02/P12 refreshed successor ownership
+
+The current work includes Cursor hooks in stacked PR #161, base #160 branch, inspected at cebec2d. This is a separately owned agent-harness implementation, not proof of local activation. Five of six local Windows hook tests passed; the symlink-creation fixture required an unavailable privilege (WinError 1314). The original external-adapter gap is narrowed only for registered/loaded Cursor event paths. Parent UI-contract CI repair, Windows hook fixture portability and actual allow/deny canaries remain distinct gates. Canonical successor panels/factoring/proof map are tracked in SysAdminSuite docs/plans/bluetooth-desktop-closeout-20261110.plan.md (PR #562); docs/LEDGER.md carries the local pointer. Do not modify the #161 branch from this parent lane.
+
+## Windows peripheral ownership — cross-repository fail-closed semantic boundary
+
+Machine contract: `contracts/peripheral-authority.v1.json`. BetterInstincts may observe game state and, after independent player/context admission, operate the **game**; it may not configure Windows Bluetooth service state, PnP radio/driver nodes, pairing records, input locks or screenshot/mouse preferences. A game capture error, unusable pointer, stalled desktop, stopped `BluetoothUserService_*`, Bluetooth PIN prompt or invisible mouse routes to the existing SysAdminSuite field recovery owner, not a game adapter or new orchestration subsystem. Even an apparently idle player does not authorize OS repair. `scripts/check_peripheral_boundary.py` is a source-level regression barrier for this owned code; external agents and processes are not kernel-sandboxed by this checker. In-source and newly registered adapters still require independent player/session/scene/intent gates. Never claim that a static scan proved a third-party agent cannot touch Windows.
+
+The operator has confirmed both Bluetooth mice connect after repair of Windows Bluetooth services. Functional Bluetooth pairing is recovered. The earlier simultaneous adapter/service transitions do not establish a uniquely isolated underlying failure cause. BetterInstincts' historical game-window foreground interference is a **separate proved defect** and must not be misrepresented as a Bluetooth-service cause. This keeps `RCA`, `functional acceptance`, `OS owner`, `game-side protective controls`, and `live runtime proof` distinct.
+
 
 ## Fail-closed Cursor project boundary (stacked hardening after PR #160)
 
