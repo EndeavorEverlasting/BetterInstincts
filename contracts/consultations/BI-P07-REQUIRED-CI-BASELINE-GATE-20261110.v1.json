@@ -56,7 +56,8 @@
     "Camera edge creek regression retains stronger recovery priority",
     "Hotkey test validates IDs by name not unstable positional index",
     "Vision marker accurately distinguishes CI from live game proof",
-    "Targeted new world highlight tests remain green"
+    "Targeted new world highlight tests remain green",
+    "Measured skills expansion action must never resolve as an arbitrary native click target"
   ],
   "rollback_path": "Revert CI-specific fixes while preserving opt-in world-highlight layer; report baseline CI failures separately; BI-002 stays ACTIVE.",
   "unresolved_unknowns": [
@@ -69,7 +70,8 @@
     "tests/test_camera_traverse.py",
     "tests/test_sim_camera.py",
     "docs/DOCTRINE.md",
-    "docs/LEDGER.md"
+    "docs/LEDGER.md",
+    "tests/test_ui_microsystems.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "decision_rationale": "Existing GitHub Actions main baseline and branch both show same 42 named failures. Repairing the broken required CI gate is a proven dependency of safe P07 mainline merge, not a speculative side project."
