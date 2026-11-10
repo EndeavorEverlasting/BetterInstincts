@@ -106,6 +106,8 @@ def propose_computer_purchase_step(
     computer_observed: bool = False,
     inside_lot_verified: bool = False,
     menu_labels: Sequence[str] = (),
+    menu_scope: str = "ROOT",
+    order_menu_observed: bool = False,
     visited_labels: Sequence[str] = (),
     menu_pages_seen: int = 0,
     page_signature_seen_before: bool = False,
@@ -181,11 +183,24 @@ def propose_computer_purchase_step(
             return _hold("MENU_HOP_COUNT_INVALID")
         if menu_pages_seen >= max_pages or page_signature_seen_before is not False:
             return _hold("MENU_DISCOVERY_BOUNDED_OR_CYCLE_DETECTED")
+        # User-authoritative interaction chain:
+        # computer -> Order -> nested Purchase Upgrade Parts -> picker.
+        # Discovery depth can vary on BOTH menus. The caller must re-observe
+        # the menu context after the Order effect; this policy never infers
+        # entering Order merely because Purchase Upgrade Parts is visible.
+        scope = str(menu_scope or "").upper()
+        if scope not in {"ROOT", "ORDER"}:
+            return _hold("UNKNOWN_ORDER_MENU_SCOPE")
+        if scope == "ORDER" and order_menu_observed is not True:
+            return _hold("ORDER_SUBMENU_NOT_OBSERVED")
         options = {_norm(label): label for label in menu_labels if isinstance(label, str)}
         seen = {_norm(label) for label in visited_labels}
-        for preferred in ("purchase upgrade parts", "order"):
-            if preferred in options and preferred not in seen:
-                return _ready("SELECT_VISIBLE_LABEL", options[preferred])
+        target = "order" if scope == "ROOT" else "purchase upgrade parts"
+        # An ambiguous duplicate visible target must not yield a coordinate.
+        if sum(_norm(label) == target for label in menu_labels if isinstance(label, str)) > 1:
+            return _hold("AMBIGUOUS_VISIBLE_ORDER_TARGET")
+        if target in options and target not in seen:
+            return _ready("SELECT_VISIBLE_LABEL", options[target])
         for key, original in options.items():
             if key in MORE_CHOICES:
                 return _ready("SELECT_VISIBLE_LABEL", original)
