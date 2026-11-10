@@ -1,0 +1,76 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-P07-REQUIRED-CI-BASELINE-GATE-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "decdaa28d980ef298c258a376418e3de8936f2bf",
+  "proposed_capability": "P07 dependency repair required for world-highlight learning branch mainline convergence: currently main and PR both fail identical 42 legacy tests (12 fails/30 errors). Restore existing UI microsystem registry acceptance for one measured, separately-owned skills scroll action without granting native click execution; correct stale test expectations for explicit camera creek-recovery priority and non-positional hotkey registry; restore non-inflated P62 progression proof-ceiling markers. No user game runtime changes.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "CLAIM",
+    "GAME_SCENE",
+    "VIEW_SCENE",
+    "HOST_SESSION",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/CAMERA_TRAVERSE.md",
+    "betterinstincts/ui_microsystems.py",
+    "contracts/ui-microsystems.v1.json",
+    "contracts/ui-chrome.v1.json",
+    "betterinstincts/camera_traverse.py",
+    "betterinstincts/sim_camera.py",
+    "betterinstincts/progression_eval.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "PREEXISTING_FULL_SUITE_CI_RECONCILIATION_NOT_LIVE_GAME_CERT",
+  "player_save_control_impact": "No user save, native game click, UI calibration, OS service/peripheral or player permission change. Keep measured skills drag under its separate fixed_ui_click_map owner and exclusive action queue. No demotion of safety validation.",
+  "expected_outcome": "Full offline test CI restored from 42 baseline failures; only accept documented measured skills scroll status with registered owner and planner, keep untrusted statuses rejected. Update camera/keyboard test assertions for current semantics and restore progression honesty marker in existing doctrine. No unrelated new gameplay features.",
+  "negative_tests": [
+    "Unrecognized action status remains rejected by UI contract",
+    "Measured skills scroll does not mint execute_allowed and requires named owner/planner",
+    "Camera edge creek regression retains stronger recovery priority",
+    "Hotkey test validates IDs by name not unstable positional index",
+    "Vision marker accurately distinguishes CI from live game proof",
+    "Targeted new world highlight tests remain green"
+  ],
+  "rollback_path": "Revert CI-specific fixes while preserving opt-in world-highlight layer; report baseline CI failures separately; BI-002 stays ACTIVE.",
+  "unresolved_unknowns": [
+    "CI full suite might expose further legacy regression once initial registry load is repaired",
+    "Live game and sensor P08 proof remains separate"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-P07-REQUIRED-CI-BASELINE-GATE-20261110.v1.json",
+    "betterinstincts/ui_microsystems.py",
+    "tests/test_camera_traverse.py",
+    "tests/test_sim_camera.py",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Existing GitHub Actions main baseline and branch both show same 42 named failures. Repairing the broken required CI gate is a proven dependency of safe P07 mainline merge, not a speculative side project."
+}
