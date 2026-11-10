@@ -60,8 +60,12 @@ from betterinstincts.diy_skill_force import (
     load_completion_ledger,
     plan_household_skill_force,
     plan_skill_force,
+    record_member_panel_snapshot,
     record_skill_dispatched,
+    record_skill_panel_observed,
+    resolve_skill_ref,
     save_completion_ledger,
+    set_household_roster,
     skills_panel_observation_policy,
     steps_to_commands,
 )
@@ -906,10 +910,142 @@ def main(argv: list[str] | None = None) -> int:
         help="Disabled safety guard: detached UI worker execution is forbidden",
     )
 
+    pr = sub.add_parser(
+        "panel-record",
+        help="Record Skills-panel LOCAL_OBSERVED levels into the completion ledger (no screenshots required next time)",
+    )
+    pr.add_argument("--session-id", required=True)
+    pr.add_argument("--members", type=int, default=None, help="Exact observed portrait count N")
+    pr.add_argument("--roster-key", action="append", default=[], help="Ordered portrait keys matching N")
+    pr.add_argument("--display-name", action="append", default=[], help="Optional display names ordered with roster")
+    pr.add_argument("--member-key", required=True, help="Portrait key receiving this panel reading")
+    pr.add_argument("--member-display-name", default=None)
+    pr.add_argument(
+        "--skill-level",
+        action="append",
+        default=[],
+        help="Repeatable skill=level (id or display name), e.g. cooking=10 robotics=3",
+    )
+    pr.add_argument(
+        "--all-listed-max",
+        action="store_true",
+        help="Operator attested every visible skill at max; also mark remaining full_unlock rows PANEL_OBSERVED_MAX",
+    )
+    pr.add_argument("--target-level", type=int, default=10)
+    pr.add_argument(
+        "--completion-ledger",
+        type=Path,
+        default=None,
+        help="Default dist/game-host/diy-skill-force-completion.json",
+    )
+    pr.add_argument("--receipt", type=Path, default=None)
+
+    rs = sub.add_parser(
+        "roster-status",
+        help="Print household roster N + per-member panel/dispatched skill status from the ledger",
+    )
+    rs.add_argument("--session-id", default=None)
+    rs.add_argument("--completion-ledger", type=Path, default=None)
+    rs.add_argument("--target-level", type=int, default=10)
+    rs.add_argument("--bundle", default="full_unlock")
+
     args = p.parse_args(argv)
     try:
         if args.command == "catalog":
             result = catalog_snapshot()
+        elif args.command == "panel-record":
+            ledger_path = (
+                Path(args.completion_ledger)
+                if args.completion_ledger is not None
+                else default_completion_ledger_path()
+            )
+            if not ledger_path.is_absolute():
+                ledger_path = ROOT / ledger_path
+            ledger = load_completion_ledger(ledger_path)
+            if args.members is not None:
+                if len(args.roster_key) != int(args.members):
+                    raise GateError("EXACT_OBSERVED_PORTRAIT_ROSTER_REQUIRED")
+                set_household_roster(
+                    ledger,
+                    session_id=args.session_id,
+                    members=int(args.members),
+                    roster_keys=list(args.roster_key),
+                    display_names=list(args.display_name) or None,
+                )
+            observed: dict[str, int] = {}
+            for item in args.skill_level:
+                if "=" not in str(item):
+                    raise GateError("SKILL_LEVEL_MUST_BE_NAME_EQ_INT")
+                name, _, lvl = str(item).partition("=")
+                observed[name.strip()] = int(lvl)
+            if not observed and not args.all_listed_max:
+                raise GateError("SKILL_LEVEL_OR_ALL_LISTED_MAX_REQUIRED")
+            if args.all_listed_max and not observed:
+                # Treat as full max attestation with empty explicit map.
+                observed = {}
+            mkey = (
+                args.member_key
+                if ("::key::" in args.member_key or "::idx::" in args.member_key)
+                else completion_member_key(args.session_id, 0, args.member_key)
+            )
+            snap = record_member_panel_snapshot(
+                ledger,
+                member_key=mkey,
+                observed_skills=observed,
+                display_name=args.member_display_name,
+                mark_unlisted_full_unlock_max=bool(args.all_listed_max),
+                target_level=int(args.target_level),
+            )
+            path = save_completion_ledger(ledger, ledger_path)
+            result = {
+                "state": "SKILLS_PANEL_RECORDED",
+                "ledger": str(path),
+                "household_roster": ledger.get("household_roster"),
+                "snapshot": snap,
+                "note": "PANEL_OBSERVED_MAX skips future maximize cells; PANEL_OBSERVED stores gaps. No screenshot required once recorded.",
+            }
+            if args.receipt is not None:
+                args.receipt.parent.mkdir(parents=True, exist_ok=True)
+                args.receipt.write_text(
+                    json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+                )
+        elif args.command == "roster-status":
+            ledger_path = (
+                Path(args.completion_ledger)
+                if args.completion_ledger is not None
+                else default_completion_ledger_path()
+            )
+            if not ledger_path.is_absolute():
+                ledger_path = ROOT / ledger_path
+            ledger = load_completion_ledger(ledger_path)
+            catalog = catalog_snapshot()
+            bundle = args.bundle or "full_unlock"
+            skill_ids = list((catalog.get("bundles") or {}).get(bundle, {}).get("skill_ids") or [])
+            roster = ledger.get("household_roster") if isinstance(ledger.get("household_roster"), dict) else {}
+            members_out = []
+            for key, row in sorted((ledger.get("members") or {}).items()):
+                if args.session_id and args.session_id not in str(key):
+                    continue
+                skills = (row or {}).get("skills") or {}
+                done = completed_skill_ids_for_member(ledger, key, target_level=int(args.target_level))
+                remaining = [sid for sid in skill_ids if sid not in done]
+                members_out.append(
+                    {
+                        "member_key": key,
+                        "display_name": (row or {}).get("display_name"),
+                        "panel_or_dispatched_complete": sorted(done),
+                        "remaining_for_bundle": remaining,
+                        "skill_rows": skills,
+                    }
+                )
+            result = {
+                "state": "ROSTER_STATUS",
+                "ledger": str(ledger_path),
+                "household_roster": roster,
+                "observed_n": roster.get("members"),
+                "bundle": bundle,
+                "members": members_out,
+            }
         elif args.command == "trait-repair":
             plan = plan_trait_repair(
                 remove_traits=list(args.trait) or None,

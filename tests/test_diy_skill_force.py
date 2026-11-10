@@ -852,5 +852,80 @@ class DispatchedIsNotMaximizedTests(unittest.TestCase):
         self.assertIn("PANEL_FALSIFIED", cfg["completion_ledger"]["statuses"])
 
 
+class SkillsPanelRosterRecordTests(unittest.TestCase):
+    """Operator N=4 panel readings must live in the ledger, not chat screenshots."""
+
+    def test_n4_roster_and_panel_max_skips_member(self):
+        from betterinstincts.diy_skill_force import (
+            record_member_panel_snapshot,
+            set_household_roster,
+        )
+
+        ledger = empty_completion_ledger()
+        set_household_roster(
+            ledger,
+            session_id="household-n4-20261109",
+            members=4,
+            roster_keys=["EVIL_P0", "BERNICE_P1", "OLGA_P2", "CHARLEE_P3"],
+            display_names=["Evil Fagbot", "Bernice Thermidor", "Olga Chabenvenutzki", "Charlee"],
+        )
+        self.assertEqual(ledger["household_roster"]["members"], 4)
+        with self.assertRaises(DiySkillForceError):
+            set_household_roster(
+                ledger,
+                session_id="household-n4-20261109",
+                members=5,
+                roster_keys=["EVIL_P0", "BERNICE_P1", "OLGA_P2", "CHARLEE_P3"],
+            )
+        bernice = completion_member_key("household-n4-20261109", 1, "BERNICE_P1")
+        snap = record_member_panel_snapshot(
+            ledger,
+            member_key=bernice,
+            observed_skills={"cooking": 10, "handiness": 10},
+            display_name="Bernice Thermidor",
+            mark_unlisted_full_unlock_max=True,
+        )
+        self.assertGreaterEqual(snap["panel_max_count"], 2)
+        evil = completion_member_key("household-n4-20261109", 0, "EVIL_P0")
+        record_member_panel_snapshot(
+            ledger,
+            member_key=evil,
+            observed_skills={
+                "charisma": 1,
+                "gardening": 1,
+                "mischief": 1,
+                "robotics": 3,
+                "video_gaming": 1,
+                "wellness": 1,
+            },
+            display_name="Evil Fagbot",
+        )
+        self.assertEqual(
+            ledger["members"][evil]["skills"]["robotics"]["status"], "PANEL_OBSERVED"
+        )
+        self.assertFalse(
+            skill_is_complete(ledger["members"][evil]["skills"]["robotics"], target_level=10)
+        )
+        plan = plan_household_skill_force(
+            members=4,
+            skill_ids=["robotics", "cooking"],
+            session_id="household-n4-20261109",
+            member_keys=["EVIL_P0", "BERNICE_P1", "OLGA_P2", "CHARLEE_P3"],
+            completion_ledger=ledger,
+        )
+        # Bernice cooking+robotics panel-maxed => those cells skip; Evil still needs robotics.
+        bernice_units = [
+            u for u in plan["dispatch_units"]
+            if u["member_key"].endswith("BERNICE_P1")
+        ]
+        self.assertTrue(all(u["skip_dispatch"] for u in bernice_units))
+        evil_robotics = [
+            u for u in plan["dispatch_units"]
+            if u["member_key"].endswith("EVIL_P0") and u["skill_id"] == "robotics"
+        ]
+        self.assertEqual(len(evil_robotics), 1)
+        self.assertFalse(evil_robotics[0]["skip_dispatch"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -62,6 +62,18 @@ python bootstrap.py household-skills
 python bootstrap.py household-skills -- --members 3 --bundle full_unlock --execute --roster-key SIM_A --roster-key SIM_B --roster-key SERVO_C --first-portrait-attested --process-id PID --session-id ID
 ```
 
+**Skills-panel roster ledger (no more screenshot loops):** after you read a Skills panel once, record it:
+
+```sh
+python -m scripts.diy_skill_force panel-record --session-id household-n4-20261109 --members 4 \
+  --roster-key EVIL_P0 --roster-key BERNICE_P1 --roster-key OLGA_P2 --roster-key CHARLEE_P3 \
+  --display-name "Evil Fagbot" --display-name "Bernice Thermidor" --display-name "Olga Chabenvenutzki" --display-name Charlee \
+  --member-key BERNICE_P1 --member-display-name "Bernice Thermidor" --all-listed-max --skill-level cooking=10
+python -m scripts.diy_skill_force roster-status --session-id household-n4-20261109
+```
+
+`PANEL_OBSERVED_MAX` skips maximize cells; `PANEL_OBSERVED` stores gaps below 10. `household_roster.members` is exact Live portrait count — **N=4** for the current attested household. Do not invent a fifth portrait. Ledger path: `dist/game-host/diy-skill-force-completion.json` (local).
+
 **Household (skill-round-robin):** observe Live portrait count → `--members N` where **N is whatever that household is** (not an invented 8/10 ceiling). Dispatch order is **one skill × every portrait, then the next skill** (not all skills on one Sim before Space). Between cells, `_execute_plan(close_console=True)` has **already closed** the console with Ctrl+Shift+C; **never toggle it again** before **Space** (`SELECT_NEXT_HOUSEHOLD_SIM`; wraps after last portrait). The Space action requires a fresh `admitted_screen_lease`; another agent owning the screen must cause deferral, not blind selection. Already-complete skill×member cells in the durable completion ledger (`dist/game-host/diy-skill-force-completion.json`) are **skipped** while Space still advances so selection stays aligned. Each typed cheat line is recorded `DISPATCHED` immediately (resume/skip evidence only; **not** Skills-panel PASS). `--redo` ignores the ledger for that run. Bootstrap entry `python bootstrap.py household-skills` prints the recipe; with `-- --members N …` it forwards into the verified checkout — never on install/gui open. `--detach` is **rejected before launching any subprocess**. The foreground executor waits for trustworthy OS input idle ≥15000ms and rechecks admission. Only one screen-input owner should work on the skill job. `--roster-key` values must be the exact, stable, ordered portrait identities, not invented names; `--first-portrait-attested` is a local host/operator assertion that the initial selected portrait is the first. These arguments are not themselves visual evidence: any roster change or uncertain selection requires stopping and reobserving, never adding a household member. Residual ids: `Major_HomestyleCooking`, `Skill_Fitness`, `Skill_NLS`. Missing packs may no-op individual lines.
 
 ## P83 installation and ledger-proof correction (2026-11-09)

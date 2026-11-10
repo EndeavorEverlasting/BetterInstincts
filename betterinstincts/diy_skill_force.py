@@ -110,6 +110,9 @@ def load_completion_ledger(path: Path | None = None) -> dict:
     out["members"] = dict(members)
     if isinstance(raw.get("note"), str):
         out["note"] = raw["note"]
+    roster = raw.get("household_roster")
+    if isinstance(roster, Mapping):
+        out["household_roster"] = dict(roster)
     return out
 
 
@@ -189,6 +192,175 @@ def record_skill_dispatched(
         "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     return skills[sid]
+
+
+def resolve_skill_ref(token: str, *, cfg: Optional[dict] = None) -> dict:
+    """Map a skill id or Skills-panel display name to catalog id/stat."""
+    cfg = cfg or load_contract()
+    raw = str(token or "").strip()
+    if not raw:
+        raise DiySkillForceError("SKILL_REF_REQUIRED")
+    needle = raw.lower().replace(" ", "_")
+    skills = cfg.get("skill_catalog") or cfg.get("skills") or []
+    if not isinstance(skills, list):
+        raise DiySkillForceError("SKILL_CATALOG_INVALID")
+    for row in skills:
+        if not isinstance(row, Mapping):
+            continue
+        sid = str(row.get("id") or "").strip().lower()
+        display = str(row.get("display_name") or "").strip().lower()
+        display_key = display.replace(" ", "_")
+        if needle in {sid, display, display_key}:
+            return {
+                "skill_id": sid,
+                "skill_stat": str(row.get("skill_stat") or ""),
+                "display_name": str(row.get("display_name") or sid),
+            }
+    raise DiySkillForceError(f"UNKNOWN_SKILL_REF:{raw}")
+
+
+def set_household_roster(
+    ledger: dict,
+    *,
+    session_id: str,
+    members: int,
+    roster_keys: Sequence[str],
+    display_names: Sequence[str] | None = None,
+    evidence: str = "OPERATOR_PORTRAIT_COUNT_LOCAL_OBSERVED",
+) -> dict:
+    """Persist observed household N and ordered portrait keys in the ledger."""
+    count = int(members)
+    keys = [str(k).strip() for k in roster_keys]
+    if count < 1 or count > 100:
+        raise DiySkillForceError("HOUSEHOLD_ROSTER_N_OUT_OF_RANGE")
+    if len(keys) != count or any(not k or len(k) > 64 for k in keys):
+        raise DiySkillForceError("HOUSEHOLD_ROSTER_KEYS_MUST_MATCH_N")
+    if len(set(keys)) != count:
+        raise DiySkillForceError("HOUSEHOLD_ROSTER_KEYS_MUST_BE_UNIQUE")
+    names = list(display_names or [])
+    if names and len(names) != count:
+        raise DiySkillForceError("HOUSEHOLD_DISPLAY_NAMES_MUST_MATCH_N")
+    roster = {
+        "session_id": str(session_id).strip() or "anonymous-session",
+        "members": count,
+        "roster_keys": keys,
+        "display_names": names,
+        "evidence": str(evidence),
+        "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "note": "N is exact Live portrait count. Never invent a fifth portrait.",
+    }
+    ledger["household_roster"] = roster
+    return roster
+
+
+def record_skill_panel_observed(
+    ledger: dict,
+    *,
+    member_key: str,
+    skill_id: str,
+    level: int,
+    skill_stat: str | None = None,
+    display_name: str | None = None,
+    target_level: int = 10,
+    evidence: str = "SKILLS_PANEL_LOCAL_OBSERVED",
+    note: str | None = None,
+) -> dict:
+    """Record one Skills-panel reading so agents stop depending on chat screenshots.
+
+    level >= target_level => PANEL_OBSERVED_MAX (durable skip).
+    Otherwise PANEL_OBSERVED with the exact observed level (not complete).
+    """
+    members = ledger.setdefault("members", {})
+    if not isinstance(members, dict):
+        raise DiySkillForceError("COMPLETION_LEDGER_INVALID")
+    row = members.setdefault(str(member_key), {"skills": {}})
+    if not isinstance(row, dict):
+        raise DiySkillForceError("COMPLETION_LEDGER_INVALID")
+    if display_name:
+        row["display_name"] = str(display_name)
+    skills = row.setdefault("skills", {})
+    if not isinstance(skills, dict):
+        raise DiySkillForceError("COMPLETION_LEDGER_INVALID")
+    sid = str(skill_id).strip().lower()
+    if not sid:
+        raise DiySkillForceError("SKILL_ID_REQUIRED")
+    observed = int(level)
+    if observed < 0 or observed > 10:
+        raise DiySkillForceError("SKILL_LEVEL_OUT_OF_RANGE")
+    target = int(target_level)
+    prior = skills.get(sid) if isinstance(skills.get(sid), Mapping) else {}
+    status = "PANEL_OBSERVED_MAX" if observed >= target else "PANEL_OBSERVED"
+    entry = {
+        "skill_id": sid,
+        "skill_stat": str(skill_stat or prior.get("skill_stat") or ""),
+        "level": observed,
+        "status": status,
+        "evidence": str(evidence),
+        "prior_status": str(prior.get("status") or ""),
+        "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    if note:
+        entry["note"] = str(note)[:500]
+    skills[sid] = entry
+    return entry
+
+
+def record_member_panel_snapshot(
+    ledger: dict,
+    *,
+    member_key: str,
+    observed_skills: Mapping[str, int],
+    display_name: str | None = None,
+    mark_unlisted_full_unlock_max: bool = False,
+    target_level: int = 10,
+    evidence: str = "SKILLS_PANEL_LOCAL_OBSERVED",
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Write many Skills-panel levels for one portrait into the completion ledger.
+
+    When ``mark_unlisted_full_unlock_max`` is true (operator attested every listed
+    skill at max and the visible list is the full unlock set), also mark remaining
+    full_unlock catalog skills PANEL_OBSERVED_MAX so sequential household runs skip
+    that portrait without more screenshots.
+    """
+    cfg = cfg or load_contract()
+    written: dict[str, dict] = {}
+    for token, level in dict(observed_skills).items():
+        ref = resolve_skill_ref(str(token), cfg=cfg)
+        written[ref["skill_id"]] = record_skill_panel_observed(
+            ledger,
+            member_key=member_key,
+            skill_id=ref["skill_id"],
+            skill_stat=ref["skill_stat"],
+            display_name=display_name,
+            level=int(level),
+            target_level=target_level,
+            evidence=evidence,
+        )
+    if mark_unlisted_full_unlock_max:
+        full_ids = list(((cfg.get("bundles") or {}).get("full_unlock") or {}).get("skill_ids") or [])
+        for sid in full_ids:
+            if str(sid).strip().lower() in written:
+                continue
+            ref = resolve_skill_ref(str(sid), cfg=cfg)
+            written[ref["skill_id"]] = record_skill_panel_observed(
+                ledger,
+                member_key=member_key,
+                skill_id=ref["skill_id"],
+                skill_stat=ref["skill_stat"],
+                display_name=display_name,
+                level=int(target_level),
+                target_level=target_level,
+                evidence=evidence + "_FULL_UNLOCK_LIST_ATTESTED",
+                note="Operator attested all visible skills at max; unlisted full_unlock rows inherited PANEL_OBSERVED_MAX",
+            )
+    return {
+        "member_key": member_key,
+        "display_name": display_name,
+        "skills_written": sorted(written),
+        "panel_max_count": sum(1 for e in written.values() if e.get("status") == "PANEL_OBSERVED_MAX"),
+        "panel_partial_count": sum(1 for e in written.values() if e.get("status") == "PANEL_OBSERVED"),
+    }
 
 
 def record_skill_panel_falsified(

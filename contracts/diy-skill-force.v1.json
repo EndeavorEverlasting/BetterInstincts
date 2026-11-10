@@ -51,8 +51,21 @@
       "plan": "python -m scripts.diy_skill_force plan --bundle full_unlock",
       "level": "python -m scripts.diy_skill_force level --bundle full_unlock --execute --process-id PID --session-id ID",
       "household": "python -m scripts.diy_skill_force household --members N --bundle full_unlock --execute --roster-key PORTRAIT_1 [--roster-key PORTRAIT_2 ...] --first-portrait-attested --process-id PID --session-id ID",
-      "bootstrap_household_skills": "python bootstrap.py household-skills -- --members N --bundle full_unlock --execute --roster-key PORTRAIT_1 [--roster-key PORTRAIT_2 ...] --first-portrait-attested --process-id PID --session-id ID"
+      "bootstrap_household_skills": "python bootstrap.py household-skills -- --members N --bundle full_unlock --execute --roster-key PORTRAIT_1 [--roster-key PORTRAIT_2 ...] --first-portrait-attested --process-id PID --session-id ID",
+      "panel_record": "python -m scripts.diy_skill_force panel-record --session-id ID --members N --roster-key P0 --roster-key P1 --member-key P0 --skill-level cooking=10 --skill-level robotics=3",
+      "roster_status": "python -m scripts.diy_skill_force roster-status --session-id ID"
     }
+  },
+  "panel_record": {
+    "owner": "betterinstincts/diy_skill_force.py",
+    "cli": "scripts/diy_skill_force.py panel-record|roster-status",
+    "purpose": "Persist Skills-panel LOCAL_OBSERVED levels so agents do not require repeated operator screenshots",
+    "statuses": {
+      "PANEL_OBSERVED": "Exact observed level below target — gap remains for sequential upgrade",
+      "PANEL_OBSERVED_MAX": "Observed at/above target — durable skip for maximize cells"
+    },
+    "roster": "household_roster.members is exact Live portrait count N; never invent portraits",
+    "not": ["skills_panel_pass_from_DISPATCHED", "screenshot_required_after_record"]
   },
   "required_residual_skills": [
     "cooking",
