@@ -161,6 +161,15 @@ def classify_click(
     }
 
 
+def is_forbidden_target(target_id: str, *, cfg: Optional[dict] = None) -> bool:
+    """True when the contract seed is a deny target (status FORBIDDEN*/action deny)."""
+    cfg = cfg or load_contract()
+    row = (cfg.get("seed_targets_1920x1080") or {}).get(str(target_id).strip())
+    if not isinstance(row, Mapping):
+        return False
+    return str(row.get("status") or "").startswith("FORBIDDEN") or str(row.get("action") or "") == "deny"
+
+
 def record_click_attempt(
     ledger: dict,
     *,
@@ -197,6 +206,8 @@ def record_click_attempt(
     label = str(classification)
     if label not in allowed:
         raise FixedUiClickMapError("UNKNOWN_CLICK_CLASSIFICATION")
+    if label == "HIT" and is_forbidden_target(tid, cfg=cfg):
+        raise FixedUiClickMapError("FORBIDDEN_TARGET_CANNOT_ATTEST_HIT:" + tid)
     book = ensure_seeded_ledger(ledger, cfg=cfg)
     targets = book["targets"]
     row = dict(targets.get(tid) or {"target_id": tid, "client_xy": [int(client_xy[0]), int(client_xy[1])], "status": "CANDIDATE", "hit_count": 0, "miss_count": 0, "wrong_control_count": 0, "attested": False})
@@ -240,8 +251,34 @@ def resolve_target_xy(ledger: Mapping[str, object], target_id: str, *, cfg: Opti
         "status": str(row.get("status") or "CANDIDATE"),
         "attested": bool(row.get("attested")),
         "role": str(row.get("role") or ""),
+        "denied": is_forbidden_target(tid, cfg=cfg),
         "proof_ceiling": cfg["proof_ceiling"],
     }
+
+
+def load_inventory_multiselect_coords(*, cfg: Optional[dict] = None) -> dict[str, tuple[int, int]]:
+    """Return inventory Multiselect toggle + FORBIDDEN Sell client_xy (1920x1080).
+
+    The Sell entry is for avoidance only; callers must never click it.
+    """
+    cfg = cfg or load_contract()
+    block = cfg.get("inventory_multiselect_1920x1080")
+    if not isinstance(block, Mapping):
+        raise FixedUiClickMapError("INVENTORY_MULTISELECT_BLOCK_REQUIRED")
+    targets = block.get("targets")
+    if not isinstance(targets, Mapping):
+        raise FixedUiClickMapError("INVENTORY_MULTISELECT_TARGETS_REQUIRED")
+    out: dict[str, tuple[int, int]] = {}
+    for key in ("multiselect_toggle", "sell_button"):
+        row = targets.get(key)
+        xy = row.get("client_xy") if isinstance(row, Mapping) else None
+        if not (isinstance(xy, (list, tuple)) and len(xy) == 2 and all(isinstance(v, int) for v in xy)):
+            raise FixedUiClickMapError(f"INVENTORY_MULTISELECT_XY_REQUIRED:{key}")
+        out[key] = (int(xy[0]), int(xy[1]))
+    sell = targets["sell_button"]
+    if sell.get("action") != "deny" or not str(sell.get("status") or "").startswith("FORBIDDEN"):
+        raise FixedUiClickMapError("INVENTORY_SELL_MUST_BE_FORBIDDEN_DENY")
+    return out
 
 
 def plan_arm_to_console_handoff(*, cfg: Optional[dict] = None) -> dict:

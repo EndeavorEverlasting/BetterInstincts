@@ -1,0 +1,71 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-INVENTORY-MULTISELECT-CLICK-MAP-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "Promote PrintWindow-measured (approximate) Live inventory-panel Multiselect toggle client coords into fixed-ui-click-map v11 as additive seeds, and record the panel's Sell button as a FORBIDDEN_DENY target that can never be attested as a HIT or resolved as clickable. Operator rule: agents never sell or delete household items.",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "OBSERVATION",
+    "CLAIM",
+    "PLAYER_PRESENCE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/UI_CHROME.md",
+    "docs/GAME_HOST.md",
+    "contracts/fixed-ui-click-map.v1.json",
+    "betterinstincts/fixed_ui_click_map.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "INVENTORY_MULTISELECT_APPROX_PRINTWINDOW_20261110_NOT_LIVE_HIT_CERT",
+  "player_save_control_impact": "Records fixed panel coordinates and a deny policy only. No save, game file, or live input is touched by this change. Sell button is contractually unclickable (FORBIDDEN_DENY).",
+  "expected_outcome": "fixed-ui-click-map v11: seeds live.inventory_multiselect_toggle and live.inventory_sell_button (FORBIDDEN_DENY), inventory_multiselect_1920x1080 block, load_inventory_multiselect_coords loader, record_click_attempt refuses HIT on FORBIDDEN targets, resolve_target_xy flags denied targets; unit tests; receipt under horizon-exec-20261110/bi002.",
+  "negative_tests": [
+    "Sell button cannot be recorded as HIT",
+    "resolve_target_xy flags Sell as denied",
+    "Sell and Multiselect toggle coords differ by more than near-miss radius",
+    "Prior seeds (live.panel_inventory, version 10 entries) unchanged"
+  ],
+  "rollback_path": "Revert contract v11 additions and the two guard edits in betterinstincts/fixed_ui_click_map.py; v10 content is untouched.",
+  "unresolved_unknowns": [
+    "Exact client_xy of Multiselect toggle and Sell button are approximate single-session measurements",
+    "Whether the Household vs personal inventory scope is a tab inside the same panel opened by live.panel_inventory"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-INVENTORY-MULTISELECT-CLICK-MAP-20261110.v1.json",
+    "contracts/fixed-ui-click-map.v1.json",
+    "betterinstincts/fixed_ui_click_map.py",
+    "tests/test_fixed_ui_click_map.py",
+    "dist/game-host/horizon-exec-20261110/bi002/inventory-multiselect-map-receipt.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decided_at": "2026-11-10T12:30:00Z",
+  "decided_by": "cursor-local-agent",
+  "decision_rationale": "Multiselect path blocked the Eat queue in live session; Sell sits next to Multiselect and deletes/sells items. Durable deny-by-contract prevents repeat. Offline map edit only; no game input."
+}

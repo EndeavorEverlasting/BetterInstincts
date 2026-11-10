@@ -8,7 +8,9 @@ from betterinstincts.fixed_ui_click_map import (
     classify_click,
     empty_ledger,
     ensure_seeded_ledger,
+    is_forbidden_target,
     load_contract,
+    load_inventory_multiselect_coords,
     load_camera_dependent_fridge_seeds,
     load_escape_menu_coords,
     load_load_play_recovery_coords,
@@ -243,7 +245,71 @@ class CameraDependentFridgeSeedTests(unittest.TestCase):
             self.assertFalse(tid.startswith("world.fridge"), tid)
         self.assertEqual(cfg["seed_targets_1920x1080"]["live.calendar_close_x"]["client_xy"], [1445, 255])
         self.assertEqual(cfg["seed_targets_1920x1080"]["live.notebook_close_x"]["client_xy"], [1338, 276])
-        self.assertEqual(cfg["version"], 10)
+        self.assertGreaterEqual(cfg["version"], 10)
+
+
+class InventoryMultiselectTests(unittest.TestCase):
+    def test_multiselect_and_sell_coords(self):
+        cfg = load_contract()
+        self.assertGreaterEqual(cfg["version"], 11)
+        coords = load_inventory_multiselect_coords(cfg=cfg)
+        self.assertEqual(coords["multiselect_toggle"], (1878, 791))
+        self.assertNotEqual(coords["multiselect_toggle"], (1880, 735))
+        self.assertEqual(coords["sell_button"], (1915, 925))
+        seeds = cfg["seed_targets_1920x1080"]
+        toggle = seeds["live.inventory_multiselect_toggle"]
+        self.assertEqual(toggle["client_xy"], [1878, 791])
+        self.assertEqual(toggle["prior_xy_wrong"], [1880, 735])
+        self.assertEqual(toggle["panel_scope"], "HOUSEHOLD")
+        self.assertIn("1846-1911", toggle["measured_evidence"]["on_state"])
+        self.assertIn("1878, 793", toggle["measured_evidence"]["off_state"])
+        # ON switch bbox 1846-1911 x 784-799 contains the click point.
+        self.assertTrue(1846 <= coords["multiselect_toggle"][0] <= 1911)
+        self.assertTrue(784 <= coords["multiselect_toggle"][1] <= 799)
+        hvp = cfg["inventory_multiselect_1920x1080"]["household_vs_personal"]
+        self.assertFalse(hvp["household_panel"]["eat_supported"])
+        self.assertEqual(hvp["personal_panel"]["target_id"], "live.panel_inventory")
+        self.assertIn("EAT_FROM_HOUSEHOLD_MULTISELECT", cfg["inventory_multiselect_1920x1080"]["forbidden"])
+        self.assertEqual(seeds["live.inventory_sell_button"]["status"], "FORBIDDEN_DENY")
+        self.assertEqual(seeds["live.inventory_sell_button"]["action"], "deny")
+        near = cfg["thresholds_px"]["near_miss_radius"]
+        dx = coords["sell_button"][0] - coords["multiselect_toggle"][0]
+        dy = coords["sell_button"][1] - coords["multiselect_toggle"][1]
+        self.assertGreater((dx * dx + dy * dy) ** 0.5, near)
+        self.assertIn("CLICK_INVENTORY_SELL_BUTTON", cfg["inventory_multiselect_1920x1080"]["forbidden"])
+
+    def test_prior_inventory_and_needs_tray_entries_unchanged(self):
+        seeds = load_contract()["seed_targets_1920x1080"]
+        self.assertEqual(seeds["live.panel_inventory"]["client_xy"], [1757, 1045])
+        self.assertEqual(seeds["live.panel_inventory"]["panel_id"], "personal_inventory")
+        self.assertEqual(seeds["live.panel_inventory"]["hotkey"], "I")
+        self.assertEqual(seeds["live.panel_needs"]["client_xy"], [1820, 1045])
+
+    def test_sell_cannot_be_attested_hit_or_resolved_as_clickable(self):
+        ledger = ensure_seeded_ledger(empty_ledger())
+        self.assertTrue(is_forbidden_target("live.inventory_sell_button"))
+        self.assertFalse(is_forbidden_target("live.inventory_multiselect_toggle"))
+        with self.assertRaises(FixedUiClickMapError):
+            record_click_attempt(
+                ledger,
+                target_id="live.inventory_sell_button",
+                client_xy=[1915, 925],
+                classification="HIT",
+            )
+        self.assertFalse(ledger["targets"]["live.inventory_sell_button"]["attested"])
+        self.assertEqual(ledger["targets"]["live.inventory_sell_button"]["hit_count"], 0)
+        self.assertTrue(resolve_target_xy(ledger, "live.inventory_sell_button")["denied"])
+        self.assertFalse(resolve_target_xy(ledger, "live.inventory_multiselect_toggle")["denied"])
+
+    def test_multiselect_toggle_can_attest_hit(self):
+        ledger = ensure_seeded_ledger(empty_ledger())
+        record_click_attempt(
+            ledger,
+            target_id="live.inventory_multiselect_toggle",
+            client_xy=[1878, 791],
+            classification="HIT",
+        )
+        self.assertTrue(ledger["targets"]["live.inventory_multiselect_toggle"]["attested"])
 
 
 class LoadPlayRecoveryCoordTests(unittest.TestCase):

@@ -1,3 +1,9 @@
+## 2026-11-10 — Inventory Multiselect map v11 + snack still open
+
+**CHANGED:** `contracts/fixed-ui-click-map.v1.json` v11 adds `live.inventory_multiselect_toggle [1878,791]` (prior approx `[1880,735]` wrong — did not toggle) and `live.inventory_sell_button` FORBIDDEN `[1915,925]`. Household inventory (Place in World / Drag to sell / Multiselect) cannot Eat; personal inventory is hotkey `I` after household closed. Horizon plan annotated. Live: Charlee living; Multiselect Off proved; snack still not queued; BI-002 baseline 2/5.
+
+**NEXT:** Escape camera clip → kitchen Zx14+Enter → fridge `[500,560]` → Have Breakfast/`Get Leftovers` → `live_cert` trial 3; never Sell; never hunger-drain without queue.
+
 ## 2026-11-10 — Living Hunger recovered + OFF_LOT_STREET live classify
 
 **CHANGED:** Loaded `My Saved Game 6` / `Slot_00000007` (never delete) → Willow Creek → LabLab Play `[1811,1033]` (never Create Household/`[1883,1040]`). Living Charlee/Olga Needs 6-bar Hunger attested (`living-subject-attestation.json`). `assess_lot_focus` live `OFF_LOT_STREET` when Sim/camera on sidewalk/canal (`offlot-street-recognition.json`); Shift+Enter lot-center when Enter alone leaves water; avoid terrain-arm RMB on canal. Horizon plan `BI-HORIZON-EXECUTION-WIDE-20261110` gates updated. Inventory holds Faux Meat Cube + bowls — Eat queue still OPEN (multiselect/sell path avoided). Fridge kitchen re-HIT still open (lab/garden camera). BI-002 baseline still 2/5; not closed.

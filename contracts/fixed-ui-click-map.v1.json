@@ -1,10 +1,11 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 10,
+  "version": 11,
   "version_notes": {
     "8": "Adds camera_dependent_seeds_1920x1080 (fridge HIT/MISS). Additive only: seed_targets_1920x1080 and all certified seeds unchanged; camera-dependent rows are NOT ingested into the fixed-HUD ledger.",
     "9": "Adds live.notebook_close_x [1338,276] (PrintWindow-measured Notebook dismiss). Additive only; prior seeds unchanged.",
-    "10": "Promotes Load/Play/Exit-CAS/Residential Worlds/LabLab Play from living-subject-recovery receipt (2026-11-10). cas_cancel_x supersedes 1830,1050→1838,1048. FORBIDDEN deny ~[1883,1040] blue person+arrow (CAS, not Live). camera_dependent fridge seeds remain separate — not merged here."
+    "10": "Promotes Load/Play/Exit-CAS/Residential Worlds/LabLab Play from living-subject-recovery receipt (2026-11-10). cas_cancel_x supersedes 1830,1050→1838,1048. FORBIDDEN deny ~[1883,1040] blue person+arrow (CAS, not Live). camera_dependent fridge seeds remain separate — not merged here.",
+    "11": "Adds live.inventory_multiselect_toggle [1878,791] (household panel; PrintWindow ON/OFF measured 2026-11-10; prior approx [1880,735] was wrong) and live.inventory_sell_button FORBIDDEN_DENY [1915,925] plus inventory_multiselect_1920x1080 block. Additive only: v10 seeds (incl. live.panel_inventory) unchanged. Sell can never be attested HIT nor resolved as clickable."
   },
   "authority": "docs/UI_CHROME.md",
   "owners": {
@@ -433,6 +434,32 @@
       "status": "PRINTWINDOW_MEASURED_20261109",
       "profile": "1920x1080",
       "notes": "Box inventory tray icon; prefer hotkey I"
+    },
+    "live.inventory_multiselect_toggle": {
+      "role": "TOGGLE_INVENTORY_MULTISELECT",
+      "panel_id": "household_inventory",
+      "panel_scope": "HOUSEHOLD",
+      "client_xy": [1878, 791],
+      "prior_xy_wrong": [1880, 735],
+      "status": "PRINTWINDOW_MEASURED_20261110_ON_OFF",
+      "profile": "1920x1080",
+      "measured_evidence": {
+        "method": "PrintWindow pixel proof, 1920x1080 client",
+        "on_state": "green switch bbox ~x1846-1911, y784-799, centroid [1878, 791]",
+        "off_state": "red 'Off' text centroid ~[1878, 793]",
+        "click_result": "[1878, 791] toggles; prior [1880, 735] failed to toggle"
+      },
+      "notes": "Multiselect On/Off toggle on the HOUSEHOLD inventory panel (shows 'Place in World' + 'Drag here to sell'). Measured 2026-11-10: ON = green switch bbox ~1846-1911 x 784-799, centroid [1878, 791]; OFF = red 'Off' text centroid ~[1878, 793]. Prior approximate [1880, 735] was WRONG (click did not toggle) and is retained only as prior_xy_wrong. Household Multiselect only selects items for Sell/Place; it does NOT enable eating. To eat, close the household panel and open PERSONAL inventory with hotkey I. Leave Multiselect OFF unless a selection is intended; never use it to act on items. Sell button below it is FORBIDDEN."
+    },
+    "live.inventory_sell_button": {
+      "role": "FORBIDDEN_DENY_INVENTORY_SELL",
+      "panel_id": "household_inventory",
+      "panel_scope": "HOUSEHOLD",
+      "client_xy": [1915, 925],
+      "status": "FORBIDDEN_DENY",
+      "action": "deny",
+      "profile": "1920x1080",
+      "notes": "Sell (N) button below Multiselect toggle — sells/deletes selected inventory items. NEVER click, hover-confirm, or attest HIT. Operator rule: agents never delete or sell. Approximate coords exist only so planners can avoid this area."
     },
     "live.panel_simology": {
       "role": "TOGGLE_BOTTOM_RIGHT_PANEL",
@@ -1104,6 +1131,66 @@
       "MERGE_CAMERA_DEPENDENT_FRIDGE_INTO_THIS_BLOCK",
       "CLICK_LOAD_GAME_DELETE_ROW",
       "USE_EXIT_CAS_BODY_TEXT_Y508_AS_BUTTON"
+    ]
+  },
+  "inventory_multiselect_1920x1080": {
+    "measured_at": "2026-11-10",
+    "profile": "1920x1080",
+    "coordinate_basis": "PrintWindow client pixels",
+    "game_version": "UNKNOWN_NOT_RECORDED_IN_OPERATOR_EVIDENCE",
+    "evidence": "dist/game-host/horizon-exec-20261110/bi002/inventory-multiselect-map-receipt.json",
+    "owner": "betterinstincts/fixed_ui_click_map.py",
+    "location": "Live HOUSEHOLD inventory panel (Place in World / Drag here to sell) with Multiselect; personal inventory is hotkey I with household closed",
+    "scope_note": "Household and personal inventory are DISTINCT. The panel with 'Place in World' + 'Drag here to sell' and Multiselect is HOUSEHOLD inventory (selection for Sell/Place only; eating from it does not work). PERSONAL inventory (where Eat applies) is hotkey I with the household panel closed. live.panel_inventory (personal_inventory, hotkey I) is left unchanged.",
+    "household_vs_personal": {
+      "household_panel": {
+        "markers": ["Place in World", "Drag here to sell", "Multiselect"],
+        "multiselect_effect": "selects items for Sell/Place only; cannot eat",
+        "eat_supported": false
+      },
+      "personal_panel": {
+        "open_via": "hotkey I after closing the household panel",
+        "target_id": "live.panel_inventory",
+        "eat_supported": true
+      }
+    },
+    "open_via": {
+      "target_id": "live.panel_inventory",
+      "client_xy": [1757, 1045],
+      "hotkey_prefer": "I"
+    },
+    "related_fixed_targets": {
+      "live.panel_needs": {"client_xy": [1820, 1045], "notes": "Needs tray icon (approx confirmed by operator evidence); prefer hotkey O"}
+    },
+    "targets": {
+      "multiselect_toggle": {
+        "target_id": "live.inventory_multiselect_toggle",
+        "client_xy": [1878, 791],
+        "prior_xy_wrong": [1880, 735],
+        "status": "PRINTWINDOW_MEASURED_20261110_ON_OFF",
+        "notes": "Multiselect On/Off (household panel). ON green switch bbox ~1846-1911 x 784-799, centroid [1878, 791]; OFF red 'Off' text centroid ~[1878, 793]."
+      },
+      "sell_button": {
+        "target_id": "live.inventory_sell_button",
+        "client_xy": [1915, 925],
+        "status": "FORBIDDEN_DENY",
+        "action": "deny"
+      }
+    },
+    "separation_px": {
+      "multiselect_to_sell": 139.0,
+      "note": "Greater than thresholds_px.near_miss_radius; a toggle click cannot score as Sell, but Sell must never be clicked even to test."
+    },
+    "forbidden": [
+      "CLICK_INVENTORY_SELL_BUTTON",
+      "SELL_OR_DELETE_SELECTED_ITEMS",
+      "ATTEST_SELL_BUTTON_AS_HIT",
+      "LEAVE_MULTISELECT_ON_WHILE_QUEUEING_EAT",
+      "EAT_FROM_HOUSEHOLD_MULTISELECT"
+    ],
+    "not": [
+      "TREAT_MULTISELECT_ON_AS_REQUIRED_FOR_FOOD_QUEUE",
+      "REWRITE_LIVE_PANEL_INVENTORY_FOR_HOUSEHOLD_SCOPE"
     ]
   },
   "camera_dependent_seeds_1920x1080": {
