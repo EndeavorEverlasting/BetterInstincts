@@ -12,7 +12,7 @@ Critical incident reported November 10, 2026; onset between the previous night a
 
 An earlier peripheral repair changed the Print Screen shortcut preference. Restoring its previous state was physically confirmed by the operator. The inspected BetterInstincts capture function did not write that preference; PrintWindow is a separate API.
 
-The Bluetooth per-user service was stopped while the main Bluetooth service ran. Historical adapter command timeouts were observed. A targeted adapter restart succeeded and both services subsequently ran. The operator identifies the per-user service as the likely fault. The service transition and adapter restart occurred together, so service causality is not isolated. Mouse movement/click confirmation remains required before closure.
+The Bluetooth per-user service was stopped while the main Bluetooth service ran. Historical adapter command timeouts were observed. A targeted adapter restart succeeded and both services subsequently ran. Windows then discovered ProtoArc EM11 NL. Native exact-name ConfirmOnly pairing succeeded and its matching Bluetooth HID mouse node was healthy. The operator confirmed movement and clicks work. Print Screen baseline remained intact. Functional recovery is confirmed; recurrence cause remains open. The operator identifies the per-user service as the likely fault. The service transition and adapter restart occurred together, so service causality is not isolated.
 
 Before this change, capture restored Sims and called SetForegroundWindow, introduced in commit 7fa277b8. This is a confirmed interference mechanism, not proof of the Bluetooth cause. Regression tests protect passive capture and minimized-window refusal. Live capture quality remains unverified.
 
