@@ -1,3 +1,7 @@
+## 2026-11-10 — Operator desktop safety hardening, stacked on PR #160
+
+Added a project-scoped fail-closed Cursor pre-effect guard (`.cursor/hooks.json`, `.cursor/hooks/operator_boundary.py`) with a machine-readable contract and negative fixtures for peripheral/service/registry mutations, protected saves, destructive shell, self-modification and Windows-path escapes. Canonical ontology consultation: `BI-OPERATOR-DESKTOP-SAFETY-HOOK-20261110`; initial consultation commit precedes source changes. Exact branch is a separate stacked hardening branch based on PR #160 to preserve its independently-owned capture fix. CI and local Cursor activation are separate checks; do not infer host enforcement from checked-in hooks.
+
 ## 2026-11-10 — Critical desktop peripheral ownership and passive capture
 
 Owner: `scripts/game_capture.py`; consultation `BI-DESKTOP-PERIPHERAL-OWNERSHIP-20261110`. Remove capture-time restore/foreground effects; minimized capture refuses with an operator-restoration gate. Tests cover refusal and forbidden desktop-control calls. Windows Bluetooth service/adapter/driver recovery belongs to SysAdminSuite, linked in `docs/PERIPHERAL_INCIDENT.md`. Print Screen restored and operator-confirmed; EM11 paired, target-associated HID healthy, movement/click acceptance confirmed. No demonstrated Cursor attribution or common Bluetooth/capture cause. Offline capture tests do not certify live game capture.
