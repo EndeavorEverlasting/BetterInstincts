@@ -21,7 +21,7 @@ from betterinstincts.ui_microsystems import (
 TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$")
 BOTTOM_RIGHT = frozenset({
     "aspirations", "career", "skills", "relationships", "simology",
-    "personal_inventory", "needs",
+    "personal_inventory", "needs", "clubs",
 })
 OVERLAY_TYPES = frozenset({"CAREER_EVENT", "RANDOM_EVENT", "OPPORTUNITY", "SIM_NOTIFICATION", "DECISION_MODAL"})
 CLEARABLE_OVERLAY_KINDS = frozenset({
@@ -250,8 +250,23 @@ def assess_live_hud(
     }
     if requested_panel is not None:
         if requested_panel != panel_id:
-            return {**base, "state": "RIGHT_PANEL_SWITCH_REQUIRED", "gate": "RIGHT_PANEL_SWITCH_OR_REOBSERVE",
-                    "panel": resolved, "requested_panel": requested_panel}
+            switch = {
+                **base,
+                "state": "RIGHT_PANEL_SWITCH_REQUIRED",
+                "gate": "RIGHT_PANEL_SWITCH_OR_REOBSERVE",
+                "panel": resolved,
+                "requested_panel": requested_panel,
+                "preferred_switch_channel": "HOTKEY",
+            }
+            try:
+                from betterinstincts.ui_microsystems import plan_open_bottom_right_panel
+                open_plan = plan_open_bottom_right_panel(requested_panel, cfg=cfg)
+                switch["switch_plan"] = open_plan
+                switch["preferred_hotkey_id"] = open_plan.get("hotkey_id")
+                switch["preferred_chord"] = list(open_plan.get("chord") or [])
+            except (UIMicrosystemError, ValueError) as exc:
+                switch["switch_plan_error"] = str(exc)
+            return switch
         if not _token(requested_target):
             return hold("RIGHT_PANEL_REOBSERVE", "TARGET_ID_REQUIRED")
         try:

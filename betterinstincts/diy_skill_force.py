@@ -219,6 +219,376 @@ def resolve_skill_ref(token: str, *, cfg: Optional[dict] = None) -> dict:
     raise DiySkillForceError(f"UNKNOWN_SKILL_REF:{raw}")
 
 
+CHEAT_COMMAND_TEMPLATE = "stats.set_skill_level {skill_stat} {level}"
+
+
+def canonical_skill_commands(
+    *,
+    target_level: int = 10,
+    bundle: str | None = None,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Canonical id → skill_stat → cheat line for every catalog (or bundle) skill.
+
+    Never invent stats; skill_catalog is the only spelling authority
+    (e.g. Major_MediaProduction, not Major_MediaProducton).
+    """
+    cfg = cfg or load_contract()
+    target = int(target_level)
+    if target < 1 or target > 10:
+        raise DiySkillForceError("TARGET_LEVEL_OUT_OF_RANGE")
+    template = str(
+        (
+            (cfg.get("target_sim_algorithm") or {})
+            .get("lean_panel_sequence", {})
+            .get("skills_panel_inventory", {})
+            .get("cheat_template")
+        )
+        or CHEAT_COMMAND_TEMPLATE
+    )
+    if bundle:
+        rows = resolve_skills(bundle=str(bundle), cfg=cfg)
+    else:
+        rows = [
+            dict(r)
+            for r in (cfg.get("skill_catalog") or [])
+            if isinstance(r, Mapping) and r.get("id") and r.get("skill_stat")
+        ]
+    commands: list[dict] = []
+    for row in rows:
+        sid = str(row.get("id") or "").strip().lower()
+        stat = str(row.get("skill_stat") or "").strip()
+        if not sid or not stat:
+            continue
+        cmd = template.format(skill_stat=stat, level=target)
+        entry = {
+            "skill_id": sid,
+            "display_name": str(row.get("display_name") or sid),
+            "skill_stat": stat,
+            "level": target,
+            "command": cmd,
+        }
+        typos = row.get("typo_guard")
+        if isinstance(typos, list) and typos:
+            entry["typo_guard"] = [str(t) for t in typos]
+        commands.append(entry)
+    return {
+        "schema": "betterinstincts.canonical-skill-commands/v1",
+        "state": "CANONICAL_SKILL_COMMANDS_READY",
+        "target_level": target,
+        "bundle": bundle,
+        "count": len(commands),
+        "commands": commands,
+        "owner": "contracts/diy-skill-force.v1.json#skill_catalog",
+    }
+
+
+def gap_targets_from_observed_levels(
+    observed_levels: Mapping[str, int],
+    *,
+    target_level: int = 10,
+    bundle: str | None = "full_unlock",
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Non-yellow / below-target Skills-panel rows → force targets + cheat lines.
+
+    ``observed_levels`` maps skill_id (or display name) → LOCAL_OBSERVED level.
+    Missing catalog skills are treated as unknown gaps (level 0) so we never
+    forget an unlisted row after a full scroll inventory.
+    """
+    cfg = cfg or load_contract()
+    target = int(target_level)
+    canon = canonical_skill_commands(
+        target_level=target, bundle=bundle, cfg=cfg
+    )
+    observed: dict[str, int] = {}
+    for key, level in (observed_levels or {}).items():
+        ref = resolve_skill_ref(str(key), cfg=cfg)
+        observed[str(ref["skill_id"])] = int(level)
+    gaps: list[dict] = []
+    maxed: list[str] = []
+    for row in canon["commands"]:
+        sid = str(row["skill_id"])
+        level = int(observed.get(sid, 0))
+        if level >= target:
+            maxed.append(sid)
+            continue
+        gaps.append(
+            {
+                "skill_id": sid,
+                "display_name": row["display_name"],
+                "skill_stat": row["skill_stat"],
+                "observed_level": level,
+                "target_level": target,
+                "gap_cue": "NON_YELLOW_ROW_BELOW_TARGET",
+                "command": row["command"],
+            }
+        )
+    return {
+        "schema": "betterinstincts.skills-gap-targets/v1",
+        "state": "SKILLS_GAP_TARGETS_READY",
+        "target_level": target,
+        "bundle": bundle,
+        "maxed_count": len(maxed),
+        "gap_count": len(gaps),
+        "maxed_skill_ids": maxed,
+        "gaps": gaps,
+        "commands": [g["command"] for g in gaps],
+        "note": (
+            "Scroll the Skills panel (burger expand + wheel) so every row is "
+            "seen; gold/yellow checkmark rows are maxed; non-yellow are gaps."
+        ),
+    }
+
+
+def member_observed_levels_from_ledger(
+    ledger: Mapping,
+    member_key: str,
+) -> dict[str, int]:
+    """Read LOCAL_OBSERVED levels from the completion ledger (key: ``level``)."""
+    members = ledger.get("members") if isinstance(ledger, Mapping) else None
+    row = members.get(str(member_key)) if isinstance(members, Mapping) else None
+    skills = row.get("skills") if isinstance(row, Mapping) else None
+    out: dict[str, int] = {}
+    if not isinstance(skills, Mapping):
+        return out
+    for sid, cell in skills.items():
+        if not isinstance(cell, Mapping):
+            continue
+        status = str(cell.get("status") or "")
+        if status == "PANEL_OBSERVED_MAX":
+            out[str(sid).strip().lower()] = int(cell.get("level") or 10)
+        elif cell.get("level") is not None:
+            out[str(sid).strip().lower()] = int(cell["level"])
+    return out
+
+
+def resolve_force_gap_commands(
+    *,
+    bundle: str = "full_unlock",
+    target_level: int = 10,
+    observed_levels: Mapping[str, int] | None = None,
+    redo: bool = False,
+    always_include: Sequence[str] | None = None,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Canonical cheat lines for gaps (or full bundle when ``redo``).
+
+    ``always_include`` forces named skill_ids even if ledger says max
+    (e.g. sticky Major_MediaProduction / Major_Photography).
+    """
+    cfg = cfg or load_contract()
+    always = {
+        str(resolve_skill_ref(s, cfg=cfg)["skill_id"])
+        for s in (always_include or [])
+    }
+    if redo:
+        canon = canonical_skill_commands(
+            target_level=target_level, bundle=bundle, cfg=cfg
+        )
+        rows = list(canon["commands"])
+    else:
+        gaps = gap_targets_from_observed_levels(
+            observed_levels or {},
+            target_level=target_level,
+            bundle=bundle,
+            cfg=cfg,
+        )
+        rows = [
+            {
+                "skill_id": g["skill_id"],
+                "display_name": g["display_name"],
+                "skill_stat": g["skill_stat"],
+                "level": target_level,
+                "command": g["command"],
+                "observed_level": g["observed_level"],
+            }
+            for g in gaps["gaps"]
+        ]
+        if always:
+            have = {r["skill_id"] for r in rows}
+            for sid in sorted(always):
+                if sid in have:
+                    continue
+                ref = resolve_skill_ref(sid, cfg=cfg)
+                rows.append(
+                    {
+                        "skill_id": str(ref["skill_id"]),
+                        "display_name": str(ref.get("display_name") or sid),
+                        "skill_stat": str(ref["skill_stat"]),
+                        "level": int(target_level),
+                        "command": CHEAT_COMMAND_TEMPLATE.format(
+                            skill_stat=ref["skill_stat"], level=int(target_level)
+                        ),
+                        "observed_level": int((observed_levels or {}).get(sid, 0)),
+                        "forced_include": True,
+                    }
+                )
+    seen: set[str] = set()
+    deduped: list[dict] = []
+    for row in rows:
+        stat = str(row["skill_stat"])
+        if stat in seen:
+            continue
+        seen.add(stat)
+        deduped.append(row)
+    return {
+        "schema": "betterinstincts.force-gap-commands/v1",
+        "state": "FORCE_GAP_COMMANDS_READY",
+        "bundle": bundle,
+        "target_level": int(target_level),
+        "redo": bool(redo),
+        "count": len(deduped),
+        "commands": [r["command"] for r in deduped],
+        "rows": deduped,
+        "media_production_canonical": "stats.set_skill_level Major_MediaProduction 10",
+        "note": (
+            "Never invent skill_stat spelling. Media Production is "
+            "Major_MediaProduction (with i)."
+        ),
+    }
+
+
+def plan_force_gaps_beat(
+    *,
+    member_key: str,
+    portrait_client_xy: Sequence[int],
+    bundle: str = "full_unlock",
+    target_level: int = 10,
+    redo: bool = False,
+    always_include: Sequence[str] | None = None,
+    observed_levels: Mapping[str, int] | None = None,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Durable lean beat: select portrait → force gap cheats → play → scroll inventory."""
+    cfg = cfg or load_contract()
+    if not isinstance(portrait_client_xy, (list, tuple)) or len(portrait_client_xy) != 2:
+        raise DiySkillForceError("PORTRAIT_CLIENT_XY_REQUIRED")
+    gaps = resolve_force_gap_commands(
+        bundle=bundle,
+        target_level=target_level,
+        observed_levels=observed_levels,
+        redo=redo,
+        always_include=always_include,
+        cfg=cfg,
+    )
+    return {
+        "schema": "betterinstincts.force-gaps-beat/v1",
+        "state": "FORCE_GAPS_BEAT_READY",
+        "execute_allowed": False,
+        "member_key": str(member_key),
+        "portrait_client_xy": [int(portrait_client_xy[0]), int(portrait_client_xy[1])],
+        "gaps": gaps,
+        "order": [
+            "IDLE_15S",
+            "BORROW_SIMS",
+            "ONE_PINNED_TERRAIN_ARM",
+            "ENTER_CENTER_ACTIVE_SIM",
+            "LEFT_CLICK_PORTRAIT",
+            "PORTRAIT_RMB_FOLLOW_IF_STREET_DRIFT",
+            "ENTER_RECENTER",
+            "J_WORK_NAME_PROOF",
+            "CONSOLE_STRIP_THEN_TYPE_GAP_COMMANDS",
+            "CLOSE_CONSOLE",
+            "RESTORE_OPERATOR",
+            "PLAY_BRIEF",
+            "L_SKILLS_BURGER_SCROLL_INVENTORY",
+            "PANEL_RECORD_NON_YELLOW_GAPS",
+        ],
+        "forbidden": [
+            "MAP_CLICK_WANDER",
+            "V_VIDEO_RECORD",
+            "TYPE_WITHOUT_CONSOLE_STRIP",
+            "INVENTED_OPERATOR_BUSY_WHEN_AWAY",
+            "FIRST_VIEWPORT_ONLY_SKILLS_READ",
+        ],
+        "inventory": plan_skills_panel_inventory(cfg=cfg),
+        "owner": "scripts.diy_skill_force.execute_force_gaps",
+    }
+
+
+def plan_skills_panel_scroll(
+    *,
+    direction: str = "DOWN",
+    pages: int = 1,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Plan Skills-list scroll so every row can be seen (no forgotten skills)."""
+    cfg = cfg or load_contract()
+    inv = (
+        (cfg.get("target_sim_algorithm") or {})
+        .get("lean_panel_sequence", {})
+        .get("skills_panel_inventory", {})
+    )
+    scroll = inv.get("scroll") if isinstance(inv, Mapping) else {}
+    scroll = scroll if isinstance(scroll, Mapping) else {}
+    direction_u = str(direction or "DOWN").strip().upper()
+    if direction_u not in {"DOWN", "UP"}:
+        raise DiySkillForceError("SKILLS_SCROLL_DIRECTION_MUST_BE_UP_OR_DOWN")
+    pages_i = max(1, min(int(pages), int(scroll.get("max_pages") or 10)))
+    notches = int(scroll.get("wheel_notches_per_page") or 6)
+    xy = scroll.get("list_client_xy_1920x1080") or [1700, 520]
+    if not isinstance(xy, (list, tuple)) or len(xy) != 2:
+        xy = [1700, 520]
+    # send_wheel: negative delta scrolls content down (toward later alphabet)
+    wheel_sign = -1 if direction_u == "DOWN" else 1
+    return {
+        "schema": "betterinstincts.skills-panel-scroll/v1",
+        "state": "SKILLS_PANEL_SCROLL_READY",
+        "execute_allowed": False,
+        "direction": direction_u,
+        "pages": pages_i,
+        "wheel_notches_per_page": notches,
+        "total_wheel_notches": pages_i * notches * wheel_sign,
+        "list_client_xy": [int(xy[0]), int(xy[1])],
+        "helper": "scripts.win32_input.send_wheel",
+        "order": [
+            "ENSURE_SKILLS_PANEL_OPEN_L",
+            "BURGER_EXPAND_IF_NEEDED",
+            f"WHEEL_{direction_u}_PAGES_{pages_i}",
+            "READ_VISIBLE_ROWS_NON_YELLOW_ARE_GAPS",
+        ],
+        "forbidden": ["MAP_CLICK_WANDER", "CAMERA_ZOOM_TO_READ_SKILLS"],
+    }
+
+
+def plan_skills_panel_inventory(
+    *,
+    pages: int = 8,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Burger-expand + scroll the whole Skills list; target non-yellow gaps."""
+    cfg = cfg or load_contract()
+    down = plan_skills_panel_scroll(direction="DOWN", pages=pages, cfg=cfg)
+    up = plan_skills_panel_scroll(direction="UP", pages=min(2, pages), cfg=cfg)
+    return {
+        "schema": "betterinstincts.skills-panel-inventory/v1",
+        "state": "SKILLS_PANEL_INVENTORY_READY",
+        "execute_allowed": False,
+        "canonical_commands": canonical_skill_commands(cfg=cfg),
+        "steps": [
+            {"step": "OPEN_SKILLS_L", "hotkey": "L"},
+            {"step": "BURGER_EXPAND_MIN_TO_MAX", "owner": "plan_skills_burger_expand"},
+            {"step": "SCROLL_DOWN_FULL_LIST", "plan": down},
+            {
+                "step": "RECORD_VISIBLE_LEVELS",
+                "maxed_cue": "GOLD_ROW_CHECKMARK_LEVEL_10",
+                "gap_cue": "NON_YELLOW_ROW_BELOW_TARGET",
+            },
+            {"step": "SCROLL_UP_RECHECK", "plan": up},
+            {
+                "step": "RESOLVE_GAP_TARGETS",
+                "owner": "gap_targets_from_observed_levels",
+            },
+            {"step": "FORCE_GAP_COMMANDS_ONLY"},
+        ],
+        "note": (
+            "Never rely on the first viewport alone. Scroll until every "
+            "catalog skill is accounted for; force only non-yellow gaps."
+        ),
+    }
+
+
 def set_household_roster(
     ledger: dict,
     *,
@@ -534,32 +904,417 @@ def evaluate_member_skill_levels(
     }
 
 
+def detect_selected_portrait_by_white_boundaries(
+    *,
+    image_path: str | Path,
+    portrait_slots: Sequence[Mapping[str, object]],
+    band_y: tuple[int, int] = (1005, 1070),
+    luma_min: int = 220,
+) -> dict:
+    """Locate the household portrait between two white vertical boundaries.
+
+    Mood glow behind chips is ignored — only near-white edge columns count.
+    Fail closed when no unique width pair brackets exactly one slot center.
+    """
+    path = Path(image_path)
+    if not path.is_file() or path.is_symlink():
+        raise DiySkillForceError("WHITE_BOUND_IMAGE_REQUIRED")
+    try:
+        from PIL import Image
+    except ImportError as exc:
+        raise DiySkillForceError("PIL_REQUIRED_FOR_WHITE_BOUND_DETECT") from exc
+    im = Image.open(path).convert("RGB")
+    px = im.load()
+    w, h = im.size
+    y0 = max(0, int(band_y[0]))
+    y1 = min(h, int(band_y[1]))
+    if y1 - y0 < 8:
+        raise DiySkillForceError("WHITE_BOUND_BAND_INVALID")
+    # Column score: count near-white pixels in the portrait band
+    scores: list[tuple[int, int]] = []
+    for x in range(w):
+        hits = 0
+        for y in range(y0, y1):
+            r, g, b = px[x, y]
+            if (r + g + b) / 3 >= luma_min and abs(r - g) < 25 and abs(g - b) < 25:
+                hits += 1
+        if hits >= max(6, (y1 - y0) // 4):
+            scores.append((x, hits))
+    if len(scores) < 2:
+        return {
+            "state": "NO_PORTRAIT_WIDTH_PAIR",
+            "match": False,
+            "white_boundaries_x": [],
+            "selected_roster_index": None,
+            "forbidden": ["MOOD_COLOR_AS_SELECTION"],
+        }
+    # Collapse adjacent columns into edge clusters; take strongest per cluster
+    clusters: list[list[tuple[int, int]]] = [[scores[0]]]
+    for item in scores[1:]:
+        if item[0] - clusters[-1][-1][0] <= 3:
+            clusters[-1].append(item)
+        else:
+            clusters.append([item])
+    edges = [max(c, key=lambda t: t[1])[0] for c in clusters]
+    if len(edges) < 2:
+        return {
+            "state": "NO_PORTRAIT_WIDTH_PAIR",
+            "match": False,
+            "white_boundaries_x": edges,
+            "selected_roster_index": None,
+            "forbidden": ["MOOD_COLOR_AS_SELECTION"],
+        }
+    # Prefer the closest pair that brackets exactly one portrait center
+    slots = []
+    for row in portrait_slots:
+        xy = row.get("client_xy")
+        idx = row.get("roster_index")
+        if not isinstance(xy, (list, tuple)) or len(xy) != 2:
+            continue
+        if not isinstance(idx, int):
+            continue
+        slots.append({"roster_index": idx, "cx": int(xy[0]), "row": row})
+    best = None
+    for i in range(len(edges) - 1):
+        left, right = edges[i], edges[i + 1]
+        if right - left < 20 or right - left > 120:
+            continue
+        inside = [s for s in slots if left < s["cx"] < right]
+        if len(inside) == 1:
+            width = right - left
+            if best is None or width < best["width"]:
+                best = {
+                    "left": left,
+                    "right": right,
+                    "width": width,
+                    "slot": inside[0],
+                }
+    if best is None:
+        return {
+            "state": "NO_PORTRAIT_WIDTH_PAIR",
+            "match": False,
+            "white_boundaries_x": edges[:8],
+            "selected_roster_index": None,
+            "forbidden": ["MOOD_COLOR_AS_SELECTION", "AMBIGUOUS_WHITE_PAIR"],
+        }
+    return {
+        "state": "WHITE_BOUNDARIES_SELECTED",
+        "match": True,
+        "white_boundaries_x": [best["left"], best["right"]],
+        "selected_roster_index": best["slot"]["roster_index"],
+        "selected_client_xy": list(best["slot"]["row"].get("client_xy") or []),
+        "forbidden": ["MOOD_COLOR_AS_SELECTION"],
+        "proof_ceiling": "WHITE_BOUND_PIXEL_CUE_NOT_NAME_PROOF",
+    }
+
+
+def extrapolate_skill_iterations(
+    *,
+    baseline_level: int,
+    after_level: int,
+    target_level: int = 10,
+) -> dict:
+    """Memoize one measured progress step; extrapolate remaining iterations.
+
+    remaining = ceil((target - after) / delta) when delta > 0.
+    delta <= 0 → falsified (do not invent retries).
+    """
+    import math
+
+    base = int(baseline_level)
+    after = int(after_level)
+    target = int(target_level)
+    if target < 1 or target > 10:
+        raise DiySkillForceError("TARGET_LEVEL_OUT_OF_RANGE")
+    delta = after - base
+    if after >= target:
+        return {
+            "state": "SKILL_AT_TARGET",
+            "baseline_level": base,
+            "after_level": after,
+            "target_level": target,
+            "delta": delta,
+            "remaining_iterations": 0,
+            "complete": True,
+        }
+    if delta <= 0:
+        return {
+            "state": "SKILL_PROGRESS_FALSIFIED",
+            "baseline_level": base,
+            "after_level": after,
+            "target_level": target,
+            "delta": delta,
+            "remaining_iterations": None,
+            "complete": False,
+            "gate": "STOP_SKILL_NO_MEASURED_PROGRESS",
+            "forbidden": ["GUESS_ITERATION_COUNT", "BLIND_RETRY_SAME_COMMAND"],
+        }
+    remaining = int(math.ceil((target - after) / delta))
+    return {
+        "state": "SKILL_PROGRESS_EXTRAPOLATED",
+        "baseline_level": base,
+        "after_level": after,
+        "target_level": target,
+        "delta": delta,
+        "remaining_iterations": remaining,
+        "complete": False,
+        "note": "Apply remaining_iterations then confirm panel LOCAL_OBSERVED",
+    }
+
+
+def plan_skill_progress_loop(
+    *,
+    skill_id: str,
+    skill_stat: str,
+    baseline_level: int,
+    target_level: int = 10,
+    probe_level: int | None = None,
+    command_template: str = "stats.set_skill_level {skill_stat} {level}",
+    display_name: str | None = None,
+) -> dict:
+    """Library plan: one probe iteration, then measure→extrapolate gate.
+
+    execute_allowed=False. Live owner applies the probe command, reads the
+    Skills panel, then calls ``resolve_skill_progress_after_probe``.
+    """
+    sid = str(skill_id or "").strip().lower()
+    stat = str(skill_stat or "").strip()
+    if not sid or not stat:
+        raise DiySkillForceError("SKILL_ID_AND_STAT_REQUIRED")
+    base = int(baseline_level)
+    target = int(target_level)
+    if base < 0 or base > 10 or target < 1 or target > 10:
+        raise DiySkillForceError("SKILL_LEVEL_OUT_OF_RANGE")
+    if base >= target:
+        return {
+            "schema": "betterinstincts.skill-progress-loop/v1",
+            "state": "SKILL_ALREADY_AT_TARGET",
+            "execute_allowed": False,
+            "skill_id": sid,
+            "skill_stat": stat,
+            "display_name": display_name,
+            "baseline_level": base,
+            "target_level": target,
+            "steps": [{"step": "SKIP_SKILL", "reason": "BASELINE_AT_TARGET"}],
+            "forbidden": ["GUESS_ITERATION_COUNT"],
+        }
+    probe = int(probe_level) if probe_level is not None else target
+    if probe < 1 or probe > 10:
+        raise DiySkillForceError("PROBE_LEVEL_OUT_OF_RANGE")
+    cmd = str(command_template).format(skill_stat=stat, level=probe)
+    return {
+        "schema": "betterinstincts.skill-progress-loop/v1",
+        "state": "SKILL_PROGRESS_PROBE_READY",
+        "execute_allowed": False,
+        "skill_id": sid,
+        "skill_stat": stat,
+        "display_name": display_name,
+        "baseline_level": base,
+        "probe_level": probe,
+        "target_level": target,
+        "probe_command": cmd,
+        "steps": [
+            {
+                "step": "SKILL_PROGRESS_PROBE",
+                "command": cmd,
+                "skill_id": sid,
+                "skill_stat": stat,
+                "level": probe,
+                "note": "Type once while CONSOLE_FIELD_FOCUSED; then measure panel",
+            },
+            {
+                "step": "MEASURE_PANEL_LEVEL",
+                "skill_id": sid,
+                "required": True,
+                "note": "LOCAL_OBSERVE Skills-panel level for this skill after play-brief",
+            },
+            {
+                "step": "RESOLVE_VIA_extrapolate_skill_iterations",
+                "owner": "betterinstincts.diy_skill_force.resolve_skill_progress_after_probe",
+            },
+        ],
+        "forbidden": ["GUESS_ITERATION_COUNT", "BLIND_RETRY_SAME_COMMAND"],
+        "next": "resolve_skill_progress_after_probe(after_level=…)",
+    }
+
+
+def resolve_skill_progress_after_probe(
+    *,
+    skill_id: str,
+    skill_stat: str,
+    baseline_level: int,
+    after_level: int,
+    target_level: int = 10,
+    command_template: str = "stats.set_skill_level {skill_stat} {level}",
+    display_name: str | None = None,
+) -> dict:
+    """Memoize measured delta; emit remaining SET_SKILL_LEVEL commands or falsify."""
+    sid = str(skill_id or "").strip().lower()
+    stat = str(skill_stat or "").strip()
+    if not sid or not stat:
+        raise DiySkillForceError("SKILL_ID_AND_STAT_REQUIRED")
+    xpol = extrapolate_skill_iterations(
+        baseline_level=int(baseline_level),
+        after_level=int(after_level),
+        target_level=int(target_level),
+    )
+    memo = {
+        "skill_id": sid,
+        "skill_stat": stat,
+        "display_name": display_name,
+        "baseline_level": xpol["baseline_level"],
+        "after_level": xpol["after_level"],
+        "target_level": xpol["target_level"],
+        "delta": xpol["delta"],
+        "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "extrapolation": xpol,
+    }
+    if xpol["state"] == "SKILL_AT_TARGET":
+        return {
+            "schema": "betterinstincts.skill-progress-resolve/v1",
+            "state": "SKILL_PROGRESS_CONFIRMED_MAX",
+            "execute_allowed": False,
+            "memo": memo,
+            "remaining_commands": [],
+            "steps": [
+                {
+                    "step": "SKILL_PROGRESS_CONFIRM",
+                    "skill_id": sid,
+                    "action": "panel-record PANEL_OBSERVED_MAX",
+                },
+                {"step": "NEXT_SKILL"},
+            ],
+            "forbidden": ["GUESS_ITERATION_COUNT"],
+        }
+    if xpol["state"] == "SKILL_PROGRESS_FALSIFIED":
+        return {
+            "schema": "betterinstincts.skill-progress-resolve/v1",
+            "state": "SKILL_PROGRESS_FALSIFIED",
+            "execute_allowed": False,
+            "memo": memo,
+            "remaining_commands": [],
+            "gate": xpol.get("gate"),
+            "steps": [
+                {
+                    "step": "SKILL_PROGRESS_FALSIFY",
+                    "skill_id": sid,
+                    "action": "record_skill_panel_falsified; stop this skill",
+                }
+            ],
+            "forbidden": list(xpol.get("forbidden") or []),
+        }
+    remaining = int(xpol["remaining_iterations"] or 0)
+    # Each remaining iteration re-applies absolute target (or +delta steps).
+    # Prefer absolute target so a working set_skill_level finishes in one more hit;
+    # when delta < (target-after) the count still matches measured progress units.
+    commands: list[str] = []
+    steps: list[dict] = []
+    for i in range(remaining):
+        # Climb by measured delta each iteration; final clamp at target.
+        next_level = min(
+            int(target_level),
+            int(after_level) + (i + 1) * int(xpol["delta"]),
+        )
+        cmd = str(command_template).format(skill_stat=stat, level=next_level)
+        commands.append(cmd)
+        steps.append(
+            {
+                "step": "SET_SKILL_LEVEL",
+                "command": cmd,
+                "skill_id": sid,
+                "skill_stat": stat,
+                "level": next_level,
+                "iteration": i + 1,
+                "of": remaining,
+            }
+        )
+    steps.append(
+        {
+            "step": "SKILL_PROGRESS_CONFIRM",
+            "skill_id": sid,
+            "note": "Re-measure panel; require after >= target before NEXT_SKILL",
+        }
+    )
+    steps.append({"step": "NEXT_SKILL"})
+    return {
+        "schema": "betterinstincts.skill-progress-resolve/v1",
+        "state": "SKILL_PROGRESS_REMAINING_READY",
+        "execute_allowed": False,
+        "memo": memo,
+        "remaining_iterations": remaining,
+        "remaining_commands": commands,
+        "steps": steps,
+        "forbidden": ["GUESS_ITERATION_COUNT", "BLIND_RETRY_SAME_COMMAND"],
+        "next": "Type remaining_commands while CONSOLE_FIELD_FOCUSED; confirm panel",
+    }
+
+
 def assess_selection_identity(
     *,
     expected_display_name: str,
     observed_panel_header_name: str | None,
     observed_selected_roster_key: str | None = None,
     expected_roster_key: str | None = None,
+    cue_source: str | None = None,
+    white_bounds_roster_index: int | None = None,
+    expected_roster_index: int | None = None,
 ) -> dict:
     """Prove the highlighted portrait matches the intended Sim before cheats.
 
-    Prefer Skills/Dynasty header text (``Olga hasn't…`` / ``Olga is not in a Dynasty``).
-    Space-cycle without this readback is rejected for target-sim cells.
+    Identity requires a panel name embed (Servos look alike — white bounds alone
+    cannot tell Olga from Bernice). Preferred lean order: **J work/career** name,
+    then **L skills** for progress sight. Aspiration G also embeds the name but
+    is not the preferred identity panel for skill-force.
+
+    Accepted name embeds (open BR panels via letter hotkeys, not mood color):
+    - Career/work panel name text — hotkey **J** (preferred)
+    - Skills/Dynasty header (``Olga hasn't…``) — hotkey **L**
+    - Aspiration Satisfaction (``Olga's Satisfaction``) — hotkey G (valid, not preferred)
+
+    White portrait boundaries only corroborate that *some* chip is selected.
+    Mood glow behind a chip is NOT selection. Space-cycle without name is rejected.
     """
     expected = str(expected_display_name or "").strip()
     observed = str(observed_panel_header_name or "").strip()
     if not expected:
         raise DiySkillForceError("EXPECTED_DISPLAY_NAME_REQUIRED")
+    white_ok = (
+        isinstance(white_bounds_roster_index, int)
+        and isinstance(expected_roster_index, int)
+        and white_bounds_roster_index == expected_roster_index
+    )
+    # White bounds never authorize identity alone (identical Servo portraits).
     if not observed:
-        return {
+        out = {
             "state": "SELECTION_UNPROVEN",
             "match": False,
-            "gate": "READ_SKILLS_OR_DYNASTY_HEADER_NAME",
+            "gate": "READ_WORK_OR_SKILLS_PANEL_NAME",
             "expected_display_name": expected,
             "observed_panel_header_name": None,
-            "forbidden": ["SPACE_CYCLE_WITHOUT_HEADER_PROOF", "TYPE_CHEATS_ON_UNPROVEN_SELECTION"],
+            "cue_source": cue_source,
+            "white_bounds_roster_index": white_bounds_roster_index,
+            "white_bounds_corroborates_index": bool(white_ok),
+            "proof_ceiling": "WHITE_BOUNDS_CHIP_ONLY_NOT_SERVO_IDENTITY",
+            "forbidden": [
+                "SPACE_CYCLE_WITHOUT_HEADER_PROOF",
+                "TYPE_CHEATS_ON_UNPROVEN_SELECTION",
+                "MOOD_COLOR_AS_SELECTION",
+                "WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY",
+            ],
+            "preferred_panel_hotkeys": {
+                "career_work": "J",
+                "skills": "L",
+                "aspirations_valid_not_preferred": "G",
+            },
+            "lean_panel_sequence": ["J_WORK_NAME", "L_SKILLS_PROGRESS", "CTRL_SHIFT_C"],
         }
-    # Header often embeds the first name: "Olga hasn't earned…" / "Bernice hasn't…"
+        if white_ok:
+            out["note"] = (
+                "White bounds match expected roster index but Servos are visually "
+                "indistinguishable — open J (work) or L (skills) for the Sim name."
+            )
+        return out
+    # Header often embeds the first name: "Olga hasn't…" / work panel / Satisfaction
     expected_token = expected.split()[0].casefold()
     observed_l = observed.casefold()
     name_ok = expected_token in observed_l or expected.casefold() in observed_l
@@ -572,21 +1327,268 @@ def assess_selection_identity(
         return {
             "state": "SELECTION_PROVEN",
             "match": True,
-            "gate": "PROCEED_CAMERA_THEN_CONSOLE",
+            "gate": "PROCEED_SKILLS_PANEL_THEN_CONSOLE",
             "expected_display_name": expected,
             "observed_panel_header_name": observed,
+            "cue_source": cue_source or "WORK_OR_SKILLS_PANEL_NAME",
             "expected_roster_key": expected_roster_key,
             "observed_selected_roster_key": observed_selected_roster_key,
+            "white_bounds_roster_index": white_bounds_roster_index,
+            "white_bounds_corroborates_index": bool(white_ok) if white_bounds_roster_index is not None else None,
+            "forbidden": [
+                "MOOD_COLOR_AS_SELECTION",
+                "WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY",
+            ],
+            "next_lean": "L_SKILLS_IF_NOT_OPEN_THEN_CTRL_SHIFT_C",
         }
     return {
         "state": "SELECTION_MISMATCH",
         "match": False,
-        "gate": "RECLICK_TARGET_PORTRAIT_THEN_REREAD_HEADER",
+        "gate": "RECLICK_TARGET_PORTRAIT_THEN_REREAD_WORK_OR_SKILLS_NAME",
         "expected_display_name": expected,
         "observed_panel_header_name": observed,
+        "cue_source": cue_source,
         "expected_roster_key": expected_roster_key,
         "observed_selected_roster_key": observed_selected_roster_key,
-        "forbidden": ["DISPATCH_ON_WRONG_SIM", "SPACE_UNTIL_LUCKY"],
+        "forbidden": [
+            "DISPATCH_ON_WRONG_SIM",
+            "SPACE_UNTIL_LUCKY",
+            "MOOD_COLOR_AS_SELECTION",
+            "WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY",
+        ],
+    }
+
+
+def plan_arm_then_panel_letter(letter: str, *, purpose: str) -> dict:
+    """Every Live panel letter (J/L/G/…) needs a fresh terrain RMB arm first.
+
+    Operator correction 2026-11-10: hotkeys do not register without arm.
+    Arm RMB is cancel-options on empty world — never portrait RMB.
+    """
+    key = str(letter or "").strip().upper()
+    if len(key) != 1 or not key.isalpha():
+        raise DiySkillForceError("PANEL_LETTER_REQUIRED")
+    return {
+        "schema": "betterinstincts.arm-then-panel-letter/v1",
+        "state": "ARM_THEN_PANEL_LETTER_READY",
+        "execute_allowed": False,
+        "letter": key,
+        "purpose": str(purpose),
+        "requires_live_hotkey_arm": True,
+        "order": [
+            "ARM_LIVE_HOTKEYS",
+            f"PRESS_{key}",
+            "CONFIRM_PANEL_CUES",
+        ],
+        "arm": {
+            "step": "ARM_LIVE_HOTKEYS",
+            "detail": "RIGHT_CLICK exposed world/terrain only (LMB before RMB not required)",
+            "forbidden": ["PORTRAIT_RIGHT_CLICK", "SKIP_ARM_BEFORE_PANEL_LETTER", "ARM_ON_MAPPED_FIXED_UI_COORD"],
+            "owner": "betterinstincts.diy_skill_force.plan_live_hotkey_arm",
+        },
+        "hotkey": {
+            "step": "PRESS_PANEL_LETTER",
+            "chord": [key],
+            "channel": "HOTKEY",
+        },
+        "note": (
+            "If J or L does not register, you skipped terrain RMB arm "
+            "immediately before the letter."
+        ),
+        "forbidden": [
+            "PANEL_LETTER_WITHOUT_FRESH_ARM",
+            "PORTRAIT_RIGHT_CLICK",
+            "MOUSE_FALLBACK_WHILE_HOTKEY_ARMED",
+        ],
+    }
+
+
+def plan_arm_then_play_brief(
+    *,
+    play_seconds: int | None = None,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Play (1) → wait → pause (0) with no extra map clicks.
+
+    Operator 2026-11-10: Skills refresh only after Live plays a few seconds.
+    Do NOT terrain-RMB before 1 and again before 0 — that moves the map.
+    Assume the skill beat already did ONE pinned arm (or re-arm only on miss).
+    """
+    cfg = cfg or load_contract()
+    obs = (cfg.get("inject_sequence") or {}).get("skills_panel_observation") or {}
+    play_cfg = obs.get("play_brief_for_fresh_panel") or {}
+    min_s = int(play_cfg.get("min_play_seconds") or 5)
+    max_s = int(play_cfg.get("max_play_seconds") or 10)
+    default_s = int(play_cfg.get("default_play_seconds") or 7)
+    if play_seconds is None:
+        seconds = default_s
+    else:
+        seconds = int(play_seconds)
+    seconds = max(min_s, min(max_s, seconds))
+    play_key = str(play_cfg.get("play_key") or "1")
+    pause_key = str(play_cfg.get("pause_key") or "0")
+    return {
+        "schema": "betterinstincts.arm-then-play-brief/v1",
+        "state": "PLAY_BRIEF_READY",
+        "execute_allowed": False,
+        "requires_prior_skill_beat_arm": True,
+        "measure_requires_play_brief": True,
+        "play_seconds": seconds,
+        "min_play_seconds": min_s,
+        "max_play_seconds": max_s,
+        "play_key": play_key,
+        "pause_key": pause_key,
+        "order": [
+            f"PRESS_PLAY_{play_key}",
+            f"WAIT_{seconds}S",
+            f"PRESS_PAUSE_{pause_key}",
+            "THEN_MEASURE_OR_EXTRAPOLATE",
+        ],
+        "note": (
+            "No terrain RMB here — map clicks are noise. Press 1, wait "
+            f">={min_s}s, press 0, then read Skills. Re-arm only if 1/0 miss."
+        ),
+        "forbidden": [
+            "MEASURE_WITHOUT_PLAY_BRIEF",
+            "REPEATED_TERRAIN_RMB_PER_HOTKEY",
+            "PAUSED_ONLY_SKILLS_PANEL_AS_PROGRESS_PROOF",
+            "LEAVE_SIM_RUNNING_AFTER_MEASURE",
+        ],
+    }
+
+
+def plan_lean_olga_skill_beat(
+    *,
+    portrait_client_xy: Sequence[int] = (454, 1055),
+    roster_index: int = 2,
+) -> dict:
+    """Lean Olga skill-force: one pinned arm, Enter recenter, then hotkeys.
+
+    Operator 2026-11-10: keep the camera on the active Sim. Arm once may
+    displace the view — press Enter (native center-active-Sim) to refocus.
+    Notice selection/camera switches and Enter again. Never roam/zoom the lot.
+    Then J → L → console → type → close → play/pause. Re-arm only on hotkey miss.
+    """
+    xy = [int(portrait_client_xy[0]), int(portrait_client_xy[1])]
+    arm_xy = list(
+        (load_contract().get("live_hotkey_arm") or {}).get("default_world_client_xy")
+        or [880, 480]
+    )
+    return {
+        "schema": "betterinstincts.lean-olga-skill-beat/v1",
+        "state": "LEAN_OLGA_SKILL_BEAT_READY",
+        "execute_allowed": False,
+        "roster_index": int(roster_index),
+        "portrait_client_xy": xy,
+        "arm_world_client_xy": arm_xy,
+        "invariant": "ONE_ARM_ENTER_RECENTER_THEN_HOTKEYS",
+        "active_sim_camera": "KEEP_FOCUSED_ENTER_TO_REFOCUS",
+        "steps": [
+            {
+                "step": "ONE_PINNED_TERRAIN_ARM",
+                "detail": "Single RIGHT_CLICK at pinned [880,480] only",
+                "world_client_xy": arm_xy,
+                "forbidden": [
+                    "REPEATED_TERRAIN_RMB_PER_HOTKEY",
+                    "ARM_BEFORE_EVERY_PANEL_LETTER",
+                    "MAP_CLICK_WANDER",
+                ],
+            },
+            {
+                "step": "ENTER_CENTER_ACTIVE_SIM",
+                "hotkey": "Enter",
+                "purpose": "REFOCUS_CAMERA_ON_ACTIVE_SIM",
+                "note": (
+                    "Native Enter centers the active Sim after arm displacement. "
+                    "Not Shift+Enter (lot). Repeat when camera/selection switches."
+                ),
+                "forbidden": [
+                    "MAP_ROAM_TO_REFOCUS",
+                    "WHEEL_ZOOM_OUT_TO_REFOCUS",
+                    "SHIFT_ENTER_LOT_CENTER_AS_SKILL_FORCE_DEFAULT",
+                ],
+            },
+            {
+                "step": "LEFT_CLICK_OLGA_PORTRAIT",
+                "detail": "LEFT_CLICK portrait only (no portrait RMB, no world roam)",
+                "client_xy": xy,
+                "forbidden": ["PORTRAIT_RIGHT_CLICK", "PORTRAIT_PROBE_LOOP"],
+            },
+            {
+                "step": "J_WORK_NAME",
+                "hotkey": "J",
+                "purpose": "NAME_IDENTITY",
+                "read": "Panel must embed Olga (work/career name text)",
+            },
+            {
+                "step": "PROVE_SELECTION_IDENTITY",
+                "owner": "assess_selection_identity",
+                "require_name_embed": True,
+                "forbidden": ["WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY"],
+            },
+            {
+                "step": "L_SKILLS",
+                "hotkey": "L",
+                "purpose": "PROGRESS_SIGHT",
+                "burger_expand_once_if_min": True,
+            },
+            {
+                "step": "OPEN_CHEAT_CONSOLE",
+                "chord": "Ctrl+Shift+C",
+                "console_field_focused": True,
+            },
+            {
+                "step": "SKILL_PROGRESS_PROBE_MEMO_EXTRAPOLATE",
+                "owner": "extrapolate_skill_iterations",
+                "per_skill": True,
+            },
+            {
+                "step": "CLOSE_CONSOLE",
+                "chord": "Ctrl+Shift+C",
+            },
+            {
+                "step": "PLAY_BRIEF_THEN_PAUSE",
+                "plan": plan_arm_then_play_brief(),
+                "owner": "betterinstincts.diy_skill_force.plan_arm_then_play_brief",
+                "note": "Press 1, wait, press 0 — no map clicks",
+            },
+            {
+                "step": "MEASURE_SKILLS_CONFIRM_OR_EXTRAPOLATE",
+                "requires_prior": "PLAY_BRIEF_THEN_PAUSE",
+                "inventory": plan_skills_panel_inventory(),
+                "then": "GAP_TARGETS_THEN_NEXT_OR_PANEL_RECORD",
+                "note": (
+                    "Burger-expand + scroll the full Skills list; non-yellow "
+                    "rows are gap targets from the canonical catalog commands"
+                ),
+                "forbidden": [
+                    "MEASURE_WITHOUT_PLAY_BRIEF",
+                    "PAUSED_ONLY_SKILLS_PANEL_AS_PROGRESS_PROOF",
+                    "FIRST_VIEWPORT_ONLY_SKILLS_READ",
+                ],
+            },
+        ],
+        "forbidden": list(
+            (load_contract().get("target_sim_algorithm") or {}).get(
+                "lean_skill_beat_forbidden"
+            )
+            or []
+        )
+        + [
+            "WHITE_BOUNDS_ALONE_AS_SERVO_IDENTITY",
+            "ASPIRATION_G_AS_DEFAULT_IDENTITY",
+            "REPEATED_TERRAIN_RMB_PER_HOTKEY",
+            "ARM_BEFORE_EVERY_PANEL_LETTER",
+            "MEASURE_WITHOUT_PLAY_BRIEF",
+            "CAMERA_ZOOM_LADDER_DURING_SKILL_FORCE",
+            "CAMERA_PAN_DURING_SKILL_FORCE",
+            "MAP_CLICK_WANDER",
+            "STREET_CORNER_ARM_ROAM",
+            "MAP_ROAM_TO_REFOCUS",
+            "FIRST_VIEWPORT_ONLY_SKILLS_READ",
+        ],
+        "camera_during_skill_force": "ACTIVE_SIM_ONLY_ENTER_REFOCUS",
+        "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED_AFTER_PLAY_BRIEF",
     }
 
 
@@ -628,16 +1630,102 @@ def plan_arm_to_console_handoff(cfg: Optional[dict] = None) -> dict:
     return _plan(cfg=None)
 
 
+def assess_arm_world_point(
+    client_xy: Sequence[int],
+    *,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Fail closed if the arm click would hit mapped HUD / fixed-ui seeds.
+
+    Operator 2026-11-10: LMB/RMB must land on exposed world/terrain in the
+    remaining viewport — never a fixed-ui-click-map coordinate (that interacts
+    with the interface instead of arming).
+    """
+    if (
+        not isinstance(client_xy, (list, tuple))
+        or len(client_xy) != 2
+        or any(type(v) is not int for v in client_xy)
+    ):
+        raise DiySkillForceError("WORLD_CLIENT_XY_MUST_BE_TWO_INTS")
+    x, y = int(client_xy[0]), int(client_xy[1])
+    cfg = cfg or load_contract()
+    arm = cfg.get("live_hotkey_arm") if isinstance(cfg.get("live_hotkey_arm"), Mapping) else {}
+    bands = arm.get("hud_exclusion_bands_1920x1080") if isinstance(arm, Mapping) else {}
+    if not isinstance(bands, Mapping):
+        bands = {}
+    top = int(bands.get("top_y_max") or 70)
+    bottom = int(bands.get("bottom_y_min") or 980)
+    left = int(bands.get("left_x_max") or 320)
+    right = int(bands.get("right_x_min") or 1520)
+    if y <= top or y >= bottom or x <= left or x >= right:
+        return {
+            "state": "ARM_POINT_IN_HUD_BAND",
+            "ok": False,
+            "client_xy": [x, y],
+            "gate": "PICK_EXPOSED_WORLD_TERRAIN",
+            "forbidden": ["ARM_ON_MAPPED_FIXED_UI_COORD", "ARM_IN_HUD_BAND"],
+            "note": "Arm clicks in HUD bands hit the interface, not the world.",
+        }
+    radius = int(arm.get("mapped_exclusion_radius_px") or 36) if isinstance(arm, Mapping) else 36
+    hits: list[dict] = []
+    try:
+        from betterinstincts.fixed_ui_click_map import load_contract as load_fixed_map
+        from betterinstincts.fixed_ui_click_map import seed_targets_from_contract
+
+        seeds = seed_targets_from_contract(cfg=load_fixed_map())
+    except Exception:
+        seeds = {}
+    for tid, row in seeds.items():
+        if not isinstance(row, Mapping):
+            continue
+        xy = row.get("client_xy")
+        if not (
+            isinstance(xy, (list, tuple))
+            and len(xy) == 2
+            and all(isinstance(v, int) for v in xy)
+        ):
+            continue
+        dx = x - int(xy[0])
+        dy = y - int(xy[1])
+        if dx * dx + dy * dy <= radius * radius:
+            hits.append({"target_id": str(tid), "client_xy": [int(xy[0]), int(xy[1])]})
+    if hits:
+        return {
+            "state": "ARM_POINT_HITS_MAPPED_UI",
+            "ok": False,
+            "client_xy": [x, y],
+            "mapped_hits": hits[:8],
+            "gate": "PICK_UNMAPPED_EXPOSED_TERRAIN",
+            "forbidden": ["ARM_ON_MAPPED_FIXED_UI_COORD"],
+            "note": (
+                "Left/right click on mapped coords interacts with the UI. "
+                "Use the remaining exposed world/terrain only."
+            ),
+        }
+    return {
+        "state": "ARM_POINT_WORLD_TERRAIN_OK",
+        "ok": True,
+        "client_xy": [x, y],
+        "gate": "ARM_LMB_THEN_RMB_CANCEL",
+        "forbidden": [
+            "ARM_ON_MAPPED_FIXED_UI_COORD",
+            "ARM_IN_HUD_BAND",
+            "TREAT_CANCEL_RMB_AS_PORTRAIT_FOLLOW",
+        ],
+    }
+
+
 def plan_live_hotkey_arm(
     *,
     world_client_xy: Sequence[int] | None = None,
     cfg: Optional[dict] = None,
 ) -> dict:
-    """Plan LEFT_CLICK world → RIGHT_CLICK cancel so Live hotkeys register.
+    """Plan RIGHT_CLICK on exposed world/terrain so Live hotkeys register.
 
-    Operator rule: left-click focuses the game; right-click cancels the options
-    so hotkeys work. Required before Space / other Live hotkeys when focus may
-    have left the client. Not portrait follow; not cheat typing authority.
+    Operator 2026-11-10: a terrain right-click is enough (prior LMB→RMB also
+    worked but the left-click is not required). Point must be exposed
+    world/terrain — never a fixed-ui-click-map seed. Not portrait follow;
+    not cheat typing authority.
     """
     cfg = cfg or load_contract()
     arm = cfg.get("live_hotkey_arm") if isinstance(cfg.get("live_hotkey_arm"), Mapping) else {}
@@ -657,30 +1745,58 @@ def plan_live_hotkey_arm(
     ):
         point = [int(default_xy[0]), int(default_xy[1])]
     else:
-        point = [960, 520]
+        point = [880, 480]
+    assess = assess_arm_world_point(point, cfg=cfg)
+    if not assess.get("ok"):
+        raise DiySkillForceError(
+            f"{assess.get('state')}: pick exposed world/terrain, not mapped UI "
+            f"(got {point})"
+        )
+    order = arm.get("order") if isinstance(arm, Mapping) else None
+    if not isinstance(order, list) or not order:
+        order = [
+            "WAIT_TRUSTED_IDLE_GE_15S",
+            "SNAPSHOT_OPERATOR_FOREGROUND",
+            "BORROW_SIMS_FOREGROUND",
+            "RIGHT_CLICK_EXPOSED_WORLD_TERRAIN",
+            "RESTORE_OPERATOR_FOREGROUND",
+        ]
     return {
         "step": "ARM_LIVE_HOTKEYS",
         "schema": "betterinstincts.live-hotkey-arm/v1",
-        "order": ["LEFT_CLICK_WORLD", "RIGHT_CLICK_CANCEL_OPTIONS"],
+        "order": list(order),
         "world_client_xy": point,
+        "arm_point_assessment": assess,
         "select_note": str(
             arm.get("operator_rule")
             if isinstance(arm, Mapping) and arm.get("operator_rule")
             else (
-                "Left-click ensures that the focus is in the game, and then "
-                "right-click cancels the options so that the hotkeys work."
+                "Borrow Sims briefly, right-click exposed world/terrain to arm "
+                "Live hotkeys, then restore the operator's foreground app."
             )
         ),
+        "world_point_rule": str(
+            arm.get("world_point_rule")
+            if isinstance(arm, Mapping)
+            else "EXPOSED_WORLD_TERRAIN_ONLY"
+        ),
+        "interruptible": True,
         "repository_skill": ".cursor/skills/live-hotkey-arm",
         "forbidden": [
             "BARE_HOTKEY_WITHOUT_ARM",
             "TREAT_CANCEL_RMB_AS_PORTRAIT_FOLLOW",
             "SPACE_WITHOUT_ARM_WHEN_FOCUS_AMBIGUOUS",
+            "ARM_ON_MAPPED_FIXED_UI_COORD",
+            "ARM_IN_HUD_BAND",
+            "MONOPOLIZE_FOREGROUND_FOR_AGENT_SESSION",
+            "LEAVE_OPERATOR_TRAPPED_IN_SIMS",
         ],
         "not": [
             "RIGHT_CLICK_VIEW",
             "CONSOLE_TYPE_AUTHORITY",
             "PRIMARY_TARGET_SIM_SELECT",
+            "ARM_ON_MAPPED_FIXED_UI_COORD",
+            "LEAVE_OPERATOR_TRAPPED_IN_SIMS",
         ],
         "next": "SEND_LIVE_HOTKEY",
     }
@@ -820,16 +1936,23 @@ def plan_target_sim_skill_algorithm(
             {
                 "step": "CAMERA_CENTER_RIGHT_CLICK_VIEW",
                 "mode": "RIGHT_CLICK_VIEW",
-                "preferred_control": "RIGHT_CLICK_ACTIVE_SIM_PORTRAIT",
-                "pullback_from_max_close": 0.15,
-                "owner": "betterinstincts.camera_traverse.plan_agent_default_view",
-                "note": "Center on selected Sim, then durable agent zoom (15% pullback).",
+                "execute_allowed": False,
+                "lean_skill_beat": False,
+                "execute_on_lean_skill_beat": False,
+                "skipped_for_skill_force": True,
+                "note": (
+                    "FORBIDDEN during skill force (operator 2026-11-09/10): "
+                    "portrait RMB / zoom / map wander is disruptive noise and "
+                    "does not level skills. Leave camera alone."
+                ),
             },
             {
                 "step": "OPEN_CHEAT_CONSOLE",
                 "chord": ["CTRL", "SHIFT", "C"],
                 "require_white_strip_observed": True,
                 "console_safety": console,
+                "lean_skill_beat": True,
+                "forbidden_before_open": list(algo.get("lean_skill_beat_forbidden") or []),
             },
             {
                 "step": "DISPATCH_GAP_SKILLS",
@@ -881,13 +2004,14 @@ def plan_target_sim_skill_algorithm(
                 "EVALUATE",
                 "SELECT_PORTRAIT",
                 "PROVE_IDENTITY",
-                "CAMERA_CENTER_ZOOM",
                 "CONSOLE_CONFIRM",
                 "DISPATCH",
                 "PLAY_BRIEF",
                 "PANEL_RECORD",
             ]
         ),
+        "camera_during_skill_force": "FORBIDDEN",
+        "map_click_during_skill_force": "FORBIDDEN_EXCEPT_ONE_FIXED_ARM_POINT",
         "proof_ceiling": str(algo.get("proof_ceiling") or cfg["proof_ceiling"]),
         "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
         "next": (
@@ -910,7 +2034,8 @@ def skills_panel_observation_policy(
     """Skills-panel proof policy for skill-force.
 
     Dispatch under precious time: KEEP_PAUSED.
-    Verify: PLAY_BRIEF (5–10s) → OBSERVE → REPAUSE. Paused-only UI is STALE.
+    Verify: ARM → PLAY_BRIEF (5–10s) → ARM → PAUSE → OBSERVE.
+    Paused-only UI is STALE. Play/pause hotkeys need fresh terrain RMB arm.
     Never leave sim speed running after verify. Not main-menu Resume.
     """
     cfg = cfg or load_contract()
@@ -918,10 +2043,8 @@ def skills_panel_observation_policy(
     play_cfg = obs.get("play_brief_for_fresh_panel") or {}
     purpose_l = str(purpose or "verify").lower()
     precious = bool(precious_time or concurrent_live_cert or main_goal_unfinished)
-    min_s = int(play_cfg.get("min_play_seconds") or 5)
-    max_s = int(play_cfg.get("max_play_seconds") or 10)
-    default_s = int(play_cfg.get("default_play_seconds") or 7)
-    play_seconds = max(min_s, min(max_s, default_s))
+    play_plan = plan_arm_then_play_brief(cfg=cfg)
+    play_seconds = int(play_plan["play_seconds"])
     if purpose_l == "dispatch":
         action = "KEEP_PAUSED"
         panel_status = str(obs.get("paused_panel_status") or "UNPROVEN_STALE")
@@ -942,16 +2065,29 @@ def skills_panel_observation_policy(
         "concurrent_live_cert": bool(concurrent_live_cert),
         "main_goal_unfinished": bool(main_goal_unfinished),
         "play_seconds": play_seconds,
-        "min_play_seconds": min_s,
-        "max_play_seconds": max_s,
-        "play_key": str(play_cfg.get("play_key") or "1"),
-        "pause_key": str(play_cfg.get("pause_key") or "0"),
+        "min_play_seconds": int(play_plan["min_play_seconds"]),
+        "max_play_seconds": int(play_plan["max_play_seconds"]),
+        "play_key": str(play_plan["play_key"]),
+        "pause_key": str(play_plan["pause_key"]),
         "always_repause": bool(play_cfg.get("always_repause", True)),
+        "requires_live_hotkey_arm_before_play": True,
+        "requires_live_hotkey_arm_before_pause": True,
+        "play_brief_plan": play_plan if purpose_l == "verify" else None,
         "dispatch_while_paused_allowed": bool(obs.get("dispatch_while_paused_allowed", True)),
+        "forbidden": [
+            "MEASURE_WITHOUT_PLAY_BRIEF",
+            "PLAY_OR_PAUSE_HOTKEY_WITHOUT_FRESH_ARM",
+            "PAUSED_ONLY_SKILLS_PANEL_AS_PROGRESS_PROOF",
+        ]
+        if purpose_l == "verify"
+        else [],
         "note": (
             obs.get("keep_paused_policy")
             if purpose_l == "dispatch"
-            else "Play 5–10s at 1x, capture Skills panel, pause again."
+            else (
+                "Arm → play 5–10s at 1x → arm → pause → capture Skills panel. "
+                "Paused-only reads are STALE."
+            )
         ),
     }
 
@@ -1427,9 +2563,11 @@ def required_residual_skills(cfg: Optional[dict] = None) -> list[str]:
 def catalog_snapshot(cfg: Optional[dict] = None) -> dict:
     cfg = cfg or load_contract()
     seq = cfg.get("inject_sequence") or {}
+    commands = canonical_skill_commands(cfg=cfg)
     return {
         "skills": list(cfg["skill_catalog"]),
         "bundles": dict(cfg["bundles"]),
+        "canonical_commands": commands,
         "required_residual_skills": required_residual_skills(cfg),
         "household_traverse": dict(cfg.get("household_traverse") or {}),
         "live_hotkey_arm": dict(cfg.get("live_hotkey_arm") or {}),

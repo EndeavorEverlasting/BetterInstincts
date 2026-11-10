@@ -1,0 +1,78 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SKILLS-BURGER-BAR-EXPAND-20261109",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "024057a4836967a64fc7a7dcd386a4bb5c6f30c7",
+  "proposed_capability": "Operator: before cheat console / Olga skill cert, codify Skills-panel burger-bar resize grip at BOTH minimum (bottom) and maximum (top) heights on 1920x1080 Live. Open Skills with L; measure expanded top grip first (already expanded), collapse and measure min. Durable expand = stepped LMB drag min→max. Scrollbar alone is not a full panel read.",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "OBSERVATION",
+    "CLAIM",
+    "PLAYER_PRESENCE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/ONTOLOGY.md",
+    "docs/UI_CHROME.md",
+    "docs/DIY_SKILL_FORCE.md",
+    "docs/LEDGER.md",
+    "contracts/fixed-ui-click-map.v1.json",
+    "contracts/ui-microsystems.v1.json",
+    "contracts/diy-skill-force.v1.json",
+    "betterinstincts/fixed_ui_click_map.py",
+    "scripts/win32_input.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SKILLS_BURGER_BAR_PRINTWINDOW_ENDPOINTS_NOT_SKILL_PASS",
+  "player_save_control_impact": "Records fixed Skills-panel burger grip coordinates and offline expand/collapse drag plan only. No save edits. Live drag requires ACTIVE host session + admit.",
+  "expected_outcome": "fixed-ui-click-map skills_burger_bar_1920x1080 with MIN+MAX grips; plan_skills_burger_expand; left_drag helper; docs+tests; Olga panel-record remains next live gate after expand.",
+  "negative_tests": [
+    "Scrollbar alone is not full Skills panel read",
+    "MIN grip is not MAX grip",
+    "Expand plan execute_allowed false by default",
+    "Burger drag is not cheat-console typing"
+  ],
+  "rollback_path": "Revert feature PR.",
+  "unresolved_unknowns": [
+    "Exact min/max Y may shift slightly with UI scale/HUD packs; remeasure from PrintWindow if green SKILL MASTERY PERKS band disagrees"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-SKILLS-BURGER-BAR-EXPAND-20261109.v1.json",
+    "contracts/fixed-ui-click-map.v1.json",
+    "contracts/ui-microsystems.v1.json",
+    "betterinstincts/fixed_ui_click_map.py",
+    "scripts/win32_input.py",
+    "tests/test_fixed_ui_click_map.py",
+    "docs/DIY_SKILL_FORCE.md",
+    "docs/UI_CHROME.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decided_at": "2026-11-10T04:20:00Z",
+  "decided_by": "cursor-local-agent"
+}

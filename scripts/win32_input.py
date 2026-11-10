@@ -137,16 +137,36 @@ def send_key_chord(
     *,
     down_sec: float = 0.04,
     after_sec: float = 0.05,
+    via: str = "keybd_event",
 ) -> None:
     """Send a modifier+key chord without moving the mouse.
 
-    Preferred cooperative channel when a catalogued hotkey exists. Still
-    requires caller-owned idle/session admission before invocation.
+    Default ``via=keybd_event`` — Sims Live (DirectInput) often ignores
+    SendInput chords for Ctrl+Shift+C while physical keys and keybd_event work
+    (operator 2026-11-10: manual chord OK, agent SendInput miss). Callers still
+    own foreground + terrain arm before Live letters/chords.
     """
     _require_win32()
     tokens = [resolve_vk(part) for part in chord]
     if not tokens:
         raise Win32InputError("EMPTY_KEY_CHORD")
+    mode = str(via or "keybd_event").strip().lower()
+    if mode in {"keybd_event", "keybd", "type_text_path"}:
+        import ctypes
+
+        user32 = ctypes.windll.user32
+        KEYEVENTF_KEYUP = 0x0002
+        for vk in tokens:
+            user32.keybd_event(int(vk) & 0xFF, 0, 0, 0)
+            time.sleep(0.015)
+        time.sleep(down_sec)
+        for vk in reversed(tokens):
+            user32.keybd_event(int(vk) & 0xFF, 0, KEYEVENTF_KEYUP, 0)
+            time.sleep(0.015)
+        time.sleep(after_sec)
+        return
+    if mode not in {"sendinput", "send_input"}:
+        raise Win32InputError("UNKNOWN_KEY_CHORD_VIA:" + mode)
     for vk in tokens:
         send_vk(vk, up=False)
         time.sleep(0.01)
@@ -357,6 +377,46 @@ def send_wheel(
         inp.mi = MOUSEINPUT(0, 0, delta & 0xFFFFFFFF, wheel, 0, None)
         user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
         time.sleep(0.03)
+    if safe_rest_after:
+        park_safe_cursor_rest(settle_sec=settle_sec)
+
+
+def left_drag(
+    x0: int,
+    y0: int,
+    x1: int,
+    y1: int,
+    *,
+    steps: int = 48,
+    settle_sec: float = 0.05,
+    step_sec: float = 0.018,
+    safe_rest_after: bool = True,
+) -> None:
+    """Left-button stepped drag from (x0,y0) to (x1,y1). Caller owns host admission.
+
+    Used for Skills-panel burger expand (min→max) and similar fixed HUD resizes.
+    Prefer many slow SetCursorPos steps over a single jump — fast sidecar drags miss.
+    """
+    _require_win32()
+    ctypes, MOUSEINPUT, INPUT = _mouse_input_types()
+    user32 = ctypes.windll.user32
+    ld, lu = 2, 4
+    user32.SetCursorPos(int(x0), int(y0))
+    time.sleep(settle_sec)
+    inp = INPUT(type=0)
+    inp.mi = MOUSEINPUT(0, 0, 0, ld, 0, None)
+    user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+    time.sleep(0.06)
+    n = max(1, int(steps))
+    for i in range(1, n + 1):
+        user32.SetCursorPos(
+            int(x0) + (int(x1) - int(x0)) * i // n,
+            int(y0) + (int(y1) - int(y0)) * i // n,
+        )
+        time.sleep(step_sec)
+    inp = INPUT(type=0)
+    inp.mi = MOUSEINPUT(0, 0, 0, lu, 0, None)
+    user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
     if safe_rest_after:
         park_safe_cursor_rest(settle_sec=settle_sec)
 

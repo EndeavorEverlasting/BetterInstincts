@@ -77,12 +77,72 @@ def inventory(*, cfg: dict | None = None) -> dict:
                 "status": panel["status"],
                 "actions": sorted(panel["actions"]),
                 "cues": panel.get("cues"),
+                "open_hotkey_id": panel.get("open_hotkey_id"),
+                "open_chord": list(panel.get("open_chord") or []) or None,
                 "execute_allowed": False,
             }
             for panel_id, panel in cfg["panels"].items()
         },
+        "bottom_right_panel_hotkeys": dict(cfg.get("bottom_right_panel_hotkeys") or {}),
         "execute_allowed": False,
         "proof_ceiling": cfg["proof_ceiling"],
+    }
+
+
+def normalize_bottom_right_panel_id(panel_id: str, *, cfg: dict | None = None) -> str:
+    """Resolve work/school/inventory aliases to canonical microsystem panel ids."""
+    cfg = cfg or load_contract()
+    raw = str(panel_id or "").strip().casefold()
+    if not raw:
+        raise UIMicrosystemError("BOTTOM_RIGHT_PANEL_ID_REQUIRED")
+    table = (cfg.get("bottom_right_panel_hotkeys") or {}).get("aliases") or {}
+    if not isinstance(table, dict):
+        table = {}
+    canonical = str(table.get(raw) or raw)
+    panels = (cfg.get("bottom_right_panel_hotkeys") or {}).get("panels") or {}
+    if canonical not in panels and canonical not in (cfg.get("panels") or {}):
+        raise UIMicrosystemError("UNKNOWN_BOTTOM_RIGHT_PANEL:" + raw)
+    return canonical
+
+
+def plan_open_bottom_right_panel(panel_id: str, *, cfg: dict | None = None) -> dict:
+    """Hotkey-first plan to open a Live bottom-right panel (J=work, G=aspirations, …).
+
+    Requires live-hotkey-arm before the letter. Does not authorize SendInput and
+    does not claim the panel is visible until independent cues confirm it.
+    """
+    cfg = cfg or load_contract()
+    from betterinstincts.ui_chrome import resolve_bottom_right_panel_hotkey
+
+    canonical = normalize_bottom_right_panel_id(panel_id, cfg=cfg)
+    hotkey = resolve_bottom_right_panel_hotkey(canonical)
+    panel = (cfg.get("panels") or {}).get(canonical) or {}
+    return {
+        "schema": "betterinstincts.ui-microsystems.open-bottom-right/v1",
+        "state": "BR_PANEL_HOTKEY_PLANNED",
+        "panel_id": canonical,
+        "requested_panel": panel_id,
+        "hotkey_id": hotkey["hotkey_id"],
+        "chord": list(hotkey["chord"]),
+        "channel": "HOTKEY",
+        "order": [
+            "ARM_LIVE_HOTKEYS",
+            "PRESS_PANEL_LETTER",
+            "CONFIRM_PANEL_CUES",
+        ],
+        "requires_live_hotkey_arm": True,
+        "requires_entitlement_attestation": bool(
+            hotkey.get("requires_entitlement_attestation")
+            or panel.get("requires_entitlement_attestation")
+        ),
+        "panel_cues": panel.get("cues"),
+        "mouse_fallback": "FORBIDDEN_WHILE_HOTKEY_CATALOGUED",
+        "execute_allowed": False,
+        "proof_ceiling": "BR_PANEL_HOTKEY_PLAN_NOT_LIVE_PANEL_PROOF",
+        "note": (
+            "G=aspirations J=career/work L=skills R=relationships "
+            "I=inventory Y=simology O=needs U=clubs"
+        ),
     }
 
 

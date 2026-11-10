@@ -18,6 +18,8 @@
         "LIVE"
       ],
       "status": "UNCALIBRATED_CANDIDATE",
+      "open_hotkey_id": "PANEL_ASPIRATIONS",
+      "open_chord": ["G"],
       "cues": {
         "visual": "panel:live_aspirations",
         "operator": "aspirations_visible"
@@ -47,6 +49,9 @@
         "LIVE"
       ],
       "status": "UNCALIBRATED_CANDIDATE",
+      "open_hotkey_id": "PANEL_CAREER",
+      "open_chord": ["J"],
+      "aliases": ["work", "school"],
       "cues": {
         "visual": "panel:live_career",
         "operator": "career_visible"
@@ -76,6 +81,8 @@
         "LIVE"
       ],
       "status": "UNCALIBRATED_CANDIDATE",
+      "open_hotkey_id": "PANEL_SKILLS",
+      "open_chord": ["L"],
       "cues": {
         "visual": "panel:live_skills",
         "operator": "skills_visible"
@@ -88,6 +95,15 @@
         "inspect_progress": {
           "intent": "inspect_progress",
           "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
+        "expand_burger_bar": {
+          "intent": "expand_skills_list_via_burger",
+          "status": "PRINTWINDOW_ENDPOINTS_MEASURED_1920x1080",
+          "fixed_ui_owner": "contracts/fixed-ui-click-map.v1.json#skills_burger_bar_1920x1080",
+          "planner": "betterinstincts.fixed_ui_click_map.plan_skills_burger_expand",
+          "open_first": "L",
+          "drag": "LEFT_BUTTON_STEPPED_DRAG min (1722,810) → max (1722,225)",
+          "note": "Scrollbar alone is not a full panel read; expand before panel-record"
         }
       }
     },
@@ -97,6 +113,8 @@
         "LIVE"
       ],
       "status": "UNCALIBRATED_CANDIDATE",
+      "open_hotkey_id": "PANEL_SIMOLOGY",
+      "open_chord": ["Y"],
       "cues": {
         "visual": "panel:live_simology",
         "operator": "simology_visible"
@@ -118,6 +136,8 @@
         "LIVE"
       ],
       "status": "UNCALIBRATED_CANDIDATE",
+      "open_hotkey_id": "PANEL_INVENTORY",
+      "open_chord": ["I"],
       "cues": {
         "visual": "panel:live_personal_inventory",
         "operator": "personal_inventory_visible"
@@ -143,6 +163,8 @@
         "LIVE"
       ],
       "status": "UNCALIBRATED_CANDIDATE",
+      "open_hotkey_id": "PANEL_NEEDS",
+      "open_chord": ["O"],
       "cues": {
         "visual": "panel:live_needs",
         "operator": "live_needs_visible"
@@ -154,6 +176,26 @@
         },
         "inspect_motive_state": {
           "intent": "inspect_motive_state",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        }
+      }
+    },
+    "clubs": {
+      "family": "LIVE_PANEL",
+      "modes": [
+        "LIVE"
+      ],
+      "status": "UNCALIBRATED_CANDIDATE",
+      "open_hotkey_id": "PANEL_CLUBS",
+      "open_chord": ["U"],
+      "requires_entitlement_attestation": true,
+      "cues": {
+        "visual": "panel:live_clubs",
+        "operator": "clubs_visible"
+      },
+      "actions": {
+        "inspect_club": {
+          "intent": "inspect_club",
           "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
         }
       }
@@ -265,11 +307,23 @@
         "visual": "panel:live_whims",
         "operator": "whims_visible"
       },
+      "fixed_ui_owner": "contracts/fixed-ui-click-map.v1.json#whims_pin_slots_1920x1080",
       "actions": {
         "pin_whim": {
           "intent": "pin_one_verified_positive_whim",
           "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION",
-          "note": "Each pin requires its OWN observed whim_ref and current rectangle; never shortcut/guess"
+          "target_id": "whims.pin_whim",
+          "input": "MOUSE_ONLY_NO_HOTKEY",
+          "hitbox_hint": "Lower-right pin badge on the observed bubble (slot seeds in fixed-ui-click-map)",
+          "note": "Each pin requires its OWN observed whim_ref and current rectangle; slot seeds are candidates only — never shortcut/guess"
+        },
+        "unpin_whim": {
+          "intent": "unpin_one_observed_pinned_whim",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION",
+          "target_id": "whims.unpin_whim",
+          "input": "MOUSE_ONLY_NO_HOTKEY",
+          "hitbox_hint": "Green pin badge on lower-right of the pinned bubble",
+          "note": "Same badge as pin; green = pinned. Slot seed alone does not authorize click"
         }
       }
     },
@@ -279,6 +333,8 @@
         "LIVE"
       ],
       "status": "UNCALIBRATED_CANDIDATE",
+      "open_hotkey_id": "PANEL_RELATIONSHIPS",
+      "open_chord": ["R"],
       "cues": {
         "visual": "panel:live_relationships",
         "operator": "relationships_visible"
@@ -331,13 +387,91 @@
       "relationships",
       "simology",
       "personal_inventory",
-      "needs"
+      "needs",
+      "clubs"
     ],
     "source": "HOST_CAPTURE",
     "independence": "VISUAL_AND_OPERATOR_CUES_CURRENT_LAYOUT_REVISION",
     "prior_panel_coordinates": "INVALID_AFTER_TAB_OR_OVERLAY_CHANGE",
     "default_action_allowed": false,
-    "state_after_event": "REOBSERVE_BEFORE_REUSE"
+    "state_after_event": "REOBSERVE_BEFORE_REUSE",
+    "preferred_switch_channel": "HOTKEY",
+    "requires_live_hotkey_arm": true,
+    "mouse_icon_click": "MOUSE_FALLBACK_ONLY_WHEN_NO_HOTKEY"
+  },
+  "bottom_right_panel_hotkeys": {
+    "owner": "betterinstincts/ui_chrome.py",
+    "planner": "betterinstincts.ui_microsystems.plan_open_bottom_right_panel",
+    "mode": "LIVE",
+    "authority": "contracts/ui-chrome.v1.json#modes.LIVE.hotkeys",
+    "operator_correction_2026_11_09": "Catalog every BR letter so agents never rediscover: G aspirations, J career/work, L skills, R relationships, I inventory, Y simology, O needs, U clubs. Prefer hotkey over BR icon click. Arm LMB world then RMB cancel before letters.",
+    "aliases": {
+      "work": "career",
+      "school": "career",
+      "inventory": "personal_inventory",
+      "motives": "needs",
+      "groups": "clubs"
+    },
+    "panels": {
+      "aspirations": {
+        "hotkey_id": "PANEL_ASPIRATIONS",
+        "chord": ["G"],
+        "fixed_ui_target_id": "live.panel_aspirations",
+        "client_xy_1920x1080": [1607, 1045]
+      },
+      "career": {
+        "hotkey_id": "PANEL_CAREER",
+        "chord": ["J"],
+        "fixed_ui_target_id": "live.panel_career",
+        "client_xy_1920x1080": [1654, 1045]
+      },
+      "skills": {
+        "hotkey_id": "PANEL_SKILLS",
+        "chord": ["L"],
+        "fixed_ui_target_id": "live.panel_skills",
+        "client_xy_1920x1080": [1679, 1045]
+      },
+      "relationships": {
+        "hotkey_id": "PANEL_RELATIONSHIPS",
+        "chord": ["R"],
+        "fixed_ui_target_id": "live.panel_relationships",
+        "client_xy_1920x1080": [1713, 1045]
+      },
+      "personal_inventory": {
+        "hotkey_id": "PANEL_INVENTORY",
+        "chord": ["I"],
+        "fixed_ui_target_id": "live.panel_inventory",
+        "client_xy_1920x1080": [1757, 1045]
+      },
+      "simology": {
+        "hotkey_id": "PANEL_SIMOLOGY",
+        "chord": ["Y"],
+        "fixed_ui_target_id": "live.panel_simology",
+        "client_xy_1920x1080": [1786, 1045]
+      },
+      "needs": {
+        "hotkey_id": "PANEL_NEEDS",
+        "chord": ["O"],
+        "fixed_ui_target_id": "live.panel_needs",
+        "client_xy_1920x1080": [1820, 1045]
+      },
+      "clubs": {
+        "hotkey_id": "PANEL_CLUBS",
+        "chord": ["U"],
+        "fixed_ui_target_id": "live.panel_clubs",
+        "client_xy_1920x1080": [1859, 1045],
+        "requires_entitlement_attestation": true,
+        "status": "COMMUNITY_DOCUMENTED_CANDIDATE"
+      }
+    },
+    "click_map_owner": "contracts/fixed-ui-click-map.v1.json",
+    "capture_ref": "dist/game-host/household-skill-cert/live-20261109/printwindow-br-tray-now.png",
+    "not": [
+      "HOTKEY_PROVES_PANEL_VISIBLE",
+      "HOTKEY_PROVES_SELECTION_IDENTITY",
+      "REDISCOVER_TRAY_CLICKS_BY_VISION",
+      "ICON_CLICK_PREFERRED_WHEN_HOTKEY_EXISTS"
+    ]
   },
   "overlay_semantics": {
     "owner": "betterinstincts/scene_ui_semantics.py",

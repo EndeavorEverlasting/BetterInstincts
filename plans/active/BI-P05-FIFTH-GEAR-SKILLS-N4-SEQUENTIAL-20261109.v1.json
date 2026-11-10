@@ -64,11 +64,18 @@
     },
     {
       "id": "S2",
-      "title": "P08 sequential household skill-force N=4 full_unlock",
+      "title": "P08 sequential household skill-force N=4 (Olga remote_income lean beat)",
       "owner": "LOCAL_AGENT",
-      "status": "ACTIVE_BLOCKED_CHEAT_EFFECT",
+      "status": "ACTIVE",
       "process_id": 78240,
       "session_id": "household-n4-20261109",
+      "focus_20261110": {
+        "member": "OLGA_P2",
+        "bundle": "remote_income",
+        "panel_max_so_far": ["handiness", "fishing", "charisma", "cooking"],
+        "next_skills": ["programming", "writing", "painting", "fabrication", "photography", "media_production", "video_gaming", "flower_arranging", "comedy", "piano", "guitar", "violin", "singing", "dj_mixing"],
+        "interruptibility": "wait trusted idle >=15s on mouse/key; borrow Sims; restore operator app; resume via cooperative waiter not OS cron"
+      },
       "canary": {
         "skill": "robotics",
         "member": "EVIL_P0",
@@ -77,8 +84,8 @@
         "proof_ceiling": "DISPATCHED_NOT_PANEL_PASS",
         "receipt": "dist/game-host/household-skill-cert/live-20261109/canary-evil-robotics.json"
       },
-      "command": "python -m scripts.diy_skill_force household --members 4 --bundle full_unlock --execute --roster-key EVIL_P0 --roster-key BERNICE_P1 --roster-key OLGA_P2 --roster-key CHARLEE_P3 --first-portrait-attested --process-id 78240 --session-id household-n4-20261109",
-      "gate": "Do not bulk until Evil robotics Skills-panel rises after an admitted canary",
+      "command": "python -m scripts.diy_skill_force target-sim --session-id household-n4-20261109 --members 4 --roster-key EVIL_P0 --roster-key BERNICE_P1 --roster-key OLGA_P2 --roster-key CHARLEE_P3 --member-key OLGA_P2 --display-name \"Olga Chabenvenutzki\" --roster-index 2 --bundle remote_income",
+      "gate": "Skills-panel LOCAL_OBSERVED after armed play-brief; DISPATCHED is not PASS; yield on operator input",
       "overlay_preflight_20261109": {
         "event": "life_death.inheritance.ghost_stranger",
         "choice": "free_money_yes",
@@ -86,6 +93,20 @@
         "receipt": "dist/game-host/chance-event-live-20261109/free-money-receipt.json",
         "note": "Inheritance overlay cleared under HOST_NO_RISK_POLICY; Geeta lounge text left untouched"
       }
+    },
+    {
+      "id": "S2b",
+      "title": "Listener idle-yield + cooperative resume (not OS cron)",
+      "owner": "LOCAL_AGENT",
+      "status": "ACTIVE",
+      "depends_on": [],
+      "safe_parallel_with": ["S2"],
+      "mission": "Every game-input borrow waits GetLastInputInfo idle>=15s; mouse/key activity restarts wait; retained work resumes via CooperativeScreenQueue/host_listener/_wait_for_input_idle — never Task Scheduler/cron/daemon",
+      "owners": [
+        "contracts/workflow-interoperability.v1.json#game_input_borrow_restore",
+        "scripts/diy_skill_force.py::_with_sims_input_borrow",
+        "docs/ASYNC_INTEROP.md"
+      ]
     },
     {
       "id": "S3",

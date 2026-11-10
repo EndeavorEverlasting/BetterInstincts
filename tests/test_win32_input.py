@@ -42,6 +42,13 @@ class Win32InputOwnershipTests(unittest.TestCase):
                 win32_input.send_click(1, 2)
         self.assertEqual(str(ctx.exception), "LOCAL_WINDOWS_GAME_HOST_REQUIRED")
 
+    def test_left_drag_fails_closed_off_windows(self):
+        self.assertTrue(callable(win32_input.left_drag))
+        with patch.object(win32_input.sys, "platform", "linux"):
+            with self.assertRaises(win32_input.Win32InputError) as ctx:
+                win32_input.left_drag(1722, 810, 1722, 225)
+        self.assertEqual(str(ctx.exception), "LOCAL_WINDOWS_GAME_HOST_REQUIRED")
+
     def test_send_click_parks_safe_rest_after(self):
         from unittest.mock import MagicMock
 

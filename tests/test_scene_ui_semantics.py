@@ -53,7 +53,7 @@ class LiveHudTests(unittest.TestCase):
     def test_all_bottom_right_panels_are_trackable(self):
         cfg=load_contract()
         for id in ("aspirations","career","skills","relationships",
-                   "simology","personal_inventory","needs"):
+                   "simology","personal_inventory","needs","clubs"):
             self.assertIn(id,cfg["panels"])
             cues=cfg["panels"][id]["cues"]
             p=assess(frame(active_right_panel_id=id,
@@ -65,6 +65,16 @@ class LiveHudTests(unittest.TestCase):
         p=assess(frame(),requested_panel="skills",requested_target="skills.inspect_skill")
         self.assertEqual(p["gate"],"RIGHT_PANEL_SWITCH_OR_REOBSERVE")
         self.assertFalse(p["execute_allowed"])
+        self.assertEqual(p["preferred_switch_channel"],"HOTKEY")
+        self.assertEqual(p["preferred_chord"],["L"])
+        self.assertEqual(p["preferred_hotkey_id"],"PANEL_SKILLS")
+        work=assess(frame(active_right_panel_id="aspirations",
+            right_panel_cues=[{"source":"visual","token":"panel:live_aspirations"},
+                             {"source":"operator","token":"aspirations_visible"}]),
+            requested_panel="work")
+        self.assertEqual(work["gate"],"RIGHT_PANEL_SWITCH_OR_REOBSERVE")
+        self.assertEqual(work["preferred_chord"],["J"])
+        self.assertEqual(work["switch_plan"]["panel_id"],"career")
         p=assess(frame(),requested_panel="career",requested_target="career.inspect_job")
         self.assertTrue(p["panel"]["hitbox_attestation_required"])
         self.assertIsNone(p["panel"].get("click"))

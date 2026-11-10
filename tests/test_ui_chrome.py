@@ -7,10 +7,12 @@ from pathlib import Path
 
 from betterinstincts.ui_chrome import (
     UIChromeError,
+    bottom_right_panel_hotkey_rows,
     glossary_snapshot,
     load_contract,
     plan_catalog_to_inventory,
     prefer_hotkey_step,
+    resolve_bottom_right_panel_hotkey,
     resolve_catalog_item,
     resolve_target,
 )
@@ -45,6 +47,27 @@ class UIChromeTests(unittest.TestCase):
     def test_resolve_unknown_profile_fails(self) -> None:
         with self.assertRaisesRegex(UIChromeError, "UNKNOWN_RESOLUTION_PROFILE"):
             resolve_target("catalog.search_field", mode="BUILD", profile="800x600", cfg=self.cfg)
+
+    def test_bottom_right_panel_hotkeys_catalogued(self) -> None:
+        rows = bottom_right_panel_hotkey_rows(cfg=self.cfg)
+        by_panel = {r["panel_id"]: r["chord"] for r in rows}
+        self.assertEqual(by_panel["aspirations"], ["G"])
+        self.assertEqual(by_panel["career"], ["J"])
+        self.assertEqual(by_panel["skills"], ["L"])
+        self.assertEqual(by_panel["relationships"], ["R"])
+        self.assertEqual(by_panel["personal_inventory"], ["I"])
+        self.assertEqual(by_panel["simology"], ["Y"])
+        self.assertEqual(by_panel["needs"], ["O"])
+        self.assertEqual(by_panel["clubs"], ["U"])
+        work = resolve_bottom_right_panel_hotkey("work", cfg=self.cfg)
+        self.assertEqual(work["hotkey_id"], "PANEL_CAREER")
+        self.assertEqual(work["chord"], ["J"])
+        self.assertEqual(work["channel"], "HOTKEY")
+        self.assertFalse(work["execute_allowed"])
+        gloss = glossary_snapshot(cfg=self.cfg)
+        self.assertEqual(len(gloss["bottom_right_panel_hotkeys"]), 8)
+        with self.assertRaisesRegex(UIChromeError, "UNKNOWN_BOTTOM_RIGHT_PANEL"):
+            resolve_bottom_right_panel_hotkey("phone", cfg=self.cfg)
 
     def test_live_mode_refuses_catalog_target(self) -> None:
         with self.assertRaisesRegex(UIChromeError, "TARGET_NOT_IN_MODE"):

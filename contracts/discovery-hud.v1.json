@@ -28,5 +28,41 @@
     "send_text": false,
     "change_settings": false
   },
+  "tab_slots_1920x1080": {
+    "fixed_ui_owner": "contracts/fixed-ui-click-map.v1.json#top_left_discovery_tabs_1920x1080",
+    "y_row": 34,
+    "slots": [
+      {
+        "slot_index": 0,
+        "quest_label": "Lifelong Aspirations",
+        "target_id": "live.discovery_tab_lifelong_aspirations",
+        "client_xy": [26, 34],
+        "status": "PRESENT"
+      },
+      {
+        "slot_index": 1,
+        "quest_label": "Navigating Needs",
+        "target_id": "live.discovery_tab_navigating_needs",
+        "client_xy": [60, 34],
+        "status": "PRESENT"
+      },
+      {
+        "slot_index": 2,
+        "quest_label": "You and Your Phone",
+        "target_id": "live.discovery_tab_you_and_your_phone",
+        "client_xy": [99, 34],
+        "status": "PRESENT"
+      },
+      {
+        "slot_index": 3,
+        "quest_label": "EVENT_CONTEXT",
+        "target_id": "live.discovery_tab_event_context",
+        "client_xy": [135, 34],
+        "status": "ABSENT_NOW_ESTIMATED_WHEN_PRESENT",
+        "appears_when": ["work", "school", "party", "career_event", "other_live_event"],
+        "notes": "Fourth gift-box tab; remeasure on Live event capture before treating as HIT"
+      }
+    ]
+  },
   "proof_ceiling": "OFFLINE_DISCOVERY_ROUTING_NOT_GAME_HUD_PROOF"
 }

@@ -58,9 +58,123 @@ Plan steps: focus search → type `AOK` (live host may need `a-ok` + Outdoor Act
 
 Civil Designer L5 unlocks **Grow Cruelty-Free Meat** on this planter; the planter itself is an ordinary Eco Lifestyle catalog purchase (~§365).
 
+## Selected-Sim whim pin / unpin slots
+
+Far-left selected-Sim bubbles — left of household portraits, above the notebook/phone tray. Usually **2 or 3** scalloped thought-clouds; rare **4th** is a **jagged starburst** by the Sim’s left shoulder (viewer-right of the avatar). Mouse-only.
+
+Three nested geometries (do not conflate):
+
+1. **Bubble outline** — thought-cloud or jagged starburst (container)
+2. **Content thumbnail** — circular art *inside* the bubble (whim subject) — **not** the pin
+3. **Pin thumbtack** — small circular badge on the **lower-right rim** of the outline; offset **(+30, +6)** from bubble center; green when pinned
+
+| Slot | Bubble `client_xy` | Pin thumbtack `client_xy` | Status |
+| --- | --- | --- | --- |
+| 0 left | **(145, 833)** | **(170, 847)** | Measured cloud + green pin |
+| 1 mid | **(203, 827)** | **(233, 833)** | Cloud measured; pin via (+30,+6) |
+| 2 third | **(255, 830)** | **(285, 836)** | Estimated when three present |
+| 3 jagged 4th | **(278, 900)** | **(308, 906)** | Rare jagged PrintWindow-measured (paused) |
+
+Slot seeds do not authorize a live pin — `whim_pinning` still requires per-whim attestation + native queue.
+
+## Center console (time / speed / environment)
+
+Bottom-center pill (`fixed-ui-click-map.center_console_1920x1080`). **Prefer speed hotkeys** P/0, 1, 2, 3.
+
+| Control | `client_xy` | Prefer |
+| --- | --- | --- |
+| Pause | **(889, 1033)** | P / 0 |
+| Play 1x | **(920, 1033)** | 1 |
+| Fast 2x | **(952, 1033)** | 2 |
+| Ultra 3x | **(984, 1033)** | 3 |
+| Camera shutter | **(1040, 1033)** | — |
+| Day/night | **(860, 1065)** | — |
+| Clock / calendar text | **(930, 1065)** | ≠ BL Show Calendar `(305,1055)` |
+| Weather | **(1010, 1065)** | — |
+| Thermometer | **(1045, 1065)** | — |
+| Eco footprint | **(1075, 1065)** | — |
+
+## Skills panel burger bar (expand / collapse)
+
+Open Skills with **L**. The resize grip is the two short horizontal lines on the thin grey strip **directly above** green `SKILL MASTERY PERKS`. Scrollbar alone is not a full list read. PrintWindow endpoints (`fixed-ui-click-map.skills_burger_bar_1920x1080`, 1920×1080):
+
+| State | target_id | client_xy |
+| --- | --- | --- |
+| MIN (default flyout) | `live.skills_burger_grip_min` | **(1722, 810)** |
+| MAX (expanded) | `live.skills_burger_grip_max` | **(1722, 225)** |
+
+Expand: stepped LMB drag min→max (`plan_skills_burger_expand` / `win32_input.left_drag`). Collapse: max→min. Remeasure if the green header Y drifts.
+
+## Top-right Live HUD chrome
+
+PrintWindow-measured 1920×1080 (`fixed-ui-click-map.top_right_hud_1920x1080`). **Cheat console white strip overlays this band** when open — prefer hotkeys and precise strip refocus before typing.
+
+| Control | target_id | client_xy | Prefer |
+| --- | --- | --- | --- |
+| Build/Buy | `live.top_build_buy` | **(1504, 22)** | F3 |
+| Manage Worlds | `live.top_manage_worlds` | **(1562, 22)** | — |
+| Gallery | `live.top_gallery` | **(1609, 22)** | F4 |
+| EA Store | `live.top_ea_store` | **(1650, 22)** | — |
+| Floor story | `live.top_floor_story` | **(1707, 22)** | — |
+| Walls view | `live.top_walls_view` | **(1740, 22)** | — |
+| Camera/house | `live.top_camera_lot_house` | **(1768, 22)** | — |
+| Lessons/help | `live.top_lessons_help` | **(1801, 22)** | — |
+| Video capture | `live.top_video_capture` | **(1838, 22)** | — |
+| Notifications | `live.top_notification_inbox` | **(1859, 22)** | — |
+| Options … | `live.top_options` | **(1898, 22)** | Esc (careful) |
+| Live people (Build exit) | `live.top_live_people` | **(1585, 35)** | F1 |
+
+## Top-left Discovery Quest tabs
+
+Gift-box tab pill, top-left. PrintWindow-measured on 1920×1080; also `discovery-hud.tab_slots_1920x1080` and `fixed-ui-click-map`.
+
+| Tab | target_id | client_xy | Status |
+| --- | --- | --- | --- |
+| Lifelong Aspirations | `live.discovery_tab_lifelong_aspirations` | **(26, 34)** | Present |
+| Navigating Needs | `live.discovery_tab_navigating_needs` | **(60, 34)** | Present |
+| You and Your Phone | `live.discovery_tab_you_and_your_phone` | **(99, 34)** | Present |
+| Work/School/Party event | `live.discovery_tab_event_context` | **(135, 34)** | Estimated — appears for events; remeasure Live |
+
+Tab click ≠ quest completion. Fourth slot is empty until work/school/party (or similar) adds it.
+
+## Bottom-left utility tray (notebook / phone / Show Calendar)
+
+Grey pill immediately left of household portraits on 1920×1080. PrintWindow-measured; also in `contracts/fixed-ui-click-map.v1.json`.
+
+| Control | target_id | client_xy | Notes |
+| --- | --- | --- | --- |
+| Notebook | `live.notebook` | **(258, 1055)** | Leftmost; spiral notebook |
+| Phone | `live.phone` | **(282, 1055)** | Middle; hotkey `M` (unverified) |
+| Show Calendar | `live.show_calendar` | **(305, 1055)** | Rightmost; portrait clicks with x&lt;330 often hit this |
+
+Calendar dismiss: `live.calendar_close_x` ≈ **(1445, 255)**. Do not rediscover these by vision thrash.
+
+## Live bottom-right panel letter hotkeys
+
+Catalogued under `modes.LIVE.hotkeys` (`family: BOTTOM_RIGHT_LIVE_PANEL`) and `ui-microsystems.bottom_right_panel_hotkeys`. Prefer letter hotkeys over tray icon clicks. Requires **live-hotkey-arm** (LMB world → RMB cancel) first.
+
+| Panel | Key | hotkey_id |
+| --- | --- | --- |
+| Aspirations / Satisfaction | G | `PANEL_ASPIRATIONS` |
+| Career / work / school | J | `PANEL_CAREER` |
+| Skills | L | `PANEL_SKILLS` |
+| Relationships | R | `PANEL_RELATIONSHIPS` |
+| Personal inventory | I | `PANEL_INVENTORY` |
+| Simology | Y | `PANEL_SIMOLOGY` |
+| Needs | O | `PANEL_NEEDS` |
+| Clubs / groups | U | `PANEL_CLUBS` (pack-gated candidate) |
+
+Aliases: `work`/`school` → career; `inventory` → personal_inventory; `motives` → needs; `groups` → clubs.
+
+```text
+python -c "from betterinstincts.ui_microsystems import plan_open_bottom_right_panel; print(plan_open_bottom_right_panel('work'))"
+```
+
+Hitboxes remain uncalibrated until Live P08; hotkey open is not proof the panel is visible.
+
 ## Extension surface
 
-Add Live bottom-right panel cells and phone-app chrome as new targets under `modes.LIVE` once operator-attested screenshots exist. Do not invent click points for `UNCALIBRATED_STUB` panels.
+Phone-app chrome and exact BR hitboxes still need operator-attested screenshots. Do not invent click points for `UNCALIBRATED_STUB` panels when a catalogued hotkey exists.
 
 ## Related
 
