@@ -271,32 +271,52 @@
           "op": "REQUIRE_ACTIVE_SIM_SELECTION"
         },
         {
+          "op": "VERIFY_SELECTED_OBSERVED_PORTRAIT",
+          "fail": "PORTRAIT_STALE_OR_UNKNOWN"
+        },
+        {
           "op": "OBSERVE",
           "cue": "computer_on_lot",
           "fail": "COMPUTER_NOT_OBSERVED"
         },
         {
-          "op": "CLICK_OBJECT",
-          "target": "computer",
-          "preferred_channel": "MOUSE_FALLBACK"
+          "op": "LEFT_CLICK_OBSERVED_COMPUTER",
+          "target": "computer_or_laptop",
+          "preferred_channel": "MOUSE_FALLBACK",
+          "requires_sim_at_computer": false,
+          "fresh_observation_required": true
         },
         {
-          "op": "PIE_MENU",
+          "op": "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES",
           "choice": "Order",
-          "fail": "ORDER_MENU_MISSING"
+          "fail": "ORDER_MENU_MISSING",
+          "max_pages": 8,
+          "observation_required": true,
+          "no_blind_click": true
         },
         {
-          "op": "PIE_MENU",
+          "op": "FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES",
           "choice": "Purchase Upgrade Parts",
-          "fail": "PURCHASE_UPGRADE_PARTS_MISSING"
+          "fail": "PURCHASE_UPGRADE_PARTS_MISSING",
+          "max_pages": 8,
+          "observation_required": true,
+          "no_blind_click": true
+        },
+        {
+          "op": "REQUIRE_FRESH_PURCHASE_PICKER_OBSERVATION",
+          "fail": "PURCHASE_PICKER_NOT_OBSERVED"
         },
         {
           "op": "SELECT_PART",
           "from_recipe_field": "display_name",
-          "fail": "PART_ROW_MISSING"
+          "fail": "PART_ROW_MISSING",
+          "observed_picker_item_required": true,
+          "no_assumed_row_position": true
         },
         {
-          "op": "CONFIRM_PURCHASE"
+          "op": "CONFIRM_PURCHASE",
+          "fresh_player_and_screen_admission": true,
+          "effect_class": "INSTANT_UI_CANDIDATE"
         },
         {
           "op": "OBSERVE",
@@ -305,7 +325,9 @@
         },
         {
           "op": "REPEAT_PURCHASE",
-          "times_from": "quantity_remaining_after_first"
+          "times_from": "quantity_remaining_after_first",
+          "requires_picker_reobservation": true,
+          "never_replay_unobserved_purchase": true
         }
       ]
     }
@@ -611,7 +633,8 @@
       "purchase": "After opening picker, iterate requested items; if picker closes, re-observe and reopen the same domain before next item; never assume item rows or bulk-quantity support",
       "current_household": "SELECT_EXACT_OBSERVED_PORTRAIT_AND_REVALIDATE_EACH_EFFECT",
       "distance_to_computer": "NOT_ASSUMED_REQUIRED_FOR_INSTANT_ORDER_UI; SIM_MAY_BE_REMOTE_IF_GAME_PERMITS",
-      "safety": "PLAYER_PRESENCE_AND_SCREEN_LEASE_REQUIRED_BY_DOWNSTREAM_LIVE_ADAPTER"
+      "safety": "PLAYER_PRESENCE_AND_SCREEN_LEASE_REQUIRED_BY_DOWNSTREAM_LIVE_ADAPTER",
+      "default_goal_resolution": "CURRENT_OBSERVED_CHOICES_FIRST"
     },
     "effect_classes": {
       "INSTANT_UI_CANDIDATE": {
