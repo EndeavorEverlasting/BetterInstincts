@@ -1428,3 +1428,45 @@ action. Do not promote this offline feature to a shipped playable mod.
 **P07/P124:** Extend current owners; do not start a duplicate host daemon,
 fixed-pixel queue canceller or mutate EA files/saves. Preserve BI-002
 hunger certification as a separate active game-host gate.
+
+## 2026-11-10 — Moonwake Closers / native household autonomy Horizon reconciliation
+
+**Parent:** native EA autonomy must protect quantitative, meaningful ongoing Sim goals for
+*every* household member without a selected-portrait dependency or desktop cursor
+cancellation; player commands and legitimate social, fun, needs and personality remain
+higher authority. **Closers sequence:** P83 → P03 → P141 → P124 → P04, resolved
+from current Moonwake prompt catalog.
+
+**P83 verified prior result:** PR #170 merged on `main` at
+`57eb5edd0639615f38152d7ba8e27b2c820c4516` with offline CI tests,
+ontology chronology, and independent desktop-peripheral safety check passing.
+The new pure `evaluate_native_household_autonomy` remains a candidate evaluator,
+not an EA API interception, installed `.ts4script`, UI click or live queue effect.
+Issue #171 remains OPEN for exact-game-build native adapter, multi-Sim queue
+observations, override tests and reversible rollback. Nothing in this session
+read local EA files, ran Sims, touched saves, changed peripherals or established
+the existing local game session is still current.
+
+**P03 / first safe sprint:** add `native_goal_continuity` to the machine
+Horizon cross-cutting capability registry; extend `scripts/check_horizon.py`
+with anti-promotion guard and negative regressions. Preserve original 12 stage
+IDs/edges and BI-002 `ACTIVE_GAME_UNPROVEN`. Consultation preceding mutation:
+`contracts/consultations/BI-CLOSERS-NATIVE-AUTONOMY-HORIZON-20261110.v1.json`.
+
+**P141 selection:** cross-stage native autonomy seam (SELECT) vs an extra
+blocking milestone (REJECT: would delay needs and violate dependencies) vs a
+new desktop clicker/duplicate decision engine (REJECT: player sovereignty).
+Not an unrequested broad autonomy rewrite.
+
+**P124 integration:** one policy owner
+`betterinstincts/autonomy_moderation.py`, one Horizon validator
+`scripts/check_horizon.py`, one active execution owner
+`plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json`; do not rewrite
+historical runtime attestations or duplicate closeout state.
+
+**P04 execution boundary:** current GitHub/CI runtime can test the tracked
+Horizon policy/validation and merge green work; P08 game-native adoption is
+local-game work under issue #171 and BI-002 remains the independent 5 vanilla
++ 5 modified + rollback + maintainer-review gate. A version-correct, read-only
+EA source inspection is the next native-autonomy task; gameplay effects remain
+`NOT_OBSERVED` until installed and tested.
