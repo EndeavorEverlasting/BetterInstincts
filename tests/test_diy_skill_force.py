@@ -598,7 +598,7 @@ class ServoEvilEscapeRegressionTests(unittest.TestCase):
             ("Evil", None),
             ("TRAIT_EVIL", None),
             (None, "Mastery reward: you have become Evil"),
-            ("trait sim_a", "Accept this trait?"),
+            ("trait evil", "Accept this trait?"),
         ):
             d = decide_reward_dialog(observed, dialog_text=text)
             self.assertEqual(d["decision"], "ESCAPE_CANCEL_DIALOG", msg=(observed, text))
@@ -968,7 +968,7 @@ class TargetSimSkillAlgorithmTests(unittest.TestCase):
         self.assertIn("TYPE_WITHOUT_CONSOLE_STRIP", denied["forbidden"])
         mismatch = assess_selection_identity(
             expected_display_name="Sim Gamma",
-            observed_panel_header_name="Sim Beta hasn't earned any perks yet.",
+            observed_panel_header_name="Unit Beta hasn't earned any perks yet.",
         )
         self.assertEqual(mismatch["state"], "SELECTION_MISMATCH")
         proven = assess_selection_identity(
