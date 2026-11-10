@@ -83,7 +83,8 @@
     "docs/LEDGER.md",
     "docs/HORIZON.md",
     "docs/ACQUISITION_ROUTING.md",
-    "tests/test_acquisition_integration.py"
+    "tests/test_acquisition_integration.py",
+    "docs/UPGRADE_PARTS_FORCE.md"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "CONSULTED_BEFORE_BEHAVIOR_MUTATION",
