@@ -8,12 +8,22 @@
       "GITHUB"
     ],
     "physical_game_available": false,
-    "local_host": "LOCAL_AGENT_RUNTIME"
+    "local_host": "LOCAL_AGENT_RUNTIME",
+    "current_planning_host": "CURRENT_CHAT_RUNTIME",
+    "current_provider": "GitHub",
+    "next_runtime_owner": "LOCAL_AGENT_RUNTIME",
+    "operator_action_owner": "OPERATOR_OR_PHYSICAL_RUNTIME",
+    "ci_proof_owner": "CI_OR_REMOTE_RUNNER",
+    "rule": "GitHub validation never impersonates Windows Sims process. Device host grants only after operator-approved disposable-game and user-presence gates."
   },
   "parallel_execution": {
     "status": "NOT_PROVEN",
     "reason": "No verified autonomous local game-host agent adapter available to this chat session. GitHub CI is independently executing validation only.",
-    "fallback": "One writer per GitHub branch; CI validates; local game host must execute gameplay."
+    "fallback": "One writer per GitHub branch; CI validates; local game host must execute gameplay.",
+    "observed_parallelism": false,
+    "active_game_graph_width": 1,
+    "graph_width_reason": "Sensor frames then click outcome share one screen, cursor and user-presence owner; BI-002 hunger is a peer on the same game host and must not run simultaneously with an automated world trial.",
+    "autonomy_gap": "No verified local child-worker dispatch adapter is accessible through this ChatGPT GitHub provider; local game-capable agent consumes this canonical dispatch once available. No unproven parallel launch is claimed."
   },
   "lanes": [
     {
@@ -99,8 +109,184 @@
       ],
       "first": "plans/active/BI-003.execution.v1.json",
       "proof": "patch-specific multi-need gameplay certifications"
+    },
+    {
+      "id": "WORLD_SENSOR",
+      "title": "P08 actual-world highlight-loss sensor proof",
+      "status": "WAITING_FOR_AUTHORIZED_LOCAL_GAME_HOST",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [
+        {
+          "provider_family": "local_sims_game",
+          "operation": "passive opt-in scene capture and sensor calibration",
+          "authority_state": "BLOCKED",
+          "mutation_authority": false
+        },
+        {
+          "provider_family": "GitHub",
+          "operation": "read canonical contracts/CI",
+          "authority_state": "VERIFIED",
+          "mutation_authority": false
+        }
+      ],
+      "required_capabilities": [
+        "single local Sims game session with exact patch",
+        "passive local capture adapter with independent cues",
+        "player-presence observer",
+        "read-only local Python test runner"
+      ],
+      "dependencies": [
+        "CI"
+      ],
+      "serial_with": [
+        "GAME_HUNGER",
+        "WORLD_OUTCOME"
+      ],
+      "owns": [
+        "local-only ignored dist/game-host world highlight sensor proof receipt",
+        "new isolated sensor adapter only after separate ontology consultation"
+      ],
+      "forbidden": [
+        "host_listener.py while PR159 is open",
+        "unapproved screen recording",
+        "user saves or game files",
+        "auto-run game",
+        "SendInput",
+        "Windows drivers, services or Bluetooth",
+        "implicit release certification"
+      ],
+      "first": "python -m scripts.horizon_status",
+      "preflight": [
+        "python -m scripts.check_horizon",
+        "python -m unittest tests.test_world_traversal_learning -v",
+        "python -m scripts.world_traversal_eval",
+        "check exact patch/version, save ownership, user consent and UI state independently before local capture"
+      ],
+      "mission": "Produce authentic highlight cues from two independent on-screen signals for an actual in-lot world object. Demonstrate loss of highlight identity with object visible and constant camera target, and refusal to click stale/occluded/off-lot objects. Avoid fixed XY and evaluate camera drift after each scene transition.",
+      "required_evidence": [
+        "exact game version and package/module",
+        "operator-approved disposable save identity (local-only)",
+        "two real independently sourced cues per frame",
+        "capture frame indices, camera_revision and target identity",
+        "positive/negative and occlusion examples",
+        "HIGHLIGHT_LOST clears host click_candidate without input",
+        "player takeover yields immediately",
+        "no forbidden peripheral or save mutation"
+      ],
+      "expected_artifact": "dist/game-host/<approved-run-id>/world-highlight-sensor-receipt.json (local private, ignored)",
+      "proof": "real game pixel detector calibration, cross-object sensor accuracy, rejection/failure examples, no game click claim",
+      "proof_ceiling": "P08_SENSOR_ONLY_NOT_REAL_CLICK_OUTCOME_OR_BI002_CERT"
+    },
+    {
+      "id": "WORLD_OUTCOME",
+      "title": "P08 observed world-object click outcome with explicit permit",
+      "status": "BLOCKED_ON_WORLD_SENSOR_AND_OPERATOR_PERMIT",
+      "host": "LOCAL_AGENT_RUNTIME",
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [
+        {
+          "provider_family": "local_sims_game",
+          "operation": "one independently admitted reversible world interaction",
+          "authority_state": "BLOCKED",
+          "mutation_authority": false
+        }
+      ],
+      "required_capabilities": [
+        "validated local sensor receipt",
+        "cooperative input queue ownership",
+        "approved disposable game state",
+        "fresh independent lot/camera/player control permits"
+      ],
+      "dependencies": [
+        "WORLD_SENSOR"
+      ],
+      "serial_with": [
+        "GAME_HUNGER",
+        "WORLD_SENSOR"
+      ],
+      "owns": [
+        "local-only ignored dist/game-host world-click outcome receipt"
+      ],
+      "forbidden": [
+        "auto-reclick after lost glow",
+        "reusing stale coordinates",
+        "model ranked strategy as input authority",
+        "unapproved save/Build/Buy mutation",
+        "peripheral or service changes"
+      ],
+      "first": "python -m scripts.horizon_status",
+      "mission": "After successful sensor-only P08 and explicit local consent, test one reversible, camera/lot/player-admitted interaction; inspect actual in-game action/queue result; classify target outcome using independent GAME_EVENT or OPERATOR_REVIEW without training/holdout leakage; test immediate player takeover and failed clicks.",
+      "required_evidence": [
+        "source-confirmed sensor receipt and exact patch",
+        "separate screen_admit plus lot_boundary plus player_presence",
+        "single action identity and post-action observed result",
+        "failure/miss/false-reacquisition classifications",
+        "zero player-interruption violations",
+        "local-only outcome and rollback evidence"
+      ],
+      "expected_artifact": "dist/game-host/<approved-run-id>/world-click-outcome-receipt.json (local private, ignored)",
+      "proof": "real observed action outcome and independent permission proof; scope-limited",
+      "proof_ceiling": "P08_WORLD_CLICK_OUTCOME_NOT_AUTONOMY_CERT_OR_BI002_CERT"
+    },
+    {
+      "id": "WORLD_INTEGRATE",
+      "title": "Reconcile accepted local sensor adapter with existing host stack",
+      "status": "BLOCKED_ON_REAL_SENSOR_PROOF_AND_INDEPENDENT_PR159_OWNER",
+      "host": "CURRENT_CHAT_RUNTIME",
+      "execution_environment": "CURRENT_CHAT_RUNTIME",
+      "provider_access": [
+        {
+          "provider_family": "GitHub",
+          "operation": "review and integrate separately approved host adapter PR",
+          "authority_state": "VERIFIED",
+          "mutation_authority": true
+        }
+      ],
+      "required_capabilities": [
+        "GitHub repository patch authoring",
+        "ontology consultation + regression tests",
+        "current PR ownership/freshness and CI"
+      ],
+      "dependencies": [
+        "WORLD_OUTCOME"
+      ],
+      "external_preconditions": [
+        "PR159 spatial-perception accepted/landed or separately resolved without overwriting active writer",
+        "local real sensor and player-safety receipt sanitized; no raw game frames published"
+      ],
+      "owns": [
+        "bounded opt-in adapter into betterinstincts/host_stack.py after separate consultation",
+        "focused tests/docs for sensor boundary"
+      ],
+      "forbidden": [
+        "rewrite PR159 branch",
+        "merge another writer's unreviewed work",
+        "publish raw private local captures",
+        "modify native game or peripheral settings"
+      ],
+      "first": "python -m scripts.check_horizon",
+      "mission": "Wire exact-build independently calibrated sensor cue adapter to host_stack world_target.highlight_frames only after owner reconciliation; retain existing click denial, player controls and backward compatibility.",
+      "expected_artifact": "separate validated integration PR and merged mainline SHA",
+      "proof": "repository test suite, scene/permission negative checks, reviewed PR and postmerge CI",
+      "proof_ceiling": "HOST_ADAPTER_MERGED_NOT_GAME_AUTONOMY_CERT"
     }
   ],
-  "safety": "GitHub repo evidence does not prove local game runtime; a blocked game lane stays active without a false completion receipt.",
-  "next_command": "python -m scripts.horizon_status"
+  "safety": "BI-002 remains ACTIVE_GAME_UNPROVEN. World P08 is independent supporting infrastructure; offline/CI/PR proof cannot certify gameplay. Local game and save permissions are not inherited. Never modify peripheral/BT/driver/input services.",
+  "next_command": "python -m scripts.horizon_status",
+  "next_supporting_priority": "BI-WORLD-TRAVERSAL-P08-SENSOR",
+  "priority_contract": "plans/horizon.v1.json#next_supporting_priority",
+  "p04_source": {
+    "prompt": "P04",
+    "name": "[PARALLEL] Repo-Aware Sprint + Harness Factoring Distributor",
+    "catalog": "EndeavorEverlasting/Moonwake:harness/exports/prompt-invocation-catalog.v1.json",
+    "registry": "EndeavorEverlasting/Moonwake:src/tokencorridor/interface/promptkit/registry/base/prompts.json",
+    "source_blob_sha": "848728632c1243ebba023fa0012292a2ad33cada",
+    "confirmed_p04_execution": "CANONICAL_ROUTING_ONLY_LOCAL_RUNNER_NOT_LAUNCHED"
+  },
+  "launch_order": [
+    "WORLD_SENSOR",
+    "WORLD_OUTCOME",
+    "WORLD_INTEGRATE"
+  ]
 }

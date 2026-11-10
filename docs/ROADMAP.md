@@ -39,6 +39,10 @@ goal. See `docs/GARDENING_SERVICE.md`; offline selection is not gameplay proof.
 
 If game access is missing, preserve the blocked gate; continue safe conventional repo development and validators without reassigning local physical game proof to ChatGPT provider tools.
 
+## P04 canonical next supporting priority (2026-11-10)
+
+The merged Closers world traversal evaluator (#169) is now registered as `BI-WORLD-TRAVERSAL-P08-SENSOR` in `plans/horizon.v1.json#next_supporting_priority` and the existing `plans/active/BI-HORIZON.dispatch.v1.json` (not a duplicate planner). Run `python -m scripts.horizon_status` for exact local command and safe owner; `python -m scripts.check_horizon` validates the joined lane order. P04 sequence is sensor-only independent real-game cues, separately approved actual click outcome, then host adapter integration after PR #159 owner reconciliation. **BI-002 remains ACTIVE and is not gated on this optional enabling lane; game screen and player control remain exclusive.** Proof status: tracked routing and CI only until a local game-capable agent actually produces accepted receipts.
+
 ## 2026-11-07 — Cross-Horizon learning without skipping needs
 
 Add an **opt-in, reviewed-demonstration learning spine** across the existing stages, not a new milestone that displaces BI-002. Train from explicitly assessed human judgments (good and bad) and context/previous-action sequences, preserve play-style diversity, abstain under low evidence, and never execute a recommendation directly. The implementation begins as a safe offline advisory complement to `host_listener`; live action remains under the independent player-presence and exact-scene/version gates. Review `docs/JUDGMENT_LEARNING.md` and the P04 successor handoff before local experiments. Product certification still requires hunger 5+5, reversible package, rollback and maintainer review.
