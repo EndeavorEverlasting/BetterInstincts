@@ -1190,7 +1190,13 @@ def _validate_scope_ledger(ledger: dict, scope: dict | None) -> None:
     old = ledger.get("scope_id")
     if old != scope["scope_id"] and (old is not None or ledger.get("members")):
         raise GateError("CROSS_HOUSEHOLD_LEDGER_REUSE_FORBIDDEN")
+    old_roster = ledger.get("roster_fingerprint")
+    if old_roster != scope["roster_fingerprint"] and (
+        old_roster is not None or ledger.get("members")
+    ):
+        raise GateError("HOUSEHOLD_ROSTER_CHANGED_STOP_RECONCILE")
     ledger["scope_id"] = scope["scope_id"]
+    ledger["roster_fingerprint"] = scope["roster_fingerprint"]
 
 
 def _add_common_execute_flags(ap: argparse.ArgumentParser) -> None:
