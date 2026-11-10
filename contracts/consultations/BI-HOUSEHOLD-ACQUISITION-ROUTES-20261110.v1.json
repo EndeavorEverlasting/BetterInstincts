@@ -64,7 +64,8 @@
     "Fuel vs insect biofuel separate sources/currencies",
     "Queue/harvest and generator fueling not falsely marked instant",
     "No online Connect, no direct unapproved OS input, no fixed household roster",
-    "Source plan is not pocket-count proof or BI-002 closure"
+    "Source plan is not pocket-count proof or BI-002 closure",
+    "Real cooperative queue proposed effect must be bound to exact observed portrait identity and fresh hitbox, without ordering a fixed roster."
   ],
   "rollback_path": "Revert scoped new source planner additions and acquisition contract fields; retain existing DIY-kit spawn/phone/computer behavior and save-safe provenance.",
   "unresolved_unknowns": [
@@ -84,7 +85,9 @@
     "docs/HORIZON.md",
     "docs/ACQUISITION_ROUTING.md",
     "tests/test_acquisition_integration.py",
-    "docs/UPGRADE_PARTS_FORCE.md"
+    "docs/UPGRADE_PARTS_FORCE.md",
+    "betterinstincts/computer_upgrade_parts.py",
+    "tests/test_computer_upgrade_parts.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "CONSULTED_BEFORE_BEHAVIOR_MUTATION",
