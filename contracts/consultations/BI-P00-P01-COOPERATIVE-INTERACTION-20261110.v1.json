@@ -57,7 +57,8 @@
     "Partial interruption retains intent and cannot blind-replay",
     "Inactive session cannot resume",
     "Idle resume revalidates target",
-    "No desktop lock stolen or peripheral setting changes"
+    "No desktop lock stolen or peripheral setting changes",
+    "Compact root governance remains within enforced budget while detailed original instructions remain mandatory via linked owner"
   ],
   "rollback_path": "Revert scoped contract and queue changes; no installed game, save or OS settings touched.",
   "unresolved_unknowns": [
@@ -81,7 +82,8 @@
     "docs/LEDGER.md",
     "docs/ROADMAP.md",
     "docs/PROMPT_INVOCATIONS.md",
-    "AGENTS.md"
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
