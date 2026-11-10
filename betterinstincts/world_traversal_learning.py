@@ -5,6 +5,7 @@ with their existing owners; neither classifier nor model can send input.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
@@ -69,9 +70,14 @@ def _iou(a: Sequence[int], b: Sequence[int]) -> float:
 def _frame(frame: Mapping[str, Any], target_id: str, cfg: Mapping) -> dict:
     if not isinstance(frame, Mapping) or frame.get("schema") != FRAME_SCHEMA:
         raise WorldTraversalLearningError("FRAME_SCHEMA_INVALID")
-    for field in ("capture_ref", "camera_revision", "target_id", "highlight_target_id"):
+    for field in ("capture_ref", "camera_revision", "target_id"):
         if not _token(frame.get(field)):
             raise WorldTraversalLearningError("FRAME_FIELD_INVALID:" + field)
+    # A real detector often reports no highlighted identity after the glow
+    # disappears. Treat that as evidence to classify, not malformed input.
+    highlighted_id = frame.get("highlight_target_id")
+    if highlighted_id is not None and not _token(highlighted_id):
+        raise WorldTraversalLearningError("FRAME_FIELD_INVALID:highlight_target_id")
     if type(frame.get("frame_index")) is not int or frame["frame_index"] < 0:
         raise WorldTraversalLearningError("FRAME_INDEX_INVALID")
     if frame.get("source") != "HOST_CAPTURE":
@@ -110,7 +116,7 @@ def _frame(frame: Mapping[str, Any], target_id: str, cfg: Mapping) -> dict:
     return {
         "capture_ref": frame["capture_ref"], "camera_revision": frame["camera_revision"],
         "frame_index": frame["frame_index"], "target_id": frame["target_id"],
-        "highlight_target_id": frame["highlight_target_id"],
+        "highlight_target_id": highlighted_id,
         "target_visible": frame["target_visible"], "occluded": frame["occluded"],
         "object_confidence": confidence, "bbox_client": box,
         "pointer_context": frame["pointer_context"], "state": state,
@@ -145,8 +151,13 @@ def assess_highlight_continuity(
         reason = "CAMERA_CHANGED_REACQUIRE"
     elif any(x["camera_revision"] != latest["camera_revision"] for x in parsed):
         reason = "CAMERA_CHANGED_REACQUIRE"
-    elif any(x["target_id"] != target_id or x["highlight_target_id"] != target_id for x in parsed):
+    elif any(x["target_id"] != target_id or (
+            x["highlight_target_id"] is not None
+            and x["highlight_target_id"] != target_id) for x in parsed):
         reason = "TARGET_IDENTITY_CHANGED"
+    elif any(x["state"] == "PRESENT" and x["highlight_target_id"] is None
+             for x in parsed[-2:]):
+        reason = "HIGHLIGHT_UNVERIFIED"
     elif any(x["pointer_context"] != "HOVERING_TARGET" for x in parsed[-2:]):
         reason = "HIGHLIGHT_NOT_EXPECTED"
     elif any(x["occluded"] for x in parsed[-2:]):
@@ -184,7 +195,7 @@ def assess_highlight_continuity(
 
 
 def empty_model() -> dict:
-    return {"schema": MODEL_SCHEMA, "contexts": {}}
+    return {"schema": MODEL_SCHEMA, "contexts": {}, "seen_attempts": []}
 
 
 def _context(sample: Mapping) -> str:
@@ -213,7 +224,32 @@ def _check_model(model: Mapping, cfg: Mapping) -> dict:
                 or min(yes, no) < 0 or yes + no > cfg["learning"]["max_count_per_context"]):
             raise WorldTraversalLearningError("MODEL_COUNT_INVALID")
         cells[key] = {"successes": yes, "failures": no}
-    return cells
+    # Model history and counts are inseparable. An old snapshot with counts
+    # but no evidence ledger cannot be upgraded by pretending it is unique.
+    raw_seen = model.get("seen_attempts")
+    if raw_seen is None:
+        if any(c["successes"] or c["failures"] for c in cells.values()):
+            raise WorldTraversalLearningError("LEGACY_MODEL_MISSING_REPLAY_PROOF")
+        raw_seen = []
+    limit = cfg["learning"]["max_seen_attempts"]
+    if (not isinstance(raw_seen, list) or len(raw_seen) > limit
+            or any(not isinstance(x, str)
+                   or re.fullmatch(r"[0-9a-f]{40}", x) is None
+                   for x in raw_seen)
+            or len(set(raw_seen)) != len(raw_seen)):
+        raise WorldTraversalLearningError("MODEL_REPLAY_HISTORY_INVALID")
+    if sum(c["successes"] + c["failures"] for c in cells.values()) != len(raw_seen):
+        raise WorldTraversalLearningError("MODEL_REPLAY_HISTORY_COUNT_MISMATCH")
+    return cells, set(raw_seen)
+
+
+def _attempt_fingerprint(sample: Mapping[str, Any]) -> str:
+    """Opaque, portable attempt identity; never persist raw captures or Sims."""
+    # A single pre-action frame cannot be credited repeatedly, even if a caller
+    # relabels the strategy, outcome, target or post-action frame on replay.
+    identity = [sample["game_version"], sample["before_capture_ref"]]
+    raw = json.dumps(identity, separators=(",", ":"), ensure_ascii=True)
+    return hashlib.sha256(raw.encode("ascii")).hexdigest()[:40]
 
 
 def _observed_outcome(sample: Mapping, cfg: Mapping) -> bool | None:
@@ -221,7 +257,7 @@ def _observed_outcome(sample: Mapping, cfg: Mapping) -> bool | None:
     if not isinstance(sample, Mapping):
         raise WorldTraversalLearningError("SAMPLE_INVALID")
     _context(sample)
-    if sample.get("player_interrupted") is True:
+    if sample.get("player_interrupted") is not False:
         return None
     if (sample.get("evidence_source") not in cfg["learning"]["allow_outcome_sources"]
             or not _token(sample.get("target_id"))
@@ -247,28 +283,38 @@ def learn_observed_attempts(
 ) -> dict:
     """Return new model; caller explicitly controls any persistence."""
     cfg = cfg or load_contract()
-    cells = _check_model(model, cfg)
+    cells, seen = _check_model(model, cfg)
     if not isinstance(attempts, (list, tuple)) or not 1 <= len(attempts) <= cfg["learning"]["max_examples_per_update"]:
         raise WorldTraversalLearningError("LEARNING_BATCH_BUDGET_INVALID")
     accepted = 0
     abstained = 0
+    replayed = 0
     for attempt in attempts:
         key = _context(attempt)
         label = _observed_outcome(attempt, cfg)
         if label is None:
             abstained += 1
             continue
+        fingerprint = _attempt_fingerprint(attempt)
+        if fingerprint in seen:
+            replayed += 1
+            abstained += 1
+            continue
+        if len(seen) >= cfg["learning"]["max_seen_attempts"]:
+            raise WorldTraversalLearningError("MODEL_REPLAY_HISTORY_BUDGET_EXCEEDED")
         if key not in cells and len(cells) == cfg["learning"]["max_contexts"]:
             raise WorldTraversalLearningError("MODEL_CONTEXT_BUDGET_EXCEEDED")
         cell = cells.setdefault(key, {"successes": 0, "failures": 0})
         if cell["successes"] + cell["failures"] >= cfg["learning"]["max_count_per_context"]:
             raise WorldTraversalLearningError("MODEL_SAMPLE_BUDGET_EXCEEDED")
         cell["successes" if label else "failures"] += 1
+        seen.add(fingerprint)
         accepted += 1
     return {
         "schema": "betterinstincts.world-traversal.training/v1",
-        "model": {"schema": MODEL_SCHEMA, "contexts": cells},
-        "accepted": accepted, "abstained": abstained,
+        "model": {"schema": MODEL_SCHEMA, "contexts": cells,
+                  "seen_attempts": sorted(seen)},
+        "accepted": accepted, "abstained": abstained, "replayed": replayed,
         "execute_allowed": False, "proof_ceiling": PROOF,
     }
 
@@ -277,7 +323,7 @@ def rank_strategies(model: Mapping, contexts: Sequence[Mapping], *,
                     cfg: Mapping[str, Any] | None = None) -> dict:
     """Conservative empirical-Bayes ranking; never proposes action authority."""
     cfg = cfg or load_contract()
-    cells = _check_model(model, cfg)
+    cells, _ = _check_model(model, cfg)
     if not isinstance(contexts, (list, tuple)) or not 1 <= len(contexts) <= 16:
         raise WorldTraversalLearningError("RANK_BUDGET_INVALID")
     ranked = []
@@ -309,11 +355,13 @@ def evaluate_holdout(model: Mapping, attempts: Sequence[Mapping], *,
                      cfg: Mapping[str, Any] | None = None) -> dict:
     """Held-out Brier score against 0.5 baseline; no training on holdout."""
     cfg = cfg or load_contract()
-    cells = _check_model(model, cfg)
+    cells, trained = _check_model(model, cfg)
     if not isinstance(attempts, (list, tuple)) or not 1 <= len(attempts) <= 256:
         raise WorldTraversalLearningError("HOLDOUT_BUDGET_INVALID")
     evaluated = 0
     abstained = 0
+    replayed = 0
+    holdout_seen: set[str] = set()
     error = 0.0
     for sample in attempts:
         key = _context(sample)
@@ -322,6 +370,12 @@ def evaluate_holdout(model: Mapping, attempts: Sequence[Mapping], *,
         if label is None or cell is None or cell["successes"] + cell["failures"] < cfg["learning"]["min_examples_to_rank"]:
             abstained += 1
             continue
+        fingerprint = _attempt_fingerprint(sample)
+        if fingerprint in trained or fingerprint in holdout_seen:
+            replayed += 1
+            abstained += 1
+            continue
+        holdout_seen.add(fingerprint)
         pred = (cell["successes"] + 1) / (cell["successes"] + cell["failures"] + 2)
         error += (pred - int(label)) ** 2
         evaluated += 1
@@ -330,6 +384,7 @@ def evaluate_holdout(model: Mapping, attempts: Sequence[Mapping], *,
         "state": "EVALUATED" if evaluated else "NOT_EVALUABLE",
         "total": len(attempts), "evaluated": evaluated, "abstained": abstained,
         "coverage": round(evaluated / len(attempts), 6),
+        "replayed": replayed,
         "brier": round(error / evaluated, 6) if evaluated else None,
         "baseline_brier": 0.25 if evaluated else None,
         "execute_allowed": False, "proof_ceiling": PROOF,
