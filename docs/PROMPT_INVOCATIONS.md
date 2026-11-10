@@ -1,4 +1,4 @@
-# Canonical TokenCorridor prompt invocations — 2026-10-20
+undefined# Canonical TokenCorridor prompt invocations — 2026-10-20
 
 Do not treat this as a local Prompt Kit or substitute repository. Source of truth: private **EndeavorEverlasting/TokenCorridor**, file `harness/exports/prompt-invocation-catalog.v1.json`, fetched at blob SHA `8c281379ba7ccc871947391233b1db72f4a108ef`. TokenCorridor canonical invocation resolver: `scripts/prompt_invocation_resolver.py`; IDs were selected using exact catalog matches, not inferred from titles.
 
