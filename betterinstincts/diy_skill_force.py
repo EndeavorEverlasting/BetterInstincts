@@ -35,6 +35,21 @@ DEFAULT_REQUIRED_RESIDUALS = ("cooking", "fitness", "natural_living")
 COMPLETION_SCHEMA = "betterinstincts.diy-skill-force.completion/v1"
 DEFAULT_COMPLETION_LEDGER = ROOT / "dist" / "game-host" / "diy-skill-force-completion.json"
 COMPLETE_STATUSES = frozenset({"DISPATCHED", "PANEL_OBSERVED_MAX"})
+# PANEL_FALSIFIED is recorded evidence, never a skip/complete status.
+NONCOMPLETE_STATUSES = frozenset({"PANEL_FALSIFIED", "UNPROVEN"})
+_MAXIMIZE_CLAIM_RE = re.compile(
+    r"\b(maximized|maximi[sz]ed|maxed|fully\s+leveled|skills?-?\s*panel\s+pass|"
+    r"level\s*10\s+pass|handiness\s+maximized)\b",
+    re.IGNORECASE,
+)
+_DISPATCHED_ONLY_STATES = frozenset(
+    {
+        "DIY_SKILL_FORCE_DISPATCHED",
+        "HOUSEHOLD_SKILL_FORCE_DISPATCHED",
+        "HOST_CHEAT_TYPED",
+        "DISPATCHED",
+    }
+)
 
 
 class DiySkillForceError(ValueError):
@@ -65,7 +80,9 @@ def empty_completion_ledger() -> dict:
         "members": {},
         "note": (
             "DISPATCHED = host typed stats.set_skill_level for resume/skip. "
-            "Not Skills-panel PASS. PANEL_OBSERVED_MAX may be set after LOCAL_OBSERVED."
+            "Not Skills-panel PASS. Never report DISPATCHED as maximized. "
+            "PANEL_OBSERVED_MAX only after Skills-panel LOCAL_OBSERVED. "
+            "PANEL_FALSIFIED clears skip after a contradicting panel read."
         ),
     }
 
@@ -172,6 +189,90 @@ def record_skill_dispatched(
         "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     return skills[sid]
+
+
+def record_skill_panel_falsified(
+    ledger: dict,
+    *,
+    member_key: str,
+    skill_id: str,
+    observed_level: int | None = None,
+    evidence: str = "SKILLS_PANEL_LOCAL_OBSERVED_CONTRADICTS_DISPATCHED",
+    note: str | None = None,
+) -> dict:
+    """Clear a DISPATCHED skip after Skills-panel proof contradicts maximize claims.
+
+    PANEL_FALSIFIED is never treated as complete by ``skill_is_complete``.
+    """
+    members = ledger.setdefault("members", {})
+    if not isinstance(members, dict):
+        raise DiySkillForceError("COMPLETION_LEDGER_INVALID")
+    row = members.setdefault(str(member_key), {"skills": {}})
+    if not isinstance(row, dict):
+        raise DiySkillForceError("COMPLETION_LEDGER_INVALID")
+    skills = row.setdefault("skills", {})
+    if not isinstance(skills, dict):
+        raise DiySkillForceError("COMPLETION_LEDGER_INVALID")
+    sid = str(skill_id).strip().lower()
+    prior = skills.get(sid) if isinstance(skills.get(sid), Mapping) else {}
+    entry = {
+        "skill_id": sid,
+        "skill_stat": str(prior.get("skill_stat") or ""),
+        "level": int(observed_level) if observed_level is not None else prior.get("level"),
+        "status": "PANEL_FALSIFIED",
+        "evidence": str(evidence),
+        "prior_status": str(prior.get("status") or ""),
+        "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    if note:
+        entry["note"] = str(note)
+    skills[sid] = entry
+    return entry
+
+
+def assess_skill_force_claim(
+    *,
+    claim: str,
+    live_state: str | None = None,
+    panel_observed_max: bool = False,
+    pass_claim: str | None = None,
+) -> dict:
+    """Fail closed: DISPATCHED / host-typed receipts are never 'maximized'.
+
+    P83 2026-11-09: operator Skills panel showed Cooking 10 and Handiness absent
+    after a household Handiness DISPATCHED receipt was narrated as maximized.
+    """
+    text = str(claim or "").strip()
+    state = str(live_state or "").strip()
+    wants_maximize = bool(_MAXIMIZE_CLAIM_RE.search(text))
+    dispatched_only = state in _DISPATCHED_ONLY_STATES or state.endswith("_DISPATCHED")
+    forbidden_pass = str(pass_claim or "").upper().startswith("FORBIDDEN")
+    if wants_maximize and panel_observed_max and not forbidden_pass:
+        return {
+            "state": "CLAIM_ALLOWED_PANEL_OBSERVED_MAX",
+            "allowed": True,
+            "proof_ceiling": "SKILLS_PANEL_LOCAL_OBSERVED_MAX",
+            "live_state": state or None,
+        }
+    if wants_maximize:
+        return {
+            "state": "CLAIM_REJECTED_DISPATCHED_IS_NOT_MAXIMIZED",
+            "allowed": False,
+            "proof_ceiling": "HOST_SENDINPUT_DIY_SKILL_CHEAT_DISPATCH_NOT_BI005_SKILL_GROWTH_CERT",
+            "live_state": state or None,
+            "pass_claim": "FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED",
+            "correction": (
+                "Say DISPATCHED / host typed only. Do not say maximized, maxed, "
+                "or Skills-panel PASS until LOCAL_OBSERVED level 10."
+            ),
+            "dispatched_only_state": dispatched_only,
+        }
+    return {
+        "state": "CLAIM_ALLOWED_NON_MAXIMIZE_LANGUAGE",
+        "allowed": True,
+        "proof_ceiling": "LANGUAGE_DOES_NOT_CLAIM_PANEL_MAX",
+        "live_state": state or None,
+    }
 
 
 def member_needs_skill_work(
