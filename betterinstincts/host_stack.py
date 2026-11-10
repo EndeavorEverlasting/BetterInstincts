@@ -814,6 +814,38 @@ def evaluate_turn(
             )
         except (CameraTraverseError, TypeError) as exc:
             raise HostStackError(str(exc)) from exc
+        # New, optional evidence-only continuity gate. Unlike fixed UI hitboxes,
+        # world-object highlights are camera- and capture-revision-bound. An
+        # absent/changed highlight must revoke an otherwise valid pixel target.
+        # This never grants click authority; legacy callers without frames
+        # retain their existing independent camera/lot/player protections.
+        if "highlight_frames" in world_target:
+            from betterinstincts.world_traversal_learning import (
+                WorldTraversalLearningError, assess_highlight_continuity,
+            )
+            target_observation = world_target.get("observation")
+            expected_revision = (
+                target_observation.get("camera_revision")
+                if isinstance(target_observation, Mapping) else None
+            )
+            try:
+                highlight = assess_highlight_continuity(
+                    target_id=world_target.get("target_id"),
+                    frames=world_target["highlight_frames"],
+                    capture_ref=capture_ref, camera_revision=expected_revision,
+                )
+            except (WorldTraversalLearningError, TypeError) as exc:
+                raise HostStackError("WORLD_HIGHLIGHT_EVIDENCE_INVALID:" + str(exc)) from exc
+            target_framing["highlight_tracking"] = highlight
+            if not highlight["highlight_locked"]:
+                target_framing["click_ready"] = False
+                target_framing["click_candidate"] = None
+                # A stronger camera framing block remains stronger; when the
+                # object was already framed, revoke its admission candidate.
+                if target_framing["gate"] == "WORLD_TARGET_AWAIT_HOST_ADMISSION":
+                    target_framing["state"] = "WORLD_TARGET_NOT_CLICK_READY"
+                    target_framing["gate"] = "WORLD_HIGHLIGHT_REACQUIRE_REQUIRED"
+                    target_framing["reason"] = highlight["state"]
         # Opportunistic floor map while investigating a needs/world object —
         # preferred continuous path vs Build T sampling sprints.
         if lot_floor_profile_id and lot_floor_key and world_target.get("target_id"):
