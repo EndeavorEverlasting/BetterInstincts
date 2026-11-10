@@ -119,7 +119,7 @@ class HouseholdScopeTests(unittest.TestCase):
             path = household_ledger_path(
                 profile_id="default", scope_id=first["scope_id"], settings_file=settings,
             )
-            self.assertEqual(path.parent.parent.name, "default")
+            self.assertEqual(path.parent.name, "default")
             self.assertFalse(path.exists())
             self.assertFalse(settings.exists())
             ledger = empty_completion_ledger()
