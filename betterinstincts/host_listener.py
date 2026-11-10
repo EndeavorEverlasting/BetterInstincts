@@ -42,6 +42,7 @@ from betterinstincts.control_handoff import (
     decide,
 )
 from betterinstincts.scenes import load_catalog, stamp_host_capture_branch
+from betterinstincts.spatial_perception import SpatialPerceptionError, assess_frame
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "host-listener.v1.json"
@@ -645,6 +646,19 @@ def tick(
         raise HostListenerError("SESSION_TICK_BUDGET_EXCEEDED")
 
     obs = _load_observation(observation)
+    # Opt-in, capture-matched spatial observations are read-only even while
+    # the player owns the screen. No browser/IDE/screenshot engine is invoked.
+    spatial_report = None
+    if "spatial_frame" in observation:
+        spatial_frame = observation["spatial_frame"]
+        if (not isinstance(spatial_frame, Mapping)
+                or spatial_frame.get("capture_ref") != obs["capture_ref"]
+                or spatial_frame.get("game_version") != obs["game_version"]):
+            raise HostListenerError("SPATIAL_CAPTURE_OR_BUILD_MISMATCH")
+        try:
+            spatial_report = assess_frame(spatial_frame)
+        except SpatialPerceptionError as exc:
+            raise HostListenerError("SPATIAL_FRAME_INVALID:" + str(exc)) from exc
     # Optional supplied chance card. This is a READ-ONLY sidecar: even when the
     # listener yields to the player the UI may explain an observed popup.
     # No network request, worker launch, button press or session auto-start.
@@ -765,6 +779,8 @@ def tick(
         tick_path = path / f"tick-{ticks:04d}.json"
         if chance_event_advisory is not None:
             receipt["chance_event"] = chance_event_advisory
+        if spatial_report is not None:
+            receipt["spatial_perception"] = spatial_report
         _write_json(tick_path, receipt)
         receipt["receipt"] = str(tick_path.relative_to(ROOT))
         return receipt
@@ -881,6 +897,8 @@ def tick(
         tick_path = path / f"tick-{ticks:04d}.json"
         if chance_event_advisory is not None:
             receipt["chance_event"] = chance_event_advisory
+        if spatial_report is not None:
+            receipt["spatial_perception"] = spatial_report
         _write_json(tick_path, receipt)
         receipt["receipt"] = str(tick_path.relative_to(ROOT))
         return receipt
@@ -1068,6 +1086,8 @@ def tick(
     tick_path = path / f"tick-{ticks + 1:04d}.json"
     if chance_event_advisory is not None:
         receipt["chance_event"] = chance_event_advisory
+    if spatial_report is not None:
+        receipt["spatial_perception"] = spatial_report
     _write_json(tick_path, receipt)
     receipt["receipt"] = str(tick_path.relative_to(ROOT))
     return receipt
