@@ -1,3 +1,9 @@
+## 2026-11-10 — Lot-focus OFF_LOT classify proved (needs game_version)
+
+**CHANGED:** `assess_lot_focus` correctly returns `OFF_LOT_STREET` + restore `CENTER_ACTIVE_SIM` when HOST_CAPTURE includes catalog `game_version` and canal/neighbor/street tokens; without `game_version` it stays `UNKNOWN`/`HOST_CAPTURE_AND_BUILD_REQUIRED`. Receipt `dist/game-host/horizon-exec-20261110/bi002/lot-focus-recognition-receipt.json`. Live Enter restore after canal fishing view remains partial (neighborhood-high still common).
+
+**NEXT:** Host_listener must stamp `game_version` on captures before treating lot_focus as authoritative; keep Enter (not Shift+Enter) as default restore.
+
 ## 2026-11-10 — Living-subject blocker + notebook close X
 
 **CHANGED:** BI-002 living hunger subject **BLOCKED** on current LabLab roster (Charlee/Olga playable ghosts; Bernice Thermidor = Servo). Receipt `dist/game-host/horizon-exec-20261110/bi002/living-subject-blocker.json`. Fridge pie **HIT once** at zoomed `[500,560]` then camera/story drift made re-HIT unstable; snack still not queued. `live.notebook_close_x [1338,276]` promoted (v9); Space without Notebook dismiss does not cycle household. OEM_COMMA/PERIOD aliases added to `scripts/win32_input.py` for camera rotate. Horizon plan `live_truth` updated. Never delete `My Saved Game 6` / `Slot_00000007`.
