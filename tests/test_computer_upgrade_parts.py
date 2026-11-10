@@ -80,7 +80,8 @@ class ComputerMenuTests(unittest.TestCase):
     def test_cycle_or_hop_limit_fails_closed(self):
         self.assertEqual(ready(page_signature_seen_before=True)["state"], "WAIT")
         self.assertEqual(ready(menu_pages_seen=16)["state"], "WAIT")
-        self.assertEqual(ready(menu_pages_seen=-1)["state"], "READY_TO_QUEUE")
+        self.assertEqual(ready(menu_pages_seen=-1)["state"], "WAIT")
+        self.assertEqual(ready(page_signature_seen_before=None)["state"], "WAIT")
 
     def test_part_picker_never_guesses_a_row(self):
         self.assertEqual(
