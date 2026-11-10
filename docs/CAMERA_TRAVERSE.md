@@ -221,14 +221,31 @@ When the camera shows **scenery off the active household lot** (street, canal, n
 | State | Meaning |
 | --- | --- |
 | **ON_LOT** | Camera/scenery on the active household lot |
-| **OFF_LOT_STREET** | Street/neighborhood view; often `TRAVEL_AFAR` without a verified long-distance travel goal |
+| **OFF_LOT_STREET** | Street/neighborhood/rooftop view; often `TRAVEL_AFAR` without a verified long-distance travel goal |
 | **OFF_LOT_WATER** | Canal/waterfront off-lot scenery |
+| **TRAVELING_WITH_BANNER** | Manage Worlds `TRAVELING WITH` party banner |
+| **MANAGE_WORLDS_MAP** | Manage Worlds / travel map without lot framing |
+| **VIEWPORT_BLACK_OR_WHITE** | PrintWindow black/white — distinct from scenery off-lot |
 | **UNKNOWN** | Insufficient host/operator lot-focus cues — reobserve |
 
-**Cues:** missing Live HUD, `zoom_mode_observed` = `TRAVEL_AFAR` without travel goal, `camera_lot_kind`, `camera_on_active_household_lot`, `lot_focus_cues` from host/operator.
+**`scenery_focus` (operator hardening):** `ON_LOT_INTERIOR_OR_YARD` | `STREET_OR_ROOFTOP_OFF_FOCUS` | `MANAGE_WORLDS_MAP` | `TRAVELING_WITH_BANNER` | `VIEWPORT_BLACK_OR_WHITE` | `AMBIGUOUS`. Helper: `recovery_for_scenery_focus`.
+
+**Cues:** missing Live HUD, `zoom_mode_observed` = `TRAVEL_AFAR` without travel goal, `camera_lot_kind`, `camera_on_active_household_lot`, `lot_focus_cues`, `traveling_with_banner`, Manage Worlds mode, rooftop/lot-exterior tokens, `viewport_classification`.
 
 **Hardening (offline):** assessments also carry `classification` = `ON_LOT` | `OFF_LOT` | `AMBIGUOUS` (UNKNOWN). Neighboring-house tokens, canal/water, neighborhood zoom labels/altitudes and `lot_fraction_of_frame` < 0.45 are decisive OFF_LOT. Sidewalk/streetlamp/road is lot-edge furniture: two families dominate to OFF_LOT; a lone cue needs Live HUD or a household interior cue, otherwise AMBIGUOUS. Household fixtures (`SINK_WATER`, `WATER_COOLER`) are never canal scenery. An on-lot claim with neither Live HUD nor a household cue is AMBIGUOUS. Off-lot scenery outranks a stale `camera_follow_sim_id`, so the restore plan stays Enter instead of `NO_EFFECT`.
 
-**Restore:** `CENTER_ACTIVE_SIM` via **Enter** only in the default plan. **Shift+Enter** (lot center) is forbidden as the default Sim restore. `host_stack.evaluate_turn` emits `lot_focus` and gates `LOT_OFF_FOCUS_RESTORE_REQUIRED` ahead of discretionary camera work.
+**Recovery mapping:**
 
-Proof ceiling: `OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED`. Consultation: `contracts/consultations/BI-LOT-OFF-FOCUS-20261110.v1.json`.
+| `scenery_focus` | Restore |
+| --- | --- |
+| **ON_LOT_INTERIOR_OR_YARD** | None |
+| **STREET_OR_ROOFTOP_OFF_FOCUS** | **Enter** first; **Shift+Enter** only when Enter leaves street/canal/rooftop |
+| **MANAGE_WORLDS_MAP** | Exit/cancel unintended map travel — do not Enter-roam |
+| **TRAVELING_WITH_BANNER** | Cancel X `host.manage_worlds_travel_party_cancel_x` client `[1055,33]` / canvas `~(800,25)` |
+| **VIEWPORT_BLACK_OR_WHITE** | `viewport.py` recovery ladder (not Enter-as-scenery) |
+
+**Forbidden always:** crown, footprint, Sell, delete saves, click void, unbounded street pan. Esc while traveling zooms neighborhood and does **not** cancel travel.
+
+`host_stack.evaluate_turn` emits `lot_focus` + `recovery` and gates `LOT_OFF_FOCUS_RESTORE_REQUIRED` / `TRAVEL_PARTY_CANCEL_REQUIRED` / `MANAGE_WORLDS_FOCUS_RESTORE_REQUIRED` / `VIEWPORT_RECOVERY_REQUIRED` ahead of discretionary camera work.
+
+Proof ceiling: `OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED` (+ `OFFLINE_SCENERY_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED`). Consultations: `BI-LOT-OFF-FOCUS-20261110`, `BI-SCENERY-FOCUS-20261110`.

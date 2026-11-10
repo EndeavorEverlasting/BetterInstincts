@@ -1,14 +1,21 @@
 """Recognize when the camera/scenery is off the active household lot.
 
 Policy only — no input, saves, or street roam. Restore plans use Enter
-(CENTER_ACTIVE_SIM), never Shift+Enter as the default Sim restore.
+(CENTER_ACTIVE_SIM), with Shift+Enter (CENTER_CURRENT_LOT) only as an
+escalation when Enter leaves street/rooftop. Travel-banner cancel uses the
+fixed-ui seed, never crown/footprint. Viewport black/white is distinct and
+owned by betterinstincts/viewport.py.
 
-Classification (``classification`` field):
+Classification (``classification`` field, legacy):
   ON_LOT     household lot attested by >=2 agreeing cues (flag/kind + Live HUD
              or household interior cue) and no decisive off-lot scenery.
   OFF_LOT    neighboring houses, canal/water, neighborhood/Travel Afar zoom,
              small lot fraction, or dominant sidewalk/streetlamp scenery.
   AMBIGUOUS  insufficient or uncorroborated cues; reobserve, no restore.
+
+Scenery focus (``scenery_focus`` field, operator 2026-11-10):
+  ON_LOT_INTERIOR_OR_YARD | STREET_OR_ROOFTOP_OFF_FOCUS | MANAGE_WORLDS_MAP |
+  TRAVELING_WITH_BANNER | VIEWPORT_BLACK_OR_WHITE | AMBIGUOUS
 """
 from __future__ import annotations
 
@@ -20,17 +27,65 @@ from betterinstincts.scenes import load_catalog
 from betterinstincts.sim_camera import CENTER_SIM, plan_sim_camera
 
 LOT_FOCUS_PROOF = "OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
+SCENERY_FOCUS_PROOF = "OFFLINE_SCENERY_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
+
+SCENERY_ON_LOT = "ON_LOT_INTERIOR_OR_YARD"
+SCENERY_STREET_ROOFTOP = "STREET_OR_ROOFTOP_OFF_FOCUS"
+SCENERY_MANAGE_WORLDS = "MANAGE_WORLDS_MAP"
+SCENERY_TRAVELING = "TRAVELING_WITH_BANNER"
+SCENERY_VIEWPORT = "VIEWPORT_BLACK_OR_WHITE"
+SCENERY_AMBIGUOUS = "AMBIGUOUS"
+
+SCENERY_FOCUS_CLASSES = frozenset(
+    {
+        SCENERY_ON_LOT,
+        SCENERY_STREET_ROOFTOP,
+        SCENERY_MANAGE_WORLDS,
+        SCENERY_TRAVELING,
+        SCENERY_VIEWPORT,
+        SCENERY_AMBIGUOUS,
+    }
+)
+
+# Live-measured travel-party cancel (fixed-ui-click-map v14).
+_TRAVEL_CANCEL_CLIENT_XY = (1055, 33)
+_TRAVEL_CANCEL_CANVAS_XY = (800, 25)
+_TRAVEL_CANCEL_SEED = "host.manage_worlds_travel_party_cancel_x"
 
 _ON_LOT_KINDS = frozenset(
-    {"home", "active_household", "active_household_lot", "household_lot"}
+    {"home", "active_household", "active_household_lot", "household_lot", "yard", "interior"}
 )
 _STREET_KINDS = frozenset(
-    {"street", "neighborhood", "community", "off_lot", "world_map_scenery"}
+    {
+        "street",
+        "neighborhood",
+        "community",
+        "off_lot",
+        "world_map_scenery",
+        "rooftop",
+        "roof",
+        "lot_exterior",
+    }
 )
 _WATER_KINDS = frozenset({"water", "canal", "river", "pond", "ocean", "dock"})
+_MANAGE_WORLDS_KINDS = frozenset(
+    {"manage_worlds", "world_map", "travel_map", "neighborhood_map", "map_view"}
+)
 
 _WATER_TOKENS = frozenset(
     {"water", "canal", "river", "pond", "dock", "ocean", "lagoon", "marina"}
+)
+_ROOFTOP_TOKENS = frozenset(
+    {
+        "rooftop",
+        "roof",
+        "rooftops",
+        "overlooking",
+        "lot_exterior",
+        "street_rooftop",
+        "exterior_overlook",
+        "roof_edge",
+    }
 )
 # Decisive off-lot scenery: neighboring houses, neighborhood/world zoom classes.
 _STRONG_STREET_TOKENS = frozenset(
@@ -46,6 +101,42 @@ _STRONG_STREET_TOKENS = frozenset(
         "travel_afar",
         "street_scenery",
         "neighborhood_view",
+    }
+) | _ROOFTOP_TOKENS
+_TRAVELING_TOKENS = frozenset(
+    {
+        "traveling_with",
+        "traveling_with_banner",
+        "travel_party_banner",
+        "travel_with",
+        "party_traveling",
+        "sulani_travel_banner",
+        "willow_creek_travel_banner",
+    }
+)
+_MANAGE_WORLDS_TOKENS = frozenset(
+    {
+        "manage_worlds",
+        "manage_world",
+        "world_select",
+        "travel_map",
+        "neighborhood_map",
+        "map_globe",
+        "world_picker",
+    }
+)
+_VIEWPORT_BLACK_WHITE = frozenset(
+    {
+        "FULL_CLIENT_BLACK",
+        "VIEWPORT_NEAR_BLACK",
+        "VIEWPORT_BLACK_HUD_ALIVE",
+        "VOID_LOT_PLATFORM_WIREFRAME",
+        "BUILD_BUY_CATALOG_RECOVERY",
+        "FULL_CLIENT_WHITE",
+        "VIEWPORT_WHITE",
+        "PRINTWINDOW_WHITE",
+        "BLACK",
+        "WHITE",
     }
 )
 # Lot-edge furniture (sidewalk, streetlamp, road) also appears on a healthy
@@ -89,6 +180,8 @@ _HOUSEHOLD_PARTS = frozenset(
         "sofa",
         "counter",
         "room",
+        "yard",
+        "garden",
     }
 )
 _NEIGHBORHOOD_ALTITUDES = frozenset(
@@ -101,10 +194,22 @@ _NEIGHBORHOOD_ALTITUDES = frozenset(
         "STREET_TOPDOWN",
         "WORLD_MAP",
         "WORLD",
+        "ROOFTOP",
+        "STREET_ROOFTOP",
     }
 )
 _MAX_TOKENS = 64
 _MAX_TOKEN_LEN = 80
+
+_COMMON_FORBIDDEN = [
+    "UNBOUNDED_CAMERA_PAN",
+    "STREET_ROAM",
+    "CLICK_VOID",
+    "SELL",
+    "DELETE_SAVE",
+    "CROWN",
+    "FOOTPRINT",
+]
 
 
 def _parts(token: str) -> set[str]:
@@ -191,6 +296,135 @@ def _verified_travel_goal(travel_goal: Mapping[str, Any] | None) -> bool:
     )
 
 
+def _collect_tokens(observation: Mapping[str, Any]) -> tuple[list[str], set[str]]:
+    host_tokens: list[str] = []
+    cues = observation.get("lot_focus_cues")
+    if isinstance(cues, list):
+        for item in cues[:_MAX_TOKENS]:
+            if isinstance(item, Mapping) and isinstance(item.get("token"), str):
+                host_tokens.append(item["token"][:_MAX_TOKEN_LEN])
+    landmarks = observation.get("landmark_tokens") or observation.get("scenery_tokens")
+    scenery_tokens = set(_bounded_tokens(landmarks))
+    host_token_set = {t.lower() for t in host_tokens}
+    return host_tokens, scenery_tokens | host_token_set
+
+
+def _mode_upper(observation: Mapping[str, Any]) -> str:
+    for key in ("mode", "ui_mode", "scene_mode", "host_mode"):
+        raw = observation.get(key)
+        if isinstance(raw, str) and raw.strip():
+            return raw.upper().replace("-", "_").replace(" ", "_")
+    return ""
+
+
+def _viewport_anomaly(observation: Mapping[str, Any]) -> bool:
+    for key in ("viewport_classification", "viewport_state", "capture_quality"):
+        raw = observation.get(key)
+        if not isinstance(raw, str):
+            continue
+        label = raw.upper().replace("-", "_").replace(" ", "_")
+        if label in _VIEWPORT_BLACK_WHITE:
+            return True
+        if "BLACK" in label or label.endswith("_WHITE") or label == "WHITE":
+            return True
+    if observation.get("viewport_black") is True or observation.get("viewport_white") is True:
+        return True
+    return False
+
+
+def _traveling_with_banner(observation: Mapping[str, Any], tokens: set[str]) -> bool:
+    if observation.get("traveling_with_banner") is True:
+        return True
+    if observation.get("travel_party_banner") is True:
+        return True
+    banner = observation.get("banner_text")
+    if isinstance(banner, str) and "traveling with" in banner.lower():
+        return True
+    return _scenery_hits(tokens, _TRAVELING_TOKENS)
+
+
+def _manage_worlds_map(observation: Mapping[str, Any], tokens: set[str]) -> bool:
+    mode = _mode_upper(observation)
+    if mode in {"MANAGE_WORLDS", "MAP", "WORLD_MAP", "TRAVEL_MAP"}:
+        return True
+    lot_kind = str(observation.get("camera_lot_kind") or "").lower().strip()
+    if lot_kind in _MANAGE_WORLDS_KINDS:
+        return True
+    if observation.get("manage_worlds") is True or observation.get("on_manage_worlds_map") is True:
+        return True
+    return _scenery_hits(tokens, _MANAGE_WORLDS_TOKENS)
+
+
+def recovery_for_scenery_focus(scenery_focus: str) -> dict[str, Any]:
+    """Machine recovery mapping for a scenery_focus class (never grants input)."""
+    if scenery_focus == SCENERY_ON_LOT:
+        return {
+            "scenery_focus": scenery_focus,
+            "action": None,
+            "forbidden": list(_COMMON_FORBIDDEN),
+        }
+    if scenery_focus == SCENERY_STREET_ROOFTOP:
+        return {
+            "scenery_focus": scenery_focus,
+            "primary": {
+                "command": "CENTER_ACTIVE_SIM",
+                "hotkey_id": "CENTER_ACTIVE_SIM",
+                "chord": ["ENTER"],
+            },
+            "escalation": {
+                "command": "CENTER_CURRENT_LOT",
+                "hotkey_id": "CENTER_CURRENT_LOT",
+                "chord": ["SHIFT", "ENTER"],
+                "when": "ENTER_LEFT_STREET_CANAL_OR_ROOFTOP",
+            },
+            "forbidden": list(_COMMON_FORBIDDEN)
+            + ["SHIFT_ENTER_AS_DEFAULT_SIM_RESTORE", "TERRAIN_ARM_WHILE_OFF_LOT"],
+            "note": "Enter first; Shift+Enter only when Enter recenters the Sim onto street/canal/rooftop.",
+        }
+    if scenery_focus == SCENERY_MANAGE_WORLDS:
+        return {
+            "scenery_focus": scenery_focus,
+            "primary": {
+                "action": "EXIT_OR_CANCEL_UNINTENDED_MANAGE_WORLDS",
+                "note": "Do not Enter-roam the travel map; cancel unintended travel or return to Live lot.",
+            },
+            "forbidden": list(_COMMON_FORBIDDEN)
+            + ["ENTER_AS_MAP_ROAM", "ESC_AS_TRAVEL_CANCEL"],
+        }
+    if scenery_focus == SCENERY_TRAVELING:
+        return {
+            "scenery_focus": scenery_focus,
+            "primary": {
+                "action": "CANCEL_TRAVELING_WITH_PARTY",
+                "seed": _TRAVEL_CANCEL_SEED,
+                "client_xy": list(_TRAVEL_CANCEL_CLIENT_XY),
+                "canvas_1456x840_xy": list(_TRAVEL_CANCEL_CANVAS_XY),
+                "prefer": "TOP_BANNER_X",
+            },
+            "forbidden": list(_COMMON_FORBIDDEN)
+            + ["ESC_AS_TRAVEL_CANCEL", "CLICK_BANNER_TEXT"],
+            "note": "Cancel X is first circular icon after household name; never footprint or crown.",
+        }
+    if scenery_focus == SCENERY_VIEWPORT:
+        return {
+            "scenery_focus": scenery_focus,
+            "primary": {
+                "owner": "betterinstincts/viewport.py",
+                "contract": "contracts/viewport-black.v1.json",
+                "action": "VIEWPORT_RECOVERY_LADDER",
+            },
+            "forbidden": list(_COMMON_FORBIDDEN)
+            + ["TREAT_AS_STREET_ROOFTOP", "ENTER_AS_SCENERY_RESTORE"],
+            "note": "Black/white PrintWindow is distinct from street/rooftop off-focus.",
+        }
+    return {
+        "scenery_focus": SCENERY_AMBIGUOUS,
+        "action": None,
+        "next": "REOBSERVE_WITH_SECOND_INDEPENDENT_CUE",
+        "forbidden": list(_COMMON_FORBIDDEN),
+    }
+
+
 def should_assess_lot_focus(
     *,
     observation: Mapping[str, Any] | None = None,
@@ -217,6 +451,15 @@ def should_assess_lot_focus(
         return True
     if observation.get("camera_altitude") or observation.get("lot_fraction_of_frame") is not None:
         return True
+    if observation.get("traveling_with_banner") is True or observation.get("travel_party_banner") is True:
+        return True
+    if observation.get("manage_worlds") is True or observation.get("on_manage_worlds_map") is True:
+        return True
+    if _viewport_anomaly(observation):
+        return True
+    mode = _mode_upper(observation)
+    if mode in {"MANAGE_WORLDS", "MAP", "WORLD_MAP", "TRAVEL_MAP"}:
+        return True
     return observation.get("source") == "HOST_CAPTURE"
 
 
@@ -226,24 +469,31 @@ def assess_lot_focus(
     observation: Mapping[str, Any] | None = None,
     travel_goal: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Classify lot focus from a trusted host observation. Never grants input."""
+    """Classify lot/scenery focus from a trusted host observation. Never grants input."""
     base: dict[str, Any] = {
         "execute_allowed": False,
         "proof_ceiling": LOT_FOCUS_PROOF,
+        "scenery_focus_proof_ceiling": SCENERY_FOCUS_PROOF,
         "contract": "contracts/camera-traverse.v1.json#lot_focus",
     }
 
     def hold(gate: str, reason: str, **extra: object) -> dict[str, Any]:
-        return {
+        scenery = str(extra.pop("scenery_focus", SCENERY_AMBIGUOUS))
+        if scenery not in SCENERY_FOCUS_CLASSES:
+            scenery = SCENERY_AMBIGUOUS
+        out = {
             **base,
             "state": "UNKNOWN",
             "classification": "AMBIGUOUS",
+            "scenery_focus": scenery,
             "gate": gate,
             "reason": reason,
             "restore": None,
+            "recovery": recovery_for_scenery_focus(scenery),
             "next": "REOBSERVE_WITH_SECOND_INDEPENDENT_CUE",
             **extra,
         }
+        return out
 
     if not isinstance(capture_ref, str) or not 1 <= len(capture_ref) <= 128:
         raise LotFocusError("LOT_FOCUS_CAPTURE_REF_REQUIRED")
@@ -259,6 +509,60 @@ def assess_lot_focus(
         or observation.get("game_version") != version
     ):
         return hold("LOT_FOCUS_SCENE_UNVERIFIED", "HOST_CAPTURE_AND_BUILD_REQUIRED")
+
+    host_tokens, all_tokens = _collect_tokens(observation)
+
+    # Priority 1: black/white viewport (distinct from scenery off-lot).
+    if _viewport_anomaly(observation):
+        return {
+            **base,
+            "state": "VIEWPORT_BLACK_OR_WHITE",
+            "classification": "AMBIGUOUS",
+            "scenery_focus": SCENERY_VIEWPORT,
+            "gate": "VIEWPORT_RECOVERY_REQUIRED",
+            "reason": "VIEWPORT_BLACK_OR_WHITE_DISTINCT_FROM_LOT_SCENERY",
+            "cues_observed": host_tokens,
+            "restore": None,
+            "recovery": recovery_for_scenery_focus(SCENERY_VIEWPORT),
+            "next": "RUN_VIEWPORT_RECOVERY_LADDER_THEN_REOBSERVE",
+            "forbidden": recovery_for_scenery_focus(SCENERY_VIEWPORT)["forbidden"],
+        }
+
+    # Priority 2: TRAVELING WITH party banner (Manage Worlds stuck travel).
+    if _traveling_with_banner(observation, all_tokens):
+        recovery = recovery_for_scenery_focus(SCENERY_TRAVELING)
+        return {
+            **base,
+            "state": "TRAVELING_WITH_BANNER",
+            "classification": "OFF_LOT",
+            "scenery_focus": SCENERY_TRAVELING,
+            "gate": "TRAVEL_PARTY_CANCEL_REQUIRED",
+            "reason": "TRAVELING_WITH_BANNER_NOT_HOUSEHOLD_LOT_FOCUS",
+            "cues_observed": host_tokens,
+            "restore": None,
+            "restore_plan": None,
+            "recovery": recovery,
+            "next": "ADMITTED_CLICK_TRAVEL_PARTY_CANCEL_X_THEN_REOBSERVE",
+            "forbidden": recovery["forbidden"],
+        }
+
+    # Priority 3: Manage Worlds / travel map (without traveling banner).
+    if _manage_worlds_map(observation, all_tokens):
+        recovery = recovery_for_scenery_focus(SCENERY_MANAGE_WORLDS)
+        return {
+            **base,
+            "state": "MANAGE_WORLDS_MAP",
+            "classification": "OFF_LOT",
+            "scenery_focus": SCENERY_MANAGE_WORLDS,
+            "gate": "MANAGE_WORLDS_FOCUS_RESTORE_REQUIRED",
+            "reason": "MANAGE_WORLDS_MAP_NOT_HOUSEHOLD_LOT_FOCUS",
+            "cues_observed": host_tokens,
+            "restore": None,
+            "restore_plan": None,
+            "recovery": recovery,
+            "next": "EXIT_MANAGE_WORLDS_OR_CANCEL_UNINTENDED_TRAVEL_THEN_REOBSERVE",
+            "forbidden": recovery["forbidden"],
+        }
 
     live_hud = _live_hud_attested(observation)
     on_lot_flag = observation.get("camera_on_active_household_lot")
@@ -281,23 +585,16 @@ def assess_lot_focus(
     if not travel_afar_without_goal and observation.get("scenery_off_active_lot") is True:
         travel_afar_without_goal = not _verified_travel_goal(travel_goal)
 
-    host_tokens: list[str] = []
-    cues = observation.get("lot_focus_cues")
-    if isinstance(cues, list):
-        for item in cues[:_MAX_TOKENS]:
-            if isinstance(item, Mapping) and isinstance(item.get("token"), str):
-                host_tokens.append(item["token"][:_MAX_TOKEN_LEN])
-
-    landmarks = observation.get("landmark_tokens") or observation.get("scenery_tokens")
-    scenery_tokens = set(_bounded_tokens(landmarks))
-    host_token_set = {t.lower() for t in host_tokens}
-    all_tokens = scenery_tokens | host_token_set
-
     water_hint = (
         lot_kind in _WATER_KINDS
         or _scenery_hits(all_tokens, _WATER_TOKENS)
-        or "water_scenery" in host_token_set
-        or "canal_view" in host_token_set
+        or "water_scenery" in {t.lower() for t in host_tokens}
+        or "canal_view" in {t.lower() for t in host_tokens}
+    )
+    rooftop_hint = (
+        lot_kind in {"rooftop", "roof", "lot_exterior"}
+        or _scenery_hits(all_tokens, _ROOFTOP_TOKENS)
+        or observation.get("street_rooftop_overlook") is True
     )
     lot_fraction = observation.get("lot_fraction_of_frame")
     altitude = (
@@ -315,6 +612,7 @@ def assess_lot_focus(
         lot_kind in _STREET_KINDS
         or _scenery_hits(all_tokens, _STRONG_STREET_TOKENS)
         or neighborhood_high
+        or rooftop_hint
         or (travel_afar_without_goal and not live_hud)
         or (travel_afar_without_goal and on_lot_flag is False)
     )
@@ -330,6 +628,7 @@ def assess_lot_focus(
         "household_cues": household,
         "edge_scenery_families": sorted(edge_families),
         "camera_lot_kind": lot_kind or None,
+        "rooftop_hint": rooftop_hint,
     }
 
     if travel_afar_without_goal or street_hint or water_hint:
@@ -368,6 +667,10 @@ def assess_lot_focus(
         street_hint = True  # on_lot_flag False with no scenery detail
 
     state = "OFF_LOT_WATER" if water_hint and not street_hint else "OFF_LOT_STREET"
+    if rooftop_hint and not water_hint:
+        state = "OFF_LOT_STREET"
+
+    recovery = recovery_for_scenery_focus(SCENERY_STREET_ROOFTOP)
 
     # Off-lot scenery outranks a stale "already following the Sim" flag: a
     # follow lock that is not framing the lot would otherwise plan NO_EFFECT.
@@ -381,6 +684,7 @@ def assess_lot_focus(
         **base,
         "state": state,
         "classification": "OFF_LOT",
+        "scenery_focus": SCENERY_STREET_ROOFTOP,
         "gate": "LOT_OFF_FOCUS_RESTORE_REQUIRED",
         "reason": "CAMERA_SCENERY_NOT_ON_ACTIVE_HOUSEHOLD_LOT",
         "conflict": "ON_LOT_FLAG_CONTRADICTED_BY_SCENERY" if on_lot_flag is True else None,
@@ -389,25 +693,41 @@ def assess_lot_focus(
         "travel_afar_without_goal": travel_afar_without_goal,
         "zoom_policy": zoom if zoom.get("state") == "AGENT_ZOOM_RESTORE_REQUIRED" else None,
         "restore_plan": {
-            "command": CENTER_SIM,
+            "command": "CENTER_ACTIVE_SIM",
             "hotkey_id": "CENTER_ACTIVE_SIM",
             "chord": ["ENTER"],
-            "forbid_default": ["SHIFT_ENTER", "CENTER_CURRENT_LOT", "UNBOUNDED_CAMERA_PAN", "STREET_ROAM"],
+            "escalation_chord": ["SHIFT", "ENTER"],
+            "escalation_when": "ENTER_LEFT_STREET_CANAL_OR_ROOFTOP",
+            "forbid_default": [
+                "SHIFT_ENTER",
+                "CENTER_CURRENT_LOT",
+                "UNBOUNDED_CAMERA_PAN",
+                "STREET_ROAM",
+                "CROWN",
+                "FOOTPRINT",
+                "SELL",
+                "DELETE_SAVE",
+            ],
+            "note": "Shift+Enter is forbidden as the default Sim restore; use recovery.escalation only when Enter leaves street/canal/rooftop.",
         },
         "restore": restore,
+        "recovery": recovery,
         "next": "ADMITTED_ENTER_CENTER_ACTIVE_SIM_THEN_REOBSERVE",
-        "forbidden": ["SHIFT_ENTER_AS_DEFAULT_SIM_RESTORE", "UNBOUNDED_CAMERA_PAN", "STREET_ROAM"],
+        "forbidden": recovery["forbidden"],
     }
 
 
 def _on_lot(base: dict[str, Any], evidence: dict[str, Any], **extra: object) -> dict[str, Any]:
+    recovery = recovery_for_scenery_focus(SCENERY_ON_LOT)
     return {
         **base,
         "state": "ON_LOT",
         "classification": "ON_LOT",
+        "scenery_focus": SCENERY_ON_LOT,
         "gate": "LOT_FOCUS_ON_ACTIVE_HOUSEHOLD_LOT",
         **evidence,
         **extra,
         "restore": None,
-        "forbidden": ["UNBOUNDED_CAMERA_PAN", "STREET_ROAM"],
+        "recovery": recovery,
+        "forbidden": recovery["forbidden"],
     }

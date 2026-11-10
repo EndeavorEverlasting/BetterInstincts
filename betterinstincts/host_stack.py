@@ -1033,17 +1033,34 @@ def evaluate_turn(
             "execute_allowed": False,
             "next": "REOBSERVE_SELECTED_SIM_PORTRAIT_THEN_REVALIDATE_TARGET",
         }
-    elif lot_focus is not None and lot_focus.get("state") in {"OFF_LOT_STREET", "OFF_LOT_WATER"}:
+    elif lot_focus is not None and lot_focus.get("state") in {
+        "OFF_LOT_STREET",
+        "OFF_LOT_WATER",
+        "TRAVELING_WITH_BANNER",
+        "MANAGE_WORLDS_MAP",
+        "VIEWPORT_BLACK_OR_WHITE",
+    }:
+        scenery = lot_focus.get("scenery_focus")
+        if scenery == "TRAVELING_WITH_BANNER":
+            mechanism = "TRAVEL_PARTY_CANCEL"
+        elif scenery == "MANAGE_WORLDS_MAP":
+            mechanism = "MANAGE_WORLDS_FOCUS_RESTORE"
+        elif scenery == "VIEWPORT_BLACK_OR_WHITE":
+            mechanism = "VIEWPORT_RECOVERY_DISTINCT"
+        else:
+            mechanism = "LOT_OFF_FOCUS_RESTORE"
         next_gate = str(lot_focus.get("gate") or "LOT_OFF_FOCUS_RESTORE_REQUIRED")
         fallback = {
-            "mechanism": "LOT_OFF_FOCUS_RESTORE",
+            "mechanism": mechanism,
             "owner": "betterinstincts/lot_focus.py",
             "contract": "contracts/camera-traverse.v1.json#lot_focus",
             "lot_focus": lot_focus,
+            "scenery_focus": scenery,
+            "recovery": lot_focus.get("recovery"),
             "execute_allowed": False,
             "next": lot_focus.get("next"),
             "forbidden": list(lot_focus.get("forbidden") or [])
-            + ["STREET_ROAM", "UNBOUNDED_CAMERA_PAN"],
+            + ["STREET_ROAM", "UNBOUNDED_CAMERA_PAN", "CLICK_VOID", "CROWN", "FOOTPRINT", "SELL"],
         }
     elif drift_recovery is not None:
         # Recovery outranks generic scan/target clicks. Physical actions still

@@ -15,7 +15,30 @@
       "living_subject_gate_20261110": {"bernice": "SERVO (Durability) — not hunger subject", "charlee_olga_recovered": "living humans with commodity Hunger after load of Slot_00000007", "prove_via": "Needs panel 6-bar Hunger (vs Servo Durability / ghost Ethereal)", "receipts": ["dist/game-host/horizon-exec-20261110/bi002/living-subject-recovery-receipt.json", "dist/game-host/horizon-exec-20261110/bi002/living-subject-attestation.json"]},
       "adverse_bernice_death": "dist/game-host/horizon-exec-20261110/bi002/adverse-bernice-death.json",
       "lot_focus_offlot_street": "PROVED assess_lot_focus OFF_LOT_STREET when camera/Sim on sidewalk/canal; restore Shift+Enter lot center when Enter alone leaves water/street; terrain-arm RMB [880,480] can displace to canal — avoid while OFF_LOT. Receipt: offlot-street-recognition.json",
-      "off_lot_scenery_not_in_focus": "After Manage Worlds travel-cancel, camera on street/rooftop needs Enter recenter. scenery-not-in-focus when Manage Worlds map or street fills viewport without household lot interior."
+      "off_lot_scenery_not_in_focus": "After Manage Worlds travel-cancel, camera on street/rooftop needs Enter recenter. scenery-not-in-focus when Manage Worlds map or street fills viewport without household lot interior.",
+      "scenery_focus_20261110": {
+        "state": "OFFLINE_TESTED_NOT_LIVE_CERTIFIED",
+        "owner": "betterinstincts/lot_focus.py",
+        "api": "assess_lot_focus → scenery_focus + recovery_for_scenery_focus",
+        "classes": [
+          "ON_LOT_INTERIOR_OR_YARD",
+          "STREET_OR_ROOFTOP_OFF_FOCUS",
+          "MANAGE_WORLDS_MAP",
+          "TRAVELING_WITH_BANNER",
+          "VIEWPORT_BLACK_OR_WHITE"
+        ],
+        "recovery": {
+          "STREET_OR_ROOFTOP_OFF_FOCUS": "Enter then Shift+Enter if Enter left street/rooftop",
+          "TRAVELING_WITH_BANNER": "host.manage_worlds_travel_party_cancel_x [1055,33] / canvas ~(800,25); never crown/footprint",
+          "MANAGE_WORLDS_MAP": "exit/cancel unintended map; do not Enter-roam",
+          "VIEWPORT_BLACK_OR_WHITE": "viewport.py ladder (distinct from scenery)"
+        },
+        "forbidden": ["CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "CLICK_VOID"],
+        "tests": "tests/test_lot_focus.py::SceneryFocusHardeningTests",
+        "fixtures": "tests/fixtures/scenery_focus/ (crops from horizon-exec-20261110/bi002; originals preserved)",
+        "consultation": "contracts/consultations/BI-SCENERY-FOCUS-20261110.v1.json",
+        "proof_ceiling": "OFFLINE_SCENERY_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
+      }
     },
     "travel_cancel_20261110_morning": {
       "state": "PROVED_LIVE_MEASURED",
@@ -120,8 +143,9 @@
         "module": "betterinstincts/lot_focus.py",
         "offline_hardening_20261110": {
           "state": "OFFLINE_TESTED_NOT_LIVE_CERTIFIED",
-          "adds": ["neighboring_houses", "dominant_sidewalk_streetlamp", "neighborhood_zoom_labels", "household_fixture_water_exclusion", "uncorroborated_on_lot_AMBIGUOUS", "stale_follow_flag_override_enter_restore"],
+          "adds": ["neighboring_houses", "dominant_sidewalk_streetlamp", "neighborhood_zoom_labels", "household_fixture_water_exclusion", "uncorroborated_on_lot_AMBIGUOUS", "stale_follow_flag_override_enter_restore", "scenery_focus_classes", "traveling_with_banner", "manage_worlds_map", "viewport_black_or_white_distinct", "rooftop_overlook", "shift_enter_escalation_only"],
           "classification": ["ON_LOT", "OFF_LOT", "AMBIGUOUS"],
+          "scenery_focus": ["ON_LOT_INTERIOR_OR_YARD", "STREET_OR_ROOFTOP_OFF_FOCUS", "MANAGE_WORLDS_MAP", "TRAVELING_WITH_BANNER", "VIEWPORT_BLACK_OR_WHITE"],
           "tests": "tests/test_lot_focus.py",
           "proof_ceiling": "OFFLINE_LOT_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED"
         }
@@ -358,6 +382,7 @@
     "this_pack": "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
     "closers_handoff": "plans/active/BI-CLOSERS-HORIZON-20261110.v1.json + docs/handoff/BI-CLOSERS-HORIZON-P12-2026-11-10.md",
     "lot_focus": "contracts/camera-traverse.v1.json#lot_focus + betterinstincts/lot_focus.py",
+    "scenery_focus": "betterinstincts/lot_focus.py#scenery_focus + recovery_for_scenery_focus",
     "floor_map": "contracts/lot-floor-map.v1.json",
     "save_safety": "docs/LIVE_CERT.md + AGENTS.md save-safe",
     "bi002": "plans/active/BI-002.execution.v1.json"

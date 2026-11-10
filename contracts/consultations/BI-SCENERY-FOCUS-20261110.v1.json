@@ -1,0 +1,74 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SCENERY-FOCUS-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "Harden scenery-focus recognition on top of existing lot_focus: distinguish ON_LOT_INTERIOR_OR_YARD | STREET_OR_ROOFTOP_OFF_FOCUS | MANAGE_WORLDS_MAP | TRAVELING_WITH_BANNER | VIEWPORT_BLACK_OR_WHITE so agents restore focus instead of clicking void. Recovery map: Enter then Shift+Enter for street/rooftop; travel-cancel X host.manage_worlds_travel_party_cancel_x [1055,33]/canvas ~(800,25); never crown/footprint; never Sell/delete. Viewport black/white stays owned by viewport.py (distinct). Reuses PrintWindow HOST_CAPTURE observations + fixed-ui travel-cancel seeds; offline fixtures only.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "CLAIM",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "VIEW_SCENE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "docs/CAMERA_TRAVERSE.md",
+    "contracts/camera-traverse.v1.json",
+    "betterinstincts/lot_focus.py",
+    "betterinstincts/viewport.py",
+    "betterinstincts/host_stack.py",
+    "contracts/fixed-ui-click-map.v1.json",
+    "contracts/viewport-black.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_SCENERY_FOCUS_POLICY_NOT_LIVE_CAMERA_CERTIFIED",
+  "player_save_control_impact": "No save edits, no EA Connect, no autonomous SendInput. execute_allowed remains false until admitted host screen queue with fresh observation.",
+  "expected_outcome": "scenery_focus field + recovery mapping on assess_lot_focus; contract/docs/LEDGER/Horizon plan notes; fixture tests; host_stack gates for new states.",
+  "negative_tests": [
+    "TRAVELING_WITH_BANNER recovery forbids crown and footprint",
+    "STREET_OR_ROOFTOP uses Enter then optional Shift+Enter escalation, not street roam",
+    "VIEWPORT_BLACK_OR_WHITE does not plan Enter as scenery restore",
+    "execute_allowed remains false"
+  ],
+  "rollback_path": "Revert scenery_focus additions in lot_focus/contract/host_stack/tests/docs; prior lot_focus ON_LOT/OFF_LOT_STREET/OFF_LOT_WATER remain; BI-002 ACTIVE.",
+  "unresolved_unknowns": [
+    "Live P08 attestation of rooftop-after-travel-cancel vs sidewalk OFF_LOT_STREET tokens",
+    "PrintWindow white loading-frame thresholds beyond observation flags"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-SCENERY-FOCUS-20261110.v1.json",
+    "contracts/camera-traverse.v1.json",
+    "betterinstincts/lot_focus.py",
+    "betterinstincts/host_stack.py",
+    "tests/test_lot_focus.py",
+    "tests/fixtures/scenery_focus/",
+    "docs/CAMERA_TRAVERSE.md",
+    "docs/LEDGER.md",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator 2026-11-10: agents parked Manage Worlds / street-rooftop / travel banners without recognizing scenery was off household-lot focus. Extend existing lot_focus rather than a parallel classifier."
+}

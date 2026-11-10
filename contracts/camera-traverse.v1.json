@@ -302,9 +302,20 @@
       "ON_LOT",
       "OFF_LOT_STREET",
       "OFF_LOT_WATER",
+      "TRAVELING_WITH_BANNER",
+      "MANAGE_WORLDS_MAP",
+      "VIEWPORT_BLACK_OR_WHITE",
       "LOT_FOCUS_UNKNOWN",
       "LOT_FOCUS_YIELD"
     ],
+    "scenery_focus": {
+      "ON_LOT_INTERIOR_OR_YARD": "Household lot interior or yard attested.",
+      "STREET_OR_ROOFTOP_OFF_FOCUS": "Street/canal/rooftop/neighborhood scenery without lot focus.",
+      "MANAGE_WORLDS_MAP": "Manage Worlds / travel map fills the frame.",
+      "TRAVELING_WITH_BANNER": "TRAVELING WITH party banner on Manage Worlds.",
+      "VIEWPORT_BLACK_OR_WHITE": "PrintWindow black/white anomaly — distinct from scenery off-lot.",
+      "AMBIGUOUS": "Insufficient cues; reobserve."
+    },
     "cues": [
       "live_hud_visible",
       "on_active_lot",
@@ -312,7 +323,10 @@
       "scenery_kind",
       "independent_cues",
       "camera_displaced",
-      "active_sim_in_frame"
+      "active_sim_in_frame",
+      "traveling_with_banner",
+      "manage_worlds",
+      "viewport_classification"
     ],
     "off_lot_tokens": [
       "STREET",
@@ -323,18 +337,32 @@
       "OFF_LOT",
       "TRAVEL_AFAR",
       "FULL_ZOOM_OUT",
-      "STREET_TOPDOWN"
+      "STREET_TOPDOWN",
+      "ROOFTOP",
+      "TRAVELING_WITH",
+      "MANAGE_WORLDS"
     ],
     "restore_preferred": "CENTER_ACTIVE_SIM",
     "restore_hotkey": "ENTER",
+    "restore_escalation": "SHIFT_ENTER_WHEN_ENTER_LEFT_STREET_ROOFTOP",
+    "travel_cancel": {
+      "seed": "host.manage_worlds_travel_party_cancel_x",
+      "client_xy": [1055, 33],
+      "canvas_1456x840_xy": [800, 25],
+      "forbidden": ["CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "ESC_AS_TRAVEL_CANCEL"]
+    },
     "forbidden_restore": [
       "UNBOUNDED_PAN",
       "STREET_ROAM",
       "SHIFT_ENTER_AS_SIM_CENTER",
-      "WHEEL_ZOOM_OUT_TO_FIND_LOT"
+      "WHEEL_ZOOM_OUT_TO_FIND_LOT",
+      "CLICK_VOID",
+      "CROWN",
+      "FOOTPRINT"
     ],
-    "operator_correction_20261110": "When the map is way off the lot (canal/street), recognize OFF_LOT and restore with Enter to the active Sim — do not roam the neighborhood.",
+    "operator_correction_20261110": "When the map is way off the lot (canal/street/rooftop/Manage Worlds/TRAVELING WITH), recognize scenery_focus and restore — do not click void or roam.",
     "helper": "assess_lot_focus",
+    "recovery_helper": "recovery_for_scenery_focus",
     "proof_ceiling": "OFFLINE_LOT_FOCUS_ASSESS_NOT_LIVE_CAMERA_CERT"
   },
   "agent_zoom_policy": {
@@ -448,10 +476,21 @@
     "operator_correction_20261110": "Detect when scenery/camera leaves the active household lot (street, canal, neighborhood). Restore via Enter (CENTER_ACTIVE_SIM); never default to street roam or unbounded pan.",
     "states": {
       "ON_LOT": "Camera and scenery attested on the active household lot.",
-      "OFF_LOT_STREET": "Street/neighborhood/top-down scenery without a verified travel goal.",
+      "OFF_LOT_STREET": "Street/neighborhood/rooftop/top-down scenery without a verified travel goal.",
       "OFF_LOT_WATER": "Canal/water/off-lot waterfront scenery without lot framing.",
+      "TRAVELING_WITH_BANNER": "TRAVELING WITH dual-banner stuck travel on Manage Worlds.",
+      "MANAGE_WORLDS_MAP": "Manage Worlds / travel map without household-lot framing.",
+      "VIEWPORT_BLACK_OR_WHITE": "PrintWindow black/white — route to viewport recovery, not Enter scenery restore.",
       "UNKNOWN": "Insufficient or conflicting lot-focus cues; reobserve."
     },
+    "scenery_focus_classes": [
+      "ON_LOT_INTERIOR_OR_YARD",
+      "STREET_OR_ROOFTOP_OFF_FOCUS",
+      "MANAGE_WORLDS_MAP",
+      "TRAVELING_WITH_BANNER",
+      "VIEWPORT_BLACK_OR_WHITE",
+      "AMBIGUOUS"
+    ],
     "cues": {
       "missing_live_hud": "live_hud absent from independent visual cue or live_hud_present false while zoomed out",
       "travel_afar_zoom": "zoom_mode_observed TRAVEL_AFAR without VERIFIED_LONG_DISTANCE_TRAVEL goal",
@@ -459,28 +498,47 @@
       "host_tokens": "lot_focus_cues[] with source host; camera_lot_kind; camera_on_active_household_lot",
       "scenery_tokens": "landmark_tokens / scenery_off_active_lot from host capture",
       "neighboring_houses": "NEIGHBOR* scenery tokens are decisive OFF_LOT",
-      "neighborhood_zoom": "camera_altitude / zoom_mode_observed NEIGHBORHOOD_HIGH|NEIGHBORHOOD_ZOOM|FULL_ZOOM_OUT|STREET_TOPDOWN|WORLD_MAP, or lot_fraction_of_frame < 0.45",
+      "neighborhood_zoom": "camera_altitude / zoom_mode_observed NEIGHBORHOOD_HIGH|NEIGHBORHOOD_ZOOM|FULL_ZOOM_OUT|STREET_TOPDOWN|WORLD_MAP|ROOFTOP, or lot_fraction_of_frame < 0.45",
+      "rooftop_overlook": "rooftop / lot_exterior / street_rooftop tokens after travel-cancel still need Enter recenter",
+      "traveling_with_banner": "traveling_with_banner true or TRAVELING WITH banner tokens",
+      "manage_worlds_map": "mode MANAGE_WORLDS / camera_lot_kind manage_worlds / map tokens",
+      "viewport_black_or_white": "viewport_classification / capture_quality black or white — distinct path",
       "edge_scenery": "sidewalk/streetlamp/road alone is NOT off-lot; 2+ families dominate to OFF_LOT, lone cue needs Live HUD or household interior corroboration else AMBIGUOUS",
       "household_fixtures": "SINK_WATER, BATHTUB_WATER, WATER_COOLER and similar fixtures never count as canal/water",
       "missing_household_cues": "on-lot claim without Live HUD or household interior cue is AMBIGUOUS (UNKNOWN), never ON_LOT"
     },
     "classification": {
-      "ON_LOT": "state ON_LOT",
-      "OFF_LOT": "state OFF_LOT_STREET | OFF_LOT_WATER",
-      "AMBIGUOUS": "state UNKNOWN; no restore, reobserve with a second independent cue"
+      "ON_LOT": "state ON_LOT; scenery_focus ON_LOT_INTERIOR_OR_YARD",
+      "OFF_LOT": "state OFF_LOT_STREET | OFF_LOT_WATER | TRAVELING_WITH_BANNER | MANAGE_WORLDS_MAP",
+      "AMBIGUOUS": "state UNKNOWN or VIEWPORT_BLACK_OR_WHITE; no lot-scenery Enter restore without the matching recovery path"
     },
     "stale_follow_flag": "Off-lot scenery outranks camera_follow_sim_id == active sim; restore effect is still Enter (plan_sim_camera would otherwise return NO_EFFECT)",
     "restore_plan": {
       "command": "CENTER_ACTIVE_SIM",
       "hotkey_id": "CENTER_ACTIVE_SIM",
       "chord": ["ENTER"],
+      "escalation": {
+        "command": "CENTER_CURRENT_LOT",
+        "chord": ["SHIFT", "ENTER"],
+        "when": "ENTER_LEFT_STREET_CANAL_OR_ROOFTOP"
+      },
+      "travel_cancel": {
+        "seed": "host.manage_worlds_travel_party_cancel_x",
+        "client_xy": [1055, 33],
+        "canvas_1456x840_xy": [800, 25]
+      },
       "forbid_default": [
         "SHIFT_ENTER",
         "CENTER_CURRENT_LOT",
         "UNBOUNDED_CAMERA_PAN",
-        "STREET_ROAM"
+        "STREET_ROAM",
+        "CROWN",
+        "FOOTPRINT",
+        "SELL",
+        "DELETE_SAVE",
+        "CLICK_VOID"
       ],
-      "note": "Shift+Enter centers the lot once — not the default Sim restore. Portrait follow remains preferred after Enter recenters."
+      "note": "Shift+Enter centers the lot once — not the default Sim restore; escalate only when Enter leaves street/rooftop. Travel banners use cancel X, never crown/footprint."
     },
     "parallel_with": [
       "active_sim_camera_lock",

@@ -1,14 +1,27 @@
 """Lot-off-focus recognition (offline policy)."""
 from __future__ import annotations
 
+import json
 import unittest
+from pathlib import Path
 
 from betterinstincts.host_stack import evaluate_turn
-from betterinstincts.lot_focus import assess_lot_focus, should_assess_lot_focus
+from betterinstincts.lot_focus import (
+    SCENERY_MANAGE_WORLDS,
+    SCENERY_ON_LOT,
+    SCENERY_STREET_ROOFTOP,
+    SCENERY_TRAVELING,
+    SCENERY_VIEWPORT,
+    assess_lot_focus,
+    recovery_for_scenery_focus,
+    should_assess_lot_focus,
+)
 from betterinstincts.scenes import load_catalog, stamp_host_capture_branch, stamp_host_capture_game_version
 
 
 CAPTURE = "capture:lot-focus-1"
+FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "scenery_focus"
+FIXTURE_OBS = FIXTURE_DIR / "observations.v1.json"
 
 
 def obs(**overrides):
@@ -346,8 +359,139 @@ class LotFocusTests(unittest.TestCase):
         )
         self.assertIsNotNone(turn.get("lot_focus"))
         self.assertEqual(turn["lot_focus"]["state"], "OFF_LOT_STREET")
+        self.assertEqual(turn["lot_focus"]["scenery_focus"], SCENERY_STREET_ROOFTOP)
         self.assertEqual(turn["next_gate"], "LOT_OFF_FOCUS_RESTORE_REQUIRED")
         self.assertEqual(turn["fallback"]["mechanism"], "LOT_OFF_FOCUS_RESTORE")
+
+
+class SceneryFocusHardeningTests(unittest.TestCase):
+    """Operator 2026-11-10: recognize when scenery is no longer in lot focus."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.fixture = json.loads(FIXTURE_OBS.read_text(encoding="utf-8"))
+        cls.cases = {row["id"]: row for row in cls.fixture["cases"]}
+
+    def test_fixture_images_present(self):
+        for name in (
+            "sulani-travel-banner.png",
+            "kingdom-x-region.png",
+            "travel-dialog-x-crop.png",
+            "printwindow-black-synthetic.png",
+            "printwindow-white-synthetic.png",
+        ):
+            self.assertTrue((FIXTURE_DIR / name).is_file(), name)
+
+    def test_fixture_matrix_scenery_focus(self):
+        for case_id, expected in (
+            ("on_lot_interior_or_yard", SCENERY_ON_LOT),
+            ("street_or_rooftop_off_focus", SCENERY_STREET_ROOFTOP),
+            ("manage_worlds_map", SCENERY_MANAGE_WORLDS),
+            ("traveling_with_banner", SCENERY_TRAVELING),
+            ("viewport_black_or_white", SCENERY_VIEWPORT),
+        ):
+            with self.subTest(case_id=case_id):
+                overrides = self.cases[case_id]["observation_overrides"]
+                out = assess_lot_focus(capture_ref=CAPTURE, observation=obs(**overrides))
+                self.assertEqual(out["scenery_focus"], expected)
+                self.assertFalse(out["execute_allowed"])
+                self.assertEqual(out["recovery"]["scenery_focus"], expected)
+
+    def test_street_rooftop_recovery_enter_then_shift_enter(self):
+        out = assess_lot_focus(
+            capture_ref=CAPTURE,
+            observation=obs(**self.cases["street_or_rooftop_off_focus"]["observation_overrides"]),
+        )
+        self.assertEqual(out["state"], "OFF_LOT_STREET")
+        self.assertEqual(out["restore_plan"]["chord"], ["ENTER"])
+        self.assertEqual(out["restore_plan"]["escalation_chord"], ["SHIFT", "ENTER"])
+        self.assertEqual(
+            out["recovery"]["escalation"]["chord"],
+            ["SHIFT", "ENTER"],
+        )
+        for banned in ("CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "CLICK_VOID"):
+            self.assertIn(banned, out["recovery"]["forbidden"])
+
+    def test_traveling_with_banner_cancel_xy_never_crown_footprint(self):
+        out = assess_lot_focus(
+            capture_ref=CAPTURE,
+            observation=obs(**self.cases["traveling_with_banner"]["observation_overrides"]),
+        )
+        self.assertEqual(out["state"], "TRAVELING_WITH_BANNER")
+        self.assertEqual(out["gate"], "TRAVEL_PARTY_CANCEL_REQUIRED")
+        primary = out["recovery"]["primary"]
+        self.assertEqual(primary["seed"], "host.manage_worlds_travel_party_cancel_x")
+        self.assertEqual(primary["client_xy"], [1055, 33])
+        self.assertEqual(primary["canvas_1456x840_xy"], [800, 25])
+        self.assertIsNone(out.get("restore"))
+        for banned in ("CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "ESC_AS_TRAVEL_CANCEL"):
+            self.assertIn(banned, out["recovery"]["forbidden"])
+
+    def test_manage_worlds_map_not_enter_roam(self):
+        out = assess_lot_focus(
+            capture_ref=CAPTURE,
+            observation=obs(**self.cases["manage_worlds_map"]["observation_overrides"]),
+        )
+        self.assertEqual(out["state"], "MANAGE_WORLDS_MAP")
+        self.assertIsNone(out.get("restore"))
+        self.assertIn("ENTER_AS_MAP_ROAM", out["recovery"]["forbidden"])
+
+    def test_viewport_black_or_white_distinct_from_street(self):
+        out = assess_lot_focus(
+            capture_ref=CAPTURE,
+            observation=obs(**self.cases["viewport_black_or_white"]["observation_overrides"]),
+        )
+        self.assertEqual(out["scenery_focus"], SCENERY_VIEWPORT)
+        self.assertEqual(out["state"], "VIEWPORT_BLACK_OR_WHITE")
+        self.assertIn("ENTER_AS_SCENERY_RESTORE", out["recovery"]["forbidden"])
+        self.assertEqual(out["recovery"]["primary"]["owner"], "betterinstincts/viewport.py")
+
+    def test_viewport_white_flag(self):
+        out = assess_lot_focus(
+            capture_ref=CAPTURE,
+            observation=obs(
+                viewport_classification="FULL_CLIENT_WHITE",
+                capture_quality="FULL_CLIENT_WHITE",
+            ),
+        )
+        self.assertEqual(out["scenery_focus"], SCENERY_VIEWPORT)
+
+    def test_host_stack_traveling_banner_gate(self):
+        turn = evaluate_turn(
+            SIX,
+            capture_ref=CAPTURE,
+            sim_camera_observation=obs(
+                **self.cases["traveling_with_banner"]["observation_overrides"]
+            ),
+        )
+        self.assertEqual(turn["lot_focus"]["scenery_focus"], SCENERY_TRAVELING)
+        self.assertEqual(turn["next_gate"], "TRAVEL_PARTY_CANCEL_REQUIRED")
+        self.assertEqual(turn["fallback"]["mechanism"], "TRAVEL_PARTY_CANCEL")
+        self.assertIn("CROWN", turn["fallback"]["forbidden"])
+
+    def test_host_stack_manage_worlds_gate(self):
+        turn = evaluate_turn(
+            SIX,
+            capture_ref=CAPTURE,
+            sim_camera_observation=obs(
+                **self.cases["manage_worlds_map"]["observation_overrides"]
+            ),
+        )
+        self.assertEqual(turn["lot_focus"]["scenery_focus"], SCENERY_MANAGE_WORLDS)
+        self.assertEqual(turn["fallback"]["mechanism"], "MANAGE_WORLDS_FOCUS_RESTORE")
+
+    def test_recovery_helper_covers_all_classes(self):
+        for focus in (
+            SCENERY_ON_LOT,
+            SCENERY_STREET_ROOFTOP,
+            SCENERY_MANAGE_WORLDS,
+            SCENERY_TRAVELING,
+            SCENERY_VIEWPORT,
+        ):
+            with self.subTest(focus=focus):
+                payload = recovery_for_scenery_focus(focus)
+                self.assertEqual(payload["scenery_focus"], focus)
+                self.assertIn("forbidden", payload)
 
 
 if __name__ == "__main__":

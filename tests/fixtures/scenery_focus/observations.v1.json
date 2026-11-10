@@ -1,0 +1,88 @@
+{
+  "schema": "betterinstincts.scenery-focus-fixtures/v1",
+  "source_captures_dir": "dist/game-host/horizon-exec-20261110/bi002",
+  "note": "Observation fixtures derived from 2026-11-10 horizon captures. Original PNGs under dist/ are preserved; only small crops/synthetics are copied here.",
+  "cases": [
+    {
+      "id": "on_lot_interior_or_yard",
+      "scenery_focus": "ON_LOT_INTERIOR_OR_YARD",
+      "provenance": "offlot-restored.png / living on-lot Live HUD",
+      "observation_overrides": {
+        "camera_on_active_household_lot": true,
+        "camera_lot_kind": "home",
+        "live_hud_present": true,
+        "landmark_tokens": ["kitchen_interior", "household_furniture"]
+      }
+    },
+    {
+      "id": "street_or_rooftop_off_focus",
+      "scenery_focus": "STREET_OR_ROOFTOP_OFF_FOCUS",
+      "provenance": "offlot-street-charlee.png + after-travel-return rooftop/street overlook",
+      "fixture_capture_refs": ["offlot-street-charlee.png"],
+      "observation_overrides": {
+        "camera_on_active_household_lot": false,
+        "camera_lot_kind": "street",
+        "live_hud_present": true,
+        "street_rooftop_overlook": true,
+        "landmark_tokens": ["street_rooftop", "lot_exterior", "overlooking"],
+        "lot_focus_cues": [{"source": "host", "token": "rooftop_overlook"}]
+      }
+    },
+    {
+      "id": "manage_worlds_map",
+      "scenery_focus": "MANAGE_WORLDS_MAP",
+      "provenance": "map-selected-lablab.png / willow-creek-enter.png Manage Worlds travel map",
+      "observation_overrides": {
+        "mode": "MANAGE_WORLDS",
+        "camera_on_active_household_lot": false,
+        "camera_lot_kind": "manage_worlds",
+        "live_hud_present": false,
+        "landmark_tokens": ["manage_worlds", "travel_map"],
+        "lot_focus_cues": [{"source": "host", "token": "world_picker"}]
+      }
+    },
+    {
+      "id": "traveling_with_banner",
+      "scenery_focus": "TRAVELING_WITH_BANNER",
+      "provenance": "sulani-travel-banner.png TRAVELING WITH LabLab dual-banner",
+      "fixture_images": ["sulani-travel-banner.png"],
+      "observation_overrides": {
+        "mode": "MANAGE_WORLDS",
+        "traveling_with_banner": true,
+        "banner_text": "TRAVELING WITH: LabLab",
+        "camera_on_active_household_lot": false,
+        "live_hud_present": false,
+        "lot_focus_cues": [{"source": "host", "token": "traveling_with_banner"}]
+      }
+    },
+    {
+      "id": "viewport_black_or_white",
+      "scenery_focus": "VIEWPORT_BLACK_OR_WHITE",
+      "provenance": "black-pre-recover.png / school-black-check.png + synthetic white",
+      "fixture_images": ["printwindow-black-synthetic.png", "printwindow-white-synthetic.png"],
+      "observation_overrides": {
+        "viewport_classification": "FULL_CLIENT_BLACK",
+        "capture_quality": "FULL_CLIENT_BLACK",
+        "camera_on_active_household_lot": false,
+        "live_hud_present": false
+      }
+    }
+  ],
+  "recovery": {
+    "STREET_OR_ROOFTOP_OFF_FOCUS": {
+      "primary_chord": ["ENTER"],
+      "escalation_chord": ["SHIFT", "ENTER"],
+      "forbidden": ["CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "CLICK_VOID"]
+    },
+    "TRAVELING_WITH_BANNER": {
+      "seed": "host.manage_worlds_travel_party_cancel_x",
+      "client_xy": [1055, 33],
+      "canvas_1456x840_xy": [800, 25],
+      "forbidden": ["CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE"]
+    },
+    "VIEWPORT_BLACK_OR_WHITE": {
+      "owner": "betterinstincts/viewport.py",
+      "not": "ENTER_AS_SCENERY_RESTORE"
+    }
+  }
+}

@@ -1,3 +1,9 @@
+## 2026-11-10 — Scenery-focus recognition (OFF_LOT / Manage Worlds / travel banner)
+
+**CHANGED:** Extended `betterinstincts/lot_focus.py` with `scenery_focus` classes `ON_LOT_INTERIOR_OR_YARD` | `STREET_OR_ROOFTOP_OFF_FOCUS` | `MANAGE_WORLDS_MAP` | `TRAVELING_WITH_BANNER` | `VIEWPORT_BLACK_OR_WHITE` plus `recovery_for_scenery_focus`. Recovery: Enter then Shift+Enter for street/rooftop; travel-cancel X `[1055,33]` / canvas `~(800,25)`; never crown/footprint/Sell/delete; viewport black/white stays on `viewport.py`. Fixtures under `tests/fixtures/scenery_focus/` (small crops from `horizon-exec-20261110/bi002`, originals preserved). Consultation `BI-SCENERY-FOCUS-20261110`. Offline only — not live camera cert; BI-002 still open.
+
+**NEXT:** Live agents must call `assess_lot_focus` before void clicks when scenery leaves the household lot; queue Eat / live_cert trial 3 after Charlee control restore.
+
 ## 2026-11-10 — Inventory Multiselect map v11 + snack still open
 
 **CHANGED:** `contracts/fixed-ui-click-map.v1.json` v11 adds `live.inventory_multiselect_toggle [1878,791]` (prior approx `[1880,735]` wrong — did not toggle) and `live.inventory_sell_button` FORBIDDEN `[1915,925]`. Household inventory (Place in World / Drag to sell / Multiselect) cannot Eat; personal inventory is hotkey `I` after household closed. Horizon plan annotated. Live: Charlee living; Multiselect Off proved; snack still not queued; BI-002 baseline 2/5.
