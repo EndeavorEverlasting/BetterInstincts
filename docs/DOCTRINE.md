@@ -83,3 +83,21 @@ The operator may combine manual game play, mod features, voice/assistive input, 
 ## 2026-11-10 — mandatory CI / live game proof distinction
 
 A green CI check is not playable-mod proof. Never infer a Sims 4 runtime result, real-world object recognition accuracy or BI-002 milestone completion from offline fixtures or unit tests alone. `CHANGED | PROVED | NEXT` reports independently verified repository mutations, measured test outcomes and the remaining Windows-host P08 game-gate separately. Existing documented peripheral, save, player-presence and exact-build protections apply unchanged.
+
+## Human-first effect lanes — 2026-11-10
+
+Human operator activity in **any application or device modality** preempts any
+agent screen action, input chord, focus borrow, and game mutation at the next
+cooperative checkpoint. No background reasoning may be used to bypass this.
+Trustworthy observations, read-only parsing, and bounded planning may continue
+independently **without taking the desktop lease** only through a reviewed
+passive callback. Unknown activity or stale presence fails closed for input.
+Resume requires two fresh trusted idle probes at least 15 seconds old, a new
+scene/save/target/user-queue validation and one-effect admission. Never blind
+replay partially completed actions.
+
+Host configuration (Bluetooth, drivers, Print Screen settings, Escape/U remapping,
+accessibility, global hotkey interception) is outside BetterInstincts authority.
+No game prompt, frustrated agent or idle permit grants this authority.
+`contracts/effect-authority.v1.json` owns effect classes; source checks do not
+control independent unadopted tools or prove live-game behavior.

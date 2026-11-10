@@ -1,0 +1,94 @@
+{
+  "schema": "betterinstincts.effect-authority/v1",
+  "owner": "betterinstincts/effect_authority.py",
+  "policy_owner": "betterinstincts/control_handoff.py",
+  "operator_priority": "Human activity in any application takes precedence over agent screen, keyboard, mouse, foreground or native game mutation.",
+  "effect_classes": {
+    "PASSIVE_OBSERVATION": {
+      "screen": false,
+      "operator_idle_required": false,
+      "conditions": [
+        "TRUSTED_READ_ONLY_CALLBACK",
+        "NO_FOCUS_STEAL",
+        "NO_INPUT",
+        "NO_GAME_STATE_MUTATION",
+        "NO_UNCONSENTED_CAPTURE_OR_TELEMETRY"
+      ]
+    },
+    "BACKGROUND_REASONING": {
+      "screen": false,
+      "operator_idle_required": false,
+      "conditions": [
+        "BOUNDED_CPU_AND_IO",
+        "NO_INPUT",
+        "NO_GAME_STATE_MUTATION",
+        "NO_OS_SETTINGS_MUTATION"
+      ]
+    },
+    "SCREEN_EFFECT": {
+      "screen": true,
+      "operator_idle_required": true,
+      "conditions": [
+        "ACTIVE_SESSION",
+        "TWO_FRESH_IDLE_PROBES",
+        "EXCLUSIVE_DESKTOP_LOCK",
+        "FRESH_TARGET_SAVE_SCENE_AND_USER_QUEUE",
+        "CHECKPOINT_BEFORE_EACH_EFFECT"
+      ]
+    },
+    "GAME_MUTATION": {
+      "screen": true,
+      "operator_idle_required": true,
+      "conditions": [
+        "ACTIVE_SESSION",
+        "PLAYER_QUEUE_PROTECTED",
+        "NATIVE_OR_SCREEN_ADMISSION",
+        "FRESH_SCENE_SAVE_AND_TARGET",
+        "ATOMIC_STEP_OUTCOME_RECONCILIATION"
+      ]
+    },
+    "OS_CONFIGURATION": {
+      "screen": false,
+      "operator_idle_required": false,
+      "decision": "ALWAYS_DENY",
+      "conditions": [
+        "NO_BLUETOOTH_OR_DEVICE_SERVICE_CHANGE",
+        "NO_KEY_REMAP",
+        "NO_PRINT_SCREEN_OR_CAPTURE_HOTKEY_CHANGE",
+        "NO_GLOBAL_INPUT_HOOK_OR_BLOCK"
+      ]
+    }
+  },
+  "unknown": "DENY",
+  "foreground_screen_actor": "HUMAN",
+  "resume": "TWO_FRESH_TRUSTED_IDLE_PROBES_AT_LEAST_15000_MS_AND_REVALIDATED_TARGET",
+  "preemption": "AT_NEXT_COOPERATIVE_CHECKPOINT_NOT_MID_NATIVE_CALL",
+  "background_runner": "CooperativeScreenQueue.enqueue_observation (explicit trusted read-only callback, bounded in-memory, no global daemons)",
+  "runtime_limit": "Python callback classification is not arbitrary-code sandboxing; all adapters must adopt queues/checkpoints and independent OS permissions must deny non-game system control.",
+  "examples": {
+    "passive": [
+      "game capture without focus change or game mutation",
+      "needs and scenery observation from already authorized data"
+    ],
+    "background": [
+      "local goal scoring",
+      "bounded offline plan/model evaluation"
+    ],
+    "screen": [
+      "mouse or keyboard input",
+      "Playwright page click or fill",
+      "window focus borrow"
+    ],
+    "game_mutation": [
+      "cancel or enqueue Sim actions",
+      "set a live game state"
+    ],
+    "denied": [
+      "Bluetooth service disable",
+      "device driver removal",
+      "Print Screen settings change",
+      "Escape or U scancode remap",
+      "global keyboard interception"
+    ]
+  }
+}

@@ -28,6 +28,20 @@ DANGEROUS = {
         r"\b(?:PrintScreenKeyForSnippingEnabled|BlockInput|ClipCursor)\b",
         re.IGNORECASE,
     ),
+    "OS_KEYBOARD_REMAP_OR_ACCESSIBILITY": re.compile(
+        r"\b(?:Scancode\s+Map|SetKeyboardState|SystemParametersInfo[AW]?|"
+        r"FilterKeys|StickyKeys|ToggleKeys|Keyboard\s+Layout\\\\Scancode)\b",
+        re.IGNORECASE,
+    ),
+    "OS_GLOBAL_INPUT_INTERCEPTION": re.compile(
+        r"\b(?:SetWindowsHookEx[AW]?|RegisterHotKey|UnregisterHotKey)\b",
+        re.IGNORECASE,
+    ),
+    "OS_REGISTRY_MUTATION": re.compile(
+        r"\b(?:reg(?:\.exe)?\s+(?:add|delete|import)|"
+        r"(?:Set|New|Remove)-ItemProperty|winreg\.(?:SetValue|DeleteValue|CreateKey))\b",
+        re.IGNORECASE,
+    ),
 }
 
 

@@ -25,6 +25,7 @@ from betterinstincts.control_handoff import (
     live_hud_surface_busy,
 )
 from betterinstincts.player_presence import PresenceProbe
+from betterinstincts.effect_authority import assess_effect
 
 HUD_SURFACE_ALIASES = {
     "BOTTOM_RIGHT_PANEL": "BOTTOM_RIGHT_PANEL",
@@ -51,6 +52,7 @@ SURFACE_CLEARABLE_KIND = {
 
 DEFAULT_IDLE_MS = 15_000
 MAX_QUEUE = 32
+MAX_OBSERVATION_SECONDS = 2.0
 CONFIRM_GAP_SECONDS = 0.20
 IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$")
 Checkpoint = Callable[[], Awaitable[None]]
@@ -67,6 +69,14 @@ class QueuedStep:
     work_id: str
     validate: Validate
     action: Action
+
+
+@dataclass(frozen=True)
+class PassiveObservation:
+    """Explicit trusted read-only work. Never an input/OS mutation adapter."""
+    work_id: str
+    validate: Validate
+    observe: Callable[[], Awaitable[Any]]
 
 
 class CooperativeScreenQueue:
@@ -98,9 +108,10 @@ class CooperativeScreenQueue:
         self.sleep = sleep
         self.lock_root = lock_root
         self.pending: deque[QueuedStep] = deque()
+        self.pending_observations: deque[PassiveObservation] = deque()
         self.completed: list[str] = []
         self.needs_review: set[str] = set()
-        self.suspended: dict[str, QueuedStep] = {}
+        self.suspended: dict[str, QueuedStep | PassiveObservation] = {}
         self.events: deque[dict[str, str]] = deque(maxlen=128)
         self._running = False
 
@@ -111,9 +122,9 @@ class CooperativeScreenQueue:
             raise ValueError("CALLBACKS_REQUIRED")
         if step.work_id in self.completed or step.work_id in self.needs_review or any(
             p.work_id == step.work_id for p in self.pending
-        ):
+        ) or any(p.work_id == step.work_id for p in self.pending_observations):
             raise ValueError("WORK_ID_ALREADY_REGISTERED")
-        if len(self.pending) + len(self.suspended) >= MAX_QUEUE:
+        if len(self.pending) + len(self.pending_observations) + len(self.suspended) >= MAX_QUEUE:
             raise ValueError("QUEUE_FULL")
         self.pending.append(step)
         self._event("ENQUEUED", step.work_id)
@@ -134,6 +145,65 @@ class CooperativeScreenQueue:
             return await effect()
 
         self.enqueue(QueuedStep(work_id, validate, action))
+
+
+    def enqueue_observation(self, work_id: str, validate: Validate,
+                            observe: Callable[[], Awaitable[Any]]) -> None:
+        """Queue trusted, bounded, read-only observation without screen ownership.
+
+        Never pass game mutation, Playwright, mouse, keyboard, Windows settings,
+        focus changing capture, or arbitrary external/third-party callbacks.
+        Callbacks are reviewed code, not sandboxed by their Python type.
+        """
+        if not isinstance(work_id, str) or not IDENTIFIER.fullmatch(work_id):
+            raise ValueError("INVALID_WORK_ID")
+        if not callable(validate) or not callable(observe):
+            raise ValueError("CALLBACKS_REQUIRED")
+        if work_id in self.completed or work_id in self.needs_review or any(
+            x.work_id == work_id for x in self.pending
+        ) or any(x.work_id == work_id for x in self.pending_observations):
+            raise ValueError("WORK_ID_ALREADY_REGISTERED")
+        if len(self.pending) + len(self.pending_observations) + len(self.suspended) >= MAX_QUEUE:
+            raise ValueError("QUEUE_FULL")
+        self.pending_observations.append(PassiveObservation(work_id, validate, observe))
+        self._event("ENQUEUED_OBSERVATION", work_id)
+
+    async def _run_observation_once(self) -> dict[str, str | int]:
+        """One read-only observation can run even while a human uses the mouse.
+
+        It is independent of UI input and does not acquire a desktop lock.
+        An exception/timeout quarantines work; no blind retry or replay.
+        """
+        item = self.pending_observations[0]
+        decision = assess_effect("PASSIVE_OBSERVATION", session_active=bool(self.session_active()))
+        if not decision["execute_allowed"]:
+            return {"state": "WAITING_FOR_USER", "pending": len(self.pending) + len(self.pending_observations)}
+        self._running = True
+        try:
+            valid = await asyncio.wait_for(item.validate(), timeout=MAX_OBSERVATION_SECONDS)
+            if valid is not True:
+                self._suspend_observation(item, "NEEDS_REVALIDATION")
+                return {"state": "NEEDS_REVALIDATION", "pending": len(self.pending) + len(self.pending_observations)}
+            if not self.session_active():
+                return {"state": "WAITING_FOR_USER", "pending": len(self.pending) + len(self.pending_observations)}
+            await asyncio.wait_for(item.observe(), timeout=MAX_OBSERVATION_SECONDS)
+            self.pending_observations.popleft()
+            self.completed.append(item.work_id)
+            self._event("COMPLETED_OBSERVATION", item.work_id)
+            return {"state": "COMPLETED", "pending": len(self.pending) + len(self.pending_observations),
+                    "effect_class": "PASSIVE_OBSERVATION"}
+        except Exception as exc:
+            self._suspend_observation(item, "NEEDS_RECONCILIATION")
+            return {"state": "NEEDS_RECONCILIATION", "pending": len(self.pending) + len(self.pending_observations),
+                    "error_type": type(exc).__name__}
+        finally:
+            self._running = False
+
+    def _suspend_observation(self, item: PassiveObservation, state: str) -> None:
+        self.pending_observations.popleft()
+        self.needs_review.add(item.work_id)
+        self.suspended[item.work_id] = item
+        self._event(state, item.work_id)
 
     def _suspend(self, item: QueuedStep, state: str) -> None:
         self.needs_review.add(item.work_id)
@@ -186,7 +256,11 @@ class CooperativeScreenQueue:
 
     async def run_once(self) -> dict[str, str | int]:
         if self._running:
-            return {"state": "BUSY", "pending": len(self.pending)}
+            return {"state": "BUSY", "pending": len(self.pending) + len(self.pending_observations)}
+        # Observation is a disjoint, reviewed read-only lane. It may complete
+        # while a screen-effect queue is waiting for physical human inactivity.
+        if self.pending_observations:
+            return await self._run_observation_once()
         if not self.pending:
             return {"state": "EMPTY", "pending": 0}
         self._running = True
@@ -247,7 +321,7 @@ class CooperativeScreenQueue:
             last = await self.run_once()
             if last["state"] in {"EMPTY", "NEEDS_REVALIDATION", "NEEDS_RECONCILIATION", "BUSY"}:
                 return last
-            if last["state"] == "COMPLETED" and not self.pending:
+            if last["state"] == "COMPLETED" and not self.pending and not self.pending_observations:
                 return last
             if last["state"].startswith("WAITING"):
                 await self.sleep(self.poll_seconds)

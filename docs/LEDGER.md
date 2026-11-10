@@ -1,3 +1,21 @@
+## 2026-11-10 — Human-first effect lanes and host input sovereignty
+
+**Parent objective:** make every BetterInstincts subsystem yield to physical
+operator use of any application, keeping read-only observation/reasoning useful
+while preventing screen/game effects and forbidden Windows control. The reported
+Bluetooth, Print Screen, Escape and U interference is classified as
+UNAUTHORIZED_OPERATOR_HOST_CAPABILITY_INTERFERENCE; attribution/root cause
+remain unproved from GitHub-only access.
+
+**P95/P82/P08/P07/P124:** Reuse existing cooperative screen-owner and idle
+admission instead of inventing a second daemon. Added typed policy,
+bounded independent passive observation, direct regression fixtures and expanded
+host-setting static deny lists. P08 Windows/Sims runtime proof remains required,
+not asserted by offline CI. Consultation:
+`contracts/consultations/BI-HUMAN-SOVEREIGNTY-EFFECT-LANES-20261110.v1.json`.
+Keep BI-002 hunger live certification ACTIVE and do not overwrite parallel PR
+#159 spatial-perception work.
+
 ## 2026-11-10 — Moonwake Closers: verify, repair and reconcile world highlight learning
 
 **Operator request:** Invoke the established Closers composition P83 → P03 → P141 → P124 → P04 on the full world-traversal/learning conversation, not just re-describe PR #168. Current Moonwake AGENTS, deterministic resolver and five canonical prompt bodies were read; the group alias itself was not found registered on Moonwake main. Current BetterInstincts main at review was `6a399ea` (merged PR #168), with full `test` and independent peripheral-safety checks successful. Open PR #159 owns spatial-perception work; avoid overlapping its `host_listener`.
