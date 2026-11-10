@@ -1,3 +1,9 @@
+## 2026-11-09 — Fifth Gear household skill-round-robin live cert pack
+
+**Operator:** Too many Sims already present; refresh floor to `origin/main`; leave durable skill-maximize host logic; live-cert skill-first round-robin (pick skill → maximize portrait 1..N → next skill). No household expansion.
+
+**Floor:** ff-only to `553e2fa` (matches `origin/main`); PR #146 ancestor present. Host owner already on main: `diy_skill_force.household` `dispatch_order=skill_round_robin`. **Fifth Gear / P05:** `plans/active/BI-P05-FIFTH-GEAR-HOUSEHOLD-SKILL-RR-20261109.v1.json` + consultation `BI-P05-FIFTH-GEAR-HOUSEHOLD-SKILL-RR-20261109.v1.json`. Observed Live N=5 (4 Servos + Charlee). Canary skill Handiness. `DISPATCHED` ≠ Skills-panel PASS. BI-002/BI-005 remain open.
+
 ## 2026-11-09 — camera-trigger edge interpretation (P95 / P124 / Trifecta)
 
 **Parent outcome:** agents must distinguish a camera-panning pointer **rest** near the Sims client edge from a legitimate momentary click on HUD controls that overlap the edge. The canonical 48px band is a conservative client-relative avoidance zone, not a measured engine activation map. Code: `camera_traverse.assess_edge_interaction` / `evaluate_cursor_risk`, existing `scripts.camera_traverse` CLI, machine policy `contracts/camera-traverse.v1.json#edge_interaction` and glossary. No new daemon or Click/SendInput owner. Host-owned unattended edge dwell returns SAFE_REST; verified one-shot UI-chrome click returns a separate admission candidate with required post-click rest; unknown/world edge targets withhold; player-owned mouse yields. Cross-area recapture after actual camera move is required.
