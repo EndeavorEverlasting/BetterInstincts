@@ -1333,3 +1333,16 @@ Operator-observed Cursor defect: the skill-first N-portrait assignment was expan
 - Guard: `contracts/peripheral-authority.v1.json`, `scripts/check_peripheral_boundary.py` and `tests/test_peripheral_boundary.py`. Agent entrypoints and ontology documentation link this owner; SysAdminSuite owns Windows repair and approved technician rollout.
 - Evidence: operator reports both Bluetooth mice successfully connected after service repair. Exact service-only RCA remains unisolated from earlier adapter transition. Game foreground-stealing defect is separate.
 - Proof ceiling: repo static/fixture regression until new source checker, ontology chronology and CI are run; no new Windows, Bluetooth or Sims live certification is implied.
+
+
+## 2026-11-10 — Computer Purchase Upgrade Parts: human-first menu command
+
+**Operator observation:** A computer's deep interactions expose **Purchase Upgrade Parts** and five purchase items (Common, Electronic, Kitchen, Plumbing, Robot Salvage Upgrade Parts). The intermediate menu names and depth are **not** yet certified; do not infer a fixed Order path or coordinates.
+
+**Ownership / Fifth Gear:** P95 maps menu/command/queue/observation/funds/inventory seams; P82 adds falsifiable offline probes and regression tests; P08 live screen and inventory proof remains **UNVERIFIED** without a consented local Sims 4 host; P07 implements the scoped feature; P124 retains the existing DIY planner and `CooperativeScreenQueue` owners. The pre-mutation ontology consultation is `contracts/consultations/BI-COMPUTER-UPGRADE-PARTS-HUMAN-FIRST-20261110.v1.json`.
+
+**Implemented feature scope:** `contracts/upgrade-parts-force.v1.json` v3 exact five-menu catalog, dynamic menu lookup, user intent/spend/price/inventory preconditions, no-bypass OS/peripheral prohibitions. `betterinstincts/computer_upgrade_parts.py` proposes one observed game-native action at a time; `enqueue_computer_menu_step` delegates exclusively to the existing cooperative queue with revalidation and per-effect idle probes. `scripts/upgrade_parts_force.py computer-menu|computer-intent` are on-demand **passive commands**. Preserve the seven-item DIY budget, spawn alternatives, offline install, and earlier per-Sim pocket-stock receipts.
+
+**Safety:** User activity or unknown presence yields. Unknown menu, repeated page, invalid context or unsafe funds state waits. No service, Bluetooth, adapter, driver, keyboard, UAC, EA Connect, unpause, save or Build/Buy mutations authorized. One observed purchase receipt is not automatic inventory success; each purchase must increase the selected Sim's observed pocket count before another is considered.
+
+**Proof separation:** Code tests/PR checks are offline only. A live P08 acceptance requires disposable authorized Live Mode, observed menu discovery, explicit single-unit purchase within spend cap, inventory delta, human-reclaim interruption, and protected Bluetooth/peripheral controls unaffected. Do not claim local install, gameplay certification, or BI-002 closure from a repository merge.
