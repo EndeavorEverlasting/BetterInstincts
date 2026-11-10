@@ -6,6 +6,10 @@ Before edits, samples or experiments, read mandatory `docs/AGENT_OPERATING_RULES
 
 Ontology revision 4 embraces any user-chosen game/mod, mouse, keyboard, voice/assistive or other-app interaction. Adopted autonomous effects yield on activity or unknown presence. Resume after two fresh trusted idle probes and target revalidation. Prefer verified native semantic APIs; desktop fallback requires explicit opt-in. Use the existing cooperative queue's enqueue_effect; partial work retains intent and requires observed reconciliation plus a rebuilt remainder. Never change peripheral preferences or UAC to aid automation. Passive capture never steals focus. Unadopted agents and executing native calls are not forcibly intercepted.
 
+## Windows peripheral authority boundary
+
+`contracts/peripheral-authority.v1.json` and `scripts/check_peripheral_boundary.py` deny game agents Windows Bluetooth service, driver, pairing and input-preference changes. Idle/player permits never grant OS repair authority: route incidents to SysAdminSuite Field Workflow. Run the checker and `tests.test_peripheral_boundary` with ontology preflight; see `docs/PERIPHERAL_INCIDENT.md`.
+
 ## Invariants
 
 - **Player first:** explicit user control wins; no uncontrolled loops. Preserve any chosen interaction shape.
@@ -16,6 +20,10 @@ Ontology revision 4 embraces any user-chosen game/mod, mouse, keyboard, voice/as
 - **Evidence:** separate tests, build, PR, merge and gameplay. docs/SCENE_INTELLIGENCE.md owns independent cues; unknown denies.
 - **Continuity:** preserve intent and update docs/LEDGER.md, docs/ROADMAP.md and active sprint; no chat-only corrections.
 - Offline installation only; never EA Connect. Preserve lot-boundary, EA-file-first geometry and live-host policies in the mandatory detailed rules.
+
+## Existing operator/agent handoffs
+
+- Judgment P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`. Cursor shell/file hooks belong to PR #161, not the source scanner.
 
 ## Trajectory and proof
 
