@@ -1,0 +1,73 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SKILLS-PANEL-ROSTER-N4-20261109",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "38feb77f2c305cfedac51c01cd58059c99c4387e",
+  "proposed_capability": "P01/P95/P124 + Fifth Gear: durable Skills-panel roster ledger so agents stop requiring operator screenshots. Exact Live N=4 portraits (Evil Fagbot, Bernice Thermidor, Olga Chabenvenutzki, Charlee). panel-record / roster-status CLI writes PANEL_OBSERVED / PANEL_OBSERVED_MAX into diy-skill-force completion ledger; sequential skill-round-robin upgrades remaining gaps only. Never invent N=5.",
+  "operator_correction": "2026-11-09: Each Skills-panel screenshot shows four portraits. N=4. Bernice and Charlee already panel-maxed; Evil and Olga still need sequential upgrades. Repository must track panel levels so screenshots are not the ledger.",
+  "affected_concepts": [
+    "SIM",
+    "HOST_SESSION",
+    "OBSERVATION",
+    "CLAIM",
+    "PROOF_RECEIPT",
+    "GOAL_THREAD",
+    "PLAYER_PRESENCE"
+  ],
+  "relevant_canonical_owners": [
+    "contracts/diy-skill-force.v1.json",
+    "betterinstincts/diy_skill_force.py",
+    "scripts/diy_skill_force.py",
+    "docs/DIY_SKILL_FORCE.md",
+    "docs/HOUSEHOLD_JUDGMENT.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_PANEL_LEDGER_AND_OPERATOR_ATTESTED_N4_NOT_LIVE_DISPATCH_CERT",
+  "player_save_control_impact": "Local ignored completion ledger + offline plans/docs only. No save edits. Live skill dispatch remains separately admitted.",
+  "expected_outcome": "panel-record persists observed levels; roster-status reports N and remaining gaps; household skill-force skips PANEL_OBSERVED_MAX members; Fifth Gear sequential upgrade targets Evil then Olga (or skill-round-robin across N=4).",
+  "negative_tests": [
+    "N must match roster_keys length",
+    "Invented fifth portrait refused",
+    "DISPATCHED still not maximized language",
+    "PANEL_OBSERVED below 10 is not complete",
+    "all-listed-max marks full_unlock remaining rows PANEL_OBSERVED_MAX"
+  ],
+  "rollback_path": "Revert PR; delete local completion ledger entries.",
+  "unresolved_unknowns": [
+    "Live sequential dispatch on disposable save still requires operator screen lease",
+    "Exact wheel/camera RIGHT_CLICK_VIEW still OPEN"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-SKILLS-PANEL-ROSTER-N4-20261109.v1.json",
+    "contracts/diy-skill-force.v1.json",
+    "betterinstincts/diy_skill_force.py",
+    "scripts/diy_skill_force.py",
+    "tests/test_diy_skill_force.py",
+    "docs/DIY_SKILL_FORCE.md",
+    "docs/LEDGER.md",
+    "plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
+  "source_main_sha": "c2db51940ed97f7154331495aa32a7e9b5555b98"
+}

@@ -802,13 +802,22 @@
     "scales": "sim, household, world or future actor scope are optional, extensible labels; no central actor class is exclusive."
   },
   "semantic_viewpoint_extension": {
-    "revision": 3,
-    "created_for": "P95/P124_AGENT_CAMERA_AND_HUD_REFINEMENT_20261109",
-    "distinction": "GAME_SCENE_NOT_EQUAL_VIEW_SCENE_NOT_EQUAL_HUD_PANEL",
-    "camera_default": "FOLLOW_ACTIVE_SIM_VIA_VERIFIED_PORTRAIT_RIGHT_CLICK",
+    "revision": 4,
+    "created_for": "P01_P95_CAMERA_ZOOM_LADDER_AND_OVERLAY_CLEAR_20261109",
+    "distinction": "GAME_SCENE_NOT_EQUAL_VIEW_SCENE_NOT_EQUAL_HUD_PANEL_NOT_EQUAL_ZOOM_MODE",
+    "camera_default": "RIGHT_CLICK_VIEW_FOLLOW_PLUS_ZOOM_0_85_OF_MAX",
+    "zoom_ladder": {
+      "RIGHT_CLICK_VIEW": 0.85,
+      "ENVIRONMENT_NAV": 0.5,
+      "TRAVEL_AFAR": 0.0,
+      "MAX_CLOSE": 1.0
+    },
+    "travel_afar_only_when": "VERIFIED_LONG_DISTANCE_TRAVEL_GOAL",
+    "overlay_clear_when_zoomed_in": "AFTER_METADATA_TRACKED_AND_ACCOUNTED",
     "evidence": "OFFLINE_CONTRACTS_NOT_LIVE_SIMS_PROOF",
     "canonical_owners": [
       "contracts/portrait-follow.v1.json",
+      "contracts/camera-traverse.v1.json",
       "contracts/scenery-memory.v1.json",
       "contracts/ui-microsystems.v1.json"
     ]

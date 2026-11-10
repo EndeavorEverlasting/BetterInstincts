@@ -1,6 +1,22 @@
+## 2026-11-09 — Skills-panel roster ledger N=4 + sequential upgrade (Fifth Gear)
+
+**Operator correction:** Every Skills screenshot shows **four** portraits. **N=4** (not 5). Bernice Thermidor + Charlee already panel-maxed; Evil Fagbot + Olga Chabenvenutzki still have gaps. Stop requiring screenshots — record panel levels in the completion ledger.
+
+**CHANGED:** `panel-record` / `roster-status` CLI; `record_skill_panel_observed` / `record_member_panel_snapshot` / `set_household_roster`; contract `panel_record`; pack `plans/active/BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109.v1.json`; consultation `BI-SKILLS-PANEL-ROSTER-N4-20261109`. Seeded local ledger session `household-n4-20261109`.
+
+**PROVED offline:** `SkillsPanelRosterRecordTests`. Live sequential `--members 4` dispatch remains OPEN (operator screen lease).
+
+## 2026-11-09 — Camera zoom ladder + overlay clear for all agents (P01 / Fifth Gear)
+
+**Operator correction:** Agents keep parking at full zoom-out (Screenshot 1/4). Default must be Right Click View (Screenshot 2): portrait follow + zoom to 15% less than max close (Screenshot 3). Halfway zoom for environment planning. Full zoom-out only when travelling afar. When zoomed in, remove overlays once metadata is tracked. False "Handiness maximized" after DISPATCHED-only receipts is a P83 lie.
+
+**CHANGED:** consultation `BI-CAMERA-ZOOM-LADDER-OVERLAY-CLEAR-20261109`; `contracts/camera-traverse.v1.json#agent_zoom_policy` + `#zoomed_in_overlay_clear`; ontology viewpoint revision 4; `assess_agent_zoom_mode` / `plan_agent_default_view`; camera lock gate; `assess_overlay_clear_after_metadata`; Fifth Gear pack `plans/active/BI-P05-FIFTH-GEAR-CAMERA-ZOOM-LADDER-20261109.v1.json`.
+
+**PROVED offline:** `tests/test_camera_zoom_policy.py`. Live wheel-notch calibration and native dismiss P08 remain OPEN. Handiness Skills-panel LOCAL_OBSERVED across N remains OPEN (`HOUSEHOLD_SKILL_FORCE_DISPATCHED` only).
+
 ## 2026-11-09 — P83: DISPATCHED is not Handiness maximized
 
-**Operator correction (LIES:P83):** Chat claimed “Handiness maximized via host across the attested 5 portraits.” Operator Skills panel on the selected Servo showed **Cooking 10** and **Handiness absent** (Robotics 3). Truthful receipt was only `HOUSEHOLD_SKILL_FORCE_DISPATCHED` / `HOST_CHEAT_TYPED` with `pass_claim=FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED`.
+**Operator correction (LIES:P83):** Chat claimed "Handiness maximized via host across the attested 5 portraits." Operator Skills panel on the selected Servo showed **Cooking 10** and **Handiness absent** (Robotics 3). Truthful receipt was only `HOUSEHOLD_SKILL_FORCE_DISPATCHED` / `HOST_CHEAT_TYPED` with `pass_claim=FORBIDDEN_UNTIL_SKILLS_PANEL_LOCAL_OBSERVED`.
 
 **CHANGED:** `assess_skill_force_claim` rejects maximize language from DISPATCHED; `record_skill_panel_falsified` + status `PANEL_FALSIFIED` clear ledger skips; contract `completion_ledger.claim_language`. Consultation `BI-P83-DISPATCHED-NOT-MAXIMIZED-20261109.v1.json`.
 

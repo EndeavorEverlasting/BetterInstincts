@@ -363,6 +363,27 @@
     "research_owner": "betterinstincts.chance_event_research",
     "research_gate": "EXACT_VERSION_CONTEXT_REVIEWED_MEMO_AND_PLAYER_CHOICE",
     "chance_event_policy": "PLAYER_ONLY_NATIVE_CHOICE_UNLESS_INDEPENDENT_PLAYER_CHOICE_APPROVAL",
-    "heuristic_recommendation": "ADVISORY_NOT_APPROVAL"
+    "heuristic_recommendation": "ADVISORY_NOT_APPROVAL",
+    "zoomed_in_overlay_clear": {
+      "owner": "betterinstincts/scene_ui_semantics.py",
+      "policy_owner": "contracts/camera-traverse.v1.json#zoomed_in_overlay_clear",
+      "when_zoom_modes": [
+        "RIGHT_CLICK_VIEW",
+        "MAX_CLOSE"
+      ],
+      "after": "METADATA_TRACKED_AND_ACCOUNTED_BY_BETTER_INSTINCTS",
+      "clearable_kinds": [
+        "OPPORTUNITY_PANEL_EXPANDED",
+        "BOTTOM_RIGHT_PANEL_EXPANDED",
+        "CHEAT_CONSOLE",
+        "PHONE_INTERFACE_EXPANDED"
+      ],
+      "extensible": true,
+      "never_auto_clear": [
+        "UNRESOLVED_DECISION_OVERLAY",
+        "PLAYER_OWNED_MODAL",
+        "UNKNOWN_OVERLAY"
+      ]
+    }
   }
 }

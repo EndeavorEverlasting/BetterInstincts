@@ -127,8 +127,103 @@
     "UNBOUNDED_CAMERA_PAN",
     "MAP_TRAVERSE_WITHOUT_NAMED_GOAL",
     "LEAVE_CAMERA_ON_STREET",
-    "FORGET_RESTORE_AFTER_MAP_LEASE"
+    "FORGET_RESTORE_AFTER_MAP_LEASE",
+    "AGENT_DEFAULT_FULL_ZOOM_OUT",
+    "STREET_TOPDOWN_AS_DEFAULT",
+    "TRAVEL_AFAR_WITHOUT_LONG_DISTANCE_GOAL",
+    "ENVIRONMENT_NAV_WITHOUT_PLANNING_GOAL",
+    "CLAIM_SKILL_MAX_FROM_DISPATCHED_ONLY"
   ],
+  "agent_zoom_policy": {
+    "owner": "betterinstincts/camera_traverse.py",
+    "axis": "ZOOM_IN_FRACTION_OF_MAX_WHERE_1_0_IS_MAX_CLOSE",
+    "default_mode": "RIGHT_CLICK_VIEW",
+    "applies_to": "ALL_AGENTS_HOST_STACK_AND_LIVE_ADAPTERS",
+    "parallel_with": [
+      "portrait_follow",
+      "active_sim_camera_lock",
+      "scene_ui_semantics",
+      "host_stack",
+      "ASYNC_INTEROP_15S_IDLE"
+    ],
+    "modes": {
+      "RIGHT_CLICK_VIEW": {
+        "aliases": [
+          "AGENT_DEFAULT",
+          "INTERACTION_DEFAULT",
+          "SCREENSHOT_2"
+        ],
+        "zoom_in_fraction_of_max": 0.85,
+        "pullback_from_max_fraction": 0.15,
+        "required_follow": "RIGHT_CLICK_ACTIVE_SIM_PORTRAIT",
+        "use_when": "DEFAULT_AGENT_WORK_AND_RIGHT_CLICK_INTERACTION",
+        "screenshot_refs": [
+          "SCREENSHOT_2"
+        ]
+      },
+      "ENVIRONMENT_NAV": {
+        "aliases": [
+          "HALFWAY_ZOOM",
+          "PLANNING_ZOOM"
+        ],
+        "zoom_in_fraction_of_max": 0.5,
+        "requires": "NAMED_ENVIRONMENT_PLANNING_OR_NAV_GOAL",
+        "use_when": "ENVIRONMENT_UNDERSTANDING_PLANNING_MOVES",
+        "screenshot_refs": []
+      },
+      "TRAVEL_AFAR": {
+        "aliases": [
+          "FULL_ZOOM_OUT",
+          "STREET_TOPDOWN",
+          "SCREENSHOT_1",
+          "SCREENSHOT_4"
+        ],
+        "zoom_in_fraction_of_max": 0.0,
+        "requires": "VERIFIED_LONG_DISTANCE_TRAVEL_GOAL",
+        "use_when": "TRAVELLING_AFAR_ONLY",
+        "forbidden_as_default": true,
+        "screenshot_refs": [
+          "SCREENSHOT_1",
+          "SCREENSHOT_4"
+        ]
+      },
+      "MAX_CLOSE": {
+        "aliases": [
+          "SCREENSHOT_3",
+          "MAX_ZOOM_IN"
+        ],
+        "zoom_in_fraction_of_max": 1.0,
+        "use_when": "REFERENCE_EXTREME_NOT_AGENT_DEFAULT",
+        "forbidden_as_default": true,
+        "screenshot_refs": [
+          "SCREENSHOT_3"
+        ]
+      }
+    },
+    "wheel_calibration": "LIVE_P08_REQUIRED_NOTCH_DISTANCE_FROM_OBSERVED_CLASS",
+    "proof_ceiling": "OFFLINE_ZOOM_POLICY_NOT_LIVE_CAMERA_PROOF"
+  },
+  "zoomed_in_overlay_clear": {
+    "owner": "betterinstincts/scene_ui_semantics.py",
+    "when_zoom_modes": [
+      "RIGHT_CLICK_VIEW",
+      "MAX_CLOSE"
+    ],
+    "after": "METADATA_TRACKED_AND_ACCOUNTED_BY_BETTER_INSTINCTS",
+    "clearable_kinds": [
+      "OPPORTUNITY_PANEL_EXPANDED",
+      "BOTTOM_RIGHT_PANEL_EXPANDED",
+      "CHEAT_CONSOLE",
+      "PHONE_INTERFACE_EXPANDED"
+    ],
+    "extensible": true,
+    "never_auto_clear": [
+      "UNRESOLVED_DECISION_OVERLAY",
+      "PLAYER_OWNED_MODAL",
+      "UNKNOWN_OVERLAY"
+    ],
+    "proof_ceiling": "OFFLINE_OVERLAY_CLEAR_POLICY_NOT_LIVE_DISMISS_PROOF"
+  },
   "house_state_actions": [
     "CAMERA_PAN_ZOOM",
     "CAPTURE_ONLY",

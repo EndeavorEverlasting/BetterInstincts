@@ -195,6 +195,9 @@ def evaluate_turn(
     sim_camera_command: Optional[str] = None,
     sim_camera_observation: Optional[Mapping[str, object]] = None,
     camera_map_goal: Optional[Mapping[str, object]] = None,
+    camera_zoom_intent: Optional[str] = None,
+    camera_planning_goal: Optional[Mapping[str, object]] = None,
+    camera_travel_goal: Optional[Mapping[str, object]] = None,
     camera_clock_ms: Optional[int] = None,
     live_hud_observation: Optional[Mapping[str, object]] = None,
     requested_hud_panel: Optional[str] = None,
@@ -814,6 +817,9 @@ def evaluate_turn(
                 capture_ref=capture_ref, observation=sim_camera_observation,
                 map_requested=camera_navigation_requested,
                 map_goal=camera_map_goal, directions=camera_directions,
+                zoom_intent=camera_zoom_intent,
+                planning_goal=camera_planning_goal,
+                travel_goal=camera_travel_goal,
                 now_ms=camera_clock_ms,
             )
         except (SimCameraError, CameraTraverseError, TypeError) as exc:

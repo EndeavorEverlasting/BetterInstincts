@@ -85,7 +85,7 @@ Compared: (A) coordinate/script-specific screen automation, (B) flat screenshot 
 
 ## 2026-11-09 — scene evolution, HUD microsystems and retained wrong viewpoints
 
-**Three independent coordinate identities:** `GAME_SCENE` is a mode/menu (Live/Buy/Build); `VIEW_SCENE` is a specific observed viewpoint in a world/lot; `HUD_MICROSYSTEM` identifies the active tab or overlay. They must never be treated as interchangeable. The default agent view follows the selected active Sim via the **portrait right-click**, not Enter. Only a named, current goal and target can claim the existing <=30-second map lease.
+**Three independent coordinate identities:** `GAME_SCENE` is a mode/menu (Live/Buy/Build); `VIEW_SCENE` is a specific observed viewpoint in a world/lot; `HUD_MICROSYSTEM` identifies the active tab or overlay. They must never be treated as interchangeable. The default agent view is **RIGHT_CLICK_VIEW**: follow the selected active Sim via portrait right-click and hold zoom at 0.85 of max close (15% pullback). Halfway zoom is ENVIRONMENT_NAV only; full zoom-out is TRAVEL_AFAR only. When zoomed in, clear tracked overlays only after metadata is accounted for. Only a named, current goal and target can claim the existing <=30-second map lease.
 
 `betterinstincts/scene_ui_semantics.py` owns the visible bottom-right tab (aspirations, career/work, skills, relationships, Simology, personal inventory, needs). Exact active-panel identity requires visual + operator cues, current selected-Sim revision and current HUD layout revision. Switching panels or clearing an overlay invalidates earlier panel hitboxes; candidate targets resolve through existing `ui_microsystems` and `screen_atlas`. No guessed coordinates.
 

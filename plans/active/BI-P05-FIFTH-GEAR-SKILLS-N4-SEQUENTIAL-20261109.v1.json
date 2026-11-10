@@ -1,0 +1,86 @@
+{
+  "schema": "betterinstincts.p05-ordered-sprint-pack/v1",
+  "id": "BI-P05-FIFTH-GEAR-SKILLS-N4-SEQUENTIAL-20261109",
+  "prompt_resolution": {
+    "P05": {
+      "name": "[SERIALIZED] Ordered Sprint Plan Pack Generator",
+      "source_blob": "848728632c1243ebba023fa0012292a2ad33cada",
+      "role": "This ordered pack; /fifth-gear"
+    },
+    "P83": {
+      "role": "N=4 panel truth; DISPATCHED≠maximized; sequential upgrade remaining gaps"
+    }
+  },
+  "floor": {
+    "repo": "EndeavorEverlasting/BetterInstincts",
+    "primary_local_path": "C:/Users/CheeksMcClappeth/dev/BetterInstincts",
+    "observed_n": 4,
+    "roster_keys": ["EVIL_P0", "BERNICE_P1", "OLGA_P2", "CHARLEE_P3"],
+    "display_names": ["Evil Fagbot", "Bernice Thermidor", "Olga Chabenvenutzki", "Charlee"],
+    "panel_truth": {
+      "BERNICE_P1": "ALL_LISTED_SKILLS_LEVEL_10",
+      "CHARLEE_P3": "ALL_LISTED_SKILLS_LEVEL_10",
+      "EVIL_P0": {
+        "charisma": 1,
+        "gardening": 1,
+        "mischief": 1,
+        "robotics": 3,
+        "video_gaming": 1,
+        "wellness": 1
+      },
+      "OLGA_P2": {
+        "cooking": 10,
+        "robotics": 3,
+        "video_gaming": 2,
+        "fishing": 2,
+        "others_visible": 1
+      }
+    },
+    "rejected_lie": "N=5 Handiness maximized",
+    "session_id": "household-n4-20261109",
+    "mechanism": "python -m scripts.diy_skill_force panel-record|roster-status"
+  },
+  "parent_outcome": "Track Skills-panel levels in the completion ledger (N=4); skip Bernice+Charlee; sequentially skill-round-robin upgrade Evil+Olga remaining gaps to 10; RIGHT_CLICK_VIEW camera; clear overlays after metadata",
+  "runtime_partition": {
+    "host": "LOCAL_AGENT_RUNTIME_FOR_DISPATCH",
+    "provider_routes": ["GITHUB_ORIGIN"],
+    "current_chat_safe_work": "panel-record mechanism + seed ledger + pack + PR"
+  },
+  "ordered_sprints": [
+    {
+      "id": "S0",
+      "title": "Land panel-record mechanism + seed N=4 panel truth",
+      "owner": "REPO_AGENT",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S1",
+      "title": "Merge camera zoom ladder PR #151 after rebase",
+      "owner": "REPO_AGENT",
+      "status": "READY"
+    },
+    {
+      "id": "S2",
+      "title": "P08 sequential household skill-force N=4 full_unlock",
+      "owner": "LOCAL_AGENT",
+      "status": "BLOCKED_ON_OPERATOR_SCREEN",
+      "command": "python -m scripts.diy_skill_force household --members 4 --bundle full_unlock --execute --roster-key EVIL_P0 --roster-key BERNICE_P1 --roster-key OLGA_P2 --roster-key CHARLEE_P3 --first-portrait-attested --process-id PID --session-id household-n4-20261109"
+    },
+    {
+      "id": "S3",
+      "title": "P08 Skills-panel verify remaining gaps then panel-record",
+      "owner": "LOCAL_AGENT",
+      "status": "BLOCKED_ON_S2"
+    }
+  ],
+  "invariants": [
+    "N_EQUALS_4",
+    "NO_INVENTED_FIFTH_PORTRAIT",
+    "PANEL_RECORD_NOT_SCREENSHOT_LOOP",
+    "DISPATCHED_IS_NOT_MAXIMIZED",
+    "SKIP_BERNICE_AND_CHARLEE_WHEN_PANEL_MAX",
+    "PLAYER_FIRST",
+    "BI002_BI005_REMAIN_OPEN"
+  ],
+  "proof_ceiling": "PANEL_LEDGER_AND_PACK_NOT_LIVE_SEQUENTIAL_DISPATCH_UNTIL_OPERATOR_LEASE"
+}
