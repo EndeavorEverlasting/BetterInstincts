@@ -61,3 +61,11 @@ Plans alone never certify. `MET` requires independently attested pocket counts �
 ## Proof ceiling
 
 `HOST_DIY_PARTS_BUDGET_PLAN_AND_CERT_SCHEMA_NOT_BI002` — offline plans + cert schema; live SendInput / inventory OCR remain P08. Does not close BI-002.
+
+## 2026-11-10 — universal observed Order domains and eco/fuel source routing
+
+The [acquisition routing guide](ACQUISITION_ROUTING.md) extends this existing module across any attested active household and selected portrait, including interactive Order menus whose **Order** entry or nested domain can require variable **More Choices** paging. Reinspect each page, detect loops, and select only visible labels; a previously observed "two More Choices" is a hint, not a fixed instruction. The upstream five-item computer menu remains owned by `betterinstincts/computer_upgrade_parts.py` and its existing CooperativeScreenQueue dispatch/spend-cap/readback gates; `betterinstincts/upgrade_parts_force.py` adds read-only cross-source planning, not a second clicker.
+
+`Eco-Upgrade Parts` route to the Fabricator (15 bits + 10 pieces per attempt). Generator fuel is a refill via recycled bits/pieces. Biofuel-filled cans route to an insect farm's observed Collect Bio Fuel interaction, which is readiness/time dependent. Neither fuel category is assumed to be sold in the computer purchase picker. The typed contract is `contracts/upgrade-parts-force.v1.json#acquisition_routing`, with ontology `OBSERVED_MENU_ROUTE`, `ACQUISITION_SOURCE`, `ACTION_EFFECT_CLASS` and tests `tests/test_acquisition_integration.py`.
+
+Run `python -m scripts.upgrade_parts_force sources`, `acquisition --portraits ... --requests ...`, `menu-next --options ... --goal ...`, or `order-domain --portraits ... --domain ... --item ...` for **evaluate-only** source plans. An immediate-order candidate is not proof that the Sim received stock; follow the existing fresh scene, spend approval, pocket/funds-delta and player control gates. No protected saves, Build/Buy mutation, online Connect, OS services or Bluetooth changes.
