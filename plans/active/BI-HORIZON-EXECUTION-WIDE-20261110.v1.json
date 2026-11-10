@@ -220,6 +220,34 @@
           "camera": "OFF_LOT street/canal + face-cam clip LOCAL_OBSERVED; Enter after terrain arm; Gallery close via pixel [1819,48]; lot_focus assess_lot_focus remains policy",
           "receipt": "dist/game-host/horizon-exec-20261110/bi002/snack-queue-session-receipt.json",
           "next": "Dismiss Help/Gallery via measured X → zoom sane → phone Order OR Place fridge [1310,940] onto clear kitchen floor → Live Eat → live_cert trial 3"
+        },
+        "school_diversion_20261110_morning": {
+          "snack_queued": false,
+          "baseline_still": "2/5",
+          "location": "Copperdale High School — Morning Free Time ~1h38m; School Day ends 3:00 PM",
+          "trigger": "School Join/Send Alone modal at Fri 8:00 AM forced travel; Send Alone still followed",
+          "funds": 649897,
+          "preference_prompt": "Bernice Dislikes New Age Music → No",
+          "accidental_ui": "My Library search leftover Smog closed via Esc; Gallery close Esc preferred",
+          "viewport": {
+            "black_classifier": "BUILD_BUY_CATALOG_RECOVERY / live_viewport_black",
+            "recover_proved": "borrow→arm→F1→Enter→X*6→portrait recovers CONTENT_PRESENT/VIEWPORT_OK (viewport_ladder_beat.py)",
+            "reblack_risk": "terrain RMB arm on void and inventory/world pie overlap can re-black; Enter after arm mandatory"
+          },
+          "personal_inventory": {
+            "opened": true,
+            "food_candidates": "green bowl stack x4 ~[1622,940]; white canister adjacent; Growfruit stack",
+            "eat_attempts": "RMB/LMB on food hit world pie Teleport/Sleep/Ask for Help Cleaning; drag-to-portrait switched active Sim to Olga Servo — never Sell",
+            "needs_vs_inventory": "Needs yellow glow steals attention; inventory box must be clicked precisely left of Needs"
+          },
+          "active_sim_risk": "Olga Servo selected after failed food drag; must reselect Charlee before Eat",
+          "receipts": [
+            "dist/game-host/horizon-exec-20261110/bi002/after-viewport-ladder.png",
+            "dist/game-host/horizon-exec-20261110/bi002/after-eat2.png",
+            "dist/game-host/horizon-exec-20261110/bi002/after-drag-eat.png",
+            "dist/game-host/horizon-exec-20261110/bi002/school-diversion-receipt.json"
+          ],
+          "next": "Reselect Charlee → recover VIEWPORT_OK → queue Eat from personal inv food OR school cafeteria → unpause → live_cert record trial 3+; then modified×5 + rollback. Never Sell/delete saves. No BI-003 claim."
         }
       }
     },
