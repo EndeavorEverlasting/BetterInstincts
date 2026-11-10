@@ -27,10 +27,12 @@ class UpgradePartsForceTests(unittest.TestCase):
     def test_contract_household_budget_architecture(self):
         cfg = load_contract()
         self.assertEqual(cfg["architecture"]["selected"], "HOUSEHOLD_DIY_PARTS_BUDGET")
-        self.assertEqual(cfg["version"], 2)
+        self.assertEqual(cfg["version"], 3)
         self.assertEqual(cfg["household_budget"]["selected"], "PER_SIM_POCKET_STOCK")
         self.assertEqual(cfg["household_budget"]["preferred_acquisition_order"][0], "spawn")
         self.assertIn("phone", cfg["paths"])
+        self.assertEqual(len(cfg["computer_purchase_menu"]["part_ids"]), 5)
+        self.assertEqual(cfg["paths"]["computer"]["steps_template"][6]["op"], "DISCOVER_NESTED_MENU")
         self.assertIn("gsi_create_obj", cfg["forbidden"])
         self.assertTrue(cfg["offline_install"]["forbid_ea_online_connect"])
         self.assertEqual(cfg["offline_install"]["connection_required_dialog"], "STAY_OFFLINE_ONLY")
@@ -329,14 +331,12 @@ class UpgradePartsForceTests(unittest.TestCase):
         self.assertEqual(plan["state"], "YIELD_TO_PLAYER")
         self.assertEqual(plan["steps"], [])
 
-    def test_legacy_computer_path_now_uses_observed_menu_pagination(self):
+    def test_legacy_computer_path_preserves_PR163_observed_dispatch(self):
         plan = plan_parts_force(part_id="common_upgrade_parts", path="computer", quantity=2)
-        ops = [s["op"] for s in plan["steps"]]
-        self.assertIn("LEFT_CLICK_OBSERVED_COMPUTER", ops)
-        self.assertEqual(ops.count("FIND_VISIBLE_CHOICE_OR_BOUNDED_MORE_CHOICES"), 2)
-        self.assertIn("VERIFY_SELECTED_OBSERVED_PORTRAIT", ops)
-        self.assertIn("REQUIRE_FRESH_PURCHASE_PICKER_OBSERVATION", ops)
-        self.assertNotIn("PIE_MENU", ops)
+        ops = [step["op"] for step in plan["steps"]]
+        self.assertIn("DISCOVER_NESTED_MENU", ops)
+        self.assertFalse(plan["execute_allowed"])
+        self.assertEqual(load_contract()["version"], 3)
 
     def test_cli_script_compiles(self):
         script = Path(__file__).resolve().parents[1] / "scripts" / "upgrade_parts_force.py"
