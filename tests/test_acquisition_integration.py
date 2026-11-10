@@ -109,6 +109,19 @@ class AcquisitionRoutingIntegrationTests(unittest.TestCase):
         self.assertIn(source["url"], guide)
         self.assertNotIn("www.ea.com/games/battlefield/news/eco-lifestyle-gameplay", guide)
 
+    def test_verified_computer_runbook_does_not_regress_to_v2(self):
+        guide = (ROOT / "docs/UPGRADE_PARTS_FORCE.md").read_text(encoding="utf-8")
+        self.assertIn("Machine owner:", guide)
+        self.assertIn("v3", guide.split("## Goal")[0])
+        self.assertNotIn("v2", guide.split("## Goal")[0])
+        self.assertIn("verified menu, command and player sovereignty", guide)
+        self.assertIn("CooperativeScreenQueue.enqueue_effect", guide)
+        self.assertIn("explicit spend", guide.lower())
+        self.assertIn("menu_scope=ROOT", guide)
+        self.assertIn("menu_scope=ORDER", guide)
+        self.assertIn("universal observed Order domains", guide)
+        self.assertIn("insect farm", guide.lower())
+
     def test_semantic_contract_and_horizon_remain_consistent(self):
         graph = json.loads((ROOT / "contracts/ontology.v1.json").read_text(encoding="utf-8"))
         self.assertIn("OBSERVED_MENU_ROUTE", graph["concepts"])
