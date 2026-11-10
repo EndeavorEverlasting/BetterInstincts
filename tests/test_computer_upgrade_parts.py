@@ -65,8 +65,20 @@ class ComputerMenuTests(unittest.TestCase):
         self.assertEqual(decision["state"], "READY_TO_QUEUE")
         self.assertFalse(decision["execute_allowed"])
 
-    def test_dynamic_menu_prefers_visible_target_to_order_and_more_choices(self):
-        self.assertEqual(ready()["action"]["label"], "Purchase Upgrade Parts")
+    def test_dynamic_menu_obeys_root_order_then_nested_domain(self):
+        self.assertEqual(ready()["action"]["label"], "Order")
+        self.assertEqual(ready(menu_scope="ROOT", menu_labels=[
+            "Purchase Upgrade Parts", "More Choices..."])["action"]["label"], "More Choices...")
+        self.assertEqual(ready(menu_scope="ORDER", menu_labels=[
+            "Order", "Purchase Upgrade Parts", "More Choices..."],
+            order_menu_observed=True)["action"]["label"], "Purchase Upgrade Parts")
+        self.assertEqual(ready(menu_scope="ORDER", menu_labels=[
+            "Purchase Upgrade Parts", "More Choices..."])["reason"], "ORDER_SUBMENU_NOT_OBSERVED")
+        self.assertEqual(ready(menu_scope="ORDER", order_menu_observed=True,
+            menu_labels=["Other", "More Choices..."])["action"]["label"], "More Choices...")
+        self.assertEqual(ready(menu_scope="CHANGED")["reason"], "UNKNOWN_ORDER_MENU_SCOPE")
+        self.assertEqual(ready(menu_scope="ROOT", menu_labels=[
+            "Order", "Order", "More Choices..."])["reason"], "AMBIGUOUS_VISIBLE_ORDER_TARGET")
         self.assertEqual(
             ready(menu_labels=["Order", "More Choices..."])["action"]["label"], "Order")
         self.assertEqual(
@@ -76,6 +88,24 @@ class ComputerMenuTests(unittest.TestCase):
                   visited_labels=["More Choices..."])["state"], "READY_TO_QUEUE")
         self.assertEqual(
             ready(menu_labels=["Some mystery action"])["reason"], "NO_RECOGNIZED_OBSERVED_MENU_BRANCH")
+
+    def test_more_choices_can_precede_order_and_repeat_with_new_page(self):
+        root = ready(menu_scope="ROOT",
+                     menu_labels=["Browse", "More Choices..."])
+        self.assertEqual(root["action"]["label"], "More Choices...")
+        next_page = ready(menu_scope="ROOT", menu_pages_seen=1,
+                          menu_labels=["Order", "More Choices..."])
+        self.assertEqual(next_page["action"]["label"], "Order")
+        nested = ready(menu_scope="ORDER", order_menu_observed=True,
+                       menu_labels=["Parts and more", "More Choices..."])
+        self.assertEqual(nested["action"]["label"], "More Choices...")
+        nested2 = ready(menu_scope="ORDER", order_menu_observed=True,
+                        menu_pages_seen=1,
+                        menu_labels=["Purchase Upgrade Parts", "More Choices..."])
+        self.assertEqual(nested2["action"]["label"], "Purchase Upgrade Parts")
+        self.assertEqual(ready(menu_scope="ORDER", order_menu_observed=True,
+                               page_signature_seen_before=True,
+                               menu_labels=["Purchase Upgrade Parts"])["state"], "WAIT")
 
     def test_cycle_or_hop_limit_fails_closed(self):
         self.assertEqual(ready(page_signature_seen_before=True)["state"], "WAIT")
@@ -170,7 +200,7 @@ class CooperativeDispatchTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.events, [])
         self.age = 16000
         self.assertEqual((await self.queue.run_once())["state"], "COMPLETED")
-        self.assertEqual(self.events, ["fresh_scene", "game_ui:Purchase Upgrade Parts"])
+        self.assertEqual(self.events, ["fresh_scene", "game_ui:Order"])
         self.assertEqual(len(self.queue.completed), 1)
 
     async def test_changed_scene_suspends_and_does_not_click(self):
