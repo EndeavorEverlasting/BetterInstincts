@@ -168,7 +168,10 @@ def _admitted_template_navigation(process_id: int | None, session_id: str | None
         require_execute_session(session_id, process_id)
         with admitted_screen_lease(int(process_id), str(session_id), idle_ms=idle_ms) as ensure_ready:
             def check() -> None:
-                ensure_ready()  # two fresh trusted-idle probes per side-effect
+                try:
+                    ensure_ready()  # two fresh trusted-idle probes per side-effect
+                except HandoffError as exc:
+                    raise GateError("HOST_CONTROL_NOT_ADMITTED:" + str(exc)) from exc
                 observation = probe_windows(int(process_id))
                 if (not observation.probe_ok or not observation.foreground_is_sims
                         or observation.foreground_process_id != int(process_id)):
