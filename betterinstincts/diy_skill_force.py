@@ -77,6 +77,7 @@ def empty_completion_ledger() -> dict:
     return {
         "schema": COMPLETION_SCHEMA,
         "updated_at": None,
+        "scope_id": None,
         "members": {},
         "note": (
             "DISPATCHED = host typed stats.set_skill_level for resume/skip. "
@@ -107,6 +108,10 @@ def load_completion_ledger(path: Path | None = None) -> dict:
         raise DiySkillForceError("COMPLETION_LEDGER_INVALID")
     out = empty_completion_ledger()
     out["updated_at"] = raw.get("updated_at")
+    scope_id = raw.get("scope_id")
+    if scope_id is not None and (not isinstance(scope_id, str) or not re.fullmatch(r"[0-9a-f]{64}", scope_id)):
+        raise DiySkillForceError("COMPLETION_LEDGER_SCOPE_INVALID")
+    out["scope_id"] = scope_id
     out["members"] = dict(members)
     if isinstance(raw.get("note"), str):
         out["note"] = raw["note"]
@@ -2927,6 +2932,7 @@ def plan_household_skill_force(
     accept_reward_dialogs: Optional[bool] = None,
     session_id: Optional[str] = None,
     member_keys: Optional[Sequence[str]] = None,
+    household_scope: Optional[Mapping[str, object]] = None,
     completion_ledger: Optional[Mapping[str, object]] = None,
     redo: bool = False,
     cfg: Optional[dict] = None,
@@ -2979,9 +2985,23 @@ def plan_household_skill_force(
     target = int(probe.get("level") or cfg["inject_sequence"]["default_level"])
     ledger = completion_ledger if completion_ledger is not None else empty_completion_ledger()
     skill_rows = list(probe.get("skills") or [])
-    member_keys_resolved = [
-        completion_member_key(session_id, index, labels[index]) for index in range(count)
-    ]
+    if household_scope is not None:
+        scope_id = household_scope.get("scope_id")
+        scoped_keys = household_scope.get("member_keys")
+        if (not isinstance(scope_id, str) or
+                not re.fullmatch(r"[0-9a-f]{64}", scope_id) or
+                not isinstance(scoped_keys, list) or len(scoped_keys) != count or
+                not all(isinstance(k, str) and k.startswith(scope_id + "::key::") for k in scoped_keys)):
+            raise DiySkillForceError("HOUSEHOLD_SCOPE_INVALID")
+        ledger_scope = ledger.get("scope_id")
+        if ledger_scope != scope_id and (ledger_scope is not None or ledger.get("members")):
+            raise DiySkillForceError("CROSS_HOUSEHOLD_LEDGER_REUSE_FORBIDDEN")
+        member_keys_resolved = list(scoped_keys)
+    else:
+        scope_id = None
+        member_keys_resolved = [
+            completion_member_key(session_id, index, labels[index]) for index in range(count)
+        ]
     completed_by_member: list[set[str]] = []
     for mkey in member_keys_resolved:
         if redo:
@@ -3091,6 +3111,7 @@ def plan_household_skill_force(
             else "EXECUTE_HOUSEHOLD_SKILL_FORCE"
         ),
         "household_members": count,
+        "identity_scope_id": scope_id,
         "members_needing_work": members_needing,
         "cells_needing_work": cells_needing,
         "max_level_verified_by_ledger": False,
@@ -3111,6 +3132,7 @@ def plan_household_skill_force(
         "completion_ledger": {
             "schema": COMPLETION_SCHEMA,
             "session_id": session_id,
+            "scope_id": scope_id,
             "redo": bool(redo),
             "skip_already_maxed": not bool(redo),
         },
