@@ -1,0 +1,77 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-STREET-CREEK-SIDES-EA-FILE-FIRST-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "proposed_capability": "P00/P01: (1) Codify Bargain Bendh STREET_SIDE vs CREEK_SIDE (canal) orientation + camera-drift tokens (toward street = asphalt OFF_LOT risk; toward creek = water/canal OFF_LOT risk) in lot-cardinal-semantics (+ lot-boundary cross-link). (2) Strengthen lot-geometry-source so EA Documents save/Tray/DBPF READ_ONLY is unmistakable preferred authority; cardinal/street-creek/PrintWindow maps are FALLBACK only — advance research stub toward file-backed lot identity without opening Slot_00000007 without auth. Continue Horizon live gates after land; no new P05 pack.",
+  "affected_concepts": [
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "OBSERVATION",
+    "CLAIM",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT",
+    "PLAYER_PRESENCE"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "contracts/lot-cardinal-semantics.v1.json",
+    "betterinstincts/lot_cardinal_semantics.py",
+    "contracts/lot-boundary.v1.json",
+    "contracts/lot-geometry-source.v1.json",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "CONTRACT_HARNESS_NOT_EA_SAVE_OPEN_NOT_LIVE_PARTS_HIT_NOT_BI002_CLOSE",
+  "player_save_control_impact": "Never open/mutate/delete Slot_00000007 without explicit operator auth. Geometry stub may refresh path metadata only. STREET/CREEK codification is offline policy.",
+  "expected_outcome": "STREET_SIDE/CREEK_SIDE anchors + assess_camera_side_drift; lot-geometry-source authority_stack EA-first + next spike; tests; AGENTS/DOCTRINE/LEDGER/Horizon; then resume PAUSED live footprint gates.",
+  "negative_tests": [
+    "Street drift tokens must flag STREET_SIDE_OFF_LOT_RISK",
+    "Creek/canal drift tokens must flag CREEK_SIDE_OFF_LOT_RISK",
+    "lot-geometry-source authority_stack[0] must be EA file path",
+    "Cardinal/street-creek must remain FALLBACK under EA parser",
+    "Must not open Slot_00000007 in this slice"
+  ],
+  "rollback_path": "Revert street/creek blocks, assess_camera_side_drift, geometry-source authority_stack additions, and this consultation; prior cardinal + lot-boundary remain; BI-002 ACTIVE.",
+  "unresolved_unknowns": [
+    "Exact cardinal mapping of STREET_SIDE vs CREEK_SIDE on Bargain Bendh relative to world N",
+    "Whether disposable Slot copy auth will be granted for DBPF index spike"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-STREET-CREEK-SIDES-EA-FILE-FIRST-20261110.v1.json",
+    "contracts/lot-cardinal-semantics.v1.json",
+    "betterinstincts/lot_cardinal_semantics.py",
+    "tests/test_lot_cardinal_semantics.py",
+    "contracts/lot-geometry-source.v1.json",
+    "contracts/lot-boundary.v1.json",
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator repeated: street vs creek orientation must be repo-owned; EA file parse preferred over remapping town from PrintWindow. Codify both before more live thrash."
+}

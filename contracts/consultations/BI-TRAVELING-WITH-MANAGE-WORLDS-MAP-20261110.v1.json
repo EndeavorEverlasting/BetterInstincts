@@ -1,0 +1,79 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-TRAVELING-WITH-MANAGE-WORLDS-MAP-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8742d4965c764dc6a96eb5bca18ada46989c90b1",
+  "created_at": "2026-11-10T11:35:00-05:00",
+  "proposed_capability": "P00/P01: Expand Manage Worlds TRAVELING WITH travel-surface fixed-ui map (cancel X top+bottom, FORBIDDEN footprint/crown/world-globe, party portrait tray seeds, lot-pin/Play annotated as DO_NOT_CONFIRM while mapping) from operator Willow Creek dual-monitor frame + prior PrintWindow seeds. Prefer measure/seed over exiting travel; never confirm unwanted travel; never Sell/delete saves. Preserve street/creek + EA-file-first + lot-boundary owners.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "CLAIM",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "VIEW_SCENE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "contracts/fixed-ui-click-map.v1.json",
+    "betterinstincts/fixed_ui_click_map.py",
+    "betterinstincts/lot_focus.py",
+    "contracts/camera-traverse.v1.json",
+    "contracts/lot-cardinal-semantics.v1.json",
+    "contracts/lot-geometry-source.v1.json",
+    "contracts/lot-boundary.v1.json",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+    "docs/LEDGER.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OPERATOR_FRAME_AND_PRIOR_PRINTWINDOW_SEEDS_NOT_LIVE_TRAVEL_CONFIRM",
+  "player_save_control_impact": "No save edits, no Sell, no unwanted Travel/Play confirm, no Slot_00000007 open/delete. execute_allowed remains false for new seeds until admitted host queue.",
+  "expected_outcome": "Consultation + fixed-ui v19 additive travel-surface seeds + manage_worlds_travel_party block expansion + tests + LEDGER/Horizon; street/creek+EA-file-first already in owners remain; Sims currently Live+PAUSED so no re-entry to travel for measure.",
+  "negative_tests": [
+    "Footprint and crown remain FORBIDDEN_DENY and is_forbidden_target",
+    "World globe while traveling is FORBIDDEN_DENY",
+    "Play / lot-pin seeds stay annotated DO_NOT_CONFIRM_WHILE_MAPPING",
+    "Cancel X top remains [1055,22]; bottom X is secondary",
+    "Esc is not travel cancel"
+  ],
+  "rollback_path": "Revert fixed-ui v19 notes/seeds/block fields, this consultation, and travel tests; prior v15–v18 travel-cancel seeds remain; BI-002 ACTIVE.",
+  "unresolved_unknowns": [
+    "Exact PrintWindow remeasure of bottom cancel X while live on TRAVELING WITH (operator frame scale only)",
+    "Party portrait tray HIT certification under live travel"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-TRAVELING-WITH-MANAGE-WORLDS-MAP-20261110.v1.json",
+    "contracts/fixed-ui-click-map.v1.json",
+    "tests/test_fixed_ui_click_map.py",
+    "docs/LEDGER.md",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json"
+  ],
+  "evidence": [
+    "operator dual-monitor attach → dist/game-host/horizon-exec-20261110/order-upgrade-parts/op-frame-traveling-with-willow-creek-upscaled.png",
+    "prior PrintWindow cancel [1055,22] / footprint~1090 / crown~1131",
+    "live PrintWindow at map time was Live+PAUSED street (pw-traveling-with-map.png) — map from operator frame, do not re-enter travel to measure"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator 2026-11-10: opportunity to MAP TRAVELING WITH / Manage Worlds travel interface; P00/P01 require repo owners not chat-only; Sims not currently on travel surface so seed from operator frame + prior proved cancel X."
+}
