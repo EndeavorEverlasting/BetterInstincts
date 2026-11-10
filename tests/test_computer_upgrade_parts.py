@@ -111,6 +111,31 @@ class ComputerMenuTests(unittest.TestCase):
         self.assertEqual(observed["state"], "ONE_PURCHASE_OBSERVED")
         self.assertIsNone(observed["action"])
 
+    def test_any_observed_portrait_can_be_selected_without_name_or_screen_steal(self):
+        context = {
+            "stage": "PORTRAIT",
+            "observed_portrait_ids": ["ui:a", "ui:b", "ui:c"],
+            "target_portrait_id": "ui:c",
+            "current_selected_portrait_id": "ui:a",
+            "target_portrait_hitbox_verified": True,
+        }
+        result = ready(**context)
+        self.assertEqual(result["state"], "READY_TO_QUEUE")
+        self.assertEqual(result["action"], {
+            "kind": "SELECT_OBSERVED_PORTRAIT", "label": "ui:c",
+        })
+        self.assertTrue(result["requires_fresh_scene_and_player_admission"])
+        self.assertFalse(result["execute_allowed"])
+        self.assertEqual(ready(**dict(context, human_active_or_unknown=True))["state"], "YIELD_TO_PLAYER")
+        self.assertEqual(ready(**dict(context, target_portrait_id="ui:unknown"))["reason"],
+                         "TARGET_PORTRAIT_NOT_IN_FRESH_ROSTER")
+        self.assertEqual(ready(**dict(context, target_portrait_hitbox_verified=False))["reason"],
+                         "PORTRAIT_HITBOX_NOT_FRESHLY_VERIFIED")
+        self.assertEqual(ready(**dict(context, observed_portrait_ids=["ui:a", "ui:a"]))["reason"],
+                         "OBSERVED_PORTRAIT_ROSTER_REQUIRED")
+        self.assertEqual(ready(**dict(context, current_selected_portrait_id="ui:c"))["state"],
+                         "ALREADY_SELECTED")
+
     def test_unknown_state_or_out_of_menu_item_denied(self):
         with self.assertRaisesRegex(UpgradePartsForceError, "UNKNOWN_COMPUTER_MENU_STAGE"):
             ready(stage="BLUETOOTH_SERVICE")
@@ -160,6 +185,24 @@ class CooperativeDispatchTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual((await self.queue.run_once())["state"], "NEEDS_REVALIDATION")
         self.assertIn("stale_menu", self.queue.needs_review)
+
+    async def test_portrait_switch_uses_same_exclusive_queue_and_scene_proof(self):
+        self.age = 16000
+        async def validate():
+            self.events.append("portrait_hitbox_revalidated")
+            return True
+        async def effect(action):
+            self.events.append("select:" + action["label"])
+        decision = ready(stage="PORTRAIT", observed_portrait_ids=["ui:0", "ui:1"],
+                         target_portrait_id="ui:1",
+                         current_selected_portrait_id="ui:0",
+                         target_portrait_hitbox_verified=True)
+        enqueue_computer_menu_step(
+            self.queue, work_id="portrait_change", decision=decision,
+            validate_fresh_scene=validate, perform_game_ui_effect=effect,
+        )
+        self.assertEqual((await self.queue.run_once())["state"], "COMPLETED")
+        self.assertEqual(self.events, ["portrait_hitbox_revalidated", "select:ui:1"])
 
     async def test_denied_proposal_cannot_enter_queue(self):
         async def validate():
