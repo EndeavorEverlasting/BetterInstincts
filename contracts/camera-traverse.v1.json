@@ -347,9 +347,10 @@
     "restore_escalation": "SHIFT_ENTER_WHEN_ENTER_LEFT_STREET_ROOFTOP",
     "travel_cancel": {
       "seed": "host.manage_worlds_travel_party_cancel_x",
-      "client_xy": [1055, 33],
+      "client_xy": [1055, 22],
+      "prior_computer_use_scale_xy": [1055, 33],
       "canvas_1456x840_xy": [800, 25],
-      "forbidden": ["CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "ESC_AS_TRAVEL_CANCEL"]
+      "forbidden": ["CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "ESC_AS_TRAVEL_CANCEL", "SWITCH_CONTROL_EMPTY_STREET_ABOVE_STRIP"]
     },
     "forbidden_restore": [
       "UNBOUNDED_PAN",
@@ -524,7 +525,8 @@
       },
       "travel_cancel": {
         "seed": "host.manage_worlds_travel_party_cancel_x",
-        "client_xy": [1055, 33],
+        "client_xy": [1055, 22],
+        "prior_computer_use_scale_xy": [1055, 33],
         "canvas_1456x840_xy": [800, 25]
       },
       "forbid_default": [

@@ -421,7 +421,7 @@ class SceneryFocusHardeningTests(unittest.TestCase):
         self.assertEqual(out["gate"], "TRAVEL_PARTY_CANCEL_REQUIRED")
         primary = out["recovery"]["primary"]
         self.assertEqual(primary["seed"], "host.manage_worlds_travel_party_cancel_x")
-        self.assertEqual(primary["client_xy"], [1055, 33])
+        self.assertEqual(primary["client_xy"], [1055, 22])
         self.assertEqual(primary["canvas_1456x840_xy"], [800, 25])
         self.assertIsNone(out.get("restore"))
         for banned in ("CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "ESC_AS_TRAVEL_CANCEL"):

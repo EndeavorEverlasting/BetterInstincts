@@ -2,7 +2,7 @@
   "schema": "betterinstincts.horizon-execution-wide/v1",
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
-  "updated_at": "2026-11-10T09:55:00-05:00",
+  "updated_at": "2026-11-10T09:36:00-05:00",
   "live_truth_20261110": {
     "host": {"pid": 78240, "exe": "TS4_x64_fpb", "game_version": "1.121.361.1020"},
     "live_cert_run": "bi002-game1-20261107",
@@ -29,11 +29,11 @@
         ],
         "recovery": {
           "STREET_OR_ROOFTOP_OFF_FOCUS": "Enter then Shift+Enter if Enter left street/rooftop",
-          "TRAVELING_WITH_BANNER": "host.manage_worlds_travel_party_cancel_x [1055,33] / canvas ~(800,25); never crown/footprint",
+          "TRAVELING_WITH_BANNER": "host.manage_worlds_travel_party_cancel_x PrintWindow [1055,22] (prior computer-use scale [1055,33] / canvas ~(800,25)); never crown/footprint",
           "MANAGE_WORLDS_MAP": "exit/cancel unintended map; do not Enter-roam",
           "VIEWPORT_BLACK_OR_WHITE": "viewport.py ladder (distinct from scenery)"
         },
-        "forbidden": ["CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "CLICK_VOID"],
+        "forbidden": ["CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE", "CLICK_VOID", "SWITCH_CONTROL_EMPTY_STREET_ABOVE_STRIP"],
         "tests": "tests/test_lot_focus.py::SceneryFocusHardeningTests",
         "fixtures": "tests/fixtures/scenery_focus/ (crops from horizon-exec-20261110/bi002; originals preserved)",
         "consultation": "contracts/consultations/BI-SCENERY-FOCUS-20261110.v1.json",
@@ -43,14 +43,43 @@
     "travel_cancel_20261110_morning": {
       "state": "PROVED_LIVE_MEASURED",
       "stuck_surface": "Manage Worlds dual TRAVELING WITH: LabLab banners (Willow Creek then Sulani after accidental world nav)",
-      "cancel_hit": {"client_xy": [1055, 33], "canvas_1456x840_xy": [800, 25], "target_id": "host.manage_worlds_travel_party_cancel_x", "alias": "manage_worlds.travel_party_cancel_x"},
+      "cancel_hit": {"client_xy": [1055, 22], "printwindow_remeasure_20261110": true, "prior_computer_use_scale_xy": [1055, 33], "canvas_1456x840_xy": [800, 25], "first_white_circle_cluster_approx": [1050, 20], "target_id": "host.manage_worlds_travel_party_cancel_x", "alias": "manage_worlds.travel_party_cancel_x"},
       "text_miss": {"canvas_1456x840_xy": [556, 34], "client_xy_approx": [733, 44], "note": "hits banner TEXT not X"},
-      "forbidden": ["footprint_icon", "crown_icon"],
+      "forbidden": {"footprint_icon": [1090, 22], "crown_icon": [1131, 22], "note": "PrintWindow: footprint ~1090; crown ~1131 FORBIDDEN"},
       "kingdom_modal_close": {"canvas_1456x840_xy": [924, 217], "client_family": [1138, 255], "target_id": "host.manage_worlds_kingdom_modal_close_x"},
       "esc_while_traveling": "zooms neighborhood; does NOT cancel travel",
       "after_cancel": {"returned_to": "Live household lot", "funds": 649897, "clock": "Fri 8:54 AM", "active": "Servo", "charlee": "REMOTE_BRIEFCASE"},
-      "contract": "contracts/fixed-ui-click-map.v1.json v14 manage_worlds_travel_party_1920x1080",
+      "contract": "contracts/fixed-ui-click-map.v1.json v15 manage_worlds_travel_party_1920x1080 + switch_control_chip_trap",
       "next_gate": "Charlee Switch Control → Eat → live_cert trial 3+ on run bi002-game1-20261107 (baseline still 2/5)"
+    },
+    "switch_control_click_trap_20261110": {
+      "state": "PROVED_LIVE_MISS_TRAP",
+      "charlee": "REMOTE_BRIEFCASE after travel-cancel; must Switch Control before Eat",
+      "charlee_portrait": {
+        "target_id": "live.household_portrait_3",
+        "magenta_bbox_printwindow": {"x": [431, 480], "y": [1060, 1075]},
+        "face_hover_approx": [455, 1035],
+        "seed_client_xy": [450, 1055]
+      },
+      "switch_control_chip": {
+        "when_visible": "just above the portrait strip after hovering Charlee remote portrait",
+        "computer_use_band_y_approx": [898, 922],
+        "click": "PILL_TEXT (Switch Control label)",
+        "forbidden": [
+          "EMPTY_STREET_HIGH_ABOVE_STRIP",
+          "LIGHTNING_ICON_ALONE_IF_OPENS_TRAVEL"
+        ]
+      },
+      "proved_miss": {
+        "after_hover_charlee_click_xy": [455, 900],
+        "result": "MISSED chip; re-entered Manage Worlds TRAVELING WITH LabLab",
+        "rule": "Do NOT click that high above the portrait strip; aim pill text in the chip band, not empty street"
+      },
+      "buy_trap_exit": {
+        "household_inventory_sell_for_panel": "exit via live.top_live_people [1585,35] + F1; never Sell"
+      },
+      "contract": "contracts/fixed-ui-click-map.v1.json v15 live.switch_control_chip + live.household_portrait_3 notes",
+      "next_gate": "Switch Control to Charlee → Eat → live_cert trial 3+ on bi002-game1-20261107 (baseline still 2/5)"
     },
     "fridge_hit_zoomed_20261110": "HIT_PIE_MENU at client [500,560] after Z-zoom (~14) + Enter recenter; snack NOT queued; single frame; contracts/fixed-ui-click-map.v1.json camera_dependent_seeds_1920x1080",
     "fridge_hit": "WIDE [465,595] MISS (outdoor Upgrade/Possess); ZOOMED [500,560] HIT once then camera/story drift made re-HIT unstable",
@@ -295,12 +324,15 @@
           "cancel_x": {
             "target_id": "host.manage_worlds_travel_party_cancel_x",
             "alias": "manage_worlds.travel_party_cancel_x",
-            "client_xy": [1055, 33],
+            "client_xy": [1055, 22],
+            "printwindow_remeasure": true,
+            "prior_computer_use_scale_xy": [1055, 33],
+            "first_white_circle_cluster_approx": [1050, 20],
             "canvas_1456x840_xy": [800, 25],
             "prefer": "TOP_BANNER_X_FIRST_OF_THREE_ICONS"
           },
           "text_miss": {"canvas_1456x840_xy": [556, 34], "client_xy_approx": [733, 44]},
-          "forbidden_icons": ["footprint", "crown"],
+          "forbidden_icons": {"footprint": [1090, 22], "crown": [1131, 22]},
           "kingdom_modal": {
             "opened_by": "miss travel X / hit near crown",
             "close_x_canvas_1456x840_xy": [924, 217],
@@ -316,8 +348,34 @@
             "charlee": "REMOTE_BRIEFCASE"
           },
           "off_lot_recognition": "Camera on street/rooftop after cancel needs Enter recenter; scenery-not-in-focus when Manage Worlds map or street fills viewport without household lot interior",
-          "contract_v14": "contracts/fixed-ui-click-map.v1.json#manage_worlds_travel_party_1920x1080",
+          "contract_v15": "contracts/fixed-ui-click-map.v1.json#manage_worlds_travel_party_1920x1080",
           "next": "Charlee Switch Control → Eat → live_cert trial 3+ on bi002-game1-20261107 (baseline still 2/5). Never Sell/delete saves. No BI-003 claim."
+        },
+        "switch_control_click_trap_20261110": {
+          "state": "PROVED_LIVE_MISS_TRAP",
+          "snack_queued": false,
+          "baseline_still": "2/5",
+          "run_id": "bi002-game1-20261107",
+          "charlee_remote": "REMOTE_BRIEFCASE — Switch Control required before Eat",
+          "charlee_portrait": {
+            "target_id": "live.household_portrait_3",
+            "magenta_bbox_printwindow": {"x": [431, 480], "y": [1060, 1075]},
+            "face_hover_approx": [455, 1035]
+          },
+          "chip": {
+            "location": "just above portrait strip when visible after Charlee hover",
+            "computer_use_band_y_approx": [898, 922],
+            "click": "PILL_TEXT",
+            "forbidden": ["EMPTY_STREET_HIGH_ABOVE_STRIP", "LIGHTNING_ICON_ALONE_IF_OPENS_TRAVEL"]
+          },
+          "proved_miss": {
+            "xy": [455, 900],
+            "result": "MISSED chip → re-entered Manage Worlds TRAVELING WITH LabLab",
+            "rule": "Do NOT click that high above the strip"
+          },
+          "buy_trap_exit": "household inventory Sell-for panel → live.top_live_people [1585,35] + F1; never Sell",
+          "contract_v15": "contracts/fixed-ui-click-map.v1.json#live.switch_control_chip",
+          "next": "Switch Control to Charlee (pill text, not empty street / lightning-alone) → Eat → live_cert trial 3+. Never Sell/delete saves. No BI-003 claim."
         }
       }
     },
@@ -365,11 +423,12 @@
   ],
   "next_gates_ordered": [
     "1. DONE — living Hunger subject attested on LabLab after Load Slot_00000007 (never delete saves)",
-    "2. DONE — Manage Worlds travel-cancel LIVE_MEASURED [1055,33] / canvas (800,25); FORBIDDEN footprint/crown; Esc≠cancel",
-    "3. NEXT — Charlee Switch Control → Eat → live_cert trial 3+ on bi002-game1-20261107 (baseline still 2/5); Enter recenter if street/rooftop/map scenery-not-in-focus",
-    "4. Fridge/snack QUEUE still OPEN if Eat not yet queued — Multiselect Off [1878,791]; never Sell; kitchen Zx14+Enter; fridge [500,560]",
-    "5. BI-002 baseline trials 3-5 then modified 5/5 + rollback + maintainer review",
-    "6. Only after BI-002 live cert: BI-003A-E -> BI-003F -> BI-004 -> BI-005 -> BI-006"
+    "2. DONE — Manage Worlds travel-cancel PrintWindow [1055,22] (prior scale [1055,33] / canvas 800,25); FORBIDDEN footprint~1090 / crown~1131; Esc≠cancel",
+    "3. DONE — Switch Control click trap annotated: Charlee magenta bbox x431-480 y1060-1075; face hover ~(455,1035); chip just above strip y~898-922; ~(455,900) MISS re-opens TRAVELING WITH — click pill text, not empty street / lightning-alone",
+    "4. NEXT — Switch Control to Charlee → Eat → live_cert trial 3+ on bi002-game1-20261107 (baseline still 2/5); Enter recenter if street/rooftop/map scenery-not-in-focus; Buy exit via F1 + live.top_live_people [1585,35]; never Sell",
+    "5. Fridge/snack QUEUE still OPEN if Eat not yet queued — Multiselect Off [1878,791]; never Sell; kitchen Zx14+Enter; fridge [500,560]",
+    "6. BI-002 baseline trials 3-5 then modified 5/5 + rollback + maintainer review",
+    "7. Only after BI-002 live cert: BI-003A-E -> BI-003F -> BI-004 -> BI-005 -> BI-006"
   ],
   "next_commands": [
     "python -m scripts.live_cert status --run-id bi002-game1-20261107",

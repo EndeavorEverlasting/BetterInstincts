@@ -47,8 +47,8 @@ SCENERY_FOCUS_CLASSES = frozenset(
     }
 )
 
-# Live-measured travel-party cancel (fixed-ui-click-map v14).
-_TRAVEL_CANCEL_CLIENT_XY = (1055, 33)
+# PrintWindow-remeasured travel-party cancel (fixed-ui-click-map v15; prior scale was 1055,33).
+_TRAVEL_CANCEL_CLIENT_XY = (1055, 22)
 _TRAVEL_CANCEL_CANVAS_XY = (800, 25)
 _TRAVEL_CANCEL_SEED = "host.manage_worlds_travel_party_cancel_x"
 

@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.fixed-ui-click-map/v1",
-  "version": 14,
+  "version": 15,
   "version_notes": {
     "8": "Adds camera_dependent_seeds_1920x1080 (fridge HIT/MISS). Additive only: seed_targets_1920x1080 and all certified seeds unchanged; camera-dependent rows are NOT ingested into the fixed-HUD ledger.",
     "9": "Adds live.notebook_close_x [1338,276] (PrintWindow-measured Notebook dismiss). Additive only; prior seeds unchanged.",
@@ -8,7 +8,8 @@
     "11": "Adds live.inventory_multiselect_toggle [1878,791] (household panel; PrintWindow ON/OFF measured 2026-11-10; prior approx [1880,735] was wrong) and live.inventory_sell_button FORBIDDEN_DENY [1915,925] plus inventory_multiselect_1920x1080 block. Additive only: v10 seeds (incl. live.panel_inventory) unchanged. Sell can never be attested HIT nor resolved as clickable.",
     "12": "Corrects live.panel_inventory tray glyph to [1750,1058] (PrintWindow 2026-11-10). prior_xy_wrong [1757,1045] hit dark bar above icons and left Simology/Needs open. Prefer hotkey I when armed. Additive only.",
     "13": "Adds pack detail modal close X [1543,197], options MENU close X [1081,330], build cancel held-object [1013,1028]; documents Buy→Live prefer F1 + live.top_live_people; FORBIDDEN top-bar wander 1620-1700 (Owned Expansion Packs) and REMOVE_FLOOR without library checkpoint. Consultation BI-BUY-EXIT-PACK-MODAL-20261110. Additive only.",
-    "14": "Adds host.manage_worlds_travel_party_cancel_x [1055,33] LIVE_MEASURED_20261110 (computer-use canvas ~(800,25) on 1456×840 → physical 1920×1080). Prefer top TRAVELING WITH banner X (first of three circular icons after LabLab text). Text-miss ~canvas (556,34)/client ~[733,44]. FORBIDDEN footprint + crown. Esc while traveling zooms neighborhood only. Kingdom-of-Willow-Creek modal close family [1138,255]/canvas ~(924,217). Additive only."
+    "14": "Adds host.manage_worlds_travel_party_cancel_x [1055,33] LIVE_MEASURED_20261110 (computer-use canvas ~(800,25) on 1456×840 → physical 1920×1080). Prefer top TRAVELING WITH banner X (first of three circular icons after LabLab text). Text-miss ~canvas (556,34)/client ~[733,44]. FORBIDDEN footprint + crown. Esc while traveling zooms neighborhood only. Kingdom-of-Willow-Creek modal close family [1138,255]/canvas ~(924,217). Additive only.",
+    "15": "PrintWindow-remeasures travel-party cancel X to [1055,22] (first white circle cluster ~[1050,20]; prior computer-use scale [1055,33] retained as prior_xy). Footprint ~[1090,22]; crown ~[1131,22] FORBIDDEN. Adds live.switch_control_chip trap band (just above portrait strip y~898-922): click PILL TEXT; ~(455,900) after Charlee hover MISSED chip and re-opened Manage Worlds TRAVELING WITH LabLab — never empty street high above strip; never lightning-alone if it opens travel. Charlee portrait magenta bbox x431-480 y1060-1075; face hover ~(455,1035). Buy/Sell-for exit remains F1 + live.top_live_people [1585,35]. Additive only; not HIT-certified Switch Control click."
   },
   "authority": "docs/UI_CHROME.md",
   "owners": {
@@ -276,31 +277,34 @@
     "host.manage_worlds_travel_party_cancel_x": {
       "role": "CANCEL_TRAVELING_WITH_PARTY",
       "aliases": ["manage_worlds.travel_party_cancel_x"],
-      "client_xy": [1055, 33],
-      "status": "LIVE_MEASURED_20261110",
+      "client_xy": [1055, 22],
+      "prior_xy_computer_use_scale": [1055, 33],
+      "first_white_circle_cluster_approx": [1050, 20],
+      "status": "PRINTWINDOW_REMEASURED_20261110",
       "profile": "1920x1080",
       "canvas_1456x840_xy": [800, 25],
       "text_miss_canvas_1456x840_xy": [556, 34],
       "text_miss_client_xy": [733, 44],
       "icon_order_after_lablab_text": ["cancel_x", "footprint", "crown"],
       "prefer": "TOP_BANNER_X",
-      "notes": "TRAVELING WITH: LabLab dual-banner stuck on Manage Worlds (Willow Creek then Sulani after accidental world nav). Live-proved cancel at computer-use canvas ~(800,25) on 1456×840 → client [1055,33] on 1920×1080 — FIRST circular icon after LabLab text (X). Canvas ~(556,34)/client ~[733,44] hits banner TEXT (MISS, not X). Bottom TRAVELING WITH X is also valid but harder; prefer top X. Esc while traveling zooms neighborhood and does NOT cancel travel. After cancel: Live household lot funds §649,897 Fri 8:54 AM; active Servo; Charlee still remote (briefcase)."
+      "notes": "TRAVELING WITH: LabLab dual-banner stuck on Manage Worlds. PrintWindow-remeasured cancel X [1055,22] (first white circle cluster ~[1050,20]); prior computer-use canvas ~(800,25) scaled to [1055,33]. FIRST circular icon after LabLab text (X). Canvas ~(556,34)/client ~[733,44] hits banner TEXT (MISS, not X). Bottom TRAVELING WITH X is also valid but harder; prefer top X. Esc while traveling zooms neighborhood and does NOT cancel travel. After cancel: Live household lot; Charlee still remote (briefcase) — Switch Control next (see live.switch_control_chip trap)."
     },
     "host.forbidden_manage_worlds_travel_party_footprint": {
       "role": "FORBIDDEN_DENY_TRAVEL_CANCEL",
-      "client_xy": [1090, 33],
+      "client_xy": [1090, 22],
       "status": "FORBIDDEN_DENY",
       "action": "deny",
       "profile": "1920x1080",
-      "notes": "Second circular icon after LabLab text on TRAVELING WITH banner (footprint) — NOT cancel. Approx x right of cancel X [1055,33]; never click for travel cancel."
+      "notes": "Second circular icon after LabLab text on TRAVELING WITH banner (footprint) — NOT cancel. PrintWindow ~x1090; never click for travel cancel."
     },
     "host.forbidden_manage_worlds_travel_party_crown": {
       "role": "FORBIDDEN_DENY_TRAVEL_CANCEL",
-      "client_xy": [1125, 33],
+      "client_xy": [1131, 22],
+      "prior_xy_approx": [1125, 33],
       "status": "FORBIDDEN_DENY",
       "action": "deny",
       "profile": "1920x1080",
-      "notes": "Third circular icon after LabLab text on TRAVELING WITH banner (crown / Kingdom of Willow Creek). Missing the travel X and clicking near crown opened Kingdom modal. FORBIDDEN for cancel. Modal close X canvas ~(924,217) ≈ client near prior [1138,255] family (~[1218,279] scale)."
+      "notes": "Third circular icon after LabLab text on TRAVELING WITH banner (crown / Kingdom of Willow Creek). PrintWindow ~[1131,22] FORBIDDEN. Missing the travel X and clicking near crown opened Kingdom modal. Modal close X canvas ~(924,217) ≈ client near prior [1138,255] family."
     },
     "host.manage_worlds_kingdom_modal_close_x": {
       "role": "CLOSE_KINGDOM_WORLD_MODAL",
@@ -317,7 +321,7 @@
       "status": "DOCUMENTED_CANDIDATE_BUILD_EXIT",
       "profile": "1920x1080",
       "hotkey_prefer": "F1",
-      "notes": "Prefer F1; Build→Live people control. F2 alone does not exit Appliances/Buy once already in Buy. FORBIDDEN top-bar wander x≈1620-1700 (opens Owned Expansion Packs)."
+      "notes": "Prefer F1; Build→Live people control. Also exit household-inventory Sell-for panel via [1585,35]+F1 — never Sell. F2 alone does not exit Appliances/Buy once already in Buy. FORBIDDEN top-bar wander x≈1620-1700 (opens Owned Expansion Packs)."
     },
     "live.pack_detail_modal_close_x": {
       "role": "CLOSE_PACK_DETAIL_MODAL",
@@ -431,10 +435,28 @@
       "display_name_hint": "Charlee",
       "client_xy": [450, 1055],
       "hitbox_x": [420, 480],
+      "magenta_bbox_printwindow": {"x": [431, 480], "y": [1060, 1075]},
+      "face_hover_approx": [455, 1035],
       "status": "LIVE_REMEASURED_20261110",
       "profile": "1920x1080",
       "prior_xy_stale": [522, 1055],
-      "notes": "Skin-tone PrintWindow band 2026-11-10; stale 522 missed Charlee (Servo selected). Prove via Needs 6-bar + Charlee LabLab name."
+      "notes": "PrintWindow magenta bbox x431-480 y1060-1075; face hover ~(455,1035). Skin-tone band; stale 522 missed Charlee (Servo selected). When remote (briefcase), hover then click live.switch_control_chip PILL TEXT — never ~(455,900) empty street above strip. Prove via Needs 6-bar + Charlee LabLab name."
+    },
+    "live.switch_control_chip": {
+      "role": "SWITCH_CONTROL_REMOTE_HOUSEHOLD_SIM",
+      "client_xy": [455, 910],
+      "band_y_approx": [898, 922],
+      "status": "TRAP_ANNOTATED_NOT_HIT_CERTIFIED",
+      "profile": "1920x1080",
+      "precondition": "Hover Charlee remote/briefcase portrait first so Switch Control chip appears just above the portrait strip",
+      "click": "PILL_TEXT",
+      "proved_miss_xy": [455, 900],
+      "proved_miss_result": "MISSED chip; re-entered Manage Worlds TRAVELING WITH LabLab",
+      "forbidden": [
+        "EMPTY_STREET_HIGH_ABOVE_PORTRAIT_STRIP",
+        "LIGHTNING_ICON_ALONE_IF_OPENS_TRAVEL"
+      ],
+      "notes": "LIVE PROOF 2026-11-10: after travel-cancel Charlee is REMOTE_BRIEFCASE. Chip sits just above portrait strip (computer-use band y~898-922). Click the Switch Control pill text. Hovering Charlee then clicking ~(455,900) MISSED the chip and re-opened Manage Worlds TRAVELING WITH LabLab — do NOT click that high above the strip / empty street. Do not click lightning alone if it opens travel. client_xy [455,910] is band midpoint annotation only — NOT HIT-certified. Next gate: Switch Control → Eat → live_cert trial 3+ (baseline 2/5)."
     },
     "live.panel_aspirations": {
       "role": "TOGGLE_BOTTOM_RIGHT_PANEL",
@@ -1198,8 +1220,9 @@
   },
   "manage_worlds_travel_party_1920x1080": {
     "measured_at": "2026-11-10T04:20:00-05:00",
+    "remeasured_at": "2026-11-10T09:36:00-05:00",
     "profile": "1920x1080",
-    "coordinate_basis": "computer-use canvas 1456×840 scaled to PrintWindow/client 1920×1080",
+    "coordinate_basis": "PrintWindow client 1920×1080 (v15); prior computer-use canvas 1456×840 scale retained as prior_xy",
     "game_version": "1.121.361.1020",
     "location": "Manage Worlds TRAVELING WITH: LabLab dual banners (top preferred)",
     "owner": "betterinstincts/fixed_ui_click_map.py",
@@ -1208,17 +1231,19 @@
       "canvas": [1456, 840],
       "client": [1920, 1080],
       "proved_cancel_canvas_xy": [800, 25],
-      "proved_cancel_client_xy": [1055, 33],
+      "proved_cancel_client_xy": [1055, 22],
+      "prior_computer_use_scale_client_xy": [1055, 33],
+      "first_white_circle_cluster_approx": [1050, 20],
       "text_miss_canvas_xy": [556, 34],
       "text_miss_client_xy": [733, 44]
     },
     "targets": {
       "travel_party_cancel_x": {
         "target_id": "host.manage_worlds_travel_party_cancel_x",
-        "client_xy": [1055, 33],
+        "client_xy": [1055, 22],
         "canvas_1456x840_xy": [800, 25],
-        "status": "LIVE_MEASURED_20261110",
-        "notes": "First circular icon after LabLab text (X). Prefer top banner over bottom TRAVELING WITH X."
+        "status": "PRINTWINDOW_REMEASURED_20261110",
+        "notes": "First circular icon after LabLab text (X). PrintWindow [1055,22]; prefer top banner over bottom TRAVELING WITH X."
       },
       "kingdom_modal_close_x": {
         "target_id": "host.manage_worlds_kingdom_modal_close_x",
@@ -1228,13 +1253,13 @@
       },
       "forbidden_footprint": {
         "target_id": "host.forbidden_manage_worlds_travel_party_footprint",
-        "client_xy": [1090, 33],
+        "client_xy": [1090, 22],
         "status": "FORBIDDEN_DENY",
         "action": "deny"
       },
       "forbidden_crown": {
         "target_id": "host.forbidden_manage_worlds_travel_party_crown",
-        "client_xy": [1125, 33],
+        "client_xy": [1131, 22],
         "status": "FORBIDDEN_DENY",
         "action": "deny"
       }
@@ -1244,20 +1269,28 @@
       "funds": 649897,
       "clock": "Fri 8:54 AM",
       "active_sim": "Servo",
-      "charlee": "REMOTE_BRIEFCASE"
+      "charlee": "REMOTE_BRIEFCASE",
+      "next": "Switch Control via live.switch_control_chip (pill text) — never ~(455,900) empty street"
     },
     "off_lot_after_cancel": {
       "note": "Camera often on street/rooftop after cancel — needs Enter recenter. scenery-not-in-focus when Manage Worlds map or street fills viewport without household lot interior."
+    },
+    "switch_control_trap": {
+      "see": "live.switch_control_chip",
+      "proved_miss_xy": [455, 900],
+      "result": "re-opened Manage Worlds TRAVELING WITH LabLab"
     },
     "forbidden": [
       "CLICK_TRAVEL_PARTY_FOOTPRINT_AS_CANCEL",
       "CLICK_TRAVEL_PARTY_CROWN_AS_CANCEL",
       "TREAT_BANNER_TEXT_556_34_AS_CANCEL_X",
-      "EXPECT_ESC_TO_CANCEL_TRAVEL"
+      "EXPECT_ESC_TO_CANCEL_TRAVEL",
+      "SWITCH_CONTROL_EMPTY_STREET_ABOVE_STRIP"
     ],
     "not": [
       "USE_FOOTPRINT_OR_CROWN_FOR_TRAVEL_CANCEL",
-      "ASSUME_ESC_CANCELS_TRAVELING_WITH"
+      "ASSUME_ESC_CANCELS_TRAVELING_WITH",
+      "CLAIM_SWITCH_CONTROL_HIT_FROM_BAND_MIDPOINT"
     ]
   },
   "inventory_multiselect_1920x1080": {

@@ -241,7 +241,7 @@ When the camera shows **scenery off the active household lot** (street, canal, n
 | **ON_LOT_INTERIOR_OR_YARD** | None |
 | **STREET_OR_ROOFTOP_OFF_FOCUS** | **Enter** first; **Shift+Enter** only when Enter leaves street/canal/rooftop |
 | **MANAGE_WORLDS_MAP** | Exit/cancel unintended map travel — do not Enter-roam |
-| **TRAVELING_WITH_BANNER** | Cancel X `host.manage_worlds_travel_party_cancel_x` client `[1055,33]` / canvas `~(800,25)` |
+| **TRAVELING_WITH_BANNER** | Cancel X `host.manage_worlds_travel_party_cancel_x` PrintWindow `[1055,22]` (prior scale `[1055,33]` / canvas `~(800,25)`); never crown~1131 / footprint~1090 |
 | **VIEWPORT_BLACK_OR_WHITE** | `viewport.py` recovery ladder (not Enter-as-scenery) |
 
 **Forbidden always:** crown, footprint, Sell, delete saves, click void, unbounded street pan. Esc while traveling zooms neighborhood and does **not** cancel travel.

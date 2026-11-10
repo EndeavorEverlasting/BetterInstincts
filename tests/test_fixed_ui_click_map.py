@@ -351,15 +351,24 @@ class LoadPlayRecoveryCoordTests(unittest.TestCase):
 class ManageWorldsTravelPartyCancelTests(unittest.TestCase):
     def test_travel_party_cancel_x_live_measured(self):
         cfg = load_contract()
-        self.assertGreaterEqual(cfg["version"], 14)
+        self.assertGreaterEqual(cfg["version"], 15)
         seeds = cfg["seed_targets_1920x1080"]
         cancel = seeds["host.manage_worlds_travel_party_cancel_x"]
-        self.assertEqual(cancel["client_xy"], [1055, 33])
+        self.assertEqual(cancel["client_xy"], [1055, 22])
+        self.assertEqual(cancel["prior_xy_computer_use_scale"], [1055, 33])
         self.assertEqual(cancel["canvas_1456x840_xy"], [800, 25])
-        self.assertEqual(cancel["status"], "LIVE_MEASURED_20261110")
+        self.assertEqual(cancel["status"], "PRINTWINDOW_REMEASURED_20261110")
         self.assertIn("manage_worlds.travel_party_cancel_x", cancel["aliases"])
         self.assertEqual(cancel["text_miss_canvas_1456x840_xy"], [556, 34])
         self.assertEqual(cancel["icon_order_after_lablab_text"], ["cancel_x", "footprint", "crown"])
+        self.assertEqual(
+            seeds["host.forbidden_manage_worlds_travel_party_footprint"]["client_xy"],
+            [1090, 22],
+        )
+        self.assertEqual(
+            seeds["host.forbidden_manage_worlds_travel_party_crown"]["client_xy"],
+            [1131, 22],
+        )
         self.assertEqual(
             seeds["host.forbidden_manage_worlds_travel_party_footprint"]["status"],
             "FORBIDDEN_DENY",
@@ -372,7 +381,7 @@ class ManageWorldsTravelPartyCancelTests(unittest.TestCase):
         self.assertTrue(is_forbidden_target("host.forbidden_manage_worlds_travel_party_crown"))
         self.assertFalse(is_forbidden_target("host.manage_worlds_travel_party_cancel_x"))
         block = cfg["manage_worlds_travel_party_1920x1080"]
-        self.assertEqual(block["targets"]["travel_party_cancel_x"]["client_xy"], [1055, 33])
+        self.assertEqual(block["targets"]["travel_party_cancel_x"]["client_xy"], [1055, 22])
         self.assertEqual(block["alias_key"], "manage_worlds.travel_party_cancel_x")
         self.assertIn("CLICK_TRAVEL_PARTY_FOOTPRINT_AS_CANCEL", block["forbidden"])
         self.assertIn("EXPECT_ESC_TO_CANCEL_TRAVEL", block["forbidden"])
@@ -384,6 +393,22 @@ class ManageWorldsTravelPartyCancelTests(unittest.TestCase):
             cfg=cfg,
         )
         self.assertNotEqual(scored["classification"], "HIT")
+
+    def test_switch_control_chip_trap_annotated(self):
+        cfg = load_contract()
+        seeds = cfg["seed_targets_1920x1080"]
+        chip = seeds["live.switch_control_chip"]
+        self.assertEqual(chip["status"], "TRAP_ANNOTATED_NOT_HIT_CERTIFIED")
+        self.assertEqual(chip["proved_miss_xy"], [455, 900])
+        self.assertEqual(chip["click"], "PILL_TEXT")
+        self.assertIn("EMPTY_STREET_HIGH_ABOVE_PORTRAIT_STRIP", chip["forbidden"])
+        self.assertIn("LIGHTNING_ICON_ALONE_IF_OPENS_TRAVEL", chip["forbidden"])
+        charlee = seeds["live.household_portrait_3"]
+        self.assertEqual(charlee["magenta_bbox_printwindow"]["x"], [431, 480])
+        self.assertEqual(charlee["face_hover_approx"], [455, 1035])
+        block = cfg["manage_worlds_travel_party_1920x1080"]
+        self.assertEqual(block["switch_control_trap"]["proved_miss_xy"], [455, 900])
+        self.assertIn("SWITCH_CONTROL_EMPTY_STREET_ABOVE_STRIP", block["forbidden"])
 
 
 if __name__ == "__main__":

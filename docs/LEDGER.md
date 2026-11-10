@@ -1,6 +1,12 @@
+## 2026-11-10 — Switch Control click trap + travel-cancel PrintWindow remeasure (fixed-ui v15)
+
+**CHANGED:** Horizon plan + `contracts/fixed-ui-click-map.v1.json` v15 annotate LIVE PROOF Switch Control miss trap: Charlee magenta bbox x431–480 y1060–1075; face hover `~(455,1035)`; chip just above strip y~898–922 — click PILL TEXT; `~(455,900)` MISSED and re-opened Manage Worlds TRAVELING WITH LabLab. Travel-cancel PrintWindow `[1055,22]` (prior computer-use scale `[1055,33]`); footprint ~1090; crown ~1131 FORBIDDEN. Buy/Sell-for exit via `live.top_live_people [1585,35]` + F1; never Sell. `lot_focus` recovery seed aligned to `[1055,22]`.
+
+**NEXT:** Switch Control to Charlee (pill text, not empty street / lightning-alone) → Eat → `live_cert` trial 3+ on `bi002-game1-20261107` (baseline still 2/5).
+
 ## 2026-11-10 — Scenery-focus recognition (OFF_LOT / Manage Worlds / travel banner)
 
-**CHANGED:** Extended `betterinstincts/lot_focus.py` with `scenery_focus` classes `ON_LOT_INTERIOR_OR_YARD` | `STREET_OR_ROOFTOP_OFF_FOCUS` | `MANAGE_WORLDS_MAP` | `TRAVELING_WITH_BANNER` | `VIEWPORT_BLACK_OR_WHITE` plus `recovery_for_scenery_focus`. Recovery: Enter then Shift+Enter for street/rooftop; travel-cancel X `[1055,33]` / canvas `~(800,25)`; never crown/footprint/Sell/delete; viewport black/white stays on `viewport.py`. Fixtures under `tests/fixtures/scenery_focus/` (small crops from `horizon-exec-20261110/bi002`, originals preserved). Consultation `BI-SCENERY-FOCUS-20261110`. Offline only — not live camera cert; BI-002 still open.
+**CHANGED:** Extended `betterinstincts/lot_focus.py` with `scenery_focus` classes `ON_LOT_INTERIOR_OR_YARD` | `STREET_OR_ROOFTOP_OFF_FOCUS` | `MANAGE_WORLDS_MAP` | `TRAVELING_WITH_BANNER` | `VIEWPORT_BLACK_OR_WHITE` plus `recovery_for_scenery_focus`. Recovery: Enter then Shift+Enter for street/rooftop; travel-cancel X PrintWindow `[1055,22]` (prior scale `[1055,33]` / canvas `~(800,25)`); never crown/footprint/Sell/delete; viewport black/white stays on `viewport.py`. Fixtures under `tests/fixtures/scenery_focus/` (small crops from `horizon-exec-20261110/bi002`, originals preserved). Consultation `BI-SCENERY-FOCUS-20261110`. Offline only — not live camera cert; BI-002 still open.
 
 **NEXT:** Live agents must call `assess_lot_focus` before void clicks when scenery leaves the household lot; queue Eat / live_cert trial 3 after Charlee control restore.
 

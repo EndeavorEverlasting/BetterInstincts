@@ -76,7 +76,7 @@
     },
     "TRAVELING_WITH_BANNER": {
       "seed": "host.manage_worlds_travel_party_cancel_x",
-      "client_xy": [1055, 33],
+      "client_xy": [1055, 22],
       "canvas_1456x840_xy": [800, 25],
       "forbidden": ["CROWN", "FOOTPRINT", "SELL", "DELETE_SAVE"]
     },
