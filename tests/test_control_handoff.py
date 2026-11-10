@@ -197,8 +197,8 @@ class ControlHandoffTests(unittest.TestCase):
 
     def test_live_click_executor_never_batches_steps(self):
         with patch.object(needs_force.sys, "platform", "win32"), \
-             patch("betterinstincts.host_listener.status", return_value={"state": "ACTIVE"}), \
-             patch("betterinstincts.player_presence.probe_windows", return_value=probe(20000)), \
+             patch("betterinstincts.screen_admit.listener_status", return_value={"state": "ACTIVE"}), \
+             patch("betterinstincts.screen_admit.probe_windows", return_value=probe(20000)), \
              patch("scripts.game_host.focus"), \
              patch("scripts.needs_force._send_click") as click, \
              patch("scripts.needs_force.time.sleep"), \
@@ -216,8 +216,8 @@ class ControlHandoffTests(unittest.TestCase):
     def test_live_click_executor_stops_after_probe_changes(self):
         samples = iter([probe(20000), probe(20000), probe(0)])
         with patch.object(needs_force.sys, "platform", "win32"), \
-             patch("betterinstincts.host_listener.status", return_value={"state": "ACTIVE"}), \
-             patch("betterinstincts.player_presence.probe_windows", side_effect=lambda *_: next(samples)), \
+             patch("betterinstincts.screen_admit.listener_status", return_value={"state": "ACTIVE"}), \
+             patch("betterinstincts.screen_admit.probe_windows", side_effect=lambda *_: next(samples)), \
              patch("scripts.game_host.focus"), \
              patch("scripts.needs_force._send_click") as click, \
              patch("scripts.needs_force.time.sleep"), \
@@ -232,11 +232,11 @@ class ControlHandoffTests(unittest.TestCase):
 
 
     def test_session_deactivation_before_click_cancels(self):
-        states = iter([{"state": "ACTIVE"}, {"state": "ACTIVE"}, {"state": "INACTIVE"}])
+        states = iter([{"state": "ACTIVE"}, {"state": "ACTIVE"}, {"state": "ACTIVE"}, {"state": "INACTIVE"}])
         with (
             patch.object(needs_force.sys, "platform", "win32"),
-            patch("betterinstincts.host_listener.status", side_effect=lambda _: next(states)),
-            patch("betterinstincts.player_presence.probe_windows", return_value=probe(20000)),
+            patch("betterinstincts.screen_admit.listener_status", side_effect=lambda _: next(states)),
+            patch("betterinstincts.screen_admit.probe_windows", return_value=probe(20000)),
             patch("scripts.game_host.focus"),
             patch("scripts.needs_force._send_click") as click,
             patch("scripts.needs_force.time.sleep"),
