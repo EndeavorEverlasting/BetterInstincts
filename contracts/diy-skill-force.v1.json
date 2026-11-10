@@ -210,7 +210,7 @@
         "gap_cue": "NON_YELLOW_ROW_BELOW_TARGET",
         "gap_resolver": "betterinstincts.diy_skill_force.gap_targets_from_observed_levels",
         "force_gaps_owner": "betterinstincts.diy_skill_force.plan_force_gaps_beat",
-        "force_gaps_cli": "python -m scripts.diy_skill_force force-gaps --member-key CHARLEE_P3 --portrait-xy 522,1055 --bundle full_unlock --redo --always-include media_production --execute --process-id PID --console-strip-observed",
+        "force_gaps_cli": "python -m scripts.diy_skill_force force-gaps --member-key portrait-001 --portrait-xy OBSERVED_X,OBSERVED_Y --bundle full_unlock --save-key observed-save --household-key observed-household --members 1 --roster-key portrait-001 --session-id active-host-session",
         "never_forget": "skill_catalog is the canonical id→skill_stat→cheat list; full_unlock must cover adult majors; CLI: python -m scripts.diy_skill_force commands",
         "media_production_canonical": "stats.set_skill_level Major_MediaProduction 10",
         "inherited_all_listed_max_is_not_fresh_panel_proof": true
