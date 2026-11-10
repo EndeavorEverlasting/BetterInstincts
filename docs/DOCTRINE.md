@@ -79,3 +79,7 @@ Agents that click street, asphalt, neighbor lots, or canal have lost the house b
 ## P00/P01: interaction sovereignty and native transport
 
 The operator may combine manual game play, mod features, voice/assistive input, IDEs and other apps. Autonomous effects yield at the next cooperative boundary and wait for fresh inactivity evidence before revalidation. Never change screenshot, mouse, Bluetooth or UAC settings for automation. Prefer verified native semantic APIs; never invent an unsupported command. Desktop input is an explicit fallback under existing ownership/presence checks. Passive capture never restores/foregrounds Sims. This applies to adopted adapters, not arbitrary external agents or game-native behavior.
+
+## 2026-11-10 — mandatory CI / live game proof distinction
+
+A green CI check is not playable-mod proof. Never infer a Sims 4 runtime result, real-world object recognition accuracy or BI-002 milestone completion from offline fixtures or unit tests alone. `CHANGED | PROVED | NEXT` reports independently verified repository mutations, measured test outcomes and the remaining Windows-host P08 game-gate separately. Existing documented peripheral, save, player-presence and exact-build protections apply unchanged.
