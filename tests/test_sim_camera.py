@@ -69,7 +69,8 @@ class SimCameraPolicyTests(unittest.TestCase):
         self.assertEqual(center["effect"]["kind"], "SEND_KEY_CHORD")
         self.assertEqual(lot["effect"]["kind"], "SEND_KEY_CHORD")
         self.assertFalse(center["execute_allowed"])
-        self.assertEqual(load_chrome()["modes"]["LIVE"]["hotkeys"][-3]["id"], CENTER_SIM)
+        self.assertIn(CENTER_SIM, [row["id"] for row in load_chrome()["modes"]["LIVE"]["hotkeys"]])
+        self.assertIn(CENTER_LOT, [row["id"] for row in load_chrome()["modes"]["LIVE"]["hotkeys"]])
 
     def test_follow_is_game_api_not_a_fake_native_hotkey(self):
         p = plan(FOLLOW_SIM)
