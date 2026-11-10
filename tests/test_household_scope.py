@@ -49,6 +49,14 @@ class HouseholdScopeTests(unittest.TestCase):
         changed_roster = self.scope(keys=["portrait-002", "portrait-001"])
         self.assertEqual(changed_roster["scope_id"], baseline["scope_id"])
         self.assertNotEqual(changed_roster["roster_fingerprint"], baseline["roster_fingerprint"])
+        ledger = empty_completion_ledger()
+        ledger["scope_id"] = baseline["scope_id"]
+        ledger["roster_fingerprint"] = baseline["roster_fingerprint"]
+        with self.assertRaisesRegex(DiySkillForceError, "HOUSEHOLD_ROSTER_CHANGED"):
+            plan_household_skill_force(
+                members=2, skill_ids=["handiness"], household_scope=changed_roster,
+                completion_ledger=ledger,
+            )
 
     def test_arbitrary_household_size_without_named_sims(self):
         for n in (1, 2, 4, 9, 24):
@@ -82,6 +90,7 @@ class HouseholdScopeTests(unittest.TestCase):
         first = self.scope()
         ledger = empty_completion_ledger()
         ledger["scope_id"] = first["scope_id"]
+        ledger["roster_fingerprint"] = first["roster_fingerprint"]
         record_skill_dispatched(
             ledger, member_key=first["member_keys"][0],
             skill_id="handiness", skill_stat="Major_Handiness", level=10,
