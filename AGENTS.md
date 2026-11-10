@@ -19,6 +19,7 @@ Useful-item force: `python -m scripts.household_object_force`. DIY parts: `pytho
 - **Build structure / FLOOR_2 / all purchases:** No agent Build/Buy edits/purchases until ALL floors/rooms are scanned, classified, backed up to My Library pre-edit and model readback verified. Unknowns, stale saves, incomplete FLOOR_2 = DENY. Keep stairs/Craftidink CANCEL_UI and `admit_live_structure_effect`; offline leases are NOT live input permits. `docs/BUILD_LIBRARY_CHECKPOINT.md`.
 - **Offline install:** never EA Connect; Stay Offline only; play as installed.
 - **Storage:** no arbitrary profile writes, auto-discovery, asset copy, daemons, telemetry, unbounded logs.
+- **Public portability:** implement behavior from game mechanics, never a named operator household. Keep real Sim names, save/roster identifiers and progress out of tracked examples and code. Use per-installation/save/household scoped local ledgers, observe identity before effects, and fail closed on roster drift. See `docs/HOUSEHOLD_SCOPE.md`.
 - **Community-native:** review prior art/licensing; favor tuning before script hooks where justified.
 - **Performance:** bounded work; no global per-frame scans, busy-waits or unmeasured runtime hooks.
 - **Evidence:** separate tests, build, PR, merge and gameplay. See docs/SCENE_INTELLIGENCE.md; two cues; unknown -> no action.
