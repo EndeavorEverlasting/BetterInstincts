@@ -1,0 +1,80 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PORTABLE-INDIVIDUAL-HOUSEHOLD-SCOPE-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "024057a4836967a64fc7a7dcd386a4bb5c6f30c7",
+  "proposed_capability": "Portable public BetterInstincts: bind per-installation profile and observed save/household/portrait identity to local-only progression data. No individual's Sim names, household rosters or progress are universal rules.",
+  "operator_correction": "Public installs use different households, Sims, names, save state and profile preferences; agents must not commit one operator's Sim instances into shared source/tests/identity assumptions.",
+  "affected_concepts": [
+    "HOST_SESSION",
+    "SAVE_SLOT",
+    "HOUSEHOLD",
+    "SIM",
+    "SIM_PORTRAIT",
+    "PLAYER_PRESENCE",
+    "OBSERVATION",
+    "CLAIM",
+    "PROOF_RECEIPT",
+    "LEARNING_MODEL"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/installation_profiles.py",
+    "betterinstincts/household_judgment.py",
+    "betterinstincts/diy_skill_force.py",
+    "scripts/diy_skill_force.py",
+    "docs/HOUSEHOLD_JUDGMENT.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SCOPED_LOCAL_LEDGER_OFFLINE_TESTS_NOT_WINDOWS_GAME_PROOF",
+  "player_save_control_impact": "Only local profile user-config paths; no save scan, direct EA files writes, uncontrolled input, changes to live account settings, installer or hidden background jobs. Live still requires independent player-first game observer and executable screen permit.",
+  "expected_outcome": "An existing local installation profile and observed save/household/stable portrait IDs bind a private ledger; cross-profile, cross-save, cross-household or roster-reorder prior progress cannot silently authorize a new target. Generic public fixtures replace instance-specific Sims.",
+  "negative_tests": [
+    "different profile/save/household cannot reuse ledger",
+    "changed roster order stops/reconcile",
+    "one/two/many portrait arbitrary names support",
+    "name-only, duplicate or missing local IDs denied",
+    "legacy populated ledger cannot silently import",
+    "no session hard-coded in live helper",
+    "no game or save mutation from offline planners"
+  ],
+  "rollback_path": "Revert PR; leave existing local preferences and ignored/private ledgers intact. New scoped ledgers are never auto-migrated.",
+  "unresolved_unknowns": [
+    "Exact local stable Sims 4 save/household/portrait ID observer is not currently live certified",
+    "P08 disposable-save observation on Windows game is still required",
+    "Existing unrelated main CI errors require separate ownership"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-PORTABLE-INDIVIDUAL-HOUSEHOLD-SCOPE-20261110.v1.json",
+    "betterinstincts/household_judgment.py",
+    "betterinstincts/installation_profiles.py",
+    "betterinstincts/diy_skill_force.py",
+    "scripts/diy_skill_force.py",
+    "tests/test_diy_skill_force.py",
+    "tests/test_household_scope.py",
+    "docs/HOUSEHOLD_SCOPE.md",
+    "README.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
+  "source_main_sha": "a9d6633f2ce98b94c450268fe2e157e543db102e"
+}
