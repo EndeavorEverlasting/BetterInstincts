@@ -1671,14 +1671,10 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 result = {**result, "receipt": str(args.receipt)}
         elif args.command == "panel-record":
-            ledger_path = (
-                Path(args.completion_ledger)
-                if args.completion_ledger is not None
-                else default_completion_ledger_path()
-            )
-            if not ledger_path.is_absolute():
-                ledger_path = ROOT / ledger_path
+            scope, scoped_path = _scoped_household_ledger(args)
+            ledger_path = _resolve_ledger_path(args, scoped_path)
             ledger = load_completion_ledger(ledger_path)
+            _validate_scope_ledger(ledger, scope)
             if args.members is not None:
                 if len(args.roster_key) != int(args.members):
                     raise GateError("EXACT_OBSERVED_PORTRAIT_ROSTER_REQUIRED")
@@ -1700,11 +1696,16 @@ def main(argv: list[str] | None = None) -> int:
             if args.all_listed_max and not observed:
                 # Treat as full max attestation with empty explicit map.
                 observed = {}
-            mkey = (
-                args.member_key
-                if ("::key::" in args.member_key or "::idx::" in args.member_key)
-                else completion_member_key(args.session_id, 0, args.member_key)
-            )
+            if scope is not None:
+                if args.member_key not in args.roster_key:
+                    raise GateError("PANEL_MEMBER_NOT_IN_OBSERVED_SCOPED_ROSTER")
+                mkey = scope["member_keys"][args.roster_key.index(args.member_key)]
+            else:
+                mkey = (
+                    args.member_key
+                    if ("::key::" in args.member_key or "::idx::" in args.member_key)
+                    else completion_member_key(args.session_id, 0, args.member_key)
+                )
             snap = record_member_panel_snapshot(
                 ledger,
                 member_key=mkey,
@@ -1713,6 +1714,8 @@ def main(argv: list[str] | None = None) -> int:
                 mark_unlisted_full_unlock_max=bool(args.all_listed_max),
                 target_level=int(args.target_level),
             )
+            if scope is None and args.completion_ledger is None:
+                raise GateError("PRIVATE_PROFILE_SCOPE_REQUIRED_FOR_PANEL_PERSISTENCE")
             path = save_completion_ledger(ledger, ledger_path)
             result = {
                 "state": "SKILLS_PANEL_RECORDED",
@@ -1727,21 +1730,19 @@ def main(argv: list[str] | None = None) -> int:
                     json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
                 )
         elif args.command == "roster-status":
-            ledger_path = (
-                Path(args.completion_ledger)
-                if args.completion_ledger is not None
-                else default_completion_ledger_path()
-            )
-            if not ledger_path.is_absolute():
-                ledger_path = ROOT / ledger_path
+            scope, scoped_path = _scoped_household_ledger(args)
+            ledger_path = _resolve_ledger_path(args, scoped_path)
             ledger = load_completion_ledger(ledger_path)
+            _validate_scope_ledger(ledger, scope)
             catalog = catalog_snapshot()
             bundle = args.bundle or "full_unlock"
             skill_ids = list((catalog.get("bundles") or {}).get(bundle, {}).get("skill_ids") or [])
             roster = ledger.get("household_roster") if isinstance(ledger.get("household_roster"), dict) else {}
             members_out = []
             for key, row in sorted((ledger.get("members") or {}).items()):
-                if args.session_id and args.session_id not in str(key):
+                if scope is not None and key not in scope["member_keys"]:
+                    continue
+                if scope is None and args.session_id and args.session_id not in str(key):
                     continue
                 skills = (row or {}).get("skills") or {}
                 done = completed_skill_ids_for_member(ledger, key, target_level=int(args.target_level))
@@ -1795,14 +1796,10 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "target-sim":
             if len(args.roster_key) != int(args.members):
                 raise GateError("EXACT_OBSERVED_PORTRAIT_ROSTER_REQUIRED")
-            ledger_path = (
-                Path(args.completion_ledger)
-                if args.completion_ledger is not None
-                else default_completion_ledger_path()
-            )
-            if not ledger_path.is_absolute():
-                ledger_path = ROOT / ledger_path
+            scope, scoped_path = _scoped_household_ledger(args)
+            ledger_path = _resolve_ledger_path(args, scoped_path)
             ledger = load_completion_ledger(ledger_path)
+            _validate_scope_ledger(ledger, scope)
             portrait_xy = None
             if args.portrait_client_xy:
                 parts = [p.strip() for p in str(args.portrait_client_xy).split(",")]
@@ -1839,10 +1836,14 @@ def main(argv: list[str] | None = None) -> int:
                 "evaluation": evaluate_member_skill_levels(
                     ledger,
                     member_key=(
-                        args.member_key
-                        if "::key::" in args.member_key
-                        else completion_member_key(
-                            args.session_id, int(args.roster_index), args.member_key
+                        scope["member_keys"][int(args.roster_index)]
+                        if scope is not None
+                        else (
+                            args.member_key
+                            if "::key::" in args.member_key
+                            else completion_member_key(
+                                args.session_id, int(args.roster_index), args.member_key
+                            )
                         )
                     ),
                     skill_ids=list(
