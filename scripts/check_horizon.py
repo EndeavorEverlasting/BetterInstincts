@@ -97,7 +97,7 @@ def validate(data):
             or esc.get("current_product_gate")!="BI-002"
             or esc.get("product_gate_effect")!="NONE"
             or esc.get("does_not_supersede")!=SUPPORTING_ID
-            or esc.get("status")!="ROUTED_LOCAL_EVIDENCE_OPEN"
+            or esc.get("status") not in {"ROUTED_LOCAL_EVIDENCE_OPEN","REVIEWED_LOCAL_EVIDENCE"}
             or esc.get("dispatch")!=SUPPORTING_DISPATCH
             or esc.get("runbook")!="plans/active/BI-ESC-U-FORENSICS-P04-20261110.md"):
         raise HorizonError("ESC_U_P04_CANONICAL_WORKLOAD_LOST")
@@ -106,11 +106,37 @@ def validate(data):
             or origin.get("proof")!="OFFLINE_CI_AND_MAIN_READBACK_NOT_PHYSICAL_KEY_CERTIFICATION"):
         raise HorizonError("ESC_U_SOURCE_AND_PHYSICAL_PROOF_CONFLATED")
     state=esc.get("status_dimensions") or {}
-    if (state.get("physical_escape_menu")!="NOT_OBSERVED"
-            or state.get("physical_u_clubs")!="NOT_OBSERVED"
-            or state.get("culpable_cursor_session")!="UNATTRIBUTED"
-            or state.get("local_hook_active")!="NOT_OBSERVED"):
-        raise HorizonError("ESC_U_PHYSICAL_CAUSALITY_UNPROVEN")
+    receipts=esc.get("proof_receipts") or {}
+    accepted={
+        "physical_escape_menu": {"NOT_OBSERVED","LOCAL_OBSERVED_WITH_RECEIPT"},
+        "physical_u_clubs": {"NOT_OBSERVED","LOCAL_OBSERVED_WITH_RECEIPT",
+                             "NOT_APPLICABLE_PACK_ABSENT"},
+        "local_hook_active": {"NOT_OBSERVED","LOCAL_VERIFIED_WITH_RECEIPT"},
+        "culpable_cursor_session": {"UNATTRIBUTED","DIRECT_LOCAL_EVIDENCE_REVIEWED"},
+        "physical_recovery": {"OPEN","ACCEPTED_AFTER_LOCAL_RETEST"},
+    }
+    baseline={
+        "physical_escape_menu": "NOT_OBSERVED",
+        "physical_u_clubs": "NOT_OBSERVED",
+        "local_hook_active": "NOT_OBSERVED",
+        "culpable_cursor_session": "UNATTRIBUTED",
+        "physical_recovery": "OPEN",
+    }
+    for field,allowed in accepted.items():
+        value=state.get(field)
+        if value not in allowed:
+            raise HorizonError("ESC_U_PHYSICAL_CAUSALITY_UNPROVEN")
+        ref=receipts.get(field)
+        if value!=baseline[field]:
+            if (not isinstance(ref,str) or
+                    not ref.startswith("dist/game-host/") or
+                    ".." in ref.split("/") or not ref.endswith(".json")):
+                raise HorizonError("ESC_U_LOCAL_REVIEWED_RECEIPT_REQUIRED")
+        elif ref is not None:
+            raise HorizonError("ESC_U_UNOBSERVED_MUST_NOT_CLAIM_RECEIPT")
+    if (esc.get("status")=="REVIEWED_LOCAL_EVIDENCE"
+            and state["physical_recovery"]!="ACCEPTED_AFTER_LOCAL_RETEST"):
+        raise HorizonError("ESC_U_P04_PREMATURE_WORKLOAD_COMPLETION")
     policy=set(esc.get("safety") or [])
     for guard in ("OPERATOR_OWNS_INPUT","SINGLE_CURSOR_LEASE",
                   "NO_UNATTENDED_KEY_INJECTION","NO_OS_KEY_REMAP",
