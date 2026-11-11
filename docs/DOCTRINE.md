@@ -195,4 +195,3 @@ all player-sovereignty, beneficial fun/social, interruption, patch,
 peripheral and protected-save rules; native coding is not carte blanche.
 See `docs/NATIVE_GAMEPLAY_ARCHITECTURE.md`. Issue #171 owns the
 unverified native adapter; BI-002 hunger stays the live Horizon gate.
-
