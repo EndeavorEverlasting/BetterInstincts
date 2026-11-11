@@ -37,8 +37,7 @@ SOURCE_OWNERS = {
     "horizon": HORIZON,
 }
 ROUTES = {
-    "AGENTS.md": ("docs/AGENT_OPERATING_RULES.md", "docs/WORLD_TRAVERSAL_HARNESS.md",
-                  "HIGHLIGHT_OBSERVATION", "WORLD_INTERACTION_ATTEMPT"),
+    "AGENTS.md": ("docs/AGENT_OPERATING_RULES.md", "docs/WORLD_TRAVERSAL_HARNESS.md"),
     "docs/AGENT_OPERATING_RULES.md": ("contracts/world-traversal-harness.v1.json",
                                       "BI-ONT-028..030", "python -m scripts.check_world_traversal_harness"),
     "docs/DOCTRINE.md": ("HIGHLIGHT_OBSERVATION", "WORLD_TARGET_TRACK",
@@ -247,6 +246,11 @@ def validate_contract(
                    ".cursor/skills/world-traversal-p08/SKILL.md"):
         _must(needed in referenced or needed == MANIFEST,
               "WORLD_P01_SOURCE_MAP_GAP:" + needed)
+    # Root is a strictly size-budgeted router; detailed semantics live in the
+    # mandatory owner, never in a duplicated always-on prompt wall.
+    root_agent = contents.get("AGENTS.md", "")
+    _must(isinstance(root_agent, str) and len(root_agent) <= 3600,
+          "WORLD_P01_ROOT_GOVERNANCE_BUDGET")
     for path, fragments in ROUTES.items():
         content = contents.get(path)
         _must(isinstance(content, str), "WORLD_P01_ROUTE_FILE_MISSING:" + path)
