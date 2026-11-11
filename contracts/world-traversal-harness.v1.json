@@ -1,0 +1,261 @@
+{
+  "schema": "betterinstincts.world-traversal-harness/v1",
+  "id": "BI-P00-P01-WORLD-TRAVERSAL-HARNESS",
+  "revision": 1,
+  "purpose": "Canonical agent/harness route for world-object highlight, camera/target continuity and replay-safe observed-outcome learning, not fixed HUD chrome or an input runtime.",
+  "scope": "REPOSITORY_OFFLINE_GOVERNANCE_AND_LOCAL_GAME_P08_HANDOFF",
+  "product_gate": "BI-002",
+  "supporting_priority": "BI-WORLD-TRAVERSAL-P08-SENSOR",
+  "authority": {
+    "root": "AGENTS.md",
+    "detail": "docs/AGENT_OPERATING_RULES.md",
+    "doctrine": "docs/DOCTRINE.md",
+    "ontology": "contracts/ontology.v1.json",
+    "ontology_min_revision": 5,
+    "semantic_ids": [
+      "HIGHLIGHT_OBSERVATION",
+      "WORLD_TARGET_TRACK",
+      "WORLD_INTERACTION_ATTEMPT"
+    ],
+    "invariants": [
+      "BI-ONT-028",
+      "BI-ONT-029",
+      "BI-ONT-030"
+    ],
+    "domain_contract": "contracts/world-traversal-learning.v1.json",
+    "domain_library": "betterinstincts/world_traversal_learning.py",
+    "host_adapter": "betterinstincts/host_stack.py",
+    "game_control_owner": "betterinstincts/screen_admit.py",
+    "lot_guard": "betterinstincts/lot_boundary.py",
+    "presence_contract": "contracts/player-presence.v1.json",
+    "save_contract": "contracts/save-policy.v1.json",
+    "existing_workflow": "plans/active/BI-HORIZON.dispatch.v1.json",
+    "horizon": "plans/horizon.v1.json",
+    "runbook": "plans/active/BI-WORLD-TRAVERSAL-CLOSERS-P04-20261110.md",
+    "independent_writer": "PR159_SEPARATE_UNMERGED_OR_OWNER_RECONCILIATION_REQUIRED"
+  },
+  "codebase_map": [
+    {
+      "surface": "AGENT_ENTRY",
+      "paths": [
+        "AGENTS.md",
+        "docs/AGENT_OPERATING_RULES.md",
+        "docs/DOCTRINE.md",
+        "docs/ONTOLOGY.md"
+      ]
+    },
+    {
+      "surface": "SCHEMA",
+      "paths": [
+        "contracts/ontology.v1.json",
+        "contracts/world-traversal-learning.v1.json",
+        "contracts/workstation-paths.v1.json"
+      ]
+    },
+    {
+      "surface": "PURE_EVALUATOR",
+      "paths": [
+        "betterinstincts/world_traversal_learning.py",
+        "betterinstincts/host_stack.py",
+        "tests/test_world_traversal_learning.py"
+      ]
+    },
+    {
+      "surface": "EXISTING_INPUT_ADMISSION",
+      "paths": [
+        "betterinstincts/screen_admit.py",
+        "betterinstincts/lot_boundary.py",
+        "contracts/player-presence.v1.json",
+        "contracts/save-policy.v1.json"
+      ]
+    },
+    {
+      "surface": "HORIZON_AND_DISPATCH",
+      "paths": [
+        "plans/horizon.v1.json",
+        "plans/active/BI-HORIZON.dispatch.v1.json",
+        "scripts/horizon_status.py",
+        "scripts/check_horizon.py"
+      ]
+    },
+    {
+      "surface": "P01_AGENT_HARNESS",
+      "paths": [
+        ".cursor/skills/world-traversal-p08/SKILL.md",
+        "scripts/check_world_traversal_harness.py",
+        "tests/test_world_traversal_harness.py",
+        "docs/WORLD_TRAVERSAL_HARNESS.md"
+      ]
+    },
+    {
+      "surface": "CI_AND_WORKSTATION",
+      "paths": [
+        ".github/workflows/ci.yml",
+        "contracts/workstation-paths.v1.json",
+        "bootstrap.py",
+        ".cursor/hooks.json",
+        ".cursor/hooks/operator_boundary.py"
+      ]
+    }
+  ],
+  "workflow": [
+    {
+      "id": "OFFLINE_PREFLIGHT",
+      "owner": "CURRENT_CHAT_RUNTIME_OR_LOCAL_AGENT_RUNTIME",
+      "depends_on": [],
+      "trigger": "WORLD_TRAVERSAL_WORK_INTENT",
+      "mode": "READ_ONLY",
+      "checks": [
+        "python -m scripts.check_ontology",
+        "python -m scripts.check_world_traversal_harness",
+        "python -m scripts.check_horizon",
+        "python -m scripts.horizon_status",
+        "python -m unittest tests.test_world_traversal_learning -v",
+        "python -m scripts.world_traversal_eval"
+      ],
+      "result": "OFFLINE_CONTRACT_AND_SYNTHETIC_REGRESSION_ONLY"
+    },
+    {
+      "id": "WORLD_SENSOR",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "depends_on": [
+        "OFFLINE_PREFLIGHT"
+      ],
+      "trigger": "OPERATOR_APPROVED_DISPOSABLE_LIVE_GAME_AND_EXACT_BUILD",
+      "mode": "PASSIVE_CAPTURE_ONLY_AFTER_CONSENT",
+      "checks": [
+        "fresh camera revision, target and 2 independent per-frame cues",
+        "two ordered distinct capture refs",
+        "highlight loss and occlusion abstention",
+        "player activity immediately yields; zero foreground grab from passive capture"
+      ],
+      "result": "PRIVATE_LOCAL_SENSOR_RECEIPT_NOT_GAME_CLICK_CERT"
+    },
+    {
+      "id": "WORLD_OUTCOME",
+      "owner": "LOCAL_AGENT_RUNTIME",
+      "depends_on": [
+        "WORLD_SENSOR"
+      ],
+      "trigger": "NEW_SEPARATE_ONE_EFFECT_OPERATOR_INPUT_PERMIT",
+      "mode": "ONE_REVERSIBLE_ACTION_IF_ADMITTED",
+      "checks": [
+        "screen_admit + lot_boundary + player_presence + exact patch + save guard",
+        "stale camera and off-lot reject",
+        "post-action independent GAME_EVENT or OPERATOR_REVIEW evidence",
+        "explicit player_interrupted false and no replay/heldout overlap"
+      ],
+      "result": "PRIVATE_LOCAL_CLICK_OUTCOME_RECEIPT_NOT_BI002_CERT"
+    },
+    {
+      "id": "WORLD_INTEGRATE",
+      "owner": "CURRENT_CHAT_RUNTIME",
+      "depends_on": [
+        "WORLD_OUTCOME"
+      ],
+      "trigger": "ACCEPTED_SANITIZED_SENSOR_EVIDENCE_AND_PR159_OWNER_RECONCILED",
+      "mode": "ISOLATED_CODE_PR",
+      "checks": [
+        "ontology consultation before code mutation",
+        "review PR159 writer and shared files before integration",
+        "full GitHub CI and postmerge readback"
+      ],
+      "result": "INTEGRATED_SOURCE_NOT_LIVE_CERT"
+    }
+  ],
+  "launch_order": [
+    "OFFLINE_PREFLIGHT",
+    "WORLD_SENSOR",
+    "WORLD_OUTCOME",
+    "WORLD_INTEGRATE"
+  ],
+  "runtime_partition": {
+    "current_provider": "GitHub",
+    "current_host": "CURRENT_CHAT_RUNTIME",
+    "game_host": "LOCAL_AGENT_RUNTIME",
+    "ci_host": "CI_OR_REMOTE_RUNNER",
+    "operator_grant": "OPERATOR_OR_PHYSICAL_RUNTIME",
+    "shared_desktop": "SINGLE_SCREEN_OWNER_SERIAL_WITH_GAME_HUNGER",
+    "auto_dispatch": false,
+    "observed_local_activation": false
+  },
+  "artifacts": [
+    {
+      "id": "OFFLINE_MODEL",
+      "path": "dist/world-traversal-eval/*.json",
+      "visibility": "IGNORED_LOCAL_ONLY",
+      "writer": "explicit offline evaluation CLI",
+      "max_bytes": "BOUNDED_BY_EXISTING_EVALUATOR",
+      "proof": "synthetic labels/holdout only"
+    },
+    {
+      "id": "P08_SENSOR",
+      "path": "dist/game-host/<approved-run-id>/world-highlight-sensor-receipt.json",
+      "visibility": "PRIVATE_LOCAL_ONLY_NOT_TRACKED",
+      "writer": "local game-capable agent with explicit operator consent",
+      "max_bytes": "BOUNDED_REVIEWED_RECEIPT",
+      "proof": "real sensor proof only"
+    },
+    {
+      "id": "P08_OUTCOME",
+      "path": "dist/game-host/<approved-run-id>/world-click-outcome-receipt.json",
+      "visibility": "PRIVATE_LOCAL_ONLY_NOT_TRACKED",
+      "writer": "local game-capable agent after independent input permit",
+      "max_bytes": "BOUNDED_REVIEWED_RECEIPT",
+      "proof": "one observed click outcome only"
+    },
+    {
+      "id": "SOURCE_PROOF",
+      "path": "docs/LEDGER.md",
+      "visibility": "PUBLIC_TRACKED_SANITIZED",
+      "writer": "reviewed repository PR",
+      "max_bytes": "DOCUMENT",
+      "proof": "source + CI/PR/merge identity, never private game capture"
+    }
+  ],
+  "validators": [
+    "python -m scripts.check_world_traversal_harness",
+    "python -m unittest tests.test_world_traversal_harness -v",
+    "python -m scripts.check_horizon",
+    "python -m scripts.world_traversal_eval",
+    "python -m unittest tests.test_world_traversal_learning -v",
+    "python -m scripts.check_peripheral_boundary"
+  ],
+  "harness": {
+    "skill": ".cursor/skills/world-traversal-p08/SKILL.md",
+    "activation": "USER_OR_AGENT_REQUEST_INVOLVES_WORLD_HIGHLIGHT_TARGET_PERCEPTION_OR_P08_SENSOR",
+    "kind": "SCOPED_READ_FIRST_AND_LOCAL_ADMISSION",
+    "hook_existing": ".cursor/hooks/operator_boundary.py",
+    "hook_runtime_activation": "NOT_VERIFIED_LOCAL_HOST",
+    "operator_report": "python -m scripts.horizon_status",
+    "complete_check": "python -m scripts.check_world_traversal_harness",
+    "cli_trigger": "python -m scripts.check_world_traversal_harness"
+  },
+  "workstation": {
+    "canonical_owner": "contracts/workstation-paths.v1.json",
+    "bootstrap_owner": "bootstrap.py",
+    "profile_keys": [
+      "windows",
+      "linux"
+    ],
+    "roles": [
+      "development",
+      "use",
+      "worktrees",
+      "entrypoint"
+    ],
+    "runtime_location_truth": "RULE_ONLY_NOT_LOCAL_HOST_VERIFIED",
+    "not_installing_new_game_mod": true
+  },
+  "safety": {
+    "execute_allowed": false,
+    "auto_collect_frames": false,
+    "auto_persist_models": false,
+    "auto_use_saves": false,
+    "may_change_windows_peripherals": false,
+    "may_replace_screen_input_owner": false,
+    "may_certify_BI002": false,
+    "host_effects_outside_this_harness": true
+  },
+  "proof_ceiling": "SOURCE_HARNESS_AND_OFFLINE_CI_NOT_ACTIVATED_CURSOR_SKILL_OR_PIXEL_DETECTOR_OR_LIVE_SIMS_OR_BI002"
+}
