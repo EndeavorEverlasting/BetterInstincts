@@ -369,3 +369,13 @@ canonical owning base prompts blob
 
 The two prompts are sequential, not synonyms for Fifth Gear or
 live-game validation. GitHub merge ≠ local installation ≠ game-proof.
+
+## 2026-11-11 — P97 → P00 → P01 → Fifth Gear: peripheral-safe human-first execution
+
+Resolved from current Moonwake `AGENTS.md`, `harness/exports/prompt-invocation-catalog.v1.json` and `scripts/prompt_invocation_resolver.py` at the beginning of this sprint. **P97** = Open-Source Prior-Art & Gap Analyst; **P00** = Governance Doctrine Installer; **P01** = Harness Infrastructure Builder. Invoked fifth-gear contract ordering is **P95 → P82 → P08 → P07 → P124** (design/prototype → measure/refine → safely certify live → execute/integrate → structural consolidation). Preserve that order of responsibility even when actual live P08 cannot be run from an off-host GitHub provider.
+
+Parent: prohibit game/agent compromise of user peripherals, input preferences, Ctrl/Print Screen/Escape/U or Bluetooth to fix capture; make safety machine-enforced wherever the BetterInstincts repo has authority. The incident does not establish AI as root cause. **P97** precedent and adoption/rejection decisions live in `docs/PRIOR_ART.md`. Consultation first: `contracts/consultations/BI-PERIPHERAL-SOVEREIGNTY-P97-P00-P01-20261111.v1.json`.
+
+**P00:** ontology revision 9 binds peripheral-identity evidence, all executable entrypoints, and independent recovery/agent-attribution/hook proof. Detailed governance is appended to mandatory `docs/AGENT_OPERATING_RULES.md`; root `AGENTS.md` already routes there and is at its enforced character budget, so no destructive root compaction. **P01:** extend existing machine contract and source guard; no new OS actor or daemon. **P95:** existing `AGENT_EFFECT_PERIMETER → OS_PERIPHERAL_AUTHORITY` call graph. **P82:** adversarial source tests for root launchers, new folders, Cursor hooks, workflow YAML, PairAsync/UnpairAsync, and disabled failsafes; safe observation controls remain allowed. **P08:** actual workstation and physical-device interruption canary not run here. **P07:** existing independent CI job and PR review/merge. **P124:** reuse existing owners; no duplicate service guard or adversarial clicker.
+
+Proof dimensions: consultation committed; source patches committed; CI only after PR run; merge only after actual passing gate. Even a merged commit cannot certify local Cursor activation, SysAdminSuite guard event recurrence, M343 pairing or true Sims game effect. BI-002 hunger remains open.
