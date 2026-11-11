@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.ontology/v1",
-  "revision": 8,
+  "revision": 9,
   "state": "CANDIDATE_REVIEW_NOT_RUNTIME_AUTHORITY",
   "owner": "BetterInstincts",
   "source_main_sha": "502f66efc0eedd4136d6a8cd0879f566c3f3612f",
@@ -377,6 +377,16 @@
       "kind": "authority_boundary",
       "definition": "Explicit temporary host UI/capture and diagnostics may support read-only reconnaissance, onboarding and disposable testing under player and save admission, but never substitute for EA-native gameplay mechanics.",
       "canonical_owner": "contracts/native-gameplay-authority.v1.json"
+    },
+    "PERIPHERAL_IDENTITY_EVIDENCE": {
+      "kind": "evidence",
+      "definition": "Read-only Bluetooth endpoint sightings, appearance, names, HID matching, physical button/movement confirmation and transition history; a generic Mouse appearance/name cannot identify a physical endpoint or grant pairing permission.",
+      "canonical_owner": "contracts/peripheral-authority.v1.json"
+    },
+    "AGENT_EFFECT_PERIMETER": {
+      "kind": "authority",
+      "definition": "All executable repository launchers, agent hooks, workflows, scripts and future adapters inherit operator-owned device and input boundaries; static scanning is distinct from runtime sandbox or effective host hook.",
+      "canonical_owner": "scripts/check_peripheral_boundary.py"
     }
   },
   "relations": [
@@ -829,6 +839,21 @@
       "from": "PLAYER_INTENT",
       "predicate": "OVERRIDES",
       "to": "GAMEPLAY_IMPLEMENTATION_ROUTE"
+    },
+    {
+      "from": "PERIPHERAL_IDENTITY_EVIDENCE",
+      "predicate": "DOES_NOT_GRANT_PAIRING_OR_OS_REPAIR",
+      "to": "OS_PERIPHERAL_AUTHORITY"
+    },
+    {
+      "from": "CONTROL_PERMIT",
+      "predicate": "CANNOT_BYPASS",
+      "to": "AGENT_EFFECT_PERIMETER"
+    },
+    {
+      "from": "AGENT_EFFECT_PERIMETER",
+      "predicate": "DENIES_GAME_SIDE_OS_MUTATIONS",
+      "to": "OS_PERIPHERAL_AUTHORITY"
     }
   ],
   "invariants": [
@@ -1227,6 +1252,33 @@
         "contracts/native-gameplay-authority.v1.json",
         "docs/DOCTRINE.md"
       ]
+    },
+    {
+      "id": "BI-ONT-046",
+      "term": "ALL_EXECUTABLE_AGENT_ENTRYPOINTS_RETAIN_OPERATOR_HARDWARE_SOVEREIGNTY",
+      "rule": "Every executable launcher, script, agent hook, CI workflow and newly added adapter must fail review for Windows service, radio, pairing, driver, registry, global input interception or user input-preference mutation. A game/control permit never grants these effects.",
+      "owned_by": [
+        "contracts/peripheral-authority.v1.json",
+        "scripts/check_peripheral_boundary.py"
+      ]
+    },
+    {
+      "id": "BI-ONT-047",
+      "term": "GENERIC_MOUSE_APPEARANCE_IS_NOT_DEVICE_IDENTITY",
+      "rule": "Bluetooth appearance 962/Mouse and an early generic Mouse label are classification evidence only; do not infer endpoint continuity, a specific physical mouse, safe pairing or absence of nearby other mice without observed identity and HID plus physical corroboration.",
+      "owned_by": [
+        "contracts/peripheral-authority.v1.json",
+        "docs/PERIPHERAL_INCIDENT.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-048",
+      "term": "RECOVERY_CAUSALITY_AND_HOOK_ACTIVATION_ARE_SEPARATE_RECEIPTS",
+      "rule": "A physically working mouse, service/adapter recovery, a source test, provider hook configuration and local hook interception are independently evidenced. No AI blame, Windows incident causal proof or cross-harness enforcement without correlated observations and actual local activation.",
+      "owned_by": [
+        "contracts/peripheral-authority.v1.json",
+        "docs/PERIPHERAL_INCIDENT.md"
+      ]
     }
   ],
   "interpretation_rules": [
@@ -1243,7 +1295,9 @@
     "A WORLD_INTERACTION_ATTEMPT used for training must be replay-unique and independently outcome-labeled; click proposal, model recommendation, frame count, or repeated holdout evidence is not success or game certification.",
     "The WORLD_SENSOR P08 support priority cannot replace BI-002 hunger; only a separate operator-authorized local game host can acquire actual screen measurements.",
     "Lot-floor-map ADJACENT and camera direction hints are descriptive spatial observations, not Sim route evidence. NAVIGATION_PASSAGE requires a separately verified, explicitly scoped walkable transition.",
-    "A deterministic household navigation suggestion is not permission for mouse, keyboard, save or game effects; a stalled or human-interrupted route must preserve intent and abstain."
+    "A deterministic household navigation suggestion is not permission for mouse, keyboard, save or game effects; a stalled or human-interrupted route must preserve intent and abstain.",
+    "An early Bluetooth Mouse label or appearance code 962 cannot distinguish multiple nearby mice or prove stable endpoint identity. A later full name requires temporal correlation; transition mechanism remains UNKNOWN until traced.",
+    "A static source guard and repository-local agent hook are independent evidence states; neither makes a game agent the Windows repair authority or intercepts unadopted external tools."
   ],
   "mutation_consultation": {
     "trigger": "Before drafting behavior-changing prototypes, tuning, agent plans, host click paths or learning-policy mutations; then repeat during review and before merge.",
@@ -1377,6 +1431,8 @@
       "LOCAL_HOOK_OBSERVED",
       "PHYSICAL_PLAYER_INTERRUPT_VERIFIED",
       "SAVED_GAME_UNCHANGED_VERIFIED"
-    ]
+    ],
+    "bluetooth_identity_owner": "contracts/peripheral-authority.v1.json#bluetooth_identity",
+    "executable_perimeter_owner": "scripts/check_peripheral_boundary.py"
   }
 }
