@@ -101,3 +101,32 @@ accessibility, global hotkey interception) is outside BetterInstincts authority.
 No game prompt, frustrated agent or idle permit grants this authority.
 `contracts/effect-authority.v1.json` owns effect classes; source checks do not
 control independent unadopted tools or prove live-game behavior.
+
+## P00 revision 5 — one human-first authority across every microsystem
+
+A gamer owns the desktop, the Sims household, the active portrait, current
+focus, physical keyboard/mouse, assistive/voice use, and all Windows device and
+input capabilities. No need, career, gardening, purchase, camera, UI, visual
+learning, skill, task scheduler, agent/harness or game-native proposal may
+override that ownership. Treat operator activity anywhere as a **control
+reclamation event**, not a nuisance to defeat. A current agent effect yields
+at its next cooperative checkpoint, retaining intent without blind replay.
+
+`EFFECT_ADMISSION_CLASS` is separate from in-game `ACTION_EFFECT_CLASS`:
+`PASSIVE_OBSERVATION` / `BACKGROUND_REASONING` are trusted, bounded, read-only
+and may continue during human computer use without focus or game mutation.
+`SCREEN_EFFECT` / `GAME_MUTATION` must stop for user activity and require an
+active opted-in session, 15s+ global inactivity, two fresh probes, exclusive
+ownership, fresh scene/save/target and player-queue admission; foreground
+borrow requires checks **before and after** focus, and the game must actually
+be foreground before sending input. `OS_CONFIGURATION` and unclassified effects
+always deny; this includes Bluetooth, drivers, Print Screen, Escape/U keyboard
+remaps, accessibility settings, registry mutation and global interception.
+
+P01 implements an executable, reviewed adapter registry and CI checks against
+canonical owners. A registered adapter or passing fixture is NOT Windows host
+activation, a physical interruption test, a Cursor hook observed locally,
+a Sims runtime certificate, or authority over unrelated agents. The product's
+BI-002 hunger Live Mode gate remains independently open. Use existing
+`control_handoff`, `screen_admit`, `workflow_interop` and
+`peripheral-authority` rather than a competing daemon or second control arbiter.

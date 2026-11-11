@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.ontology/v1",
-  "revision": 4,
+  "revision": 5,
   "state": "CANDIDATE_REVIEW_NOT_RUNTIME_AUTHORITY",
   "owner": "BetterInstincts",
   "source_main_sha": "502f66efc0eedd4136d6a8cd0879f566c3f3612f",
@@ -281,6 +281,31 @@
       "kind": "action_semantics",
       "definition": "Explicit hypothesis about whether an observed in-game interaction is a possibly immediate UI change, queued production, time-gated harvest, resource conversion or unknown; a label never proves completion or grants permission.",
       "canonical_owner": "contracts/upgrade-parts-force.v1.json"
+    },
+    "EFFECT_ADMISSION_CLASS": {
+      "kind": "authority_taxonomy",
+      "definition": "Whether a proposed operation is trusted read-only observation, background reasoning, a human-gated screen/game effect, forbidden host OS configuration or unclassified. It is distinct from in-game acquisition/action effect categories; a label alone does not grant execution.",
+      "canonical_owner": "contracts/effect-authority.v1.json"
+    },
+    "PASSIVE_BACKGROUND_LANE": {
+      "kind": "cooperative_work",
+      "definition": "An explicitly reviewed, bounded, active-session read-only callback that never acquires the operator desktop lease, sends input, takes focus, mutates game/saves or changes host settings. Its classification is not a Python sandbox.",
+      "canonical_owner": "contracts/workflow-interoperability.v1.json"
+    },
+    "HUMAN_CONTROL_RECLAIM": {
+      "kind": "control_transition",
+      "definition": "Physical human input in any application, or explicit operator busy/playing, invalidates automated focus and action admission at the next cooperative checkpoint. A prior idle/foreground permit is not transferable.",
+      "canonical_owner": "betterinstincts/screen_admit.py"
+    },
+    "OS_INPUT_CAPABILITY": {
+      "kind": "operator_property",
+      "definition": "Operator-owned Bluetooth, screenshot key, Escape/U mappings, keyboard accessibility, hotkeys, global hooks and pointer services. A game permission cannot mutate or seize host-device configuration.",
+      "canonical_owner": "contracts/peripheral-authority.v1.json"
+    },
+    "AGENT_ADOPTION_COVERAGE": {
+      "kind": "harness_evidence",
+      "definition": "Evidence that each registered BetterInstincts or Cursor input path honors the relevant player-first checks; registry/static/CI proof must remain distinct from local Windows activation and unadopted external-agent runtime control.",
+      "canonical_owner": "docs/VALIDATION.md"
     }
   },
   "relations": [
@@ -593,6 +618,56 @@
       "from": "OBSERVATION",
       "predicate": "MUST_CONFIRM_EFFECT_CLASS",
       "to": "ACTION_EFFECT_CLASS"
+    },
+    {
+      "from": "PLAYER_INTENT",
+      "predicate": "OUTRANKS",
+      "to": "EFFECT_ADMISSION_CLASS"
+    },
+    {
+      "from": "EFFECT_ADMISSION_CLASS",
+      "predicate": "CLASSIFIES",
+      "to": "HOST_ACTION"
+    },
+    {
+      "from": "EFFECT_ADMISSION_CLASS",
+      "predicate": "PERMITS_READ_ONLY",
+      "to": "PASSIVE_BACKGROUND_LANE"
+    },
+    {
+      "from": "PASSIVE_BACKGROUND_LANE",
+      "predicate": "MUST_NOT_ACQUIRE",
+      "to": "CONTROL_PERMIT"
+    },
+    {
+      "from": "HUMAN_CONTROL_RECLAIM",
+      "predicate": "REVOKES_STALE",
+      "to": "CONTROL_PERMIT"
+    },
+    {
+      "from": "PLAYER_PRESENCE",
+      "predicate": "CAN_SIGNAL",
+      "to": "HUMAN_CONTROL_RECLAIM"
+    },
+    {
+      "from": "OS_INPUT_CAPABILITY",
+      "predicate": "NOT_GRANTED_BY",
+      "to": "CONTROL_PERMIT"
+    },
+    {
+      "from": "INCIDENT",
+      "predicate": "MAY_AFFECT",
+      "to": "OS_INPUT_CAPABILITY"
+    },
+    {
+      "from": "AGENT_ADOPTION_COVERAGE",
+      "predicate": "IS_NOT",
+      "to": "PROOF_RECEIPT"
+    },
+    {
+      "from": "AGENT_ADOPTION_COVERAGE",
+      "predicate": "CHECKS",
+      "to": "EFFECT_ADMISSION_CLASS"
     }
   ],
   "invariants": [
@@ -825,6 +900,52 @@
         "contracts/upgrade-parts-force.v1.json",
         "betterinstincts/upgrade_parts_force.py"
       ]
+    },
+    {
+      "id": "BI-ONT-028",
+      "term": "EFFECT_CLASSIFICATION_BEFORE_CONTROL",
+      "rule": "Every automation entrypoint must classify an operation as read-only background, human-gated screen/game effect, denied host configuration or unclassified; unknown and OS settings never inherit a player-idle permission.",
+      "owned_by": [
+        "contracts/effect-authority.v1.json",
+        "betterinstincts/effect_authority.py"
+      ]
+    },
+    {
+      "id": "BI-ONT-029",
+      "term": "READ_ONLY_ASYNC_WITHOUT_INPUT_AUTHORITY",
+      "rule": "Trusted bounded passive observation and planning may proceed during physical human activity only without screen/focus/game mutation. The background queue is not a bypass for input, saves or privacy; callback type alone is no sandbox.",
+      "owned_by": [
+        "contracts/workflow-interoperability.v1.json",
+        "betterinstincts/workflow_interop.py"
+      ]
+    },
+    {
+      "id": "BI-ONT-030",
+      "term": "RECLAIM_INVALIDATES_FOCUS_PERMIT",
+      "rule": "Human input from any app or explicit busy signal blocks focus borrowing and subsequent game input. Two fresh trusted idle probes precede focus; game foreground and a second confirmation are required before one effect. Unknown presence fails closed.",
+      "owned_by": [
+        "betterinstincts/screen_admit.py",
+        "contracts/control-handoff.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-031",
+      "term": "OPERATOR_OWNS_HOST_INPUT_CAPABILITIES",
+      "rule": "Bluetooth services, driver/adapter, Print Screen, Escape/U remapping, accessibility, global input interception and Windows registry configuration are out of BetterInstincts game authority regardless of agent frustration or idle state.",
+      "owned_by": [
+        "contracts/peripheral-authority.v1.json",
+        "contracts/operator-desktop-boundary.v1.json",
+        "scripts/check_peripheral_boundary.py"
+      ]
+    },
+    {
+      "id": "BI-ONT-032",
+      "term": "ADOPTION_AND_PROOF_ARE_DISTINCT",
+      "rule": "Every adopted screen/game entrypoint must have a reviewed owner, fresh per-effect gate and durable harness check; static inventory, CI, merge, workstation installation and live physical takeover are independent proof states. Unadopted tools and mid-call interruption remain unproven.",
+      "owned_by": [
+        "docs/VALIDATION.md",
+        "docs/ASYNC_INTEROP.md"
+      ]
     }
   ],
   "interpretation_rules": [
@@ -954,6 +1075,22 @@
       "Already executing native calls cannot be forcibly preempted.",
       "No new global hooks, UAC changes, scheduler or background service."
     ],
-    "peripheral_authority_owner": "contracts/peripheral-authority.v1.json"
+    "peripheral_authority_owner": "contracts/peripheral-authority.v1.json",
+    "effect_authority_owner": "contracts/effect-authority.v1.json",
+    "background_lane_owner": "betterinstincts/workflow_interop.py#enqueue_observation",
+    "human_reclaim_owner": "betterinstincts/screen_admit.py#admitted_screen_lease",
+    "operator_host_capability_owner": "contracts/peripheral-authority.v1.json",
+    "harness_adoption_owner": "contracts/human-first-harness.v1.json",
+    "harness_validator": "scripts/check_human_sovereignty.py",
+    "admission_rule": "Unknown/OS_CONFIGURATION denied; read-only background requires explicit trusted callback and active session; UI/game effects require scoped consent, idle >=15000ms, lock, fresh target and game context; focus rechecks before/after borrow.",
+    "proof_separation": [
+      "REGISTERED_STATIC_INVENTORY",
+      "CI_OFFLINE_VALIDATED",
+      "MERGED_DEFAULT_BRANCH",
+      "LOCAL_AGENT_INSTALLED",
+      "LOCAL_HOOK_OBSERVED",
+      "PHYSICAL_PLAYER_INTERRUPT_VERIFIED",
+      "SAVED_GAME_UNCHANGED_VERIFIED"
+    ]
   }
 }

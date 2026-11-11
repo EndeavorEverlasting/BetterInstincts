@@ -110,3 +110,22 @@ The host boundary is `contracts/peripheral-authority.v1.json`, linked to the `PL
 ## 2026-11-10 — observed Order menus and source/action semantics
 
 `OBSERVED_MENU_ROUTE`, `ACQUISITION_SOURCE` and `ACTION_EFFECT_CLASS` are graph concepts in `contracts/ontology.v1.json` (BI-ONT-026 / BI-ONT-027); owner is `contracts/upgrade-parts-force.v1.json#acquisition_routing` with application entrypoint `betterinstincts/upgrade_parts_force.py`. Agent semantic routing and read-only CLI are in `docs/ACQUISITION_ROUTING.md`. A previously seen two-step More Choices depth is **not** immutable; menu traversal consumes current visible choices, stops on repeated page signatures and never fabricates a click coordinate. Any portrait in an observed active household is eligible only after a fresh actor, player and screen-lease check. Computer Order is an instant-*candidate*; Fabricator eco parts, regular generator fuel from recycled resources, and insect-farm biofuel are distinct producer/effect classes. Pending game observation cannot be promoted to an inventory/fuel delta, Sims playable mod, or BI-002 certification.
+
+## Revision 5 — P00/P01 human-owned control, typed effects, and proof ceilings
+
+Distinct concepts: `EFFECT_ADMISSION_CLASS` (host-side authority, **not**
+`ACTION_EFFECT_CLASS` for Sims purchases), `PASSIVE_BACKGROUND_LANE` (trusted
+non-interactive in-process work), `HUMAN_CONTROL_RECLAIM` (input anywhere
+invalidates stale agent permission), `OS_INPUT_CAPABILITY` (operator-owned
+Bluetooth, screenshot/Print Screen, Escape/U and accessibility controls),
+and `AGENT_ADOPTION_COVERAGE` (CI/source adoption ≠ physical host enforcement).
+
+`BI-ONT-028..032` require effect classification and deny unknowns;
+safe background processing cannot borrow the desktop; human activity blocks
+focus/game input; host input configuration is outside game authority; and
+registered adapters must preserve separate CI, merge, local-install and live
+physical takeover evidence. The machine harness owner is
+`contracts/human-first-harness.v1.json`; validator
+`scripts/check_human_sovereignty.py`. Existing vision, camera, build,
+purchases, aspirations, career, needs, queue and save contracts inherit these
+cross-cutting gates without replacing their own more specific risk checks.

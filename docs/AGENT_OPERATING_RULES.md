@@ -54,3 +54,23 @@ Skills: `docs/HOUSEHOLD_JUDGMENT.md` (fixed roster; serial/offline).
 ## P00/P01 user interaction sovereignty
 
 Ontology revision 4 (`contracts/ontology.v1.json#interaction_policy`) embraces any user-chosen game, mod, voice/assistive or other-app interaction. Adopted autonomous effects yield and resume only after two fresh idle probes plus target validation. Prefer verified native semantic APIs. Desktop fallback requires opt-in. New adapters use CooperativeScreenQueue.enqueue_effect; partial callbacks retain intent for reconcile with observed outcome and a rebuilt remainder. Never alter peripheral preferences or UAC for game automation. External raw callers are not intercepted.
+
+## P00/P01 human-control reclamation and effect admission (revision 5)
+
+Fresh physical user activity in **any app or monitor**, plus explicit voice/assistive
+operator-busy, outranks screen/game input at the next cooperative checkpoint.
+Classify effects via `contracts/effect-authority.v1.json`. Read-only bounded
+observations may continue only when reviewed for no focus, screen, game-state,
+save, host-setting or unconsented capture mutation. Any unknown effect denies;
+host OS input/peripheral configuration is not within game authority.
+
+Before borrowing Sims foreground, two fresh trusted desktop-wide idle checks
+must pass. After any borrowed focus, confirm twice again and verify actual Sims
+foreground. Game effects still need scene/save/queue/target and exclusive desktop
+ownership. A partially executed effect requires an observed outcome and rebuilt
+remainder: do not blind replay, cancel a player's queue or steal their keyboard.
+After a human returns, resume only upon new per-effect evidence. Local Windows
+installation and Cursor hooks require independent activation and verification.
+
+Use `scripts/check_human_sovereignty.py` for machine coverage (not an OS
+sandbox), plus `docs/ASYNC_INTEROP.md` and `docs/VALIDATION.md` for proof gates.

@@ -4,7 +4,7 @@ Before edits, samples or experiments, read mandatory `docs/AGENT_OPERATING_RULES
 
 ## P00/P01 interaction sovereignty
 
-Ontology revision 4 embraces any user-chosen game/mod, mouse, keyboard, voice/assistive or other-app interaction. Adopted autonomous effects yield on activity or unknown presence. Resume after two fresh trusted idle probes and target revalidation. Prefer verified native semantic APIs; desktop fallback requires explicit opt-in. Use the existing cooperative queue's enqueue_effect; partial work retains intent and requires observed reconciliation plus a rebuilt remainder. Never change peripheral preferences or UAC to aid automation. Passive capture never steals focus. Unadopted agents and executing native calls are not forcibly intercepted.
+Ontology revision 5: human input in any app, game, mod, key, mouse, voice or assistive modality outranks agents. `contracts/effect-authority.v1.json` classifies passive/background (reviewed, read-only, no input) versus screen/game effects (pause on human input, 15s idle, two fresh probes, target and game-context recheck) versus OS configuration/unknown (deny). Focus borrow requires checks before and after; stale foreground never grants input. Retain interrupted intent for observed reconciliation, not replay. Never mutate Bluetooth, Print Screen, Escape/U, keyboard accessibility, drivers or Windows settings. Use `scripts/check_human_sovereignty.py` and existing CI. Unadopted tools/native mid-call events remain unproven.
 
 ## Windows peripheral authority boundary
 
