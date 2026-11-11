@@ -74,3 +74,37 @@ installation and Cursor hooks require independent activation and verification.
 
 Use `scripts/check_human_sovereignty.py` for machine coverage (not an OS
 sandbox), plus `docs/ASYNC_INTEROP.md` and `docs/VALIDATION.md` for proof gates.
+
+## P00 full governance installation — mandatory for all repository writing agents
+
+**Operating principles:** evidence before action; repository/default-branch floor
+before edits; bounded work with declared scope; one independent writer per
+branch/worktree and generated surface; reuse canonical owners before replacing;
+no completion claim without actual proof. No agent frustration, failed mouse
+capture or competing UI activity overrides human autonomy, privacy, or safety.
+
+**Instruction precedence:** platform/security/legal and explicit repo-owner
+decisions > this canonical `AGENTS.md` and mandatory detailed governance >
+the *current, exact* task-specific Moonwake P-number contract > generic
+agent/default behavior. A repo file cannot overrule higher-priority protections.
+
+**Writing sprint declaration:** state real repo and runtime/host (provider
+connection is not the user's Windows machine), refreshed branch/PR/main floor,
+mission and lane, one-writer ownership, affected and forbidden paths, expected
+tracked artifacts, dependencies/collisions, validator commands and evidence
+ceiling. In particular, classify whether an effect requires the operator
+desktop or is reviewed, read-only background work; never silently expand
+P00 governance into unrelated application code or use P01 to rewrite P00.
+
+**Completion:** report CHANGED (real paths), PROVED (commands and outcomes),
+NEXT (first executable gate), exact commit SHA, push/PR and actual default
+branch status. Independently label local checkout, installed launcher, hook
+activation, Windows human-input takeover and Sims Live Mode. No synthetic
+fixture, plan, report or draft is gameplay certification.
+
+**Forbidden:** acknowledgment-only execution, plans replacing reachable work,
+unsupported completion or merge/deploy assertions, secret publication, OS
+Bluetooth/driver/screenshot/input remapping, unsupported game execution,
+protected-save changes, stealth mouse/keyboard hooks, and bypassing operator
+approval or installed agent protections. If a source adapter is unadopted,
+identify the gap instead of running or laundering it through another tool.

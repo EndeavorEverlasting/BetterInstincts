@@ -45,6 +45,14 @@ class HumanSovereigntyGovernanceTests(unittest.TestCase):
         self.assertIn("Print Screen", self.agents)
         self.assertIn("EFFECT_ADMISSION_CLASS", self.doctrine)
         self.assertIn("BI-002", self.doctrine)
+        detailed = (ROOT / "docs/AGENT_OPERATING_RULES.md").read_text(encoding="utf-8")
+        for mandatory in (
+            "Instruction precedence", "Writing sprint declaration",
+            "one independent writer per", "P00 governance", "P01",
+            "PROVED", "Forbidden:", "repo and runtime/host",
+        ):
+            with self.subTest(mandatory=mandatory):
+                self.assertIn(mandatory, detailed)
 
     def test_glossary_classification_not_conflated(self):
         self.assertIn("acquisition", self.glossary["terms"]["EFFECT_ADMISSION_CLASS"]["definition"])

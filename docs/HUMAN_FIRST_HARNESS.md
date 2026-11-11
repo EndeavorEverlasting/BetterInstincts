@@ -89,3 +89,13 @@ Sims gameplay mod is installed and working. P08 live canaries must demonstrate
 physical takeover with multiple apps, no input after interruption,
 safe resume and exact-game foreground, and no peripheral/input setting changes.
 BI-002 hunger certification remains independent.
+
+## P00/P01 governance and proof checklist
+
+The mandatory detailed operating contract records instruction precedence,
+one-writer branch/worktree ownership, bounded sprint declaration, expected
+artifacts, forbidden OS/save mutation, and completion receipts. P00 owns
+governance; P01 owns source scanning, codebase and artifact maps, tests and CI;
+neither supplies a general OS input bypass. The GitHub-connected runtime
+is **not** the installed Windows game host. A maintainer must recheck local
+Cursor hook activation and player-reclaim behavior separately.
