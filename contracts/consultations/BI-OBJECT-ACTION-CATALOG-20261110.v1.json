@@ -1,0 +1,72 @@
+{
+  "schema": "betterinstincts.consultation/v1",
+  "id": "BI-OBJECT-ACTION-CATALOG-P95-P82-P08-P07-P124-20261110",
+  "date": "2026-11-10",
+  "parent_objective": "Portable, deterministic, machine-readable object-interaction discovery: every semantically observed player/host object menu, selection and outcome accumulates class-based action knowledge usable for safe queue recommendations across saves.",
+  "route": "Moonwake fifth gear, current P95 -> P82 -> P08 -> P07 -> P124; catalog + resolver and AGENTS.md read; local P08 game host unavailable from provider connector.",
+  "source_base": "dc062e008c60de9f8898228e0c1a92168214b0f3",
+  "active_collisions": [
+    "PR #159 spatial-perception/evaluator",
+    "PR #149 home needs/homework"
+  ],
+  "selected_design": "Add a narrowly owned opt-in object-action catalog fed by validated semantic observation events, persisted as a bounded atomic local projection by existing listener. Query ranks only independently reviewed helpful effects for current fresh menu; never dispatches game input.",
+  "alternatives": [
+    {
+      "name": "Global OS click/key capture",
+      "decision": "REJECT",
+      "reason": "violates human-first/peripheral sovereignty and conflates UI clicks with object semantics"
+    },
+    {
+      "name": "Hardcoded list of Sims object IDs and interactions",
+      "decision": "REJECT",
+      "reason": "not portable across saves, packs, patches or object variants"
+    },
+    {
+      "name": "Extend existing hover schema to include all menu semantics",
+      "decision": "DEFER",
+      "reason": "would break existing validated event shape and mix tooltip with menu observation"
+    },
+    {
+      "name": "Separate bounded semantic object-event port adjoining host_listener",
+      "decision": "SELECT",
+      "reason": "reuses session lifecycle and keeps captured facts separate from learned usefulness"
+    }
+  ],
+  "invariants": [
+    "Never scan input outside explicit BetterInstincts observer session",
+    "No per-frame polling or telemetry",
+    "No arbitrary or raw UI text in portable catalog",
+    "Player-directed queue protected",
+    "No OS/window/input mutation",
+    "Patch-qualified menu knowledge is not live action proof",
+    "Catalog suggestions are advisory only",
+    "Do not alter BI-002 gate or unrelated PR-owned paths"
+  ],
+  "owned": [
+    "betterinstincts/object_action_catalog.py",
+    "contracts/object-action-catalog.v1.json",
+    "betterinstincts/host_listener.py scoped port",
+    "scripts/host_listener.py scoped CLI",
+    "tests/test_object_action_catalog.py",
+    "docs/OBJECT_ACTION_CATALOG.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md"
+  ],
+  "forbidden": [
+    "Windows input settings",
+    "The Sims 4 user save contents",
+    "Live game execution without verified local host",
+    "Unrelated PR branches",
+    "Raw screenshots/key logs"
+  ],
+  "acceptance": [
+    "Deterministic class-keyed discovery without household identity as global key",
+    "Menu -> selection -> reviewed outcome must bind to matching session and replay identifier",
+    "Current menu query must match exact session/capture/object/patch and available action",
+    "Three verified helpful nonharmful examples before useful action recommendation",
+    "Player-directed queues never touched",
+    "Bounded atomic opt-in persistence in existing dist host-listener",
+    "Negative and portability tests",
+    "CI and readback receipts, no invented local live certification"
+  ]
+}
