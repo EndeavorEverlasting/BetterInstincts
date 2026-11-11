@@ -31,6 +31,27 @@ authority. See `docs/OBJECT_ACTION_CATALOG.md`. BI-002 remains active.
 
 Reviewed object usefulness requires distinct post-action evidence; replayed proof, legacy count-only aggregates, stale event sequences and contradictory harmful outcomes must fail closed. See `contracts/object-action-catalog.v1.json` and its tests.
 
+## P00/P01 native-gameplay architecture and agent routing
+
+Mandatory before editing any product logic in `betterinstincts/*.py`:
+read `contracts/native-gameplay-authority.v1.json`, `docs/NATIVE_GAMEPLAY_ARCHITECTURE.md` and
+`docs/VALIDATION.md`. Classify each touched product file as `EA_TUNING`,
+`EA_SCRIPT`, `POLICY_ONLY`, `HOST_LAB_ONLY` or `NON_GAMEPLAY` in
+`contracts/native-gameplay-decisions/*.json`. Each reviewed decision must be
+introduced on the same feature branch and cover all changed product files;
+`python -m scripts.check_native_gameplay_authority --base-ref BASE_SHA`
+blocks unclassified work. A `POLICY_ONLY` feature cannot claim game action
+authority. A `HOST_LAB_ONLY` diagnostic cannot implement live Sim
+autonomy by repeatedly clicking HUD/queue controls. Only version-pinned,
+source-inspected EA tuning or game-native script hooks can implement
+actual playable mechanics after local A/B and rollback. Host game inspection
+remains useful for bootstrap/debugging and explicit disposable trials with
+existing human-first, save, input, exact-patch and game-scene admission.
+When native EA source is inaccessible, record `LOCAL_EA_EVIDENCE_REQUIRED`;
+continue safe offline work without launching a substitute desktop actuator.
+No waiver of any player authority, retained goal, social/fun, save or
+peripheral protection.
+
 ## Invariants
 - **Player first:** no interrupt of explicit player commands; no uncontrolled autonomy loops.
 - **Save-safe:** never edit/delete/migrate/overwrite user saves/game files. Unknown/user saves protected.
