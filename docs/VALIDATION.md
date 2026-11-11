@@ -103,4 +103,3 @@ activation/proof and real Sims queue effect still requires
 patch-specific EA inspection, disposable 5+5 or equivalent named
 A/B, live player override, rollback and maintainer review.
 Native mod delivery remains issue #171 and BI-002 remains separate.
-
