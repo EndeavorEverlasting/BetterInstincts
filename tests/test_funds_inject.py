@@ -63,7 +63,7 @@ class FundsInjectTests(unittest.TestCase):
             self.assertEqual(plan["game_mode"], mode)
             self.assertNotIn("ENSURE_LIVE_MODE", [s["step"] for s in plan["steps"]])
             self.assertEqual(steps_to_commands(plan), ["testingcheats true", "money 100000"])
-            self.assertNotIn("portrait", json.dumps(plan).lower())
+            self.assertNotIn("sim_id", plan)
             self.assertNotIn("motherlode", steps_to_commands(plan))
 
     def test_observation_required_before_exact_money(self):
