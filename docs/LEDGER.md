@@ -1636,3 +1636,41 @@ EA source inspection is the next native-autonomy task; gameplay effects remain
 ## 2026-11-10 — household navigation no-oscillation P00/P01 + Fifth Gear
 
 Parent: prevent agents from moving back/forth in the same region without progress. Consultation created in separate earlier commit; ontology revision 7 defines NAVIGATION_SCOPE/REGION/PASSAGE/FRONTIER/INTENT/PROGRESS/STALL/RECOVERY and invariants BI-ONT-036..041. P95: independent route graph versus camera/visual graph. P82: stable weighted navigation with synthetic no-progress A-B-A-B falsifiers. P08: no actual live game host or approved disposable session in this chat, live proof remains UNPROVEN. P07: pure planner + room-map integration. P124: machine contract, validation, CI, governance and ledger. Read-only offline advisory, no autonomous mouse/controller, save, OS configuration or new server. BI-002 needs gate remains active; open spatial perception PR #159 not overwritten.
+
+## 2026-11-10 — P00/P01 native EA programming first, host lab is not game runtime
+
+**Owner clarification:** the user's BetterInstincts vision is game-native Sim behavior,
+not a general-purpose computer-use robot that keeps the in-game queue on track
+by selecting portraits, pressing Escape or clicking the action queue. Core motives,
+autonomy, career, income, skills and goal continuity should be implemented through
+verified EA XML tuning and, where needed, patch-specific Sims-embedded Python
+hooks. Human choices, legitimate fun/social, mood and personality must still win.
+
+**P00 governance (ontology revision 8):** `GAMEPLAY_IMPLEMENTATION_ROUTE`,
+`NATIVE_MECHANIC_EVIDENCE`, `HOST_LAB_BOUNDARY`; invariants
+`BI-ONT-042..045`. `AGENTS.md`, mandatory detailed governance,
+`docs/DOCTRINE.md`, and `docs/ONTOLOGY.md` now make EA-native programming
+the required gameplay architecture. This **does not** ban explicitly approved
+desktop/camera/UI tests; those are bounded lab diagnostics and bootstrapping,
+not the shipped behavior.
+
+**P01 harness:** machine contract
+`contracts/native-gameplay-authority.v1.json`, source/PR validator
+`scripts/check_native_gameplay_authority.py`, negative regression tests,
+an always-applied `.cursor/rules/native-gameplay.mdc`, and the independent
+native-first CI gate. New or changed `betterinstincts/*.py` and native mod
+sources require a same-PR `contracts/native-gameplay-decisions/*.json`
+file stating whether the change is EA tuning, game script, policy-only,
+host-lab-only, or unrelated. Core gameplay policy modules refuse GUI
+dependencies and HOST_LAB_ONLY. Offline policy/native route metadata cannot
+self-certify game effects.
+
+**Consultation predates mutation:**
+`contracts/consultations/BI-NATIVE-MECHANICS-FIRST-P00-P01-20261110.v1.json`.
+No game files, protected saves, Sims host, local Cursor installation,
+driver, Bluetooth, input keys or user settings were changed in this
+provider-side sprint. Static CI is not a runtime enforcement sandbox.
+Issue #171 remains the native EA adapter/proof owner; BI-002 hunger
+5+5 trials remain the independent Horizon stage. The first game-side
+gate is a local, explicitly approved read-only inspection of exact-patch
+EA tuning/hooks, not another mouse-driven gameplay loop.
