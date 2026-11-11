@@ -80,13 +80,14 @@ class NativeGameplayAuthorityTests(unittest.TestCase):
                     CONTRACT["source_policy"]["core_desktop_input_sentinels"]))
 
     def test_policy_cannot_claim_runtime_or_missing_successor(self):
-        for kwargs in (
-            {"game_effect_claim":"OFFLINE_ONLY"},
-            {"game_effect_claim":"GAME_CERTIFIED"},
-            {"successor_issue":None},
-        ):
+        cases=(
+            ({"game_effect_claim":"OFFLINE_ONLY"},"NON_NATIVE_GAME_EFFECT_CLAIM"),
+            ({"game_effect_claim":"GAME_CERTIFIED"},"NATIVE_ROUTE_CANNOT_SELF_CERTIFY"),
+            ({"successor_issue":None},"NON_NATIVE_GAME_EFFECT_CLAIM"),
+        )
+        for kwargs,error in cases:
             with self.subTest(kwargs=kwargs),self.assertRaisesRegex(
-                NativeGameplayError,"NON_NATIVE_GAME_EFFECT_CLAIM"
+                NativeGameplayError,error
             ):
                 validate_route_decisions(CONTRACT,[CORE],[decision(CORE,**kwargs)])
 
