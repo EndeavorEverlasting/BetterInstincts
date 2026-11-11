@@ -29,6 +29,20 @@ def status(root=ROOT):
             "supporting_launch_order":dispatch["launch_order"],
             "supporting_first_command":horizon["next_supporting_priority"]["offline_preflight"][0],
             "supporting_local_host_state":"BLOCKED_LOCAL_GAME_ACCESS_UNTIL_AUTHORIZED",
+            "supporting_workloads":{
+                name: {
+                    "id": entry["id"],
+                    "status": entry["status"],
+                    "runbook": entry["runbook"],
+                    "source_pr": entry["source_fix"]["pr"],
+                    "local_escape_menu": entry["status_dimensions"]["physical_escape_menu"],
+                    "local_u_clubs": entry["status_dimensions"]["physical_u_clubs"],
+                    "cursor_session_attribution": entry["status_dimensions"]["culpable_cursor_session"],
+                    "lane_order": dispatch["supporting_workload_launch_order"],
+                    "live_proof": "UNPROVEN_OPERATOR_HOST",
+                }
+                for name,entry in (horizon.get("supporting_workloads") or {}).items()
+            },
             "dispatch_validation":dispatch_state["state"],
             "certified_module_patch_combinations":len(certified),
             "closure":"UNPROVEN_GAME_HOST" if not certified else "REVIEW_GAME_EVIDENCE",
