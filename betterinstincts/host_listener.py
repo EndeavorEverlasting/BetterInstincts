@@ -803,6 +803,29 @@ def tick(
     except OpportunitySurveyError as exc:
         raise HostListenerError("SURVEY_OBSERVATION_INVALID:" + str(exc)) from exc
     survey["affordance_index_state"] = memory_state
+    # The sensor must supply a fresh menu query in this same tick. This
+    # attaches a queue *proposal* to the existing survey, not to game input.
+    if "object_catalog_query" in observation:
+        candidate = observation["object_catalog_query"]
+        if (not isinstance(candidate, Mapping)
+                or len(json.dumps(dict(candidate)).encode("utf-8")) > 8192):
+            raise HostListenerError("OBJECT_CATALOG_QUERY_INVALID")
+        if (candidate.get("capture_ref") != obs["capture_ref"]
+                or candidate.get("game_version") != obs["game_version"]):
+            raise HostListenerError("OBJECT_CATALOG_QUERY_CAPTURE_MISMATCH")
+        if (mode_context is None or mode_context["mode"] != "LIVE"
+                or not mode_context["mode_autonomy_allowed"]):
+            survey["object_action_hint"] = {
+                "state": "SCENE_UNVERIFIED", "candidate": None,
+                "execute_allowed": False, "cancel_allowed": False,
+            }
+        else:
+            current = {
+                **candidate,
+                "player_active": presence["host"] == "YIELD_TO_PLAYER",
+                "player_queue_present": bool(obs["player_directed"]),
+            }
+            survey["object_action_hint"] = suggest_object_action(session_id, current)
     if presence["host"] == "YIELD_TO_PLAYER":
         ticks = ticks + 1
         meta["ticks"] = ticks
