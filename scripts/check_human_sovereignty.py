@@ -115,10 +115,18 @@ def validate_manifest(manifest: dict, root: Path = ROOT) -> dict:
             "ADOPTED_PASSIVE_CAPTURE", "ADOPTED_READ_ONLY_WITH_CALLBACK_TRUST",
         }:
             raise HarnessCoverageError("BACKGROUND_REVIEW_REQUIRED:" + path)
-        if status == "ADOPTED_GATED" and not _has_call(
-            source, {"admitted_screen_lease", "CooperativeScreenQueue", "confirm"}
-        ):
-            raise HarnessCoverageError("FALSE_ADOPTED_GATE_CLAIM:" + path)
+        if status == "ADOPTED_GATED":
+            required_calls = entry.get("admission_calls")
+            if required_calls is not None:
+                if not isinstance(required_calls, list) or not required_calls or any(
+                    not isinstance(name, str) or not _has_call(source, {name})
+                    for name in required_calls
+                ):
+                    raise HarnessCoverageError("FALSE_ADOPTED_GATE_CLAIM:" + path)
+            elif not _has_call(
+                source, {"admitted_screen_lease", "CooperativeScreenQueue", "confirm"}
+            ):
+                raise HarnessCoverageError("FALSE_ADOPTED_GATE_CLAIM:" + path)
         if status == "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY":
             entrypoint = entry.get("guard_entrypoint")
             if not _legacy_guard_call(source, path, entrypoint):

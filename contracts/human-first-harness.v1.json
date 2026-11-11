@@ -56,7 +56,11 @@
       "path": "betterinstincts/playwright_interop.py",
       "classification": "SCREEN_EFFECT",
       "status": "ADOPTED_GATED",
-      "marker": "CooperativeScreenQueue"
+      "marker": "CooperativeScreenQueue",
+      "admission_calls": [
+        "enqueue",
+        "QueuedStep"
+      ]
     },
     {
       "path": "betterinstincts/screen_admit.py",
