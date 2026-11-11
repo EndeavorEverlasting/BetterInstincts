@@ -1,0 +1,26 @@
+---
+description: BetterInstincts native Sims 4 gameplay first; host desktop is a lab tool, not the mod runtime
+alwaysApply: true
+---
+
+For every BetterInstincts gameplay task, read `AGENTS.md`,
+`docs/AGENT_OPERATING_RULES.md`, `docs/NATIVE_GAMEPLAY_ARCHITECTURE.md`
+and `contracts/native-gameplay-authority.v1.json` before proposing an
+implementation. P00: preserve the native mechanism philosophy. P01: obey
+`python -m scripts.check_native_gameplay_authority` plus PR base-ref gate,
+then existing safety and ontology preflight. Add
+`contracts/native-gameplay-decisions/<feature>.v1.json` for any changed
+`betterinstincts/*.py`, `tuning/` or `native_mod/` file.
+
+**Do not implement Sim autonomy by mouse/keyboard/HUD queue automation.**
+Use patch-proven EA XML scoring/tests or verified embedded in-game Python
+mechanics, event-driven, opt-in and reversible. Host vision and GUI input
+remain bounded disposable test tools only; they do not certify game behavior.
+Never invent EA hook names or game version, cancel player's queue, interfere
+with beneficial social/fun, modify user saves, disable keyboard/Bluetooth
+or bypass local handoff protection. An offline policy is only a recommendation,
+not an installed mod.
+
+Native integration issue: #171. Current Horizon live gate: BI-002.
+If exact EA evidence is absent, record `LOCAL_EA_EVIDENCE_REQUIRED`
+and do the safe repo work without substituting a desktop clicker.
