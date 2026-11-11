@@ -134,9 +134,12 @@ def validate(data):
                 raise HorizonError("ESC_U_LOCAL_REVIEWED_RECEIPT_REQUIRED")
         elif ref is not None:
             raise HorizonError("ESC_U_UNOBSERVED_MUST_NOT_CLAIM_RECEIPT")
-    if (esc.get("status")=="REVIEWED_LOCAL_EVIDENCE"
-            and state["physical_recovery"]!="ACCEPTED_AFTER_LOCAL_RETEST"):
-        raise HorizonError("ESC_U_P04_PREMATURE_WORKLOAD_COMPLETION")
+    if esc.get("status")=="REVIEWED_LOCAL_EVIDENCE":
+        if (state["physical_recovery"]!="ACCEPTED_AFTER_LOCAL_RETEST"
+                or state["physical_escape_menu"]!="LOCAL_OBSERVED_WITH_RECEIPT"
+                or state["physical_u_clubs"] not in {
+                    "LOCAL_OBSERVED_WITH_RECEIPT","NOT_APPLICABLE_PACK_ABSENT"}):
+            raise HorizonError("ESC_U_P04_PREMATURE_WORKLOAD_COMPLETION")
     policy=set(esc.get("safety") or [])
     for guard in ("OPERATOR_OWNS_INPUT","SINGLE_CURSOR_LEASE",
                   "NO_UNATTENDED_KEY_INJECTION","NO_OS_KEY_REMAP",
