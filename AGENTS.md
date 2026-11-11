@@ -6,6 +6,8 @@ Before edits, samples or experiments, read mandatory `docs/AGENT_OPERATING_RULES
 
 Ontology revision 6: human input anywhere (game, mod, keyboard, mouse, voice or other app) outranks agents. `contracts/effect-authority.v1.json` separates reviewed read-only background work from screen/game effects (15s idle, fresh dual probes before/after focus, scene/save/target recheck) and OS/unknown effects (deny). Retain interrupted intent, reconcile outcomes, never blindly replay. Never change Bluetooth, Print Screen, Escape/U, drivers, accessibility or Windows settings. Run `scripts/check_human_sovereignty.py`. Unadopted tools and mid-call actions remain unproven.
 
+Native gameplay: EA tuning/scripts; GUI lab-only. See detailed rules.
+
 ## Windows peripheral authority boundary
 
 `contracts/peripheral-authority.v1.json` and `scripts/check_peripheral_boundary.py` deny game agents Windows Bluetooth service, driver, pairing and input-preference changes. Idle/player permits never grant OS repair authority: route incidents to SysAdminSuite Field Workflow. Run the checker and `tests.test_peripheral_boundary` with ontology preflight; see `docs/PERIPHERAL_INCIDENT.md`.

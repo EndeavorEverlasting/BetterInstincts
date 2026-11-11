@@ -81,3 +81,25 @@ Pass means only **registered static source and offline fixtures**:
 and `GAMEPLAY_CERTIFIED` are separate evidence dimensions.
 Unadopted legacy CAS and raw adapters are inventory debts, not safe
 runtime execution permits. See `docs/HUMAN_FIRST_HARNESS.md`.
+
+## Native EA gameplay architecture gate — P00/P01
+
+Run `python -m scripts.check_native_gameplay_authority` and
+`python -m unittest tests.test_native_gameplay_authority -v`.
+PR CI also runs the checker with `--base-ref` using the actual
+GitHub PR base commit SHA. This enforces the machine
+`contracts/native-gameplay-authority.v1.json` route taxonomy,
+mandatory new/updated per-product-file route declarations in
+`contracts/native-gameplay-decisions/`, static denial of known desktop
+input mechanisms inside the current core gameplay-policy modules,
+ontology/agent rule/Cursor rule ownership and proof-ceiling separation.
+A host diagnostic can remain a host diagnostic, but a host-lab or
+offline-policy route cannot claim shipped native gameplay.
+
+This is a **static preventative architecture guard**, not a
+runtime sandbox: declarations can misdescribe code, unlisted
+dynamic imports need review, external agents need separate
+activation/proof and real Sims queue effect still requires
+patch-specific EA inspection, disposable 5+5 or equivalent named
+A/B, live player override, rollback and maintainer review.
+Native mod delivery remains issue #171 and BI-002 remains separate.

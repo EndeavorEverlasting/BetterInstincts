@@ -160,3 +160,38 @@ BI-002 hunger Live Mode gate remains independently open. Use existing
 ## Deterministic household traversal (P00)
 
 In-world household traversal navigates named, verified on-lot **regions**, never raw mouse coordinates or aimless N/E/S/W camera turns. Camera exploration, Sim movement, scene transitions, and world-object selection have separate evidence and admission. Lot-floor-map's relative object graph cannot assert Sim reachability. A goal retains opaque household/actor scope; a repeated no-progress region cycle (including A-B-A-B) must stop, avoid the failed transition within its bounded scope, re-anchor/replan using only verified passages, or abstain. Never use a passage that is unknown, off-lot, unverified or a mere camera hint. Movement is not progress; a route proposal, arrival, or model score is not an interaction outcome and does not grant CONTROL_PERMIT. Player takeover, stale revision or absent independent evidence immediately yields; preserve last known good saves and human controls. Details: `docs/HOUSEHOLD_NAVIGATION.md`, `contracts/household-navigation.v1.json`.
+
+## P00/P01 — Native EA programming is the product, GUI is a lab tool
+
+`GAMEPLAY_IMPLEMENTATION_ROUTE` makes the architecture a non-negotiable
+programming invariant, not an agent's stylistic preference. For actual
+autonomous Sims decisions about needs, goals, queue interruptions, income,
+skills, socializing and careers, favor verified EA interaction tuning
+and native engine scoring/tests. When tuning cannot deliver a proven
+behavior, use exact-game-build Sims-embedded script hooks with verified
+source signatures. An ongoing external Cursor/mouse clicker is **not**
+the native game engine; moving a mouse to cancel queue HUD entries may
+be a bounded human-approved experiment, never a replacement product.
+There is no operator authorization for a stealth Windows daemon or
+global input interception.
+
+`NATIVE_MECHANIC_EVIDENCE` requires actual patch/build, licensed
+read-only game source provenance, mechanism/TGI identity, reversible
+authored package, controlled in-game observations and rollback before
+a native gameplay effect is called live. `POLICY_ONLY` offline scoring
+can guide future work but cannot enqueue/cancel or certify the game.
+`HOST_LAB_BOUNDARY` preserves purposeful human-safe research,
+interactive diagnostics, assistive testing and gameplay observation,
+subject to existing game scene/save/queue and operator presence
+admission. Lack of EA source is a **local runtime evidence gate**,
+not permission for a desktop automation workaround.
+
+Each changed product Python file must be routed in
+`contracts/native-gameplay-decisions/` and checked by
+`scripts.check_native_gameplay_authority` on every PR. The core
+autonomy/motive/career policy owners cannot acquire GUI imports or
+claim host-lab-only game behavior. Native hooks remain subject to
+all player-sovereignty, beneficial fun/social, interruption, patch,
+peripheral and protected-save rules; native coding is not carte blanche.
+See `docs/NATIVE_GAMEPLAY_ARCHITECTURE.md`. Issue #171 owns the
+unverified native adapter; BI-002 hunger stays the live Horizon gate.

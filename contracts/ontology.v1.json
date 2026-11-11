@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.ontology/v1",
-  "revision": 7,
+  "revision": 8,
   "state": "CANDIDATE_REVIEW_NOT_RUNTIME_AUTHORITY",
   "owner": "BetterInstincts",
   "source_main_sha": "502f66efc0eedd4136d6a8cd0879f566c3f3612f",
@@ -362,6 +362,21 @@
       "kind": "state",
       "definition": "Re-anchor and replan using a verified alternative, or abstain without OS/game effects when evidence is stale or blocked.",
       "canonical_owner": "contracts/household-navigation.v1.json"
+    },
+    "GAMEPLAY_IMPLEMENTATION_ROUTE": {
+      "kind": "execution_architecture",
+      "definition": "An explicit reviewed choice between EA native tuning, verified in-game Python hooks, pure policy, bounded host-lab observation, or non-game behavior; the chosen route cannot grant game effect authority.",
+      "canonical_owner": "contracts/native-gameplay-authority.v1.json"
+    },
+    "NATIVE_MECHANIC_EVIDENCE": {
+      "kind": "game_proof",
+      "definition": "Patch-pinned EA source or script API provenance, packaged mod identity and independently observed in-game behavior/rollback. Offline code and host UI clicks are not native gameplay proof.",
+      "canonical_owner": "contracts/native-gameplay-authority.v1.json"
+    },
+    "HOST_LAB_BOUNDARY": {
+      "kind": "authority_boundary",
+      "definition": "Explicit temporary host UI/capture and diagnostics may support read-only reconnaissance, onboarding and disposable testing under player and save admission, but never substitute for EA-native gameplay mechanics.",
+      "canonical_owner": "contracts/native-gameplay-authority.v1.json"
     }
   },
   "relations": [
@@ -794,6 +809,26 @@
       "from": "NAVIGATION_RECOVERY",
       "to": "CONTROL_PERMIT",
       "predicate": "DOES_NOT_GRANT_CONTROL"
+    },
+    {
+      "from": "MECHANIC_PATH",
+      "predicate": "MUST_DECLARE",
+      "to": "GAMEPLAY_IMPLEMENTATION_ROUTE"
+    },
+    {
+      "from": "GAMEPLAY_IMPLEMENTATION_ROUTE",
+      "predicate": "REQUIRES_FOR_GAME_EFFECT",
+      "to": "NATIVE_MECHANIC_EVIDENCE"
+    },
+    {
+      "from": "HOST_LAB_BOUNDARY",
+      "predicate": "CANNOT_IMPERSONATE",
+      "to": "NATIVE_MECHANIC_EVIDENCE"
+    },
+    {
+      "from": "PLAYER_INTENT",
+      "predicate": "OVERRIDES",
+      "to": "GAMEPLAY_IMPLEMENTATION_ROUTE"
     }
   ],
   "invariants": [
@@ -1155,6 +1190,42 @@
       "owned_by": [
         "contracts/household-navigation.v1.json",
         "docs/ONTOLOGY.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-042",
+      "term": "EA_NATIVE_MECHANICS_FIRST",
+      "rule": "Sim autonomy, motives, queued goals, careers and other ongoing gameplay mechanics must use verified EA tuning or exact-build native script interfaces for installed gameplay; desktop input may only assist bounded host-lab workflows, never act as a silent substitute.",
+      "owned_by": [
+        "contracts/native-gameplay-authority.v1.json",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-043",
+      "term": "IMPLEMENTATION_ROUTE_PROVENANCE",
+      "rule": "Every changed product Python implementation must declare a machine-reviewed route and owned paths in the PR, classifying non-game/host-lab/policy/native paths; unclassified changes fail the native authority checker.",
+      "owned_by": [
+        "contracts/native-gameplay-authority.v1.json",
+        "scripts/check_native_gameplay_authority.py"
+      ]
+    },
+    {
+      "id": "BI-ONT-044",
+      "term": "POLICY_AND_HOST_NOT_PLAYABLE_NATIVE",
+      "rule": "Offline policy or host interaction evidence never establishes a playable EA-native mechanic; installed and live claims require exact game patch, verified native source, independent gameplay observation and rollback.",
+      "owned_by": [
+        "contracts/native-gameplay-authority.v1.json",
+        "docs/VALIDATION.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-045",
+      "term": "NATIVE_PATH_RESPECTS_PLAYER",
+      "rule": "Native scoring or script integration must still preserve explicit player queue, unknown action origin, urgent needs, socially beneficial actions, gameplay version compatibility, protected saves and opt-in; native is a mechanism, not blanket execution permission.",
+      "owned_by": [
+        "contracts/native-gameplay-authority.v1.json",
+        "docs/DOCTRINE.md"
       ]
     }
   ],

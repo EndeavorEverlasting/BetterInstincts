@@ -1,0 +1,136 @@
+{
+  "schema": "betterinstincts.native-gameplay-authority/v1",
+  "owner": "AGENTS.md + docs/AGENT_OPERATING_RULES.md",
+  "ontology": "contracts/ontology.v1.json",
+  "native_first": true,
+  "principle": "Sims behaviors execute through the game's verified EA tuning or installed game-native Python mod, not through an external desktop agent repeatedly moving the mouse or cancelling queue HUD elements.",
+  "routes": {
+    "EA_TUNING": {
+      "role": "Version-specific EA XML tuning/interaction scoring or test overrides",
+      "game_effect_candidate": true,
+      "requires": [
+        "exact_patch",
+        "read_only_ea_source_ref",
+        "tgi_or_tuning_id",
+        "reversible_mod",
+        "player_first",
+        "disposable_A_B_and_rollback_before_live_claim"
+      ]
+    },
+    "EA_SCRIPT": {
+      "role": "Exact-build game-embedded Python event/interaction queue hooks, never unverified host Python API guesses",
+      "game_effect_candidate": true,
+      "requires": [
+        "exact_patch",
+        "read_only_ea_hook_source_ref",
+        "native_hook_id",
+        "embedded_runtime_compatibility",
+        "reversible_mod",
+        "player_first",
+        "disposable_A_B_and_rollback_before_live_claim"
+      ]
+    },
+    "POLICY_ONLY": {
+      "role": "Deterministic advisory/scoring; no gameplay side effects or live authority",
+      "game_effect_candidate": false,
+      "requires": [
+        "no_game_effect",
+        "explicit_native_successor"
+      ]
+    },
+    "HOST_LAB_ONLY": {
+      "role": "Opt-in, human-gated screen capture/UI/console/bootstrap/disposable diagnostics; cannot be a native Sim gameplay engine",
+      "game_effect_candidate": false,
+      "requires": [
+        "explicit_local_admission",
+        "no_autonomy_runtime_claim"
+      ]
+    },
+    "NON_GAMEPLAY": {
+      "role": "Unrelated helpers, I/O, data/metadata, editor and engineering infrastructure",
+      "game_effect_candidate": false,
+      "requires": [
+        "not_gameplay_behaviour"
+      ]
+    }
+  },
+  "source_policy": {
+    "product_code_prefix": "betterinstincts/",
+    "product_code_suffix": ".py",
+    "native_mod_prefixes": [
+      "tuning/",
+      "native_mod/"
+    ],
+    "core_policy_paths": [
+      "betterinstincts/autonomy_moderation.py",
+      "betterinstincts/horizon.py",
+      "betterinstincts/need_services.py",
+      "betterinstincts/career_service.py",
+      "betterinstincts/domain_cascade.py",
+      "betterinstincts/household_upkeep.py",
+      "betterinstincts/household_navigation.py"
+    ],
+    "core_allowed_routes": [
+      "POLICY_ONLY",
+      "EA_TUNING",
+      "EA_SCRIPT"
+    ],
+    "core_desktop_input_sentinels": [
+      "pyautogui",
+      "pywinauto",
+      "pynput",
+      "win32api",
+      "win32gui",
+      "win32con",
+      "ctypes",
+      "SendInput",
+      "SetCursorPos",
+      "SetForegroundWindow",
+      "keybd_event",
+      "PostMessage",
+      "RegisterHotKey"
+    ]
+  },
+  "change_review": {
+    "directory": "contracts/native-gameplay-decisions/",
+    "schema": "betterinstincts.native-gameplay-decision/v1",
+    "scope": "Any PR touching betterinstincts/*.py or tuning/ or native_mod/ must add/update a machine-readable route decision in its own diff that maps each changed file exactly once.",
+    "route_fields": [
+      "path",
+      "route",
+      "reason",
+      "game_effect_claim",
+      "game_build",
+      "ea_source_ref",
+      "successor_issue"
+    ],
+    "game_effect_claim_values": [
+      "NONE",
+      "OFFLINE_ONLY",
+      "GAME_CERTIFIED"
+    ],
+    "rule": "POLICY_ONLY, HOST_LAB_ONLY and NON_GAMEPLAY can never claim in-game effect. EA_TUNING/EA_SCRIPT may be CODED but not GAME_CERTIFIED without separate in-game trial and rollback record. Native is never a bypass for player input, protected saves or game-version gate."
+  },
+  "harness": {
+    "validator": "scripts/check_native_gameplay_authority.py",
+    "tests": "tests/test_native_gameplay_authority.py",
+    "workflow": ".github/workflows/ci.yml",
+    "cursor_rule": ".cursor/rules/native-gameplay.mdc",
+    "governance": "AGENTS.md",
+    "detailed_governance": "docs/AGENT_OPERATING_RULES.md",
+    "operator_report": "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md",
+    "local_game_owner": "https://github.com/EndeavorEverlasting/BetterInstincts/issues/171"
+  },
+  "do_not": {
+    "desktop_as_gameplay_engine": true,
+    "os_peripheral_or_input_settings": true,
+    "unverified_ea_api_names": true,
+    "overwrite_user_saves": true,
+    "fake_live_proof_from_ci": true,
+    "ship_ea_original_assets": true,
+    "global_per_frame_or_unbounded_input_loops": true,
+    "player_queue_cancellation": true,
+    "disable_valid_fun_social": true
+  },
+  "proof_ceiling": "STATIC_ARCHITECTURE_GUARD_ONLY_NOT_EA_GAMEPLAY_NATIVE_CERTIFICATION"
+}

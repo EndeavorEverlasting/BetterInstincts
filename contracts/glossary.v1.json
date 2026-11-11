@@ -1355,6 +1355,27 @@
         "docs/DOCTRINE.md",
         "docs/ASYNC_INTEROP.md"
       ]
+    },
+    "GAMEPLAY_IMPLEMENTATION_ROUTE": {
+      "definition": "Per-product-file reviewed execution class: EA_TUNING or EA_SCRIPT for verified game-native runtime; POLICY_ONLY for offline advice; HOST_LAB_ONLY for bounded external inspection/testing; NON_GAMEPLAY for unrelated application code. No class alone grants live effect.",
+      "owners": [
+        "contracts/native-gameplay-authority.v1.json",
+        "scripts/check_native_gameplay_authority.py"
+      ]
+    },
+    "NATIVE_MECHANIC_EVIDENCE": {
+      "definition": "Version-bound read-only EA tuning/script interface provenance; a reversible authored mod, and independent player-safe game outcome with rollback. Repository CI validates only source and declarations.",
+      "owners": [
+        "contracts/native-gameplay-authority.v1.json",
+        "docs/VALIDATION.md"
+      ]
+    },
+    "HOST_LAB_BOUNDARY": {
+      "definition": "Desktop vision, mouse/keyboard and HUD mapping are opt-in diagnostic or experiment tools, not the implementation of Sims autonomous behavior. Existing human presence, queue, safe-save and peripheral gates remain required.",
+      "owners": [
+        "contracts/native-gameplay-authority.v1.json",
+        "docs/DOCTRINE.md"
+      ]
     }
   }
 }
