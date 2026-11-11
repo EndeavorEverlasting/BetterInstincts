@@ -17,7 +17,7 @@ import sys
 import time
 
 from betterinstincts.fixed_ui_click_map import load_escape_menu_coords
-from betterinstincts.legacy_screen_boundary import deny_unadopted_live_effect
+from betterinstincts.legacy_screen_boundary import UnadoptedLiveEffectError, deny_unadopted_live_effect
 
 # Offline-calibrated against PrintWindow bitmaps (1920x1080 borderless).
 SEASON_SUMMER = (850, 520)
@@ -131,6 +131,12 @@ def main(argv: list[str] | None = None) -> int:
     if not args.execute:
         print(json.dumps(payload, sort_keys=True))
         return 0
+    # Do not enumerate/focus the game window for an unadopted legacy effect.
+    try:
+        deny_unadopted_live_effect("scripts/cas_place_live.py")
+    except UnadoptedLiveEffectError as exc:
+        print(json.dumps({"state": "BLOCKED", "reason": str(exc)}, sort_keys=True))
+        return 2
     if sys.platform != "win32":
         print(json.dumps({"state": "BLOCKED", "reason": "WINDOWS_REQUIRED"}, sort_keys=True))
         return 2

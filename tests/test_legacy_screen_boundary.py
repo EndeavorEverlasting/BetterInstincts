@@ -81,6 +81,24 @@ class LegacyInputBoundaryTests(unittest.TestCase):
         focus.assert_not_called()
         click.assert_not_called()
 
+    def test_legacy_cli_returns_json_block_without_leaking_traceback(self):
+        import json
+        for name, invoke in (
+            ("host", lambda: host_menu.main([
+                "run", "--from-scene", "select_sim_to_play",
+                "--process-id", "1234", "--execute",
+            ])),
+            ("cas_place", lambda: cas_place_live.main(["--execute"])),
+        ):
+            with self.subTest(name=name):
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    code = invoke()
+                self.assertEqual(code, 2)
+                result = json.loads(out.getvalue())
+                self.assertEqual(result["state"], "BLOCKED")
+                self.assertIn("UNADOPTED_LEGACY_INPUT_DENIED", result["reason"])
+
     def test_school_click_injection_cannot_bypass_runtime_denial(self):
         callback = MagicMock(return_value={"state": "CLICK_DISPATCHED"})
         argv = [
