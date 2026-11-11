@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-FIRST-RUN-BOOTSTRAP-20261111",
+  "purpose": "Classify installed-game discovery and explicitly clicked process startup as supporting host-only installation; not EA native autonomy, gameplay mutation, automatic save selection or desktop input control.",
+  "files": [
+    {
+      "path": "betterinstincts/first_run.py",
+      "route": "HOST_LAB_ONLY",
+      "reason": "Bounded read-only EA/Steam executable discovery, explicit player authorization before starting that executable, and static advisory CAS plans; no game input, tuning, script injection or native gameplay behavior.",
+      "game_effect_claim": "NONE",
+      "autonomy_runtime": false
+    }
+  ],
+  "host_adapter": "scripts/first_run.py",
+  "runtime_admission": "Explicit user selection of Continue existing game or Start a new game; process dispatch only, with player-controlled in-game menu",
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_HOST_PLANNING_ONLY_NOT_GAMEPLAY_OR_LOCAL_WINDOWS_CERTIFICATION",
+  "next_gate": "Local Windows P08 first-run executable launch, title screen observation, player-selected save or disposable CAS and safe human takeover"
+}
