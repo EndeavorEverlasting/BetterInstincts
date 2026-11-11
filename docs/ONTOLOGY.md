@@ -144,3 +144,16 @@ cross-cutting gates without replacing their own more specific risk checks.
 ## Revision 7 — deterministic household navigation (P00/P01 + Fifth Gear)
 
 `NAVIGATION_SCOPE`, `NAVIGATION_REGION`, `NAVIGATION_PASSAGE`, `NAVIGATION_FRONTIER`, `NAVIGATION_INTENT`, `NAVIGATION_PROGRESS`, `NAVIGATION_STALL` and `NAVIGATION_RECOVERY` are first-class, scope-bound semantics. `BI-ONT-036..041` distinguish player/Sim movement from camera repositioning, verified traversable passages from visual adjacency, and progress evidence from repeated motion. `contracts/household-navigation.v1.json` owns the bounded pure navigation policy; `betterinstincts/household_navigation.py` is the read-only planner. Position loops or failed transitions replan through verified alternatives or abstain. User-supplied save/profile identity is never published or embedded in shared defaults. Region arrival does not certify an object interaction or earn a control permit. Offline results do not certify Sims 4 gameplay. Existing BI-002 and player-first gates remain authoritative.
+
+
+## Closer gate on BI-ONT-035 — unadopted means runtime denied
+
+`AGENT_ADOPTION_COVERAGE` is not satisfied by an inventoried warning alone.
+BI-ONT-035 now has a concrete repository-only negative path: six declared
+legacy executors must call `betterinstincts.legacy_screen_boundary`
+to deny execution before any focus/SendInput. A Python AST harness check
+verifies the declared denial call and offline mocks prove no callback/click
+is dispatched. No new ontology node or rival admission policy is needed:
+`screen_admit` stays canonical for future adoption. A future status change
+must include independent game-scene/target input-safety proof; passing static
+checks does not certify physical Windows operator reclamation.

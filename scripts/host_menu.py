@@ -31,6 +31,7 @@ if str(ROOT) not in sys.path:
 
 from betterinstincts.host_menu import HostMenuError, plan_from_scene, plan_journey
 from betterinstincts.menu_blockers import assert_safe_action
+from betterinstincts.legacy_screen_boundary import UnadoptedLiveEffectError, deny_unadopted_live_effect
 from scripts.win32_input import send_click as _send_click
 
 OUTPUT = ROOT / "dist" / "game-host"
@@ -79,6 +80,7 @@ def run_journey(
             "--execute --run-id RUN"
         )
         return out
+    deny_unadopted_live_effect("scripts/host_menu.py")
     if sys.platform != "win32":
         raise GateError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
     _focus(process_id)
@@ -164,7 +166,7 @@ def main(argv: list[str] | None = None) -> int:
                 result["receipt"] = str(path.relative_to(ROOT))
         print(json.dumps(result, sort_keys=True))
         return 0
-    except (HostMenuError, GateError, OSError, ValueError, TypeError) as exc:
+    except (HostMenuError, GateError, UnadoptedLiveEffectError, OSError, ValueError, TypeError) as exc:
         print(json.dumps({"state": "BLOCKED", "reason": str(exc)}, sort_keys=True))
         return 2
 

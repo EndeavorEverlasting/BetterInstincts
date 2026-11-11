@@ -10,6 +10,8 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+
+from betterinstincts.legacy_screen_boundary import deny_unadopted_live_effect
 import time
 from pathlib import Path
 
@@ -89,6 +91,7 @@ def find_sims_hwnd(process_id: int | None) -> tuple[int, int]:
 
 
 def finish_cas(process_id: int | None, out_dir: Path, first: str, last: str) -> dict:
+    deny_unadopted_live_effect("scripts/cas_finish_disposable.py")
     if sys.platform != "win32":
         raise RuntimeError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
     from scripts.game_capture import capture_sims

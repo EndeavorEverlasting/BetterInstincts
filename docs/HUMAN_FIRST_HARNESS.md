@@ -99,3 +99,32 @@ governance; P01 owns source scanning, codebase and artifact maps, tests and CI;
 neither supplies a general OS input bypass. The GitHub-connected runtime
 is **not** the installed Windows game host. A maintainer must recheck local
 Cursor hook activation and player-reclaim behavior separately.
+
+## Moonwake closers — legacy execution gate, not just registry labels
+
+P83 verified an input-authority discrepancy: registry rows marked
+`UNADOPTED_LEGACY_NO_LIVE_AUTHORITY` did not by themselves stop an
+`--execute` command from reaching raw foreground focus/Win32 SendInput.
+P03's first safe sprint installed the pure repository-owned runtime
+`betterinstincts/legacy_screen_boundary.py` denier at the six entrypoints
+for CAS completion/placement, quiz/household clicks, school Send Alone,
+and multi-step host-menu automation. **These commands now fail closed for
+live input**; read-only plans remain available. This is a deliberate
+temporary safety block, not completion of functional adapter adoption.
+
+The P01 registry names each legacy `guard_entrypoint` and verifies its
+literal denial call via Python AST; new potential input sources are also
+discovered under both `scripts/` and `betterinstincts/`. Changing a status
+label or inserting an admission keyword in a comment cannot independently
+authorize a raw input path. Focus/game mutation remains explicitly unproven
+until the adapter is rebuilt on `admitted_screen_lease`, exact game version,
+scene/target/queue evidence and at-most-one-effect reconciliation.
+In particular, `--operator-screen-released` is not a trustworthy
+desktop-wide idle probe or permission to override the player.
+
+This protection is cooperative **inside the repository**. It does not
+intercept independent tools, non-Python agents, imported raw Win32 helpers,
+or a native call already in progress. No Windows game device was tested or
+configured by this repository commit. See
+`docs/handoff/BI-HUMAN-FIRST-CLOSERS-P04-2026-11-10.md` for scoped
+successor work, ownership and physical local certification.

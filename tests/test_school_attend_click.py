@@ -239,11 +239,17 @@ class CliTests(unittest.TestCase):
         calls = []
         argv = ["plan", "--execute", "--operator-screen-released", "--measured-join-y", "560",
                 "--calibration-source", "OPERATOR_MEASURED", "--dialog-observed"]
-        code, out, _ = self._run(argv, dispatch=lambda p: calls.append(p) or {"state": "OKAY_CLICK_DISPATCHED"})
-        self.assertEqual(code, 0)
-        self.assertEqual(calls, [(960, 616)])
-        self.assertNotEqual(calls[0], LEGACY)
-        self.assertIn("NOT_A_SEND_ALONE_CLAIM", json.loads(out)["next"])
+        code, out, err = self._run(argv, dispatch=lambda p: calls.append(p) or {"state": "OKAY_CLICK_DISPATCHED"})
+        self.assertEqual(code, 2)
+        self.assertEqual(calls, [])
+        self.assertEqual(out, "")
+        self.assertIn("UNADOPTED_LEGACY_INPUT_DENIED:scripts/school_attend_click.py", err)
+        proposed = plan_send_alone_click(
+            measured_join_y=560, calibration_source="OPERATOR_MEASURED",
+            dialog_observed=True, execute=True,
+        )
+        self.assertEqual(proposed["target_xy"], [960, 616])
+        self.assertNotEqual(proposed["target_xy"], list(LEGACY))
 
     def test_verify_exit_codes(self):
         code, out, _ = self._run(["verify", "--lot-kind", "school"])

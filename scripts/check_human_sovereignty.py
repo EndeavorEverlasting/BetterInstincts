@@ -6,6 +6,7 @@ assertion that an independently running Cursor agent has adopted the policy.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 from pathlib import Path
 
@@ -18,6 +19,7 @@ STATUSES = {
     "ADOPTED_PASSIVE_CAPTURE", "MIXED_PATHS_REVIEW_REQUIRED",
     "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY", "LOW_LEVEL_CALLER_GATE_ONLY",
     "REPOSITORY_HOOK_UNVERIFIED_LOCAL_ACTIVATION", "STATIC_DENY_ONLY",
+    "READ_ONLY_PRESENCE_SENSOR",
 }
 NOT_PROVED = {
     "MIXED_PATHS_REVIEW_REQUIRED", "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
@@ -35,8 +37,10 @@ class HarnessCoverageError(ValueError):
 
 
 def _file(root: Path, path: str) -> Path:
+    if not isinstance(path, str) or not path:
+        raise HarnessCoverageError("INVALID_PATH:" + str(path))
     p = Path(path)
-    if not isinstance(path, str) or not path or p.is_absolute() or ".." in p.parts:
+    if p.is_absolute() or ".." in p.parts:
         raise HarnessCoverageError("INVALID_PATH:" + str(path))
     target = root / p
     if target.is_symlink() or not target.is_file():
@@ -110,12 +114,31 @@ def validate_manifest(manifest: dict, root: Path = ROOT) -> dict:
             raise HarnessCoverageError("SCREEN_EFFECT_AS_BACKGROUND:" + path)
         if kind == "PASSIVE_OBSERVATION" and status not in {
             "ADOPTED_PASSIVE_CAPTURE", "ADOPTED_READ_ONLY_WITH_CALLBACK_TRUST",
+            "READ_ONLY_PRESENCE_SENSOR",
         }:
             raise HarnessCoverageError("BACKGROUND_REVIEW_REQUIRED:" + path)
-        if status == "ADOPTED_GATED" and not any(
-            anchor in source for anchor in ("admitted_screen_lease", "CooperativeScreenQueue", "preflight = confirm(")
+        if kind == "PASSIVE_OBSERVATION" and _has_call(
+            source, {"SendInput", "SetCursorPos", "SetForegroundWindow", "keybd_event"}
         ):
-            raise HarnessCoverageError("FALSE_ADOPTED_GATE_CLAIM:" + path)
+            raise HarnessCoverageError("PASSIVE_SENSOR_INPUT_MUTATION:" + path)
+        if status == "READ_ONLY_PRESENCE_SENSOR" and not _has_call(source, {"GetLastInputInfo"}):
+            raise HarnessCoverageError("PRESENCE_SENSOR_PROBE_MISSING:" + path)
+        if status == "ADOPTED_GATED":
+            required_calls = entry.get("admission_calls")
+            if required_calls is not None:
+                if not isinstance(required_calls, list) or not required_calls or any(
+                    not isinstance(name, str) or not _has_call(source, {name})
+                    for name in required_calls
+                ):
+                    raise HarnessCoverageError("FALSE_ADOPTED_GATE_CLAIM:" + path)
+            elif not _has_call(
+                source, {"admitted_screen_lease", "CooperativeScreenQueue", "confirm"}
+            ):
+                raise HarnessCoverageError("FALSE_ADOPTED_GATE_CLAIM:" + path)
+        if status == "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY":
+            entrypoint = entry.get("guard_entrypoint")
+            if not _legacy_guard_call(source, path, entrypoint):
+                raise HarnessCoverageError("UNADOPTED_RUNTIME_GUARD_MISSING:" + path)
         if status in NOT_PROVED:
             unproven.append(path)
     if len(manifest.get("proof_dimensions", [])) < 7 or "WINDOWS_HUMAN_INTERRUPT_OBSERVED" not in manifest["proof_dimensions"]:
@@ -135,6 +158,45 @@ def validate_manifest(manifest: dict, root: Path = ROOT) -> dict:
         "proof_ceiling": "GITHUB_SOURCE_AND_CI_ONLY_NOT_LOCAL_GAME_OR_EXTERNAL_AGENT_ENFORCEMENT",
     }
 
+
+
+def _has_call(source: str, names: set[str]) -> bool:
+    """Require an actual Python call expression, not comments or string markers."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return False
+    return any(
+        isinstance(node, ast.Call) and (
+            isinstance(node.func, ast.Name) and node.func.id in names or
+            isinstance(node.func, ast.Attribute) and node.func.attr in names
+        )
+        for node in ast.walk(tree)
+    )
+
+
+def _legacy_guard_call(source: str, path: str, entrypoint: object) -> bool:
+    """Require a direct, literal, deny-only call in the listed public entrypoint."""
+    if not isinstance(entrypoint, str) or not entrypoint:
+        return False
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return False
+    for fn in tree.body:
+        if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)) or fn.name != entrypoint:
+            continue
+        for statement in fn.body:
+            if not isinstance(statement, ast.Expr) or not isinstance(statement.value, ast.Call):
+                continue
+            call = statement.value
+            if not isinstance(call.func, ast.Name) or call.func.id != "deny_unadopted_live_effect":
+                continue
+            if len(call.args) != 1 or not isinstance(call.args[0], ast.Constant):
+                continue
+            if call.args[0].value == path and not call.keywords:
+                return True
+    return False
 
 def _unregistered_sources(manifest: dict, root: Path, *, registered: set[str]) -> list[str]:
     scan = manifest.get("source_scan") or {}

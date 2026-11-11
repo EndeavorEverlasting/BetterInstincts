@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+
+from betterinstincts.legacy_screen_boundary import deny_unadopted_live_effect
 import time
 
 
@@ -17,6 +19,7 @@ HOUSEHOLD_CHECK = (1230, 788)  # deep-blue check (not the white glyph above it)
 
 
 def click_household_check(process_id: int | None, delay_s: float) -> dict:
+    deny_unadopted_live_effect("scripts/cas_household_check.py")
     if sys.platform != "win32":
         raise RuntimeError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
     import ctypes

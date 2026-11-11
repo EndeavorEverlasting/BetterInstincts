@@ -1,3 +1,39 @@
+## 2026-11-10 — Moonwake closers P83 → P03 → P141 → P124 → P04: live-input coverage repair
+
+**Parent:** gamer/operator computer control is sovereign during active use,
+including mouse, keyboard, dictation and other applications; no autonomous
+Bluetooth/driver/Print Screen/Escape/U remapping or save mutation. Previous
+validated baseline: merged PRs #175, #176, #177; ontology revision 6; main
+`dc062e008c60de9f8898228e0c1a92168214b0f3`.
+
+**P83 factual discrepancy:** the P01 harness classified six CAS, school
+and host-menu raw inputs as `UNADOPTED_LEGACY_NO_LIVE_AUTHORITY`, but
+`scripts/host_menu.py#run_journey` and
+`scripts/school_attend_click.py#run_plan` could still reach direct clicks
+through executable paths. A manifest entry was not a runtime denial.
+
+**P03 bounded remedy:** `betterinstincts/legacy_screen_boundary.py`
+denies all six listed unadopted executors before any first screen effect.
+Read-only planners stay available. P01's harness now checks the denial
+entrypoint using source AST rather than trusting an advisory string;
+its discovery scans both application and scripts roots. Negative regression
+tests simulate direct CLI/library invocation with no Win32 effects.
+`--operator-screen-released` alone never admits input.
+
+**P141 discriminating opportunity:** the next high-leverage *investigation*
+is one exact-build legacy input flow under `admitted_screen_lease`
+with real scene and player-takeover evidence; global OS input hooks are
+unjustified and forbidden. P124 kept the safety owner single and separated
+static classification, pure runtime deny and CLI planning (no refactor
+of functioning desktop/game code unrelated to this defect). P04 owns
+the bounded successor tasks and distinct local/remote proof ceilings
+in `docs/handoff/BI-HUMAN-FIRST-CLOSERS-P04-2026-11-10.md`.
+
+**Proof ceiling:** repository tests and GitHub CI, not local installed
+Windows game, actual physical input preemption, Cursor activation,
+independent external-agent interception or playable Sims-mod proof.
+BI-002 hunger remains ACTIVE / `BLOCKED_LOCAL_GAME_ACCESS`.
+
 ## 2026-11-10 — fifth-gear object-action catalog (P95 → P82 → P08 → P07 → P124)
 
 **Parent objective:** Portable machine-readable discovery of Sims object

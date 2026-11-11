@@ -53,10 +53,26 @@
       "marker": "assess_effect"
     },
     {
+      "path": "betterinstincts/legacy_screen_boundary.py",
+      "classification": "POLICY",
+      "status": "STATIC_POLICY_ONLY",
+      "marker": "def deny_unadopted_live_effect"
+    },
+    {
+      "path": "betterinstincts/player_presence.py",
+      "classification": "PASSIVE_OBSERVATION",
+      "status": "READ_ONLY_PRESENCE_SENSOR",
+      "marker": "GetLastInputInfo"
+    },
+    {
       "path": "betterinstincts/playwright_interop.py",
       "classification": "SCREEN_EFFECT",
       "status": "ADOPTED_GATED",
-      "marker": "CooperativeScreenQueue"
+      "marker": "CooperativeScreenQueue",
+      "admission_calls": [
+        "enqueue",
+        "QueuedStep"
+      ]
     },
     {
       "path": "betterinstincts/screen_admit.py",
@@ -80,25 +96,29 @@
       "path": "scripts/cas_finish_disposable.py",
       "classification": "SCREEN_EFFECT",
       "status": "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
-      "marker": "SendInput"
+      "marker": "SendInput",
+      "guard_entrypoint": "finish_cas"
     },
     {
       "path": "scripts/cas_household_check.py",
       "classification": "SCREEN_EFFECT",
       "status": "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
-      "marker": "user32.SendInput"
+      "marker": "user32.SendInput",
+      "guard_entrypoint": "click_household_check"
     },
     {
       "path": "scripts/cas_place_live.py",
       "classification": "SCREEN_EFFECT",
       "status": "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
-      "marker": "SendInput"
+      "marker": "SendInput",
+      "guard_entrypoint": "_click"
     },
     {
       "path": "scripts/cas_quiz_okay.py",
       "classification": "SCREEN_EFFECT",
       "status": "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
-      "marker": "SendInput"
+      "marker": "SendInput",
+      "guard_entrypoint": "click_okay"
     },
     {
       "path": "scripts/check_peripheral_boundary.py",
@@ -134,7 +154,8 @@
       "path": "scripts/host_menu.py",
       "classification": "SCREEN_EFFECT",
       "status": "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
-      "marker": "_send_click"
+      "marker": "_send_click",
+      "guard_entrypoint": "run_journey"
     },
     {
       "path": "scripts/menu_blockers.py",
@@ -158,7 +179,8 @@
       "path": "scripts/school_attend_click.py",
       "classification": "SCREEN_EFFECT",
       "status": "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
-      "marker": "cas_quiz_okay"
+      "marker": "cas_quiz_okay",
+      "guard_entrypoint": "run_plan"
     },
     {
       "path": "scripts/sim_camera.py",
@@ -181,7 +203,8 @@
   ],
   "source_scan": {
     "roots": [
-      "scripts"
+      "scripts",
+      "betterinstincts"
     ],
     "file_suffix": ".py",
     "needles": [
@@ -203,6 +226,21 @@
     "python -m scripts.check_ontology",
     "python -m scripts.check_peripheral_boundary",
     "python scripts/validate_doctrine.py",
-    "python -m unittest discover -s tests -v"
-  ]
+    "python -m unittest discover -s tests -v",
+    "python -m unittest tests.test_legacy_screen_boundary -v"
+  ],
+  "legacy_policy": {
+    "runtime_owner": "betterinstincts/legacy_screen_boundary.py",
+    "state": "DENY_BEFORE_FOCUS_OR_INPUT",
+    "unadopted_paths": [
+      "scripts/cas_finish_disposable.py",
+      "scripts/cas_household_check.py",
+      "scripts/cas_place_live.py",
+      "scripts/cas_quiz_okay.py",
+      "scripts/host_menu.py",
+      "scripts/school_attend_click.py"
+    ],
+    "exception_policy": "NO_OVERRIDE_FLAG_OR_CLI_BYPASS",
+    "proof": "OFFLINE_NEGATIVE_REGRESSIONS_NOT_LOCAL_WINDOWS_BEHAVIOR"
+  }
 }

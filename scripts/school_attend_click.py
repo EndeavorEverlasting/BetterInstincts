@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from betterinstincts.legacy_screen_boundary import deny_unadopted_live_effect
 from betterinstincts.school_attend_click import (
     CALIBRATION_SOURCES,
     REQUIRED_EXECUTOR,
@@ -77,6 +78,7 @@ def run_plan(args: argparse.Namespace, dispatch: Optional[Callable[[tuple[int, i
     if gate:
         plan["execute_refused"] = sorted(set(gate))
         return 3, plan
+    deny_unadopted_live_effect("scripts/school_attend_click.py")
     result = (dispatch or _default_dispatch)(tuple(plan["target_xy"]))
     plan["dispatch"] = result
     plan["next"] = "RUN_VERIFY_WITH_FRESH_POST_CLICK_OBSERVATION_DISPATCH_IS_NOT_A_SEND_ALONE_CLAIM"
