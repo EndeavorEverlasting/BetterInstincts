@@ -23,11 +23,14 @@
       159,
       149
     ],
-    "ci_and_merge_status": "MUST_BE_FILLED_FROM_PROVIDER_READBACK; NO ASSUMED_PASS",
+    "ci_and_merge_status": "PR182_MERGED_MAIN_AND_GITHUB_ACTIONS_BOTH_JOBS_SUCCESS",
     "player_and_save_state": "NO_HOST_MUTATION",
     "merged_concurrent_prs": [
       180
-    ]
+    ],
+    "verified_merge_sha": "e8d9384b14f3057aea165b0b3d2df204c92551d1",
+    "verified_ci_run_url": "https://github.com/EndeavorEverlasting/BetterInstincts/actions/runs/42941812997",
+    "provider_readback_date": "2026-11-11"
   },
   "p83_findings": [
     {
@@ -138,8 +141,17 @@
         "other PR branches"
       ],
       "launch_action": "Commit consultation then reviewed corrections; PR; check CI; merge; verify main",
-      "status": "IN_PROGRESS_PROVIDER_NOT_YET_CLOSED",
-      "proof_ceiling": "GITHUB_MAIN_AND_OFFLINE_CI"
+      "status": "COMPLETE_MAIN_READBACK_AND_CI_GREEN",
+      "proof_ceiling": "GITHUB_MAIN_AND_OFFLINE_CI",
+      "provider_receipt": {
+        "pr": 182,
+        "commit": "e8d9384b14f3057aea165b0b3d2df204c92551d1",
+        "workflow_run": 42941812997,
+        "jobs": {
+          "test": "success",
+          "Independent desktop peripheral safety gate": "success"
+        }
+      }
     },
     {
       "lane_id": "BI-002-LIVE-HUNGER-UNCHANGED",
@@ -274,6 +286,7 @@
     "BI002_retained": true,
     "complete_only_when": "Provider checks green, committed mainline readback, AND later separate local P08 real menu/queue proof where authorized.",
     "can_claim_game_verified_usefulness_without_independent_sensor": false,
-    "advisory_may_be_generated_from_operator_supplied_test_events": true
+    "advisory_may_be_generated_from_operator_supplied_test_events": true,
+    "remaining_live_certification": "Local game calibrated menu/selection/outcome sensor, independent object/actor/scene permits and actual queue action outcomes are not proved by mainline CI."
   }
 }
