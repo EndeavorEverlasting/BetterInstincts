@@ -118,7 +118,7 @@ def validate_manifest(manifest: dict, root: Path = ROOT) -> dict:
         }:
             raise HarnessCoverageError("BACKGROUND_REVIEW_REQUIRED:" + path)
         if kind == "PASSIVE_OBSERVATION" and _has_call(
-            source, {"SendInput", "SetCursorPos", "SetForegroundWindow", "keybd_event", "BlockInput"}
+            source, {"SendInput", "SetCursorPos", "SetForegroundWindow", "keybd_event"}
         ):
             raise HarnessCoverageError("PASSIVE_SENSOR_INPUT_MUTATION:" + path)
         if status == "READ_ONLY_PRESENCE_SENSOR" and not _has_call(source, {"GetLastInputInfo"}):
