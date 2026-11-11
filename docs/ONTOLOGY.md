@@ -176,3 +176,13 @@ Canonical implementation routing owner:
 `scripts/check_native_gameplay_authority.py`. Existing host viewport,
 mouse, scene and save automation stays available only as an explicitly
 bounded lab interface; it is not a new engine or fallback for autonomy.
+
+## Revision 9 — OS peripheral sovereignty, BLE endpoint identity, and proof dimensions
+
+Canonical machine owner: `contracts/ontology.v1.json` revision 9. `PERIPHERAL_IDENTITY_EVIDENCE` distinguishes a mouse type or generic advertising label from a stable endpoint, matched HID, and physically verified device; `AGENT_EFFECT_PERIMETER` is the boundary for all executable game/agent entrypoints. Neither a game control permit nor an idle status can become an OS repair or pairing permit.
+
+- `BI-ONT-046`: executable launchers, source scripts, Cursor hooks, workflow YAML and newly created adapters all receive the same deny-by-default Windows peripheral/input review.
+- `BI-ONT-047`: BLE appearance 962 and the generic `Mouse` label cannot disambiguate neighboring mice or prove whether a later name is the same endpoint.
+- `BI-ONT-048`: working physical input, causal fault isolation, AI responsibility, GitHub CI, installed Cursor hooks and live Sims certification are independent evidence states.
+
+Cross-reference `contracts/peripheral-authority.v1.json`, `scripts/check_peripheral_boundary.py`, `tests/test_peripheral_boundary.py` and `docs/PERIPHERAL_INCIDENT.md`. This revision adds semantics without creating a new Windows actuator, background watcher or privileged game adapter.

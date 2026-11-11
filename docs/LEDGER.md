@@ -1694,3 +1694,18 @@ EA tuning/hooks, not another mouse-driven gameplay loop.
 **Parent:** One inspectable Windows file safely clones/updates the official canonical BetterInstincts checkout, installs the existing offline toolkit, finds an already-installed Sims 4 executable and requests explicit player consent for launch. On existing games, the user chooses Load Game and the exact save; on new games, Create-a-Sim/placement remains player-controlled and goal-based traits/aspirations are advisory. Never read/edit/delete saves, alter game files, install system tools or change Windows peripherals.
 
 **P95 → P82 → P08 → P07 → P124:** Prior consultation in contracts/consultations/BI-FIRST-RUN-BOOTSTRAP-20261111.v1.json; canonical state machine contracts/launch-journey.v1.json. Source owners: Start-BetterInstincts.cmd; existing bootstrap.py; betterinstincts/first_run.py; scripts/first_run.py; docs/download/index.html; docs/FIRST_RUN.md. CI negatives are offline only. Real player-host Windows launch, save selection, CAS, gameplay and hosted Pages publication remain separately unproven. BI-002 hunger certification stays ACTIVE and is not silently reprioritized.
+
+
+## 2026-11-11 — P97/P00/P01 Fifth Gear: operator peripheral sovereignty
+
+**Parent objective:** prohibit BetterInstincts agents, host-game helpers, launchers and harness paths from disabling or reconfiguring operator Bluetooth/HID, Print Screen, Escape/U, Windows services/registry, pairing or physical input just to recover gameplay/capture. Investigate causal attribution without assuming AI or driver blame.
+
+**P97:** existing repo mechanisms plus Cline command approval, PyAutoGUI fail-safe, Open Interpreter sandbox/admission and hook timeout behavior inspected; bounded adoption/gap report: `docs/PRIOR_ART.md`. No third-party code copied.
+
+**P00:** consultation `contracts/consultations/BI-PERIPHERAL-SOVEREIGNTY-P97-P00-P01-20261111.v1.json` committed before source mutation; ontology revision 9 adds `PERIPHERAL_IDENTITY_EVIDENCE`, `AGENT_EFFECT_PERIMETER` and invariants BI-ONT-046..048. Detailed governance, doctrine and ontology documentation extended append-only; original `AGENTS.md` retains its size-budgeted routing.
+
+**P01 and Fifth Gear:** existing `contracts/peripheral-authority.v1.json`, `scripts/check_peripheral_boundary.py` and `tests/test_peripheral_boundary.py` strengthened. Scan includes root launchers, all future executable directories, Cursor hooks and workflow YAML; PairAsync/UnpairAsync, Bluetooth service/driver/pairing, input hooks/preferences/registry and disabled PyAutoGUI failsafe are regression negatives. P95 selected reuse, P82 designed hostile fixtures, P08 physical host proof remains independent, P07 CI/PR integrates, P124 keeps one owner.
+
+**Evidence distinction:** working ProtoArc EM11 NL and appearance 962/early generic `Mouse` are supported by operator's SysAdminSuite report; actual generic-label transition, unchanged endpoint identity, M343, guarded failure-event delivery, causal root cause and AI actor attribution remain unobserved here. The game is not authorized to attempt Windows pairing or repairs. GitHub CI/merge proof and physical host hook activation require distinct verified receipts. Existing BI-002 game hunger milestone remains active and is not displaced.
+
+**Safe rollback:** revert isolated branch's commits; no Windows settings, drivers, user saves, game build, or local agent installation altered.

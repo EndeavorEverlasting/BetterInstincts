@@ -45,6 +45,26 @@
         "BlockInput",
         "ClipCursor"
       ]
+    },
+    "OS_BLUETOOTH_PAIRING": {
+      "decision": "DENY_AND_REFER_SYSADMINSUITE",
+      "operations": [
+        "PairAsync",
+        "UnpairAsync",
+        "BluetoothAuthenticateDeviceEx",
+        "BluetoothRemoveDevice",
+        "DeviceInformationPairing",
+        "CustomPairing"
+      ]
+    },
+    "OS_INPUT_FAILSAFE_OR_GLOBAL_HOOK": {
+      "decision": "DENY",
+      "operations": [
+        "pyautogui.FAILSAFE = False",
+        "SetWindowsHookExW",
+        "RegisterHotKey",
+        "SetKeyboardState"
+      ]
     }
   },
   "unknown_effect": "DENY_UNTIL_CLASSIFIED",
@@ -56,6 +76,55 @@
     "BI_CAPTURE_INTERFERENCE_PROVEN_SEPARATELY",
     "NO_CURSOR_ATTRIBUTION"
   ],
-  "enforcement": "scripts/check_peripheral_boundary.py, tests/test_peripheral_boundary.py",
-  "safety_limit": "Source scan is a regression guard; external agents/tools must independently honor repo policy and cannot be forcibly intercepted."
+  "enforcement": "scripts/check_peripheral_boundary.py + tests/test_peripheral_boundary.py + .cursor/hooks/operator_boundary.py + .github/workflows/ci.yml",
+  "safety_limit": "Static source checks and provider-scoped project hooks are not OS security boundaries; external agents, scripts, Windows services and hooks not actually installed are not covered.",
+  "bluetooth_identity": {
+    "observation_owner": "SysAdminSuite_READ_ONLY_TRACE",
+    "early_appearance_mouse": 962,
+    "early_name": "Mouse",
+    "early_name_is_identity": false,
+    "early_name_may_precede_full_device_name": true,
+    "compare_only_after": [
+      "STABLE_ENDPOINT_ID",
+      "ADDRESS_OR_VERIFIED_PLATFORM_ID",
+      "LATEST_DISCOVERY_EVENT",
+      "MATCHED_HID_NODE",
+      "OPERATOR_PHYSICAL_MOVEMENT_AND_CLICKS"
+    ],
+    "transitions_to_preserve": [
+      "SAME_ENDPOINT_RENAMED",
+      "ENDPOINT_REPLACED",
+      "ADVERTISING_STOPPED",
+      "UNKNOWN_TRANSITION"
+    ],
+    "indistinguishable_neighboring_mice": "FAIL_CLOSED_NO_AUTOMATIC_PAIRING",
+    "pairing_authority": "OUTSIDE_BETTERINSTINCTS",
+    "evidence_rule": "Connected or mouse appearance alone does not prove endpoint continuity, specific physical device, root cause or agent attribution."
+  },
+  "cross_harness": {
+    "source_scan": "ALL_REPO_EXECUTABLE_SURFACES_EXCEPT_TEST_FIXTURES",
+    "checked_entrypoints": [
+      "bootstrap.py",
+      "Start-BetterInstincts.cmd",
+      "betterinstincts/**",
+      "scripts/**",
+      ".cursor/hooks/**",
+      ".github/workflows/**",
+      "new executable directories"
+    ],
+    "cursor_hook": ".cursor/hooks/operator_boundary.py",
+    "runtime": "HOOK_EFFECTIVE_ONLY_WHEN_PROVIDER_HAS_LOADED_AND_REPORTED_DENY",
+    "unadopted_adapters": "NO_INTERCEPTION_PROOF",
+    "fail_open_timeout": "DO_NOT_COUNT_HOOK_TIMEOUT_AS_HARD_DENIAL",
+    "local_activation_gate": "BENIGN_ALLOW_AND_SYNTHETIC_DENY_LOG_PROOF",
+    "human_reclamation": "NEVER_DISABLE_INPUT_FAILSAFES_OR_TAKE_CONTROL_OF_OTHER_APPS"
+  },
+  "failure_evidence": {
+    "connected": "DEVICE_CONNECTED_NOT_CAUSALITY",
+    "physical": "USER_CONFIRMED_MOVE_AND_CLICK",
+    "no_transition_trace": "DISCOVERY_TRANSITION_UNCAPTURED",
+    "service_and_adapter_changed": "CAUSALITY_NOT_ISOLATED",
+    "suspect_agent": "ATTRIBUTION_REQUIRES_INDEPENDENT_PROCESS_TOOL_CALL_AND_DEVICE_TIMELINE",
+    "observed_hook": "PROVIDER_LOCAL_HOOK_LOG_REQUIRED"
+  }
 }

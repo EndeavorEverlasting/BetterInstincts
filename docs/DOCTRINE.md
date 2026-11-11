@@ -195,3 +195,11 @@ all player-sovereignty, beneficial fun/social, interruption, patch,
 peripheral and protected-save rules; native coding is not carte blanche.
 See `docs/NATIVE_GAMEPLAY_ARCHITECTURE.md`. Issue #171 owns the
 unverified native adapter; BI-002 hunger stays the live Horizon gate.
+
+## P00/P01 revision 9 — protected operator hardware and early BLE identity (2026-11-11)
+
+A Sims autonomy, agent diagnostic, bootstrapper, fifth-gear worker or recovery heuristic may not reconfigure the operator's Windows input or Bluetooth hardware. The game may relinquish control and report a problem; it must not elevate itself into SysAdminSuite's Windows repair workflow. No Bluetooth service, radio/HID driver, pairing database, input/Print Screen/Escape/U remapping, accessibility preference, global hook or failsafe change is an admissible gameplay effect.
+
+The label `Mouse` and BLE appearance `962` are *classification*, not device identity. Endpoint rename, endpoint replacement and loss of advertising cannot be inferred from one successful pairing screenshot. Read-only observer evidence plus matched HID and physical movement/clicks can prove function, but do not isolate the failure cause or implicate an agent. Generic nearby mice must not be auto-selected.
+
+`contracts/peripheral-authority.v1.json` owns the semantic distinctions; `scripts/check_peripheral_boundary.py` prevents known dangerous literals from entering executable repository paths, including future scripts, launchers, hooks and workflows. Cursor's existing project pre-effect hook independently rejects unknown shell effects. Neither source scan nor a checked-in hook proves host-level enforcement: activated hooks, independent process permissions and Windows sandbox/policy must be evidenced for each agent. The operator retains uninterrupted input and all existing human-first screen and protected-save admission rules; unknowns fail closed.

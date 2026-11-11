@@ -1,9 +1,8 @@
-"""Fail-closed source boundary: game-side code cannot repair OS peripherals.
+"""Reject game/agent source that attempts Windows peripheral or input control.
 
-This repository owns Sims/game capture and cooperative input, not Windows
-Bluetooth services, PnP drivers, pairing databases or input preferences.
-Legitimate host repair belongs to SysAdminSuite. This scan is a preventive
-CI/agent guard, not a kernel sandbox for external tools or agents.
+Read-only discovery and passive Sims observation remain possible. This CI check
+is a source regression barrier, not a security sandbox or proof that the
+operator's Windows machine has loaded project hooks.
 """
 from __future__ import annotations
 
@@ -14,14 +13,28 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOTS = ("betterinstincts", "scripts")
 SELF = Path("scripts/check_peripheral_boundary.py")
+# Inspect *every* future executable code surface, not only the two historically
+# known package roots. Test fixtures contain intentionally hostile examples.
+EXCLUDED_DIRS = frozenset({
+    ".git", ".venv", "venv", "__pycache__", "node_modules", "dist",
+    "build", "artifacts", "tests",
+})
+EXECUTABLE_SUFFIXES = frozenset({
+    ".py", ".ps1", ".cmd", ".bat", ".sh", ".js", ".jsx", ".ts", ".tsx",
+    ".cjs", ".mjs", ".yml", ".yaml",
+})
 DANGEROUS = {
     "OS_SERVICE_CONTROL": re.compile(
         r"\b(?:Start|Stop|Restart|Set)-Service\b|\bsc(?:\.exe)?\s+(?:start|stop|config|delete)\b|"
-        r"\bBluetoothUserService_[A-Za-z0-9]+\b",
-        re.IGNORECASE,
+        r"\bBluetoothUserService_[A-Za-z0-9]+\b", re.IGNORECASE,
     ),
     "OS_PNP_MUTATION": re.compile(
         r"\b(?:pnputil(?:\.exe)?|Disable-PnpDevice|Enable-PnpDevice|Remove-PnpDevice)\b",
+        re.IGNORECASE,
+    ),
+    "OS_BLUETOOTH_PAIRING": re.compile(
+        r"\b(?:PairAsync|UnpairAsync|DeviceInformationPairing|CustomPairing|"
+        r"BluetoothAuthenticateDevice(?:Ex)?|BluetoothRemoveDevice|BluetoothSetServiceState)\b",
         re.IGNORECASE,
     ),
     "OS_PERIPHERAL_PREFERENCE": re.compile(
@@ -42,39 +55,42 @@ DANGEROUS = {
         r"(?:Set|New|Remove)-ItemProperty|winreg\.(?:SetValue(?:Ex)?|DeleteValue|CreateKey(?:Ex)?))\b",
         re.IGNORECASE,
     ),
+    "OS_INPUT_FAILSAFE_DISABLED": re.compile(
+        r"\b(?:pyautogui|pya)\.FAILSAFE\s*=\s*False\b",
+        re.IGNORECASE,
+    ),
 }
 
 
 def inspect_source(source: str) -> tuple[str, ...]:
-    """Conservative textual sentinel for privileged operations, including shell strings.
-
-    A deliberate string-construction bypass cannot be ruled out by static
-    inspection; human/repository review and external execution authority remain
-    necessary. Only source files are inspected, not documentation/evidence.
-    """
-    return tuple(name for name, rule in DANGEROUS.items() if rule.search(source))
+    """Conservative literal sentinel; obfuscation and external tools need review."""
+    return tuple(name for name, pattern in DANGEROUS.items() if pattern.search(source))
 
 
 def inspect_repository(root: Path = ROOT) -> list[tuple[str, str]]:
-    violations: list[tuple[str, str]] = []
     for top in SOURCE_ROOTS:
-        base = root / top
-        if not base.is_dir():
+        if not (root / top).is_dir():
             raise ValueError("SOURCE_ROOT_MISSING:" + top)
-        for path in sorted(base.rglob("*")):
-            if path.suffix.lower() not in {".py", ".ps1", ".cmd"} or not path.is_file():
-                continue
-            rel = path.relative_to(root)
-            if rel == SELF or any(p in {"__pycache__", ".venv"} for p in rel.parts):
-                continue
-            for reason in inspect_source(path.read_text(encoding="utf-8-sig")):
-                violations.append((rel.as_posix(), reason))
-    return violations
+    findings: list[tuple[str, str]] = []
+    for path in sorted(root.rglob("*")):
+        rel = path.relative_to(root)
+        if any(part in EXCLUDED_DIRS for part in rel.parts):
+            continue
+        if rel == SELF or path.suffix.lower() not in EXECUTABLE_SUFFIXES:
+            continue
+        if path.is_symlink():
+            findings.append((rel.as_posix(), "UNREVIEWED_EXECUTABLE_SYMLINK"))
+            continue
+        if not path.is_file():
+            continue
+        for reason in inspect_source(path.read_text(encoding="utf-8-sig")):
+            findings.append((rel.as_posix(), reason))
+    return findings
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=ROOT, help="Repository root to inspect")
+    parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args()
     try:
         violations = inspect_repository(args.root)
@@ -85,7 +101,7 @@ def main() -> int:
         for path, reason in violations:
             print(f"PERIPHERAL_BOUNDARY_FAIL {path}: {reason}")
         return 1
-    print("PERIPHERAL_BOUNDARY_PASS game code contains no known Windows peripheral controls")
+    print("PERIPHERAL_BOUNDARY_PASS all repository executable surfaces preserve Windows device/input authority")
     return 0
 
 
