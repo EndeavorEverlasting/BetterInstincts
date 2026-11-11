@@ -39,7 +39,7 @@ def status(root=ROOT):
                     "local_u_clubs": entry["status_dimensions"]["physical_u_clubs"],
                     "cursor_session_attribution": entry["status_dimensions"]["culpable_cursor_session"],
                     "lane_order": dispatch["supporting_workload_launch_order"],
-                    "live_proof": "UNPROVEN_OPERATOR_HOST",
+                    "live_proof": ("LOCAL_OPERATOR_ACCEPTED" if entry["status_dimensions"]["physical_recovery"]=="ACCEPTED_AFTER_LOCAL_RETEST" else "UNPROVEN_OPERATOR_HOST"),
                 }
                 for name,entry in (horizon.get("supporting_workloads") or {}).items()
             },
