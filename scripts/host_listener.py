@@ -23,6 +23,8 @@ from betterinstincts.host_listener import (
     status,
     tick,
     observe_hover,
+    observe_object_action,
+    suggest_object_action,
 )
 
 
@@ -54,6 +56,13 @@ def main(argv: list[str] | None = None) -> int:
         hv.add_argument("--lot-id", default=None, help="Current observed lot ID, not a guessed world name")
         hv.add_argument("--use-active-profile", action="store_true",
                         help="Use this channel's active local profile preference")
+    oe = sub.add_parser("object-event", help="Observe one sanitized object menu/selection/outcome")
+    oe.add_argument("--session-id", required=True)
+    oe.add_argument("--event", type=Path, required=True)
+    oe.add_argument("--explicit-opt-in", action="store_true")
+    oq = sub.add_parser("object-recommend", help="Read-only candidate from fresh menu snapshot")
+    oq.add_argument("--session-id", required=True)
+    oq.add_argument("--query", type=Path, required=True)
     sub.add_parser("behavior-catalog", help="Show canonical safe hotkey and cheat IDs")
     args = p.parse_args(argv)
     try:
@@ -63,6 +72,20 @@ def main(argv: list[str] | None = None) -> int:
             result = status(args.session_id)
         elif args.command == "deactivate":
             result = deactivate(args.session_id)
+        elif args.command == "object-event":
+            path = args.event
+            if path.is_symlink() or not path.is_file() or path.stat().st_size > 8192:
+                raise HostListenerError("OBJECT_EVENT_FILE_UNSAFE")
+            event = json.loads(path.read_text(encoding="utf-8"))
+            result = observe_object_action(
+                args.session_id, event, explicit_opt_in=args.explicit_opt_in,
+            )
+        elif args.command == "object-recommend":
+            path = args.query
+            if path.is_symlink() or not path.is_file() or path.stat().st_size > 8192:
+                raise HostListenerError("OBJECT_QUERY_FILE_UNSAFE")
+            query = json.loads(path.read_text(encoding="utf-8"))
+            result = suggest_object_action(args.session_id, query)
         elif args.command == "behavior-catalog":
             from betterinstincts.behavior_input_catalog import catalog
             result = catalog()
