@@ -15,6 +15,7 @@ from betterinstincts.camera_traverse import (
     plan_traverse,
 )
 from betterinstincts.lot_floor_map import LotFloorMapError, load_contract as load_floor_contract
+from betterinstincts.household_navigation import plan_household_navigation
 
 PROOF = "OFFLINE_ROOM_MAP_TRAVERSE_PLAN_PLUS_LOCAL_GRAPH_STORE_NOT_LIVE_CLICK_CERT"
 
@@ -222,10 +223,16 @@ def next_ring_direction(
     return None
 
 
+def plan_semantic_region_route(*, snapshot: Mapping[str, object]) -> dict:
+    """P01: region-graph route; camera ring cannot certify Sim travel."""
+    return plan_household_navigation(snapshot)
+
+
 __all__ = [
     "PROOF",
     "RING_DIRECTIONS",
     "DEFAULT_LANDMARK_HINT",
     "plan_room_map_traverse",
     "next_ring_direction",
+    "plan_semantic_region_route",
 ]

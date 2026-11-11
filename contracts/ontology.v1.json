@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.ontology/v1",
-  "revision": 6,
+  "revision": 7,
   "state": "CANDIDATE_REVIEW_NOT_RUNTIME_AUTHORITY",
   "owner": "BetterInstincts",
   "source_main_sha": "502f66efc0eedd4136d6a8cd0879f566c3f3612f",
@@ -12,7 +12,8 @@
     "agency": "PLAYER_INTENT,PLAYER_PRESENCE,ACTION_QUEUE,GOAL,OPPORTUNITY,AFFORDANCE,ACTION_PROPOSAL,CONTROL_PERMIT,HOST_ACTION",
     "learning": "OUTCOME,REVIEWED_JUDGMENT,LEARNING_MODEL",
     "governance": "HOST_SESSION,SAVE_SLOT,INCIDENT,PROOF_RECEIPT",
-    "orchestration": "SITUATION,DOMAIN_CAPABILITY,GOAL_THREAD,ACTIVITY,RESOURCE_CLAIM,TIME_WINDOW,CONTINGENCY,INTERRUPTION,RESUME_CONDITION,MECHANIC_PATH,COORDINATION_CYCLE"
+    "orchestration": "SITUATION,DOMAIN_CAPABILITY,GOAL_THREAD,ACTIVITY,RESOURCE_CLAIM,TIME_WINDOW,CONTINGENCY,INTERRUPTION,RESUME_CONDITION,MECHANIC_PATH,COORDINATION_CYCLE",
+    "navigation": "NAVIGATION_SCOPE,NAVIGATION_REGION,NAVIGATION_PASSAGE,NAVIGATION_FRONTIER,NAVIGATION_INTENT,NAVIGATION_PROGRESS,NAVIGATION_STALL,NAVIGATION_RECOVERY"
   },
   "evidence_states": [
     "UNKNOWN",
@@ -321,6 +322,46 @@
       "kind": "harness_evidence",
       "definition": "Evidence that each registered BetterInstincts or Cursor input path honors the relevant player-first checks; registry/static/CI proof must remain distinct from local Windows activation and unadopted external-agent runtime control.",
       "canonical_owner": "docs/VALIDATION.md"
+    },
+    "NAVIGATION_SCOPE": {
+      "kind": "context",
+      "definition": "Opaque save/household/lot/actor/game-build/scene/graph revision tuple. Navigation history is never reused across a changed scope.",
+      "canonical_owner": "contracts/household-navigation.v1.json"
+    },
+    "NAVIGATION_REGION": {
+      "kind": "entity",
+      "definition": "Verified on-lot spatial region with floor and observation provenance, distinct from a rendered viewport or camera direction.",
+      "canonical_owner": "contracts/household-navigation.v1.json"
+    },
+    "NAVIGATION_PASSAGE": {
+      "kind": "relation",
+      "definition": "Explicitly independently verified Sim-walkable directed connection between regions; visual adjacency, pixel overlap, or a camera pan is insufficient.",
+      "canonical_owner": "contracts/household-navigation.v1.json"
+    },
+    "NAVIGATION_FRONTIER": {
+      "kind": "state",
+      "definition": "Unvisited but already verified on-lot region reachable from the current region by verified passages, suitable for bounded discovery.",
+      "canonical_owner": "contracts/household-navigation.v1.json"
+    },
+    "NAVIGATION_INTENT": {
+      "kind": "state",
+      "definition": "Preserved actor-scoped named navigation objective and target, not permission to move or swap active portraits.",
+      "canonical_owner": "contracts/household-navigation.v1.json"
+    },
+    "NAVIGATION_PROGRESS": {
+      "kind": "evidence",
+      "definition": "Fresh, scope-bound, independently evidenced region discovery, target proximity or objective outcome; movement alone is not progress.",
+      "canonical_owner": "contracts/household-navigation.v1.json"
+    },
+    "NAVIGATION_STALL": {
+      "kind": "state",
+      "definition": "Repeated no-progress position/region cycle (including A-B-A-B) or exhausted transition budget that blocks blind replay.",
+      "canonical_owner": "contracts/household-navigation.v1.json"
+    },
+    "NAVIGATION_RECOVERY": {
+      "kind": "state",
+      "definition": "Re-anchor and replan using a verified alternative, or abstain without OS/game effects when evidence is stale or blocked.",
+      "canonical_owner": "contracts/household-navigation.v1.json"
     }
   },
   "relations": [
@@ -718,6 +759,41 @@
       "from": "AGENT_ADOPTION_COVERAGE",
       "predicate": "CHECKS",
       "to": "EFFECT_ADMISSION_CLASS"
+    },
+    {
+      "from": "NAVIGATION_SCOPE",
+      "to": "NAVIGATION_REGION",
+      "predicate": "SCOPES_REGION"
+    },
+    {
+      "from": "NAVIGATION_REGION",
+      "to": "NAVIGATION_PASSAGE",
+      "predicate": "HAS_VERIFIED_PASSAGE"
+    },
+    {
+      "from": "NAVIGATION_PASSAGE",
+      "to": "NAVIGATION_REGION",
+      "predicate": "REACHES_REGION"
+    },
+    {
+      "from": "NAVIGATION_INTENT",
+      "to": "NAVIGATION_FRONTIER",
+      "predicate": "SELECTS_FRONTIER_WHEN_DISCOVERING"
+    },
+    {
+      "from": "NAVIGATION_PROGRESS",
+      "to": "NAVIGATION_INTENT",
+      "predicate": "EVIDENCES_PROGRESS_TOWARD"
+    },
+    {
+      "from": "NAVIGATION_STALL",
+      "to": "NAVIGATION_RECOVERY",
+      "predicate": "TRIGGERS_BOUNDED_RECOVERY"
+    },
+    {
+      "from": "NAVIGATION_RECOVERY",
+      "to": "CONTROL_PERMIT",
+      "predicate": "DOES_NOT_GRANT_CONTROL"
     }
   ],
   "invariants": [
@@ -1026,6 +1102,60 @@
         "docs/VALIDATION.md",
         "docs/ASYNC_INTEROP.md"
       ]
+    },
+    {
+      "id": "BI-ONT-036",
+      "term": "DETERMINISTIC_HOUSEHOLD_NAVIGATION",
+      "rule": "A camera pan, viewport direction, pixel distance or visual relative lot-floor-map graph edge is never a verified Sim-walkable NAVIGATION_PASSAGE; physical routing needs source-verified on-lot adjacency and reachability.",
+      "owned_by": [
+        "contracts/household-navigation.v1.json",
+        "docs/ONTOLOGY.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-037",
+      "term": "DETERMINISTIC_HOUSEHOLD_NAVIGATION",
+      "rule": "Every navigation proposal must bind opaque game/household/lot/actor/scene/graph scope, preserve named objective and deterministic tie-breakers; no shared history across profiles, Sims or saves.",
+      "owned_by": [
+        "contracts/household-navigation.v1.json",
+        "docs/ONTOLOGY.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-038",
+      "term": "DETERMINISTIC_HOUSEHOLD_NAVIGATION",
+      "rule": "Movement or capture repetition does not constitute NAVIGATION_PROGRESS; no-progress A-B-A-B, repeated unsuccessful edges and exhausted budgets trigger bounded replanning or abstention, never automatic retrigger.",
+      "owned_by": [
+        "contracts/household-navigation.v1.json",
+        "docs/ONTOLOGY.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-039",
+      "term": "DETERMINISTIC_HOUSEHOLD_NAVIGATION",
+      "rule": "Navigation is proposal-only, cannot grant CONTROL_PERMIT, issue camera/game/OS input, mutate saves or borrow focus; human-presence uncertainty and stale scene/target evidence fail closed.",
+      "owned_by": [
+        "contracts/household-navigation.v1.json",
+        "docs/ONTOLOGY.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-040",
+      "term": "DETERMINISTIC_HOUSEHOLD_NAVIGATION",
+      "rule": "Discovery/frontier coverage is only for reachable verified on-lot regions; unknown regions, walls, locked doors, stair transitions or off-lot space are not silently promoted to traversable graph edges.",
+      "owned_by": [
+        "contracts/household-navigation.v1.json",
+        "docs/ONTOLOGY.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-041",
+      "term": "DETERMINISTIC_HOUSEHOLD_NAVIGATION",
+      "rule": "A GOAL_ROUTING arrival is not interaction completion; actual outcome requires separate world-target, action-queue, game scene and player-authority evidence before goal closure.",
+      "owned_by": [
+        "contracts/household-navigation.v1.json",
+        "docs/ONTOLOGY.md"
+      ]
     }
   ],
   "interpretation_rules": [
@@ -1040,7 +1170,9 @@
     "A CONTINGENCY's urgency, deadline and possible action path are hypotheses until supported by real game/version observations; no universal burglar behavior assumption.",
     "A HIGHLIGHT_OBSERVATION about a world target never proves that a click was sent or would affect the intended GAME_OBJECT; WORLD_TARGET_TRACK LOCKED is independent of CONTROL_PERMIT.",
     "A WORLD_INTERACTION_ATTEMPT used for training must be replay-unique and independently outcome-labeled; click proposal, model recommendation, frame count, or repeated holdout evidence is not success or game certification.",
-    "The WORLD_SENSOR P08 support priority cannot replace BI-002 hunger; only a separate operator-authorized local game host can acquire actual screen measurements."
+    "The WORLD_SENSOR P08 support priority cannot replace BI-002 hunger; only a separate operator-authorized local game host can acquire actual screen measurements.",
+    "Lot-floor-map ADJACENT and camera direction hints are descriptive spatial observations, not Sim route evidence. NAVIGATION_PASSAGE requires a separately verified, explicitly scoped walkable transition.",
+    "A deterministic household navigation suggestion is not permission for mouse, keyboard, save or game effects; a stalled or human-interrupted route must preserve intent and abstain."
   ],
   "mutation_consultation": {
     "trigger": "Before drafting behavior-changing prototypes, tuning, agent plans, host click paths or learning-policy mutations; then repeat during review and before merge.",
