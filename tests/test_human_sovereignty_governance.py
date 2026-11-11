@@ -27,7 +27,7 @@ class HumanSovereigntyGovernanceTests(unittest.TestCase):
 
     def test_required_invariants_and_owned_relations(self):
         ids = {x["id"] for x in self.ontology["invariants"]}
-        self.assertTrue({f"BI-ONT-{n:03}" for n in range(28,33)}.issubset(ids))
+        self.assertTrue({f"BI-ONT-{n:03}" for n in range(31,36)}.issubset(ids))
         edges = self.ontology["relations"]
         for source, predicate, dest in [
             ("PLAYER_INTENT", "OUTRANKS", "EFFECT_ADMISSION_CLASS"),

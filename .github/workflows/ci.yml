@@ -74,6 +74,10 @@ jobs:
         run: |
           python -m scripts.host_eval --out dist/host-eval/ci.json > /dev/null
           python -m unittest tests.test_host_eval -v
+      - name: P00 P01 world-target ontology and harness completeness
+        run: |
+          python -m scripts.check_world_traversal_harness
+          python -m unittest tests.test_world_traversal_harness -v
       - name: World-target highlight and observed-outcome learning eval
         run: |
           python -m scripts.world_traversal_eval

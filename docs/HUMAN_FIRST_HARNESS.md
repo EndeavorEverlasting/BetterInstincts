@@ -3,7 +3,7 @@
 ## Operator-visible state — November 10, 2026
 
 P00 source owner: `AGENTS.md` → `docs/AGENT_OPERATING_RULES.md` /
-`docs/DOCTRINE.md` → `contracts/ontology.v1.json` revision 5 /
+`docs/DOCTRINE.md` → `contracts/ontology.v1.json` revision 6 /
 `contracts/glossary.v1.json`. P01 machine entrypoint:
 `contracts/human-first-harness.v1.json` validated by
 `python -m scripts.check_human_sovereignty --json`.
@@ -35,7 +35,7 @@ Never bypass a known gap by delegating raw input to another agent.
 ## Agent workflow and scoped skill
 
 1. Open root `AGENTS.md` and mandatory detailed rules. Read P00 ontology
-   revision 5 and the sole `effect-authority` contract; never create a rival
+   revision 6 and the sole `effect-authority` contract; never create a rival
    controller, input daemon, or replacement governance file.
 2. Declare one branch owner, file scope, effect classification, player/saves
    authority, canonical development/install/worktree path and proof ceiling.

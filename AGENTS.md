@@ -4,7 +4,7 @@ Before edits, samples or experiments, read mandatory `docs/AGENT_OPERATING_RULES
 
 ## P00/P01 interaction sovereignty
 
-Ontology revision 5: human input in any app, game, mod, key, mouse, voice or assistive modality outranks agents. `contracts/effect-authority.v1.json` classifies passive/background (reviewed, read-only, no input) versus screen/game effects (pause on human input, 15s idle, two fresh probes, target and game-context recheck) versus OS configuration/unknown (deny). Focus borrow requires checks before and after; stale foreground never grants input. Retain interrupted intent for observed reconciliation, not replay. Never mutate Bluetooth, Print Screen, Escape/U, keyboard accessibility, drivers or Windows settings. Use `scripts/check_human_sovereignty.py` and existing CI. Unadopted tools/native mid-call events remain unproven.
+Ontology revision 6: human input anywhere (game, mod, keyboard, mouse, voice or other app) outranks agents. `contracts/effect-authority.v1.json` separates reviewed read-only background work from screen/game effects (15s idle, fresh dual probes before/after focus, scene/save/target recheck) and OS/unknown effects (deny). Retain interrupted intent, reconcile outcomes, never blindly replay. Never change Bluetooth, Print Screen, Escape/U, drivers, accessibility or Windows settings. Run `scripts/check_human_sovereignty.py`. Unadopted tools and mid-call actions remain unproven.
 
 ## Windows peripheral authority boundary
 
@@ -20,6 +20,8 @@ Ontology revision 5: human input in any app, game, mod, key, mouse, voice or ass
 - **Evidence:** separate tests, build, PR, merge and gameplay. docs/SCENE_INTELLIGENCE.md owns independent cues; unknown denies.
 - **Continuity:** preserve intent and update docs/LEDGER.md, docs/ROADMAP.md and active sprint; no chat-only corrections.
 - Offline installation only; never EA Connect. Preserve lot-boundary, EA-file-first geometry and live-host policies in the mandatory detailed rules.
+
+P00/P01 world-traversal: see `docs/WORLD_TRAVERSAL_HARNESS.md`; BI-002 remains active.
 
 ## Existing operator/agent handoffs
 
