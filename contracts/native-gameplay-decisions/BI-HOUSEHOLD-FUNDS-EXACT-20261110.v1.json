@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-HOUSEHOLD-FUNDS-EXACT-20261110",
+  "purpose": "Bound active-household cheat-console funding as opt-in host lab operation; advisory planning is not shipped EA autonomy.",
+  "files": [
+    {
+      "path": "betterinstincts/funds_inject.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure household target arithmetic and command planning; never makes installed game effects or owns desktop input. Opt-in host adapter and disposable runtime certification remain separate.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "host_adapter": "scripts/funds_inject.py",
+  "runtime_admission": "betterinstincts.screen_admit.admitted_screen_lease",
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_POLICY_ONLY_NOT_NATIVE_SIM_GAMEPLAY",
+  "next_gate": "Local P08 disposable Sims 4 scene, console focus, HUD funds and player-takeover evidence"
+}
