@@ -23,6 +23,16 @@ jobs:
         run: python -m scripts.check_peripheral_boundary
       - name: Synthetic hostile and permitted host effects
         run: python -m unittest tests.test_peripheral_boundary -v
+      - name: P00 P01 native gameplay-first architecture and route enforcement
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          python -m scripts.check_native_gameplay_authority --json
+          python -m unittest tests.test_native_gameplay_authority -v
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            python -m scripts.check_native_gameplay_authority --base-ref "$PR_BASE_SHA"
+          fi
       - name: Human-first P00/P01 ontology and cross-adapter coverage
         run: |
           python -m scripts.check_human_sovereignty --json
