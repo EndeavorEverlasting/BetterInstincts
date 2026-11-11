@@ -118,3 +118,7 @@ Bluetooth/driver/screenshot/input remapping, unsupported game execution,
 protected-save changes, stealth mouse/keyboard hooks, and bypassing operator
 approval or installed agent protections. If a source adapter is unadopted,
 identify the gap instead of running or laundering it through another tool.
+
+## Household navigation anti-oscillation (P00/P01)
+
+For active-household mapping, room traversal, goal routing and camera surveys read `docs/HOUSEHOLD_NAVIGATION.md` and `contracts/household-navigation.v1.json`. Plan with `betterinstincts.household_navigation.plan_household_navigation` via `betterinstincts.room_map_traverse.plan_semantic_region_route`; require opaque actor/lot/household identifiers, verified passages and revision-bound progress. Never infer Sim walkability from `lot_floor_map` `ADJACENT`, `CORNER_OF` or camera pan hints. Preserve distinct discovery, goal and recovery states. A-B-A-B without independent novelty is a stall; no unbounded retries, no blind reclick, no out-of-lot or cross-save state carry. Run `python -m scripts.check_household_navigation` and `python -m unittest tests.test_household_navigation -v`; these are offline only and do not grant an OS/game input permit.

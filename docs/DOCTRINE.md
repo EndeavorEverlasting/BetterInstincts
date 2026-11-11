@@ -141,3 +141,7 @@ a Sims runtime certificate, or authority over unrelated agents. The product's
 BI-002 hunger Live Mode gate remains independently open. Use existing
 `control_handoff`, `screen_admit`, `workflow_interop` and
 `peripheral-authority` rather than a competing daemon or second control arbiter.
+
+## Deterministic household traversal (P00)
+
+In-world household traversal navigates named, verified on-lot **regions**, never raw mouse coordinates or aimless N/E/S/W camera turns. Camera exploration, Sim movement, scene transitions, and world-object selection have separate evidence and admission. Lot-floor-map's relative object graph cannot assert Sim reachability. A goal retains opaque household/actor scope; a repeated no-progress region cycle (including A-B-A-B) must stop, avoid the failed transition within its bounded scope, re-anchor/replan using only verified passages, or abstain. Never use a passage that is unknown, off-lot, unverified or a mere camera hint. Movement is not progress; a route proposal, arrival, or model score is not an interaction outcome and does not grant CONTROL_PERMIT. Player takeover, stale revision or absent independent evidence immediately yields; preserve last known good saves and human controls. Details: `docs/HOUSEHOLD_NAVIGATION.md`, `contracts/household-navigation.v1.json`.

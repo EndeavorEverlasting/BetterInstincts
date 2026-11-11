@@ -31,3 +31,7 @@ P00/P01 world-traversal: see `docs/WORLD_TRAVERSAL_HARNESS.md`; BI-002 remains a
 ## Trajectory and proof
 
 plans/active/BI-001.md is merged; plans/active/BI-002.md owns the game-lab gate. docs/HORIZON.md and plans/horizon.v1.json retain six needs, balance, income, skills and career order. docs/COMPATIBILITY.md and docs/LIVE_CERT.md require exact game build and immutable older certifications. BI-002 requires actual vanilla/modified trials and rollback; absent host means BLOCKED_LOCAL_GAME_ACCESS, active rather than complete. Report CHANGED | PROVED | NEXT, checks, SHA, push/PR/merge and actual live status. An offline pass is not gameplay proof.
+
+## P00/P01 navigation law
+
+For deterministic household region traversal and no-progress loop recovery consult `docs/HOUSEHOLD_NAVIGATION.md`, `contracts/household-navigation.v1.json`, `betterinstincts/household_navigation.py` and `scripts/check_household_navigation.py`. Never equate camera pan/visual adjacency with verified Sim travel, movement with progress, or a route proposal with CONTROL_PERMIT. Preserve human-first, off-lot, save, portrait, scene and existing BI-002 boundaries.
