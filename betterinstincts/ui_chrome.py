@@ -62,6 +62,24 @@ def load_contract(path: Path = CONTRACT) -> dict:
     if (native.get("CENTER_ACTIVE_SIM", {}).get("chord") != ["ENTER"]
             or native.get("CENTER_CURRENT_LOT", {}).get("chord") != ["SHIFT", "ENTER"]):
         raise UIChromeError("SIM_CAMERA_NATIVE_FOCUS_KEYS_DRIFT")
+    # Escape is context-sensitive Cancel/Options, never a clock-pause permit.
+    # P is the EA-documented game-time pause key; U is a pack-gated
+    # in-game Clubs shortcut, not a Windows keyboard configuration change.
+    esc = native.get("PAUSE_MENU") or {}
+    pause = native.get("PAUSE_GAME_TOGGLE") or {}
+    clubs = native.get("PANEL_CLUBS") or {}
+    if (esc.get("chord") != ["ESC"]
+            or esc.get("direct_time_pause") is not False
+            or esc.get("conditional_menu") is not True):
+        raise UIChromeError("ESC_CONTEXT_MUST_NOT_ASSUME_GAME_TIME_PAUSE")
+    if (pause.get("chord") != ["P"]
+            or pause.get("requires_clock_precondition") != "PLAYING_CORROBORATED"
+            or pause.get("auto_resume") is not False):
+        raise UIChromeError("NATIVE_PAUSE_REQUIRES_OBSERVED_PLAYING")
+    if (clubs.get("chord") != ["U"]
+            or clubs.get("panel_id") != "clubs"
+            or clubs.get("requires_entitlement_attestation") is not True):
+        raise UIChromeError("U_CLUBS_MUST_REMAIN_PACK_GATED")
     follow = (cfg.get("app_hotkeys") or {}).get("follow_active_sim") or {}
     if (follow.get("command") != "FOLLOW_ACTIVE_SIM"
             or follow.get("in_game_native") is not False
