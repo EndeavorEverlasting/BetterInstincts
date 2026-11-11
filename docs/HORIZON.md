@@ -6,6 +6,12 @@ This is the long-term product outcome, not a command to implement everything imm
 
 **Material acquisition routing (supporting infrastructure):** `docs/ACQUISITION_ROUTING.md` covers observed computer Order domains for arbitrary household/portrait identities, Fabricator eco parts, Recycler/generator fuel and insect-farm biofuel, with instant-candidate versus queued/time-gated effect classes. Its read-only plans **do not** advance the Horizon stage gates; BI-002 hunger remains active and requires actual Sims gameplay certification.
 
+## P04 Escape/U selective-game-input safety workload (2026-11-10)
+
+**Canonical supporting workload, not a replacement priority:** [`plans/horizon.v1.json#supporting_workloads.escape_u_input_forensics`](../plans/horizon.v1.json) and the existing [`BI-HORIZON.dispatch.v1.json`](../plans/active/BI-HORIZON.dispatch.v1.json) now own `ESC_U_OPERATOR_KEY_MATRIX`, `ESC_U_CURSOR_PROVENANCE`, and `ESC_U_RECONCILE`. [P04 runbook](../plans/active/BI-ESC-U-FORENSICS-P04-20261110.md) contains the exact non-mutating local host differential and redacted proof requirements. The merged implementation source is [PR #183](https://github.com/EndeavorEverlasting/BetterInstincts/pull/183); physical Escape/U acceptance, local Cursor hook activation, and agent attribution remain OPEN. 
+
+Run `python -m scripts.horizon_status` to discover `supporting_workloads.escape_u_input_forensics`; `python -m scripts.check_horizon` and `tests.test_p04_escape_u_workload` refuse loss of this owner, false physical proof or Windows/device authority. BI-002 stays active and world-highlight sensor remains the existing `next_supporting_priority`; do not confuse Escape-cancel with game-time pause or U/Clubs entitlement with Windows key mapping.
+
 ## Next supporting priority — P04 world-highlight sensor (2026-11-10)
 
 **Canonical machine owner:** [`plans/horizon.v1.json#next_supporting_priority`](../plans/horizon.v1.json). **Existing P04 dispatch (not a second orchestration source):** [`plans/active/BI-HORIZON.dispatch.v1.json`](../plans/active/BI-HORIZON.dispatch.v1.json), with the authoritative repo-wide execution pointer in [`BI-HORIZON-EXECUTION-WIDE-20261110.v1.json`](../plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json). Details and local permission boundaries: [Closers P04 world traversal runbook](../plans/active/BI-WORLD-TRAVERSAL-CLOSERS-P04-20261110.md).
