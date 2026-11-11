@@ -33,8 +33,10 @@ identity as a universal rule. Learned suggestions feed the existing passive
 opportunity survey and remain under player-first, effect-authority, scene,
 lot and queue admission. This is not permission to install global input
 observers or to claim live game/autonomy certification. Ownership:
-\`contracts/object-action-catalog.v1.json\` and
-\`docs/OBJECT_ACTION_CATALOG.md\`.
+`contracts/object-action-catalog.v1.json` and
+`docs/OBJECT_ACTION_CATALOG.md`.
+
+P83/P03 closers: replay-unique, reviewed observations must support each promoted usefulness judgment; a repeated proof is not another example. Contradictory harm in another need/money/skill/career domain makes the action advisory-ineligible until a separately reviewed tradeoff policy exists. Preserve legacy records without silently treating unproven counts as gameplay evidence.
 
 ## Project architecture rule
 Observe the game's native tuning and compare with community implementations **before** adding a generalized decision framework. Prefer localized XML tuning and proven shared extension points if appropriate. Introduce Python game scripts only if the chosen behavior cannot be implemented safely through tuning. Offline Python prototypes are simulations, not game hooks. Do not use Rust/TypeScript/C# in the game runtime without evidence of a concrete need; build tooling may be different from runtime language.

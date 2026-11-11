@@ -54,8 +54,8 @@ A matching read-only candidate is surfaced at
 
 All identifiers below are sanitized semantic tokens, **not** user names or
 opaque raw tooltip strings. Use unique 1-based \`seq\` per explicit session.
-The sequence is monotonic. An old sequence is a no-op; a missing sequence
-is an error. Each outcome must refer to an earlier selection and use an
+The sequence is monotonic. Only the latest **byte-identical retransmission**
+is idempotent; older, contradictory, missing or backward-time events are rejected. Each outcome must refer to an earlier selection and use an
 independent later capture. Reuse the same patch even across different saves
 to build portable class knowledge.
 
@@ -82,7 +82,9 @@ Invoke each of the three events in order. The CLI is a bounded, *supplied
 evidence* port, not an automatic observer. Repeating a menu observation with
 a new sequence strengthens availability only, not usefulness. To obtain a
 useful recommendation the same class/action/domain needs at least **three
-operator-reviewed helpful outcomes** and a helpful rate of at least 75%.
+independently review-proven helpful evidence fingerprints** and a helpful rate
+of at least 75%. Identical outcome evidence cannot be counted again even from
+another session or interaction identifier.
 Unreviewed or inconsistent observations force abstention.
 
 After learning, provide a current menu query:
@@ -121,6 +123,27 @@ active tick observation as \`object_catalog_query\`, with the same
 - No automatic global polling, OS service/settings changes, peripheral
   repairs, save edits, purchases, player queue cancellation or gameplay
   certification are implied.
+
+## Closers: replay, feedback integrity and tradeoffs
+
+Evidence fingerprints, not raw evidence references, are retained alongside
+bounded aggregates. The prior catalog shape is still readable, but legacy
+aggregate counts without replay-unique provenance are not promoted as useful.
+New reviewed examples rebuild promotion from independent evidence. Replayed or
+contradictory session events, backward-time observations, and duplicated review
+proofs cannot inflate training confidence. A reviewed harmful effect in any
+other goal domain causes **CONFLICTING_REVIEWED_EFFECTS**, rather than silently
+recommending a seemingly beneficial action. The review-evidence budget is 64
+per object-class/action; exhaustion explicitly abstains instead of dropping
+adverse feedback. The index remains bounded at 256 class/action records and
+2 MB; a larger cross-patch/pack data store is an open capacity-scaling task,
+not a claim that the complete Sims object set is already represented.
+
+Source of truth for local game inputs remains the existing host and human-first
+admission layers. A calibrated menu-event sensor and **independent P08 real Sims
+replay** are required before the system could learn from every click or safely
+populate actual queued interactions. See the exact P04 follow-on in
+`plans/active/BI-OBJECT-ACTION-CLOSERS-P04-20261110.v1.json`.
 
 ## P95/P82/P08/P07/P124 verification route
 

@@ -1,3 +1,17 @@
+## 2026-11-10 — Moonwake Closers object-action review integrity (P83 → P03 → P141 → P124 → P04)
+
+**Parent:** Independently verify the previously merged PR #179 at current main and close replay/evidence holes before promoting object-menu utility knowledge. Initial verified mainline at audit: `a1ef40c4a7b4993fa077be12603feebc90525795` (household-navigation PR #181 already merged). PR #180 legacy-input enforcement merged concurrently; #159 spatial-perception and #149 home-queue remain separately owned.
+
+**P83/P03:** The first implementation's repeated reviewed outcome `evidence_ref` was counted multiple times across interactions/sessions, old or contradictory event-sequence replays were treated as successes, and beneficial domain judgments ignored other-domain harmful reviews. Static confidence could therefore be inflated despite green CI. There was also literal escaped backtick markup in four added documentation sections. No Windows/Sims live host was attached to this provider execution.
+
+**P141:** Selected the narrowly testable review-integrity repair over invasive global click monitoring or a competing queue scheduler; existing human-first and listener/affordance owners remain canonical.
+
+**P124:** One catalog reducer retains event validation, replay-unique evidence aggregation, legacy read compatibility and conservative queue advisory; no new screen-input owner. A bounded record cap explicitly abstains rather than forgetting or overclaiming reviews. The existing listener still owns explicit activation and passive opportunity survey.
+
+**P04:** Machine-readable dependency handoff: `plans/active/BI-OBJECT-ACTION-CLOSERS-P04-20261110.v1.json`. The game-calibrated semantic menu sensor and P08 disposable live queue certification require the local operator game runtime. The current parent BI-002 hunger A/B/rollback remains active; do not reframe local sensor work as BI-002 completion.
+
+**Proof ledger:** GitHub provider PR checks/merge and mainline readback will be reported separately from actual Sims event capture or input authority. This note is not a CI pass or merge claim by itself.
+
 ## 2026-11-10 — Moonwake closers P83 → P03 → P141 → P124 → P04: live-input coverage repair
 
 **Parent:** gamer/operator computer control is sovereign during active use,
@@ -40,15 +54,15 @@ BI-002 hunger remains ACTIVE / `BLOCKED_LOCAL_GAME_ACCESS`.
 menus, selected actions and their reviewed needs/money/skills/career effects,
 so the host's opportunity survey can rank actions while preserving human
 control in any household/save. Scoped consultation:
-\`contracts/consultations/BI-OBJECT-ACTION-CATALOG-20261110.v1.json\`.
-Provider baseline \`dc062e008c60de9f8898228e0c1a92168214b0f3\`;
+`contracts/consultations/BI-OBJECT-ACTION-CATALOG-20261110.v1.json`.
+Provider baseline `dc062e008c60de9f8898228e0c1a92168214b0f3`;
 existing PR #159 spatial perception and #149 home queue deliberately untouched.
 
-**Implementation:** \`betterinstincts/object_action_catalog.py\`,
-\`contracts/object-action-catalog.v1.json\`,
-\`host_listener.observe_object_action\` and
-\`host_listener.suggest_object_action\`, existing listener tick survey
-\`object_action_hint\`, scoped CLI and deterministic negative replay/portability
+**Implementation:** `betterinstincts/object_action_catalog.py`,
+`contracts/object-action-catalog.v1.json`,
+`host_listener.observe_object_action` and
+`host_listener.suggest_object_action`, existing listener tick survey
+`object_action_hint`, scoped CLI and deterministic negative replay/portability
 tests. Reviewed usefulness requires at least three helpful outcome examples and
 at least 75% helpful reviews in exact patch/class/action/domain; menu
 appearance and selection alone are insufficient. Local catalog is atomic
@@ -58,7 +72,7 @@ and bounded, with no OS hooks, game input, save mutation or daemon.
 local Sims game proof. P08 needs a calibrated game sensor, true player/host
 events, independent scene/actor/capture gates and disposable live A/B before
 real queue actuation could be certified. BI-002 hunger A/B + rollback stays
-the parent product gate. See \`docs/OBJECT_ACTION_CATALOG.md\`.
+the parent product gate. See `docs/OBJECT_ACTION_CATALOG.md`.
 
 ## 2026-11-10 — P00/P01 holistic human-first doctrine, ontology and harness
 

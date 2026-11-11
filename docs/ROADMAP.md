@@ -82,4 +82,8 @@ on a disposable save, prove exact-patch object-class identities and callback
 coverage for player and host input, and exercise the already existing human
 handoff/queue admission before any execution adapter is promoted. Do not
 reorder or block active BI-002 hunger certification. Detailed owner:
-\`docs/OBJECT_ACTION_CATALOG.md\`.
+`docs/OBJECT_ACTION_CATALOG.md`.
+
+### 2026-11-10 — Closers review-integrity gate
+
+Replay-unique reviewed evidence, not historical aggregate counts or menu availability, is the sole promotion source. A conflicting reviewed harm or exhausted bounded proof store abstains. Only the latest byte-identical event can be idempotently retried. Portable catalog correctness is separate from the next **local P08 calibrated menu/selection/outcome sensor** and subsequent independently permitted queue dispatch, tracked in `plans/active/BI-OBJECT-ACTION-CLOSERS-P04-20261110.v1.json`. Continue BI-002 as the active product certification gate.
