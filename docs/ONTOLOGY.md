@@ -157,3 +157,23 @@ is dispatched. No new ontology node or rival admission policy is needed:
 `screen_admit` stays canonical for future adoption. A future status change
 must include independent game-scene/target input-safety proof; passing static
 checks does not certify physical Windows operator reclamation.
+ 
+## P00/P01 native-mechanic implementation route
+
+Ontology revision 8 introduces three independent distinctions:
+`GAMEPLAY_IMPLEMENTATION_ROUTE` (where game behavior is actually
+implemented), `NATIVE_MECHANIC_EVIDENCE` (exact-game-build EA source and
+real gameplay outcome), and `HOST_LAB_BOUNDARY` (temporary, opt-in desktop
+inspection/testing, **not** autonomous gameplay). Invariants
+`BI-ONT-042..045` require EA-native mechanics first, a machine-read
+route decision for all changes to product Python, no false promotion of
+host/offline policy into installed game proof, and unconditional
+player-first protection. This extends, never replaces, existing
+`MECHANIC_PATH`, `PLAYER_INTENT`, `CONTROL_PERMIT`,
+`EFFECT_ADMISSION_CLASS` and `AGENT_ADOPTION_COVERAGE`.
+Canonical implementation routing owner:
+`contracts/native-gameplay-authority.v1.json` with
+`scripts/check_native_gameplay_authority.py`. Existing host viewport,
+mouse, scene and save automation stays available only as an explicitly
+bounded lab interface; it is not a new engine or fallback for autonomy.
+
