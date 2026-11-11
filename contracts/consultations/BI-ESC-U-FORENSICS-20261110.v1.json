@@ -1,0 +1,77 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-ESC-U-FORENSICS-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "b99f5fb64cf145e7385875dd09878dea3195aadd",
+  "proposed_capability": "Correct semantic conflation between context-sensitive Escape cancellation / conditional Options menu and the independently documented P/0 game-time pause; preserve Get Together-gated U Clubs panel semantics. Harden existing Win32 injected chord release after an aborted sequence and publish read-only operator-host fault isolation. Do not change Windows key mapping, accessibility, Bluetooth, screenshot or OS hooks. Repository fixes are not proof of live-game resolution or Cursor session attribution.",
+  "affected_concepts": [
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "OBSERVATION",
+    "CLAIM",
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "ACTIVITY",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT",
+    "COORDINATION_CYCLE"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/ONTOLOGY.md",
+    "docs/ASYNC_INTEROP.md",
+    "docs/DOCTRINE.md",
+    "docs/PERIPHERAL_INCIDENT.md",
+    "docs/UI_CHROME.md",
+    "contracts/ui-chrome.v1.json",
+    "betterinstincts/ui_chrome.py",
+    "scripts/win32_input.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-028",
+    "BI-ONT-029",
+    "BI-ONT-030",
+    "BI-ONT-031",
+    "BI-ONT-032"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SOURCE_AUDIT_AND_OFFLINE_KEY_DISPATCH_REGRESSIONS_ONLY_NO_LOCAL_WIN32_OR_GAMEPLAY_PROOF",
+  "player_save_control_impact": "Pure contract, source-level keyboard send balancing, negative tests and manual read-only triage. Does not install keyboard interceptors, change host input preferences, write EA saves, start TS4 or operate user devices.",
+  "expected_outcome": "Preserve Esc cancel/menu as context-dependent with zero direct pause guarantee, P actual time pause only with observed playing precondition, U Clubs only when pack is attested, synthetic chord release on errors, and a host evidence matrix that distinguishes game UI interception, game defect, mods, and external agents without asserting causal attribution.",
+  "negative_tests": [
+    "ESC is not considered a direct game-time pause key",
+    "P remains explicitly non-idempotent with PLAYING precondition",
+    "U remains pack-gated and never OS-remapped",
+    "Aborted synthetic modifier chord releases keys it pressed in reverse order",
+    "No global keyboard hook, OS preference write, game input dispatch or save mutation from these changes"
+  ],
+  "rollback_path": "Revert bounded PR to restore prior contract labels and key-dispatch behavior. Do not touch Windows host settings or saves. BI-002 and local Windows input certification remain open.",
+  "unresolved_unknowns": [
+    "No authenticated Cursor conversation/tool logs or physical keystroke trace; commit metadata cannot identify who altered the user's desktop",
+    "On-host options menu versus direct pause and Get Together/U tests remain operator-host only",
+    "External agent unbalanced physical/direct input and mod UI consumption remain independently possible"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-ESC-U-FORENSICS-20261110.v1.json",
+    "contracts/ui-chrome.v1.json",
+    "betterinstincts/ui_chrome.py",
+    "scripts/win32_input.py",
+    "tests/test_ui_chrome.py",
+    "tests/test_win32_input.py",
+    "docs/UI_CHROME.md",
+    "docs/PERIPHERAL_INCIDENT.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decided_at": "2026-11-11T01:54:00Z",
+  "decided_by": "chatgpt-provider-repository-agent"
+}
