@@ -151,7 +151,7 @@ def _unregistered_sources(manifest: dict, root: Path, *, registered: set[str]) -
             if rel == manifest["harness_validator"] or rel == manifest["host_settings_guard"]:
                 continue
             code = path.read_text(encoding="utf-8-sig")
-            if any(token in code for token in needles) and rel not in seen:
+            if any(token in code for token in needles) and rel not in registered:
                 unregistered.append(rel)
     return unregistered
 
