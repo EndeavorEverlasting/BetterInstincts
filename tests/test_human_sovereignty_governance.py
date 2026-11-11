@@ -48,7 +48,7 @@ class HumanSovereigntyGovernanceTests(unittest.TestCase):
 
     def test_glossary_classification_not_conflated(self):
         self.assertIn("acquisition", self.glossary["terms"]["EFFECT_ADMISSION_CLASS"]["definition"])
-        self.assertIn("not a Python sandbox", self.glossary["terms"]["PASSIVE_BACKGROUND_LANE"]["definition"])
+        self.assertIn("sandboxes the callback", self.glossary["terms"]["PASSIVE_BACKGROUND_LANE"]["definition"])
         self.assertIn("Windows", self.glossary["terms"]["P00_P01_HUMAN_FIRST_GATE"]["definition"])
 
 
