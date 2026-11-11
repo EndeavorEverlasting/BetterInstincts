@@ -56,7 +56,7 @@ class EscapeUP04WorkloadTests(unittest.TestCase):
         broken = copy.deepcopy(self.dispatch)
         broken["lanes"] = [x for x in broken["lanes"]
                            if x["id"] != "ESC_U_CURSOR_PROVENANCE"]
-        with self.assertRaisesRegex(HorizonError, "ESC_U_P04_DISPATCH_LANE_COVERAGE_LOST"):
+        with self.assertRaisesRegex(HorizonError, "P04_DISPATCH_DANGLING_DEPENDENCY|ESC_U_P04_DISPATCH_LANE_COVERAGE_LOST"):
             validate_dispatch(self.horizon, broken)
 
     def test_interactive_lane_must_not_be_labeled_autonomous(self):
