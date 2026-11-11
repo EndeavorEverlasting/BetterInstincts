@@ -79,7 +79,8 @@
     "docs/FIRST_RUN.md",
     "docs/download/index.html",
     "README.md",
-    "docs/LEDGER.md"
+    "docs/LEDGER.md",
+    "contracts/native-gameplay-decisions/BI-FIRST-RUN-BOOTSTRAP-20261111.v1.json"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "decided_at": "2026-11-11",
