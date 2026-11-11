@@ -37,6 +37,12 @@
 
 **Local receipts:** `dist/game-host/<approved-run-id>/escape-u-manual-matrix.json` and `dist/game-host/<approved-run-id>/escape-u-cursor-provenance.json` remain private/ignored; publish only sanitized findings and status. Unknown/unavailable evidence stays unknown. No automatic collector, keylogger, watchdog, service or daemon.
 
+## Machine status progression (future local acceptance)
+
+The initial public repository status remains `ROUTED_LOCAL_EVIDENCE_OPEN` with physical observations `NOT_OBSERVED` and attribution `UNATTRIBUTED`. A locally observed result can be recorded as `LOCAL_OBSERVED_WITH_RECEIPT` for `physical_escape_menu`; for `physical_u_clubs` use either `LOCAL_OBSERVED_WITH_RECEIPT` or `NOT_APPLICABLE_PACK_ABSENT` after an actual entitlement review. Cursor hook state may become `LOCAL_VERIFIED_WITH_RECEIPT`; causality may become `DIRECT_LOCAL_EVIDENCE_REVIEWED` only with a direct reviewed session trace. Distinct local receipt references must remain private under `dist/game-host/<approved-run-id>/` and are represented in `supporting_workloads.escape_u_input_forensics.proof_receipts` by safe ignored-path pointers, not raw logs.
+
+Do not change the workload to `REVIEWED_LOCAL_EVIDENCE` until Esc, entitlement-aware U and `physical_recovery=ACCEPTED_AFTER_LOCAL_RETEST` each have independent local receipts; `scripts/check_horizon.py` refuses incomplete promotion. It is acceptable for Cursor attribution to remain `UNATTRIBUTED` after a genuine physical repair. A local accepted game test is still not a BI-002 tuning certification.
+
 ## Verification and finish criteria
 
 ```sh
