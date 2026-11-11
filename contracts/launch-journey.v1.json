@@ -1,0 +1,38 @@
+{
+  "schema": "betterinstincts.launch-journey/v1",
+  "source": "docs/FIRST_RUN.md",
+  "states": [
+    "DOWNLOAD_REQUESTED",
+    "DEPENDENCIES_CHECKED",
+    "CLONED_OR_FAST_FORWARDED",
+    "TOOLKIT_INSTALLED",
+    "GAME_DISCOVERED_OR_MANUALLY_SELECTED",
+    "MODE_CHOSEN",
+    "GAME_LAUNCH_DISPATCHED",
+    "PLAYER_SAVE_SELECTION_REQUIRED",
+    "PLAYER_CREATE_A_SIM_REQUIRED",
+    "GAMEPLAY_PROOF_PENDING"
+  ],
+  "entrypoints": {
+    "windows": "Start-BetterInstincts.cmd",
+    "installer": "bootstrap.py",
+    "ui": "python -m scripts.first_run gui",
+    "offline": "python -m scripts.first_run plan --mode new"
+  },
+  "invariants": {
+    "canonical_checkout": "%USERPROFILE%/dev/BetterInstincts",
+    "update": "clean main only, fast-forward only",
+    "prerequisites": "Python >=3.11 and Git; no unattended system installation",
+    "sims_executable": "Game/Bin/TS4_x64.exe or TS4.exe in known locations or explicitly selected path",
+    "game_launch": "explicit user click; subprocess without shell",
+    "save_selection": "player-only; no automatic Resume",
+    "cas": "player-only; suggestions not effects",
+    "protected_data": "never read/write user saves or edit Sims game files",
+    "host_proof": "process dispatch is not game load or Live Mode evidence"
+  },
+  "limitations": [
+    "Read-only bounded default install discovery may require manual path selection",
+    "Existing game-host image-template navigator is independent and requires separately observed calibrated screenshots and strict screen lease",
+    "Gameplay and saved-session observations require an authorized Windows P08 run"
+  ]
+}
