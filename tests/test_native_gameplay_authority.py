@@ -52,7 +52,7 @@ class NativeGameplayAuthorityTests(unittest.TestCase):
     def test_product_change_requires_routed_decision(self):
         with self.assertRaisesRegex(NativeGameplayError,"UNROUTED_PRODUCT_CHANGE"):
             validate_route_decisions(CONTRACT,[CORE],[])
-        with self.assertRaisesRegex(NativeGameplayError,"UNROUTED_PRODUCT_CHANGE"):
+        with self.assertRaisesRegex(NativeGameplayError,"NATIVE_DECISION_PATH_UNRELATED"):
             validate_route_decisions(CONTRACT,[CORE],[decision(HOST,"HOST_LAB_ONLY")])
 
     def test_all_new_product_modules_need_review(self):
