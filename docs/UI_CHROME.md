@@ -31,6 +31,14 @@ Search field candidate (1920×1080) is client **(140, 864)** (`nx=0.0729`, `ny=0
 **Miss causes (learn over time):** geometry alone is not enough — also label `miss_cause` via `python -m scripts.click_miss_cause classify|ingest-parts-buy|summarize` (`contracts/click-miss-cause.v1.json`). Priority: `PEER_HUD_COLLISION` → `OVERLAY_CLEAR_WIPE` → `STALE_SURFACE` → `WRONG_CONTROL` → `ZOOM_INSUFFICIENT` → `LOT_PUNCH_THROUGH` → `HITBOX_DRIFT`. Feature vectors are pinned for future ML; RULE_V1 is not a trained model. Peer Skills vs phone fights must not be “learned” as hitbox drift.
 **Handoff:** `ARM_LIVE_HOTKEYS` (left-click world focus, right-click cancel options) → `CHEAT_CONSOLE` (`Ctrl+Shift+C`) → white-strip confirm before `type_text`. Plan: `python -m scripts.fixed_ui_click_map handoff`.
 
+## Escape / U host-forensics boundary (2026-11-10)
+
+**Do not equate ESC with game-time pause.** EA lists **Esc = Cancel** and **P / 0 / \` = Pause**. Esc may dismiss a held object or active modal, and may open Options when nothing consumes it. The historical id `PAUSE_MENU` is retained for callers, but it is context-sensitive, never a certified direct time-control action or evidence that a physical key is remapped. Never send repeated Esc presses to "force" a pause menu, and never unpause to retry.
+
+**U** maps to the **Clubs panel** only when the Get Together entitlement, Live scene, game focus, and hotkey-arm conditions are independently met. An absent panel is not proof that Windows has disabled U. The catalog neither registers nor remaps any physical keyboard shortcut.
+
+For a non-mutating operator-host test, see `docs/PERIPHERAL_INCIDENT.md#escapeu-selective-game-input-forensic-matrix`. Offline tests validate semantic and synthetic key-up safety, not local game behavior or Cursor-session responsibility.
+
 ## Hotkeys (intent / glossary)
 
 | Mode | Chord | Effect | Notes |
