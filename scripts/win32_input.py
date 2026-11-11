@@ -155,30 +155,51 @@ def send_key_chord(
     if not tokens:
         raise Win32InputError("EMPTY_KEY_CHORD")
     mode = str(via or "keybd_event").strip().lower()
+    def balanced(press, release, delay: float) -> None:
+        """Release only synthetic keys actually pressed, even if dispatch aborts.
+
+        Never install an OS hook or change a physical-key mapping. An error in
+        the middle of a chord must not leave an injected modifier/key down.
+        Release attempts continue for remaining keys if one release raises.
+        """
+        pressed: list[int] = []
+        try:
+            for vk in tokens:
+                press(vk)
+                pressed.append(vk)
+                time.sleep(delay)
+            time.sleep(down_sec)
+        finally:
+            release_failure: Exception | None = None
+            for vk in reversed(pressed):
+                try:
+                    release(vk)
+                    time.sleep(delay)
+                except Exception as exc:
+                    if release_failure is None:
+                        release_failure = exc
+            if release_failure is not None:
+                raise Win32InputError("SYNTHETIC_KEY_RELEASE_UNCONFIRMED") from release_failure
+        time.sleep(after_sec)
+
     if mode in {"keybd_event", "keybd", "type_text_path"}:
         import ctypes
 
         user32 = ctypes.windll.user32
         KEYEVENTF_KEYUP = 0x0002
-        for vk in tokens:
-            user32.keybd_event(int(vk) & 0xFF, 0, 0, 0)
-            time.sleep(0.015)
-        time.sleep(down_sec)
-        for vk in reversed(tokens):
-            user32.keybd_event(int(vk) & 0xFF, 0, KEYEVENTF_KEYUP, 0)
-            time.sleep(0.015)
-        time.sleep(after_sec)
+        balanced(
+            lambda vk: user32.keybd_event(int(vk) & 0xFF, 0, 0, 0),
+            lambda vk: user32.keybd_event(int(vk) & 0xFF, 0, KEYEVENTF_KEYUP, 0),
+            0.015,
+        )
         return
     if mode not in {"sendinput", "send_input"}:
         raise Win32InputError("UNKNOWN_KEY_CHORD_VIA:" + mode)
-    for vk in tokens:
-        send_vk(vk, up=False)
-        time.sleep(0.01)
-    time.sleep(down_sec)
-    for vk in reversed(tokens):
-        send_vk(vk, up=True)
-        time.sleep(0.01)
-    time.sleep(after_sec)
+    balanced(
+        lambda vk: send_vk(vk, up=False),
+        lambda vk: send_vk(vk, up=True),
+        0.01,
+    )
 
 
 def type_unicode(text: str, *, per_char_sec: float = 0.015) -> None:
