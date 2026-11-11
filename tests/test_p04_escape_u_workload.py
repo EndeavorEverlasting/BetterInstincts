@@ -42,6 +42,34 @@ class EscapeUP04WorkloadTests(unittest.TestCase):
                 with self.assertRaisesRegex(HorizonError, "ESC_U_PHYSICAL_CAUSALITY_UNPROVEN"):
                     validate(broken)
 
+    def test_local_proof_requires_private_sanitized_receipt(self):
+        broken = copy.deepcopy(self.horizon)
+        row = broken["supporting_workloads"]["escape_u_input_forensics"]
+        row["status_dimensions"]["physical_escape_menu"] = "LOCAL_OBSERVED_WITH_RECEIPT"
+        with self.assertRaisesRegex(HorizonError, "ESC_U_LOCAL_REVIEWED_RECEIPT_REQUIRED"):
+            validate(broken)
+        row["proof_receipts"]["physical_escape_menu"] = "dist/game-host/approved-run/esc-menu.json"
+        self.assertEqual(validate(broken)["state"], "PASS")
+
+    def test_pack_absent_requires_receipt_not_a_false_u_failure(self):
+        changed = copy.deepcopy(self.horizon)
+        row = changed["supporting_workloads"]["escape_u_input_forensics"]
+        row["status_dimensions"]["physical_u_clubs"] = "NOT_APPLICABLE_PACK_ABSENT"
+        with self.assertRaisesRegex(HorizonError, "ESC_U_LOCAL_REVIEWED_RECEIPT_REQUIRED"):
+            validate(changed)
+        row["proof_receipts"]["physical_u_clubs"] = "dist/game-host/approved-run/pack-review.json"
+        self.assertEqual(validate(changed)["state"], "PASS")
+
+    def test_only_reviewed_local_retest_can_promote_workload(self):
+        changed = copy.deepcopy(self.horizon)
+        row = changed["supporting_workloads"]["escape_u_input_forensics"]
+        row["status"] = "REVIEWED_LOCAL_EVIDENCE"
+        with self.assertRaisesRegex(HorizonError, "ESC_U_P04_PREMATURE_WORKLOAD_COMPLETION"):
+            validate(changed)
+        row["status_dimensions"]["physical_recovery"] = "ACCEPTED_AFTER_LOCAL_RETEST"
+        row["proof_receipts"]["physical_recovery"] = "dist/game-host/approved-run/accepted-retest.json"
+        self.assertEqual(validate(changed)["state"], "PASS")
+
     def test_delete_os_or_input_guard_denies(self):
         for guard in ("NO_OS_KEY_REMAP", "NO_UNATTENDED_KEY_INJECTION",
                       "NO_PERSONAL_SAVE_ACCESS", "SINGLE_CURSOR_LEASE"):
