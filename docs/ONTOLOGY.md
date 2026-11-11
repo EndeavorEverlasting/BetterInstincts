@@ -157,7 +157,7 @@ is dispatched. No new ontology node or rival admission policy is needed:
 `screen_admit` stays canonical for future adoption. A future status change
 must include independent game-scene/target input-safety proof; passing static
 checks does not certify physical Windows operator reclamation.
- 
+
 ## P00/P01 native-mechanic implementation route
 
 Ontology revision 8 introduces three independent distinctions:
@@ -176,4 +176,3 @@ Canonical implementation routing owner:
 `scripts/check_native_gameplay_authority.py`. Existing host viewport,
 mouse, scene and save automation stays available only as an explicitly
 bounded lab interface; it is not a new engine or fallback for autonomy.
-
