@@ -6,6 +6,10 @@ Before edits, samples or experiments, read mandatory `docs/AGENT_OPERATING_RULES
 
 Ontology revision 6: human input anywhere (game, mod, keyboard, mouse, voice or other app) outranks agents. `contracts/effect-authority.v1.json` separates reviewed read-only background work from screen/game effects (15s idle, fresh dual probes before/after focus, scene/save/target recheck) and OS/unknown effects (deny). Retain interrupted intent, reconcile outcomes, never blindly replay. Never change Bluetooth, Print Screen, Escape/U, drivers, accessibility or Windows settings. Run `scripts/check_human_sovereignty.py`. Unadopted tools and mid-call actions remain unproven.
 
+## P00/P01 native gameplay-first execution
+
+**Native EA mechanics are the product; desktop clicks are a lab tool, not the autonomy runtime.** For Sim autonomy, needs, queued goals, income, skills and careers, use verified patch-specific EA tuning or embedded Sims 4 scripting. Pure policy is advisory; host UI/vision may inspect, bootstrap or test only under existing player gates. Every product-code PR needs a reviewed implementation route and native-effect proof distinction. Run `python -m scripts.check_native_gameplay_authority` and see `docs/NATIVE_GAMEPLAY_ARCHITECTURE.md`. Never claim a playable mod from a screenshot, synthetic test or queued mouse click.
+
 ## Windows peripheral authority boundary
 
 `contracts/peripheral-authority.v1.json` and `scripts/check_peripheral_boundary.py` deny game agents Windows Bluetooth service, driver, pairing and input-preference changes. Idle/player permits never grant OS repair authority: route incidents to SysAdminSuite Field Workflow. Run the checker and `tests.test_peripheral_boundary` with ontology preflight; see `docs/PERIPHERAL_INCIDENT.md`.
