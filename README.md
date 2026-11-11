@@ -5,6 +5,14 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 
 > **Status: pre-alpha, not a playable mod.** The current Python decision-policy prototype is an offline experiment; it is **not connected to the game**, and no `.package` or `.ts4script` release has been validated.
 
+## One-click first run (Windows)
+
+**[Download the BetterInstincts launcher](Start-BetterInstincts.cmd)** or open the [download page](docs/download/index.html). Save the .cmd file and double-click it. This **pre-alpha toolkit** is not a released Sims 4 mod. The launcher requires Git and Python 3.11+ and never silently installs system tools, changes Windows services/settings, or elevates itself.
+
+The launcher clones a fresh canonical user-profile checkout, or fast-forwards only an existing clean main checkout. Dirty, unrelated or divergent checkouts are preserved. Then a local chooser locates EA/Steam/Epic Sims 4 installations (or offers a manual executable picker). Press **Continue existing game** or **Start a new game** to launch. Save selection and Create-a-Sim stay player-controlled; trait/aspiration examples are advice, not automatic clicks. No saves are inspected or modified.
+
+**[Complete first-run guide and proof levels](docs/FIRST_RUN.md)**. Inspect an unsigned script on GitHub; do not disable Windows protections to run it. Hosting a public GitHub Pages download page and live Windows/Sims testing require separate verification.
+
 ## Install / uninstall the offline toolkit (Windows and Linux Mint)
 
 This is **still pre-alpha, not a playable Sims 4 mod**. The repository home page provides [bootstrap.py](bootstrap.py), a user-scoped installer with no third-party dependencies. Download that file to a location **outside** the checkout, inspect it, then **open it with Python** to show a local window with **Inspect paths**, **Install**, and **Uninstall** buttons (the latter asks for confirmation). Or run the equivalent CLI commands:

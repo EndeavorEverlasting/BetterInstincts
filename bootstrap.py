@@ -364,7 +364,7 @@ def _gui() -> int:
     except tk.TclError as exc:
         raise BootstrapError("GRAPHICAL_DESKTOP_UNAVAILABLE_USE_CLI") from exc
     root.title("BetterInstincts · Installation")
-    root.geometry("650x280")
+    root.geometry("700x345")
     root.resizable(False, False)
     frame = tk.Frame(root, padx=22, pady=18)
     frame.pack(fill="both", expand=True)
@@ -452,6 +452,27 @@ def _gui() -> int:
         command=show_household_skills_recipe,
         width=16,
     ).pack(side="left", padx=(8, 0))
+    def open_game() -> None:
+        """Open the opt-in Sims chooser; installation itself is not launch consent."""
+        try:
+            location = paths()
+            if _validated_manifest(location["use"], location["development"], sys.platform) is None:
+                raise BootstrapError("INSTALL_TOOLKIT_BEFORE_PLAY")
+            checkout = location["development"]
+            if not (checkout / "scripts" / "first_run.py").is_file():
+                raise BootstrapError("FIRST_RUN_MODULE_NOT_INSTALLED_OR_CHECKOUT_STALE")
+            subprocess.Popen(
+                [sys.executable, "-m", "scripts.first_run", "gui"],
+                cwd=checkout, close_fds=True,
+            )
+            status_text.set("Sims 4 chooser opened. No game launched without your click.")
+        except (BootstrapError, OSError, json.JSONDecodeError) as exc:
+            status_text.set("GAME_CHOOSER_UNAVAILABLE: " + str(exc))
+            messagebox.showerror("BetterInstincts", str(exc), parent=root)
+
+    tk.Button(
+        frame, text="Play The Sims 4…", command=open_game, width=23,
+    ).pack(anchor="w", pady=(12, 0))
     root.mainloop()
     return 0
 
