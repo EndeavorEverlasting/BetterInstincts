@@ -21,7 +21,8 @@
     "contracts/host-funds.v1.json",
     "betterinstincts/funds_inject.py",
     "scripts/funds_inject.py",
-    "betterinstincts/screen_admit.py"
+    "betterinstincts/screen_admit.py",
+    "contracts/native-gameplay-authority.v1.json"
   ],
   "invariants_checked": [
     "BI-ONT-001",
@@ -55,7 +56,8 @@
     "No fixed screen click or forced game mode switch",
     "No key dispatch without active session, exact PID and player idle admission",
     "No successful funds claim without observed matching household balance",
-    "No shortcuts dispatched to arbitrary foreground"
+    "No shortcuts dispatched to arbitrary foreground",
+    "Native-first CI route decision explicitly declares funds planner policy-only, not game-side autonomy"
   ],
   "rollback_path": "Revert isolated PR; no game installation or protected saves changed.",
   "unresolved_unknowns": [
@@ -69,7 +71,8 @@
     "betterinstincts/funds_inject.py",
     "scripts/funds_inject.py",
     "tests/test_funds_inject.py",
-    "docs/LEDGER.md"
+    "docs/LEDGER.md",
+    "contracts/native-gameplay-decisions/BI-HOUSEHOLD-FUNDS-EXACT-20261110.v1.json"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "decided_at": "2026-11-10",
