@@ -1688,3 +1688,9 @@ Issue #171 remains the native EA adapter/proof owner; BI-002 hunger
 5+5 trials remain the independent Horizon stage. The first game-side
 gate is a local, explicitly approved read-only inspection of exact-patch
 EA tuning/hooks, not another mouse-driven gameplay loop.
+
+## 2026-11-11 — Fifth Gear first-run download and Sims handoff
+
+**Parent:** One inspectable Windows file safely clones/updates the official canonical BetterInstincts checkout, installs the existing offline toolkit, finds an already-installed Sims 4 executable and requests explicit player consent for launch. On existing games, the user chooses Load Game and the exact save; on new games, Create-a-Sim/placement remains player-controlled and goal-based traits/aspirations are advisory. Never read/edit/delete saves, alter game files, install system tools or change Windows peripherals.
+
+**P95 → P82 → P08 → P07 → P124:** Prior consultation in contracts/consultations/BI-FIRST-RUN-BOOTSTRAP-20261111.v1.json; canonical state machine contracts/launch-journey.v1.json. Source owners: Start-BetterInstincts.cmd; existing bootstrap.py; betterinstincts/first_run.py; scripts/first_run.py; docs/download/index.html; docs/FIRST_RUN.md. CI negatives are offline only. Real player-host Windows launch, save selection, CAS, gameplay and hosted Pages publication remain separately unproven. BI-002 hunger certification stays ACTIVE and is not silently reprioritized.
