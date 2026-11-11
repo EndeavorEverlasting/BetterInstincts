@@ -68,6 +68,12 @@ class EscapeUP04WorkloadTests(unittest.TestCase):
             validate(changed)
         row["status_dimensions"]["physical_recovery"] = "ACCEPTED_AFTER_LOCAL_RETEST"
         row["proof_receipts"]["physical_recovery"] = "dist/game-host/approved-run/accepted-retest.json"
+        with self.assertRaisesRegex(HorizonError, "ESC_U_P04_PREMATURE_WORKLOAD_COMPLETION"):
+            validate(changed)
+        row["status_dimensions"]["physical_escape_menu"] = "LOCAL_OBSERVED_WITH_RECEIPT"
+        row["proof_receipts"]["physical_escape_menu"] = "dist/game-host/approved-run/esc-options.json"
+        row["status_dimensions"]["physical_u_clubs"] = "NOT_APPLICABLE_PACK_ABSENT"
+        row["proof_receipts"]["physical_u_clubs"] = "dist/game-host/approved-run/pack-attestation.json"
         self.assertEqual(validate(changed)["state"], "PASS")
 
     def test_delete_os_or_input_guard_denies(self):
