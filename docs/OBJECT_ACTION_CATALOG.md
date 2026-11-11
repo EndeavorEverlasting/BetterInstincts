@@ -1,8 +1,8 @@
 # Object-action utility catalog — portable learned interactions
 
-Owner: [object_action_catalog.py](../betterinstincts/object_action_catalog.py)  
-Machine contract: [object-action-catalog.v1.json](../contracts/object-action-catalog.v1.json)  
-Existing event lifecycle: [host_listener.py](../betterinstincts/host_listener.py)  
+Owner: [object_action_catalog.py](../betterinstincts/object_action_catalog.py)
+Machine contract: [object-action-catalog.v1.json](../contracts/object-action-catalog.v1.json)
+Existing event lifecycle: [host_listener.py](../betterinstincts/host_listener.py)
 Current product gate: **BI-002 hunger live A/B and rollback remains active**.
 
 ## Intent
