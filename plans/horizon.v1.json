@@ -263,5 +263,56 @@
       "BI002_CLOSE",
       "PR159_TAKEOVER"
     ]
+  },
+  "supporting_workloads": {
+    "escape_u_input_forensics": {
+      "id": "BI-ESC-U-FORENSICS-P04",
+      "kind": "SUPPORTING_RUNTIME_SAFETY_PROOF",
+      "priority": "ACTIVE_NON_GATE_FORENSICS",
+      "status": "ROUTED_LOCAL_EVIDENCE_OPEN",
+      "current_product_gate": "BI-002",
+      "product_gate_effect": "NONE",
+      "does_not_supersede": "BI-WORLD-TRAVERSAL-P08-SENSOR",
+      "source_fix": {
+        "pr": 183,
+        "merged_into_main": true,
+        "merge_sha": "03b8cc488fc856daf35cd6babadf12cd36fe93ad",
+        "proof": "OFFLINE_CI_AND_MAIN_READBACK_NOT_PHYSICAL_KEY_CERTIFICATION"
+      },
+      "dispatch": "plans/active/BI-HORIZON.dispatch.v1.json",
+      "runbook": "plans/active/BI-ESC-U-FORENSICS-P04-20261110.md",
+      "first_command": "python -m scripts.horizon_status",
+      "execution_environments": [
+        "OPERATOR_OR_PHYSICAL_RUNTIME",
+        "LOCAL_AGENT_RUNTIME",
+        "CURRENT_CHAT_RUNTIME"
+      ],
+      "lanes": [
+        "ESC_U_OPERATOR_KEY_MATRIX",
+        "ESC_U_CURSOR_PROVENANCE",
+        "ESC_U_RECONCILE"
+      ],
+      "status_dimensions": {
+        "source_merged": "PROVED",
+        "ci_offline": "PROVED_AT_PR_183",
+        "local_hook_active": "NOT_OBSERVED",
+        "physical_escape_menu": "NOT_OBSERVED",
+        "physical_u_clubs": "NOT_OBSERVED",
+        "culpable_cursor_session": "UNATTRIBUTED",
+        "physical_recovery": "OPEN"
+      },
+      "safety": [
+        "OPERATOR_OWNS_INPUT",
+        "SINGLE_CURSOR_LEASE",
+        "NO_UNATTENDED_KEY_INJECTION",
+        "NO_OS_KEY_REMAP",
+        "NO_BLUETOOTH_OR_DRIVER_MUTATION",
+        "NO_PRINT_SCREEN_CHANGES",
+        "NO_ACCESSIBILITY_MUTATION",
+        "NO_PERSONAL_SAVE_ACCESS",
+        "NO_CLAIM_OF_GAME_PROOF_FROM_CI"
+      ],
+      "proof_ceiling": "ROUTED_AND_OFFLINE_CHECKED_ONLY_LOCAL_HOST_CAUSE_NOT_CERTIFIED"
+    }
   }
 }
