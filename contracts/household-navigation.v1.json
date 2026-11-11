@@ -1,0 +1,53 @@
+{
+  "schema": "betterinstincts.household-navigation/v1",
+  "version": 1,
+  "status": "OFFLINE_PURE_PLANNER_NOT_GAME_WALKER",
+  "consultation": "contracts/consultations/BI-HOUSEHOLD-NAVIGATION-NO-OSCILLATION-20261110.v1.json",
+  "ontology_revision": 7,
+  "canonical_spatial_owner": "betterinstincts/lot_floor_map.py",
+  "canonical_camera_owner": "betterinstincts/camera_traverse.py",
+  "new_advisory_owner": "betterinstincts/household_navigation.py",
+  "existing_route_entrypoint": "betterinstincts/room_map_traverse.py#plan_semantic_region_route",
+  "objective": "Verified on-lot per-actor graph routing and frontier discovery with explicit no-progress recovery.",
+  "modes": [
+    "GOAL_ROUTING",
+    "DISCOVERY"
+  ],
+  "concepts": [
+    "NAVIGATION_SCOPE",
+    "NAVIGATION_REGION",
+    "NAVIGATION_PASSAGE",
+    "NAVIGATION_FRONTIER",
+    "NAVIGATION_INTENT",
+    "NAVIGATION_PROGRESS",
+    "NAVIGATION_STALL",
+    "NAVIGATION_RECOVERY"
+  ],
+  "selection": "Dijkstra / A* zero heuristic; stable cost, hops, path, target ID",
+  "limits": {
+    "max_regions": 128,
+    "max_passages": 512,
+    "max_trace": 32,
+    "max_steps": 32
+  },
+  "progress": "Movement and camera pan do not count; require evidence_kind and evidence_ref for novelty",
+  "stall": "No-progress ABAB or three stationary observations; block blind reversal, replan or abstain",
+  "passage_admission": "Explicit WALKABLE_PASSAGE verified via GAME_ROUTE_PROBE or OPERATOR_VERIFIED_TRAVERSAL and current graph revision",
+  "safety": {
+    "visual_graph_is_not_route_graph": true,
+    "no_game_effects": true,
+    "control_permit": null,
+    "off_lot": "DENY",
+    "unknown_presence": "PAUSE",
+    "stale_scene": "ABSTAIN",
+    "saved_games": "UNTOUCHED",
+    "os_peripherals": "DENY",
+    "BI_002_active": true,
+    "actual_game_certification": "UNPROVEN"
+  },
+  "validation": [
+    "python -m scripts.check_household_navigation",
+    "python -m unittest tests.test_household_navigation -v",
+    "python -m scripts.check_ontology"
+  ]
+}
