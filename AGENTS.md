@@ -21,6 +21,8 @@ Ontology revision 4 embraces any user-chosen game/mod, mouse, keyboard, voice/as
 - **Continuity:** preserve intent and update docs/LEDGER.md, docs/ROADMAP.md and active sprint; no chat-only corrections.
 - Offline installation only; never EA Connect. Preserve lot-boundary, EA-file-first geometry and live-host policies in the mandatory detailed rules.
 
+P00/P01 world-traversal: see `docs/WORLD_TRAVERSAL_HARNESS.md`; BI-002 remains active.
+
 ## Existing operator/agent handoffs
 
 - Judgment P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`.

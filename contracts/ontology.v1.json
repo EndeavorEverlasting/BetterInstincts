@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.ontology/v1",
-  "revision": 4,
+  "revision": 5,
   "state": "CANDIDATE_REVIEW_NOT_RUNTIME_AUTHORITY",
   "owner": "BetterInstincts",
   "source_main_sha": "502f66efc0eedd4136d6a8cd0879f566c3f3612f",
@@ -281,6 +281,21 @@
       "kind": "action_semantics",
       "definition": "Explicit hypothesis about whether an observed in-game interaction is a possibly immediate UI change, queued production, time-gated harvest, resource conversion or unknown; a label never proves completion or grants permission.",
       "canonical_owner": "contracts/upgrade-parts-force.v1.json"
+    },
+    "HIGHLIGHT_OBSERVATION": {
+      "kind": "evidence",
+      "definition": "Source-qualified, capture-bound multi-cue evidence about whether a specific in-world object is highlighted; ABSENT is a measured cue state and may carry null highlighted-object identity. A cue, however confident, is not a host action permit.",
+      "canonical_owner": "contracts/world-traversal-learning.v1.json"
+    },
+    "WORLD_TARGET_TRACK": {
+      "kind": "state",
+      "definition": "Per-target and per-camera-revision continuity of a visible world object and its highlight, supported by fresh frame indices, capture identity, stable client bounding boxes and independent cues. Distinguishes LOCKED, HIGHLIGHT_LOST, transient, occluded, drift, unknown and camera/identity change; a track cannot grant a click.",
+      "canonical_owner": "contracts/world-traversal-learning.v1.json"
+    },
+    "WORLD_INTERACTION_ATTEMPT": {
+      "kind": "evidence",
+      "definition": "One independent before/after capture pair with observed target outcome and explicit player-not-interrupted attestation, used as replay-unique strategy training evidence only when source-qualified. Prediction, pointer proposal and game-input attempt are not independent success evidence.",
+      "canonical_owner": "contracts/world-traversal-learning.v1.json"
     }
   },
   "relations": [
@@ -593,6 +608,41 @@
       "from": "OBSERVATION",
       "predicate": "MUST_CONFIRM_EFFECT_CLASS",
       "to": "ACTION_EFFECT_CLASS"
+    },
+    {
+      "from": "OBSERVATION",
+      "predicate": "MAY_CONTAIN_SOURCE_QUALIFIED_HIGHLIGHT_CUES",
+      "to": "HIGHLIGHT_OBSERVATION"
+    },
+    {
+      "from": "HIGHLIGHT_OBSERVATION",
+      "predicate": "EVIDENCES_WITH_FRESH_CAPTURE_AND_CAMERA",
+      "to": "WORLD_TARGET_TRACK"
+    },
+    {
+      "from": "WORLD_TARGET_TRACK",
+      "predicate": "REFERS_TO_OBSERVED_WORLD_OBJECT",
+      "to": "GAME_OBJECT"
+    },
+    {
+      "from": "WORLD_TARGET_TRACK",
+      "predicate": "CANNOT_MINT_INPUT_AUTHORITY",
+      "to": "CONTROL_PERMIT"
+    },
+    {
+      "from": "WORLD_INTERACTION_ATTEMPT",
+      "predicate": "LABELS_INDEPENDENT_OBSERVED_RESULT",
+      "to": "OUTCOME"
+    },
+    {
+      "from": "WORLD_INTERACTION_ATTEMPT",
+      "predicate": "MAY_UPDATE_BOUNDED_ADVISORY_ONLY",
+      "to": "LEARNING_MODEL"
+    },
+    {
+      "from": "WORLD_TARGET_TRACK",
+      "predicate": "REQUIRES_REVALIDATION_AFTER_VIEW_CHANGE",
+      "to": "VIEW_SCENE"
     }
   ],
   "invariants": [
@@ -825,6 +875,36 @@
         "contracts/upgrade-parts-force.v1.json",
         "betterinstincts/upgrade_parts_force.py"
       ]
+    },
+    {
+      "id": "BI-ONT-028",
+      "term": "WORLD_HIGHLIGHT_CONTINUITY_IS_CAPTURE_AND_IDENTITY_BOUND",
+      "rule": "World-target highlight status requires at least two ordered fresh, distinct host captures on the same target and camera revision with two independent supported cues per frame and stable bounds. Two ABSENT observations may carry null highlight identity and yield HIGHLIGHT_LOST; PRESENT without target identity cannot lock. Flicker, camera/target change, occlusion, unknown and stale evidence withhold click candidates. Any LOCKED is only framing evidence, never CONTROL_PERMIT.",
+      "owned_by": [
+        "contracts/world-traversal-learning.v1.json",
+        "betterinstincts/world_traversal_learning.py",
+        "betterinstincts/host_stack.py"
+      ]
+    },
+    {
+      "id": "BI-ONT-029",
+      "term": "WORLD_OUTCOME_LEARNING_IS_REPLAY_UNIQUE_AND_NONEXECUTABLE",
+      "rule": "Only independently attested observed post-action outcome with explicit player_interrupted=false can train a contextual strategy; exact game-version and pre-action capture fingerprint is unique across training sessions and heldout evaluation. Legacy counts without replay provenance and exhausted bounded history fail closed. An advisory ranking, synthetic score or labeled fixture cannot authorize cursor input, mutate OS/user data or certify screenshot accuracy or Sims gameplay.",
+      "owned_by": [
+        "contracts/world-traversal-learning.v1.json",
+        "betterinstincts/world_traversal_learning.py",
+        "docs/WORLD_TRAVERSAL_LEARNING.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-030",
+      "term": "WORLD_SENSOR_IS_NONPROMOTING_HORIZON_SUPPORT_AND_SINGLE_SCREEN",
+      "rule": "P08 world-highlight sensor measurement is a supporting live evidence lane, not BI-002 completion or a prerequisite to the needs-first product gate. One authorized local Sims screen owner runs sensor, independent click outcome, then reviewed adapter integration in sequence, yields to any human activity, and refuses saves, off-lot/stale camera clicks, OS peripheral mutations or unreviewed takeover of an active spatial-perception writer. CI/PR/fixtures never substitute for local installed evidence.",
+      "owned_by": [
+        "plans/horizon.v1.json",
+        "plans/active/BI-HORIZON.dispatch.v1.json",
+        "docs/DOCTRINE.md"
+      ]
     }
   ],
   "interpretation_rules": [
@@ -836,7 +916,10 @@
     "A GOAL_THREAD belongs to an actor/scope and outlives a particular ACTIVITY; interruption records a reason and revalidation before any resume.",
     "DOMAIN_CAPABILITY is open-world metadata, not a closed enumeration of Sims 4 mechanics; a candidate extension cannot bypass player, save, scene, build or host admission.",
     "Parallel evaluation does not imply simultaneous exclusive object use or parallel SendInput; selection remains a proposal until separately authorized.",
-    "A CONTINGENCY's urgency, deadline and possible action path are hypotheses until supported by real game/version observations; no universal burglar behavior assumption."
+    "A CONTINGENCY's urgency, deadline and possible action path are hypotheses until supported by real game/version observations; no universal burglar behavior assumption.",
+    "A HIGHLIGHT_OBSERVATION about a world target never proves that a click was sent or would affect the intended GAME_OBJECT; WORLD_TARGET_TRACK LOCKED is independent of CONTROL_PERMIT.",
+    "A WORLD_INTERACTION_ATTEMPT used for training must be replay-unique and independently outcome-labeled; click proposal, model recommendation, frame count, or repeated holdout evidence is not success or game certification.",
+    "The WORLD_SENSOR P08 support priority cannot replace BI-002 hunger; only a separate operator-authorized local game host can acquire actual screen measurements."
   ],
   "mutation_consultation": {
     "trigger": "Before drafting behavior-changing prototypes, tuning, agent plans, host click paths or learning-policy mutations; then repeat during review and before merge.",

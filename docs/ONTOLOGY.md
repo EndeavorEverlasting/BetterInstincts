@@ -1,4 +1,4 @@
-# BetterInstincts ontology — v1, revision 2 (merged offline semantics)
+# BetterInstincts ontology — v1, revision 5 (earlier revision history retained)
 
 **Status:** offline semantic contract and CI validators merged in [PR #57](https://github.com/EndeavorEverlasting/BetterInstincts/pull/57); canonical P04 handoff merged in [PR #58](https://github.com/EndeavorEverlasting/BetterInstincts/pull/58). Machine graph: `contracts/ontology.v1.json`. Its machine `state` remains a **candidate for runtime adoption**; it is neither game-input authority nor proof of Sims gameplay. Historical inspection base: `502f66efc0ee`, November 7, 2026.
 
@@ -110,3 +110,14 @@ The host boundary is `contracts/peripheral-authority.v1.json`, linked to the `PL
 ## 2026-11-10 — observed Order menus and source/action semantics
 
 `OBSERVED_MENU_ROUTE`, `ACQUISITION_SOURCE` and `ACTION_EFFECT_CLASS` are graph concepts in `contracts/ontology.v1.json` (BI-ONT-026 / BI-ONT-027); owner is `contracts/upgrade-parts-force.v1.json#acquisition_routing` with application entrypoint `betterinstincts/upgrade_parts_force.py`. Agent semantic routing and read-only CLI are in `docs/ACQUISITION_ROUTING.md`. A previously seen two-step More Choices depth is **not** immutable; menu traversal consumes current visible choices, stops on repeated page signatures and never fabricates a click coordinate. Any portrait in an observed active household is eligible only after a fresh actor, player and screen-lease check. Computer Order is an instant-*candidate*; Fabricator eco parts, regular generator fuel from recycled resources, and insect-farm biofuel are distinct producer/effect classes. Pending game observation cannot be promoted to an inventory/fuel delta, Sims playable mod, or BI-002 certification.
+
+
+## Revision 5 — P00/P01 world-target highlight and learning semantics
+
+The machine graph `contracts/ontology.v1.json` now distinguishes `HIGHLIGHT_OBSERVATION` (capture-bound two-source positive/negative cue evidence), `WORLD_TARGET_TRACK` (camera- and object-identity-bound continuity) and `WORLD_INTERACTION_ATTEMPT` (observed, replay-unique, non-interrupted outcome). These are **refinements** of `OBSERVATION`, `GAME_OBJECT`, `VIEW_SCENE`, `OUTCOME` and `LEARNING_MODEL`, not rival model/router owners. The target is **world scenery**, not calibrated fixed HUD chrome.
+
+- `BI-ONT-028` guards multi-frame identity, null highlighted identity on actually ABSENT cues, transient/occluded/unknown distinction, and the fact that `LOCKED` is not an input permit.
+- `BI-ONT-029` guards independent before/after labels, explicit lack of player interruption, replay exclusion across persisted training and held-out evaluation, fail-closed capacity and advice-only models.
+- `BI-ONT-030` preserves BI-002 needs as the active product gate and makes actual local P08 sensor/outcome work one-screen serial, not an invitation to run concurrent desktop clickers or replace the separately owned PR #159.
+
+Source: `contracts/world-traversal-learning.v1.json`; pure implementation `betterinstincts/world_traversal_learning.py`; separate host input admits remain in existing screen, save, lot and player-presence owners. Reusable codebase map/workflow/artifact inventory and CLI verifier: `contracts/world-traversal-harness.v1.json`, `docs/WORLD_TRAVERSAL_HARNESS.md`, `scripts/check_world_traversal_harness.py`. Exact game patch/capture and independent operator review still needed for real screenshots and click-outcome proofs; v5 ontology CI does not install or certify a Sims mod.
