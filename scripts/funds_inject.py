@@ -89,6 +89,13 @@ def _type_text(text: str) -> None:
     type_text(text)
 
 
+def _click(x: int, y: int) -> None:
+    """Legacy shared-input adapter API; never called by funding workflow."""
+    from scripts.win32_input import send_click
+
+    send_click(x, y, between_sec=0.04)
+
+
 def _open_console_chord() -> None:
     """A balanced input chord: release all modifiers even if C fails."""
     ctrl_down = shift_down = False
@@ -297,6 +304,15 @@ def main(argv: list[str] | None = None) -> int:
 
     args = p.parse_args(argv)
     try:
+        if getattr(args, "execute", False):
+            # Preserve the existing no-session denial before any other action.
+            from betterinstincts.screen_admit import require_execute_session
+            from betterinstincts.control_handoff import HandoffError
+
+            try:
+                require_execute_session(args.session_id, args.process_id)
+            except HandoffError as exc:
+                raise GateError(str(exc)) from exc
         if args.command == "prompt":
             result = subsidy_prompt()
         elif args.command == "plan":
@@ -321,7 +337,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             if (
                 args.execute
-                and result.get("next_gate") == "EXECUTE_FUNDS_INJECT"
+                and result.get("next_gate") == "EXECUTE_FUNDS_INJECT_WITH_ADMISSION"
                 and isinstance(result.get("inject"), dict)
             ):
                 live = _execute_plan(
