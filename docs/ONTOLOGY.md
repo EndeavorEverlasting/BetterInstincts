@@ -140,3 +140,15 @@ physical takeover evidence. The machine harness owner is
 `scripts/check_human_sovereignty.py`. Existing vision, camera, build,
 purchases, aspirations, career, needs, queue and save contracts inherit these
 cross-cutting gates without replacing their own more specific risk checks.
+
+## Closer gate on BI-ONT-035 — unadopted means runtime denied
+
+`AGENT_ADOPTION_COVERAGE` is not satisfied by an inventoried warning alone.
+BI-ONT-035 now has a concrete repository-only negative path: six declared
+legacy executors must call `betterinstincts.legacy_screen_boundary`
+to deny execution before any focus/SendInput. A Python AST harness check
+verifies the declared denial call and offline mocks prove no callback/click
+is dispatched. No new ontology node or rival admission policy is needed:
+`screen_admit` stays canonical for future adoption. A future status change
+must include independent game-scene/target input-safety proof; passing static
+checks does not certify physical Windows operator reclamation.

@@ -233,3 +233,15 @@ and honest CI/merge/installed/live proof dimensions. The existing
 `player_presence`, `control_handoff`, `screen_admit`,
 `workflow_interop`, `peripheral-authority` and Cursor hook remain
 single owners of their established responsibilities.
+
+## Closer runtime denial of unadopted input (2026-11-10)
+
+A policy manifest is not a runtime barrier. The six
+`UNADOPTED_LEGACY_NO_LIVE_AUTHORITY` paths now call the shared
+`deny_unadopted_live_effect` in the real input entrypoint, before
+game window focus, pointer movement, or Win32 clicks. Plan-only evaluators
+remain functional; injected school-dialog callbacks do not bypass the
+execute denial. The source inventory detects removed guards, fake adopted
+callers, and unregistered potential input in the application package.
+No generic shell veto or Windows service is introduced. Only independently
+reviewed per-effect adapters may later replace this denial.
