@@ -1,3 +1,7 @@
+## 2026-11-10 — P04 Escape/U forensics canonical workload
+
+Resolved **P04 — [PARALLEL] Repo-Aware Sprint + Harness Factoring Distributor** from current Moonwake `AGENTS.md`, `harness/exports/prompt-invocation-catalog.v1.json` (blob `8c281379ba7ccc871947391233b1db72f4a108ef`) and `scripts/prompt_invocation_resolver.py`, canonical base registry blob `848728632c1243ebba023fa0012292a2ad33cada`. Operator requested an executable canonical workload for selective in-game Escape/U input failure, following merged PR #183. Machine owner: `plans/horizon.v1.json#supporting_workloads.escape_u_input_forensics`; existing primary dispatch owns `ESC_U_OPERATOR_KEY_MATRIX`, `ESC_U_CURSOR_PROVENANCE`, `ESC_U_RECONCILE`; executable runbook `plans/active/BI-ESC-U-FORENSICS-P04-20261110.md`. This is *supporting safety* independent of BI-002 hunger and current world-sensor priority, and does not authorize Windows remapping, agent keylogging, private-save changes or attribution without evidence. Local game/Windows proof remains open.
+
 # Canonical TokenCorridor prompt invocations — 2026-10-20
 
 Do not treat this as a local Prompt Kit or substitute repository. Source of truth: private **EndeavorEverlasting/TokenCorridor**, file `harness/exports/prompt-invocation-catalog.v1.json`, fetched at blob SHA `8c281379ba7ccc871947391233b1db72f4a108ef`. TokenCorridor canonical invocation resolver: `scripts/prompt_invocation_resolver.py`; IDs were selected using exact catalog matches, not inferred from titles.
