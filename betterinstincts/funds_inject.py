@@ -26,9 +26,12 @@ def _funds_int(value: object, label: str, *, positive: bool = False) -> int:
     """Fail closed on bools, strings, NaN, infinity, fractions and overflow."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise FundsInjectError(label + "_MUST_BE_INTEGER")
-    if not math.isfinite(value) or value != int(value):
+    if isinstance(value, int):
+        amount = value
+    elif not math.isfinite(value) or value != int(value):
         raise FundsInjectError(label + "_MUST_BE_INTEGER")
-    amount = int(value)
+    else:
+        amount = int(value)
     if amount < (1 if positive else 0) or amount > MAX_HOUSEHOLD_FUNDS:
         raise FundsInjectError(label + "_OUT_OF_RANGE")
     return amount
