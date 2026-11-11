@@ -312,7 +312,15 @@
         "NO_PERSONAL_SAVE_ACCESS",
         "NO_CLAIM_OF_GAME_PROOF_FROM_CI"
       ],
-      "proof_ceiling": "ROUTED_AND_OFFLINE_CHECKED_ONLY_LOCAL_HOST_CAUSE_NOT_CERTIFIED"
+      "proof_ceiling": "ROUTED_AND_OFFLINE_CHECKED_ONLY_LOCAL_HOST_CAUSE_NOT_CERTIFIED",
+      "proof_receipts": {
+        "physical_escape_menu": null,
+        "physical_u_clubs": null,
+        "local_hook_active": null,
+        "culpable_cursor_session": null,
+        "physical_recovery": null
+      },
+      "local_proof_rule": "Status can advance only through reviewed, sanitized local ignored dist/game-host receipts; provider CI cannot promote keyboard, hook or agent-causality proof. Record NOT_APPLICABLE for U only after separate pack-attestation receipt."
     }
   }
 }
