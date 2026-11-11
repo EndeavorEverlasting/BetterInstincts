@@ -1,3 +1,29 @@
+## 2026-11-10 — fifth-gear object-action catalog (P95 → P82 → P08 → P07 → P124)
+
+**Parent objective:** Portable machine-readable discovery of Sims object
+menus, selected actions and their reviewed needs/money/skills/career effects,
+so the host's opportunity survey can rank actions while preserving human
+control in any household/save. Scoped consultation:
+\`contracts/consultations/BI-OBJECT-ACTION-CATALOG-20261110.v1.json\`.
+Provider baseline \`dc062e008c60de9f8898228e0c1a92168214b0f3\`;
+existing PR #159 spatial perception and #149 home queue deliberately untouched.
+
+**Implementation:** \`betterinstincts/object_action_catalog.py\`,
+\`contracts/object-action-catalog.v1.json\`,
+\`host_listener.observe_object_action\` and
+\`host_listener.suggest_object_action\`, existing listener tick survey
+\`object_action_hint\`, scoped CLI and deterministic negative replay/portability
+tests. Reviewed usefulness requires at least three helpful outcome examples and
+at least 75% helpful reviews in exact patch/class/action/domain; menu
+appearance and selection alone are insufficient. Local catalog is atomic
+and bounded, with no OS hooks, game input, save mutation or daemon.
+
+**Evidence ceiling:** GitHub connector writes and CI/offline tests are not
+local Sims game proof. P08 needs a calibrated game sensor, true player/host
+events, independent scene/actor/capture gates and disposable live A/B before
+real queue actuation could be certified. BI-002 hunger A/B + rollback stays
+the parent product gate. See \`docs/OBJECT_ACTION_CATALOG.md\`.
+
 ## 2026-11-10 — P00/P01 holistic human-first doctrine, ontology and harness
 
 **Parent objective:** consolidate the user control and background independence

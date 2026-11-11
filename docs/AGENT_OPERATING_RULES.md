@@ -17,6 +17,18 @@ Read `plans/active/BI-HIDDEN-OBJECTS.P04.md`, `docs/HIDDEN_OBJECT_SCOUT.md`; dis
 
 Useful-item force: `python -m scripts.household_object_force`. DIY parts: `python -m scripts.upgrade_parts_force`.
 
+## Portable object-action learning (P95 → P82 → P08 → P07 → P124)
+
+Machine owner: \`contracts/object-action-catalog.v1.json\`; code owner:
+\`betterinstincts/object_action_catalog.py\`; event entrypoint:
+\`host_listener.observe_object_action\`. When a calibrated operator/host
+sensor observes a menu, selection or outcome, send sanitized semantics to
+this port only inside an **explicit active listener**. Never replace this
+with raw Windows mouse/key logging. Query through the existing opportunity
+survey with exact current patch, menu, target and capture; results are
+advisory-only and never override human action, queue ownership or input
+authority. See \`docs/OBJECT_ACTION_CATALOG.md\`. BI-002 remains active.
+
 ## Invariants
 - **Player first:** no interrupt of explicit player commands; no uncontrolled autonomy loops.
 - **Save-safe:** never edit/delete/migrate/overwrite user saves/game files. Unknown/user saves protected.
