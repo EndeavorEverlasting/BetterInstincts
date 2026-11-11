@@ -1,0 +1,82 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-P04-ESC-U-RUNTIME-FORENSICS-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "b99f5fb64cf145e7385875dd09878dea3195aadd",
+  "proposed_capability": "Invoke exact current Moonwake P04 to promote merged Escape/U source fix #183 into durable non-gate supporting runtime forensic workload in existing BetterInstincts Horizon and dispatch. Keep BI-002 hunger and existing WORLD_SENSOR next-supporting priority unchanged. Separate local physical/manual game key semantics, read-only Cursor/hook timeline correlation, and only evidence-driven adapter repair; enforce single-screen human-first ownership and no Windows preference/service/key remapping.",
+  "affected_concepts": [
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "OBSERVATION",
+    "CLAIM",
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "ACTIVITY",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT",
+    "COORDINATION_CYCLE"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/HORIZON.md",
+    "docs/PERIPHERAL_INCIDENT.md",
+    "plans/horizon.v1.json",
+    "plans/active/BI-HORIZON.dispatch.v1.json",
+    "scripts/check_horizon.py",
+    "scripts/horizon_status.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-028",
+    "BI-ONT-029",
+    "BI-ONT-030",
+    "BI-ONT-031",
+    "BI-ONT-032"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "P04_CANONICAL_ROUTING_ONLY_LOCAL_PHYSICAL_ESCAPE_U_REMEDIATION_UNPROVEN",
+  "player_save_control_impact": "Existing public repository routing/contracts/checkers/tests only. No local OS or input changes, no Cursor hook installation, no Sims game/saves, no remote raw logs and no automated physical keyboard action.",
+  "expected_outcome": "Machine-discoverable supporting ESC_U_INPUT_FORENSICS contract with P04 lane ownership and dependencies, CLI status and negative validator tests, sanitized local proof receipt instructions. Preserve existing BI-002 and world-sensor dependency graph. Only local operator-authorized physical game trial can certify key behavior; Cursor attribution requires independent session/process evidence.",
+  "negative_tests": [
+    "BI-002 stays current gate",
+    "WORLD_SENSOR stays next_supporting_priority",
+    "ESC_U and WORLD_SENSOR cannot run concurrent screen actions",
+    "ESC and U physical tests cannot be claimed from provider CI",
+    "No OS key remap/service action or protected-save mutation authorized",
+    "Missing P04 escape lane or proof boundaries fails horizon check"
+  ],
+  "rollback_path": "Revert this isolated planning branch/merge without changing game, Windows, existing Horizon priority or previously merged #183 source fix.",
+  "unresolved_unknowns": [
+    "Physical Escape cancel versus menu in current Sims scene and P pause result",
+    "U Clubs entitlement and observed Live-mode behavior",
+    "Cursor active hooks and session/process evidence on the physical host",
+    "No independently accessible local Windows agent from this GitHub provider"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-P04-ESC-U-RUNTIME-FORENSICS-20261110.v1.json",
+    "plans/horizon.v1.json",
+    "plans/active/BI-HORIZON.dispatch.v1.json",
+    "plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json",
+    "plans/active/BI-ESC-U-FORENSICS-P04-20261110.md",
+    "scripts/check_horizon.py",
+    "scripts/horizon_status.py",
+    "tests/test_horizon_status.py",
+    "tests/test_p04_escape_u_workload.py",
+    "docs/HORIZON.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decided_at": "2026-11-10",
+  "decided_by": "chatgpt-provider-p04-agent"
+}
