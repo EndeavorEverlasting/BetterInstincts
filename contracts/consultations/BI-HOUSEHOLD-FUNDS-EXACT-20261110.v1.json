@@ -1,0 +1,80 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-HOUSEHOLD-FUNDS-EXACT-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8faaa7055980fe0896a67b30eba4fb10c468dc81",
+  "proposed_capability": "Moonwake /fifth-gear P95→P82→P08→P07→P124: generalized currently active Sims 4 household funds boost, using an observed household balance, a single native cheat-console exact-funds command, explicit screen lease, and post-command confirmation; no portrait-specific automation and no automatic motherlode overshoot.",
+  "affected_concepts": [
+    "MECHANIC_PATH",
+    "PLAYER_INTENT",
+    "HOST_SESSION",
+    "GAME_SCENE",
+    "CONTROL_PERMIT",
+    "OBSERVATION",
+    "PROOF_RECEIPT",
+    "EFFECT_ADMISSION_CLASS"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/DOCTRINE.md",
+    "contracts/host-funds.v1.json",
+    "betterinstincts/funds_inject.py",
+    "scripts/funds_inject.py",
+    "betterinstincts/screen_admit.py",
+    "contracts/native-gameplay-authority.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "STATIC_OFFLINE_AND_REMOTE_CI_NOT_LOCAL_GAMEPLAY_PROOF",
+  "player_save_control_impact": "Host lab-only opt-in input; never edit saves, Windows peripherals, key mappings, game mode, portrait selection, or non-game windows. Only acts through existing admitted_screen_lease with fresh player-presence checks. A money cheat is not earned-income evidence.",
+  "expected_outcome": "Repair existing host-funds owner: enforce fresh observed balance or abstain; choose exactly one money target command, no speculative automatic motherlode; stage under live screen lease and verify foreground before each input; distinguish dispatch from actual balance confirmation; bounded/no replay and clear manual local-game acceptance.",
+  "negative_tests": [
+    "Unknown starting funds never executes a potentially subtractive money command",
+    "Balance at or above target never reduces funds",
+    "NaN/noninteger/cap-exceeding amount blocked",
+    "No unconditional motherlode after money command",
+    "No fixed screen click or forced game mode switch",
+    "No key dispatch without active session, exact PID and player idle admission",
+    "No successful funds claim without observed matching household balance",
+    "No shortcuts dispatched to arbitrary foreground",
+    "Native-first CI route decision explicitly declares funds planner policy-only, not game-side autonomy"
+  ],
+  "rollback_path": "Revert isolated PR; no game installation or protected saves changed.",
+  "unresolved_unknowns": [
+    "No direct Windows Sims host accessible to this GitHub execution",
+    "A durable automated visual console-open/funds HUD sensor needs calibration and separate disposable-game P08 proof",
+    "Unknown household balance cannot be safely acted on without observation"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-HOUSEHOLD-FUNDS-EXACT-20261110.v1.json",
+    "contracts/host-funds.v1.json",
+    "betterinstincts/funds_inject.py",
+    "scripts/funds_inject.py",
+    "tests/test_funds_inject.py",
+    "docs/LEDGER.md",
+    "contracts/native-gameplay-decisions/BI-HOUSEHOLD-FUNDS-EXACT-20261110.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decided_at": "2026-11-10",
+  "decided_by": "ChatGPT connected GitHub /fifth-gear engineering"
+}

@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-"""Deterministic Live-Mode household funds inject via Sims cheat console.
+"""Opt-in exact household funds through the existing Sims 4 host input lease.
 
-Order (durable — do not skip):
-  F1 Live Mode → Ctrl+Shift+C → testingcheats enabled true → Money N → Esc
-
-Default amount is the federal subsidy boost (1_000_000). Evaluate-only unless
---execute. Disposable lab only; never edits saves.
+Command stack: Ctrl+Shift+C -> testingcheats true -> money N -> HUD check.
+No portrait click, fixed screen click, mode switch, extra motherlodes, or
+automatic retries. The remote/CLI executor reports dispatch, NEVER a proven
+balance change. Local P08 disposable game verification remains required.
 
 Examples:
-  python -m scripts.funds_inject plan --funds 38
-  python -m scripts.funds_inject subsidy --funds 38
-  python -m scripts.funds_inject subsidy --funds 38 --choice accept_subsidy --execute --process-id PID
-  python -m scripts.funds_inject inject --amount 1000000 --execute --process-id PID
+  python -m scripts.funds_inject plan --amount 1000000 --funds 38 --game-mode live
+  python -m scripts.funds_inject inject --amount 1000000 --funds 38 --game-mode live
+  python -m scripts.funds_inject inject --amount 1000000 --funds 38 --game-mode live --execute --process-id PID --session-id ACTIVE_SESSION
+  python -m scripts.funds_inject verify --amount 1000000 --funds-before 38 --funds-after 1000000 --evidence-ref observed-hud-id
 """
 from __future__ import annotations
 
@@ -31,6 +30,7 @@ from betterinstincts.funds_inject import (
     plan_inject,
     steps_to_commands,
     subsidy_prompt,
+    verify_funds_outcome,
 )
 
 OUTPUT = ROOT / "dist" / "game-host"
@@ -40,8 +40,8 @@ class GateError(ValueError):
     pass
 
 
-def _focus(process_id: int | None, *, click_client: bool = False) -> dict:
-    """Soft-focus Sims without stealing Build tools (no center click by default)."""
+def _focus(process_id: int | None) -> dict:
+    """Soft-focus Sims; never click the world or a fixed console pixel."""
     import ctypes
 
     from scripts.game_host import focus
@@ -63,19 +63,9 @@ def _focus(process_id: int | None, *, click_client: bool = False) -> dict:
     user32.SetActiveWindow(hwnd)
     user32.AttachThreadInput(tid_fg, tid_t, False)
     time.sleep(0.35)
-    # Optional client click — OFF by default so Build wall/room tools stay intact.
-    if click_client:
-        from ctypes import wintypes
-
-        rect = wintypes.RECT()
-        user32.GetClientRect(hwnd, ctypes.byref(rect))
-        pt = wintypes.POINT(rect.right // 2, rect.bottom // 2)
-        user32.ClientToScreen(hwnd, ctypes.byref(pt))
-        _click(int(pt.x), int(pt.y))
-        time.sleep(0.2)
     fg_ok = user32.GetForegroundWindow() == hwnd
     report["foreground_ok"] = fg_ok
-    report["soft_focus"] = not click_client
+    report["soft_focus"] = True
     if not fg_ok:
         raise GateError("SIMS_FOREGROUND_REQUIRED_FOR_CHEAT_CONSOLE")
     return report
@@ -100,9 +90,26 @@ def _type_text(text: str) -> None:
 
 
 def _click(x: int, y: int) -> None:
+    """Legacy shared-input adapter API; never called by funding workflow."""
     from scripts.win32_input import send_click
 
     send_click(x, y, between_sec=0.04)
+
+
+def _open_console_chord() -> None:
+    """A balanced input chord: release all modifiers even if C fails."""
+    ctrl_down = shift_down = False
+    try:
+        _send_vk(0x11)  # CTRL
+        ctrl_down = True
+        _send_vk(0x10)  # SHIFT
+        shift_down = True
+        _tap(0x43)  # C
+    finally:
+        if shift_down:
+            _send_vk(0x10, up=True)
+        if ctrl_down:
+            _send_vk(0x11, up=True)
 
 
 def _execute_plan(
@@ -113,66 +120,79 @@ def _execute_plan(
     session_id: str | None = None,
     idle_ms: int = 15000,
 ) -> dict:
-    """Mode-agnostic inject: no F1, no Esc spam — tandem with Build/Live/Buy."""
+    """One bounded exact-money dispatch under explicit human-first admission.
+
+    The permitted input burst must not masquerade as a verified money change.
+    GetLastInputInfo sees our own injected keystrokes, so a fresh 15-second
+    idle lease between each *synthetic* character would deadlock. The caller
+    holds one exclusive desktop/game lease, probes before borrowing focus,
+    and checks exact foreground PID and ACTIVE session between commands.
+    """
     if sys.platform != "win32":
         raise GateError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
     commands = steps_to_commands(plan)
-    if commands[0] != "testingcheats enabled true":
-        raise GateError("TESTINGCHEATS_ENABLED_TRUE_REQUIRED")
-    # Never force Live Mode — operator may be mid-build with new funds.
-    if any(s.get("step") == "ENSURE_LIVE_MODE" and s.get("required") for s in (plan.get("steps") or [])):
-        raise GateError("ENSURE_LIVE_MODE_FORBIDDEN_IN_MODE_AGNOSTIC_STACK")
+    if plan.get("game_mode") not in {"live", "build", "buy"}:
+        raise GateError("EXPLICIT_GAME_MODE_REQUIRED")
+    if any(s.get("step") == "ENSURE_LIVE_MODE" for s in (plan.get("steps") or [])):
+        raise GateError("ENSURE_LIVE_MODE_FORBIDDEN")
+    if close_console:
+        # Esc's menu/cancellation semantics are under separate local forensics.
+        # Do not toggle or spam an unverified key after money dispatch.
+        raise GateError("CLOSE_CONSOLE_REQUIRES_SEPARATE_LOCAL_CERTIFICATION")
     from betterinstincts.control_handoff import HandoffError
     from betterinstincts.screen_admit import admitted_screen_lease, require_execute_session
+    from betterinstincts.host_listener import status as listener_status
+    from betterinstincts.player_presence import probe_windows
+
     try:
         require_execute_session(session_id, process_id)
     except HandoffError as exc:
         raise GateError(str(exc)) from exc
-    with admitted_screen_lease(
-        int(process_id),
-        str(session_id),
-        idle_ms=idle_ms,
-        focus_fn=lambda: _focus(process_id),
-    ) as ensure_ready:
-        try:
+
+    def verify_game_focus() -> None:
+        observed = probe_windows(int(process_id))
+        if (
+            not observed.probe_ok
+            or not observed.foreground_is_sims
+            or observed.foreground_process_id != int(process_id)
+            or listener_status(str(session_id)).get("state") != "ACTIVE"
+        ):
+            raise GateError("GAME_FOREGROUND_OR_SESSION_LOST")
+
+    try:
+        with admitted_screen_lease(
+            int(process_id),
+            str(session_id),
+            idle_ms=idle_ms,
+            focus_fn=lambda: _focus(process_id),
+        ) as ensure_ready:
             handoff = ensure_ready()
-        except HandoffError as exc:
-            raise GateError(str(exc)) from exc
-        focus_report = {"state": "FOCUS_VIA_SCREEN_ADMIT"}
-        time.sleep(0.2)
-        # Durable console open in whatever mode the operator is in: Ctrl+Shift+C
-        _send_vk(0x11)  # CTRL
-        _send_vk(0x10)  # SHIFT
-        _tap(0x43)      # C
-        _send_vk(0x10, up=True)
-        _send_vk(0x11, up=True)
-        time.sleep(0.55)
-        _click(250, 16)
-        time.sleep(0.2)
-        dispatched = []
-        run_cmds = list(commands)
-        if run_cmds and run_cmds[0] == "testingcheats enabled true":
-            run_cmds.insert(1, "testingcheats true")
-        for cmd in run_cmds:
-            _type_text(cmd)
-            _tap(0x0D)
-            time.sleep(0.35 if cmd == "motherlode" else 0.45)
-            dispatched.append(cmd)
-        if close_console:
-            _tap(0x1B)
+            verify_game_focus()
+            _open_console_chord()
+            time.sleep(0.55)
+            dispatched = []
+            for cmd in commands:
+                verify_game_focus()
+                _type_text(cmd)
+                _tap(0x0D)  # Enter
+                time.sleep(0.40)
+                dispatched.append(cmd)
+    except HandoffError as exc:
+        raise GateError("HOST_CONTROL_NOT_ADMITTED:" + str(exc)) from exc
     return {
-        "state": "FUNDS_INJECT_DISPATCHED",
+        "state": "FUNDS_INJECT_DISPATCHED_NOT_VERIFIED",
         "commands": dispatched,
         "open_console": "Ctrl+Shift+C",
         "mode_agnostic": True,
         "forced_live_mode": False,
-        "game_mode": plan.get("game_mode", "unknown"),
-        "focus": focus_report,
+        "game_mode": plan.get("game_mode"),
         "handoff": handoff,
         "session_id": session_id,
-        "amount": plan.get("amount"),
-        "proof_ceiling": plan.get("proof_ceiling"),
-        "next": "PrintWindow-confirm household funds; LOCAL_OBSERVED only",
+        "target_funds": plan.get("target_funds"),
+        "funds_before_reported": plan.get("funds_observed"),
+        "proof_ceiling": "INPUT_DISPATCH_ONLY_NOT_ACCEPTANCE_OR_BALANCE_PROOF",
+        "next_gate": "OBSERVE_HOUSEHOLD_FUNDS_UI_THEN_VERIFY_WITH_EVIDENCE",
+        "auto_retry": False,
     }
 
 
@@ -276,8 +296,23 @@ def main(argv: list[str] | None = None) -> int:
     inj.add_argument("--idle-ms", type=int, default=15000)
     inj.add_argument("--receipt", type=Path, default=None)
 
+    verify = sub.add_parser("verify", help="Classify externally observed HUD funds; no game input")
+    verify.add_argument("--amount", type=float, required=True)
+    verify.add_argument("--funds-before", type=float, required=True)
+    verify.add_argument("--funds-after", type=float, required=True)
+    verify.add_argument("--evidence-ref", default=None)
+
     args = p.parse_args(argv)
     try:
+        if getattr(args, "execute", False):
+            # Preserve the existing no-session denial before any other action.
+            from betterinstincts.screen_admit import require_execute_session
+            from betterinstincts.control_handoff import HandoffError
+
+            try:
+                require_execute_session(args.session_id, args.process_id)
+            except HandoffError as exc:
+                raise GateError(str(exc)) from exc
         if args.command == "prompt":
             result = subsidy_prompt()
         elif args.command == "plan":
@@ -285,6 +320,11 @@ def main(argv: list[str] | None = None) -> int:
                 amount=args.amount,
                 funds_observed=args.funds,
                 game_mode=args.game_mode,
+            )
+        elif args.command == "verify":
+            prior_plan = plan_inject(amount=args.amount, funds_observed=args.funds_before)
+            result = verify_funds_outcome(
+                prior_plan, funds_after=args.funds_after, evidence_ref=args.evidence_ref,
             )
         elif args.command == "subsidy":
             choice = args.choice
@@ -297,7 +337,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             if (
                 args.execute
-                and result.get("next_gate") == "EXECUTE_FUNDS_INJECT"
+                and result.get("next_gate") == "EXECUTE_FUNDS_INJECT_WITH_ADMISSION"
                 and isinstance(result.get("inject"), dict)
             ):
                 live = _execute_plan(
