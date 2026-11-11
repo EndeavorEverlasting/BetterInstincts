@@ -217,3 +217,19 @@ admission and a new borrow; previously focused does not mean still focused.
 `scripts/needs_force.py` now composes this same owner instead of carrying
 a weaker duplicate one-sample focus preflight. Recovered mouse/keyboard input
 while waiting prevents a new focus borrow rather than shutting down devices.
+
+## P00/P01 revision 5 — testable cross-adapter effect coverage
+
+`contracts/human-first-harness.v1.json` enumerates admitted, mixed,
+passive, raw caller-gated and legacy/unadopted input paths; the static
+discovery scanner fails when an effectful script is newly introduced
+without an inventory entry. It is a **completeness/review guard**, not
+proof that arbitrary input code is safe. No typing, focus, game/save
+mutation or Windows configuration is allowed in a passive callback.
+
+Read `docs/HUMAN_FIRST_HARNESS.md` for the codebase map, artifact
+registry, validation commands, scoped skill, canonical profile paths,
+and honest CI/merge/installed/live proof dimensions. The existing
+`player_presence`, `control_handoff`, `screen_admit`,
+`workflow_interop`, `peripheral-authority` and Cursor hook remain
+single owners of their established responsibilities.

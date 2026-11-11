@@ -1,0 +1,196 @@
+{
+  "schema": "betterinstincts.human-first-harness/v1",
+  "canonical_governance": "AGENTS.md",
+  "doctrine": "docs/DOCTRINE.md",
+  "ontology": "contracts/ontology.v1.json",
+  "glossary": "contracts/glossary.v1.json",
+  "effect_authority": "contracts/effect-authority.v1.json",
+  "presence_owner": "betterinstincts/control_handoff.py",
+  "admission_owner": "betterinstincts/screen_admit.py",
+  "background_owner": "betterinstincts/workflow_interop.py",
+  "operator_desktop_guard": ".cursor/hooks/operator_boundary.py",
+  "host_settings_guard": "scripts/check_peripheral_boundary.py",
+  "path_contract": "contracts/workstation-paths.v1.json",
+  "path_resolver": "bootstrap.py",
+  "harness_validator": "scripts/check_human_sovereignty.py",
+  "scoped_skill": ".cursor/skills/human-first-interoperability/SKILL.md",
+  "operator_report": "docs/HUMAN_FIRST_HARNESS.md",
+  "ci_workflow": ".github/workflows/ci.yml",
+  "proof_dimensions": [
+    "REPO_COMMITTED",
+    "CI_TESTS_PASSED",
+    "DEFAULT_BRANCH_MERGED",
+    "CANONICAL_DEV_CHECKOUT_CURRENT",
+    "LOCAL_USE_APP_CURRENT",
+    "LOCAL_CURSOR_HOOK_ACTIVE",
+    "WINDOWS_HUMAN_INTERRUPT_OBSERVED",
+    "GAMEPLAY_CERTIFIED"
+  ],
+  "operator_reclaim": "PHYSICAL_INPUT_ANY_APPLICATION_OR_EXPLICIT_BUSY_PREEMPTS_AT_NEXT_COOPERATIVE_CHECKPOINT",
+  "screen_resume": "ACTIVE_SESSION_AND_TRUSTED_15000MS_IDLE_DOUBLE_SAMPLE_BEFORE_FOCUS_AND_AFTER_FOCUS_WHEN_BORROWED_EXACT_GAME_FOREGROUND_AND_FRESH_PER_EFFECT_SCENE_SAVE_TARGET_QUEUE",
+  "background": "REVIEWED_READ_ONLY_BOUNDED_ACTIVE_SESSION_NO_INPUT_OR_FOCUS_OR_SAVE_OR_SETTINGS_OR_UNCONSENTED_CAPTURE",
+  "deny": [
+    "OS_CONFIGURATION",
+    "UNCLASSIFIED_EFFECT"
+  ],
+  "sources": [
+    {
+      "path": "betterinstincts/effect_authority.py",
+      "classification": "POLICY",
+      "status": "STATIC_POLICY_ONLY",
+      "marker": "assess_effect"
+    },
+    {
+      "path": "betterinstincts/control_handoff.py",
+      "classification": "POLICY",
+      "status": "STATIC_POLICY_ONLY",
+      "marker": "def confirm("
+    },
+    {
+      "path": "betterinstincts/screen_admit.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "ADOPTED_GATED",
+      "marker": "preflight = confirm("
+    },
+    {
+      "path": "betterinstincts/workflow_interop.py",
+      "classification": "PASSIVE_OBSERVATION",
+      "status": "ADOPTED_READ_ONLY_WITH_CALLBACK_TRUST",
+      "marker": "enqueue_observation"
+    },
+    {
+      "path": "betterinstincts/playwright_interop.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "ADOPTED_GATED",
+      "marker": "CooperativeScreenQueue"
+    },
+    {
+      "path": "scripts/game_capture.py",
+      "classification": "PASSIVE_OBSERVATION",
+      "status": "ADOPTED_PASSIVE_CAPTURE",
+      "marker": "PrintWindow"
+    },
+    {
+      "path": "scripts/game_host.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "MIXED_PATHS_REVIEW_REQUIRED",
+      "marker": "admitted_screen_lease"
+    },
+    {
+      "path": "scripts/camera_traverse.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "ADOPTED_GATED",
+      "marker": "admitted_screen_lease"
+    },
+    {
+      "path": "scripts/diy_skill_force.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "MIXED_PATHS_REVIEW_REQUIRED",
+      "marker": "_with_sims_input_borrow"
+    },
+    {
+      "path": "scripts/funds_inject.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "MIXED_PATHS_REVIEW_REQUIRED",
+      "marker": "admitted_screen_lease"
+    },
+    {
+      "path": "scripts/viewport_recover.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "ADOPTED_GATED",
+      "marker": "admitted_screen_lease"
+    },
+    {
+      "path": "scripts/needs_force.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "ADOPTED_GATED",
+      "marker": "admitted_screen_lease"
+    },
+    {
+      "path": "scripts/menu_blockers.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "ADOPTED_GATED",
+      "marker": "admitted_screen_lease"
+    },
+    {
+      "path": "scripts/sim_camera.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "ADOPTED_GATED",
+      "marker": "admitted_screen_lease"
+    },
+    {
+      "path": "scripts/school_attend_click.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
+      "marker": "cas_quiz_okay"
+    },
+    {
+      "path": "scripts/host_menu.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
+      "marker": "_send_click"
+    },
+    {
+      "path": "scripts/cas_finish_disposable.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
+      "marker": "SendInput"
+    },
+    {
+      "path": "scripts/cas_place_live.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
+      "marker": "SendInput"
+    },
+    {
+      "path": "scripts/cas_quiz_okay.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
+      "marker": "SendInput"
+    },
+    {
+      "path": "scripts/win32_input.py",
+      "classification": "SCREEN_EFFECT",
+      "status": "LOW_LEVEL_CALLER_GATE_ONLY",
+      "marker": "SendInput"
+    },
+    {
+      "path": ".cursor/hooks/operator_boundary.py",
+      "classification": "OS_CONFIGURATION",
+      "status": "REPOSITORY_HOOK_UNVERIFIED_LOCAL_ACTIVATION",
+      "marker": "def evaluate("
+    },
+    {
+      "path": "scripts/check_peripheral_boundary.py",
+      "classification": "OS_CONFIGURATION",
+      "status": "STATIC_DENY_ONLY",
+      "marker": "def inspect_repository("
+    }
+  ],
+  "source_scan": {
+    "roots": [
+      "scripts"
+    ],
+    "file_suffix": ".py",
+    "needles": [
+      "from scripts.win32_input import",
+      "user32.SendInput",
+      "user32.keybd_event",
+      "user32.SetCursorPos",
+      "ctypes.windll.user32",
+      "import pyautogui",
+      "admitted_screen_lease",
+      "_with_sims_input_borrow",
+      "SetForegroundWindow("
+    ],
+    "rule": "Every source containing a known effectful Win32/UI signature is registered; unadopted raw input does not become authorized because it is inventoried."
+  },
+  "validation": [
+    "python -m scripts.check_human_sovereignty",
+    "python -m unittest tests.test_human_sovereignty_governance tests.test_human_first_harness -v",
+    "python -m scripts.check_ontology",
+    "python -m scripts.check_peripheral_boundary",
+    "python scripts/validate_doctrine.py",
+    "python -m unittest discover -s tests -v"
+  ]
+}
