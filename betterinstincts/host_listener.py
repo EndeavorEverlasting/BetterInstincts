@@ -226,6 +226,66 @@ def observe_hover(
         lock_path.unlink(missing_ok=True)
 
 
+def observe_object_action(
+    session_id: str, supplied_event: Mapping, *, explicit_opt_in: bool = False,
+) -> dict:
+    """Accept sanitized game-object events under an active listener session.
+
+    PLAYER/HOST are event provenance, not a license to intercept the desktop.
+    Sensors must explicitly invoke this port for each observed menu/selection/
+    outcome. The listener does not start a global hook or issue game input.
+    """
+    from betterinstincts.object_action_catalog import (
+        ObjectActionCatalogError, record_event as record_object_event,
+    )
+
+    if explicit_opt_in is not True:
+        raise HostListenerError("EXPLICIT_OBJECT_OBSERVATION_OPT_IN_REQUIRED")
+    path = _session_dir(session_id)
+    metadata = path / "session.json"
+    if metadata.is_symlink() or not metadata.is_file():
+        raise HostListenerError("OBJECT_SESSION_NOT_ACTIVE")
+    session = json.loads(metadata.read_text(encoding="utf-8"))
+    if session.get("state") != "ACTIVE":
+        raise HostListenerError("OBJECT_SESSION_NOT_ACTIVE")
+    try:
+        receipt = record_object_event(
+            OUTPUT / "object-action-catalog.v1.json",
+            supplied_event, session_id=session_id,
+        )
+    except ObjectActionCatalogError as exc:
+        raise HostListenerError("OBJECT_EVENT_INVALID:" + str(exc)) from exc
+    return {"schema": "betterinstincts.object-action-observation-receipt/v1",
+            "session_id": session_id, "catalog": receipt,
+            "execute_clicks": False, "control_permit": None}
+
+
+def suggest_object_action(session_id: str, query: Mapping) -> dict:
+    """Read-only queue candidate for an independently fresh object/menu snapshot."""
+    from betterinstincts.object_action_catalog import (
+        ObjectActionCatalogError, load_catalog as load_object_catalog, recommend,
+    )
+    path = _session_dir(session_id)
+    metadata = path / "session.json"
+    if metadata.is_symlink() or not metadata.is_file():
+        raise HostListenerError("OBJECT_SESSION_NOT_ACTIVE")
+    session = json.loads(metadata.read_text(encoding="utf-8"))
+    if session.get("state") != "ACTIVE":
+        raise HostListenerError("OBJECT_SESSION_NOT_ACTIVE")
+    required = {"game_version", "object_ref", "class_ref", "capture_ref",
+                "now_ms", "available_actions", "desired_domains",
+                "player_active", "player_queue_present"}
+    if not isinstance(query, dict) or set(query) != required:
+        raise HostListenerError("OBJECT_QUERY_FIELDS_INVALID")
+    try:
+        return recommend(
+            load_object_catalog(OUTPUT / "object-action-catalog.v1.json"),
+            session_id=session_id, **query,
+        )
+    except (ObjectActionCatalogError, TypeError) as exc:
+        raise HostListenerError("OBJECT_QUERY_INVALID:" + str(exc)) from exc
+
+
 def observe_behavior_review(
     session_id: str, reviews: list[Mapping], *,
     game_version: str, platform: str,
