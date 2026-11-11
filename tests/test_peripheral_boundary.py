@@ -130,7 +130,18 @@ class PeripheralBoundaryTests(unittest.TestCase):
         self.assertIn("MATCHED_HID_NODE", identity["compare_only_after"])
         self.assertEqual(authority["effect_classes"]["OS_BLUETOOTH_PAIRING"]["decision"],
                          "DENY_AND_REFER_SYSADMINSUITE")
-        self.assertIn("LOCAL_HOOK_OBSERVED", authority["cross_harness"]["runtime"].upper().replace("PROVIDER_HAS_LOADED_AND_REPORTED_DENY", "LOCAL_HOOK_OBSERVED"))
+        self.assertEqual(authority["cross_harness"]["runtime"],
+                         "HOOK_EFFECTIVE_ONLY_WHEN_PROVIDER_HAS_LOADED_AND_REPORTED_DENY")
+
+    def test_revision_nine_binds_perimeter_identity_and_independent_proofs(self):
+        graph = json.loads((ROOT / "contracts/ontology.v1.json").read_text(encoding="utf-8"))
+        self.assertGreaterEqual(graph["revision"], 9)
+        for concept in ("PERIPHERAL_IDENTITY_EVIDENCE", "AGENT_EFFECT_PERIMETER"):
+            self.assertIn(concept, graph["concepts"])
+        ids = {row["id"] for row in graph["invariants"]}
+        self.assertTrue({"BI-ONT-046", "BI-ONT-047", "BI-ONT-048"} <= ids)
+        self.assertIn({"from": "CONTROL_PERMIT", "predicate": "CANNOT_BYPASS",
+                       "to": "AGENT_EFFECT_PERIMETER"}, graph["relations"])
 
 if __name__ == "__main__":
     unittest.main()
