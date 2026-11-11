@@ -1,0 +1,77 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PERIPHERAL-SOVEREIGNTY-P97-P00-P01-20261111",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "8faaa7055980fe0896a67b30eba4fb10c468dc81",
+  "proposed_capability": "Extend the established human-owned desktop perimeter across every executable project surface and agent harness; distinguish early unnamed Bluetooth mouse appearance from authenticated endpoint identity; prevent game or capture failure from triggering any Windows repair or input interception.",
+  "affected_concepts": [
+    "OS_PERIPHERAL_AUTHORITY",
+    "CONTROL_PERMIT",
+    "PLAYER_PRESENCE",
+    "HOST_ACTION",
+    "INCIDENT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "contracts/peripheral-authority.v1.json",
+    "scripts/check_peripheral_boundary.py",
+    "docs/PERIPHERAL_INCIDENT.md",
+    "docs/DOCTRINE.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-025"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "REVIEWED_SOURCE_AND_CI_ONLY_NOT_WINDOWS_CAUSALITY_LOCAL_CURSOR_ACTIVATION_OR_SIMS_LIVE_PROOF",
+  "player_save_control_impact": "No game, user save, Windows service, Bluetooth radio, HID pairing, driver, keyboard, Print Screen or host settings will be changed; all operator-owned channels remain sovereign.",
+  "expected_outcome": "Machine contract and ontology classify distinct recovery and endpoint evidence states; wider source scanner blocks service, PnP, pairing and input mutation across future launchers/workflows/agent adapters; adversarial fixtures prevent false regression passes.",
+  "negative_tests": [
+    "New root-level executable OS peripheral repair fails even when outside scripts/betterinstincts",
+    "New Cursor hook, workflow YAML, and launcher attempting peripheral mutation fail repository scan",
+    "Windows PairAsync/UnpairAsync and mouse-specific ambiguity cases are denied as autonomous effects",
+    "Read-only discovery and game capture remain permissible",
+    "Existing Cursor deny-by-default command hooks and human-screen admission remain unchanged"
+  ],
+  "rollback_path": "Revert this isolated feature branch or its merge commit; no live workstation modifications are performed.",
+  "unresolved_unknowns": [
+    "Exact successful Mouse-to-ProtoArc endpoint transition is not captured; same endpoint rename vs replacement remains unresolved.",
+    "Paired and physically functional device does not prove which earlier service or driver failure caused the incident.",
+    "No evidence attributes a Windows peripheral mutation to a particular AI agent.",
+    "New SysAdminSuite guard event-delivery and M343 troubleshooting require separate host observations."
+  ],
+  "files_expected": [
+    "AGENTS.md",
+    "contracts/ontology.v1.json",
+    "contracts/peripheral-authority.v1.json",
+    "scripts/check_peripheral_boundary.py",
+    "tests/test_peripheral_boundary.py",
+    "docs/PERIPHERAL_INCIDENT.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "docs/PRIOR_ART.md",
+    "docs/PROMPT_INVOCATIONS.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREMUTATION_CONSULTATION_COMMITTED_FIRST",
+  "source_main_sha": "b3a6a74a8a3f7392f2feb127e4568d8357aa6dfd",
+  "invocations": [
+    "P97",
+    "P00",
+    "P01",
+    "P95",
+    "P82",
+    "P08",
+    "P07",
+    "P124"
+  ]
+}
