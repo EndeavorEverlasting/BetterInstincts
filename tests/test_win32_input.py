@@ -129,6 +129,71 @@ class Win32InputOwnershipTests(unittest.TestCase):
                 win32_input.send_key_chord(["F3"])
         self.assertEqual(str(ctx.exception), "LOCAL_WINDOWS_GAME_HOST_REQUIRED")
 
+    def test_interrupted_keybd_chord_releases_ctrl_and_u_in_reverse(self):
+        import ctypes
+        from types import SimpleNamespace
+
+        calls = []
+        pauses = 0
+
+        def record_key(vk, _scan, flag, _extra):
+            calls.append((vk, flag))
+
+        def interrupt_second_delay(_seconds):
+            nonlocal pauses
+            pauses += 1
+            if pauses == 2:
+                raise RuntimeError("SIMULATED_HUMAN_INTERRUPT")
+
+        fake = SimpleNamespace(user32=SimpleNamespace(keybd_event=record_key))
+        with (
+            patch.object(win32_input.sys, "platform", "win32"),
+            patch.object(ctypes, "windll", fake, create=True),
+            patch("scripts.win32_input.time.sleep", side_effect=interrupt_second_delay),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "SIMULATED_HUMAN_INTERRUPT"):
+                win32_input.send_key_chord(["CTRL", "U"], via="keybd_event")
+        self.assertEqual(
+            calls,
+            [(0x11, 0), (ord("U"), 0), (ord("U"), 2), (0x11, 2)],
+        )
+
+    def test_interrupted_sendinput_chord_releases_escape(self):
+        calls = []
+
+        def record_vk(vk, *, up=False):
+            calls.append((vk, up))
+
+        with (
+            patch.object(win32_input.sys, "platform", "win32"),
+            patch("scripts.win32_input.send_vk", side_effect=record_vk),
+            patch("scripts.win32_input.time.sleep", side_effect=[RuntimeError("ABORTED"), None]),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "ABORTED"):
+                win32_input.send_key_chord(["ESC"], via="sendinput")
+        self.assertEqual(calls, [(0x1B, False), (0x1B, True)])
+
+    def test_key_release_failure_attempts_other_modifier_release(self):
+        import ctypes
+        from types import SimpleNamespace
+
+        calls = []
+
+        def fake_keybd(vk, _scan, flag, _extra):
+            calls.append((vk, flag))
+            if vk == ord("U") and flag == 2:
+                raise RuntimeError("KEYUP_FAILED")
+
+        fake = SimpleNamespace(user32=SimpleNamespace(keybd_event=fake_keybd))
+        with (
+            patch.object(win32_input.sys, "platform", "win32"),
+            patch.object(ctypes, "windll", fake, create=True),
+            patch("scripts.win32_input.time.sleep"),
+        ):
+            with self.assertRaisesRegex(win32_input.Win32InputError, "SYNTHETIC_KEY_RELEASE_UNCONFIRMED"):
+                win32_input.send_key_chord(["CTRL", "U"])
+        self.assertEqual(calls[-2:], [(ord("U"), 2), (0x11, 2)])
+
     def test_resolve_vk_aliases(self):
         self.assertEqual(win32_input.resolve_vk("F3"), 0x72)
         self.assertEqual(win32_input.resolve_vk("CTRL"), 0x11)

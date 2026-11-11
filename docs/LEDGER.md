@@ -1,3 +1,9 @@
+## 2026-11-10 — Escape/U selective-game-input forensic correction (host proof open)
+
+**Observed operator symptom:** physical Escape functions outside Sims and cancels some in-game operations but does not open the expected Options/pause menu; U also reported affected. **Provider audit:** main PRs #97/#98/#104/#110/#147/#160/#161/#162/#175/#177/#180; no Cursor tool/session provenance establishing an OS remap. EA documents P/0/backtick direct pause separately from Escape cancellation. The inherited `PAUSE_MENU` label was misleading and existing `send_key_chord` lacked exception-safe release of synthetic pressed keys. This branch retains the historical hotkey id but makes its semantics explicit, protects pack-gated U/Clubs, adds fail-closed contract tests, balances keyboard injection on interrupted calls and records a host-only manual differential matrix in `docs/PERIPHERAL_INCIDENT.md`.
+
+**Proof:** GitHub source commits/readback and CI only; NOT Windows host activation, an installed Cursor hook, physical Escape/U repair, confirmed mod fault or live Sims certification. **Next:** observe manual Esc-cancel vs Esc-Options vs P/0 pause vs three-dots Options in foreground Live with a known overlay state, compare U only when Clubs entitlement is present, correlate sanitized Cursor process/action timeline, and resolve only the proven cause. No host settings, protected saves or Windows services changed.
+
 ## 2026-11-10 — Moonwake Closers object-action review integrity (P83 → P03 → P141 → P124 → P04)
 
 **Parent:** Independently verify the previously merged PR #179 at current main and close replay/evidence holes before promoting object-menu utility knowledge. Initial verified mainline at audit: `a1ef40c4a7b4993fa077be12603feebc90525795` (household-navigation PR #181 already merged). PR #180 legacy-input enforcement merged concurrently; #159 spatial-perception and #149 home-queue remain separately owned.

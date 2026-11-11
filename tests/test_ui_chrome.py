@@ -56,6 +56,38 @@ class UIChromeTests(unittest.TestCase):
         self.assertIn("RIGHT_CLICK", by_id["CAMERA_ZOOM_IN"]["not"])
         self.assertEqual(by_id["CAMERA_ZOOM_IN"]["wheel_equivalent"], "SCROLL_WHEEL_ZOOM_IN")
 
+    def test_escape_menu_is_not_a_direct_game_time_pause(self) -> None:
+        live = {h["id"]: h for h in self.cfg["modes"]["LIVE"]["hotkeys"]}
+        self.assertEqual(live["PAUSE_MENU"]["chord"], ["ESC"])
+        self.assertIs(live["PAUSE_MENU"]["direct_time_pause"], False)
+        self.assertIs(live["PAUSE_MENU"]["conditional_menu"], True)
+        self.assertIs(live["PAUSE_MENU"]["menu_verified"], False)
+        self.assertEqual(live["PAUSE_GAME_TOGGLE"]["chord"], ["P"])
+        self.assertEqual(live["PAUSE_GAME_TOGGLE"]["requires_clock_precondition"], "PLAYING_CORROBORATED")
+        self.assertFalse(live["PAUSE_GAME_TOGGLE"]["auto_resume"])
+        self.assertEqual(live["PANEL_CLUBS"]["chord"], ["U"])
+        self.assertTrue(live["PANEL_CLUBS"]["requires_entitlement_attestation"])
+
+    def test_esc_pause_conflation_fails_contract_validation(self) -> None:
+        from copy import deepcopy
+        from unittest.mock import patch
+        malformed = deepcopy(self.cfg)
+        live = {h["id"]: h for h in malformed["modes"]["LIVE"]["hotkeys"]}
+        live["PAUSE_MENU"]["direct_time_pause"] = True
+        with patch("betterinstincts.ui_chrome.json.loads", return_value=malformed):
+            with self.assertRaisesRegex(UIChromeError, "ESC_CONTEXT_MUST_NOT_ASSUME_GAME_TIME_PAUSE"):
+                load_contract()
+
+    def test_u_clubs_without_pack_gate_fails_validation(self) -> None:
+        from copy import deepcopy
+        from unittest.mock import patch
+        malformed = deepcopy(self.cfg)
+        live = {h["id"]: h for h in malformed["modes"]["LIVE"]["hotkeys"]}
+        live["PANEL_CLUBS"]["requires_entitlement_attestation"] = False
+        with patch("betterinstincts.ui_chrome.json.loads", return_value=malformed):
+            with self.assertRaisesRegex(UIChromeError, "U_CLUBS_MUST_REMAIN_PACK_GATED"):
+                load_contract()
+
     def test_bottom_right_panel_hotkeys_catalogued(self) -> None:
         rows = bottom_right_panel_hotkey_rows(cfg=self.cfg)
         by_panel = {r["panel_id"]: r["chord"] for r in rows}
