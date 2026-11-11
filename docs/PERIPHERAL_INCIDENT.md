@@ -61,4 +61,3 @@ This is defense in depth, not a system-wide security boundary: project hooks mus
 6. Store a **sanitized** per-case outcome table (no raw keystroke capture, game saves, user documents, or private log payloads): timestamp, process/PID, game build, scene, overlay, human vs injected, menu-click, Esc-cancel, Esc-menu, P/0 pause, U/Clubs entitlement, automation-active, result. Do not make host setting changes to conduct this test.
 
 **No-agent host mutation rule:** no registry remap edits, `BlockInput`, global keyboard hook, Bluetooth/service restart, Print Screen setting, keyboard accessibility change, save edit, force-kill of unrelated apps, or agent-controlled key test while the player owns the desktop. The next closure gate is locally reproduced human-input behavior and, if indicated, read-only Cursor session/tool-call timeline correlated to timestamps. A green GitHub CI run cannot certify physical input.
-
