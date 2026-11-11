@@ -31,6 +31,7 @@ if str(ROOT) not in sys.path:
 
 from betterinstincts.host_menu import HostMenuError, plan_from_scene, plan_journey
 from betterinstincts.menu_blockers import assert_safe_action
+from betterinstincts.legacy_screen_boundary import deny_unadopted_live_effect
 from scripts.win32_input import send_click as _send_click
 
 OUTPUT = ROOT / "dist" / "game-host"
@@ -79,6 +80,7 @@ def run_journey(
             "--execute --run-id RUN"
         )
         return out
+    deny_unadopted_live_effect("scripts/host_menu.py")
     if sys.platform != "win32":
         raise GateError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
     _focus(process_id)

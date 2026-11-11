@@ -17,6 +17,7 @@ import sys
 import time
 
 from betterinstincts.fixed_ui_click_map import load_escape_menu_coords
+from betterinstincts.legacy_screen_boundary import deny_unadopted_live_effect
 
 # Offline-calibrated against PrintWindow bitmaps (1920x1080 borderless).
 SEASON_SUMMER = (850, 520)
@@ -60,6 +61,7 @@ STEPS = (
 
 
 def _click(hwnd: int, x: int, y: int) -> None:
+    deny_unadopted_live_effect("scripts/cas_place_live.py")
     import ctypes
     from ctypes import wintypes
 

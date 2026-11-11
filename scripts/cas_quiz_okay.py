@@ -11,6 +11,8 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+
+from betterinstincts.legacy_screen_boundary import deny_unadopted_live_effect
 import time
 
 
@@ -27,6 +29,7 @@ def click_okay(
     Other callers (scripts.school_attend_click) pass an explicit, gated point so
     there is one native click owner. The result is dispatch-only proof.
     """
+    deny_unadopted_live_effect("scripts/cas_quiz_okay.py")
     click_point = OKAY_CLICK if point is None else (int(point[0]), int(point[1]))
     if sys.platform != "win32":
         raise RuntimeError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
