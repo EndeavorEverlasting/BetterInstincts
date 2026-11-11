@@ -23,6 +23,10 @@ jobs:
         run: python -m scripts.check_peripheral_boundary
       - name: Synthetic hostile and permitted host effects
         run: python -m unittest tests.test_peripheral_boundary -v
+      - name: Human-first P00/P01 ontology and cross-adapter coverage
+        run: |
+          python -m scripts.check_human_sovereignty --json
+          python -m unittest tests.test_human_sovereignty_governance tests.test_human_first_harness -v
       - name: Cursor shell/file interception regressions
         run: python -m unittest tests.test_operator_boundary -v
       - name: Ontology schema and consultation chronology

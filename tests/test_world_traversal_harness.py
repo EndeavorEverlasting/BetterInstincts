@@ -26,7 +26,7 @@ class WorldTraversalHarnessTests(unittest.TestCase):
     def test_root_world_traversal_governance_complete_and_nonexecuting(self):
         status = check(ROOT)
         self.assertEqual(status["status"], "P00_P01_WORLD_TRAVERSAL_HARNESS_PASS")
-        self.assertEqual(status["ontology_revision"], 5)
+        self.assertGreaterEqual(status["ontology_revision"], 5)
         self.assertEqual(status["product_gate"], "BI-002")
         self.assertEqual(status["artifact_classes"], 4)
         self.assertFalse(status["local_game_activation_observed"])
@@ -151,7 +151,7 @@ class WorldTraversalHarnessTests(unittest.TestCase):
 
     def test_p00_root_budget_keeps_detailed_instruction_owner(self):
         contents = copy.deepcopy(self.inputs[6])
-        contents["AGENTS.md"] += "New unbounded duplicated instructions must not live in root."
+        contents["AGENTS.md"] += "X" * (3601 - len(contents["AGENTS.md"]))
         with self.assertRaisesRegex(WorldTraversalHarnessError,
                                     "WORLD_P01_ROOT_GOVERNANCE_BUDGET"):
             self.validate((6, contents))

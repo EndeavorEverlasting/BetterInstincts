@@ -1312,6 +1312,49 @@
         "betterinstincts/camera_traverse.py",
         "scripts/win32_input.py"
       ]
+    },
+    "EFFECT_ADMISSION_CLASS": {
+      "definition": "Distinguishes PASSIVE_OBSERVATION/BACKGROUND_REASONING (reviewed read-only), SCREEN_EFFECT/GAME_MUTATION (human-gated), and OS_CONFIGURATION/unknown (denied); unlike ACTION_EFFECT_CLASS this is not game acquisition semantics.",
+      "owners": [
+        "contracts/effect-authority.v1.json",
+        "contracts/ontology.v1.json"
+      ]
+    },
+    "PASSIVE_BACKGROUND_LANE": {
+      "definition": "Bounded trusted in-process observation/reasoning that continues without focus, desktop lock or mutation during human computer use; classification never sandboxes the callback.",
+      "owners": [
+        "contracts/workflow-interoperability.v1.json",
+        "betterinstincts/workflow_interop.py"
+      ]
+    },
+    "HUMAN_CONTROL_RECLAIM": {
+      "definition": "Any fresh physical input anywhere or explicit operator busy/play signal pauses a participating UI/game agent at its next checkpoint, retaining intent. No stale focus/idle permit or silent replay.",
+      "owners": [
+        "betterinstincts/screen_admit.py",
+        "contracts/control-handoff.v1.json"
+      ]
+    },
+    "OS_INPUT_CAPABILITY": {
+      "definition": "Operator-owned Bluetooth/driver, screenshot, Escape/U mapping, keyboard accessibility, hotkey and pointer configuration that BetterInstincts has no authority to mutate.",
+      "owners": [
+        "contracts/peripheral-authority.v1.json",
+        "docs/PERIPHERAL_INCIDENT.md"
+      ]
+    },
+    "AGENT_ADOPTION_COVERAGE": {
+      "definition": "Machine-reviewed inventory of participating UI/game/background adapters and their admission owners, not proof an independent agent is installed or compliant at runtime.",
+      "owners": [
+        "docs/VALIDATION.md",
+        "contracts/ontology.v1.json"
+      ]
+    },
+    "P00_P01_HUMAN_FIRST_GATE": {
+      "definition": "Governance and harness must preserve operator-first preemption, safe asynchronous read-only reasoning, per-effect admission, forbidden Windows configuration, coverage tests, and separate offline/installed/live proof.",
+      "owners": [
+        "AGENTS.md",
+        "docs/DOCTRINE.md",
+        "docs/ASYNC_INTEROP.md"
+      ]
     }
   }
 }

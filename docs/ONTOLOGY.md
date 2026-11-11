@@ -121,3 +121,22 @@ The machine graph `contracts/ontology.v1.json` now distinguishes `HIGHLIGHT_OBSE
 - `BI-ONT-030` preserves BI-002 needs as the active product gate and makes actual local P08 sensor/outcome work one-screen serial, not an invitation to run concurrent desktop clickers or replace the separately owned PR #159.
 
 Source: `contracts/world-traversal-learning.v1.json`; pure implementation `betterinstincts/world_traversal_learning.py`; separate host input admits remain in existing screen, save, lot and player-presence owners. Reusable codebase map/workflow/artifact inventory and CLI verifier: `contracts/world-traversal-harness.v1.json`, `docs/WORLD_TRAVERSAL_HARNESS.md`, `scripts/check_world_traversal_harness.py`. Exact game patch/capture and independent operator review still needed for real screenshots and click-outcome proofs; v5 ontology CI does not install or certify a Sims mod.
+
+## Revision 6 — P00/P01 human-owned control, typed effects, and proof ceilings
+
+Distinct concepts: `EFFECT_ADMISSION_CLASS` (host-side authority, **not**
+`ACTION_EFFECT_CLASS` for Sims purchases), `PASSIVE_BACKGROUND_LANE` (trusted
+non-interactive in-process work), `HUMAN_CONTROL_RECLAIM` (input anywhere
+invalidates stale agent permission), `OS_INPUT_CAPABILITY` (operator-owned
+Bluetooth, screenshot/Print Screen, Escape/U and accessibility controls),
+and `AGENT_ADOPTION_COVERAGE` (CI/source adoption ≠ physical host enforcement).
+
+`BI-ONT-031..035` require effect classification and deny unknowns;
+safe background processing cannot borrow the desktop; human activity blocks
+focus/game input; host input configuration is outside game authority; and
+registered adapters must preserve separate CI, merge, local-install and live
+physical takeover evidence. The machine harness owner is
+`contracts/human-first-harness.v1.json`; validator
+`scripts/check_human_sovereignty.py`. Existing vision, camera, build,
+purchases, aspirations, career, needs, queue and save contracts inherit these
+cross-cutting gates without replacing their own more specific risk checks.

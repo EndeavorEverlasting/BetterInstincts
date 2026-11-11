@@ -112,3 +112,32 @@ control independent unadopted tools or prove live-game behavior.
 **Learning doctrine:** accept only independently observed `GAME_EVENT` or reviewed operator evidence with explicit no-player-interruption attestation, different before/after refs, actual observed target result, and one replay fingerprint for the originating before capture. Train/holdout duplicates abstain; cap history at 2,048 and reject legacy counted snapshots lacking replay provenance rather than manufacturing independence. Never promote offline Brier/fixture performance to true screenshot accuracy or a game action permit. Learn contextual strategies, not household-specific names, personal save content, coordinates or exploitative click loops. Prefer bounded passive sensor work; model snapshots/real captures remain private/local and require explicit operator opt-in.
 
 **Priority and ownership:** `BI-WORLD-TRAVERSAL-P08-SENSOR` in `plans/horizon.v1.json` is *supporting infrastructure*, not a successor to/mandatory dependency of BI-002 hunger. Serial phases `WORLD_SENSOR → WORLD_OUTCOME → WORLD_INTEGRATE` in the existing `BI-HORIZON.dispatch.v1.json` share one Sims screen owner with BI-002; actual world-input permission requires a fresh separately approved disposable-game P08. Open PR #159's spatial-perception owner is independent. Canonical P01 map, workflows, artifact/privacy registry, scoped skill, workstation path and validation instructions: `contracts/world-traversal-harness.v1.json`, `docs/WORLD_TRAVERSAL_HARNESS.md`, `scripts/check_world_traversal_harness.py` and `docs/INSTALLATION_PROFILES.md`. Tracked governance is not local tool activation or gameplay proof.
+
+## P00 revision 6 — one human-first authority across every microsystem
+
+A gamer owns the desktop, the Sims household, the active portrait, current
+focus, physical keyboard/mouse, assistive/voice use, and all Windows device and
+input capabilities. No need, career, gardening, purchase, camera, UI, visual
+learning, skill, task scheduler, agent/harness or game-native proposal may
+override that ownership. Treat operator activity anywhere as a **control
+reclamation event**, not a nuisance to defeat. A current agent effect yields
+at its next cooperative checkpoint, retaining intent without blind replay.
+
+`EFFECT_ADMISSION_CLASS` is separate from in-game `ACTION_EFFECT_CLASS`:
+`PASSIVE_OBSERVATION` / `BACKGROUND_REASONING` are trusted, bounded, read-only
+and may continue during human computer use without focus or game mutation.
+`SCREEN_EFFECT` / `GAME_MUTATION` must stop for user activity and require an
+active opted-in session, 15s+ global inactivity, two fresh probes, exclusive
+ownership, fresh scene/save/target and player-queue admission; foreground
+borrow requires checks **before and after** focus, and the game must actually
+be foreground before sending input. `OS_CONFIGURATION` and unclassified effects
+always deny; this includes Bluetooth, drivers, Print Screen, Escape/U keyboard
+remaps, accessibility settings, registry mutation and global interception.
+
+P01 implements an executable, reviewed adapter registry and CI checks against
+canonical owners. A registered adapter or passing fixture is NOT Windows host
+activation, a physical interruption test, a Cursor hook observed locally,
+a Sims runtime certificate, or authority over unrelated agents. The product's
+BI-002 hunger Live Mode gate remains independently open. Use existing
+`control_handoff`, `screen_admit`, `workflow_interop` and
+`peripheral-authority` rather than a competing daemon or second control arbiter.

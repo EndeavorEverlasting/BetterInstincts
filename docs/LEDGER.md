@@ -1,3 +1,25 @@
+## 2026-11-10 — P00/P01 holistic human-first doctrine, ontology and harness
+
+**Parent objective:** consolidate the user control and background independence
+work from merged PR #175 and #176 into one P00 authority model and a P01
+machine-checked harness. P00 recasts effect admission and operator-owned OS
+input capabilities in ontology revision 5, glossary, compact AGENTS and
+doctrine without replacing original rules. P01 adds an explicit source/adoption
+inventory, source-discovery test, CI validator, scoped skill, codebase map,
+path registry link and proof-dimensional reporting.
+
+**Critical limits:** raw Win32 helpers and legacy CAS/host-menu entrypoints
+remain explicitly inventoried as unadopted or mixed until independently gated.
+A static registry does not intercept independent agents, forbid an OS-admin
+shell outside this repository, or certify a physical user takeover. No
+Windows or Sims game mutation occurred in this provider-scoped work. Existing
+CI/P08 and BI-002 hunger live game proof remain separate.
+
+**Source provenance:** Moonwake current P00/P01 canonical base registry at
+`src/tokencorridor/interface/promptkit/registry/base/prompts.json`;
+pre-mutation consultation:
+`contracts/consultations/BI-P00-P01-HUMAN-SOVEREIGNTY-GOVERNANCE-HARNESS-20261110.v1.json`.
+
 ## 2026-11-10 — P00/P01 governance and operational harness for world-object highlight learning
 
 **Parent objective:** After PR #168/#169 implementation/Closers and PR #174 canonical supporting P08 Horizon routing, invoke Moonwake P00 then P01 to make world-target highlight-loss and replay-safe click learning **first-class, enforceable** BetterInstincts ontology, doctrine and harness behavior. No new clicker or fake local-agent launch. Current provider main at consultation: `db11b22c59a61777adf4dc2e553da3feac1a52c4`; overlapping open PR #159 spatial-perception and #149 needs/homework were left untouched. Moonwake P00 = Governance Doctrine Installer; P01 = Harness Infrastructure Builder, confirmed from current `AGENTS.md` / deterministic resolver / exported prompt catalog and owning registry blob `848728632c1243ebba023fa0012292a2ad33cada`. Private instruction index and engineering/context-system routes read on 2026-11-10; no private custom-instruction text was copied to this public repository.

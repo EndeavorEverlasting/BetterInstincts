@@ -61,3 +61,23 @@ python -m scripts.progression_eval --repo-only
 ```
 
 These establish deterministic **offline** train/predict/prequential, active-player and unknown-scene abstention, patch isolation, explicit consent, bounded input/paths, and advisory-only listener integration. `python -m scripts.judgment_learning --help` documents explicit local training/recommendation commands; raw reviewed examples and aggregate models stay in ignored repo `dist/judgment-learning`, never committed. CI green and high historical precision do **not** demonstrate real gameplay, causal improvement, valid real-world sensors, package compatibility or BI-002 certification. Real game proof and control collision checks belong to the local P08 + BI-002 path.
+
+## P00/P01 human sovereignty harness — separate gates
+
+`python -m scripts.check_human_sovereignty --json` validates revision-5
+ontology and glossary coverage, canonical governance owners, typed authority
+taxonomy, machine source/adoption inventory, safe background classification,
+known raw-input exceptions, and CI wiring. Unit fixtures:
+`tests.test_human_sovereignty_governance` and
+`tests.test_human_first_harness`. These checks must fail on an
+unregistered raw Win32/desktop input script, false-gated screen effect,
+or invented background input permission. Run existing peripheral and
+operator-hook tests as independent checks.
+
+Pass means only **registered static source and offline fixtures**:
+`REPO_COMMITTED`, `CI_TESTS_PASSED`, `DEFAULT_BRANCH_MERGED`,
+`CANONICAL_DEV_CHECKOUT_CURRENT`, `LOCAL_USE_APP_CURRENT`,
+`LOCAL_CURSOR_HOOK_ACTIVE`, `WINDOWS_HUMAN_INTERRUPT_OBSERVED`,
+and `GAMEPLAY_CERTIFIED` are separate evidence dimensions.
+Unadopted legacy CAS and raw adapters are inventory debts, not safe
+runtime execution permits. See `docs/HUMAN_FIRST_HARNESS.md`.

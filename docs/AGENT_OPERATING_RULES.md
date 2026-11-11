@@ -64,3 +64,57 @@ Skills: `docs/HOUSEHOLD_JUDGMENT.md` (fixed roster; serial/offline).
 ## P00/P01 user interaction sovereignty
 
 Ontology revision 4 (`contracts/ontology.v1.json#interaction_policy`) embraces any user-chosen game, mod, voice/assistive or other-app interaction. Adopted autonomous effects yield and resume only after two fresh idle probes plus target validation. Prefer verified native semantic APIs. Desktop fallback requires opt-in. New adapters use CooperativeScreenQueue.enqueue_effect; partial callbacks retain intent for reconcile with observed outcome and a rebuilt remainder. Never alter peripheral preferences or UAC for game automation. External raw callers are not intercepted.
+
+## P00/P01 human-control reclamation and effect admission (revision 6)
+
+Fresh physical user activity in **any app or monitor**, plus explicit voice/assistive
+operator-busy, outranks screen/game input at the next cooperative checkpoint.
+Classify effects via `contracts/effect-authority.v1.json`. Read-only bounded
+observations may continue only when reviewed for no focus, screen, game-state,
+save, host-setting or unconsented capture mutation. Any unknown effect denies;
+host OS input/peripheral configuration is not within game authority.
+
+Before borrowing Sims foreground, two fresh trusted desktop-wide idle checks
+must pass. After any borrowed focus, confirm twice again and verify actual Sims
+foreground. Game effects still need scene/save/queue/target and exclusive desktop
+ownership. A partially executed effect requires an observed outcome and rebuilt
+remainder: do not blind replay, cancel a player's queue or steal their keyboard.
+After a human returns, resume only upon new per-effect evidence. Local Windows
+installation and Cursor hooks require independent activation and verification.
+
+Use `scripts/check_human_sovereignty.py` for machine coverage (not an OS
+sandbox), plus `docs/ASYNC_INTEROP.md` and `docs/VALIDATION.md` for proof gates.
+
+## P00 full governance installation — mandatory for all repository writing agents
+
+**Operating principles:** evidence before action; repository/default-branch floor
+before edits; bounded work with declared scope; one independent writer per
+branch/worktree and generated surface; reuse canonical owners before replacing;
+no completion claim without actual proof. No agent frustration, failed mouse
+capture or competing UI activity overrides human autonomy, privacy, or safety.
+
+**Instruction precedence:** platform/security/legal and explicit repo-owner
+decisions > this canonical `AGENTS.md` and mandatory detailed governance >
+the *current, exact* task-specific Moonwake P-number contract > generic
+agent/default behavior. A repo file cannot overrule higher-priority protections.
+
+**Writing sprint declaration:** state real repo and runtime/host (provider
+connection is not the user's Windows machine), refreshed branch/PR/main floor,
+mission and lane, one-writer ownership, affected and forbidden paths, expected
+tracked artifacts, dependencies/collisions, validator commands and evidence
+ceiling. In particular, classify whether an effect requires the operator
+desktop or is reviewed, read-only background work; never silently expand
+P00 governance into unrelated application code or use P01 to rewrite P00.
+
+**Completion:** report CHANGED (real paths), PROVED (commands and outcomes),
+NEXT (first executable gate), exact commit SHA, push/PR and actual default
+branch status. Independently label local checkout, installed launcher, hook
+activation, Windows human-input takeover and Sims Live Mode. No synthetic
+fixture, plan, report or draft is gameplay certification.
+
+**Forbidden:** acknowledgment-only execution, plans replacing reachable work,
+unsupported completion or merge/deploy assertions, secret publication, OS
+Bluetooth/driver/screenshot/input remapping, unsupported game execution,
+protected-save changes, stealth mouse/keyboard hooks, and bypassing operator
+approval or installed agent protections. If a source adapter is unadopted,
+identify the gap instead of running or laundering it through another tool.

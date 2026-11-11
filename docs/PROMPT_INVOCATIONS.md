@@ -344,3 +344,24 @@ P00 Governance Doctrine Installer and P01 Harness Infrastructure Builder (canoni
 ## 2026-11-10 /fifth-gear — computer Upgrade Parts command and player-control boundary
 
 Resolved from the Moonwake/TokenCorridor current prompt-invocation catalog `harness/exports/prompt-invocation-catalog.v1.json` and canonical `scripts/prompt_invocation_resolver.py`; exact ordered sequence **P95 → P82 → P08 → P07 → P124**. P95: map computer/menu/part/funds/inventory/queue call stacks; P82: prototype semantic navigation and negative cases; P08: distinguish live Sims host proof (not available in GitHub environment) from offline evidence; P07: commit, test, PR and seek mainline merge; P124: preserve single DIY/queue owners and regressions. Consultation: `contracts/consultations/BI-COMPUTER-UPGRADE-PARTS-HUMAN-FIRST-20261110.v1.json`. Files: `betterinstincts/computer_upgrade_parts.py`, `contracts/upgrade-parts-force.v1.json` v3, `scripts/upgrade_parts_force.py`, `tests/test_computer_upgrade_parts.py`, `docs/UPGRADE_PARTS_FORCE.md`. Never translate Fifth Gear into authority to change OS Bluetooth or any peripheral service.
+
+## 2026-11-10 — P00 then P01 human-sovereignty governance and harness
+
+Resolved from Moonwake current `AGENTS.md`, deterministic
+`scripts/prompt_invocation_resolver.py`, and
+`harness/exports/prompt-invocation-catalog.v1.json`
+(catalog blob `8c281379ba7ccc871947391233b1db72f4a108ef`;
+canonical owning base prompts blob
+`848728632c1243ebba023fa0012292a2ad33cada`).
+
+- **P00 — Governance Doctrine Installer:** preserve root `AGENTS.md`
+  within the 3,600-character budget; extend the canonical ontology,
+  glossary, `docs/DOCTRINE.md` and governance regression checks.
+- **P01 — Harness Infrastructure Builder:** reuse existing path/resolver,
+  hook, shared input owner, CI and source contracts; add machine
+  adapter coverage, standalone validator, focused regressions, scoped
+  Cursor skill and operator-facing status/matrix. No new product input
+  daemon or independent Windows setup authority.
+
+The two prompts are sequential, not synonyms for Fifth Gear or
+live-game validation. GitHub merge ≠ local installation ≠ game-proof.
