@@ -81,7 +81,8 @@
     "New screen input source without registered path reported",
     "Observed partial effects never blind-replayed; passive analysis does not control input",
     "Runtime/PR/merge proof not conflated",
-    "Harness completeness report documents canonical user checkout/install/worktree and limits independent of GitHub mainline"
+    "Harness completeness report documents canonical user checkout/install/worktree and limits independent of GitHub mainline",
+    "World P00/P01 validator accepts later append-only ontology revisions; budget mutation always exceeds 3600 irrespective of actual root length"
   ],
   "rollback_path": "Revert the scoped two-stage branch commits; preserve previous ontology blob, existing governance, operating rules, game saves, Windows services and user profile.",
   "unresolved_unknowns": [
@@ -107,7 +108,8 @@
     ".github/workflows/ci.yml",
     ".cursor/skills/human-first-interoperability/SKILL.md",
     "scripts/validate_doctrine.py",
-    "docs/HUMAN_FIRST_HARNESS.md"
+    "docs/HUMAN_FIRST_HARNESS.md",
+    "tests/test_world_traversal_harness.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "status": "PREPROTOTYPE_RECEIPT_BEFORE_SOURCE_MUTATION",
