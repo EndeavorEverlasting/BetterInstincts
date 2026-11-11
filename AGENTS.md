@@ -21,6 +21,10 @@ Ontology revision 4 embraces any user-chosen game/mod, mouse, keyboard, voice/as
 - **Continuity:** preserve intent and update docs/LEDGER.md, docs/ROADMAP.md and active sprint; no chat-only corrections.
 - Offline installation only; never EA Connect. Preserve lot-boundary, EA-file-first geometry and live-host policies in the mandatory detailed rules.
 
+## P00 world-target evidence boundary (ontology revision 5)
+
+`HIGHLIGHT_OBSERVATION` and `WORLD_TARGET_TRACK` are capture/camera/identity-bound; `WORLD_INTERACTION_ATTEMPT` learning requires independent, replay-unique outcomes. Model advice never grants input. Next supporting P08 gate: `docs/WORLD_TRAVERSAL_HARNESS.md`; BI-002 still owns product certification. No raw host capture, OS repair or save mutation.
+
 ## Existing operator/agent handoffs
 
 - Judgment P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`.
