@@ -19,15 +19,17 @@ Useful-item force: `python -m scripts.household_object_force`. DIY parts: `pytho
 
 ## Portable object-action learning (P95 → P82 → P08 → P07 → P124)
 
-Machine owner: \`contracts/object-action-catalog.v1.json\`; code owner:
-\`betterinstincts/object_action_catalog.py\`; event entrypoint:
-\`host_listener.observe_object_action\`. When a calibrated operator/host
+Machine owner: `contracts/object-action-catalog.v1.json`; code owner:
+`betterinstincts/object_action_catalog.py`; event entrypoint:
+`host_listener.observe_object_action`. When a calibrated operator/host
 sensor observes a menu, selection or outcome, send sanitized semantics to
 this port only inside an **explicit active listener**. Never replace this
 with raw Windows mouse/key logging. Query through the existing opportunity
 survey with exact current patch, menu, target and capture; results are
 advisory-only and never override human action, queue ownership or input
-authority. See \`docs/OBJECT_ACTION_CATALOG.md\`. BI-002 remains active.
+authority. See `docs/OBJECT_ACTION_CATALOG.md`. BI-002 remains active.
+
+Reviewed object usefulness requires distinct post-action evidence; replayed proof, legacy count-only aggregates, stale event sequences and contradictory harmful outcomes must fail closed. See `contracts/object-action-catalog.v1.json` and its tests.
 
 ## Invariants
 - **Player first:** no interrupt of explicit player commands; no uncontrolled autonomy loops.

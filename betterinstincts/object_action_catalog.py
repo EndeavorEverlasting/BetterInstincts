@@ -6,6 +6,7 @@ raw object names, household-specific model weights, or network calls.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -24,7 +25,8 @@ MAX_ACTIONS = 32
 MAX_CLASSES = 256
 MAX_SESSIONS = 128
 MAX_PENDING = 64
-MAX_BYTES = 512_000
+MAX_BYTES = 2_000_000
+MAX_REVIEW_EVIDENCE = 64
 MENU_AGE_MS = 30_000
 OUTCOME_AGE_MS = 600_000
 
@@ -128,13 +130,14 @@ def _event(value: Mapping) -> dict:
 
 def empty_catalog() -> dict:
     return {"schema": SCHEMA, "revision": 0, "classes": {}, "menus": {},
-            "pending": {}, "cursors": {}}
+            "pending": {}, "cursors": {}, "receipt_heads": {}}
 
 
 def _validate(value: Mapping) -> dict:
-    if not isinstance(value, dict) or set(value) != {
-        "schema", "revision", "classes", "menus", "pending", "cursors"
-    } or value.get("schema") != SCHEMA:
+    required = {"schema", "revision", "classes", "menus", "pending", "cursors"}
+    if (not isinstance(value, dict)
+            or set(value) not in (required, required | {"receipt_heads"})
+            or value.get("schema") != SCHEMA):
         raise ObjectActionCatalogError("CATALOG_SCHEMA_INVALID")
     if type(value["revision"]) is not int or value["revision"] < 0:
         raise ObjectActionCatalogError("CATALOG_REVISION_INVALID")
@@ -146,11 +149,22 @@ def _validate(value: Mapping) -> dict:
         _session(session)
         if type(cursor) is not int or cursor < 1:
             raise ObjectActionCatalogError("CATALOG_CURSOR_INVALID")
+    heads = value.get("receipt_heads", {})
+    if not isinstance(heads, dict) or len(heads) > MAX_SESSIONS:
+        raise ObjectActionCatalogError("CATALOG_RECEIPT_HEADS_INVALID")
+    for sid, receipt in heads.items():
+        if (sid not in value["cursors"] or not isinstance(receipt, dict)
+                or set(receipt) != {"seq", "at_ms", "fingerprint"}
+                or receipt["seq"] != value["cursors"][sid]
+                or type(receipt["at_ms"]) is not int or receipt["at_ms"] < 0
+                or not isinstance(receipt["fingerprint"], str)
+                or re.fullmatch(r"[a-f0-9]{32}", receipt["fingerprint"]) is None):
+            raise ObjectActionCatalogError("CATALOG_RECEIPT_HEAD_INVALID")
+    class_fields = {"game_version", "class_ref", "action_ref", "menu_seen",
+                    "selections", "last_seen_ms", "effects"}
     for key, entry in value["classes"].items():
-        if not isinstance(key, str) or not isinstance(entry, dict) or set(entry) != {
-            "game_version", "class_ref", "action_ref", "menu_seen",
-            "selections", "last_seen_ms", "effects"
-        }:
+        if (not isinstance(key, str) or not isinstance(entry, dict)
+                or set(entry) not in (class_fields, class_fields | {"review_evidence"})):
             raise ObjectActionCatalogError("CATALOG_CLASS_INVALID")
         if key != _key(_patch(entry["game_version"]),
                        _token(entry["class_ref"], "class_ref"),
@@ -166,6 +180,22 @@ def _validate(value: Mapping) -> dict:
                 "helpful", "harmful"
             } or any(type(v) is not int or v < 0 for v in counts.values()):
                 raise ObjectActionCatalogError("CATALOG_EFFECT_COUNTS_INVALID")
+        reviews = entry.get("review_evidence", [])
+        if not isinstance(reviews, list) or len(reviews) > MAX_REVIEW_EVIDENCE:
+            raise ObjectActionCatalogError("CATALOG_REVIEW_EVIDENCE_BUDGET")
+        reviewed = set()
+        for review in reviews:
+            if (not isinstance(review, dict)
+                    or set(review) != {"fingerprint", "domain", "result"}
+                    or review["domain"] not in DOMAINS
+                    or review["result"] not in {"helpful", "harmful"}
+                    or not isinstance(review["fingerprint"], str)
+                    or re.fullmatch(r"[a-f0-9]{32}", review["fingerprint"]) is None):
+                raise ObjectActionCatalogError("CATALOG_REVIEW_PROOF_INVALID")
+            marker = (review["domain"], review["fingerprint"])
+            if marker in reviewed:
+                raise ObjectActionCatalogError("CATALOG_DUPLICATE_REVIEW_PROOF")
+            reviewed.add(marker)
     for sid, menu in value["menus"].items():
         _session(sid)
         if not isinstance(menu, dict) or set(menu) != {
@@ -200,13 +230,26 @@ def ingest(catalog: Mapping, supplied_event: Mapping, *, session_id: str) -> tup
     sid = _session(session_id)
     event = _event(supplied_event)
     previous_seq = state["cursors"].get(sid, 0)
+    fingerprint = hashlib.blake2s(
+        json.dumps(event, sort_keys=True, separators=(",", ":")).encode("utf-8"),
+        digest_size=16,
+    ).hexdigest()
+    previous_head = state.get("receipt_heads", {}).get(sid)
     if event["seq"] <= previous_seq:
-        return state, {"state": "ALREADY_INDEXED", "recorded": False,
-                       "execute_allowed": False}
+        if (event["seq"] == previous_seq and previous_head is not None
+                and previous_head["fingerprint"] == fingerprint):
+            return state, {"state": "ALREADY_INDEXED", "recorded": False,
+                           "execute_allowed": False}
+        raise ObjectActionCatalogError("EVENT_STALE_OR_CONTRADICTORY_REPLAY")
     if event["seq"] != previous_seq + 1:
         raise ObjectActionCatalogError("EVENT_SEQUENCE_GAP")
-    classes = {k: {**v, "effects": {d: dict(n) for d, n in v["effects"].items()}}
-               for k, v in state["classes"].items()}
+    if previous_head is not None and event["at_ms"] < previous_head["at_ms"]:
+        raise ObjectActionCatalogError("EVENT_TIME_REGRESSION")
+    classes = {
+        k: {**v, "effects": {d: dict(n) for d, n in v["effects"].items()},
+            "review_evidence": [dict(item) for item in v.get("review_evidence", [])]}
+        for k, v in state["classes"].items()
+    }
     menus = {k: dict(v) for k, v in state["menus"].items()}
     pending = {k: dict(v) for k, v in state["pending"].items()}
     kind = event["kind"]
@@ -220,7 +263,7 @@ def ingest(catalog: Mapping, supplied_event: Mapping, *, session_id: str) -> tup
             row = classes.setdefault(key, {
                 "game_version": event["game_version"], "class_ref": event["class_ref"],
                 "action_ref": action, "menu_seen": 0, "selections": 0,
-                "last_seen_ms": now, "effects": {},
+                "last_seen_ms": now, "effects": {}, "review_evidence": [],
             })
             row["menu_seen"] += 1
             row["last_seen_ms"] = now
@@ -250,15 +293,33 @@ def ingest(catalog: Mapping, supplied_event: Mapping, *, session_id: str) -> tup
         if event["operator_reviewed"]:
             row = classes[matched["entry"]]
             for effect in event["effects"]:
-                if effect["result"] in {"helpful", "harmful"}:
-                    counts = row["effects"].setdefault(
-                        effect["domain"], {"helpful": 0, "harmful": 0}
-                    )
-                    counts[effect["result"]] += 1
+                if effect["result"] not in {"helpful", "harmful"}:
+                    continue
+                proof = hashlib.blake2s(
+                    (effect["domain"] + "|" + effect["evidence_ref"]).encode("utf-8"),
+                    digest_size=16,
+                ).hexdigest()
+                if any(r["domain"] == effect["domain"] and
+                       r["fingerprint"] == proof for r in row["review_evidence"]):
+                    continue  # The same observed outcome is not a second training sample.
+                if len(row["review_evidence"]) >= MAX_REVIEW_EVIDENCE:
+                    raise ObjectActionCatalogError("REVIEW_EVIDENCE_CAPACITY_EXHAUSTED")
+                row["review_evidence"].append({
+                    "fingerprint": proof, "domain": effect["domain"],
+                    "result": effect["result"],
+                })
+                counts = row["effects"].setdefault(
+                    effect["domain"], {"helpful": 0, "harmful": 0}
+                )
+                counts[effect["result"]] += 1
     updated = {
         "schema": SCHEMA, "revision": state["revision"] + 1,
         "classes": classes, "menus": menus, "pending": pending,
         "cursors": {**state["cursors"], sid: event["seq"]},
+        "receipt_heads": {**state.get("receipt_heads", {}), sid: {
+            "seq": event["seq"], "at_ms": event["at_ms"],
+            "fingerprint": fingerprint,
+        }},
     }
     _validate(updated)
     return updated, {"state": "OBJECT_ACTION_INDEXED", "recorded": True,
@@ -298,19 +359,35 @@ def recommend(catalog: Mapping, *, session_id: str, game_version: str,
             not 0 <= now - menu["at_ms"] <= MENU_AGE_MS):
         return {**base, "state": "REOBSERVE_CURRENT_OBJECT_MENU"}
     matches = []
+    conflicting = saturated = False
     for action in actions:
         row = state["classes"].get(_key(patch, kind, action))
         if row is None:
             continue
+        # Legacy aggregate counts are retained, but lack replay-unique review
+        # provenance. They must not independently establish usable utility.
+        reviews = row.get("review_evidence", [])
+        if len(reviews) >= MAX_REVIEW_EVIDENCE:
+            saturated = True
+            continue
         for domain in desired_domains:
-            counts = row["effects"].get(domain, {"helpful": 0, "harmful": 0})
-            positive, negative = counts["helpful"], counts["harmful"]
+            positive = sum(r["result"] == "helpful" and r["domain"] == domain
+                           for r in reviews)
+            negative = sum(r["result"] == "harmful" and r["domain"] == domain
+                           for r in reviews)
             total = positive + negative
             if positive >= 3 and total >= 3 and positive / total >= 0.75:
+                if any(r["result"] == "harmful" and r["domain"] != domain
+                       for r in reviews):
+                    conflicting = True
+                    continue
                 matches.append((desired_domains.index(domain), -positive,
                                 negative, action, domain, total))
     if not matches:
-        return {**base, "state": "INSUFFICIENT_REVIEWED_UTILITY"}
+        reason = ("CONFLICTING_REVIEWED_EFFECTS" if conflicting else
+                  "REVIEW_EVIDENCE_CAPACITY_EXHAUSTED" if saturated else
+                  "INSUFFICIENT_REVIEWED_UTILITY")
+        return {**base, "state": reason}
     _, neg_positive, negative, action, domain, total = min(matches)
     return {**base, "state": "ADVISORY_ONLY",
             "candidate": {"action_ref": action, "object_ref": obj,

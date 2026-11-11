@@ -1,0 +1,279 @@
+{
+  "schema": "betterinstincts.object-action-closers-plan/v1",
+  "date": "2026-11-10",
+  "route": [
+    "P83",
+    "P03",
+    "P141",
+    "P124",
+    "P04"
+  ],
+  "parent_objective": "Every observed player/host Sims object interaction should incrementally build a portable, review-qualified action catalog and yield safe game-queue recommendations across household/save boundaries.",
+  "current_floor": {
+    "repo": "EndeavorEverlasting/BetterInstincts",
+    "base_branch": "main",
+    "base_commit_at_consultation": "6f177bbdd0ef7f1d837ad10d277d8e2264e904fa",
+    "prior_implementation_pr": 179,
+    "prior_merge": "df628983843aae5f4d87c5dfc792f054b51e8f51",
+    "current_fix_branch": "fix/object-action-closers-review-integrity-20261110",
+    "primary_host": "CURRENT_CHAT_RUNTIME",
+    "provider_route": "GitHub connector",
+    "user_game_runtime": "BLOCKED_LOCAL_GAME_ACCESS",
+    "separately_owned_prs": [
+      159,
+      149
+    ],
+    "ci_and_merge_status": "MUST_BE_FILLED_FROM_PROVIDER_READBACK; NO ASSUMED_PASS",
+    "player_and_save_state": "NO_HOST_MUTATION",
+    "merged_concurrent_prs": [
+      180
+    ]
+  },
+  "p83_findings": [
+    {
+      "id": "REPLAY-SEQ",
+      "status": "FIXED_IN_CANDIDATE_UNTIL_CI",
+      "claim": "Any replayed/stale seq was previously reported ALREADY_INDEXED",
+      "repair": "Remember digest and timestamp of latest accepted event; only exact latest replay idempotent; others fail",
+      "test": "test_replayed_sequence_must_match_exact_last_event"
+    },
+    {
+      "id": "REVIEW-DUP",
+      "status": "FIXED_IN_CANDIDATE_UNTIL_CI",
+      "claim": "Repeated evidence_ref could train same helpful action many times even across sessions",
+      "repair": "Per class/action/domain reviewed proof fingerprints; distinct evidence only; legacy totals remain nonpromoting",
+      "test": "test_same_outcome_evidence_cannot_train_again"
+    },
+    {
+      "id": "CROSS-HARM",
+      "status": "FIXED_IN_CANDIDATE_UNTIL_CI",
+      "claim": "Helpful need/domain action ignored harmful observed effects on other domains",
+      "repair": "Abstain when reviewed cross-domain harmful effects conflict; retain long-term tradeoff policymaking for separately evidenced user judgment",
+      "test": "test_cross_domain_harm_blocks_usefulness_promotion"
+    },
+    {
+      "id": "DOC-ESCAPE",
+      "status": "FIXED_IN_CANDIDATE_UNTIL_CI",
+      "claim": "Previously added documentation contained literal Markdown backslash-escaped backticks (Mainline legacy-input changes merged during closeout and were preserved.)",
+      "repair": "Restore semantic links and inline code in added sections and correct event sequence docs",
+      "test": "CI git diff --check and review documentation readback"
+    }
+  ],
+  "p141_theses": [
+    {
+      "thesis": "Harden replay-unique reviewed evidence and protect cross-domain tradeoffs",
+      "status": "SELECT",
+      "reason": "Direct exploitable confidence promotion defect; small tests and code fix; needed before learning from the player's actions"
+    },
+    {
+      "thesis": "Install universal Windows click interception to observe all actions",
+      "status": "REJECT",
+      "reason": "Violates P00/P01 human-first input authority and creates OS/peripheral risk"
+    },
+    {
+      "thesis": "Build a new machine-learning scheduler replacing existing opportunity_survey",
+      "status": "DEFER",
+      "reason": "Existing host listener and queue/cascade are canonical; genuine menu sensor and outcome feedback must be proven first"
+    },
+    {
+      "thesis": "Scale 256-action catalog into large per-patch evidence store now",
+      "status": "DEFER",
+      "reason": "Capacity will limit full coverage; streaming/per-pack schema and performance require measurements from actual game sensor"
+    }
+  ],
+  "p124_editability": {
+    "owner_map": {
+      "event_validation_reducer_and_local_index": "betterinstincts/object_action_catalog.py",
+      "explicit_session_entry_and_passive_advisory": "betterinstincts/host_listener.py",
+      "operator_supplied_event_cli": "scripts/host_listener.py",
+      "contract_safety": "contracts/object-action-catalog.v1.json",
+      "training_and_negative_regressions": "tests/test_object_action_catalog.py",
+      "current_product_gate": "plans/active/BI-002.md"
+    },
+    "decision": "KEEP_COHESIVE_MODULE_NO_NEW_CLICKER",
+    "seam": "One pure ingest and one pure recommend; controller and input admission remain external."
+  },
+  "p04_runtime_partition": {
+    "current_host": "CURRENT_CHAT_RUNTIME",
+    "providers": [
+      "GitHub connector",
+      "GitHub Actions"
+    ],
+    "local_game_host": "LOCAL_AGENT_RUNTIME",
+    "physical_operator": "OPERATOR_OR_PHYSICAL_RUNTIME",
+    "evidence_partition": "Provider commits/CI do not prove local TS4 PID, menu sensor accuracy or game-save safety."
+  },
+  "launch_order": [
+    "CLOSERS-REPLAY-REPAIR-CI",
+    "BI-002-LIVE-HUNGER-UNCHANGED",
+    "OBJECT-MENU-SENSOR-P08",
+    "CATALOG-QUEUE-ADMISSION",
+    "CATALOG-CAPACITY-MEASURE"
+  ],
+  "lanes": [
+    {
+      "lane_id": "CLOSERS-REPLAY-REPAIR-CI",
+      "wave": 0,
+      "execution_environment": "CURRENT_CHAT_RUNTIME",
+      "provider_access": [
+        "GitHub connector",
+        "GitHub Actions"
+      ],
+      "required_capabilities": [
+        "write isolated branch",
+        "run independent CI",
+        "merge green validated candidate"
+      ],
+      "dependencies": [],
+      "owner": "Current ChatGPT/GitHub repository contributor",
+      "owned": [
+        "object_action_catalog",
+        "tests",
+        "object-action contract",
+        "docs"
+      ],
+      "forbidden": [
+        "user saves",
+        "Windows services",
+        "other PR branches"
+      ],
+      "launch_action": "Commit consultation then reviewed corrections; PR; check CI; merge; verify main",
+      "status": "IN_PROGRESS_PROVIDER_NOT_YET_CLOSED",
+      "proof_ceiling": "GITHUB_MAIN_AND_OFFLINE_CI"
+    },
+    {
+      "lane_id": "BI-002-LIVE-HUNGER-UNCHANGED",
+      "wave": 1,
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [
+        "local Sims 4 host"
+      ],
+      "required_capabilities": [
+        "approved disposable save",
+        "verified TS4 PID",
+        "independent operator relinquishment",
+        "maintainer review"
+      ],
+      "dependencies": [],
+      "owner": "Existing BI-002 local game-lab worker",
+      "owned": [
+        "plans/active/BI-002.md",
+        "existing hunger A/B receipts"
+      ],
+      "forbidden": [
+        "personal saves",
+        "Windows input settings",
+        "premature sprint closure"
+      ],
+      "launch_action": "Resume existing BI-002 execution contract; vanilla/modified 5+5 with rollback and independent review",
+      "status": "BLOCKED_LOCAL_GAME_ACCESS_IN_CHAT",
+      "proof_ceiling": "GAMEPLAY_ONLY_AFTER_PHYSICAL_PROOF"
+    },
+    {
+      "lane_id": "OBJECT-MENU-SENSOR-P08",
+      "wave": 1,
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [
+        "local Sims 4 game",
+        "existing BetterInstincts opt-in listener"
+      ],
+      "required_capabilities": [
+        "calibrated semantic game menu events",
+        "player/host source tagging",
+        "exact current patch and object-class identity",
+        "fresh post-action independent effects",
+        "P08 independent proof"
+      ],
+      "dependencies": [
+        "CLOSERS-REPLAY-REPAIR-CI"
+      ],
+      "owner": "Local game host agent under independent P00/P01 effect authority",
+      "owned": [
+        "existing listener sensor adapter only after safe source proof",
+        "disposable captured fixtures and game receipts"
+      ],
+      "forbidden": [
+        "global Windows keylogger/mouse hooks",
+        "unconsented real saves",
+        "other app focus",
+        "mod installation claims without evidence"
+      ],
+      "launch_action": "In disposable controlled Sims Live Mode explicitly activate listener; capture menu/selection/outcome from one object using existing sensors, validate exact source and post-action effects; stop on uncertainty",
+      "status": "BLOCKED_LOCAL_GAME_ACCESS_IN_CHAT",
+      "proof_ceiling": "LOCAL_SENSOR_GAME_PROOF_NOT_ASSUMED"
+    },
+    {
+      "lane_id": "CATALOG-QUEUE-ADMISSION",
+      "wave": 2,
+      "execution_environment": "LOCAL_AGENT_RUNTIME",
+      "provider_access": [
+        "local Sims 4 game"
+      ],
+      "required_capabilities": [
+        "fresh selected Sim",
+        "player idle dual probe",
+        "scene/save/lot/current object recheck",
+        "cooperative queue capacity",
+        "rollback"
+      ],
+      "dependencies": [
+        "OBJECT-MENU-SENSOR-P08",
+        "BI-002-LIVE-HUNGER-UNCHANGED"
+      ],
+      "owner": "Canonical cooperative host input adapter, not catalog",
+      "owned": [
+        "action queue integration behind existing control_handoff and effect_authority"
+      ],
+      "forbidden": [
+        "player queue cancellation",
+        "unknown OS effects",
+        "unbacked Build Buy mutations"
+      ],
+      "launch_action": "Replay one recommended action through current canonical admission and observe actual completed Sim outcome; forbid legacy raw SendInput paths",
+      "status": "BLOCKED_PENDING_LIVE_PROOF",
+      "proof_ceiling": "NO_QUEUE_ACTION_UNTIL_P08_REAL_HOST"
+    },
+    {
+      "lane_id": "CATALOG-CAPACITY-MEASURE",
+      "wave": 3,
+      "execution_environment": "CI_OR_REMOTE_RUNNER",
+      "provider_access": [
+        "GitHub Actions"
+      ],
+      "required_capabilities": [
+        "evidence-backed action-set cardinality",
+        "profile specific retention requirements",
+        "bounded performance benchmarks"
+      ],
+      "dependencies": [
+        "OBJECT-MENU-SENSOR-P08"
+      ],
+      "owner": "BetterInstincts catalog/data-model maintainer",
+      "owned": [
+        "bounded model partition/projection performance",
+        "storage migration tests"
+      ],
+      "forbidden": [
+        "unbounded files",
+        "telemetry",
+        "ingesting raw saves or personal labels"
+      ],
+      "launch_action": "Measure actual cross-pack class/action cardinality and frequent input rate, select bounded sharding/compaction with backward compatibility",
+      "status": "DEFERRED_NOT_PARENT_BLOCKER",
+      "proof_ceiling": "CI_BENCHMARK_NOT_GAME_CERT"
+    }
+  ],
+  "parallelism": {
+    "ready_width_in_current_runtime": 1,
+    "decision": "NOT_APPLICABLE_AT_CURRENT_PROVIDER_EVIDENCE_BOUNDARY",
+    "reason": "Current provider-owned repair is one-writer on catalog; local game execution is outside the current runtime. BI-002 and sensor proof can run independently only after local runtime exists; no false dispatch receipt."
+  },
+  "outcome_contract": {
+    "no_new_background_daemon": true,
+    "default_execute_allowed": false,
+    "BI002_retained": true,
+    "complete_only_when": "Provider checks green, committed mainline readback, AND later separate local P08 real menu/queue proof where authorized.",
+    "can_claim_game_verified_usefulness_without_independent_sensor": false,
+    "advisory_may_be_generated_from_operator_supplied_test_events": true
+  }
+}

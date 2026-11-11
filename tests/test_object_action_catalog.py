@@ -179,6 +179,128 @@ class ObjectActionLearningTests(unittest.TestCase):
             with self.assertRaises(ObjectActionCatalogError):
                 ingest(empty_catalog(), bad, session_id=SESSION)
 
+    def test_replayed_sequence_must_match_exact_last_event(self):
+        initial = menu(1, "capture:menu")
+        state, _ = ingest(empty_catalog(), initial, session_id=SESSION)
+        same, receipt = ingest(state, initial, session_id=SESSION)
+        self.assertIs(same, state)
+        self.assertEqual(receipt["state"], "ALREADY_INDEXED")
+        with self.assertRaisesRegex(
+            ObjectActionCatalogError, "EVENT_STALE_OR_CONTRADICTORY_REPLAY"
+        ):
+            ingest(state, {**initial, "actions": [ACTION]},
+                   session_id=SESSION)
+        state, _ = ingest(state, selection(2, "capture:menu"),
+                          session_id=SESSION)
+        with self.assertRaisesRegex(
+            ObjectActionCatalogError, "EVENT_STALE_OR_CONTRADICTORY_REPLAY"
+        ):
+            ingest(state, initial, session_id=SESSION)
+        with self.assertRaisesRegex(
+            ObjectActionCatalogError, "EVENT_TIME_REGRESSION"
+        ):
+            ingest(state, {**menu(3, "capture:new"), "at_ms": 100000},
+                   session_id=SESSION)
+
+    def test_same_outcome_evidence_cannot_train_again(self):
+        state = empty_catalog()
+        for i in range(3):
+            start = i * 3 + 1
+            cap = "capture:menu_" + str(i)
+            for e in (
+                menu(start, cap),
+                selection(start + 1, cap),
+                {**outcome(start + 2, "interaction:" + str(start + 1)),
+                 "effects": [{"domain": "energy", "result": "helpful",
+                              "evidence_ref": "evidence:same_source"}]},
+            ):
+                state, _ = ingest(state, e, session_id=SESSION)
+        self.assertEqual(query(state)["state"], "INSUFFICIENT_REVIEWED_UTILITY")
+        bed = state["classes"][PATCH + "|" + CLASS + "|" + ACTION]
+        self.assertEqual(len(bed["review_evidence"]), 1)
+        self.assertEqual(bed["effects"]["energy"]["helpful"], 1)
+        # A new observer session cannot convert the same proof into a new sample.
+        for e in (
+            menu(1, "capture:other"),
+            selection(2, "capture:other"),
+            {**outcome(3, "interaction:2"), "effects": [
+                {"domain": "energy", "result": "helpful",
+                 "evidence_ref": "evidence:same_source"}]},
+        ):
+            state, _ = ingest(state, e, session_id="other_session")
+        self.assertEqual(
+            recommend(state, session_id="other_session", game_version=PATCH,
+                      object_ref=OBJ, class_ref=CLASS,
+                      capture_ref="capture:other", now_ms=100300,
+                      available_actions=[ACTION, "action:nap"],
+                      desired_domains=["energy"], player_active=False,
+                      player_queue_present=False)["state"],
+            "INSUFFICIENT_REVIEWED_UTILITY",
+        )
+
+    def test_legacy_counts_preserved_but_not_promoted_without_provenance(self):
+        state = empty_catalog()
+        for i in range(3):
+            state = cycle(state, i)
+        self.assertEqual(query(state)["state"], "ADVISORY_ONLY")
+        for row in state["classes"].values():
+            row.pop("review_evidence")
+        state.pop("receipt_heads")
+        self.assertEqual(query(state)["state"], "INSUFFICIENT_REVIEWED_UTILITY")
+        with self.assertRaisesRegex(
+            ObjectActionCatalogError, "EVENT_STALE_OR_CONTRADICTORY_REPLAY"
+        ):
+            ingest(state, menu(7, "capture:menu_2"), session_id=SESSION)
+        # New events migrate the old record without assuming old counts were
+        # independently replay-deduplicated.
+        state, _ = ingest(state, menu(10, "capture:after_legacy"),
+                          session_id=SESSION)
+        self.assertEqual(state["revision"], 10)
+        self.assertIn("receipt_heads", state)
+
+    def test_cross_domain_harm_blocks_usefulness_promotion(self):
+        state = empty_catalog()
+        for i in range(3):
+            start = i * 3 + 1
+            capture = "capture:menu_" + str(i)
+            for e in (
+                menu(start, capture),
+                selection(start + 1, capture),
+                {**outcome(start + 2, "interaction:" + str(start + 1)),
+                 "effects": [
+                     {"domain": "energy", "result": "helpful",
+                      "evidence_ref": "evidence:positive_" + str(i)},
+                     {"domain": "social", "result": "harmful",
+                      "evidence_ref": "evidence:negative_" + str(i)},
+                 ]},
+            ):
+                state, _ = ingest(state, e, session_id=SESSION)
+        result = query(state)
+        self.assertEqual(result["state"], "CONFLICTING_REVIEWED_EFFECTS")
+        self.assertIsNone(result["candidate"])
+        self.assertFalse(result["execute_allowed"])
+
+    def test_reviewer_capacity_fail_closed_not_silent_truncation(self):
+        from betterinstincts.object_action_catalog import MAX_REVIEW_EVIDENCE
+        state = empty_catalog()
+        for i in range(MAX_REVIEW_EVIDENCE):
+            state = cycle(state, i)
+        last = (MAX_REVIEW_EVIDENCE - 1) * 3 + 1
+        candidate = query(state, capture_ref="capture:menu_" + str(
+            MAX_REVIEW_EVIDENCE - 1), now_ms=100000 + last * 100 + 100)
+        self.assertEqual(candidate["state"], "REVIEW_EVIDENCE_CAPACITY_EXHAUSTED")
+        self.assertFalse(candidate["execute_allowed"])
+        start = MAX_REVIEW_EVIDENCE * 3 + 1
+        capture = "capture:menu_last"
+        state, _ = ingest(state, menu(start, capture), session_id=SESSION)
+        state, _ = ingest(state, selection(start + 1, capture),
+                          session_id=SESSION)
+        with self.assertRaisesRegex(
+            ObjectActionCatalogError, "REVIEW_EVIDENCE_CAPACITY_EXHAUSTED"
+        ):
+            ingest(state, outcome(start + 2, "interaction:" + str(start + 1)),
+                   session_id=SESSION)
+
     def test_atomic_local_persistence_and_replay(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "object-action.json"

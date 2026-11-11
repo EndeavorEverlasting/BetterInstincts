@@ -36,12 +36,13 @@
     "separate_evidence": [
       "observed menu availability",
       "observed action selection",
-      "reviewed post-action usefulness"
+      "reviewed post-action usefulness",
+      "replay-unique outcome-evidence fingerprint per object class/action/domain"
     ],
-    "utility_requirement": "At least 3 independently sequenced, operator-reviewed helpful outcomes and >=75% helpful among reviewed helpful/harmful outcomes in a requested domain",
-    "unknown": "Recorded, not promoted to utility"
+    "utility_requirement": "At least three distinct reviewed helpful evidence fingerprints and >=75% helpful among unique same-domain evidence; legacy aggregate counts alone never promote",
+    "unknown": "Recorded, not promoted; cross-domain harmful reviewed effects veto otherwise helpful candidates until separately reviewed tradeoff policy"
   },
-  "sequencing": "Monotonic 1-based event seq per unique explicit session; old sequence idempotent, gap denied; menu and selection bind same fresh capture; outcome requires later independent capture; stale events denied",
+  "sequencing": "Monotonic 1-based seq per unique explicit session; only byte-identical most-recent retransmission is idempotent; contradictory/stale sequence or backward event clock denied; menu and selection bind exact fresh capture; post-action outcome requires later distinct capture",
   "recommendation": "Only after an exact current menu observation matching session, patch, object, class, capture and action list within 30 seconds",
   "player_first": "Any player_active or player_queue_present denies catalog recommendation; no queue cancel permitted",
   "execution": {
@@ -72,12 +73,13 @@
       "cross-account uploads"
     ],
     "storage": "atomic bounded opt-in local JSON projection",
-    "max_bytes": 512000,
+    "max_bytes": 2000000,
     "max_classes": 256,
     "max_actions_per_menu": 32,
     "max_sessions": 128,
     "max_pending": 64,
-    "no_background_daemon": true
+    "no_background_daemon": true,
+    "max_review_evidence_per_class_action": 64
   },
   "scope": {
     "current": "Existing semantically calibrated user/host interaction observers submit events via active session. The catalog does not itself discover game signals or instrument Windows input.",
@@ -89,5 +91,13 @@
     ],
     "bi002": "Hunger A/B 5+5 rollback and maintainer review remains current parent gate"
   },
-  "proof_ceiling": "REPOSITORY_OFFLINE_SEMANTIC_ADVISORY_NOT_LIVE_SIM_INPUT"
+  "proof_ceiling": "REPOSITORY_OFFLINE_REVIEW_EVIDENCE_INTEGRITY_NOT_LIVE_SENSOR_OR_ACTION_QUEUE_CERT",
+  "review_integrity": {
+    "store": "Bounded fingerprints of reviewed outcome evidence refs (not raw evidence refs) and last accepted event per session",
+    "legacy_compatibility": "Existing catalogs without fingerprints remain readable and preserve counts, but historical counts without replay-provenanced reviews do not authorize recommendation",
+    "replay": "Only exact last accepted normalized event may be replayed idempotently; older or conflicting payload rejected",
+    "duplicate": "Repeated reviewed evidence for same class/action/domain contributes at most one training sample, even across observer sessions",
+    "conflicting_outcomes": "If a candidate's reviewed effects contain harm to any other domain, abstain pending separate tradeoff policy",
+    "capacity": "Evidence cap returns explicit fail-closed abstention; never silently evict reviewed positive or negative evidence"
+  }
 }
