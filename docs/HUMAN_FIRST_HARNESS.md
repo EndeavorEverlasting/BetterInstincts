@@ -128,3 +128,9 @@ or a native call already in progress. No Windows game device was tested or
 configured by this repository commit. See
 `docs/handoff/BI-HUMAN-FIRST-CLOSERS-P04-2026-11-10.md` for scoped
 successor work, ownership and physical local certification.
+
+## 2026-11-11 — peripheral-sovereignty extension
+
+All new project executables are included in the existing `scripts.check_peripheral_boundary` CI regression scan, including root launchers, `.cursor/hooks/*.py`, `.github/workflows/*`, future tools and existing game scripts. Test fixtures are excluded from source-scan findings because they intentionally contain hostile strings; dedicated tests verify those cases fail when moved into an executable surface.
+
+The checker statically rejects known Windows service, PnP, Bluetooth pairing, keyboard/input preference, registry, global hook, and failsafe-disabling operations. It is defense in depth, not interception of dynamically constructed external shell actions. Actual Cursor, Codex, other local agents and runtime providers must independently install/enable and observe their own pre-effect permissions and OS-level restrictions. Do not enable a privileged sandbox bypass, remove existing agent denial hooks, or downgrade original player-presence admission. `contracts/peripheral-authority.v1.json` is the canonical semantic and proof owner; root `AGENTS.md` routes to detailed governance. Read-only SysAdminSuite observations do not permit BetterInstincts to repair a mouse.
