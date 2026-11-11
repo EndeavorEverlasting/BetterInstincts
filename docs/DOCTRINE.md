@@ -23,6 +23,19 @@ BetterInstincts improves the game's natural mechanics through safe, coordinated 
 - TokenCorridor owns the exact P-number registry; this repository must not fork or rename prompt meanings.
 - Authority order: platform/security/owner instruction > root agent governance > canonical ledger/sprint > local implementation notes. Repository docs cannot override user safety.
 
+### Observed affordances are not action permits
+
+The portable object-action catalog may learn the availability and reviewed
+utility of Sims actions on object **classes**, but only from explicit
+semantically calibrated, opt-in observations. It cannot infer objective yield
+from a click or menu label alone. Never bind usefulness to private Sim/save
+identity as a universal rule. Learned suggestions feed the existing passive
+opportunity survey and remain under player-first, effect-authority, scene,
+lot and queue admission. This is not permission to install global input
+observers or to claim live game/autonomy certification. Ownership:
+\`contracts/object-action-catalog.v1.json\` and
+\`docs/OBJECT_ACTION_CATALOG.md\`.
+
 ## Project architecture rule
 Observe the game's native tuning and compare with community implementations **before** adding a generalized decision framework. Prefer localized XML tuning and proven shared extension points if appropriate. Introduce Python game scripts only if the chosen behavior cannot be implemented safely through tuning. Offline Python prototypes are simulations, not game hooks. Do not use Rust/TypeScript/C# in the game runtime without evidence of a concrete need; build tooling may be different from runtime language.
 
