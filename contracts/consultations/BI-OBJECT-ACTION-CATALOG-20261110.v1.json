@@ -1,0 +1,123 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-OBJECT-ACTION-CATALOG-20261110",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "e1abf030032ce6f305a602ce1202a68c3a09628f",
+  "proposed_capability": "Portable, deterministic, machine-readable object-interaction discovery: every semantically observed player/host object menu, selection and outcome accumulates class-based action knowledge usable for safe queue recommendations across saves.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "GAME_OBJECT",
+    "AFFORDANCE",
+    "ACTION_QUEUE",
+    "OUTCOME",
+    "REVIEWED_JUDGMENT",
+    "LEARNING_MODEL",
+    "ACTION_PROPOSAL",
+    "PLAYER_PRESENCE",
+    "CONTROL_PERMIT",
+    "HOST_SESSION",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "betterinstincts/affordance_memory.py",
+    "betterinstincts/host_listener.py",
+    "betterinstincts/opportunity_survey.py",
+    "betterinstincts/judgment_learning.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018",
+    "BI-ONT-028",
+    "BI-ONT-029",
+    "BI-ONT-030",
+    "BI-ONT-031",
+    "BI-ONT-032",
+    "BI-ONT-033",
+    "BI-ONT-034",
+    "BI-ONT-035"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "BOUNDED_OFFLINE_SEMANTIC_EVENT_ADVISORY_NOT_LIVE_SENSOR_OR_SIM_QUEUE_CERT",
+  "player_save_control_impact": "Read-only opt-in, bounded semantic event observations and reviewed utility; no user save or game files, OS input settings, mouse/keyboard hooks, automation daemon or game side effects. Player's control, selected Sim and queue actions protected. Advisory-only catalog cannot issue a control permit.",
+  "expected_outcome": "Portable per game patch/object class/action catalogue of observed availability, selection and reviewed outcomes, replay-safe idempotent atomic storage; exact live menu freshness queries attached to existing listener opportunity survey as candidate suggestions never dispatched. Negative tests and CI.",
+  "negative_tests": [
+    "No learned ability from tooltip/menu appearance or unreviewed outcomes",
+    "No candidate on stale patch/capture/object/menu/scene",
+    "No candidate while player active or owns queue",
+    "Selection outside visible fresh menu denied",
+    "Post-action outcomes must match an interaction and distinct capture",
+    "Replays idempotent; sequence gaps denied; bounded local persistence",
+    "No raw text or personal save/Sim names in global class labels",
+    "No autonomous interaction or control permit"
+  ],
+  "rollback_path": "Revert isolated feature branch or merge commit. Existing opt-in hover/affordance and listener queue logic retain behavior; no new live hooks or storage migration. BI-002 stays active.",
+  "unresolved_unknowns": [
+    "Local Sims executable is inaccessible through GitHub provider; independent P08 game sensor coverage, menu/selector fidelity, gameplay outcome calibration and live input authority unproven",
+    "Exact patch and source observation sensor adapters must submit semantic user and host events to existing opt-in listener; not automatically attached",
+    "Concurrent PR #159 spatial perception and PR #149 needs/homework owned separately; preserve non-overlapping changes"
+  ],
+  "files_expected": [
+    "betterinstincts/object_action_catalog.py",
+    "betterinstincts/host_listener.py",
+    "scripts/host_listener.py",
+    "contracts/object-action-catalog.v1.json",
+    "tests/test_object_action_catalog.py",
+    "docs/OBJECT_ACTION_CATALOG.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Scoped extension of existing session lifecycle and passive opportunity survey; strict reviewed evidence and human-first abstention instead of universal global click observation.",
+  "prior_design_decisions": [
+    {
+      "name": "Global OS click/key capture",
+      "decision": "REJECT",
+      "reason": "violates human-first/peripheral sovereignty and conflates UI clicks with object semantics"
+    },
+    {
+      "name": "Hardcoded list of Sims object IDs and interactions",
+      "decision": "REJECT",
+      "reason": "not portable across saves, packs, patches or object variants"
+    },
+    {
+      "name": "Extend existing hover schema to include all menu semantics",
+      "decision": "DEFER",
+      "reason": "would break existing validated event shape and mix tooltip with menu observation"
+    },
+    {
+      "name": "Separate bounded semantic object-event port adjoining host_listener",
+      "decision": "SELECT",
+      "reason": "reuses session lifecycle and keeps captured facts separate from learned usefulness"
+    }
+  ],
+  "fifth_gear_order": [
+    "P95",
+    "P82",
+    "P08",
+    "P07",
+    "P124"
+  ],
+  "prior_baseline": "dc062e008c60de9f8898228e0c1a92168214b0f3"
+}

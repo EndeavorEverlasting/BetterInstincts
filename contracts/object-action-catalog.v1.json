@@ -1,0 +1,93 @@
+{
+  "schema": "betterinstincts.object-action-catalog-contract/v1",
+  "owner": "betterinstincts/object_action_catalog.py",
+  "listener_owner": "betterinstincts/host_listener.py",
+  "cli": "python -m scripts.host_listener",
+  "data_schema": "betterinstincts.object-action-catalog/v1",
+  "event_schema": "betterinstincts.object-action-event/v1",
+  "event_kinds": [
+    "menu",
+    "selection",
+    "outcome"
+  ],
+  "sources": [
+    "PLAYER",
+    "HOST",
+    "SENSOR"
+  ],
+  "classification": {
+    "portable_key": [
+      "exact_game_version",
+      "object_class_ref",
+      "action_ref"
+    ],
+    "locality": "Local installation under dist/host-listener; no cross-player telemetry or user save identities in trained class keys",
+    "domains": [
+      "hunger",
+      "bladder",
+      "energy",
+      "hygiene",
+      "fun",
+      "social",
+      "money",
+      "skills",
+      "career"
+    ],
+    "separate_evidence": [
+      "observed menu availability",
+      "observed action selection",
+      "reviewed post-action usefulness"
+    ],
+    "utility_requirement": "At least 3 independently sequenced, operator-reviewed helpful outcomes and >=75% helpful among reviewed helpful/harmful outcomes in a requested domain",
+    "unknown": "Recorded, not promoted to utility"
+  },
+  "sequencing": "Monotonic 1-based event seq per unique explicit session; old sequence idempotent, gap denied; menu and selection bind same fresh capture; outcome requires later independent capture; stale events denied",
+  "recommendation": "Only after an exact current menu observation matching session, patch, object, class, capture and action list within 30 seconds",
+  "player_first": "Any player_active or player_queue_present denies catalog recommendation; no queue cancel permitted",
+  "execution": {
+    "status": "ADVISORY_ONLY",
+    "execute_allowed": false,
+    "cancel_allowed": false,
+    "must_pass_existing": [
+      "control_handoff",
+      "screen_admit",
+      "lot_boundary",
+      "effect_authority",
+      "queue_capacity",
+      "operator-desktop-boundary"
+    ],
+    "no_new_input_permission": true,
+    "no_auto_dispatch": true,
+    "no_os_hook": true,
+    "no_implicit_session_activation": true
+  },
+  "privacy": {
+    "forbidden": [
+      "raw mouse/keyboard events",
+      "raw tooltip text",
+      "Sim names",
+      "save paths",
+      "screenshots",
+      "device settings",
+      "cross-account uploads"
+    ],
+    "storage": "atomic bounded opt-in local JSON projection",
+    "max_bytes": 512000,
+    "max_classes": 256,
+    "max_actions_per_menu": 32,
+    "max_sessions": 128,
+    "max_pending": 64,
+    "no_background_daemon": true
+  },
+  "scope": {
+    "current": "Existing semantically calibrated user/host interaction observers submit events via active session. The catalog does not itself discover game signals or instrument Windows input.",
+    "required_for_live_complete": [
+      "certified local game menu sensor and player/host event adapter",
+      "fresh scene/actor/sim/target proof",
+      "queue integration behind cooperative control gates",
+      "P08 disposable game trial with review"
+    ],
+    "bi002": "Hunger A/B 5+5 rollback and maintainer review remains current parent gate"
+  },
+  "proof_ceiling": "REPOSITORY_OFFLINE_SEMANTIC_ADVISORY_NOT_LIVE_SIM_INPUT"
+}
