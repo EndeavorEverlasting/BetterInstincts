@@ -96,6 +96,18 @@ class HumanFirstHarnessTests(unittest.TestCase):
         with self.assertRaisesRegex(HarnessCoverageError, "FALSE_ADOPTED_GATE_CLAIM"):
             validate_manifest(bad)
 
+    def test_passive_presence_sensor_is_not_input_authority(self):
+        from scripts.check_human_sovereignty import _has_call
+        probe = next(
+            x for x in self.manifest["sources"]
+            if x["path"] == "betterinstincts/player_presence.py"
+        )
+        self.assertEqual(probe["classification"], "PASSIVE_OBSERVATION")
+        self.assertEqual(probe["status"], "READ_ONLY_PRESENCE_SENSOR")
+        source = (ROOT / probe["path"]).read_text(encoding="utf-8")
+        self.assertTrue(_has_call(source, {"GetLastInputInfo"}))
+        self.assertFalse(_has_call(source, {"SendInput", "SetForegroundWindow", "SetCursorPos"}))
+
     def test_no_local_runtime_proof_from_static_manifest(self):
         self.assertIn("CANONICAL_DEV_CHECKOUT_CURRENT", self.manifest["proof_dimensions"])
         self.assertIn("LOCAL_CURSOR_HOOK_ACTIVE", self.manifest["proof_dimensions"])

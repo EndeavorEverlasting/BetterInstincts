@@ -19,6 +19,7 @@ STATUSES = {
     "ADOPTED_PASSIVE_CAPTURE", "MIXED_PATHS_REVIEW_REQUIRED",
     "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY", "LOW_LEVEL_CALLER_GATE_ONLY",
     "REPOSITORY_HOOK_UNVERIFIED_LOCAL_ACTIVATION", "STATIC_DENY_ONLY",
+    "READ_ONLY_PRESENCE_SENSOR",
 }
 NOT_PROVED = {
     "MIXED_PATHS_REVIEW_REQUIRED", "UNADOPTED_LEGACY_NO_LIVE_AUTHORITY",
@@ -113,8 +114,15 @@ def validate_manifest(manifest: dict, root: Path = ROOT) -> dict:
             raise HarnessCoverageError("SCREEN_EFFECT_AS_BACKGROUND:" + path)
         if kind == "PASSIVE_OBSERVATION" and status not in {
             "ADOPTED_PASSIVE_CAPTURE", "ADOPTED_READ_ONLY_WITH_CALLBACK_TRUST",
+            "READ_ONLY_PRESENCE_SENSOR",
         }:
             raise HarnessCoverageError("BACKGROUND_REVIEW_REQUIRED:" + path)
+        if kind == "PASSIVE_OBSERVATION" and _has_call(
+            source, {"SendInput", "SetCursorPos", "SetForegroundWindow", "keybd_event", "BlockInput"}
+        ):
+            raise HarnessCoverageError("PASSIVE_SENSOR_INPUT_MUTATION:" + path)
+        if status == "READ_ONLY_PRESENCE_SENSOR" and not _has_call(source, {"GetLastInputInfo"}):
+            raise HarnessCoverageError("PRESENCE_SENSOR_PROBE_MISSING:" + path)
         if status == "ADOPTED_GATED":
             required_calls = entry.get("admission_calls")
             if required_calls is not None:

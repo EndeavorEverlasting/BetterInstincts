@@ -53,6 +53,18 @@
       "marker": "assess_effect"
     },
     {
+      "path": "betterinstincts/legacy_screen_boundary.py",
+      "classification": "POLICY",
+      "status": "STATIC_POLICY_ONLY",
+      "marker": "def deny_unadopted_live_effect"
+    },
+    {
+      "path": "betterinstincts/player_presence.py",
+      "classification": "PASSIVE_OBSERVATION",
+      "status": "READ_ONLY_PRESENCE_SENSOR",
+      "marker": "GetLastInputInfo"
+    },
+    {
       "path": "betterinstincts/playwright_interop.py",
       "classification": "SCREEN_EFFECT",
       "status": "ADOPTED_GATED",
