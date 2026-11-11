@@ -149,6 +149,13 @@ class WorldTraversalHarnessTests(unittest.TestCase):
         with self.assertRaisesRegex(WorldTraversalHarnessError, "HARNESS_PATH_INVALID"):
             self.validate((0, harness))
 
+    def test_p00_root_budget_keeps_detailed_instruction_owner(self):
+        contents = copy.deepcopy(self.inputs[6])
+        contents["AGENTS.md"] += "New unbounded duplicated instructions must not live in root."
+        with self.assertRaisesRegex(WorldTraversalHarnessError,
+                                    "WORLD_P01_ROOT_GOVERNANCE_BUDGET"):
+            self.validate((6, contents))
+
     def test_p01_local_skill_doctrine_or_ci_gate_cannot_disappear(self):
         for path, needle in (
             ("AGENTS.md", "docs/WORLD_TRAVERSAL_HARNESS.md"),
