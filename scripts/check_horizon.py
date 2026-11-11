@@ -87,6 +87,38 @@ def validate(data):
                    "OS_PERIPHERAL_MUTATION","BI002_CLOSE","PR159_TAKEOVER"):
         if needed not in forbidden:
             raise HorizonError("WORLD_SENSOR_SAFETY_BOUNDARY_LOST")
+
+    # P04 Escape/U forensics is a supporting safety workload, not a new
+    # product stage or replacement for the existing world-sensor priority.
+    esc=(data.get("supporting_workloads") or {}).get("escape_u_input_forensics")
+    if (not isinstance(esc,dict)
+            or esc.get("id")!="BI-ESC-U-FORENSICS-P04"
+            or esc.get("kind")!="SUPPORTING_RUNTIME_SAFETY_PROOF"
+            or esc.get("current_product_gate")!="BI-002"
+            or esc.get("product_gate_effect")!="NONE"
+            or esc.get("does_not_supersede")!=SUPPORTING_ID
+            or esc.get("status")!="ROUTED_LOCAL_EVIDENCE_OPEN"
+            or esc.get("dispatch")!=SUPPORTING_DISPATCH
+            or esc.get("runbook")!="plans/active/BI-ESC-U-FORENSICS-P04-20261110.md"):
+        raise HorizonError("ESC_U_P04_CANONICAL_WORKLOAD_LOST")
+    origin=esc.get("source_fix") or {}
+    if (origin.get("pr")!=183 or origin.get("merged_into_main") is not True
+            or origin.get("proof")!="OFFLINE_CI_AND_MAIN_READBACK_NOT_PHYSICAL_KEY_CERTIFICATION"):
+        raise HorizonError("ESC_U_SOURCE_AND_PHYSICAL_PROOF_CONFLATED")
+    state=esc.get("status_dimensions") or {}
+    if (state.get("physical_escape_menu")!="NOT_OBSERVED"
+            or state.get("physical_u_clubs")!="NOT_OBSERVED"
+            or state.get("culpable_cursor_session")!="UNATTRIBUTED"
+            or state.get("local_hook_active")!="NOT_OBSERVED"):
+        raise HorizonError("ESC_U_PHYSICAL_CAUSALITY_UNPROVEN")
+    policy=set(esc.get("safety") or [])
+    for guard in ("OPERATOR_OWNS_INPUT","SINGLE_CURSOR_LEASE",
+                  "NO_UNATTENDED_KEY_INJECTION","NO_OS_KEY_REMAP",
+                  "NO_BLUETOOTH_OR_DRIVER_MUTATION",
+                  "NO_PRINT_SCREEN_CHANGES","NO_ACCESSIBILITY_MUTATION",
+                  "NO_PERSONAL_SAVE_ACCESS","NO_CLAIM_OF_GAME_PROOF_FROM_CI"):
+        if guard not in policy:
+            raise HorizonError("ESC_U_P04_SOVEREIGNTY_GUARD_LOST")
     return {"state":"PASS","stages":len(rows),"game_certification":"NOT_PROVED",
             "native_autonomy_policy":native["policy_merge"]["proof"],
             "native_adapter_status":status,"next_supporting_priority":SUPPORTING_ID}
@@ -156,6 +188,45 @@ def validate_dispatch(horizon,dispatch):
             raise HorizonError("P04_PERIPHERAL_PROTECTION_LOST")
     if integration.get("status")!="BLOCKED_ON_REAL_SENSOR_PROOF_AND_INDEPENDENT_PR159_OWNER":
         raise HorizonError("P04_PR159_COLLISION_GUARD_LOST")
+
+    # Independent P04 evidence lanes must not acquire a second cursor owner.
+    required={"ESC_U_OPERATOR_KEY_MATRIX","ESC_U_CURSOR_PROVENANCE","ESC_U_RECONCILE"}
+    if not required.issubset(set(ids)):
+        raise HorizonError("ESC_U_P04_DISPATCH_LANE_COVERAGE_LOST")
+    if dispatch.get("supporting_workload_id")!="BI-ESC-U-FORENSICS-P04":
+        raise HorizonError("ESC_U_P04_DISPATCH_ID_DRIFT")
+    if (dispatch.get("supporting_workload_contract")!=
+            "plans/horizon.v1.json#supporting_workloads.escape_u_input_forensics"):
+        raise HorizonError("ESC_U_P04_DISPATCH_OWNER_DRIFT")
+    if dispatch.get("supporting_workload_launch_order")!=[
+            "ESC_U_OPERATOR_KEY_MATRIX","ESC_U_CURSOR_PROVENANCE","ESC_U_RECONCILE"]:
+        raise HorizonError("ESC_U_P04_DEPENDENCY_ORDER_DRIFT")
+    manual=by_id["ESC_U_OPERATOR_KEY_MATRIX"]
+    provenance=by_id["ESC_U_CURSOR_PROVENANCE"]
+    reconcile=by_id["ESC_U_RECONCILE"]
+    if (manual.get("execution_environment")!="OPERATOR_OR_PHYSICAL_RUNTIME"
+            or provenance.get("execution_environment")!="LOCAL_AGENT_RUNTIME"
+            or reconcile.get("execution_environment")!="LOCAL_AGENT_RUNTIME"
+            or set(reconcile.get("dependencies") or [])!={
+                "ESC_U_OPERATOR_KEY_MATRIX","ESC_U_CURSOR_PROVENANCE"}):
+        raise HorizonError("ESC_U_P04_RUNTIME_PARTITION_OR_DEPENDENCY_LOST")
+    for lane in (manual,provenance,reconcile):
+        if (not lane.get("expected_artifact")
+                or "GAME_HUNGER" not in lane.get("serial_with",[])
+                or "WORLD_SENSOR" not in lane.get("serial_with",[])
+                or not any("Windows" in x or "OS " in x or "key" in x.lower()
+                           for x in lane.get("forbidden",[]))):
+            raise HorizonError("ESC_U_P04_COLLISION_OR_OS_GUARD_LOST")
+    if (not manual["expected_artifact"].startswith("dist/game-host/")
+            or not provenance["expected_artifact"].startswith("dist/game-host/")
+            or "GAME_HUNGER" in manual.get("dependencies",[])
+            or "WORLD_SENSOR" in provenance.get("dependencies",[])):
+        raise HorizonError("ESC_U_P04_EVIDENCE_DEPENDENCY_INCORRECT")
+    flags=dispatch.get("parallel_execution") or {}
+    if (flags.get("escape_u_dependency_ready_width")!=2
+            or flags.get("escape_u_observed_parallelism") is not False
+            or flags.get("escape_u_status")!="DEGRADED_NO_VERIFIED_LOCAL_HOST_AGENT_ADAPTER"):
+        raise HorizonError("ESC_U_P04_FALSE_PARALLELISM_CLAIM")
     return {"state":"PASS","lanes":len(lanes),"current_gate":"BI-002",
             "next_supporting_priority":SUPPORTING_ID,
             "parallel_game_workers":0,"game_certification":"NOT_PROVED"}
