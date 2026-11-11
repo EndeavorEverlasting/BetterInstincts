@@ -70,3 +70,16 @@ The P83/P03/P141/P124/P04 audit of PR #168 found and repaired source-level false
 ## 2026-11-10 — P00/P01 world-traversal ontology and harness
 
 World-target highlight, camera/identity continuity, and replay-unique observed learning are now first-class concepts/invariants in `contracts/ontology.v1.json` revision 5 (`BI-ONT-028..030`), routed by `AGENTS.md` / `docs/AGENT_OPERATING_RULES.md` / `docs/DOCTRINE.md`. One P01 manifest `contracts/world-traversal-harness.v1.json` carries the codebase map, independent permissions, offline/source-only versus local-game runtime, private receipts, scoped `.cursor/skills/world-traversal-p08/SKILL.md`, and canonical workstation path owner; `docs/WORLD_TRAVERSAL_HARNESS.md` is the complete operating guide. Regressions run `python -m scripts.check_world_traversal_harness` and `python -m unittest tests.test_world_traversal_harness -v`. `BI-WORLD-TRAVERSAL-P08-SENSOR` remains a **supporting local game proof** after offline source readiness, not the product `current_gate`: **BI-002 hunger retains full priority and live certification requirements**. Neither PR #159 ownership nor real Sims local skill activation is implied by source routing.
+
+## 2026-11-10 — semantic object-action learning integration
+
+The catalog's bounded offline semantic port and existing opt-in listener
+support portable discovery across save-specific object instances. Each new
+menu/selection/outcome contributes evidence; only reviewed effects yield a
+current-capture queue **recommendation**, never a game action or cancellation.
+Next local P08 gate: calibrate Sims menu/selection/post-action event sensors
+on a disposable save, prove exact-patch object-class identities and callback
+coverage for player and host input, and exercise the already existing human
+handoff/queue admission before any execution adapter is promoted. Do not
+reorder or block active BI-002 hunger certification. Detailed owner:
+\`docs/OBJECT_ACTION_CATALOG.md\`.
