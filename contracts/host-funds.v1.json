@@ -1,14 +1,14 @@
 {
   "schema": "betterinstincts.host-funds/v1",
-  "version": 2,
-  "proof_ceiling": "HOST_SENDINPUT_CHEAT_DISPATCH_NOT_GAME_MOD_OR_INCOME_CERT",
+  "version": 3,
+  "proof_ceiling": "EXACT_FUNDS_CONSOLE_DISPATCH_UNTIL_EXTERNAL_HUD_VERIFICATION_NOT_EARNED_INCOME",
   "local_observed": {
     "date": "2026-11-07",
     "household": "LabLab / Charlee",
     "patch": "1.121.361.1020",
     "funds_before_subsidy_hint": 38,
     "motherlode_delta": 50000,
-    "note": "Ctrl+Shift+C opens console in Live OR Build/Buy. testingcheats enabled true before funds commands. motherlode is durable (+50k); Money N may no-op. Do not force F1 — operator may be building with the new funds."
+    "note": "Ctrl+Shift+C opens console in Live OR Build/Buy. testingcheats enabled true before funds commands. motherlode is durable (+50k); Money N may no-op. Do not force F1 — operator may be building with the new funds. Historical local behavior only: EA's canonical testingcheats true + money X command is the new preferred plan; no automatic motherlode after it; requires new P08 host certification."
   },
   "subsidy": {
     "prompt_id": "host.funds.federal_subsidy",
@@ -29,53 +29,81 @@
   },
   "inject_sequence": {
     "mode_agnostic": true,
-    "allowed_modes": ["live", "build", "buy", "unknown"],
+    "allowed_modes": [
+      "live",
+      "build",
+      "buy",
+      "unknown"
+    ],
     "require_live_mode": false,
     "live_mode_key": "F1",
     "never_force_mode_switch": true,
-    "open_console_chord": ["CTRL", "SHIFT", "C"],
+    "open_console_chord": [
+      "CTRL",
+      "SHIFT",
+      "C"
+    ],
     "open_console_chord_label": "Ctrl+Shift+C",
     "open_console_note": "Required in every mode. Opens the Sims cheat console before testingcheats or funds commands.",
     "require_foreground_sims": true,
     "soft_focus_only": true,
     "forbid_escape_spam": true,
-    "activate_testing_cheats": "testingcheats enabled true",
-    "activate_testing_cheats_alias": "testingcheats true",
-    "set_funds_template": "Money {amount}",
-    "set_funds_status": "BEST_EFFORT_MAY_NOOP",
-    "preferred_path_status": "OPEN",
-    "preferred_path_id": "FUNDS_PREFERRED_NON_MOTHERLODE",
-    "preferred_path_note": "Operator believes a more efficient exact-funds mechanism than looping motherlode exists. Keep OPEN; do not block BI-002. Interim: motherlode chunks after testingcheats.",
+    "activate_testing_cheats": "testingcheats true",
+    "activate_testing_cheats_alias": "testingcheats enabled true",
+    "set_funds_template": "money {amount}",
+    "set_funds_status": "EA_DOCUMENTED_LOCAL_P08_OPEN",
+    "preferred_path_status": "EA_DOCUMENTED_HOST_CONFIRMATION_PENDING",
+    "preferred_path_id": "EA_MONEY_EXACT_TARGET",
+    "preferred_path_note": "Native EA cheat console: testingcheats true; money N sets current active household total N. No portrait names, clicks or repeated motherlode. Confirm HUD; do not auto-replay.",
     "durable_additive_command": "motherlode",
     "durable_additive_chunk": 50000,
-    "durable_additive_note": "INTERIM LOCAL_OBSERVED substitute: motherlode +50000 after testingcheats; Money N may no-op. Loop motherlode until preferred exact-funds path is proven.",
+    "durable_additive_note": "Historical local observation: +50000. NOT executed automatically after exact money; manual fallback requires new observed HUD balance, explicit permission and bounded separate plan.",
     "close_console_key": "ESCAPE",
     "close_console_optional": true,
-    "forbidden": ["Resume", "Delete", "TerminateProcess", "edit_save_file", "force_F1_while_building"]
+    "forbidden": [
+      "Resume",
+      "Delete",
+      "TerminateProcess",
+      "edit_save_file",
+      "force_F1_while_building"
+    ],
+    "auto_fallback": false,
+    "max_household_funds": 9999999,
+    "funds_observation_required": true,
+    "only_add_funds": true,
+    "fresh_runtime_scene_required": true,
+    "console_visibility_note": "No absolute screen click to focus console. A post-chord console focus/visibility sensor is an open local P08 certification gate; never mistake typed-command dispatch for game acceptance."
   },
   "call_stack": {
     "success": [
-      "PLAYER_FIRST / presence yield if playing and no subsidy choice",
-      "REQUIRE_FOREGROUND_SIMS (soft focus; no mode switch)",
-      "OPEN_CHEAT_CONSOLE via Ctrl+Shift+C (Live or Build/Buy)",
-      "ACTIVATE_TESTING_CHEATS: testingcheats enabled true",
-      "TRY_SET_EXACT_FUNDS: Money N (best-effort)",
-      "ADD_FUNDS_CHUNK: motherlode x ceil(boost/50000)",
-      "optional CLOSE_CHEAT_CONSOLE"
+      "P95: player/household intent -> current active household target, independent of portrait/name/save",
+      "P82: observe current HUD funds and current game mode; block if unknown or target already met",
+      "P08: acquire admitted_screen_lease with player idle/foreground and scene checks; local game proof still open",
+      "P07: open cheat console via Ctrl+Shift+C; activate testingcheats true; money <exact target> exactly once",
+      "P124: external HUD readback + evidence ref -> classify result, never blindly retry or fallback"
     ],
     "failure": [
-      "no foreground Sims -> SIMS_FOREGROUND_REQUIRED",
-      "skip Ctrl+Shift+C -> console never opens",
-      "skip testingcheats -> funds commands fail",
-      "force F1 while operator builds -> HOST_CRISIS_ANTI_PATTERN / tandem break"
+      "unknown/stale balance -> FUNDS_OBSERVATION_REQUIRED (no commands)",
+      "already at or above target -> TARGET_ALREADY_MET (no reducing household wealth)",
+      "unknown game scene at execute -> EXPLICIT_GAME_MODE_REQUIRED",
+      "no idle/foreground/screen lease -> HOST_PAUSED",
+      "console visibility/acceptance unproven -> DISPATCHED_NOT_VERIFIED, no auto retry",
+      "no supplied after-HUD evidence -> FUNDS_NOT_VERIFIED",
+      "never force F1, no fixed screen click, no automatic motherlode, no Esc spam"
     ]
   },
   "invariants": [
     "PLAYER_FIRST_outRanks_subsidy_prompt",
     "disposable_lab_only_when_executing",
-    "testingcheats_enabled_true_before_funds_commands",
+    "EA_testingcheats_true_before_money_exact_target",
     "ctrl_shift_c_opens_cheat_console",
     "mode_agnostic_no_forced_F1",
+    "observed_current_active_household_funds_required",
+    "only_add_funds_never_decrease_balance",
+    "single_exact_money_command_no_auto_motherlode",
+    "external_HUD_observation_required_for_result_confirmation",
+    "no_portrait_or_legacy_person_specific_identifiers",
     "never_claim_BI004_income_from_subsidy"
-  ]
+  ],
+  "documented_ea_reference": "https://www.ea.com/games/the-sims/the-sims-4/faq/cheats"
 }
