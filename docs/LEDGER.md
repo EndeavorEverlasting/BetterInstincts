@@ -1546,3 +1546,7 @@ local-game work under issue #171 and BI-002 remains the independent 5 vanilla
 + 5 modified + rollback + maintainer-review gate. A version-correct, read-only
 EA source inspection is the next native-autonomy task; gameplay effects remain
 `NOT_OBSERVED` until installed and tested.
+
+## 2026-11-10 — household navigation no-oscillation P00/P01 + Fifth Gear
+
+Parent: prevent agents from moving back/forth in the same region without progress. Consultation created in separate earlier commit; ontology revision 7 defines NAVIGATION_SCOPE/REGION/PASSAGE/FRONTIER/INTENT/PROGRESS/STALL/RECOVERY and invariants BI-ONT-036..041. P95: independent route graph versus camera/visual graph. P82: stable weighted navigation with synthetic no-progress A-B-A-B falsifiers. P08: no actual live game host or approved disposable session in this chat, live proof remains UNPROVEN. P07: pure planner + room-map integration. P124: machine contract, validation, CI, governance and ledger. Read-only offline advisory, no autonomous mouse/controller, save, OS configuration or new server. BI-002 needs gate remains active; open spatial perception PR #159 not overwritten.

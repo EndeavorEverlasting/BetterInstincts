@@ -78,6 +78,10 @@ jobs:
         run: |
           python -m scripts.check_world_traversal_harness
           python -m unittest tests.test_world_traversal_harness -v
+      - name: P00 P01 household navigation and no-oscillation regression
+        run: |
+          python -m scripts.check_household_navigation
+          python -m unittest tests.test_household_navigation -v
       - name: World-target highlight and observed-outcome learning eval
         run: |
           python -m scripts.world_traversal_eval
