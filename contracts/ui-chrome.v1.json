@@ -59,8 +59,12 @@
           "chord": [
             "ESC"
           ],
-          "effect": "Open/close pause or cancel overlay",
-          "risk": "May open MENU if no overlay"
+          "effect": "Cancel the active held object/overlay; request Options menu only when no overlay consumes Escape. Not a direct game-time pause.",
+          "risk": "Context-sensitive: a modal or held object can consume Escape without opening Options",
+          "status": "CONTEXT_DEPENDENT_NATIVE",
+          "direct_time_pause": false,
+          "conditional_menu": true,
+          "menu_verified": false
         },
         {
           "id": "CHEAT_CONSOLE",
