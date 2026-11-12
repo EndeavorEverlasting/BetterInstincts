@@ -16,15 +16,16 @@ Included are full `unittest discover`, peripheral authority, Cursor desktop guar
 
 **No GitHub token or GitHub Actions API is required to run these checks.** Git history is supplied read-only for base-ref validators. The committed source snapshot is copied to a disposable, networkless container. Output artifacts and `__pycache__` remain inside ephemeral storage.
 
-## Read-only plan — normal operator terminal
+## Read-only plan — trusted operator launcher
 
-From a **clean, reviewed BetterInstincts checkout**:
+After the reviewed external-launcher copy step below, from a **clean BetterInstincts checkout**:
 
 ```powershell
-python -m scripts.local_quality plan
+$trusted = Join-Path $env:LOCALAPPDATA 'BetterInstincts\\trusted-host'
+python (Join-Path $trusted 'local_quality.py') plan --repo .
 ```
 
-A plan validates the exact manifest and current Git SHA; it does not invoke Entire, Docker, agent executors or any test code. For the actual run, use an independently reviewed launcher copy **outside** the agent-editable checkout; the local repository copy refuses host execution.
+A plan validates the exact manifest and current Git SHA without invoking Entire, Docker, agent executors or any test code. **Both plan and run refuse the repository's own agent-editable Python launcher.** This is a project-scope preflight safeguard, not an OS privilege boundary.
 
 ## Once-only host provisioning (operator-reviewed)
 
