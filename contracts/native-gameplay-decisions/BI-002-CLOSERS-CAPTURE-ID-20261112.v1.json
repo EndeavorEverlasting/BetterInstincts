@@ -1,0 +1,15 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-002-CLOSERS-CAPTURE-ID-20261112",
+  "purpose": "P83 closer improves input evidence identity validation, not in-game Sims autonomy behavior or native EA hooks.",
+  "files": [
+    {
+      "path": "betterinstincts/live_eval.py",
+      "route": "NON_GAMEPLAY",
+      "reason": "Pure bounded validation of manually supplied experiment evidence IDs; no game actions, queues or system state are mutated.",
+      "game_effect_claim": "NONE"
+    }
+  ],
+  "proof_ceiling": "OFFLINE_RECEIPT_VALIDATION_ONLY_NOT_SIMS_GAMEPLAY_PROOF",
+  "successor_gate": "BI-002 5 vanilla, 5 modified, rollback and review on an authorized disposable game save"
+}
