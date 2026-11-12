@@ -1,0 +1,91 @@
+{
+  "schema": "betterinstincts.voi-traversal-harness/v1",
+  "version": 1,
+  "status": "OFFLINE_HARNESS_AND_ADVISORY_NOT_GAME_WALK_CERT",
+  "consultation": "contracts/consultations/BI-VOI-PURPOSEFUL-TRAVERSAL-20261112.v1.json",
+  "purpose": "One goal-bound agent walk maximum until independently observed needs/career/skills/whims action; separate camera VOI and physical navigation.",
+  "owners": {
+    "navigation_graph": "betterinstincts/household_navigation.py",
+    "camera_policy": "betterinstincts/camera_traverse.py",
+    "action_queue_capacity": "betterinstincts/queue_capacity.py",
+    "movement_and_voi_advisor": "betterinstincts/traversal_voi.py",
+    "host_composition": "betterinstincts/host_stack.py",
+    "outer_presence_gate": "betterinstincts/host_automate.py",
+    "actuator_authority": "betterinstincts/screen_admit.py",
+    "outcome_continuity": "betterinstincts/task_continuity.py"
+  },
+  "stages": [
+    "PASSIVE_OBSERVE",
+    "GOAL_AND_AFFORDANCE_ATTEST",
+    "NATIVE_OBJECT_ACTION_FIRST",
+    "CAMERA_REFRAME_IF_UNCLEAR",
+    "VERIFIED_SIM_ROUTE_IF_NEEDED",
+    "ONE_WALK_IN_FLIGHT",
+    "OBSERVE_DOMAIN_ACTION_BEFORE_ANY_MORE_WALK"
+  ],
+  "domains": [
+    "NEEDS",
+    "CAREER",
+    "SKILLS",
+    "WHIMS"
+  ],
+  "limits": {
+    "max_host_walks_before_goal_action": 1,
+    "max_queue_rows": 16,
+    "max_route_steps": 32,
+    "max_voi_score_input": 1
+  },
+  "walk_contract": {
+    "purpose": "WALK is transit, never a terminal value and never an information-gathering gesture.",
+    "direct_interaction": "PREFER_GAME_NATIVE_PATHFINDING_WITH_VERIFIED_OBJECT_AFFORDANCE",
+    "entry": "Current actor, objective, target, domain, positive affordance, active on-lot scene, source-bound queue and current route evidence",
+    "repeat_guard": "A prior walk since last observed domain action blocks another walk even after the queue empties.",
+    "terminal": "NEEDS|CAREER|SKILLS|WHIMS action with same goal and target is separately observed, not assumed from arrival.",
+    "uncertain": "ABSTAIN_AND_REOBSERVE"
+  },
+  "camera_contract": {
+    "owner": "betterinstincts/camera_traverse.py",
+    "motion": "View-only pan/zoom/reframe, no physical Sim position or Sim queue mutation",
+    "evidence": "Fresh capture/camera revision and independently admitted named camera lease",
+    "restore": "Existing active Sim follow and safe cursor rest, never leave camera off intent",
+    "never": "CAMERA_PAN_IS_SIM_PROGRESS"
+  },
+  "learning_boundary": {
+    "admissible": "Versioned, consented, source-bound reviewed outcomes may calibrate VOI cost and benefit",
+    "prediction": "Never replaces fresh verified route, goal, player and effect permits",
+    "no_auto_training": true,
+    "no_background_scanning": true,
+    "no_image_persistence": true
+  },
+  "harness": {
+    "map": "docs/VOI_TRAVERSAL.md",
+    "workflow": "docs/VOI_TRAVERSAL.md",
+    "artifacts": [
+      "contracts/voi-traversal-harness.v1.json",
+      "contracts/consultations/BI-VOI-PURPOSEFUL-TRAVERSAL-20261112.v1.json",
+      "contracts/native-gameplay-decisions/BI-VOI-PURPOSEFUL-TRAVERSAL-20261112.v1.json",
+      "docs/VOI_TRAVERSAL.md"
+    ],
+    "validators": [
+      "python -m scripts.check_voi_traversal_harness",
+      "python -m unittest tests.test_traversal_voi -v",
+      "python -m scripts.check_ontology",
+      "python -m scripts.check_native_gameplay_authority --json"
+    ],
+    "tests": "tests/test_traversal_voi.py",
+    "local_live": "EXACT_GAME_BUILD_OPERATOR_APPROVED_DISPOSABLE_SAVE_ONLY",
+    "handoff": "CHANGED | PROVED | NEXT, PR/commit/CI separate from local gameplay"
+  },
+  "hard_forbidden": [
+    "BLIND_WALK_SPAM",
+    "WALK_FOR_CHEAP_VISUAL_SCAN",
+    "SECOND_WALK_WITHOUT_DOMAIN_OUTCOME",
+    "CAMERA_MOTION_COUNTS_AS_SIM_PROGRESS",
+    "PLAYER_QUEUE_REWRITE",
+    "UNKNOWN_SAVE_MODIFICATION",
+    "AUTO_CLICK_FROM_VOI_SCORE"
+  ],
+  "execute_allowed_default": false,
+  "control_permit": null,
+  "proof_ceiling": "OFFLINE_VOI_POLICY_NOT_SIMS_MOVEMENT_OR_LIVE_SLAM_CERT"
+}
