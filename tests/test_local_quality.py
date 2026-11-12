@@ -128,5 +128,17 @@ class HostQualityTests(unittest.TestCase):
 
 
 
+    def test_real_subprocess_stdout_cap_and_timeout(self):
+        import sys
+        too_much = q.run_command([sys.executable, '-c', "print('x'*2000000)"], timeout=5)
+        self.assertEqual(too_much['code'], 124)
+        self.assertEqual(too_much['stderr'], 'OUTPUT_LIMIT')
+        self.assertEqual(too_much['stdout'], '')
+        slow = q.run_command([sys.executable, '-c', 'import time;time.sleep(3)'], timeout=1)
+        self.assertEqual(slow['code'], 124)
+        self.assertEqual(slow['stderr'], 'TIMEOUT')
+
+
+
 if __name__ == '__main__':
     unittest.main()
