@@ -1,0 +1,123 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-002-OBSERVATION-REPLAY-P141-FIFTH-GEAR-20261111",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "source_main_sha": "5d39e34663c19d8ac0e2eb8d60c14d720b167f6b",
+  "proposed_capability": "Prevent reused gameplay observation references from counting as independent BI-002 hunger trial evidence. Extend existing live_eval and live_cert owners; no game input or new evidence pipeline.",
+  "scout": {
+    "owner": "P141",
+    "strategic_question": "Which bounded repository investment most improves trustworthy progress toward BI-002 without a local Sims game host?",
+    "theses": [
+      {
+        "title": "Reject replayed hunger evidence at source",
+        "facts": [
+          "docs/LIVE_CERT.md requires distinct observation capture references",
+          "betterinstincts/live_eval.py checks stage/trial uniqueness but not observation_ref reuse",
+          "scripts/live_cert.py appends before status/evaluate, allowing a post-write validation failure"
+        ],
+        "alternative": "Local operator manually reviews captures anyway, but that does not protect machine-produced trial counts",
+        "falsifier": "Existing evaluator blocks duplicate refs in both record and load paths",
+        "disposition": "SURVIVES"
+      },
+      {
+        "title": "Build native EA autonomy adapter now",
+        "facts": [
+          "BI-002 remains active and requires 5+5 genuine gameplay trials",
+          "GitHub issue #171 owns native adapter game proof"
+        ],
+        "alternative": "Offline source alone cannot confirm version-specific EA hooks, so implementation risks fictional APIs",
+        "falsifier": "Current approved exact-patch EA hook, installed game and disposable A/B evidence exist in this provider runtime",
+        "disposition": "DEFERRED"
+      },
+      {
+        "title": "Consolidate all gameplay and host orchestration",
+        "facts": [
+          "Existing domain_cascade, need_load_balance and semantic_advisory already own independent responsibilities"
+        ],
+        "alternative": "A rewrite duplicates tested owners while hunger certification remains open",
+        "falsifier": "A verified ownership collision blocking BI-002 requires replacing existing owners",
+        "disposition": "REJECTED"
+      },
+      {
+        "title": "Advance spatial host sensor as first priority",
+        "facts": [
+          "Open PR #159 already owns spatial host perception",
+          "Active parent remains BI-002 hunger"
+        ],
+        "alternative": "Independent PR scope and local live gate make another spatial writer collision-prone",
+        "falsifier": "PR #159 is integrated and a specific spatial evidence defect blocks hunger trial recording",
+        "disposition": "DEFERRED"
+      }
+    ],
+    "selected_thesis": "Reject replayed hunger evidence at source",
+    "confidence": "HIGH",
+    "cheap_investigation": "Feed the same observation_ref under different stage/trial keys; verify baseline currently accepts it, then strengthen record and evaluator, preserving distinct refs from the existing valid fixture.",
+    "route": "P95 internal design → P82 falsification → P08 live proof unavailable locally → P07 implement/CI → P124 no duplicate owner"
+  },
+  "affected_concepts": [
+    "OBSERVATION",
+    "PROOF_RECEIPT",
+    "GAME_BUILD",
+    "CONTROL_PERMIT",
+    "OUTCOME",
+    "PLAYER_INTENT"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/live_eval.py",
+    "scripts/live_cert.py",
+    "tests/test_live_eval.py",
+    "tests/test_live_cert_cli.py",
+    "docs/LIVE_CERT.md",
+    "plans/active/BI-002.md",
+    "docs/LEDGER.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_PROVENANCE_GUARD_ONLY_NO_SIMS_GAMEPLAY_CERTIFICATION",
+  "player_save_control_impact": "No local game, user saves, Mods, desktop focus, input mapping, Windows peripherals or Sims runtime touched. Local lab receipt rejection only.",
+  "expected_outcome": "Distinct observation references become mandatory within each run; new records fail before append, already stored replayed records fail on read/evaluate, valid 5+5+rollback fixtures use unique refs, and documentation/ledger remain truthful about the parent gate.",
+  "negative_tests": [
+    "Same observation_ref on different stages is rejected",
+    "Same observation_ref on different trial numbers is rejected",
+    "Rejection does not append a row",
+    "Persisted tampered/replayed evidence fails at status/load",
+    "Unique 5 baseline, 5 modified and 1 rollback still produce review-required only",
+    "Never turn offline measurement into gameplay certified"
+  ],
+  "rollback_path": "Revert bounded feature PR; no installed mod or user-state effects.",
+  "unresolved_unknowns": [
+    "No actual Windows Sims host or game runtime in the GitHub connector; independent 5+5 and rollback proof remain open",
+    "Captures are opaque manual references, not independently authenticated media content"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-002-OBSERVATION-REPLAY-P141-FIFTH-GEAR-20261111.v1.json",
+    "contracts/native-gameplay-decisions/BI-002-EVIDENCE-REPLAY-20261111.v1.json",
+    "betterinstincts/live_eval.py",
+    "scripts/live_cert.py",
+    "tests/test_live_eval.py",
+    "tests/test_live_cert_cli.py",
+    "docs/LIVE_CERT.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREMUTATION_CONSULTATION_FIRST_VALIDATED",
+  "invocations": [
+    "P141",
+    "P95",
+    "P82",
+    "P08",
+    "P07",
+    "P124"
+  ]
+}

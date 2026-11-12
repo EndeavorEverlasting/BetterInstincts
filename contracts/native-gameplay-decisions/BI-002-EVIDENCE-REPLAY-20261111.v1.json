@@ -1,0 +1,16 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-002-EVIDENCE-REPLAY-20261111",
+  "purpose": "Classify deterministic, offline-only proof-receipt validation as engineering evidence integrity, not Sims native gameplay implementation.",
+  "files": [
+    {
+      "path": "betterinstincts/live_eval.py",
+      "route": "NON_GAMEPLAY",
+      "reason": "Validated, run-local experiment provenance and metrics; cannot change autonomous Sims behavior, queues, game files, saves or desktop input.",
+      "game_effect_claim": "NONE"
+    }
+  ],
+  "game_effect_claim": "NONE",
+  "proof_ceiling": "OFFLINE_EVIDENCE_INTEGRITY_NOT_GAMEPLAY_CERTIFICATION",
+  "successor_gate": "BI-002: actual 5 vanilla + 5 modified Sims trials, rollback and reviewer attestation"
+}

@@ -1,5 +1,8 @@
 # BetterInstincts roadmap — no trajectory rediscovery
 
+**2026-11-11 BI-002 evidence integrity continuation (P141 → Fifth Gear):** Preserve the hunger-first parent and the separate live game gate. Strengthen existing `live_eval` / `live_cert` so duplicate observation references cannot inflate 5+5+rollback trial counts, including already-persisted receipts. This is a bounded offline proof guard, not a new gameplay prerequisite, native EA hook or completed Sims certification. See `docs/LIVE_CERT.md` and the P141 consultation.
+
+
 **2026-11-08 operator correction:** the requested work is Sim behavior orchestration.
 The bed-placement proposal and its approval gate are rejected and are not a
 dependency. Gardening now has a peer host-stack/listener service using the existing
