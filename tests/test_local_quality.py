@@ -56,7 +56,9 @@ class HostQualityTests(unittest.TestCase):
                 t.addfile(item)
             return f.getvalue()
         with tempfile.TemporaryDirectory() as dest:
-            for candidate in ('../outside.txt', '/tmp/absolute.txt', 'a/../../out.txt'):
+            for candidate in ('../outside.txt', '/tmp/absolute.txt', 'a/../../out.txt',
+                              r'..\outside.txt', r'C:\Windows\bad.txt',
+                              r'a\..\..\out.txt', 'bad:name.txt'):
                 with self.subTest(candidate=candidate), self.assertRaisesRegex(ValueError, 'UNSAFE_ARCHIVE_PATH'):
                     q.safe_extract_git_archive(archive(candidate), dest)
             with self.assertRaisesRegex(ValueError, 'UNSAFE_ARCHIVE_ENTRY'):
