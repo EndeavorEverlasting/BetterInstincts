@@ -1,3 +1,9 @@
+## 2026-11-11 — P141 → Fifth Gear: Entire-backed local verification and GitHub Actions independence
+
+Exact registry: current Moonwake AGENTS.md + `harness/exports/prompt-invocation-catalog.v1.json` (blob `8c281379ba7ccc871947391233b1db72f4a108ef`) + deterministic resolver. P141 ranked five alternatives (direct Windows tests REJECT; duplicate agent orchestrator REJECT; hosted-CI swap DEFER; Entire-only testing DEFER; isolated host plus Moonwake continuity SELECT), documented in `plans/active/BI-ENTIRE-LOCAL-QUALITY-20261111.md`. Fifth Gear: P95 local acceptance/Git/Entire call stack; P82 hostile/no-privilege and coverage-parity falsifiers; P08 actual Windows Docker/Entire/physical canary OPEN; P07 branch/tests/PR; P124 one manifest, no parallel agent loop. Pre-mutation source consultation `contracts/consultations/BI-ENTIRE-LOCAL-QUALITY-20261111.v1.json`.
+
+The independent quality gate includes 49 existing workflow commands and does not call GitHub Actions to execute them. Public checkpoint uploads stay disabled; no hook/host settings touched. Preserve BI-002 gameplay, operator-peripheral and cursor-hook proof as separate dimensions. See `docs/LOCAL_QUALITY.md`.
+
 ## 2026-11-10 — P04 Escape/U forensics canonical workload
 
 ## 2026-11-11 — P141 → /fifth-gear for BI-002 observation replay integrity
