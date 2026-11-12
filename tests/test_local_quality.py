@@ -101,6 +101,8 @@ class HostQualityTests(unittest.TestCase):
         for token in ('--network=none', '--read-only', '--cap-drop=ALL',
                       '--security-opt=no-new-privileges', '--user=65534:65534',
                       '--pull=never', 'BI_LOCAL_QUALITY_ISOLATED=1',
+                      'GIT_CONFIG_COUNT=1', 'GIT_CONFIG_KEY_0=safe.directory',
+                      'GIT_CONFIG_VALUE_0=/work',
                       'type=bind,src=/safe/stage,dst=/src,readonly'):
             self.assertIn(token, joined)
         for forbidden in ('--privileged', '--network=host', 'entire enable', 'git push'):
