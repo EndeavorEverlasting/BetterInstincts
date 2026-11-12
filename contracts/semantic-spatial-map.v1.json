@@ -1,0 +1,64 @@
+{
+  "schema": "betterinstincts.semantic-spatial-map/v1",
+  "version": 1,
+  "owner": "betterinstincts/semantic_spatial_map.py",
+  "integration": "betterinstincts/room_map_traverse.py",
+  "purpose": "Sparse semantic 3D world object map and local 3D-to-client projection to resolve stacked, slotted, contained, wall-mounted and high-elevation Sims objects across floors.",
+  "coordinate_spaces": {
+    "world": "EA_LOT_X_Y_UP_Z",
+    "viewport": "CLIENT_PIXELS_BOUND_TO_CAMERA_AND_CAPTURE",
+    "floor": "EXPLICIT_STORY_ID_NOT_SCREEN_ROW",
+    "camera": "LOCAL_AFFINE_APPROXIMATION_NOT_GLOBAL_VIO_OR_DENSE_SLAM"
+  },
+  "evidence": {
+    "pose_sources": [
+      "NONE",
+      "EA_READ_ONLY",
+      "CALIBRATED_MULTIVIEW"
+    ],
+    "identity_sources": [
+      "EA_CATALOG",
+      "OPERATOR_VERIFIED",
+      "TWO_VIEW_REVIEW"
+    ],
+    "relation_sources": [
+      "EA_SLOT",
+      "BUILD_INSPECT",
+      "OPERATOR_REVIEW"
+    ],
+    "landmark_sources": [
+      "HOST_OBSERVED",
+      "OPERATOR_REVIEW"
+    ]
+  },
+  "relations": [
+    "ON_TOP_OF",
+    "INSIDE",
+    "BESIDE",
+    "WALL_MOUNTED_TO"
+  ],
+  "limits": {
+    "max_objects": 256,
+    "max_relations": 512,
+    "max_landmarks": 32,
+    "geometry_tolerance_world": 0.25,
+    "min_category_confidence": 0.8,
+    "max_projection_error_px": 8,
+    "max_rms_error_px": 5
+  },
+  "run_model": {
+    "sensor": "PR159_NOT_YET_MERGED_SEPARATE_OWNER",
+    "EA_geometry": "READ_ONLY_EXACT_PATCH_ONLY",
+    "classifier": "SEMANTIC_CANDIDATE_REQUIRES_REAL_LABELED_SAMPLES_NO_TRAINED_MODEL_CLAIM",
+    "camera": "NEW_FRESH_LOCAL_CALIBRATION_AFTER_PAN_ZOOM_FLOOR_CHANGE",
+    "training": "OFFLINE_EXPLICIT_OPT_IN_REPLAY_SAFE_HOLDOUT_NO_RAW_PRIVATE_IMAGES",
+    "click": "DENIED_HERE_USE_EXISTING_SCREEN_ADMIT"
+  },
+  "execute_allowed_default": false,
+  "auto_capture": false,
+  "auto_persist": false,
+  "auto_scan_saves": false,
+  "auto_train": false,
+  "auto_move_camera": false,
+  "proof_ceiling": "OFFLINE_SEMANTIC_3D_AND_AFFINE_CAMERA_PROJECTION_NOT_LIVE_SLAM_OR_CLICK_CERT"
+}

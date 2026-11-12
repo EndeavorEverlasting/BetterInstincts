@@ -1,0 +1,24 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-SEMANTIC-SLAM-20261112",
+  "purpose": "Read-only object elevation, floor, relation and camera projection advice; no EA engine manipulation, save mutation or executable desktop input.",
+  "files": [
+    {
+      "path": "betterinstincts/semantic_spatial_map.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure 3D object graph and camera projection evaluation, no gameplay effects; local host integration only after independent gate.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/room_map_traverse.py",
+      "route": "POLICY_ONLY",
+      "reason": "Existing room-navigation plan exposes semantic 3D framing advice without admitting game input or adding a screen owner.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_STATIC_NOT_NATIVE_GAMEPLAY_OR_GAME_CLICK_CERT",
+  "next_gate": "Reconcile PR159, record actual local Sims exact-build sensor/3D geometry calibration, then separately re-authorize player-first action only through screen_admit."
+}

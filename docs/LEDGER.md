@@ -1,3 +1,11 @@
+## 2026-11-12 — BetterInstincts Semantic SLAM (P141 → P95 → P82 → P08 → P07 → P124)
+
+**P141 selected:** A sparse, evidence-qualified 3D object/floor/elevation + local camera relocalization layer. Dense physical SLAM/VIO rejected without inertial/depth/host camera evidence; camera-bound 2D-only pick maps insufficient for stacked/wall-mounted/contained objects. Ontology consultation committed before code as `BI-SEMANTIC-SLAM-20261112`.
+
+**Owned implementation:** `contracts/semantic-spatial-map.v1.json`, pure `betterinstincts/semantic_spatial_map.py`, read-only bridge in `room_map_traverse.py`, native-effect routing, tests and `docs/SEMANTIC_SPATIAL_MAP.md`. Camera pose solved from fresh noncoplanar landmarks using a residual-bounded local affine approximation; Y is actual world elevation, not screen vertical. No input, save edits, automatic capture, private image storage, or trained classifier claimed. PR #159 spatial perception/sensor remains independently owned/unmerged; no colliding edits.
+
+**Proof and release distinction:** Offline synthetic evaluation is testable in GitHub CI; P08 *real game* calibration and object-class accuracy still need operator-authorized local Sims host. BI-002 hunger and the game-native authority guards are not altered. Never promote projected pixels to a control permit. PR CI, branch, merge state and main SHA must be verified independently before declaring repository landing.
+
 ## 2026-11-12 — Moonwake /the-closers: PR #194 household-funds review corrections
 
 **Parent retained:** Generalized active household funds alteration across a known Windows Sims 4 runtime, independent of EA app / Steam / Epic install directory, with verified fallback routes, player-first authority and no unsupported platform promises. PR #194 was merged at `b6ce1719c98119fee2e9d877a1a05c42c3e5f1db` after green offline CI, but its closed-PR review threads still exposed material execution gaps. Consultation `contracts/consultations/BI-HOUSEHOLD-FUNDS-CLOSERS-20261112.v1.json` was committed before closer source modifications.
