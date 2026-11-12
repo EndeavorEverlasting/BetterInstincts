@@ -88,12 +88,14 @@ class HostQualityTests(unittest.TestCase):
         calls = []
         def fake(args, **kw):
             calls.append(args)
-            return {'code': 0, 'stdout': '', 'stderr': '', 'stdout_hash': 'x', 'stderr_hash': 'y'}
+            return {'code': 0, 'stdout': 'sha256:'+'a'*64 if 'inspect' in args else '',
+                    'stderr': '', 'stdout_hash': 'x', 'stderr_hash': 'y'}
         with mock.patch.object(q, 'git_info', return_value={'git_dir': '/safe/git', 'common_dir': '/safe/common'}), \
              mock.patch.object(q, 'run_command', side_effect=fake):
             q.sandbox(Path('/safe/repo'), Path('/safe/stage'), manifest, 'a' * 40,
                       engine='docker', image=q.IMAGE)
         joined = ' '.join(calls[-1])
+        self.assertIn('sha256:'+'a'*64, joined)
         for token in ('--network=none', '--read-only', '--cap-drop=ALL',
                       '--security-opt=no-new-privileges', '--user=65534:65534',
                       '--pull=never', 'BI_LOCAL_QUALITY_ISOLATED=1',
@@ -137,6 +139,27 @@ class HostQualityTests(unittest.TestCase):
         slow = q.run_command([sys.executable, '-c', 'import time;time.sleep(3)'], timeout=1)
         self.assertEqual(slow['code'], 124)
         self.assertEqual(slow['stderr'], 'TIMEOUT')
+
+
+
+    def test_repo_executable_shadowing_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fake = Path(tmp) / 'docker'
+            fake.write_text('not a trusted binary')
+            with mock.patch.object(q.shutil, 'which', return_value=str(fake)):
+                with self.assertRaisesRegex(ValueError, 'UNTRUSTED_HOST_EXECUTABLE'):
+                    q.trusted_executable('docker', Path(tmp))
+
+    def test_image_identity_must_be_immutable(self):
+        data = self.manifest()
+        def bad(args, **kw):
+            return {'code': 0, 'stdout': 'unverified:latest', 'stderr': '',
+                    'stdout_hash': 'x', 'stderr_hash': 'y'}
+        with mock.patch.object(q, 'git_info', return_value={'git_dir': '/gitdir', 'common_dir': '/gitcommon'}), \
+             mock.patch.object(q, 'run_command', side_effect=bad):
+            with self.assertRaisesRegex(ValueError, 'LOCAL_SANDBOX_IMAGE_ID_UNVERIFIED'):
+                q.sandbox(Path('/repo'), Path('/stage'), data, 'a'*40,
+                          engine='docker', image=q.IMAGE)
 
 
 
