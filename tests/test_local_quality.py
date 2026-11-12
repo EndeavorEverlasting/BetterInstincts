@@ -174,7 +174,8 @@ class HostQualityTests(unittest.TestCase):
         import io as _io
         original = q.ROOT
         report = _io.StringIO()
-        with mock.patch.object(q, 'git_info', return_value={'head': 'a' * 40}), \
+        with mock.patch.object(q, '__file__', '/trusted/operator/local_quality.py'), \
+             mock.patch.object(q, 'git_info', return_value={'head': 'a' * 40}), \
              mock.patch.object(q, 'entire_probe', side_effect=AssertionError('entire must not run')), \
              mock.patch.object(q, 'sandbox', side_effect=AssertionError('sandbox must not run')), \
              contextlib.redirect_stdout(report):
@@ -190,6 +191,13 @@ class HostQualityTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'TRUSTED_RUNNER_OUTSIDE_REPOSITORY_REQUIRED'):
                 q.main(['run', '--authorize', '--base-sha', 'b'*40,
                         '--expected-head', 'a'*40])
+
+
+
+    def test_even_plan_refuses_untrusted_mutable_checkout_script(self):
+        with mock.patch.object(q, 'git_info', side_effect=AssertionError('must deny before git')):
+            with self.assertRaisesRegex(ValueError, 'TRUSTED_RUNNER_OUTSIDE_REPOSITORY_REQUIRED'):
+                q.main(['plan'])
 
 
 
