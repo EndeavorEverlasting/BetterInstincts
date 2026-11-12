@@ -305,17 +305,17 @@ def main(argv=None):
         data = worker(repo_root, manifest, a.base_sha)
         print(json.dumps(data, sort_keys=True))
         return 0 if data['all_pass'] else 1
+    # Even 'plan' executes Python: a mutable worktree is not a trusted launcher.
+    # On-host code must be reviewed and independently installed outside the repo.
+    launcher = Path(__file__).resolve()
+    if launcher == repo_root or repo_root in launcher.parents:
+        raise ValueError('TRUSTED_RUNNER_OUTSIDE_REPOSITORY_REQUIRED')
     git = git_info(repo_root)
     summary = {'head': git['head'], 'check_count': len(checks),
                'checks_contract_sha256': digest((repo_root / CONTRACT).read_text(encoding='utf-8')),
                'workflow_parity': 'PASS' if workflow.exists() else 'LEGACY_WORKFLOW_ABSENT'}
     if a.command == 'plan':
         print(json.dumps(summary, sort_keys=True)); return 0
-    # An editable worktree cannot be the source of the host-side code executor.
-    # A reviewed launcher must live outside the agent-controlled repository.
-    launcher = Path(__file__).resolve()
-    if launcher == repo_root or repo_root in launcher.parents:
-        raise ValueError('TRUSTED_RUNNER_OUTSIDE_REPOSITORY_REQUIRED')
     if not a.authorize or not a.expected_head or a.expected_head != git['head']:
         raise ValueError('REVIEWED_EXPECTED_HEAD_REQUIRED')
     if not a.base_sha or not re.fullmatch('[a-f0-9]{40}', a.base_sha):
