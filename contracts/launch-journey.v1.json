@@ -11,28 +11,35 @@
     "GAME_LAUNCH_DISPATCHED",
     "PLAYER_SAVE_SELECTION_REQUIRED",
     "PLAYER_CREATE_A_SIM_REQUIRED",
-    "GAMEPLAY_PROOF_PENDING"
+    "GAMEPLAY_PROOF_PENDING",
+    "AUTOMATIC_LAUNCH_ADMITTED_OR_GAME_SELECTION_REQUIRED",
+    "PID_OBSERVED_BY_READ_ONLY_PROCESS_INVENTORY",
+    "MENU_STATE_NOT_OBSERVED_NO_AUTOMATED_SAVE"
   ],
   "entrypoints": {
     "windows": "Start-BetterInstincts.cmd",
     "installer": "bootstrap.py",
     "ui": "python -m scripts.first_run gui",
-    "offline": "python -m scripts.first_run plan --mode new"
+    "offline": "python -m scripts.first_run plan --mode new",
+    "unattended_windows": "python -m scripts.first_run auto --fallback-gui"
   },
   "invariants": {
     "canonical_checkout": "%USERPROFILE%/dev/BetterInstincts",
     "update": "clean main only, fast-forward only",
     "prerequisites": "Python >=3.11 and Git; no unattended system installation",
     "sims_executable": "Game/Bin/TS4_x64.exe or TS4.exe in known locations or explicitly selected path",
-    "game_launch": "explicit user click; subprocess without shell",
-    "save_selection": "player-only; no automatic Resume",
+    "game_launch": "deliberate double-click/explicit CLI auto invocation or manual chooser click; no background auto launch; subprocess without shell",
+    "save_selection": "player-only until separately verified authorized save identity + calibrated local scene/action gating; never blind Resume or auto-select unknown saves",
     "cas": "player-only; suggestions not effects",
     "protected_data": "never read/write user saves or edit Sims game files",
-    "host_proof": "process dispatch is not game load or Live Mode evidence"
+    "host_proof": "process dispatch is not game load or Live Mode evidence",
+    "active_process": "read-only bounded tasklist PID observation; if Sims already running, never launch a second copy; dispatch PID is not necessarily the actual game PID",
+    "menu_learning": "NOT_OBSERVED unless future host captures independently certify scene/menu cues; no speculative detection or automatic menu clicks"
   },
   "limitations": [
     "Read-only bounded default install discovery may require manual path selection",
     "Existing game-host image-template navigator is independent and requires separately observed calibrated screenshots and strict screen lease",
-    "Gameplay and saved-session observations require an authorized Windows P08 run"
+    "Gameplay and saved-session observations require an authorized Windows P08 run",
+    "Unique-install Windows auto-launch is not automatic loading of the latest protected user save; save identity and scene-safe navigation require dedicated local proof"
   ]
 }
