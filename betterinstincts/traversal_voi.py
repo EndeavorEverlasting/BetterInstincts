@@ -89,7 +89,7 @@ def evaluate_traversal_voi(observation: Mapping, *, goal: Mapping,
     out["voi_scores"] = scores  # Always advisory, never a permit.
     current = observation.get("capture_ref")
     if (any(not _ref(observation.get(k)) for k in
-            ("scope_id", "actor_id", "scene_revision", "capture_ref"))
+            ("scope_id", "actor_id", "scene_revision", "graph_revision", "capture_ref"))
             or observation.get("scene") != "LIVE_MODE"
             or observation.get("observed_scene_revision") != observation.get("scene_revision")
             or observation.get("queue_verified") is not True
@@ -188,6 +188,11 @@ def evaluate_traversal_voi(observation: Mapping, *, goal: Mapping,
             "target_id": goal["target_id"],
         }]
         return out
+    if observation.get("target_visible") is False:
+        # A camera pose change is cheaper than disturbing Sim locomotion.
+        # View exploration needs its own named lease; it is never a Walk.
+        out["gate"] = "CAMERA_REOBSERVE_BEFORE_SIM_WALK"
+        return out
     if not isinstance(route, Mapping):
         out["gate"] = "VERIFIED_SIM_ROUTE_REQUIRED"
         return out
@@ -199,6 +204,7 @@ def evaluate_traversal_voi(observation: Mapping, *, goal: Mapping,
             or route.get("actor_id") != observation["actor_id"]
             or route.get("objective_id") != goal["goal_id"]
             or route.get("scene_revision") != observation["scene_revision"]
+            or route.get("graph_revision") != observation["graph_revision"]
             or route.get("execute_allowed") is not False
             or route.get("control_permit") is not None
             or not isinstance(route.get("route"), list)
