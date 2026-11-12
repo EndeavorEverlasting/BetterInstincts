@@ -1,5 +1,12 @@
 # Local gameplay certification evidence loop — contract v1
 
+## 2026-11-11 — replay-safe observation references (P141 → Fifth Gear)
+
+Each `observation_ref` is a **distinct opaque evidence reference within one run**, including across baseline, modified and rollback stages. Reusing the same reference under a different stage or trial ID is `DUPLICATE_OBSERVATION_REF`: `record` rejects it before appending, and `status`/`evaluate` fail closed on legacy or tampered persisted rows. Two independently observed trials need different evidence references; stage/trial numbers alone do not establish independence. Test fixtures use explicitly synthetic, unique references.
+
+This guard checks string identity only; it does **not** authenticate screenshots, timecodes, observations, trial comparability or that any Sims session actually occurred. Maintainer review of original local game evidence, the 5+5 baseline/modified trials, rollback and player queue remains mandatory. No offline evidence, status percentage or CI run closes BI-002.
+
+
 ## What exists
 `scripts/live_cert.py` is a **local-only evidence recorder and evaluator**. It never reads Sims game files, installs a mod, inspects Sims processes, polls the filesystem, or collects telemetry. It stores at most 150 bounded rows under `dist/live-cert/<run-id>/` in the repository, excluded from Git. A completed numerical evaluation is **not** a game certificate; it returns `MEASUREMENTS_PASS_REVIEW_REQUIRED` for independent review.
 
