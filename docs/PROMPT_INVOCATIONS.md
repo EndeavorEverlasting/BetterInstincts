@@ -1,5 +1,12 @@
 ## 2026-11-10 — P04 Escape/U forensics canonical workload
 
+## 2026-11-11 — P141 → /fifth-gear for BI-002 observation replay integrity
+
+Resolved current Moonwake `AGENTS.md`, canonical `harness/exports/prompt-invocation-catalog.v1.json` and `scripts/prompt_invocation_resolver.py` locator. P141 = Repository Strategic Opportunity Scout: contrast/falsify theses and stop before implementation; selected unique run-local BI-002 evidence identity. Then Fifth Gear: P95 = Program Design & Call-Stack Prototype Architect (existing evaluator → CLI), P82 = Prototype-Measure-Refine Delivery Loop (replay falsifier), P08 = Live Runtime Proof Executor (local Sims gate remains OPEN), P07 = Repo Sprint Executor (bounded implementation/tests/PR), P124 = Repository Code Readability & Structural Refactorer (reuse one evidence helper, no second pipeline). Order: **P141 first; then P95 → P82 → P08 → P07 → P124**.
+
+Consultation: `contracts/consultations/BI-002-OBSERVATION-REPLAY-P141-FIFTH-GEAR-20261111.v1.json`; product-code decision: `contracts/native-gameplay-decisions/BI-002-EVIDENCE-REPLAY-20261111.v1.json`. Source evidence: reused `observation_ref` used to pass as distinct stage/trial evidence; guard now rejects record/read/evaluation replay. Provider CI can prove only offline correctness. Local Windows EA 5 vanilla + 5 modified + rollback and independent review remain BI-002's closure authority.
+
+
 Resolved **P04 — [PARALLEL] Repo-Aware Sprint + Harness Factoring Distributor** from current Moonwake `AGENTS.md`, `harness/exports/prompt-invocation-catalog.v1.json` (blob `8c281379ba7ccc871947391233b1db72f4a108ef`) and `scripts/prompt_invocation_resolver.py`, canonical base registry blob `848728632c1243ebba023fa0012292a2ad33cada`. Operator requested an executable canonical workload for selective in-game Escape/U input failure, following merged PR #183. Machine owner: `plans/horizon.v1.json#supporting_workloads.escape_u_input_forensics`; existing primary dispatch owns `ESC_U_OPERATOR_KEY_MATRIX`, `ESC_U_CURSOR_PROVENANCE`, `ESC_U_RECONCILE`; executable runbook `plans/active/BI-ESC-U-FORENSICS-P04-20261110.md`. This is *supporting safety* independent of BI-002 hunger and current world-sensor priority, and does not authorize Windows remapping, agent keylogging, private-save changes or attribution without evidence. Local game/Windows proof remains open.
 
 # Canonical TokenCorridor prompt invocations — 2026-10-20
