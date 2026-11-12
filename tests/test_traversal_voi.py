@@ -23,7 +23,7 @@ def observation():
     return {
         "scope_id": "lab-scope", "actor_id": "sim-a",
         "scene": "LIVE_MODE", "scene_revision": "rev-1",
-        "observed_scene_revision": "rev-1", "capture_ref": "cap-1",
+        "observed_scene_revision": "rev-1", "graph_revision": "graph-1", "capture_ref": "cap-1",
         "human_present": False, "queue_verified": True, "queue": [],
         "movement_checkpoint": {
             "source": "HOST_OBSERVED", "proof_ref": "checkpoint-1",
@@ -165,6 +165,10 @@ class PurposefulTraversalTests(unittest.TestCase):
         bad = dict(route(), actor_id="different")
         self.assertEqual(evaluate_traversal_voi(o, goal=goal(), route=bad)["gate"],
                          "SIM_ROUTE_STALE_OR_UNVERIFIED")
+        o = observation()
+        old_graph = dict(route(), graph_revision="stale-graph")
+        self.assertEqual(evaluate_traversal_voi(o, goal=goal(), route=old_graph)["gate"],
+                         "SIM_ROUTE_STALE_OR_UNVERIFIED")
         o["movement_checkpoint"]["scope_id"] = "other-save"
         self.assertEqual(evaluate_traversal_voi(o, goal=goal(), route=route())["gate"],
                          "MOVEMENT_CHECKPOINT_REOBSERVE_REQUIRED")
@@ -183,7 +187,7 @@ class PurposefulTraversalTests(unittest.TestCase):
         r = evaluate_traversal_voi(o, goal=goal())
         self.assertEqual(r["camera"]["next"], "NAMED_CAMERA_REFRAME_LEASE_REQUIRED")
         self.assertTrue(r["camera"]["motion_candidate"])
-        self.assertEqual(r["gate"], "VERIFIED_SIM_ROUTE_REQUIRED")
+        self.assertEqual(r["gate"], "CAMERA_REOBSERVE_BEFORE_SIM_WALK")
         self.assertFalse(r["sim"]["walk_candidate"])
         self.deny_effect(r)
 
@@ -240,6 +244,11 @@ class PurposefulTraversalTests(unittest.TestCase):
         self.assertIn(r["traversal_voi"]["gate"],
                       {"YIELD_TO_PLAYER", "REOBSERVE_SCENE_QUEUE_OR_PRESENCE"})
         self.assertFalse(r["queue_capacity"]["enqueue_allowed"])
+        self.assertEqual(r["queue_capacity"]["gate"], "PLAYER_QUEUE_YIELD")
+        r = evaluate_turn(needs, capture_ref="cap-1", queue=[],
+                          multitasking=False, already_busy=True,
+                          traversal_voi_observation=o)
+        self.assertEqual(r["queue_capacity"]["gate"], "HOST_BUSY_YIELD")
 
     def test_no_mutation_and_harness_smoke(self):
         o, g, r = observation(), goal(), route()
