@@ -26,6 +26,20 @@ def validate_trial(row):
     if not isinstance(note, str) or not 3 <= len(note) <= 160:
         raise EvidenceError("OBSERVATION_REF_MISSING")
 
+def require_distinct_observation_refs(trials):
+    """One observation must not count as several independent gameplay trials.
+
+    Call only after validate_trial has checked every row's reference type.
+    This is run-scoped evidence integrity, not authentication of actual media.
+    """
+    seen = set()
+    for row in trials:
+        ref = row["observation_ref"]
+        if ref in seen:
+            raise EvidenceError("DUPLICATE_OBSERVATION_REF")
+        seen.add(ref)
+
+
 def evaluate(metadata, trials):
     """PASS means numeric criteria, never Sims 4 verification or approval."""
     grouped = {name: [] for name in STAGES}
@@ -37,6 +51,7 @@ def evaluate(metadata, trials):
             raise EvidenceError("DUPLICATE_TRIAL")
         keys.add(key)
         grouped[row["stage"]].append(row)
+    require_distinct_observation_refs(trials)
     counts = {s: len(grouped[s]) for s in STAGES}
     result = {"state": "INCOMPLETE", "counts": counts, "criteria": {}, "proof_ceiling": "UNVERIFIED_OBSERVATIONS_ONLY"}
     if counts["baseline"] < REQUIRED_BASELINE or counts["modified"] < REQUIRED_MODIFIED or counts["rollback"] < 1:
