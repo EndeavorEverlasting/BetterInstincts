@@ -71,6 +71,19 @@ or on Linux under `$XDG_STATE_HOME/BetterInstincts/host-quality/` (default `~/.l
 
 The command **must not** be run through an agent Cursor project shell hook: that hook intentionally refuses execution of mutable repository Python code with normal Windows privileges. Use a reviewed standalone operator-controlled launcher or Moonwake's independently authorized isolated execution lane. The repository's local test script is not a security product and cannot protect against an adversarial system administrator or a tampered Docker engine.
 
+## Optional Moonwake/Entire local agent-continuation integration
+
+The quality CLI runs all 49 checks without GitHub Actions. **Moonwake is the separate, existing owner of bounded agent retries, feedback and Entire checkpoints**, not a command hidden inside this repository's test runner. In a trusted terminal, the operator can inspect Moonwake's installed local agent host:
+
+```powershell
+$moonwakeHost = Join-Path '<independently-reviewed-Moonwake-checkout>' 'scripts/entire_host_cycle.cjs'
+node $moonwakeHost probe --repo .
+```
+
+For an expressly approved local coding/repair task, Moonwake's existing interface is `node $moonwakeHost run --repo . --manifest <approved-private-work.json>`. Its `moonwake.entire-host-work/v1` work manifest must live **outside** this repository, specify the exact BetterInstincts Git origin and source revision, require a trusted external `local_quality.py` acceptance command with reviewed `--expected-head` and `--base-sha`, supply the admitted native agent argv/feedback file, and set `authorized:true` only after operator approval. Do not run editable source tests directly as acceptance on Windows. Changing a candidate SHA requires a new independent review/approval; do not let the coding agent substitute a new image, test matrix or expected head while retaining a previous approval. The safety refusal is intentional, not an agent retry to bypass.
+
+Moonwake's actual installed `entire` version, hooks, checkpoint retention, local-only privacy and host permissions must be discovered from the workstation rather than inferred from a GitHub source file. No agent/host scheduler is installed or enabled by this PR. **Entire-backed agent execution, sandboxed unit checks, Cursor hook canaries and physical Sims gameplay are four independent proofs.**
+
 ## Fifth Gear / sunset sequence
 
 - **P141:** compared local direct execution, duplicate orchestrator, hosted replacements, Entire-only and isolated-host options; selected isolated host plus Moonwake continuity. See `plans/active/BI-ENTIRE-LOCAL-QUALITY-20261111.md`.
