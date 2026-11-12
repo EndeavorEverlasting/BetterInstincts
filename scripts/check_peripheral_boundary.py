@@ -20,7 +20,7 @@ EXCLUDED_DIRS = frozenset({
     "build", "artifacts", "tests",
 })
 EXECUTABLE_SUFFIXES = frozenset({
-    ".py", ".ps1", ".cmd", ".bat", ".sh", ".js", ".jsx", ".ts", ".tsx",
+    ".py", ".pyw", ".ps1", ".psm1", ".psd1", ".cmd", ".bat", ".vbs", ".wsf", ".sh", ".js", ".jsx", ".ts", ".tsx",
     ".cjs", ".mjs", ".yml", ".yaml",
 })
 DANGEROUS = {
@@ -56,7 +56,8 @@ DANGEROUS = {
         re.IGNORECASE,
     ),
     "OS_INPUT_FAILSAFE_DISABLED": re.compile(
-        r"\b(?:pyautogui|pya)\.FAILSAFE\s*=\s*False\b",
+        r"\b(?:[A-Za-z_]\w*\.)?FAILSAFE\s*=\s*(?:False|0)\b|"
+        r"\bsetattr\s*\(\s*[A-Za-z_]\w*\s*,\s*['\"]FAILSAFE['\"]\s*,\s*(?:False|0)\s*\)",
         re.IGNORECASE,
     ),
 }

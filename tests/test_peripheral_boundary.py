@@ -143,5 +143,38 @@ class PeripheralBoundaryTests(unittest.TestCase):
         self.assertIn({"from": "CONTROL_PERMIT", "predicate": "CANNOT_BYPASS",
                        "to": "AGENT_EFFECT_PERIMETER"}, graph["relations"])
 
+
+    def test_executable_powershell_modules_and_windows_script_host_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "betterinstincts").mkdir()
+            (root / "scripts").mkdir()
+            cases = (
+                ("host_tools/mouse.psm1", "Stop-Service bthserv", "OS_SERVICE_CONTROL"),
+                ("host_tools/driver.psd1", "pnputil.exe /remove-device HID", "OS_PNP_MUTATION"),
+                ("host_tools/input.pyw", "gui.FAILSAFE = False", "OS_INPUT_FAILSAFE_DISABLED"),
+                ("host_tools/repair.vbs", "BluetoothRemoveDevice(device)", "OS_BLUETOOTH_PAIRING"),
+            )
+            for path, content, _ in cases:
+                dest = root / path
+                dest.parent.mkdir(exist_ok=True)
+                dest.write_text(content, encoding="utf-8")
+            observed = set(inspect_repository(root))
+            for path, _, reason in cases:
+                with self.subTest(path=path):
+                    self.assertIn((path, reason), observed)
+
+    def test_all_aliased_pyautogui_failsafe_disables_are_denied(self):
+        for source in (
+            "import pyautogui as gui\ngui.FAILSAFE = False",
+            "import pyautogui as pg\npg.FAILSAFE = False",
+            "import pyautogui as pya\npya.FAILSAFE = 0",
+            "setattr(gui, 'FAILSAFE', False)",
+            'setattr(pg, "FAILSAFE", 0)',
+        ):
+            with self.subTest(source=source):
+                self.assertIn("OS_INPUT_FAILSAFE_DISABLED", inspect_source(source))
+        self.assertEqual(inspect_source("gui.FAILSAFE = True; gui.moveTo(10, 10)"), ())
+
 if __name__ == "__main__":
     unittest.main()

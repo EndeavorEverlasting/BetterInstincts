@@ -1,0 +1,76 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PERIPHERAL-CLOSERS-P83-P03-P141-P124-P04-20261111",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Close confirmed merged PR #188 peripheral safety gaps: missed PowerShell script modules, PyAutoGUI alias bypass, and mutable test-module execution through a Cursor shell test command while the agent owns its checkout. Protect canonical safety policies from ordinary agent writes and preserve working developer CI.",
+  "affected_concepts": [
+    "AGENT_EFFECT_PERIMETER",
+    "OS_PERIPHERAL_AUTHORITY",
+    "CONTROL_PERMIT",
+    "PLAYER_PRESENCE",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "scripts/check_peripheral_boundary.py",
+    ".cursor/hooks/operator_boundary.py",
+    "contracts/peripheral-authority.v1.json",
+    "contracts/operator-desktop-boundary.v1.json",
+    "docs/PERIPHERAL_INCIDENT.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-025",
+    "BI-ONT-046",
+    "BI-ONT-047",
+    "BI-ONT-048"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "GITHUB_CI_AND_SOURCE_ONLY_NOT_CURSOR_ACTIVE_HOOK_OR_WINDOWS_PHYSICAL_PROOF",
+  "player_save_control_impact": "No user game saves, Windows services, input settings, peripherals, drivers, registry, Bluetooth, physical Sims session, or external agents modified. Read-only safe shell git diagnostics remain available; automatically running mutable Python tests on operator host is denied; full offline tests remain available on ephemeral CI.",
+  "expected_outcome": "Source scanner recognizes executable PowerShell module suffix and common imported PyAutoGUI aliases. Cursor agent cannot mutate critical policy files or auto-run changeable Python test modules under a safe-shell allowlist; tests prove both positive and denial cases.",
+  "negative_tests": [
+    ".psm1 and .ps1 PnP mutation paths are rejected",
+    "gui.FAILSAFE=False and alternate explicit aliases are rejected",
+    "local Cursor proposed python -m unittest and python -m scripts.* deny even after local test-file mutation",
+    "read-only git status remains allowed",
+    "safety policy and validator file edits denied by Cursor hook",
+    "existing CI offline tests and ontology consultation chronology pass"
+  ],
+  "rollback_path": "Revert isolated feature PR after review; no workstation effects and no protected save modifications.",
+  "unresolved_unknowns": [
+    "Project hook actual activation on operator Windows not yet observed.",
+    "Other harnesses and externally privileged agents are not intercepted by Cursor project hook.",
+    "SysAdminSuite discovery transition/M343 incident root cause remain separate from BetterInstincts."
+  ],
+  "files_expected": [
+    "scripts/check_peripheral_boundary.py",
+    "tests/test_peripheral_boundary.py",
+    ".cursor/hooks/operator_boundary.py",
+    "tests/test_operator_boundary.py",
+    "contracts/operator-desktop-boundary.v1.json",
+    "contracts/peripheral-authority.v1.json",
+    "docs/HUMAN_FIRST_HARNESS.md",
+    "docs/PERIPHERAL_INCIDENT.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "docs/LEDGER.md",
+    "plans/active/BI-PERIPHERAL-CLOSERS-20261111.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREMUTATION_CONSULTATION_FIRST",
+  "source_main_sha": "a44a7c67dd44e8dd36fecbd4435695b674b9ebc5",
+  "invocations": [
+    "P83",
+    "P03",
+    "P141",
+    "P124",
+    "P04"
+  ]
+}
