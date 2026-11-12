@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from betterinstincts.compatibility import VERSION_RE, PLATFORMS, SHA_RE
-from betterinstincts.live_eval import evaluate, validate_trial, EvidenceError
+from betterinstincts.live_eval import evaluate, validate_trial, require_distinct_observation_refs, EvidenceError
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "dist/live-cert"
@@ -44,6 +44,7 @@ def load(run_id, output=OUTPUT):
     trials = [json.loads(line) for line in lines if line.strip()]
     for row in trials:
         validate_trial(row)
+    require_distinct_observation_refs(trials)
     return meta,trials
 
 def init(run_id, game_version, platform, studio_build, output=OUTPUT):
@@ -69,6 +70,7 @@ def record(run_id, row, output=OUTPUT):
         raise EvidenceError("TOO_MANY_OBSERVATIONS")
     if any(t["stage"]==row["stage"] and t["trial"]==row["trial"] for t in trials):
         raise EvidenceError("DUPLICATE_TRIAL")
+    require_distinct_observation_refs([*trials, row])
     line=json.dumps(row,sort_keys=True)+"\n"
     target=run_root(run_id,output)/"observations.jsonl"
     if target.stat().st_size+len(line.encode("utf-8"))>MAX_BYTES:
