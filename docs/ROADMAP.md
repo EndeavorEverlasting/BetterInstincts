@@ -1,3 +1,7 @@
+## 2026-11-12 — First-run one-click closer hardening
+
+Following merged PR #200, correct one-install/two-executable false ambiguity (prefer TS4_x64), reject malformed Windows tasklist evidence on both pre-launch snapshots, and withhold post-launch PID when untrusted. The bounded offline test owner remains `tests/test_smart_start.py`, with consultation `BI-FIRST-RUN-CLOSERS-20261112`. Mainline/CI and real Windows/Sims gameplay evidence remain separate. Existing Issue #201 owns safe latest-save identity, host menu calibration, single-effect player-first navigation and P08 certification; the older native BI-002 hunger gate stays active.
+
 ## 2026-11-12 — Closer hardening of semantic-world traversal
 
 Pure 3D targeting requires fresh **external** active-world identity (lot, build, floor, camera, capture, source), and unknown object categories abstain. This repairs a stale-map+stale-calibration pair; it is not a trained detector, a live input permit or a new requirement blocking BI-002. See `docs/SEMANTIC_SPATIAL_MAP.md`.
