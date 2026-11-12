@@ -46,10 +46,12 @@ def read_sims_processes(
             raise FirstRunError("PROCESS_INVENTORY_UNAVAILABLE_OR_TOO_LARGE")
         found: dict[int, str] = {}
         for row in rows:
-            if not row or row[0].casefold() not in SIMGAME_NAMES:
+            # tasklist /FO CSV /NH returns five columns for each process.
+            # An INFO/error line or truncated output must never mean "no Sims".
+            if len(row) != 5 or not row[0].strip() or not row[1].strip().isdecimal():
+                raise FirstRunError("PROCESS_INVENTORY_UNTRUSTWORTHY")
+            if row[0].casefold() not in SIMGAME_NAMES:
                 continue
-            if len(row) < 2 or not row[1].strip().isdecimal():
-                raise FirstRunError("SIMS_PROCESS_ID_UNTRUSTWORTHY")
             pid = int(row[1].strip())
             if pid <= 0 or pid in found:
                 raise FirstRunError("SIMS_PROCESS_ID_UNTRUSTWORTHY")
@@ -57,6 +59,35 @@ def read_sims_processes(
         return found
     except (OSError, UnicodeError, subprocess.SubprocessError, csv.Error) as exc:
         raise FirstRunError("PROCESS_INVENTORY_UNAVAILABLE") from exc
+
+
+def _checked_process_inventory(inventory: object) -> dict[int, str]:
+    """Require a complete, trusted read-only process snapshot at every gate."""
+    if not isinstance(inventory, dict) or any(
+        type(pid) is not int or pid <= 0 or not isinstance(name, str)
+        or name.casefold() not in SIMGAME_NAMES
+        for pid, name in inventory.items()
+    ):
+        raise FirstRunError("INVALID_PROCESS_INVENTORY")
+    return inventory
+
+
+def _select_unique_install(installs: list[Path]) -> Path:
+    """Count distinct installed Game/Bin roots, not 32-bit and 64-bit exes.
+
+    The 64-bit executable is preferred when both recognized binaries belong
+    to exactly one validated installation. Never pick between separate roots.
+    """
+    if len(installs) <= 1:
+        return select_game(installs)
+    checked = [select_game([], candidate) for candidate in installs]
+    roots = {str(path.parent).casefold() for path in checked}
+    if len(roots) != 1:
+        raise FirstRunError("MULTIPLE_SIMS4_INSTALLATIONS_SELECT_ONE")
+    preferred = min(checked, key=lambda path: (
+        path.name.casefold() != "ts4_x64.exe", str(path).casefold(),
+    ))
+    return preferred
 
 
 def auto_start(
@@ -73,13 +104,7 @@ def auto_start(
     """
     if sys.platform != "win32":
         raise FirstRunError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
-    before = process_reader()
-    if not isinstance(before, dict) or any(
-        type(pid) is not int or pid <= 0 or name.casefold() not in SIMGAME_NAMES
-        for pid, name in before.items()
-        if isinstance(name, str)
-    ) or any(not isinstance(name, str) for name in before.values()):
-        raise FirstRunError("INVALID_PROCESS_INVENTORY")
+    before = _checked_process_inventory(process_reader())
     if len(before) > 1:
         return {
             "state": "BLOCKED_MULTIPLE_ACTIVE_GAMES",
@@ -98,7 +123,7 @@ def auto_start(
             "proof_ceiling": "PROCESS_NAME_ONLY_NOT_GAME_OR_SAVE_CERTIFIED",
         }
     try:
-        target = select_game(discoverer())
+        target = _select_unique_install(discoverer())
     except FirstRunError as exc:
         if str(exc) not in {
             "SIMS4_NOT_FOUND_SELECT_INSTALLED_EXE",
@@ -113,16 +138,20 @@ def auto_start(
             "proof_ceiling": "NO_GAME_LAUNCHED",
         }
     # Recheck after path selection: a concurrently started game wins.
-    if process_reader():
+    if _checked_process_inventory(process_reader()):
         raise FirstRunError("SIMS_STARTED_DURING_PREFLIGHT_NO_DUPLICATE_LAUNCH")
     dispatched = launcher(target, user_clicked_launch=True)
     if dispatched.get("state") != "GAME_LAUNCH_DISPATCHED_NOT_LIVE_MODE":
         raise FirstRunError("GAME_DISPATCH_RESULT_UNTRUSTWORTHY")
     # Read-only post-dispatch snapshot; no guesses from the launcher PID.
     try:
-        after = process_reader()
+        after = _checked_process_inventory(process_reader())
+        observation_state = "PROCESS_NAME_SNAPSHOT_OBSERVED"
     except FirstRunError:
+        # Game dispatch already happened: never retry it because observation
+        # failed. Withhold the PID and preserve the unknown-outcome boundary.
         after = {}
+        observation_state = "PROCESS_INVENTORY_UNAVAILABLE_AFTER_DISPATCH"
     observed = sorted(after)
     return {
         "state": "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF",
@@ -130,6 +159,7 @@ def auto_start(
         "dispatch_process_id": dispatched.get("process_id"),
         "observed_game_process_id": observed[0] if len(observed) == 1 else None,
         "observed_process_count": len(observed),
+        "process_observation_state": observation_state,
         "menu_state": "NOT_OBSERVED",
         "automatic_input": False,
         "save_selection": "PLAYER_ONLY_NO_AUTOMATIC_RESUME",
