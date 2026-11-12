@@ -6,6 +6,7 @@ This module has no screenshot adapter, input hooks, persistence or game effects.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -251,11 +252,19 @@ def calibrate_camera(
     if max_error > cfg["limits"]["max_projection_error_px"] or rms > cfg["limits"]["max_rms_error_px"]:
         raise SemanticSpatialError("CAMERA_REPROJECTION_UNSTABLE")
     return {"schema": "betterinstincts.semantic-camera-local/v1", "camera_revision": camera,
+            "map_fingerprint": _map_fingerprint(spatial_map),
             "capture_refs": sorted(refs), "latest_capture_ref": _text(landmarks[-1]["capture_ref"], "CAPTURE_REF"),
             "coefficients": [list(coeffs[0]), list(coeffs[1])],
             "rms_error_px": round(rms, 6), "max_error_px": round(max_error, 6),
             "landmark_count": len(landmarks), "execute_allowed": False,
             "proof_ceiling": PROOF}
+
+
+def _map_fingerprint(spatial_map: Mapping[str, object]) -> str:
+    """Bind each camera solution to a particular lot/build/geometry snapshot."""
+    snapshot = {key: spatial_map.get(key) for key in ("schema", "lot_id", "game_build", "objects", "relations")}
+    payload = json.dumps(snapshot, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def plan_spatial_target(
@@ -280,6 +289,8 @@ def plan_spatial_target(
         return decline("METRIC_3D_UNPROVEN", "EA_GEOMETRY_OR_CALIBRATED_MULTIVIEW")
     if calibration is None or calibration.get("camera_revision") != camera_revision:
         return decline("STALE_OR_MISSING_CAMERA", "RELOCALIZE_FROM_FRESH_LANDMARKS")
+    if calibration.get("map_fingerprint") != _map_fingerprint(spatial_map):
+        return decline("STALE_OBJECT_MAP", "REBUILD_SPATIAL_MAP_AND_RELOCALIZE")
     if capture_ref != calibration.get("latest_capture_ref"):
         return decline("STALE_CAPTURE", "RELOCALIZE_FROM_FRESH_LANDMARKS")
     if not isinstance(visibility, Mapping) or visibility.get("object_id") != object_id or visibility.get("capture_ref") != capture_ref or visibility.get("camera_revision") != camera_revision:
