@@ -3,6 +3,7 @@
 No real Sims executable, EA app, Documents directory or Windows input used.
 """
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -131,6 +132,96 @@ class SmartStartTests(unittest.TestCase):
         self.assertIsNone(result["observed_game_process_id"])
         self.assertEqual(result["dispatch_process_id"], 234)
         self.assertNotIn("LIVE_CERTIFIED", str(result))
+
+
+    def test_single_install_with_32_and_64_bit_exes_prefers_x64(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = Path(tmp) / "EA Games" / "The Sims 4" / "Game" / "Bin"
+            binary.mkdir(parents=True)
+            legacy = binary / "TS4.exe"
+            current = binary / "TS4_x64.exe"
+            legacy.write_bytes(b"fixture")
+            current.write_bytes(b"fixture")
+            launch = Mock(return_value={
+                "state": "GAME_LAUNCH_DISPATCHED_NOT_LIVE_MODE", "process_id": 132,
+            })
+            with patch.object(smart_start.sys, "platform", "win32"):
+                result = smart_start.auto_start(
+                    process_reader=lambda: {}, discoverer=lambda: [legacy, current],
+                    launcher=launch,
+                )
+            launch.assert_called_once_with(current.resolve(), user_clicked_launch=True)
+            self.assertEqual(result["state"], "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF")
+            self.assertEqual(result["save_selection"], "PLAYER_ONLY_NO_AUTOMATIC_RESUME")
+
+    def test_two_distinct_install_directories_are_not_collapsed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            candidates = []
+            for name in ("EA Games", "Steam"):
+                binary = Path(tmp) / name / "The Sims 4" / "Game" / "Bin"
+                binary.mkdir(parents=True)
+                exe = binary / "TS4_x64.exe"
+                exe.write_bytes(b"fixture")
+                candidates.append(exe)
+            launch = Mock()
+            with patch.object(smart_start.sys, "platform", "win32"):
+                result = smart_start.auto_start(
+                    process_reader=lambda: {}, discoverer=lambda: candidates,
+                    launcher=launch,
+                )
+            self.assertEqual(result["state"], "GAME_SELECTION_REQUIRED")
+            self.assertEqual(result["reason"], "MULTIPLE_SIMS4_INSTALLATIONS_SELECT_ONE")
+            launch.assert_not_called()
+
+    def test_malformed_tasklist_must_not_be_interpreted_as_empty_inventory(self):
+        with patch.object(smart_start.sys, "platform", "win32"):
+            for output in (
+                'INFO: No tasks are running which match the specified criteria.\\n',
+                '"System","100"\\n',
+                '"System","100","Console","1","1 K"\\n"TS4.exe","20"\\n',
+                '"TS4.exe","21","Console","1","1 K","extra"\\n',
+            ):
+                with self.subTest(output=output):
+                    with self.assertRaisesRegex(
+                        FirstRunError, "PROCESS_INVENTORY_UNTRUSTWORTHY"
+                    ):
+                        smart_start.read_sims_processes(
+                            Mock(return_value=SimpleNamespace(stdout=output))
+                        )
+
+    def test_prelaunch_second_snapshot_must_be_well_formed(self):
+        launch = Mock()
+        with patch.object(smart_start.sys, "platform", "win32"), patch.object(
+            smart_start, "select_game", return_value=Path("sim.exe")
+        ):
+            for second in ([], {"bad": "TS4.exe"}, {1: "not-the-sims.exe"}):
+                with self.subTest(second=second):
+                    with self.assertRaisesRegex(FirstRunError, "INVALID_PROCESS_INVENTORY"):
+                        smart_start.auto_start(
+                            process_reader=Mock(side_effect=[{}, second]),
+                            discoverer=lambda: [Path("sim.exe")],
+                            launcher=launch,
+                        )
+        launch.assert_not_called()
+
+    def test_postdispatch_invalid_snapshot_withholds_process_proof_without_replay(self):
+        launch = Mock(return_value={
+            "state": "GAME_LAUNCH_DISPATCHED_NOT_LIVE_MODE", "process_id": 123,
+        })
+        with patch.object(smart_start.sys, "platform", "win32"), patch.object(
+            smart_start, "select_game", return_value=Path("sim.exe")
+        ):
+            result = smart_start.auto_start(
+                process_reader=Mock(side_effect=[{}, {}, {"not-a-pid": "TS4.exe"}]),
+                discoverer=lambda: [Path("sim.exe")], launcher=launch,
+            )
+        launch.assert_called_once()
+        self.assertIsNone(result["observed_game_process_id"])
+        self.assertEqual(result["observed_process_count"], 0)
+        self.assertEqual(result["process_observation_state"],
+                         "PROCESS_INVENTORY_UNAVAILABLE_AFTER_DISPATCH")
+        self.assertEqual(result["menu_state"], "NOT_OBSERVED")
+
 
 
 if __name__ == "__main__":
