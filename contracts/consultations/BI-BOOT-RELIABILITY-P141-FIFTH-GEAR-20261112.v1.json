@@ -1,0 +1,80 @@
+{
+  "schema": "betterinstincts.consultation/v1",
+  "id": "BI-BOOT-RELIABILITY-P141-FIFTH-GEAR-20261112",
+  "date": "2026-11-12",
+  "parent_objective": "Trustworthy double-click bootstrap detects locally installed Sims 4, learns real process and menu state, and resumes the actual most recently played game unattended where safe, without endangering players' saves or desktop sovereignty.",
+  "base_commit": "b7a82ab8c39a9c8ed49cc70b0f421a250f2aa961",
+  "source_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "contracts/launch-journey.v1.json",
+    "betterinstincts/first_run.py",
+    "betterinstincts/save_policy.py",
+    "betterinstincts/scenes.py",
+    "scripts/game_host.py",
+    "scripts/host_menu.py"
+  ],
+  "p141": {
+    "candidates": [
+      {
+        "thesis": "Blindly click Resume after spawning Sims",
+        "decision": "REJECT",
+        "reason": "Resume is explicitly forbidden; wrong save and unknown game scene can change protected user state."
+      },
+      {
+        "thesis": "Inspect arbitrary user saves and choose newest file",
+        "decision": "DEFER",
+        "reason": "File timestamps do not prove in-game recency or displayed save identity; current protected-save contract prohibits inspecting user saves."
+      },
+      {
+        "thesis": "Deterministic unattended game launch with explicit provenance, read-only PID/menu observations, bounded fail-closed handoff",
+        "decision": "SELECT",
+        "reason": "Can automate known safe dispatch without a new mouse controller or weakening save protection."
+      },
+      {
+        "thesis": "Reuse existing calibrated disposable-save host navigator for all users",
+        "decision": "REJECT",
+        "reason": "Template coordinates, lab attestation and exact version are environment-specific; generalization requires actual Windows P08 proof."
+      }
+    ],
+    "selected_thesis": "Deterministic unattended game launch and observable PID/menu handoff; protected-save auto-resume remains blocked until verified opt-in save identity and a calibrated host-side effect gate exist."
+  },
+  "fifth_gear_order": [
+    "P95",
+    "P82",
+    "P08",
+    "P07",
+    "P124"
+  ],
+  "scope": {
+    "owned": [
+      "scripts/first_run.py",
+      "scripts/smart_start.py",
+      "tests/test_smart_start.py",
+      "Start-BetterInstincts.cmd",
+      "contracts/launch-journey.v1.json",
+      "docs/FIRST_RUN.md",
+      "docs/PROMPT_INVOCATIONS.md",
+      "docs/LEDGER.md",
+      "contracts/consultations/BI-BOOT-RELIABILITY-P141-FIFTH-GEAR-20261112.v1.json"
+    ],
+    "forbidden": [
+      "game files and user saves",
+      "EA authentication",
+      "Windows settings",
+      "unadopted desktop input",
+      "BI-002 gameplay certification",
+      "separately owned SLAM/sensor code"
+    ]
+  },
+  "acceptance": [
+    "unique known installation launches only after a deliberate double-click without a second button",
+    "ambiguous or missing executables do not guess and can fall back to the current chooser",
+    "process PID is reported as dispatch-only, not a verified live-game process",
+    "no auto Resume/load/select of unknown or protected saves",
+    "no duplicate launch on untrusted or active-game ownership",
+    "offline regression tests cover negative boundaries",
+    "main merge and real Windows host proof remain independently evidenced"
+  ],
+  "p08": "NOT_RUN: No Windows Sims game/EA installation or calibrated screenshot available in GitHub connector runtime."
+}
