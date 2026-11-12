@@ -1,5 +1,14 @@
 ## 2026-11-10 — Fifth Gear exact active-household funds injection (P95 → P82 → P08 → P07 → P124)
 
+## 2026-11-11 — P141 → Fifth Gear: BI-002 trial observation replay guard
+
+**Parent:** BI-002 hunger native-gameplay first win remains ACTIVE; prior offline receipts cannot certify Sims gameplay. P141 tested four strategic theses and selected the narrow evidence-integrity gap rather than a new orchestration engine, competing spatial branch or guessed native EA hooks. Pre-mutation consultation: `contracts/consultations/BI-002-OBSERVATION-REPLAY-P141-FIFTH-GEAR-20261111.v1.json`.
+
+**P95:** retain `betterinstincts/live_eval.py` as deterministic trial evidence owner and `scripts/live_cert.py` as local run intake; both reuse one uniqueness rule, with no Sims-side effect. **P82:** characterize duplicated observation references across different stages/trials, a failed pre-append case and persisted receipt tampering; preserve unique 5 baseline/5 modified/1 rollback fixtures. **P08:** local game proof is separately blocked in the GitHub provider runtime; never promote record validation to gameplay. **P07:** scoped source/tests/doc changes on an isolated branch with native `NON_GAMEPLAY` decision. **P124:** one canonical helper, no duplicate pipeline or broadened runtime dependencies.
+
+**Correction:** a reused capture ID now fails with `DUPLICATE_OBSERVATION_REF` before the CLI writes and when already stored evidence is read/evaluated. Reference-identity validation cannot establish the underlying media is genuine or independent; actual game patch, mod hash, 5+5 measured trials, rollback, player queue and maintainer review remain open. Track tests/PR/merge from provider receipts; no local Sims or desktop input operations occurred.
+
+
 **Parent:** Replace disorganized agents clicking around for money cheats with one generalized Sims 4 active-household operation independent of portrait, Sim identity, save labels or lot. Reuse the established host-funds and human-first screen lease; do not create a second UI controller. **Authoritative EA source:** https://www.ea.com/games/the-sims/the-sims-4/faq/cheats (Ctrl+Shift+C, testingcheats true, money N sets exact household total). **Consultation:** `contracts/consultations/BI-HOUSEHOLD-FUNDS-EXACT-20261110.v1.json`, committed before behavior changes.
 
 **P95 call stack:** operator target balance + observed current HUD balance → reject unknown or already-at/above target → retain Live/Build/Buy scene and screen ownership → Ctrl+Shift+C → testingcheats true → money N once → observe HUD → evidence-attested evaluation. The command is a target TOTAL, not an additive delta. Do not force F1 or select a Sim portrait.
