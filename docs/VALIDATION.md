@@ -1,3 +1,9 @@
+## Independent local offline quality gate — Entire-observed host (2026-11-11)
+
+The CI equivalent is now a **standalone local acceptance manifest**, not an API call to GitHub Actions: `contracts/local-quality-checks.v1.json` (49 invocations mirrored from the current workflow), `scripts/local_quality.py` (manifest parity and isolated runner), `tests/test_local_quality.py`, and `docs/LOCAL_QUALITY.md` (operator procedure). The plan needs only Git and Python; actual execution requires explicit local authority, an installed no-network sandbox image, and read-only Entire CLI checkpoint status with confirmed no push to this public repo. Moonwake retains the separate native-agent/retry/continuation loop; do not duplicate its owner.
+
+The existing Actions job is retained as a temporary equivalence comparator **until the local host run is actually observed**. Source/CI validation ≠ installed Windows hook ≠ Entire session checkpoint ≠ Sims/BI-002 gameplay certification. This is not permission for Cursor's project shell to execute mutable tests with operator Windows privileges.
+
 # Validation and release gates
 
 ## Offline (safe in any host)
