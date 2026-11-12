@@ -17,6 +17,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,15 +35,56 @@ def digest(data: str) -> str:
 
 
 def run_command(argv, *, cwd=ROOT, timeout=30):
+    """Capture only bounded diagnostics; terminate runaway output/CPU."""
+    maximum = 1024 * 1024
     try:
-        p = subprocess.run(argv, cwd=cwd, timeout=timeout, stdin=subprocess.DEVNULL,
-                           capture_output=True, text=True, errors='replace', shell=False)
-        return {'code': p.returncode, 'stdout_hash': digest(p.stdout),
-                'stderr_hash': digest(p.stderr), 'stdout': p.stdout, 'stderr': p.stderr}
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        return {'code': 124 if isinstance(exc, subprocess.TimeoutExpired) else 127,
-                'stdout_hash': digest(''), 'stderr_hash': digest(type(exc).__name__),
-                'stdout': '', 'stderr': type(exc).__name__}
+        p = subprocess.Popen(argv, cwd=cwd, stdin=subprocess.DEVNULL,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             shell=False)
+    except OSError as exc:
+        return {'code': 127, 'stdout_hash': digest(''),
+                'stderr_hash': digest(type(exc).__name__), 'stdout': '', 'stderr': type(exc).__name__}
+    buffers = [bytearray(), bytearray()]
+    overflow = threading.Event()
+
+    def consume(stream, buffer):
+        while True:
+            chunk = stream.read(8192)
+            if not chunk:
+                break
+            if len(buffer) + len(chunk) > maximum:
+                overflow.set()
+            if len(buffer) < maximum:
+                buffer.extend(chunk[:maximum - len(buffer)])
+        stream.close()
+
+    readers = [threading.Thread(target=consume, args=(pipe, buf), daemon=True)
+               for pipe, buf in zip((p.stdout, p.stderr), buffers)]
+    for reader in readers:
+        reader.start()
+    deadline = time.monotonic() + timeout
+    interrupted = ''
+    try:
+        while p.poll() is None:
+            if overflow.is_set():
+                interrupted = 'OUTPUT_LIMIT'; p.kill(); break
+            if time.monotonic() >= deadline:
+                interrupted = 'TIMEOUT'; p.kill(); break
+            time.sleep(0.025)
+        p.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        interrupted = 'TIMEOUT'; p.kill(); p.wait()
+    for reader in readers:
+        reader.join(timeout=5)
+    if overflow.is_set():
+        interrupted = 'OUTPUT_LIMIT'
+    stdout = buffers[0].decode('utf-8', 'replace')
+    stderr = buffers[1].decode('utf-8', 'replace')
+    if interrupted:
+        stderr = interrupted  # redact partial untrusted output on denial
+    return {'code': 124 if interrupted else p.returncode,
+            'stdout_hash': digest(stdout), 'stderr_hash': digest(stderr),
+            'stdout': '' if interrupted else stdout, 'stderr': stderr}
 
 
 def normalized(tokens):
