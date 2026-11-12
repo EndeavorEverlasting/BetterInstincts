@@ -8,7 +8,7 @@ META={"disposable_save_confirmed":True,"user_selected_mods_root_confirmed":True,
 def trial(stage, i, seconds=100, lag=50, interrupts=0):
     return {"stage":stage,"trial":i,"seconds_to_eat":seconds,"min_hunger":.15,
             "sim_lag_ms":lag,"player_interruptions":interrupts,"action_loops":0,
-            "exceptions":0,"observation_ref":"synthetic-test-only:"+str(i)}
+            "exceptions":0,"observation_ref":"synthetic-test-only:"+stage+":"+str(i)}
 
 def populated():
     return [trial("baseline",i) for i in range(1,6)]+[
@@ -32,6 +32,18 @@ class LiveEvalTests(unittest.TestCase):
         self.assertEqual(evaluate(META,rows)["state"],"MEASUREMENTS_FAIL")
     def test_no_attestation_fails(self):
         self.assertEqual(evaluate({},populated())["state"],"MEASUREMENTS_FAIL")
+    def test_replayed_observation_ref_across_stages_rejected(self):
+        rows = populated()
+        rows[5]["observation_ref"] = rows[0]["observation_ref"]
+        with self.assertRaisesRegex(EvidenceError, "DUPLICATE_OBSERVATION_REF"):
+            evaluate(META, rows)
+
+    def test_replayed_observation_ref_across_trials_rejected(self):
+        rows = populated()
+        rows[1]["observation_ref"] = rows[0]["observation_ref"]
+        with self.assertRaisesRegex(EvidenceError, "DUPLICATE_OBSERVATION_REF"):
+            evaluate(META, rows)
+
     def test_duplicate_trial_rejected(self):
         with self.assertRaisesRegex(EvidenceError,"DUPLICATE_TRIAL"):
             evaluate(META,populated()+[trial("baseline",1)])
