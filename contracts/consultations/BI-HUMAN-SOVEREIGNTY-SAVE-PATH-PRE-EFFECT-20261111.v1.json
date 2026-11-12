@@ -1,0 +1,69 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-HUMAN-SOVEREIGNTY-SAVE-PATH-PRE-EFFECT-20261111",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Close two Cursor pre-effect write bypasses after merged PR160: prevent agent writes to any protected Sims user saves or user-game-data trees even when copied inside the repository, and deny ambiguous/multi-target write tool payloads rather than trusting the first apparent path. Preserve read-only diagnostics and ordinary scoped code editing.",
+  "affected_concepts": [
+    "AGENT_EFFECT_PERIMETER",
+    "SAVE_SLOT",
+    "PLAYER_INTENT",
+    "CONTROL_PERMIT",
+    "OS_PERIPHERAL_AUTHORITY",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    ".cursor/hooks/operator_boundary.py",
+    "contracts/operator-desktop-boundary.v1.json",
+    "contracts/peripheral-authority.v1.json",
+    "docs/PERIPHERAL_INCIDENT.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-025",
+    "BI-ONT-046",
+    "BI-ONT-047",
+    "BI-ONT-048"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "GITHUB_SOURCE_CI_ONLY_NO_OPERATOR_WINDOWS_HOOK_OR_DEVICE_ATTESTATION",
+  "player_save_control_impact": "No EA data, user save files, Windows services/drivers, Bluetooth or installed local hook is modified. Deny pre-effect protected-file paths and ambiguous multi-path tool payloads.",
+  "expected_outcome": "Agent preToolUse Write/Edit/ApplyPatch operations with game-save data under repo, Slot_*.save copies, multiple divergent path fields or bulk-target inputs DENY. A single explicit benign repo file path still ALLOW; other effectful shell/device paths remain DENY. Regression fixtures cover Windows and POSIX spellings.",
+  "negative_tests": [
+    "In-repo saves/Slot_00000007.save and backup variants deny",
+    "In-repo Mods/Tray game-owned content denies",
+    "Windows mixed separators and case variants deny",
+    "Conflicting file_path vs path and multi-operation args deny",
+    "One unambiguous code file path and safe git status allow",
+    "Malformed and unrecognized tool payloads still fail closed"
+  ],
+  "rollback_path": "Revert isolated PR; keep merged PR160 and later peripheral and hook protections, without touching physical host.",
+  "unresolved_unknowns": [
+    "Actual Cursor hook installation/load/deny proof on the operator's Windows host is not available in GitHub CI",
+    "Other harness and direct computer-use agents need their own explicit admission adapters",
+    "Path checks cannot be an OS-enforced sandbox or prevent post-check filesystem races"
+  ],
+  "files_expected": [
+    ".cursor/hooks/operator_boundary.py",
+    "tests/test_operator_boundary.py",
+    "contracts/operator-desktop-boundary.v1.json",
+    "docs/PERIPHERAL_INCIDENT.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREMUTATION_CONSULTATION_FIRST",
+  "source_main_sha": "11e21e4533e49c4481e23db64d3db44fe9c9ad4f",
+  "invocations": [
+    "P95",
+    "P82",
+    "P08",
+    "P07",
+    "P124"
+  ]
+}
