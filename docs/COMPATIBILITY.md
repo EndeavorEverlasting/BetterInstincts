@@ -2,6 +2,26 @@
 
 **Goal:** publish mod variants that support several concrete game versions without breaking configurations already proven to work on older patches. New versions DO NOT retire old profiles by default.
 
+## Storefront versus game-patch compatibility for funds operations (2026-11-12)
+
+An EA app, Steam or Epic installation and an alternate Windows library
+directory do **not** justify separate money-cheat implementations. The
+funding adapter uses an explicit already-running game PID, ACTIVE human-first
+session and the recognized `TS4_x64.exe` / `TS4.exe` process basename,
+rather than relying on a Steam/EA/Epic path. Launcher-based game start is
+a separate user-selected executable-profile workflow. Trial, legacy and
+unrecognized binaries are **not** automatically accepted or certified.
+
+The pure funds planner runs without platform-specific side effects. The
+existing executable input adapter is Windows-only; macOS and game consoles
+require separately tested, permissioned platform adapters and must not be
+reported as working. Game builds and storefronts are separate compatibility
+axes. Unknown patches, free-base versus trial installations and specific
+additive-cheat behavior are **not** automatically certified by offline
+tests. See [HOUSEHOLD_FUNDS_RECOVERY.md](HOUSEHOLD_FUNDS_RECOVERY.md) and
+`contracts/host-funds.v1.json`.
+
+
 ## Why these mechanics
 - [Lot51/core-library README](https://github.com/lot51/core-library/blob/main/README.md): semantic mod versions, dependency minimum version checks, avoid bundling Core; [Core 1.37 release](https://lot51.cc/mods/core-library/releases/1.37) documents a repaired regression in compatibility with <=1.116. **OBSERVED DOCUMENTATION**; separate mod dependency from exact game-patch proof.
 - [The Sims 4 Modders Reference](https://thesims4moddersreference.org/tutorials/creating-xml-compare/): extract and retain per-patch XML for diffing. **DOCUMENTED WORKFLOW**; do not commit EA extracted game content to this repo.

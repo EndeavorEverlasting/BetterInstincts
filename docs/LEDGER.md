@@ -1,3 +1,12 @@
+## 2026-11-12 — Fifth Gear: active-household funds verified fallback / storefront-neutral host
+
+**Parent objective:** Make a generalized active Sims 4 household funds boost reliable when one cheat-console command fails, across Windows EA app, Steam, Epic and custom installation directories. Do not mistake a different launcher for a separate cheat engine or claim version-independent game certification. Consultation committed first: `contracts/consultations/BI-HOUSEHOLD-FUNDS-FALLBACK-20261112.v1.json`; code decision: `contracts/native-gameplay-decisions/BI-HOUSEHOLD-FUNDS-FALLBACK-20261112.v1.json`.
+
+**P95:** Retain the canonical exact-funds planner and existing screen lease. **P82:** An observed no-op plus a unique prior dispatch reference and distinct HUD reference admits at most one EA-documented, non-overshooting additive command; deny pending effect, changed balances and less-than-§1,000 gaps. **P08:** Physical Windows/Sims HUD, input-focus and cross-storefront/patch trials remain OPEN, without a claim of local proof. **P07:** Existing CLI now supports explicit `recover` and an operator-armed console route; exact executable basename/PID and foreground are checked without hardcoded install paths. **P124:** No duplicate input controller, hidden scanner, uncontrolled motherlode loop or save manipulation.
+
+**Proof:** Offline regressions own the route/evidence/overshoot/identity checks; remote CI cannot certify actual funds changed. A partial additive increase is not exact-target attainment or BI-004 earned income. Operator/local runbook: `docs/HOUSEHOLD_FUNDS_RECOVERY.md`. The parent BI-002 hunger gameplay gate and immutable version profiles remain unchanged.
+
+
 ## 2026-11-10 — Fifth Gear exact active-household funds injection (P95 → P82 → P08 → P07 → P124)
 
 ## 2026-11-11 — P141 → Fifth Gear: BI-002 trial observation replay guard

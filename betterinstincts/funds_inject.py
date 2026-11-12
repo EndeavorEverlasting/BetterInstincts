@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 from pathlib import Path
 from typing import Mapping, Optional
 
@@ -16,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "host-funds.v1.json"
 MAX_BYTES = 48_000
 MAX_HOUSEHOLD_FUNDS = 9_999_999
+EVIDENCE_REF_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_:.-]{2,119}$")
 
 
 class FundsInjectError(ValueError):
@@ -59,6 +61,12 @@ def load_contract(path: Path = CONTRACT) -> dict:
         raise FundsInjectError("UNVERIFIED_AUTO_FALLBACK_FORBIDDEN")
     if seq.get("max_household_funds") != MAX_HOUSEHOLD_FUNDS:
         raise FundsInjectError("HOUSEHOLD_FUNDS_CAP_REQUIRED")
+    recovery = cfg.get("observed_noop_recovery") or {}
+    if (recovery.get("one_effect_per_invocation") is not True
+            or recovery.get("explicit_opt_in") is not True
+            or recovery.get("fresh_distinct_evidence_required") is not True
+            or recovery.get("additive_commands") != {"motherlode": 50000, "kaching": 1000}):
+        raise FundsInjectError("HOST_FUNDS_RECOVERY_CONTRACT_UNSAFE")
     sub = cfg.get("subsidy") or {}
     _funds_int(sub.get("trigger_funds_below"), "SUBSIDY_TRIGGER", positive=True)
     _funds_int(sub.get("boost_to"), "SUBSIDY_BOOST", positive=True)
@@ -224,8 +232,9 @@ def evaluate_subsidy_gate(
 
 
 def steps_to_commands(plan: Mapping[str, object]) -> list[str]:
-    """Only the canonical two commands are admissible for host dispatch."""
-    if plan.get("state") != "FUNDS_INJECT_PLAN_READY":
+    """Admit only the exact command pair or one evidence-gated additive pair."""
+    state = plan.get("state")
+    if state not in ("FUNDS_INJECT_PLAN_READY", "FUNDS_RECOVERY_PLAN_READY"):
         raise FundsInjectError("FUNDS_PLAN_NOT_EXECUTABLE")
     target = _funds_int(plan.get("target_funds"), "TARGET", positive=True)
     commands = []
@@ -237,10 +246,104 @@ def steps_to_commands(plan: Mapping[str, object]) -> list[str]:
             if not isinstance(cmd, str):
                 raise FundsInjectError("INVALID_FUNDS_COMMAND")
             commands.append(cmd)
-    expected = ["testingcheats true", f"money {target}"]
+    if state == "FUNDS_RECOVERY_PLAN_READY":
+        current = _funds_int(plan.get("funds_observed"), "OBSERVED_FUNDS")
+        fallback = plan.get("recovery_command")
+        if fallback not in ("motherlode", "kaching"):
+            raise FundsInjectError("FUNDS_RECOVERY_PLAN_UNSAFE")
+        delta = {"motherlode": 50000, "kaching": 1000}[fallback]
+        before = _funds_int(plan.get("funds_before_exact"), "OBSERVED_FUNDS")
+        if (plan.get("auto_retry") is not False or plan.get("confirmed_noop") is not True
+                or plan.get("planned_delta") != delta or current != before
+                or current + delta > target
+                or not EVIDENCE_REF_RE.fullmatch(str(plan.get("prior_dispatch_ref") or ""))
+                or not EVIDENCE_REF_RE.fullmatch(str(plan.get("post_exact_evidence_ref") or ""))
+                or plan.get("prior_dispatch_ref") == plan.get("post_exact_evidence_ref")):
+            raise FundsInjectError("FUNDS_RECOVERY_PLAN_UNSAFE")
+        expected = ["testingcheats true", fallback]
+    else:
+        expected = ["testingcheats true", f"money {target}"]
     if commands != expected:
         raise FundsInjectError("FUNDS_COMMAND_STACK_UNSAFE")
     return commands
+
+
+
+def plan_funds_recovery(
+    *,
+    prior_plan: Mapping[str, object],
+    funds_after: float,
+    evidence_ref: Optional[str] = None,
+    prior_dispatch_ref: Optional[str] = None,
+    confirmed_noop: bool = False,
+    player_directed: bool = False,
+    cfg: Optional[dict] = None,
+) -> dict:
+    """Plan one opt-in additive command after a separately observed exact-money no-op.
+
+    Do not blindly retry; the user must confirm the first dispatch has settled.
+    The alternate EA cheats cannot reach every exact remainder without overshoot.
+    """
+    cfg = cfg or load_contract()
+    if player_directed:
+        return {"state": "YIELD_TO_PLAYER", "steps": [], "auto_retry": False,
+                "next_gate": "YIELD_TO_PLAYER", "proof_ceiling": cfg["proof_ceiling"]}
+    steps_to_commands(prior_plan)  # Reject a tampered or non-executable predecessor.
+    if prior_plan.get("state") != "FUNDS_INJECT_PLAN_READY":
+        raise FundsInjectError("EXACT_FUNDS_PREDECESSOR_REQUIRED")
+    target = _funds_int(prior_plan.get("target_funds"), "TARGET", positive=True)
+    before = _funds_int(prior_plan.get("funds_observed"), "OBSERVED_FUNDS")
+    after = _funds_int(funds_after, "OBSERVED_FUNDS")
+    if before >= target:
+        raise FundsInjectError("PREDECESSOR_TARGET_ALREADY_MET")
+    mode = prior_plan.get("game_mode")
+    if mode not in ("live", "build", "buy", "unknown"):
+        raise FundsInjectError("UNSUPPORTED_GAME_MODE")
+    result = {
+        "state": "RECOVERY_EVIDENCE_REQUIRED",
+        "route": "EA_ADDITIVE_ONE_SHOT",
+        "target_funds": target,
+        "funds_observed": after,
+        "funds_before_exact": before,
+        "game_mode": mode,
+        "steps": [],
+        "auto_retry": False,
+        "proof_ceiling": "EXTERNAL_ATTESTATION_ONLY_NOT_GAME_CERTIFICATION",
+        "next_gate": "OBSERVE_EXACT_COMMAND_RESULT_WITH_PLAYER",
+    }
+    if after != before:
+        return {**result, "state": "REPLAN_FROM_NEW_OBSERVATION",
+                "next_gate": "REPLAN_EXACT_FROM_CURRENT_HUD"}
+    prior_ref = str(prior_dispatch_ref or "").strip()
+    after_ref = str(evidence_ref or "").strip()
+    if (not EVIDENCE_REF_RE.fullmatch(prior_ref)
+            or not EVIDENCE_REF_RE.fullmatch(after_ref) or prior_ref == after_ref):
+        return result
+    if confirmed_noop is not True:
+        return {**result, "state": "RECOVERY_CONFIRMATION_REQUIRED",
+                "next_gate": "CONFIRM_NO_PENDING_EXACT_MONEY_EFFECT"}
+    remaining = target - after
+    candidates = cfg["observed_noop_recovery"]["additive_commands"]
+    command = next((cmd for cmd, delta in candidates.items()
+                    if remaining >= delta), None)
+    if command is None:
+        return {**result, "state": "NO_EXACT_ADDITIVE_FALLBACK",
+                "remaining": remaining,
+                "next_gate": "MANUAL_EXACT_MONEY_DIAGNOSIS"}
+    delta = candidates[command]
+    steps = [
+        *[dict(step) for step in prior_plan["steps"][:4]],
+        {"step": "ADD_FUNDS_CHUNK", "required": True, "command": command,
+         "delta": delta},
+        {"step": "VERIFY_HOUSEHOLD_FUNDS", "required": True, "target": target,
+         "note": "Fresh HUD observation required before any further action"},
+    ]
+    return {**result, "state": "FUNDS_RECOVERY_PLAN_READY",
+            "next_gate": "EXECUTE_FUNDS_INJECT_WITH_ADMISSION",
+            "recovery_command": command, "planned_delta": delta,
+            "remaining": remaining, "prior_dispatch_ref": prior_ref,
+            "post_exact_evidence_ref": after_ref, "confirmed_noop": True,
+            "steps": steps}
 
 
 def verify_funds_outcome(
@@ -250,21 +353,38 @@ def verify_funds_outcome(
     evidence_ref: Optional[str] = None,
 ) -> dict:
     """Classify an external HUD observation; never trigger an automatic retry."""
-    if plan.get("state") != "FUNDS_INJECT_PLAN_READY":
-        raise FundsInjectError("FUNDS_PLAN_NOT_EXECUTABLE")
+    steps_to_commands(plan)
     target = _funds_int(plan.get("target_funds"), "TARGET", positive=True)
     observed = _funds_int(funds_after, "OBSERVED_FUNDS")
     reference = str(evidence_ref or "").strip()
-    verified = observed >= target and bool(reference)
+    if (plan.get("state") == "FUNDS_RECOVERY_PLAN_READY"
+            and (not EVIDENCE_REF_RE.fullmatch(reference)
+                 or reference in (plan.get("prior_dispatch_ref"), plan.get("post_exact_evidence_ref")))):
+        raise FundsInjectError("RECOVERY_HUD_EVIDENCE_MUST_BE_FRESH_AND_DISTINCT")
+    is_recovery = plan.get("state") == "FUNDS_RECOVERY_PLAN_READY"
+    baseline = (plan.get("funds_observed") if is_recovery else None)
+    if is_recovery:
+        baseline = _funds_int(baseline, "OBSERVED_FUNDS")
+        planned_delta = _funds_int(plan.get("planned_delta"), "PLANNED_DELTA", positive=True)
+        unexpected = observed < baseline or observed > baseline + planned_delta
+    else:
+        unexpected = observed > target
+    verified = observed == target and bool(reference) and not unexpected
+    progressed = (is_recovery and bool(reference) and baseline < observed < target
+                  and not unexpected)
     return {
         "state": (
-            "TARGET_ATTESTED_BY_EXTERNAL_OBSERVATION" if verified
+            "FUNDS_UNEXPECTED_DELTA" if unexpected
+            else "TARGET_ATTESTED_BY_EXTERNAL_OBSERVATION" if verified
+            else "FUNDS_PROGRESS_ATTESTED_BY_EXTERNAL_OBSERVATION" if progressed
             else "FUNDS_NOT_VERIFIED"
         ),
         "target": target,
         "funds_after_reported": observed,
         "evidence_ref": reference or None,
-        "next_gate": "CONTINUE_HOST" if verified else "RECHECK_UI_WITH_PLAYER",
+        "next_gate": ("STOP_AND_RECONCILE_UNEXPECTED_FUNDS" if unexpected else
+                      "CONTINUE_HOST" if verified else
+                      "REPLAN_FROM_CURRENT_HUD" if progressed else "RECHECK_UI_WITH_PLAYER"),
         "auto_retry": False,
         "proof_ceiling": "EXTERNAL_OBSERVATION_ATTESTATION_NOT_GAME_CERTIFICATION",
     }

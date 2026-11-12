@@ -1,5 +1,8 @@
 # BetterInstincts roadmap — no trajectory rediscovery
 
+**2026-11-12 household funds support continuation (P95 → P82 → P08 → P07 → P124):** Existing exact-money host planner now has an explicitly confirmed one-shot additive fallback and operator-ready console mode, independent of Steam/EA/Epic installation paths when the Windows Sims PID is verified. This is a disposable test-setup/support tool, not BI-004 earned income and not a new BI-002 prerequisite. Local game/patch and HUD P08 proof remains open; see [HOUSEHOLD_FUNDS_RECOVERY.md](HOUSEHOLD_FUNDS_RECOVERY.md).
+
+
 **2026-11-11 BI-002 evidence integrity continuation (P141 → Fifth Gear):** Preserve the hunger-first parent and the separate live game gate. Strengthen existing `live_eval` / `live_cert` so duplicate observation references cannot inflate 5+5+rollback trial counts, including already-persisted receipts. This is a bounded offline proof guard, not a new gameplay prerequisite, native EA hook or completed Sims certification. See `docs/LIVE_CERT.md` and the P141 consultation.
 
 

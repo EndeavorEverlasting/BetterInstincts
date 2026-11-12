@@ -18,6 +18,7 @@ import argparse
 import json
 import sys
 import time
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +29,7 @@ from betterinstincts.funds_inject import (
     FundsInjectError,
     evaluate_subsidy_gate,
     plan_inject,
+    plan_funds_recovery,
     steps_to_commands,
     subsidy_prompt,
     verify_funds_outcome,
@@ -119,8 +121,10 @@ def _execute_plan(
     close_console: bool = False,
     session_id: str | None = None,
     idle_ms: int = 15000,
+    console_open_method: str = "chord",
+    console_ready: bool = False,
 ) -> dict:
-    """One bounded exact-money dispatch under explicit human-first admission.
+    """One bounded funding dispatch under explicit human-first admission.
 
     The permitted input burst must not masquerade as a verified money change.
     GetLastInputInfo sees our own injected keystrokes, so a fresh 15-second
@@ -131,6 +135,10 @@ def _execute_plan(
     if sys.platform != "win32":
         raise GateError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
     commands = steps_to_commands(plan)
+    if console_open_method not in ("chord", "operator-ready"):
+        raise GateError("UNSUPPORTED_CONSOLE_OPEN_METHOD")
+    if console_open_method == "operator-ready" and console_ready is not True:
+        raise GateError("OPERATOR_CONSOLE_FOCUS_ATTESTATION_REQUIRED")
     if plan.get("game_mode") not in {"live", "build", "buy"}:
         raise GateError("EXPLICIT_GAME_MODE_REQUIRED")
     if any(s.get("step") == "ENSURE_LIVE_MODE" for s in (plan.get("steps") or [])):
@@ -155,6 +163,7 @@ def _execute_plan(
             not observed.probe_ok
             or not observed.foreground_is_sims
             or observed.foreground_process_id != int(process_id)
+            or str(observed.foreground_process_name or "").lower() not in ("ts4_x64.exe", "ts4.exe")
             or listener_status(str(session_id)).get("state") != "ACTIVE"
         ):
             raise GateError("GAME_FOREGROUND_OR_SESSION_LOST")
@@ -168,8 +177,11 @@ def _execute_plan(
         ) as ensure_ready:
             handoff = ensure_ready()
             verify_game_focus()
-            _open_console_chord()
-            time.sleep(0.55)
+            if console_open_method == "chord":
+                _open_console_chord()
+                time.sleep(0.55)
+            # Alternative: the operator has visually armed the existing console.
+            # Never blindly toggle Ctrl+Shift+C again when it may already be open.
             dispatched = []
             for cmd in commands:
                 verify_game_focus()
@@ -181,8 +193,10 @@ def _execute_plan(
         raise GateError("HOST_CONTROL_NOT_ADMITTED:" + str(exc)) from exc
     return {
         "state": "FUNDS_INJECT_DISPATCHED_NOT_VERIFIED",
+        "dispatch_ref": "dispatch:" + uuid.uuid4().hex,
         "commands": dispatched,
-        "open_console": "Ctrl+Shift+C",
+        "open_console": ("Ctrl+Shift+C" if console_open_method == "chord"
+                         else "OPERATOR_ATTESTED_READY_CONSOLE"),
         "mode_agnostic": True,
         "forced_live_mode": False,
         "game_mode": plan.get("game_mode"),
@@ -193,6 +207,8 @@ def _execute_plan(
         "proof_ceiling": "INPUT_DISPATCH_ONLY_NOT_ACCEPTANCE_OR_BALANCE_PROOF",
         "next_gate": "OBSERVE_HOUSEHOLD_FUNDS_UI_THEN_VERIFY_WITH_EVIDENCE",
         "auto_retry": False,
+        "one_effect_per_invocation": True,
+        "console_input_focus_proof": ("OPERATOR_ATTESTED" if console_open_method == "operator-ready" else "NOT_INDEPENDENTLY_PROVEN"),
     }
 
 
@@ -296,11 +312,40 @@ def main(argv: list[str] | None = None) -> int:
     inj.add_argument("--idle-ms", type=int, default=15000)
     inj.add_argument("--receipt", type=Path, default=None)
 
+    recover = sub.add_parser("recover", help="One explicit observed-noop additive fallback; no chain")
+    recover.add_argument("--amount", type=float, required=True)
+    recover.add_argument("--funds-before", type=float, required=True)
+    recover.add_argument("--funds-after", type=float, required=True)
+    recover.add_argument("--evidence-ref", required=True, help="Distinct post-exact HUD observation")
+    recover.add_argument("--prior-dispatch-ref", required=True, help="Actual exact-money dispatch receipt ID")
+    recover.add_argument("--confirmed-noop", action="store_true",
+                         help="Operator confirms no pending exact-money effect")
+    recover.add_argument("--game-mode", default="unknown")
+    recover.add_argument("--execute", action="store_true")
+    recover.add_argument("--close-console", action="store_true")
+    recover.add_argument("--process-id", type=int, default=None)
+    recover.add_argument("--session-id", default=None)
+    recover.add_argument("--idle-ms", type=int, default=15000)
+    recover.add_argument("--receipt", type=Path, default=None)
+
     verify = sub.add_parser("verify", help="Classify externally observed HUD funds; no game input")
     verify.add_argument("--amount", type=float, required=True)
     verify.add_argument("--funds-before", type=float, required=True)
     verify.add_argument("--funds-after", type=float, required=True)
     verify.add_argument("--evidence-ref", default=None)
+    verify.add_argument("--route", choices=("exact", "recovery"), default="exact")
+    verify.add_argument("--game-mode", default="unknown")
+    verify.add_argument("--funds-after-exact", type=float, default=None,
+                        help="For recovery: the unchanged HUD after exact money")
+    verify.add_argument("--prior-dispatch-ref", default=None)
+    verify.add_argument("--no-op-evidence-ref", default=None)
+    verify.add_argument("--confirmed-noop", action="store_true")
+
+    for command_parser in (inj, gate, recover):
+        command_parser.add_argument("--console-open-method", choices=("chord", "operator-ready"),
+                                    default="chord")
+        command_parser.add_argument("--console-ready", action="store_true",
+                                    help="Required for operator-ready, confirmed live console focus")
 
     args = p.parse_args(argv)
     try:
@@ -322,10 +367,43 @@ def main(argv: list[str] | None = None) -> int:
                 game_mode=args.game_mode,
             )
         elif args.command == "verify":
-            prior_plan = plan_inject(amount=args.amount, funds_observed=args.funds_before)
+            prior_plan = plan_inject(
+                amount=args.amount, funds_observed=args.funds_before,
+                game_mode=args.game_mode,
+            )
+            if args.route == "recovery":
+                if args.funds_after_exact is None:
+                    raise GateError("POST_EXACT_FUNDS_OBSERVATION_REQUIRED")
+                prior_plan = plan_funds_recovery(
+                    prior_plan=prior_plan,
+                    funds_after=args.funds_after_exact,
+                    evidence_ref=args.no_op_evidence_ref,
+                    prior_dispatch_ref=args.prior_dispatch_ref,
+                    confirmed_noop=args.confirmed_noop,
+                )
             result = verify_funds_outcome(
                 prior_plan, funds_after=args.funds_after, evidence_ref=args.evidence_ref,
             )
+        elif args.command == "recover":
+            prior_plan = plan_inject(
+                amount=args.amount, funds_observed=args.funds_before,
+                game_mode=args.game_mode,
+            )
+            plan = plan_funds_recovery(
+                prior_plan=prior_plan, funds_after=args.funds_after,
+                evidence_ref=args.evidence_ref,
+                prior_dispatch_ref=args.prior_dispatch_ref,
+                confirmed_noop=args.confirmed_noop,
+            )
+            result = {"plan": plan, "execute": bool(args.execute)}
+            if args.execute:
+                result["live"] = _execute_plan(
+                    plan, process_id=args.process_id,
+                    close_console=bool(args.close_console),
+                    session_id=args.session_id, idle_ms=int(args.idle_ms),
+                    console_open_method=args.console_open_method,
+                    console_ready=bool(args.console_ready),
+                )
         elif args.command == "subsidy":
             choice = args.choice
             if args.overlay and choice is None:
@@ -346,6 +424,8 @@ def main(argv: list[str] | None = None) -> int:
                     close_console=bool(args.close_console),
                     session_id=args.session_id,
                     idle_ms=int(args.idle_ms),
+                    console_open_method=args.console_open_method,
+                    console_ready=bool(args.console_ready),
                 )
                 result = {**result, "live": live, "execute": True}
             else:
@@ -364,6 +444,8 @@ def main(argv: list[str] | None = None) -> int:
                     close_console=bool(args.close_console),
                     session_id=args.session_id,
                     idle_ms=int(args.idle_ms),
+                    console_open_method=args.console_open_method,
+                    console_ready=bool(args.console_ready),
                 )
 
         receipt = getattr(args, "receipt", None)

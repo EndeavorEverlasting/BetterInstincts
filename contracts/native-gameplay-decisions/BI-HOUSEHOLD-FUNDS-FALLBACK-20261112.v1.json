@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-HOUSEHOLD-FUNDS-FALLBACK-20261112",
+  "purpose": "Pure policy household funds fallback planning; Windows lab adapter remains opt-in, not game-native autonomy.",
+  "files": [
+    {
+      "path": "betterinstincts/funds_inject.py",
+      "route": "POLICY_ONLY",
+      "reason": "Deterministic and read-only EA cheat command selection based on explicit observed household funds and evidence; never dispatches Sims/OS effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "host_adapter": "scripts/funds_inject.py",
+  "runtime_admission": "betterinstincts.screen_admit.admitted_screen_lease",
+  "autonomy_runtime": false,
+  "evidence_ceiling": "OFFLINE_POLICY_AND_PROVIDER_TESTS_ONLY_NO_CROSS_STOREFRONT_LIVE_PROOF",
+  "next_gate": "Windows Sims exact-binary and scene calibration in disposable save, command focus and HUD before/after across storefront channels; preserve user input takeover."
+}

@@ -1,7 +1,7 @@
 {
   "schema": "betterinstincts.host-funds/v1",
-  "version": 3,
-  "proof_ceiling": "EXACT_FUNDS_CONSOLE_DISPATCH_UNTIL_EXTERNAL_HUD_VERIFICATION_NOT_EARNED_INCOME",
+  "version": 4,
+  "proof_ceiling": "EXACT_OR_SINGLE_ADDITIVE_DISPATCH_ONLY_UNTIL_EXTERNAL_HUD_ATTESTATION_NOT_GAME_CERTIFICATION",
   "local_observed": {
     "date": "2026-11-07",
     "household": "LabLab / Charlee",
@@ -54,10 +54,10 @@
     "set_funds_status": "EA_DOCUMENTED_LOCAL_P08_OPEN",
     "preferred_path_status": "OPEN",
     "preferred_path_id": "FUNDS_PREFERRED_NON_MOTHERLODE",
-    "preferred_path_note": "Native EA cheat console: testingcheats true; money N sets current active household total N. No portrait names, clicks or repeated motherlode. Confirm HUD; do not auto-replay. Preferred path id/status preserved for horizon compatibility until local game P08 certification; current exact-money candidate is documented but not game-verified.",
+    "preferred_path_note": "Native EA cheat console: testingcheats true; money N sets current active household total N. No portrait names, clicks or repeated motherlode. Confirm HUD; do not auto-replay. Preferred path id/status preserved for horizon compatibility until local game P08 certification; current exact-money candidate is documented but not game-verified. If a locally observed exact-money attempt produced no funds change, a fresh explicit operator-confirmed recovery may dispatch ONE EA-documented additive command; never auto-chain or claim exact success.",
     "durable_additive_command": "motherlode",
     "durable_additive_chunk": 50000,
-    "durable_additive_note": "Historical local observation: +50000. NOT executed automatically after exact money; manual fallback requires new observed HUD balance, explicit permission and bounded separate plan.",
+    "durable_additive_note": "EA documented motherlode +50000, kaching +1000. Separate confirmed-noop recovery, each one-shot no overshoot; no automatic fallback or retry, no promise to reach non-1000 remainder without exact-money repair.",
     "close_console_key": "ESCAPE",
     "close_console_optional": true,
     "forbidden": [
@@ -89,7 +89,9 @@
       "no idle/foreground/screen lease -> HOST_PAUSED",
       "console visibility/acceptance unproven -> DISPATCHED_NOT_VERIFIED, no auto retry",
       "no supplied after-HUD evidence -> FUNDS_NOT_VERIFIED",
-      "never force F1, no fixed screen click, no automatic motherlode, no Esc spam"
+      "never force F1, no fixed screen click, no automatic motherlode, no Esc spam",
+      "exact money observed no-op -> require distinct dispatch and after-HUD refs, confirmation no pending effect, and new explicit recover invocation",
+      "remaining <1000 -> NO_EXACT_ADDITIVE_FALLBACK; preserve funds, do not overshoot"
     ]
   },
   "invariants": [
@@ -103,7 +105,53 @@
     "single_exact_money_command_no_auto_motherlode",
     "external_HUD_observation_required_for_result_confirmation",
     "no_portrait_or_legacy_person_specific_identifiers",
-    "never_claim_BI004_income_from_subsidy"
+    "never_claim_BI004_income_from_subsidy",
+    "one_opt_in_fallback_command_per_invocation_observed_noop_only",
+    "storefront_independent_by_verified_runtime_pid_not_install_directory",
+    "no_unverified_cross_platform_game_certification"
   ],
-  "documented_ea_reference": "https://www.ea.com/games/the-sims/the-sims-4/faq/cheats"
+  "documented_ea_reference": "https://www.ea.com/games/the-sims/the-sims-4/faq/cheats",
+  "observed_noop_recovery": {
+    "schema": "betterinstincts.funds-observed-noop-recovery/v1",
+    "explicit_opt_in": true,
+    "fresh_distinct_evidence_required": true,
+    "one_effect_per_invocation": true,
+    "after_exact_must_equal_before_exact": true,
+    "additive_commands": {
+      "motherlode": 50000,
+      "kaching": 1000
+    },
+    "selection": "LARGEST_NON_OVERSHOOT_CHUNK_ONE_SHOT",
+    "minimum_target_gap_for_command": 1000,
+    "post_command_hud_verification_required": true,
+    "result_proof_ceiling": "EXTERNAL_ATTESTATION_NOT_NATIVE_GAME_CERTIFICATION",
+    "denied": [
+      "unknown_or_changed_funds",
+      "same_or_missing_evidence_ref",
+      "no_prior_dispatched_exact_money_ref",
+      "unconfirmed_noop_or_pending_effect",
+      "potential_overshoot",
+      "blind_automatic_replay",
+      "unsupported_mode_or_foreground"
+    ]
+  },
+  "runtime_compatibility": {
+    "storefront_policy": "STORE_AGNOSTIC_WHEN_SAME_VERIFIED_THE_SIMS_4_WINDOWS_PROCESS",
+    "known_distribution_channels": [
+      "ea_app",
+      "steam",
+      "epic_games",
+      "other_or_unknown"
+    ],
+    "directory_policy": "NO_HARDCODED_INSTALL_DIRECTORY; ATTACH_BY_EXPLICIT_RUNNING_PID_AND_ACTIVE_SESSION",
+    "supported_host_executor": "windows",
+    "eligible_windows_executable_basenames": [
+      "TS4_x64.exe",
+      "TS4.exe"
+    ],
+    "game_build_policy": "EXACT_BUILD_OBSERVATION_REQUIRED_FOR_CLAIMED_CERTIFICATION; UNKNOWN_NEVER_AUTOCERTIFIED",
+    "unknown_editions": "TRIAL_LEGACY_VERSION_OR_DIFFERENT_EXECUTABLE_UNVERIFIED; READ_ONLY_PLANNING_ONLY",
+    "other_platforms": "MAC_CONSOLES_AND_UNVERIFIED_RUNTIME_INPUT_ADAPTERS_NOT_EXECUTABLE_BY_WINDOWS_HOST",
+    "no_scan": "NO_DRIVE_WIDE_DISCOVERY_NO_PROFILE_WRITES_NO_GAME_BINARY_MODIFICATION"
+  }
 }
