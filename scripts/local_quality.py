@@ -331,7 +331,7 @@ def main(argv=None):
         os.chmod(temp, 0o755)
         stage = Path(temp) / 'source'; stage.mkdir(mode=0o755)
         os.chmod(stage, 0o755)
-        proc = subprocess.run(['git', 'archive', '--format=tar', 'HEAD'], cwd=repo_root,
+        proc = subprocess.run([trusted_executable('git', repo_root), 'archive', '--format=tar', 'HEAD'], cwd=repo_root,
                               stdin=subprocess.DEVNULL, capture_output=True, timeout=30)
         if proc.returncode or len(proc.stdout) > 128 * 1024 * 1024:
             raise ValueError('GIT_ARCHIVE_UNAVAILABLE_OR_OVERSIZED')
