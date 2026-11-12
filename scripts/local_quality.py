@@ -13,6 +13,7 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -34,9 +35,28 @@ def digest(data: str) -> str:
     return hashlib.sha256(data.encode('utf-8', 'replace')).hexdigest()
 
 
+def trusted_executable(name, root=ROOT):
+    """Avoid CreateProcess/command search in agent-editable repo directories."""
+    found = shutil.which(name)
+    if not found:
+        raise ValueError('HOST_EXECUTABLE_NOT_INSTALLED:' + name)
+    trusted = Path(found).resolve()
+    root = Path(root).resolve()
+    if trusted == root or root in trusted.parents or not trusted.is_file():
+        raise ValueError('UNTRUSTED_HOST_EXECUTABLE:' + name)
+    return str(trusted)
+
+
 def run_command(argv, *, cwd=ROOT, timeout=30):
     """Capture only bounded diagnostics; terminate runaway output/CPU."""
     maximum = 1024 * 1024
+    if argv and argv[0] in ('git', 'entire', 'docker', 'podman'):
+        try:
+            argv = [trusted_executable(argv[0], cwd), *argv[1:]]
+        except ValueError as exc:
+            return {'code': 127, 'stdout_hash': digest(''),
+                    'stderr_hash': digest(type(exc).__name__), 'stdout': '',
+                    'stderr': str(exc)}
     try:
         p = subprocess.Popen(argv, cwd=cwd, stdin=subprocess.DEVNULL,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -225,9 +245,12 @@ def sandbox(root, stage, manifest, base, *, engine, image, timeout=1800):
     if engine not in ('docker', 'podman') or not re.fullmatch(r'[A-Za-z0-9_./:-]{5,128}', image):
         raise ValueError('SANDBOX_ENGINE_OR_IMAGE_INVALID')
     gi = git_info(root)
-    image_check = run_command([engine, 'image', 'inspect', image], cwd=root)
+    image_check = run_command([engine, 'image', 'inspect', '--format', '{{.Id}}', image], cwd=root)
     if image_check['code']:
         raise ValueError('LOCAL_SANDBOX_IMAGE_NOT_PRESENT_NO_PULL')
+    image_id = image_check['stdout'].strip()
+    if not re.fullmatch(r'(?:sha256:)?[0-9a-f]{64}', image_id):
+        raise ValueError('LOCAL_SANDBOX_IMAGE_ID_UNVERIFIED')
     argv = [engine, 'run', '--rm', '--pull=never', '--network=none', '--read-only',
             '--cap-drop=ALL', '--security-opt=no-new-privileges', '--pids-limit=256',
             '--memory=1536m', '--cpus=2', '--user=65534:65534',
@@ -240,8 +263,10 @@ def sandbox(root, stage, manifest, base, *, engine, image, timeout=1800):
             '-e', 'PYTHONDONTWRITEBYTECODE=1', '-e', 'GIT_DIR=/gitdir',
             '-e', 'GIT_COMMON_DIR=/gitcommon', '-e', 'GIT_WORK_TREE=/work',
             '-e', 'HOME=/tmp', '--workdir', '/work', '--entrypoint', 'python',
-            image, '-c', BOOTSTRAP, 'run', '--worker', '--base-sha', base]
-    return run_command(argv, cwd=root, timeout=timeout)
+            image_id, '-c', BOOTSTRAP, 'run', '--worker', '--base-sha', base]
+    result = run_command(argv, cwd=root, timeout=timeout)
+    result['image_id'] = image_id
+    return result
 
 
 def private_receipt(root, obj):
@@ -264,6 +289,7 @@ def main(argv=None):
     p.add_argument('command', choices=['plan', 'run'])
     p.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     p.add_argument('--base-sha')
+    p.add_argument('--expected-head')
     p.add_argument('--engine', choices=['docker', 'podman'], default='docker')
     p.add_argument('--image', default=IMAGE)
     p.add_argument('--authorize', action='store_true')
@@ -283,7 +309,9 @@ def main(argv=None):
                'workflow_parity': 'PASS' if workflow.exists() else 'LEGACY_WORKFLOW_ABSENT'}
     if a.command == 'plan':
         print(json.dumps(summary, sort_keys=True)); return 0
-    if not a.authorize or not a.base_sha or not re.fullmatch('[a-f0-9]{40}', a.base_sha):
+    if not a.authorize or not a.expected_head or a.expected_head != git['head']:
+        raise ValueError('REVIEWED_EXPECTED_HEAD_REQUIRED')
+    if not a.base_sha or not re.fullmatch('[a-f0-9]{40}', a.base_sha):
         raise ValueError('EXPLICIT_AUTHORIZE_AND_BASE_SHA_REQUIRED')
     if not run_command(['git', 'cat-file', '-e', a.base_sha + '^{commit}'], cwd=ROOT)['code'] == 0:
         raise ValueError('UNKNOWN_BASE_COMMIT')
@@ -311,7 +339,7 @@ def main(argv=None):
         report = {'all_pass': False, 'reason': 'SANDBOX_REPORT_MISSING'}
     pass_state = outcome['code'] == 0 and report['all_pass'] is True and entire_after['ready']
     receipt = {**summary, 'base_sha': a.base_sha, 'sandbox': {'engine': a.engine, 'image': a.image,
-               'exit_code': outcome['code'], 'stdout_sha256': outcome['stdout_hash'],
+               'exit_code': outcome['code'], 'verified_image_id': outcome['image_id'], 'stdout_sha256': outcome['stdout_hash'],
                'stderr_sha256': outcome['stderr_hash']},
                'entire_before': entire_before, 'entire_after': entire_after,
                'checks': report, 'status': 'LOCAL_OFFLINE_CHECKS_PASS' if pass_state else 'FAIL_CLOSED',
