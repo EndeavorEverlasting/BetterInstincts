@@ -50,8 +50,9 @@ if errorlevel 1 goto blocked_existing
 echo Installing BetterInstincts offline toolkit...
 %PYTHON% bootstrap.py install
 if errorlevel 1 goto blocked_install
-echo Opening the Sims 4 chooser...
-%PYTHON% -m scripts.first_run gui
+echo Starting The Sims 4 when a unique installation and idle game process are verified...
+rem The double-click itself requests launch; never guess a save or bypass EA authentication.
+%PYTHON% -m scripts.first_run auto --fallback-gui
 if errorlevel 1 goto blocked_launcher
 exit /b 0
 :missing_git
