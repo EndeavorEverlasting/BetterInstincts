@@ -25,6 +25,11 @@ def validate_trial(row):
     note = row.get("observation_ref")
     if not isinstance(note, str) or not 3 <= len(note) <= 160:
         raise EvidenceError("OBSERVATION_REF_MISSING")
+    # P83 closer: an opaque capture ID must have exactly one usable spelling.
+    # Reject padding and hidden characters rather than silently normalizing
+    # evidence IDs, which would make distinct receipts appear interchangeable.
+    if not note.strip() or note != note.strip() or not note.isprintable():
+        raise EvidenceError("OBSERVATION_REF_INVALID")
 
 def require_distinct_observation_refs(trials):
     """One observation must not count as several independent gameplay trials.
