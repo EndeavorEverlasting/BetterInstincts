@@ -56,7 +56,7 @@ class LabCLITests(unittest.TestCase):
             tampered = row("modified", 2, 70)
             tampered["observation_ref"] = first["observation_ref"]
             with (location / "observations.jsonl").open("a", encoding="utf-8") as sink:
-                sink.write(json.dumps(tampered) + "\\n")
+                sink.write(json.dumps(tampered) + "\n")
             with self.assertRaisesRegex(EvidenceError, "DUPLICATE_OBSERVATION_REF"):
                 status("replay-run", out)
 
