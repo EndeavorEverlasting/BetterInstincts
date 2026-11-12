@@ -19,8 +19,6 @@
     "default_shell": "DENY_UNKNOWN",
     "allowed_shell_classes": [
       "GIT_READ_ONLY_DIAGNOSTICS",
-      "KNOWN_OFFLINE_UNITTEST",
-      "KNOWN_OFFLINE_DOCTRINE_CHECKS",
       "WORKING_DIRECTORY_INSPECT"
     ],
     "file_actions": {
@@ -35,7 +33,18 @@
         "**/.env.*",
         "**/*.{pem,p12,pfx,key}",
         "contracts/operator-desktop-boundary.v1.json",
-        "outside_repo/**"
+        "outside_repo/**",
+        "contracts/peripheral-authority.v1.json",
+        "contracts/ontology.v1.json",
+        "contracts/effect-authority.v1.json",
+        "contracts/human-first-harness.v1.json",
+        "docs/AGENT_OPERATING_RULES.md",
+        "docs/DOCTRINE.md",
+        "scripts/check_peripheral_boundary.py",
+        "scripts/check_human_sovereignty.py",
+        "scripts/check_ontology.py",
+        "tests/test_operator_boundary.py",
+        "tests/test_peripheral_boundary.py"
       ],
       "unknown_effectful_tools": "DENY",
       "protected_user_data": "NEVER_EDIT_OR_DELETE_USER_SAVES_OR_OS_INPUT_SETTINGS"
@@ -49,8 +58,15 @@
       "UNAPPROVED_FOREGROUND_OR_POINTER_CAPTURE",
       "DELETE_OR_OVERWRITE_USER_SAVES",
       "UNREVIEWED_REPOSITORY_DELETION",
-      "SHELL_INDIRECTION_OR_UNKNOWN_COMMAND"
-    ]
+      "SHELL_INDIRECTION_OR_UNKNOWN_COMMAND",
+      "RUN_AGENT_EDITABLE_TESTS_WITH_OPERATOR_HOST_PRIVILEGES"
+    ],
+    "denied_shell_classes": [
+      "MUTABLE_LOCAL_UNITTEST",
+      "MUTABLE_LOCAL_CHECKER_OR_INTERPRETER",
+      "ARBITRARY_SHELL_OR_PROGRAM"
+    ],
+    "execution_separation": "A fixed python -m unittest or scripts.check_* argv still executes agent-editable repository code. Project pre-effect hooks deny such interpreter invocations on operator host; use isolated CI or separately operator-approved OS sandbox. A passing CI run is not local activation proof."
   },
   "coexistence": {
     "capture": "scripts/game_capture.py is passive; minimized game requires operator restoration",
@@ -67,14 +83,17 @@
       "python -m unittest discover -s tests -p test_game_host.py -v"
     ],
     "local_activation": [
-      "Check Cursor Customize/Hooks and Hooks output channel after opening the project",
-      "Test a benign git status and synthetic denied command without actually running destructive host operation"
+      "Check Cursor project Hook subscriptions and Hook output after opening canonical checkout; do not infer local activation from GitHub merge",
+      "Allow a benign git status --short via the loaded hook and record sanitized hook receipt",
+      "Request python -m unittest tests.test_operator_boundary -v only as a synthetic denied tool intent; do not execute Python on operator host as a canary",
+      "Run tests separately on isolated CI or an independently approved restricted runner; do not run via Cursor agent shell"
     ],
     "limits": [
       "Project hooks must be loaded by Cursor; a GitHub branch is not a local installation",
       "Other IDEs, arbitrary external tools, non-cooperating computer-use clients and direct user commands are not intercepted",
       "Python unittest executes repository code and is not an OS sandbox",
-      "Project hooks are not tamper-proof against an untrusted process with filesystem access"
+      "Project hooks are not tamper-proof against an untrusted process with filesystem access",
+      "An agent can edit tests and product code; interpreter allowlisting by argv alone is not a safe execution sandbox."
     ]
   },
   "privacy": "Hook emits only coarse action policy result; no payload, paths, clipboard, key logging or incident hardware IDs are persisted.",
