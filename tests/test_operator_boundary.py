@@ -41,24 +41,39 @@ class OperatorBoundaryTests(unittest.TestCase):
         self.assertEqual(contract["project_hook"]["file_actions"]["delete"], "DENY_ALL_AGENT_DELETE")
         self.assertEqual(contract["project_hook"]["file_actions"]["unknown_effectful_tools"], "DENY")
 
-    def test_read_only_diagnostics_and_offline_tests_allowed(self):
+    def test_read_only_diagnostics_still_allowed(self):
         for command in ("git status --short", "git diff --check", "git rev-parse HEAD",
-                        "git branch --show-current", "python -m unittest discover -s tests -v",
-                        "python -m scripts.check_ontology", "pwd"):
+                        "git branch --show-current", "pwd"):
             with self.subTest(command=command):
                 self.assertEqual(boundary.evaluate({"command": command})["permission"], "allow")
 
-    def test_approved_repo_peripheral_diagnostics_are_reachable(self):
+    def test_mutable_local_python_tests_and_checker_modules_are_denied(self):
+        # unittest imports repository files the agent is allowed to edit;
+        # it cannot be presumed safe merely because the argv is allowlisted.
         for command in (
+            "python -m unittest discover -s tests -v",
+            "python -m unittest",
+            "py -3 -m unittest tests.test_operator_boundary -v",
             "python -m scripts.check_peripheral_boundary",
+            "python -m scripts.check_ontology",
+            "python -m scripts.check_horizon",
             "python -m unittest tests.test_peripheral_boundary -v",
-            "python -m unittest tests.test_operator_boundary -v",
         ):
             with self.subTest(command=command):
-                self.assertEqual(boundary.evaluate({"hook_event_name": "beforeShellExecution",
-                                                    "command": command})["permission"], "allow")
+                self.assert_denies({"hook_event_name": "beforeShellExecution",
+                                    "command": command})
         self.assert_denies({"hook_event_name": "beforeShellExecution",
                             "command": "python -m scripts.check_peripheral_boundary; sc stop bthserv"})
+
+    def test_agent_editable_code_never_becomes_approved_shell_through_tests(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(boundary.evaluate({
+                "hook_event_name": "preToolUse", "tool_name": "Write",
+                "tool_input": {"file_path": "tests/new_test.py"}
+            }, root=root)["permission"], "allow")
+            self.assert_denies({"hook_event_name": "beforeShellExecution",
+                                "command": "python -m unittest discover -s tests -v"})
 
     def test_no_peripheral_settings_registry_destructive_or_unknown_shell(self):
         for command in (
@@ -87,6 +102,12 @@ class OperatorBoundaryTests(unittest.TestCase):
         self.assert_denies({"hook_event_name": "preToolUse", "tool_name": "Delete",
                             "tool_input": {"file_path": "docs/LEDGER.md"}})
         for path in ("AGENTS.md", ".cursor/hooks.json",
+                     "docs/AGENT_OPERATING_RULES.md", "docs/DOCTRINE.md",
+                     "contracts/peripheral-authority.v1.json", "contracts/ontology.v1.json",
+                     "contracts/effect-authority.v1.json",
+                     "scripts/check_peripheral_boundary.py",
+                     "scripts/check_human_sovereignty.py",
+                     "tests/test_peripheral_boundary.py",
                      ".cursor/rules/disable.mdc", ".cursor/mcp.json",
                      ".git/config", ".github/workflows/ci.yml",
                      "secrets/.env", "local/private-key.pem",
