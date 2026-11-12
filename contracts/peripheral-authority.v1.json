@@ -117,7 +117,33 @@
     "unadopted_adapters": "NO_INTERCEPTION_PROOF",
     "fail_open_timeout": "DO_NOT_COUNT_HOOK_TIMEOUT_AS_HARD_DENIAL",
     "local_activation_gate": "BENIGN_ALLOW_AND_SYNTHETIC_DENY_LOG_PROOF",
-    "human_reclamation": "NEVER_DISABLE_INPUT_FAILSAFES_OR_TAKE_CONTROL_OF_OTHER_APPS"
+    "human_reclamation": "NEVER_DISABLE_INPUT_FAILSAFES_OR_TAKE_CONTROL_OF_OTHER_APPS",
+    "mutable_test_module_execution": "DENY_FROM_PROJECT_AGENT_SHELL_USE_CI_OR_EXPLICIT_ISOLATED_RUNNER",
+    "reviewed_source_extensions": [
+      ".py",
+      ".pyw",
+      ".ps1",
+      ".psm1",
+      ".psd1",
+      ".cmd",
+      ".bat",
+      ".vbs",
+      ".wsf",
+      ".sh",
+      ".js",
+      ".jsx",
+      ".ts",
+      ".tsx",
+      ".cjs",
+      ".mjs",
+      ".yml",
+      ".yaml"
+    ],
+    "known_static_bypass_fixed": [
+      "POWERSHELL_MODULE_PSM1",
+      "PY_AUTOGUI_ALIASED_FAILSAFE_DISABLE"
+    ],
+    "review_comment_owner": "BetterInstincts PR #188 review, repaired in successor Closers PR"
   },
   "failure_evidence": {
     "connected": "DEVICE_CONNECTED_NOT_CAUSALITY",
