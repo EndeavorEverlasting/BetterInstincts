@@ -1,3 +1,15 @@
+## 2026-11-12 — P141 → Fifth Gear: one-click Sims 4 launch reliability
+
+**Parent:** First-time BetterInstincts user double-clicks a Windows launcher and wants the game and latest session without extra interaction. Current implemented portion: unique Sims installation dispatched with read-only process/PID evidence. Unknown/user saves are never silently selected; exact most-recent game save identity and calibrated menu controls remain unproven. Git and Python 3.11+ remain prerequisites; clean-main fast-forward and uninstall protections remain unchanged.
+
+**P141:** Reject blind Resume and lab-only coordinate reuse; defer guessing newest save by file timestamp; select bounded single-install/single-process game dispatch. The machine consultation `contracts/consultations/BI-BOOT-RELIABILITY-P141-FIFTH-GEAR-20261112.v1.json` predates branch behavior mutations.
+
+**P95/P82:** `scripts/smart_start.py` uses bounded read-only Windows process inventory, blocks duplicate/concurrent game launch, reuses `first_run` installation resolution, and distinguishes dispatch PID from independently observed Sims process name/PID. Synthetic tests exercise missing/ambiguous installations, inventory failures, active processes, Linux refusal, concurrency, and proof ceilings. No save or game files are read/edited.
+
+**P08:** NOT_RUN: GitHub connector cannot observe local Windows Sims 4/EA/Steam/Epic executable, menus, Live Mode or player takeover. **P07/P124:** isolated source/contract/README/first-run/Windows entrypoint and tests, preserve manual chooser fallback, player authority, BI-002 and native EA mechanics. CI/main verification independent.
+
+**Follow-on:** Actual Windows double-click + process/title/menu observation, then separate verified user-authorized last-played save identity and calibrated per-effect host gate. Do not market latest-save load as shipped.
+
 ## 2026-11-12 — MoonWake Closers: Semantic SLAM external active-world proof
 
 P83 independently verified merged PR #197 at main `ece07ccfe21c4bd0322af71821cf04aaf312c2ab`, including prior green offline/peripheral CI. Actual defect: a stale stored map and old camera could agree but differ from the game lot or exact build. P03 selected and executed bounded provenance guard, committing ontology consultation before code; P141 rejected broad dense SLAM as premature and deferred independently owned PR #159; P124 reused the existing semantic map+room traversal owners, strengthened offline tests and prohibited class-unknown frame candidates; P04 separated cloud CI from local single-screen P08 certification and did not claim worker dispatch. No local game certification, scans, EA-file input or mouse automation. BI-002 hunger remains active. Closeout proof ceiling: source+CI+merge only; read back PR and main before declaring integrated.
