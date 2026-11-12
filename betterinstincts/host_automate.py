@@ -95,6 +95,7 @@ def plan_automation(
             scenery_observation=observation.get("scenery_observation"),
             scenery_registry=observation.get("scenery_registry"),
             camera_map_goal=observation.get("camera_map_goal"),
+            traversal_voi_observation=observation.get("traversal_voi_observation"),
             camera_clock_ms=observation.get("camera_clock_ms"),
             camera_scan_needed=bool(observation.get("camera_scan_needed", False)),
             camera_pan_directions=observation.get("camera_pan_directions") or (),

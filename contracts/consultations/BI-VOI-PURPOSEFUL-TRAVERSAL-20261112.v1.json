@@ -1,0 +1,74 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-VOI-PURPOSEFUL-TRAVERSAL-20261112",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "P141 selected purposeful Sim traversal as the smallest cross-system VOI intervention: retain the existing verified household navigation graph and independent camera traverse; prevent host-generated Walk spam by enforcing one movement until separately observed goal-domain follow-through. P01 installs a reviewable harness; fifth gear executes bounded read-only product policy and host-plan composition.",
+  "affected_concepts": [
+    "ACTION_QUEUE",
+    "GOAL",
+    "NAVIGATION_INTENT",
+    "NAVIGATION_PROGRESS",
+    "NAVIGATION_STALL",
+    "OBSERVATION",
+    "CONTROL_PERMIT",
+    "VIEW_SCENE",
+    "PLAYER_INTENT"
+  ],
+  "relevant_canonical_owners": [
+    "docs/AGENT_OPERATING_RULES.md",
+    "betterinstincts/household_navigation.py",
+    "betterinstincts/queue_capacity.py",
+    "betterinstincts/camera_traverse.py",
+    "contracts/ontology.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-036",
+    "BI-ONT-037",
+    "BI-ONT-038",
+    "BI-ONT-039",
+    "BI-ONT-040",
+    "BI-ONT-041"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_VOI_PURPOSEFUL_WALK_ADMISSION_NOT_SIMS_RUNTIME_CERTIFICATION",
+  "player_save_control_impact": "No game input or save/OS/EA file writes. Use only explicit current actor/goal/queue movement evidence, preserve player-directed queue, default to passive capture and direct gameplay interaction; do not move the Sim to scan or claim camera movement is physical progress.",
+  "expected_outcome": "One host-generated walk maximum before reviewed needs/career/skills/whims objective action; durable checkpoint prevents repeated walk after queue drains; camera view changes use independent map lease and do not consume a Sim movement slot; unknown/stale observations abstain. Host plan exports action-bound VOI advice only.",
+  "negative_tests": [
+    "Two host walks in a queue abstain",
+    "One pending walk blocks a second walk",
+    "Completed walk without observed goal action blocks repeat",
+    "Unknown intent/origin/scene/camera revision abstains",
+    "Player-directed queue remains sovereign",
+    "Camera pan never counts as a walk or progress",
+    "Direct game-native object interaction preferred to walk",
+    "No host-plan return grants game input"
+  ],
+  "rollback_path": "Revert feature PR; new advisory branch has no persistent model, screen effects or saved-game migration. Existing household_navigation and camera_traverse remain owners.",
+  "unresolved_unknowns": [
+    "Exact game build and local Sims 4 Live Mode unavailable in GitHub provider",
+    "Host adapters enforcing an actual queued walk have not been physically certified",
+    "ML VOI calibration requires real consented labeled outcomes; heuristic selection is advisory only",
+    "BI-002 hunger remains ACTIVE"
+  ],
+  "files_expected": [
+    "contracts/voi-traversal-harness.v1.json",
+    "scripts/check_voi_traversal_harness.py",
+    "docs/VOI_TRAVERSAL.md",
+    "contracts/native-gameplay-decisions/BI-VOI-PURPOSEFUL-TRAVERSAL-20261112.v1.json",
+    "betterinstincts/traversal_voi.py",
+    "betterinstincts/host_stack.py",
+    "betterinstincts/host_automate.py",
+    "tests/test_traversal_voi.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "P141 alternatives: expanding sparse SLAM/EA parsing is already owned and does not fix action spam (DEFERRED); making queue capacity smaller cannot bind movement to terminal domain value (REJECTED); action-bound VOI and one-walk checkpoint on the existing route owner directly addresses repeated regression with small reversible tests (SURVIVES, selected). P01 limited to harness; fifth gear owns product behavior."
+}
