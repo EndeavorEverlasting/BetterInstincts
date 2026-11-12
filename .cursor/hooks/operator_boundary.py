@@ -51,6 +51,38 @@ POLICY_FILES = {
     "tests/test_peripheral_boundary.py",
 }
 
+# Repository scope is not sufficient when a copy of real user/game data has
+# been staged inside it. These are data-owned paths, never agent-write paths.
+PROTECTED_GAME_COMPONENTS = frozenset({
+    "saves", "tray", "mods", "screenshots", "recorded videos", "the sims 4",
+})
+PROTECTED_SAVE_NAME = re.compile(r"\\.save(?:\\..+)?$", re.I)
+
+# A tool with more than one possible output target cannot be admitted using
+# whichever innocent path key happens to appear first.
+WRITE_PATH_KEYS = ("file_path", "path", "target_path")
+UNREVIEWED_WRITE_KEYS = frozenset({
+    "paths", "file_paths", "files", "edits", "operations", "changes",
+    "new_path", "destination", "destination_path", "source_path",
+    "from_path", "to_path", "rename_to",
+})
+
+
+def _protected_game_data(path: str) -> bool:
+    parts = tuple(part.casefold() for part in re.split(r"[\\\\/]+", path) if part)
+    return any(part in PROTECTED_GAME_COMPONENTS for part in parts) or (
+        bool(parts) and bool(PROTECTED_SAVE_NAME.search(parts[-1]))
+    )
+
+
+def _single_write_path(arguments: dict[str, Any]) -> tuple[str | None, str]:
+    if any(key in arguments for key in UNREVIEWED_WRITE_KEYS):
+        return None, "AMBIGUOUS_OR_BULK_WRITE_TARGETS"
+    paths = [arguments[key] for key in WRITE_PATH_KEYS if key in arguments]
+    if len(paths) != 1 or not isinstance(paths[0], str):
+        return None, "AMBIGUOUS_OR_MISSING_WRITE_PATH"
+    return paths[0], "SINGLE_WRITE_PATH"
+
 
 def _decision(allowed: bool, reason: str) -> dict[str, str]:
     if allowed:
@@ -97,6 +129,8 @@ def _scope(path: Any, root: str | Path) -> tuple[bool, str]:
         rel = target.relative_to(base).as_posix().lower() if inside else ""
     if not inside or not rel:
         return False, "OUTSIDE_REPOSITORY_OR_SYMLINK_ESCAPE"
+    if _protected_game_data(rel) or _protected_game_data(path):
+        return False, "PROTECTED_GAME_OR_SAVE_DATA"
     if rel in POLICY_FILES:
         return False, "GUARD_POLICY_SELF_MUTATION"
     # Protect local execution controls and secrets, not just this hook file.
@@ -128,7 +162,9 @@ def evaluate(payload: dict[str, Any], *, root: str | Path = ROOT) -> dict[str, s
         if tool in {"write", "edit", "edit_file", "applypatch", "apply_patch", "write_file"}:
             if not isinstance(arguments, dict):
                 return _decision(False, "WRITE_ARGUMENTS_UNKNOWN")
-            target = next((arguments[k] for k in ("file_path", "path", "target_path") if k in arguments), None)
+            target, reason = _single_write_path(arguments)
+            if target is None:
+                return _decision(False, reason)
             allowed, reason = _scope(target, root)
             return _decision(allowed, reason)
         # This hook only subscribes to effectful tool classes. Unrecognized
