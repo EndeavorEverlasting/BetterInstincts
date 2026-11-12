@@ -9,6 +9,7 @@ from typing import Mapping, Optional, Sequence
 
 from betterinstincts.behavior_eval import BehaviorEvalError, evaluate_queue
 from betterinstincts.queue_capacity import QueueCapacityError, evaluate_queue_capacity
+from betterinstincts.traversal_voi import evaluate_traversal_voi
 from betterinstincts.decision_eval import (
     DecisionEvalError,
     measure_need_deltas,
@@ -221,6 +222,7 @@ def evaluate_turn(
     sim_camera_command: Optional[str] = None,
     sim_camera_observation: Optional[Mapping[str, object]] = None,
     camera_map_goal: Optional[Mapping[str, object]] = None,
+    traversal_voi_observation: Optional[Mapping[str, object]] = None,
     camera_zoom_intent: Optional[str] = None,
     camera_planning_goal: Optional[Mapping[str, object]] = None,
     camera_travel_goal: Optional[Mapping[str, object]] = None,
@@ -302,6 +304,22 @@ def evaluate_turn(
         school_day_active=school_day_active,
     )
     effective_location = premises["effective_location_kind"]
+    # P141/P01: physical walking and camera navigation are separate. This
+    # advisor is only considered when the caller supplies verified queue and
+    # movement-checkpoint observations, never from a camera-panning hint.
+    traversal_voi_advice = None
+    if traversal_voi_observation is not None:
+        if not isinstance(traversal_voi_observation, Mapping):
+            raise HostStackError("VOI_OBSERVATION_INVALID")
+        voi_snapshot = dict(traversal_voi_observation)
+        if voi_snapshot.get("capture_ref") != capture_ref:
+            voi_snapshot["queue_verified"] = False
+        if player_directed or already_busy:
+            voi_snapshot["human_present"] = True
+        traversal_voi_advice = evaluate_traversal_voi(
+            voi_snapshot, goal=voi_snapshot.get("goal"),
+            route=voi_snapshot.get("route"),
+        )
     social_opportunity = None
     school_day = None
     navigating_needs = None
@@ -423,6 +441,20 @@ def evaluate_turn(
         queue_capacity = evaluate_queue_capacity(
             tuple(queue or ()), multitasking=multitasking, player_directed=player_directed
         )
+        if (traversal_voi_advice is not None
+                and traversal_voi_observation.get("requested_action_kind") == "WALK"):
+            # This restricts only a specifically requested agent Walk. It does
+            # not cancel player actions or block the separate domain follow-up.
+            queue_capacity = dict(queue_capacity)
+            if not traversal_voi_advice["sim"]["walk_candidate"]:
+                queue_capacity.update(
+                    gate="VOI_WALK_DENIED", max_new_actions=0,
+                    enqueue_allowed=False,
+                )
+            else:
+                queue_capacity["max_new_actions"] = min(
+                    queue_capacity["max_new_actions"], 1
+                )
         if queue is not None:
             on_lot = (
                 bool(objects_on_current_lot)
@@ -1955,6 +1987,7 @@ def evaluate_turn(
         "fallback": fallback,
         "behavior": behavior,
         "queue_capacity": queue_capacity,
+        "traversal_voi": traversal_voi_advice,
         "moodlets": moodlet_eval,
         "sim_profile": sim_profile,
         "school_day": school_day,
