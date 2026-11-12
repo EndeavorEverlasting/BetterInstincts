@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 import sys
 
+from scripts.smart_start import auto_start
+
 from betterinstincts.first_run import (
     FirstRunError, GOALS, discover_game_installs, launch_game,
     plan_journey, select_game,
@@ -98,6 +100,8 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command")
     sub.add_parser("gui")
     sub.add_parser("discover")
+    auto = sub.add_parser("auto", help="Launch unique installed Sims 4 on explicit launcher invocation")
+    auto.add_argument("--fallback-gui", action="store_true", help="Open existing chooser only when game install needs selection")
     p = sub.add_parser("plan")
     p.add_argument("--mode", choices=("existing", "new"), required=True)
     p.add_argument("--goal", choices=tuple(GOALS), default="balanced")
@@ -110,6 +114,15 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command in (None, "gui"):
             return gui()
+        if args.command == "auto":
+            output = auto_start()
+            print(json.dumps(output, sort_keys=True))
+            if args.fallback_gui and output["state"] == "GAME_SELECTION_REQUIRED":
+                return gui()
+            return 0 if output["state"] in {
+                "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF",
+                "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH",
+            } else 2
         if args.command == "discover":
             output = {"state": "READ_ONLY", "candidates": [str(x) for x in discover_game_installs()]}
         elif args.command == "plan":
