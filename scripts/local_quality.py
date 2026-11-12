@@ -265,6 +265,10 @@ def sandbox(root, stage, manifest, base, *, engine, image, timeout=1800):
             '--tmpfs', '/work:rw,nosuid,nodev,mode=1777,size=512m',
             '--tmpfs', '/tmp:rw,nosuid,nodev,mode=1777,size=256m',
             '-e', 'BI_LOCAL_QUALITY_ISOLATED=1',
+            # Do not mutate system/global Git settings: this is a one-process,
+            # exact-worktree exception for root-owned read-only Git mount.
+            '-e', 'GIT_CONFIG_COUNT=1', '-e', 'GIT_CONFIG_KEY_0=safe.directory',
+            '-e', 'GIT_CONFIG_VALUE_0=/work',
             '-e', 'PYTHONDONTWRITEBYTECODE=1', '-e', 'GIT_DIR=/gitdir',
             '-e', 'GIT_COMMON_DIR=/gitcommon', '-e', 'GIT_WORK_TREE=/work',
             '-e', 'HOME=/tmp', '--workdir', '/work', '--entrypoint', 'python',
