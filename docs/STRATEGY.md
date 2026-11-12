@@ -1,5 +1,12 @@
 # P141 — strategic opportunity scout (refreshed 2026-11-06)
 
+## 2026-11-11 P141 scouting decision — BI-002 evidence replay integrity
+
+Current facts: `docs/LIVE_CERT.md` requires distinct trial captures, but before this bounded repair `betterinstincts/live_eval.py` validated only unique stage/trial tuples, and `scripts/live_cert.py` appended a row before evaluation. P141 compared (A) a run-local replay guard, (B) native EA gameplay integration, (C) a broad orchestration rewrite and (D) another spatial host-sensor effort. A **SURVIVED** because duplicate references were admitted despite the stated contract; B is **DEFERRED** to the local exact-patch Sims proof owner (#171/BI-002); C is **REJECTED** as redundant with existing domain owners; D is **DEFERRED** because PR #159 owns that work.
+
+Selected **A**, high confidence, routed to P95 → P82 → P08 → P07 → P124. Falsifier: different stage/trial numbers with one identical `observation_ref` must be denied before write and on readback; distinct 5+5+rollback fixtures still reach `MEASUREMENTS_PASS_REVIEW_REQUIRED` only. The complete pre-mutation P141 comparison and ontology consultation are in `contracts/consultations/BI-002-OBSERVATION-REPLAY-P141-FIFTH-GEAR-20261111.v1.json`. This protects the parent certification's evidence quality but is **not** a game trial or change in Horizon order.
+
+
 ## Current facts
 - Parent product gate remains **BI-002 hunger** (`plans/horizon.v1.json` `current_gate`); certified profiles **0**; live trials **0/5** vanilla and modified.
 - Offline Mod Lab + bounded DBPF TGI index are on `main` (PR #7/#8/#9). Proof ceiling stays file metadata / index keys — not gameplay.
