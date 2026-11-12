@@ -16,6 +16,7 @@ from betterinstincts.camera_traverse import (
 )
 from betterinstincts.lot_floor_map import LotFloorMapError, load_contract as load_floor_contract
 from betterinstincts.household_navigation import plan_household_navigation
+from betterinstincts.observation_sweep import plan_observation_sweep
 
 PROOF = "OFFLINE_ROOM_MAP_TRAVERSE_PLAN_PLUS_LOCAL_GRAPH_STORE_NOT_LIVE_CLICK_CERT"
 
@@ -56,6 +57,7 @@ def plan_room_map_traverse(
     adjacency_note: str = "",
     max_pan_steps: int | None = None,
     observation: Mapping[str, object] | None = None,
+    survey: Mapping[str, object] | None = None,
     cfg: Mapping[str, object] | None = None,
     floor_cfg: Mapping[str, object] | None = None,
 ) -> dict:
@@ -91,6 +93,16 @@ def plan_room_map_traverse(
     ring = list(RING_DIRECTIONS[:max_steps])
     traverse = plan_traverse(ring[:1], zoom_notches=0, cfg=cfg)  # sample shape
     pick = plan_object_pick_identify(target_id=tid, observation=observation, cfg=cfg)
+    reassessment = (
+        plan_observation_sweep(**dict(survey)) if survey is not None else {
+            "schema": "betterinstincts.observation-sweep.plan/v1",
+            "state": "CAPTURE_IN_PLACE",
+            "gesture_count": 0,
+            "execute_allowed": False,
+            "control_permit": None,
+            "next_gate": "REQUIRE_CURRENT_EA_GEOMETRY_OR_STATIONARY_CAPTURE",
+        }
+    )
 
     steps = list(room.get("steps") or [
         "REQUIRE_NAMED_MAP_GOAL",
@@ -173,6 +185,9 @@ def plan_room_map_traverse(
         "map_lease_ms_max": int(room.get("map_lease_ms_max") or 30_000),
         "max_pan_steps": max_steps,
         "ring_directions": ring,
+        "scan_priority": "EA_EVIDENCE_THEN_STATIONARY_CAPTURE_THEN_ONE_SMOOTH_GESTURE",
+        "ring_policy": "LEGACY_DIAGNOSTIC_ONLY_NOT_AUTOMATIC_PAN",
+        "reassessment": reassessment,
         "steps": steps,
         "seed_graph": {"nodes": seed_nodes, "edges": seed_edges},
         "adjacency_note": str(adjacency_note or room.get("default_adjacency_note") or ""),

@@ -104,3 +104,7 @@ reorder or block active BI-002 hunger certification. Detailed owner:
 ### 2026-11-10 — Closers review-integrity gate
 
 Replay-unique reviewed evidence, not historical aggregate counts or menu availability, is the sole promotion source. A conflicting reviewed harm or exhausted bounded proof store abstains. Only the latest byte-identical event can be idempotently retried. Portable catalog correctness is separate from the next **local P08 calibrated menu/selection/outcome sensor** and subsequent independently permitted queue dispatch, tracked in `plans/active/BI-OBJECT-ACTION-CLOSERS-P04-20261110.v1.json`. Continue BI-002 as the active product certification gate.
+
+## 2026-11-12 — P141 → Fifth Gear natural semantic survey
+
+Portability and nonjerky observation strengthening: single pure planner `betterinstincts/observation_sweep.py`, explicit read-only DBPF evidence `betterinstincts/ea_geometry_intake.py`, and read-only room-map call seam. Evidence-first zero-movement reuse, stationary capture, revision/floor/novelty and previous-view guards, one smooth monotone candidate path and strict no-actuation status. Original room-map, native autonomy, save and P08 admission remain unchanged. Consultation committed before source mutation (`185b6b70563aa8335360fbc9d124a7cfc9adc559`), decision and regression tests added. Live Sims host certification and actual EA building resource decode remain open; no game-side proof claimed. See `docs/NATURAL_SEMANTIC_SURVEY.md`.
