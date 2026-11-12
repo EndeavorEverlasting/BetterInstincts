@@ -1,0 +1,62 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-ENTIRE-LOCAL-QUALITY-DOCTRINE-SUNSET-20261111",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Stop doctrine validator requiring GitHub Actions workflow as a mandatory quality owner. Require the independently executable local acceptance manifest, runner, tests and runbook instead; when legacy workflow remains, require parity via focused test; after retirement, preserve 49-check floor with focused regression.",
+  "affected_concepts": [
+    "AGENT_EFFECT_PERIMETER",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT",
+    "PLAYER_INTENT"
+  ],
+  "relevant_canonical_owners": [
+    "scripts/validate_doctrine.py",
+    "tests/test_doctrine.py",
+    "contracts/local-quality-checks.v1.json",
+    "docs/LOCAL_QUALITY.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-025",
+    "BI-ONT-046",
+    "BI-ONT-047",
+    "BI-ONT-048"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_STATIC_DOCTRINE_AND_CI_ONLY_NOT_OPERATOR_HOST_OR_ENTIRE_SESSION_CERTIFICATION",
+  "player_save_control_impact": "No user saves, peripherals, Windows settings, Entire configuration or GitHub Actions workflow are modified.",
+  "expected_outcome": "Standalone BetterInstincts doctrine no longer requires .github/workflows/ci.yml for passing after retirement; requires local-quality contract, runner and tests, with negative tests ensuring missing or diluted canonical owner is refused.",
+  "negative_tests": [
+    "Missing local acceptance manifest fails doctrine",
+    "Missing local runner fails doctrine",
+    "Removed legacy workflow does not fail doctrine after local gate is installed",
+    "Unmodified existing doctrine and gameplay invariants remain enforced"
+  ],
+  "rollback_path": "Revert isolated code change without changing current GitHub Actions file.",
+  "unresolved_unknowns": [
+    "Operator local host integration and physical sandbox proof remain open",
+    "Formal GitHub Actions retirement is later authorization/proof gated"
+  ],
+  "files_expected": [
+    "scripts/validate_doctrine.py",
+    "tests/test_doctrine.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PREMUTATION_CONSULTATION_FIRST",
+  "source_main_sha": "11e21e4533e49c4481e23db64d3db44fe9c9ad4f",
+  "invocations": [
+    "P95",
+    "P82",
+    "P08",
+    "P07",
+    "P124"
+  ]
+}
