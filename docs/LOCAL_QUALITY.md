@@ -21,7 +21,7 @@ Included are full `unittest discover`, peripheral authority, Cursor desktop guar
 After the reviewed external-launcher copy step below, from a **clean BetterInstincts checkout**:
 
 ```powershell
-$trusted = Join-Path $env:LOCALAPPDATA 'BetterInstincts\\trusted-host'
+$trusted = Join-Path $env:LOCALAPPDATA 'BetterInstincts\trusted-host'
 python (Join-Path $trusted 'local_quality.py') plan --repo .
 ```
 
