@@ -184,5 +184,14 @@ class HostQualityTests(unittest.TestCase):
 
 
 
+    def test_host_run_cannot_execute_agent_editable_repo_launcher(self):
+        with mock.patch.object(q, 'git_info', return_value={'head': 'a'*40}), \
+             mock.patch.object(q, 'entire_probe', side_effect=AssertionError('Entire must not run')):
+            with self.assertRaisesRegex(ValueError, 'TRUSTED_RUNNER_OUTSIDE_REPOSITORY_REQUIRED'):
+                q.main(['run', '--authorize', '--base-sha', 'b'*40,
+                        '--expected-head', 'a'*40])
+
+
+
 if __name__ == '__main__':
     unittest.main()
