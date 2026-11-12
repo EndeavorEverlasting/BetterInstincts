@@ -273,8 +273,9 @@ def plan_spatial_target(
     object_id: str, requested_floor: str,
     camera_revision: str, capture_ref: str,
     visibility: Mapping[str, object] | None = None,
+    active_world: Mapping[str, object] | None = None,
 ) -> dict:
-    """Advisory targeting only. An image position is never a click permit."""
+    """Advisory only; saved map/camera cannot attest the active world."""
     base = {"object_id": object_id, "execute_allowed": False,
             "click_permit": None, "proof_ceiling": PROOF}
     def decline(reason: str, next_gate: str) -> dict:
@@ -283,6 +284,8 @@ def plan_spatial_target(
     obj = spatial_map.get("objects", {}).get(object_id)
     if obj is None:
         return decline("OBJECT_NOT_MAPPED", "DISCOVER_OBJECT")
+    if obj.get("category") == "UNKNOWN_OBJECT":
+        return decline("TARGET_CATEGORY_UNVERIFIED", "REOBSERVE_SEMANTIC_OBJECT_IDENTITY")
     if obj["floor_id"] != requested_floor:
         return decline("FLOOR_NOT_ACTIVE", "CHANGE_FLOOR_THEN_REOBSERVE")
     if obj["center"] is None:
@@ -293,6 +296,18 @@ def plan_spatial_target(
         return decline("STALE_OBJECT_MAP", "REBUILD_SPATIAL_MAP_AND_RELOCALIZE")
     if capture_ref != calibration.get("latest_capture_ref"):
         return decline("STALE_CAPTURE", "RELOCALIZE_FROM_FRESH_LANDMARKS")
+    # External active world is distinct from an internally matching old map+camera.
+    if (not isinstance(active_world, Mapping)
+            or active_world.get("source") not in load_contract()["evidence"]["active_world_sources"]):
+        return decline("ACTIVE_WORLD_UNVERIFIED", "OBSERVE_ACTIVE_LOT_BUILD_AND_FLOOR")
+    if (active_world.get("camera_revision") != camera_revision
+            or active_world.get("capture_ref") != capture_ref):
+        return decline("ACTIVE_WORLD_STALE", "REOBSERVE_ACTIVE_WORLD_AND_CAMERA")
+    if (active_world.get("lot_id") != spatial_map.get("lot_id")
+            or active_world.get("game_build") != spatial_map.get("game_build")):
+        return decline("ACTIVE_WORLD_MISMATCH", "REBUILD_MAP_IN_CURRENT_LOT_AND_BUILD")
+    if active_world.get("floor_id") != requested_floor:
+        return decline("ACTIVE_FLOOR_MISMATCH", "OBSERVE_CURRENT_FLOOR")
     if not isinstance(visibility, Mapping) or visibility.get("object_id") != object_id or visibility.get("capture_ref") != capture_ref or visibility.get("camera_revision") != camera_revision:
         return decline("TARGET_VISIBILITY_UNVERIFIED", "FRESH_TARGET_OBSERVATION")
     if visibility.get("occluded") is True or visibility.get("visible") is not True:

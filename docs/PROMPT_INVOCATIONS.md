@@ -1,3 +1,7 @@
+## 2026-11-12 — MoonWake /the-closers on semantic 3D mapping
+
+Current canonical order `P83 → P03 → P141 → P124 → P04` applied: merged #197 verified; stale active-world omission corrected; P141 selected bounded stale-world closure over speculative dense SLAM or independent sensor PR #159 takeover; P124 reused existing owner and tests; P04 retained GitHub CI as cloud verification and separately blocked Windows Sims runtime. Host prompt_group_walk process and real independent agent dispatch are not claimed as run from this provider. Current PR CI/merge and main are the authoritative final proof, not this ledger.
+
 ## 2026-11-12 — P141 → MoonWake /fifth-gear: Semantic SLAM for 3D Sims object traversal
 
 Resolved MoonWake `AGENTS.md`, current prompt invocation catalog and resolver, `skills/fifth-gear/SKILL.md`. P141's selected thesis is a sparse semantic 3D multi-story object map; then the canonical order is P95 → P82 → P08 → P07 → P124. P08 Windows Sims real-game runtime is **NOT_AVAILABLE_IN_GITHUB_PROVIDER**; source-only negative/positive synthetic tests are separate and no authority is granted. Avoid PR #159's independently owned sensor/CV files. The route, measured residual gates, bridge, safety and remaining local adapter work are recorded in `docs/SEMANTIC_SPATIAL_MAP.md` and the ontology consultation.

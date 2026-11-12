@@ -248,6 +248,7 @@ def plan_semantic_3d_target(
     camera_revision: str,
     capture_ref: str,
     visibility: Mapping[str, object] | None = None,
+    active_world: Mapping[str, object] | None = None,
 ) -> dict:
     """P95: world XYZ + floor + camera-local projection -> advisory room target.
 
@@ -261,4 +262,5 @@ def plan_semantic_3d_target(
         camera_revision=camera_revision,
         capture_ref=capture_ref,
         visibility=visibility,
+        active_world=active_world,
     )
