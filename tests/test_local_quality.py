@@ -122,8 +122,9 @@ class HostQualityTests(unittest.TestCase):
     def test_actual_repository_matrix_covers_every_existing_actions_check(self):
         root = q.ROOT
         manifest = json.loads((root / q.CONTRACT).read_text(encoding='utf-8'))
-        workflow = (root / '.github/workflows/ci.yml').read_text(encoding='utf-8')
-        checks = q.validate_contract(manifest, workflow_text=workflow)
+        workflow = root / '.github/workflows/ci.yml'
+        checks = q.validate_contract(
+            manifest, workflow_text=workflow.read_text(encoding='utf-8') if workflow.exists() else None)
         self.assertEqual(len(checks), 49)
         self.assertEqual(sum(c['argv'][0] == 'git' for c in checks), 2)
         self.assertEqual(sum(c['argv'][0] == 'python' for c in checks), 47)
