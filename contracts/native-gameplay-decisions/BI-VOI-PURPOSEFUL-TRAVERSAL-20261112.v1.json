@@ -1,0 +1,31 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-VOI-PURPOSEFUL-TRAVERSAL-20261112",
+  "purpose": "Conservative offline queue/movement VOI policy and read-only host plan composition; continue using EA's native object interactions, existing route and camera owners, and separate host effect permits.",
+  "files": [
+    {
+      "path": "betterinstincts/traversal_voi.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure goal-bound VOI and one-Walk queue/checkpoint falsifier without Sims input, camera movement or save effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_stack.py",
+      "route": "POLICY_ONLY",
+      "reason": "Existing pure host evaluator attaches VOI movement/camera advice and denies a walk queue budget when the named walk request lacks admission evidence.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_automate.py",
+      "route": "POLICY_ONLY",
+      "reason": "Forward pre-existing evaluated presence and opt-in VOI observation to pure host stack; keep --execute screen action outside the seam.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_QUEUE_POLICY_AND_HOST_PLAN_NOT_NATIVE_GAMEPLAY_OR_LIVE_WALK_CERT",
+  "next_gate": "On operator-approved disposable save, exact Sims build, review in-game before/after queue and native action success with no second queued Walk. Test player interruption and camera-only exploration; do not enable runtime effects from this result."
+}
