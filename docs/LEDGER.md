@@ -7,7 +7,9 @@
 **Proof:** Offline regressions own the route/evidence/overshoot/identity checks; remote CI cannot certify actual funds changed. A partial additive increase is not exact-target attainment or BI-004 earned income. Operator/local runbook: `docs/HOUSEHOLD_FUNDS_RECOVERY.md`. The parent BI-002 hunger gameplay gate and immutable version profiles remain unchanged.
 
 
-## 2026-11-10 — Fifth Gear exact active-household funds injection (P95 → P82 → P08 → P07 → P124)
+## 2026-11-12 — The Closers: BI-002 capture-ID provenance validation
+
+**P83 verification:** Merged PR #191 (`11e21e4533e49c4481e23db64d3db44fe9c9ad4f`) and successful workflow #43133524922 establish the exact-text replay guard on main, but source review found `validate_trial` still admitted `"   "`, padded and hidden-control `observation_ref` values. Different spellings could inflate independent evidence counts. **P03 execution:** an isolated consultation-first branch hardens the existing `live_eval.validate_trial`, adds pre-append and persisted-read regressions, and documents the scope; no second evaluator or Sims input controller. **P141:** selected this proven recurrence gap over speculative native EA calls or an autonomy rewrite. **P124:** preserve the one evidence owner and repair the previously displaced 2026-11-10 funds heading without changing its content. **P04:** current ChatGPT GitHub provider can validate and integrate offline; real local game P08 remains with the authorized Windows host, including 5 vanilla + 5 modified trials and rollback. This change does not grant gameplay certification.
 
 ## 2026-11-11 — P141 → Fifth Gear: BI-002 trial observation replay guard
 
@@ -17,6 +19,7 @@
 
 **Correction:** a reused capture ID now fails with `DUPLICATE_OBSERVATION_REF` before the CLI writes and when already stored evidence is read/evaluated. Reference-identity validation cannot establish the underlying media is genuine or independent; actual game patch, mod hash, 5+5 measured trials, rollback, player queue and maintainer review remain open. Track tests/PR/merge from provider receipts; no local Sims or desktop input operations occurred.
 
+## 2026-11-10 — Fifth Gear exact active-household funds injection (P95 → P82 → P08 → P07 → P124)
 
 **Parent:** Replace disorganized agents clicking around for money cheats with one generalized Sims 4 active-household operation independent of portrait, Sim identity, save labels or lot. Reuse the established host-funds and human-first screen lease; do not create a second UI controller. **Authoritative EA source:** https://www.ea.com/games/the-sims/the-sims-4/faq/cheats (Ctrl+Shift+C, testingcheats true, money N sets exact household total). **Consultation:** `contracts/consultations/BI-HOUSEHOLD-FUNDS-EXACT-20261110.v1.json`, committed before behavior changes.
 

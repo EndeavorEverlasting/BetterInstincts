@@ -44,6 +44,17 @@ class LiveEvalTests(unittest.TestCase):
         with self.assertRaisesRegex(EvidenceError, "DUPLICATE_OBSERVATION_REF"):
             evaluate(META, rows)
 
+    def test_unusable_observation_refs_fail_before_any_measurement_pass(self):
+        # A padded spelling or hidden control code must not create a distinct
+        # evidence identity that can inflate the observed trial count.
+        for bad in ("   ", " capture:one", "capture:one ", "capture:\none",
+                    "capture:\x00one", "capture:\tone"):
+            with self.subTest(observation_ref=repr(bad)):
+                rows = populated()
+                rows[0]["observation_ref"] = bad
+                with self.assertRaisesRegex(EvidenceError, "OBSERVATION_REF_INVALID"):
+                    evaluate(META, rows)
+
     def test_duplicate_trial_rejected(self):
         with self.assertRaisesRegex(EvidenceError,"DUPLICATE_TRIAL"):
             evaluate(META,populated()+[trial("baseline",1)])

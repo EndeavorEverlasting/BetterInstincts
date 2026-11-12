@@ -1,0 +1,71 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-002-CLOSERS-CAPTURE-ID-20261112",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "source_main_sha": "b6ce1719c98119fee2e9d877a1a05c42c3e5f1db",
+  "proposed_capability": "P83→P03→P141→P124→P04 closer follow-up to merged PR #191: ensure run-scoped observation_ref replay defense cannot count whitespace-only, padded or control-character capture IDs as independent evidence; correct the documentation heading displacement introduced by prior receipt insertion without modifying gameplay.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "PROOF_RECEIPT",
+    "OUTCOME",
+    "GAME_BUILD",
+    "PLAYER_INTENT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/LEDGER.md",
+    "docs/LIVE_CERT.md",
+    "betterinstincts/live_eval.py",
+    "scripts/live_cert.py",
+    "tests/test_live_eval.py",
+    "tests/test_live_cert_cli.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "STATIC_AND_CI_ONLY_NO_SIM_TRIAL_AUTHENTICATION",
+  "player_save_control_impact": "Validation of run-local opaque receipt identifiers only; no Sims process or user save access, EA game input, OS setting, Bluetooth or external agent invocation.",
+  "expected_outcome": "Evidence IDs with leading/trailing whitespace, no nonspace text or unprintable/control code points are rejected before append and fail closed on read; valid distinct refs still evaluate; restore older ledger section under its own heading.",
+  "negative_tests": [
+    "Whitespace-only ref does not count as evidence",
+    "Leading/trailing padded ref rejected rather than creating a distinct alias",
+    "Embedded control characters including newline and NUL rejected",
+    "No mutation to observations.jsonl on rejected record",
+    "Persisted malformed reference fails on status",
+    "Valid distinct 5+5+rollback remains measurement-review only",
+    "Previous dated ledger heading retains its original following content"
+  ],
+  "rollback_path": "Revert isolated PR; previous merged replay guard retained, no user state affected.",
+  "unresolved_unknowns": [
+    "Distinct textual IDs do not prove distinct raw media; maintainer still needs original evidence and in-game 5+5 trials",
+    "Local Windows/Sims 4 P08 and package rollback remain external to GitHub provider"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-002-CLOSERS-CAPTURE-ID-20261112.v1.json",
+    "contracts/native-gameplay-decisions/BI-002-CLOSERS-CAPTURE-ID-20261112.v1.json",
+    "betterinstincts/live_eval.py",
+    "tests/test_live_eval.py",
+    "tests/test_live_cert_cli.py",
+    "docs/LIVE_CERT.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "invocations": [
+    "P83",
+    "P03",
+    "P141",
+    "P124",
+    "P04"
+  ],
+  "status": "PREMUTATION_CONSULTATION_FIRST"
+}
