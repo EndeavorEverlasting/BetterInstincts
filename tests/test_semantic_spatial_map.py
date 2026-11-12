@@ -161,6 +161,28 @@ class SemanticSpatialMapTests(unittest.TestCase):
         with self.assertRaisesRegex(SemanticSpatialError, "STALE_GAME_BUILD_POSE"):
             compile_spatial_map(lot_id="lot", game_build="1.121.361.1020", observations=obs)
 
+    def test_camera_relocalization_is_bound_to_lot_build_and_geometry(self):
+        world = spatial()
+        cam = calibrate_camera(world, camera_revision="camera:fixed", landmarks=landmarks(world))
+        common = dict(object_id="shelf", requested_floor="FLOOR_1",
+                      camera_revision="camera:fixed", capture_ref=cam["latest_capture_ref"],
+                      visibility={"object_id": "shelf", "camera_revision": "camera:fixed",
+                                  "capture_ref": cam["latest_capture_ref"], "visible": True,
+                                  "target_identity_confirmed": True, "occluded": False,
+                                  "bbox_client": [100, 40, 125, 95]})
+        for field, value in [("lot_id", "different-lot"),
+                             ("game_build", "different-build")]:
+            wrong = copy.deepcopy(world)
+            wrong[field] = value
+            with self.subTest(field=field):
+                self.assertEqual(plan_spatial_target(wrong, cam, **common)["reason"],
+                                 "STALE_OBJECT_MAP")
+        rearranged = copy.deepcopy(world)
+        rearranged["objects"]["shelf"]["center"] = (6, 3.5, 0)
+        self.assertEqual(plan_spatial_target(rearranged, cam, **common)["reason"],
+                         "STALE_OBJECT_MAP")
+
+
     def test_camera_collinearity_cannot_fake_height_estimate(self):
         world = spatial()
         lm = landmarks(world)
