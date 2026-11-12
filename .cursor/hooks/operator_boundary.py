@@ -56,7 +56,7 @@ POLICY_FILES = {
 PROTECTED_GAME_COMPONENTS = frozenset({
     "saves", "tray", "mods", "screenshots", "recorded videos", "the sims 4",
 })
-PROTECTED_SAVE_NAME = re.compile(r"\\.save(?:\\..+)?$", re.I)
+PROTECTED_SAVE_NAME = re.compile(r"\.save(?:\..+)?$", re.I)
 
 # A tool with more than one possible output target cannot be admitted using
 # whichever innocent path key happens to appear first.
@@ -69,7 +69,7 @@ UNREVIEWED_WRITE_KEYS = frozenset({
 
 
 def _protected_game_data(path: str) -> bool:
-    parts = tuple(part.casefold() for part in re.split(r"[\\\\/]+", path) if part)
+    parts = tuple(part.casefold() for part in re.split(r"[\\/]+", path) if part)
     return any(part in PROTECTED_GAME_COMPONENTS for part in parts) or (
         bool(parts) and bool(PROTECTED_SAVE_NAME.search(parts[-1]))
     )
