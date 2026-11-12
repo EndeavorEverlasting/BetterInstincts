@@ -293,29 +293,36 @@ def main(argv=None):
     p.add_argument('--engine', choices=['docker', 'podman'], default='docker')
     p.add_argument('--image', default=IMAGE)
     p.add_argument('--authorize', action='store_true')
+    p.add_argument('--repo', type=Path, default=ROOT)
     a = p.parse_args(argv)
-    manifest = json.loads((ROOT / CONTRACT).read_text(encoding='utf-8'))
-    workflow = ROOT / '.github' / 'workflows' / 'ci.yml'
+    repo_root = a.repo.resolve()
+    manifest = json.loads((repo_root / CONTRACT).read_text(encoding='utf-8'))
+    workflow = repo_root / '.github' / 'workflows' / 'ci.yml'
     checks = validate_contract(manifest, workflow_text=workflow.read_text(encoding='utf-8') if workflow.exists() else None)
     if a.worker:
         if not a.base_sha or not re.fullmatch('[a-f0-9]{40}', a.base_sha):
             raise ValueError('BASE_SHA_REQUIRED')
-        data = worker(ROOT, manifest, a.base_sha)
+        data = worker(repo_root, manifest, a.base_sha)
         print(json.dumps(data, sort_keys=True))
         return 0 if data['all_pass'] else 1
-    git = git_info(ROOT)
+    git = git_info(repo_root)
     summary = {'head': git['head'], 'check_count': len(checks),
-               'checks_contract_sha256': digest((ROOT / CONTRACT).read_text(encoding='utf-8')),
+               'checks_contract_sha256': digest((repo_root / CONTRACT).read_text(encoding='utf-8')),
                'workflow_parity': 'PASS' if workflow.exists() else 'LEGACY_WORKFLOW_ABSENT'}
     if a.command == 'plan':
         print(json.dumps(summary, sort_keys=True)); return 0
+    # An editable worktree cannot be the source of the host-side code executor.
+    # A reviewed launcher must live outside the agent-controlled repository.
+    launcher = Path(__file__).resolve()
+    if launcher == repo_root or repo_root in launcher.parents:
+        raise ValueError('TRUSTED_RUNNER_OUTSIDE_REPOSITORY_REQUIRED')
     if not a.authorize or not a.expected_head or a.expected_head != git['head']:
         raise ValueError('REVIEWED_EXPECTED_HEAD_REQUIRED')
     if not a.base_sha or not re.fullmatch('[a-f0-9]{40}', a.base_sha):
         raise ValueError('EXPLICIT_AUTHORIZE_AND_BASE_SHA_REQUIRED')
-    if not run_command(['git', 'cat-file', '-e', a.base_sha + '^{commit}'], cwd=ROOT)['code'] == 0:
+    if not run_command(['git', 'cat-file', '-e', a.base_sha + '^{commit}'], cwd=repo_root)['code'] == 0:
         raise ValueError('UNKNOWN_BASE_COMMIT')
-    entire_before = entire_probe(ROOT)
+    entire_before = entire_probe(repo_root)
     if not entire_before['ready']:
         raise ValueError(entire_before['reason'])
     with tempfile.TemporaryDirectory(prefix='bi-isolated-checks-') as temp:
@@ -324,13 +331,13 @@ def main(argv=None):
         os.chmod(temp, 0o755)
         stage = Path(temp) / 'source'; stage.mkdir(mode=0o755)
         os.chmod(stage, 0o755)
-        proc = subprocess.run(['git', 'archive', '--format=tar', 'HEAD'], cwd=ROOT,
+        proc = subprocess.run(['git', 'archive', '--format=tar', 'HEAD'], cwd=repo_root,
                               stdin=subprocess.DEVNULL, capture_output=True, timeout=30)
         if proc.returncode or len(proc.stdout) > 128 * 1024 * 1024:
             raise ValueError('GIT_ARCHIVE_UNAVAILABLE_OR_OVERSIZED')
         safe_extract_git_archive(proc.stdout, stage)
-        outcome = sandbox(ROOT, stage, manifest, a.base_sha, engine=a.engine, image=a.image)
-    entire_after = entire_probe(ROOT)
+        outcome = sandbox(repo_root, stage, manifest, a.base_sha, engine=a.engine, image=a.image)
+    entire_after = entire_probe(repo_root)
     try:
         report = json.loads(outcome['stdout'].strip().splitlines()[-1])
         if report.get('schema') != 'betterinstincts.local-quality-receipt/v1':
@@ -345,7 +352,7 @@ def main(argv=None):
                'checks': report, 'status': 'LOCAL_OFFLINE_CHECKS_PASS' if pass_state else 'FAIL_CLOSED',
                'gameplay_certified': False, 'windows_peripherals_certified': False,
                'github_actions_required_for_execution': False}
-    receipt_path = private_receipt(ROOT, receipt)
+    receipt_path = private_receipt(repo_root, receipt)
     print(json.dumps({'status': receipt['status'], 'passed': report.get('passed', 0),
                       'total': report.get('total', 0), 'private_receipt': str(receipt_path)}))
     return 0 if pass_state else 1
