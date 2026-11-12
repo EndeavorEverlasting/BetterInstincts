@@ -19,8 +19,9 @@ ROOT = Path(__file__).resolve().parents[2]
 MAX_PAYLOAD = 65536
 MAX_COMMAND = 8192
 
-# Only exact offline diagnostics are allowed. Interpreters, pipelines, file
-# mutation, arbitrary shell execution and unknown commands are refused.
+# Allow only immutable read-only shell diagnostics. Running Python from a
+# mutable checkout (even via unittest) can execute arbitrary agent-edited
+# code on the operator's host; use isolated CI or operator-approved sandbox.
 SAFE_SHELL = (
     re.compile(r"git\s+status(?:\s+(?:--short|--porcelain(?:=v[12])?|--branch))*", re.I),
     re.compile(r"git\s+diff(?:\s+(?:--check|--stat|--name-only|--cached|--staged))*", re.I),
@@ -28,10 +29,6 @@ SAFE_SHELL = (
     re.compile(r"git\s+rev-parse\s+(?:HEAD|--show-toplevel|--abbrev-ref\s+HEAD)", re.I),
     re.compile(r"git\s+branch\s+--show-current", re.I),
     re.compile(r"git\s+ls-files", re.I),
-    re.compile(r"(?:python|python3|py\s+-3)(?:\s+-B)?\s+-m\s+unittest(?:\s+discover(?:\s+-s\s+tests)?(?:\s+-v)?)?", re.I),
-    re.compile(r"(?:python|python3|py\s+-3)(?:\s+-B)?\s+-m\s+scripts\.(?:check_ontology|validate_doctrine|check_scene_contract|check_horizon)", re.I),
-    re.compile(r"(?:python|python3|py\s+-3)(?:\s+-B)?\s+-m\s+scripts\.check_peripheral_boundary", re.I),
-    re.compile(r"(?:python|python3|py\s+-3)(?:\s+-B)?\s+-m\s+unittest\s+tests\.test_(?:peripheral_boundary|operator_boundary)(?:\s+-v)?", re.I),
     re.compile(r"(?:pwd|ls|dir|Get-Location)", re.I),
 )
 
@@ -41,6 +38,17 @@ POLICY_FILES = {
     ".cursor/hooks.json",
     ".cursor/hooks/operator_boundary.py",
     "contracts/operator-desktop-boundary.v1.json",
+    "contracts/peripheral-authority.v1.json",
+    "contracts/ontology.v1.json",
+    "contracts/effect-authority.v1.json",
+    "contracts/human-first-harness.v1.json",
+    "docs/agent_operating_rules.md",
+    "docs/doctrine.md",
+    "scripts/check_peripheral_boundary.py",
+    "scripts/check_human_sovereignty.py",
+    "scripts/check_ontology.py",
+    "tests/test_operator_boundary.py",
+    "tests/test_peripheral_boundary.py",
 }
 
 
@@ -60,7 +68,7 @@ def _safe_shell(command: Any) -> dict[str, str]:
     if any(c in cmd for c in ("\n", "\r", "\x00", ";", "|", "&", ">", "<", chr(96), "$", "(", ")", "{", "}")):
         return _decision(False, "SHELL_COMPOSITION_DENIED")
     if any(p.fullmatch(cmd) for p in SAFE_SHELL):
-        return _decision(True, "SAFE_READ_OR_TEST")
+        return _decision(True, "SAFE_READ_ONLY")
     return _decision(False, "SHELL_NOT_IN_SAFE_ALLOWLIST")
 
 
