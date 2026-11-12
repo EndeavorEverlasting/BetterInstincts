@@ -17,7 +17,7 @@ def world_items():
         ("shelf", "WALL_SHELF", "FLOOR_1", (6, 2.5, 0), (0.4, 0.4, 1)),
         ("cabinet", "CABINET", "FLOOR_1", (1, 2, 0), (2, 4, 2)),
         ("item_inside", "SMALL_ITEM", "FLOOR_1", (1, 1, 0), (0.5, 0.5, 0.5)),
-        ("side_chair", "CHAIR", "FLOOR_1", (2.7, 1, 0), (1, 2, 1)),
+        ("side_chair", "CHAIR", "FLOOR_1", (2.2, 1, 0), (1, 2, 1)),
         ("upper", "LAMP", "FLOOR_2", (0, 6, 3), (1, 1, 1)),
         ("elevated_anchor", "LIGHT", "FLOOR_1", (1, 4, 2), (1, 1, 1)),
         ("deep_anchor", "LIGHT", "FLOOR_1", (3, 0, 5), (1, 1, 1)),
@@ -138,10 +138,17 @@ class SemanticSpatialMapTests(unittest.TestCase):
         with self.assertRaisesRegex(SemanticSpatialError, "SUPPORT_GEOMETRY"):
             compile_spatial_map(lot_id="lot", game_build="1.121.361.1020",
                                 observations=world_items(), relations=[link("shelf", "table", "ON_TOP_OF")])
+        with self.assertRaisesRegex(SemanticSpatialError, "CONTAINMENT_GEOMETRY_CONFLICT"):
+            compile_spatial_map(lot_id="lot", game_build="1.121.361.1020",
+                                observations=world_items(), relations=[link("cabinet", "item_inside", "INSIDE")])
+        duplicate_volume = copy.deepcopy(world_items()[-1])
+        duplicate_volume["object_id"] = "same_volume"
+        cycle_items = world_items() + [duplicate_volume]
         with self.assertRaisesRegex(SemanticSpatialError, "RELATION_CYCLE"):
             compile_spatial_map(lot_id="lot", game_build="1.121.361.1020",
-                                observations=world_items(), relations=[link("cabinet", "item_inside", "INSIDE"),
-                                                                       link("item_inside", "cabinet", "INSIDE")])
+                                observations=cycle_items,
+                                relations=[link("deep_anchor", "same_volume", "INSIDE"),
+                                           link("same_volume", "deep_anchor", "INSIDE")])
 
     def test_no_repeated_object_ids_unknown_class_or_build_guess(self):
         obs = world_items()
