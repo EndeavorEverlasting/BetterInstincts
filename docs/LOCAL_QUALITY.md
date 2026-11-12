@@ -10,7 +10,7 @@
 
 ## Coverage of the current GitHub Actions workflow
 
-The manifest executes **49 command invocations**, corresponding to every non-installation Python and Git diff command in the existing `.github/workflows/ci.yml`. Repeated invocations remain repeated until explicitly reviewed. The manifest compares all commands against the Actions source while the workflow exists; a missing or added check blocks the local plan. The Python `pip install` command from Actions is dependency provisioning and moves to the operator-reviewed sandbox image build, not a runtime check.
+The manifest maintains a fail-closed **minimum of 49 command invocations** (future additions may increase it), corresponding to every non-installation Python and Git diff command in the existing `.github/workflows/ci.yml`. Repeated invocations remain repeated until explicitly reviewed. The manifest compares all commands against the Actions source while the workflow exists; a missing or added check blocks the local plan. The Python `pip install` command from Actions is dependency provisioning and moves to the operator-reviewed sandbox image build, not a runtime check.
 
 Included are full `unittest discover`, peripheral authority, Cursor desktop guard, human sovereignty, native EA-gate classifications, ontology consultation chronology, backward compatibility, horizon/host/progression/world evaluation, hidden item, asset leakage, scene protection, `git diff --check`, syntax compilation, and explicit supporting test modules.
 
@@ -47,7 +47,8 @@ Identify the exact reviewed base commit (for example, from `git merge-base main 
 
 ```powershell
 $base = git merge-base main HEAD
-$reviewedHead = git rev-parse HEAD
+# Use the exact commit reviewed independently, not an unchecked agent-supplied HEAD.
+$reviewedHead = '<reviewed-40-character-commit-sha>'
 python -m scripts.local_quality run --base-sha $base --expected-head $reviewedHead --authorize --engine docker
 ```
 
