@@ -46,6 +46,7 @@ The [15-second human-idle waiter](betterinstincts/workflow_interop.py) retains q
 - [Strategic selection](docs/STRATEGY.md) — P141 competing theses and next investigation.
 - [Roadmap](docs/ROADMAP.md) — needs, work, career, then broader autonomy.
 - [Validation](docs/VALIDATION.md) — offline tests and future game certification.
+- [Independent local quality / Entire host](docs/LOCAL_QUALITY.md) — 49-check sandbox acceptance without GitHub Actions execution; requires independently reviewed external launcher, opt-in local-only Entire and a disposable container. The existing workflow remains until physical host parity is verified.
 - [Progression eval (P67/P62)](docs/PROGRESSION_EVAL.md) — CI honesty vs product progression rate.
 - [Full product horizon](docs/HORIZON.md) — all six needs, balanced care, income, skills, then careers.
 - [Horizon continuity](docs/HORIZON_CONTINUITY.md) — North Star → Continuity opener + BI-002 GAME-1.
