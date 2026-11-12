@@ -55,5 +55,46 @@ class DoctrineTests(unittest.TestCase):
             with self.assertRaisesRegex(DoctrineViolation, "PARENT_OR_PROOF_LOST"):
                 validate(ROOT)
 
+
+    def test_doctrine_survives_actions_workflow_retirement(self):
+        original = Path.is_file
+
+        def hidden_workflow(path, *args, **kwargs):
+            if path.as_posix().endswith("/.github/workflows/ci.yml"):
+                return False
+            return original(path, *args, **kwargs)
+
+        with patch.object(Path, "is_file", autospec=True, side_effect=hidden_workflow):
+            self.assertEqual(validate(ROOT)["state"], "PASS")
+
+    def test_missing_local_quality_contract_is_rejected(self):
+        original = Path.is_file
+
+        def missing_local_quality(path, *args, **kwargs):
+            if path.name == "local-quality-checks.v1.json":
+                return False
+            return original(path, *args, **kwargs)
+
+        with patch.object(Path, "is_file", autospec=True, side_effect=missing_local_quality):
+            with self.assertRaisesRegex(DoctrineViolation, "MISSING_CANONICAL_PATH"):
+                validate(ROOT)
+
+    def test_diluted_local_quality_floor_is_rejected(self):
+        original = Path.read_text
+
+        def weakened(path, *args, **kwargs):
+            content = original(path, *args, **kwargs)
+            if path.name == "local-quality-checks.v1.json":
+                import json
+                data = json.loads(content)
+                data["checks"] = data["checks"][:48]
+                return json.dumps(data)
+            return content
+
+        with patch.object(Path, "read_text", autospec=True, side_effect=weakened):
+            with self.assertRaisesRegex(DoctrineViolation, "LOCAL_QUALITY_FLOOR_LOST"):
+                validate(ROOT)
+
+
 if __name__ == "__main__":
     unittest.main()
