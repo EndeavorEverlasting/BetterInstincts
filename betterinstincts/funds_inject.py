@@ -324,8 +324,8 @@ def plan_funds_recovery(
                 "next_gate": "CONFIRM_NO_PENDING_EXACT_MONEY_EFFECT"}
     remaining = target - after
     candidates = cfg["observed_noop_recovery"]["additive_commands"]
-    command = next((cmd for cmd, delta in candidates.items()
-                    if remaining >= delta), None)
+    command = max((cmd for cmd, delta in candidates.items() if remaining >= delta),
+                  key=lambda cmd: candidates[cmd], default=None)
     if command is None:
         return {**result, "state": "NO_EXACT_ADDITIVE_FALLBACK",
                 "remaining": remaining,

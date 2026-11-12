@@ -1,5 +1,8 @@
 # BetterInstincts roadmap — no trajectory rediscovery
 
+**2026-11-12 Moonwake closer follow-up:** Merged funds PR #194 left review findings on console state, forged predecessor references, selection ordering, test quality and receipt failures. Bounded corrective branch maintains the existing planner/host adapter, adds proven pre-effect receipt binding and one-use claims, and updates the same local acceptance guide. Separate Windows Sims P08 certification remains open, independent of BI-002 hunger and BI-004 income. See [HOUSEHOLD_FUNDS_RECOVERY.md](HOUSEHOLD_FUNDS_RECOVERY.md) and [LEDGER.md](LEDGER.md).
+
+
 **2026-11-12 household funds support continuation (P95 → P82 → P08 → P07 → P124):** Existing exact-money host planner now has an explicitly confirmed one-shot additive fallback and operator-ready console mode, independent of Steam/EA/Epic installation paths when the Windows Sims PID is verified. This is a disposable test-setup/support tool, not BI-004 earned income and not a new BI-002 prerequisite. Local game/patch and HUD P08 proof remains open; see [HOUSEHOLD_FUNDS_RECOVERY.md](HOUSEHOLD_FUNDS_RECOVERY.md).
 
 
