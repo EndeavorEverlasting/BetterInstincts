@@ -6,6 +6,7 @@ import unittest
 
 from betterinstincts.household_navigation import plan_household_navigation
 from betterinstincts.traversal_voi import evaluate_traversal_voi
+from betterinstincts.host_stack import evaluate_turn
 from scripts.check_voi_traversal_harness import check as check_harness
 
 
@@ -199,6 +200,46 @@ class PurposefulTraversalTests(unittest.TestCase):
         g["affordance_verified"] = False
         self.assertEqual(evaluate_traversal_voi(observation(), goal=g, route=route())["gate"],
                          "ATTEST_DOMAIN_AFFORDANCE_FIRST")
+
+    def test_host_plan_walk_budget_requires_goaled_voi_evidence(self):
+        needs = {"hunger": 0.6, "bladder": 0.7, "energy": 0.8,
+                 "hygiene": 0.7, "fun": 0.7, "social": 0.6}
+        o = observation()
+        o.update(goal=goal(), route=route(), requested_action_kind="WALK")
+        r = evaluate_turn(needs, capture_ref="cap-1", queue=[],
+                          multitasking=False, traversal_voi_observation=o)
+        self.assertEqual(r["traversal_voi"]["gate"],
+                         "SINGLE_GOAL_BOUND_WALK_CANDIDATE")
+        self.assertEqual(r["queue_capacity"]["max_new_actions"], 1)
+        # An emptied queue does not allow a second walk without goal action.
+        o["movement_checkpoint"]["walks_since_goal_action"] = 1
+        r = evaluate_turn(needs, capture_ref="cap-1", queue=[],
+                          multitasking=False, traversal_voi_observation=o)
+        self.assertEqual(r["queue_capacity"]["gate"], "VOI_WALK_DENIED")
+        self.assertFalse(r["queue_capacity"]["enqueue_allowed"])
+        self.assertEqual(r["traversal_voi"]["gate"],
+                         "ONE_WALK_USED_AWAIT_OBSERVED_DOMAIN_ACTION")
+        # Camera requests do not consume or bypass physical movement budget.
+        o["requested_action_kind"] = "GOAL_ACTION"
+        r = evaluate_turn(needs, capture_ref="cap-1", queue=[],
+                          multitasking=False, traversal_voi_observation=o)
+        self.assertTrue(r["queue_capacity"]["enqueue_allowed"])
+        self.assertFalse(r["traversal_voi"]["sim"]["walk_candidate"])
+
+    def test_host_plan_capture_mismatch_and_player_control_fail_closed(self):
+        needs = {"hunger": 0.6, "bladder": 0.7, "energy": 0.8,
+                 "hygiene": 0.7, "fun": 0.7, "social": 0.6}
+        o = observation()
+        o.update(goal=goal(), route=route(), requested_action_kind="WALK")
+        r = evaluate_turn(needs, capture_ref="later-cap", queue=[],
+                          multitasking=False, traversal_voi_observation=o)
+        self.assertEqual(r["queue_capacity"]["gate"], "VOI_WALK_DENIED")
+        r = evaluate_turn(needs, capture_ref="cap-1", queue=[],
+                          multitasking=False, player_directed=True,
+                          traversal_voi_observation=o)
+        self.assertIn(r["traversal_voi"]["gate"],
+                      {"YIELD_TO_PLAYER", "REOBSERVE_SCENE_QUEUE_OR_PRESENCE"})
+        self.assertFalse(r["queue_capacity"]["enqueue_allowed"])
 
     def test_no_mutation_and_harness_smoke(self):
         o, g, r = observation(), goal(), route()
