@@ -1,3 +1,7 @@
+## 2026-11-12 — MoonWake Closers: Semantic SLAM external active-world proof
+
+P83 independently verified merged PR #197 at main `ece07ccfe21c4bd0322af71821cf04aaf312c2ab`, including prior green offline/peripheral CI. Actual defect: a stale stored map and old camera could agree but differ from the game lot or exact build. P03 selected and executed bounded provenance guard, committing ontology consultation before code; P141 rejected broad dense SLAM as premature and deferred independently owned PR #159; P124 reused the existing semantic map+room traversal owners, strengthened offline tests and prohibited class-unknown frame candidates; P04 separated cloud CI from local single-screen P08 certification and did not claim worker dispatch. No local game certification, scans, EA-file input or mouse automation. BI-002 hunger remains active. Closeout proof ceiling: source+CI+merge only; read back PR and main before declaring integrated.
+
 ## 2026-11-12 — BetterInstincts Semantic SLAM (P141 → P95 → P82 → P08 → P07 → P124)
 
 **P141 selected:** A sparse, evidence-qualified 3D object/floor/elevation + local camera relocalization layer. Dense physical SLAM/VIO rejected without inertial/depth/host camera evidence; camera-bound 2D-only pick maps insufficient for stacked/wall-mounted/contained objects. Ontology consultation committed before code as `BI-SEMANTIC-SLAM-20261112`.

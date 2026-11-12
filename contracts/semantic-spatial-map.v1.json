@@ -29,6 +29,10 @@
     "landmark_sources": [
       "HOST_OBSERVED",
       "OPERATOR_REVIEW"
+    ],
+    "active_world_sources": [
+      "HOST_OBSERVED",
+      "OPERATOR_REVIEW"
     ]
   },
   "relations": [
@@ -52,7 +56,8 @@
     "classifier": "SEMANTIC_CANDIDATE_REQUIRES_REAL_LABELED_SAMPLES_NO_TRAINED_MODEL_CLAIM",
     "camera": "NEW_FRESH_LOCAL_CALIBRATION_AFTER_PAN_ZOOM_FLOOR_CHANGE",
     "training": "OFFLINE_EXPLICIT_OPT_IN_REPLAY_SAFE_HOLDOUT_NO_RAW_PRIVATE_IMAGES",
-    "click": "DENIED_HERE_USE_EXISTING_SCREEN_ADMIT"
+    "click": "DENIED_HERE_USE_EXISTING_SCREEN_ADMIT",
+    "active_world": "EXTERNAL_ACTIVE_LOT_EXACT_BUILD_FLOOR_CAMERA_CAPTURE_REQUIRED"
   },
   "execute_allowed_default": false,
   "auto_capture": false,

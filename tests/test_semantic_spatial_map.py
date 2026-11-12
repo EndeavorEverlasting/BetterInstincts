@@ -2,6 +2,7 @@
 import copy
 import unittest
 
+from betterinstincts.room_map_traverse import plan_semantic_3d_target
 from betterinstincts.semantic_spatial_map import (
     SemanticSpatialError, calibrate_camera, compile_spatial_map,
     load_contract, plan_spatial_target,
@@ -62,6 +63,12 @@ def landmarks(world, *, camera="camera:fixed", outlier=False):
     return result
 
 
+def current_world(world, cam, floor="FLOOR_1"):
+    return {"lot_id": world["lot_id"], "game_build": world["game_build"],
+            "floor_id": floor, "camera_revision": cam["camera_revision"],
+            "capture_ref": cam["latest_capture_ref"], "source": "HOST_OBSERVED"}
+
+
 class SemanticSpatialMapTests(unittest.TestCase):
     def test_execute_is_false_and_height_not_screen_y(self):
         self.assertFalse(load_contract()["execute_allowed_default"])
@@ -91,7 +98,7 @@ class SemanticSpatialMapTests(unittest.TestCase):
         with self.assertRaisesRegex(SemanticSpatialError, "REPROJECTION_UNSTABLE"):
             calibrate_camera(world, camera_revision="camera:fixed",
                              landmarks=landmarks(world, outlier=True))
-        loc = plan_spatial_target(world, cam, object_id="shelf", requested_floor="FLOOR_1",
+        loc = plan_spatial_target(world, cam, active_world=current_world(world, cam), object_id="shelf", requested_floor="FLOOR_1",
                                   camera_revision="camera:fixed", capture_ref=cam["latest_capture_ref"],
                                   visibility={"object_id": "shelf", "camera_revision": "camera:fixed",
                                               "capture_ref": cam["latest_capture_ref"], "visible": True,
@@ -110,26 +117,26 @@ class SemanticSpatialMapTests(unittest.TestCase):
                     visibility={"object_id": "item_inside", "capture_ref": cam["latest_capture_ref"],
                                 "camera_revision": "camera:fixed", "visible": False,
                                 "occluded": True})
-        result = plan_spatial_target(world, cam, **args)
+        result = plan_spatial_target(world, cam, active_world=current_world(world, cam), **args)
         self.assertEqual(result["next_gate"], "OPEN_CONTAINER_THEN_REOBSERVE")
         self.assertIsNone(result["suggested_client_xy"])
         args["camera_revision"] = "camera:new-pan"
-        self.assertEqual(plan_spatial_target(world, cam, **args)["reason"], "STALE_OR_MISSING_CAMERA")
+        self.assertEqual(plan_spatial_target(world, cam, active_world=current_world(world, cam), **args)["reason"], "STALE_OR_MISSING_CAMERA")
 
     def test_wrong_floor_unverified_identity_and_no_fresh_frame(self):
         world = spatial()
         cam = calibrate_camera(world, camera_revision="camera:fixed", landmarks=landmarks(world))
         args = dict(object_id="shelf", requested_floor="FLOOR_2",
                     camera_revision="camera:fixed", capture_ref=cam["latest_capture_ref"])
-        self.assertEqual(plan_spatial_target(world, cam, **args)["reason"], "FLOOR_NOT_ACTIVE")
+        self.assertEqual(plan_spatial_target(world, cam, active_world=current_world(world, cam), **args)["reason"], "FLOOR_NOT_ACTIVE")
         args["requested_floor"] = "FLOOR_1"
         args["capture_ref"] = "old-frame"
-        self.assertEqual(plan_spatial_target(world, cam, **args)["reason"], "STALE_CAPTURE")
+        self.assertEqual(plan_spatial_target(world, cam, active_world=current_world(world, cam), **args)["reason"], "STALE_CAPTURE")
         args["capture_ref"] = cam["latest_capture_ref"]
         args["visibility"] = {"object_id": "shelf", "capture_ref": cam["latest_capture_ref"],
                               "camera_revision": "camera:fixed", "visible": True,
                               "occluded": False, "target_identity_confirmed": False}
-        self.assertEqual(plan_spatial_target(world, cam, **args)["reason"], "TARGET_IDENTITY_AMBIGUOUS")
+        self.assertEqual(plan_spatial_target(world, cam, active_world=current_world(world, cam), **args)["reason"], "TARGET_IDENTITY_AMBIGUOUS")
 
     def test_relationships_do_not_assume_every_floor_or_false_stack(self):
         with self.assertRaisesRegex(SemanticSpatialError, "CROSS_FLOOR"):
@@ -175,13 +182,56 @@ class SemanticSpatialMapTests(unittest.TestCase):
             wrong = copy.deepcopy(world)
             wrong[field] = value
             with self.subTest(field=field):
-                self.assertEqual(plan_spatial_target(wrong, cam, **common)["reason"],
+                self.assertEqual(plan_spatial_target(wrong, cam, active_world=current_world(wrong, cam), **common)["reason"],
                                  "STALE_OBJECT_MAP")
         rearranged = copy.deepcopy(world)
         rearranged["objects"]["shelf"]["center"] = (6, 3.5, 0)
-        self.assertEqual(plan_spatial_target(rearranged, cam, **common)["reason"],
+        self.assertEqual(plan_spatial_target(rearranged, cam, active_world=current_world(rearranged, cam), **common)["reason"],
                          "STALE_OBJECT_MAP")
 
+
+    def test_stale_map_and_stale_camera_cannot_cross_active_world(self):
+        world = spatial()
+        cam = calibrate_camera(world, camera_revision="camera:fixed", landmarks=landmarks(world))
+        common = dict(object_id="shelf", requested_floor="FLOOR_1",
+                      camera_revision="camera:fixed", capture_ref=cam["latest_capture_ref"])
+        self.assertEqual(plan_spatial_target(world, cam, **common)["reason"], "ACTIVE_WORLD_UNVERIFIED")
+        attested = current_world(world, cam)
+        scenarios = [({"lot_id": "other-lot"}, "ACTIVE_WORLD_MISMATCH"),
+                     ({"game_build": "other-build"}, "ACTIVE_WORLD_MISMATCH"),
+                     ({"floor_id": "FLOOR_2"}, "ACTIVE_FLOOR_MISMATCH"),
+                     ({"capture_ref": "old"}, "ACTIVE_WORLD_STALE"),
+                     ({"source": "AGENT_GUESS"}, "ACTIVE_WORLD_UNVERIFIED")]
+        for delta, expected in scenarios:
+            with self.subTest(delta=delta):
+                result = plan_spatial_target(world, cam, active_world={**attested, **delta}, **common)
+                self.assertEqual(result["reason"], expected)
+                self.assertIsNone(result["suggested_client_xy"])
+
+    def test_semantic_unknown_and_room_bridge_cannot_grant_action(self):
+        world = spatial()
+        cam = calibrate_camera(world, camera_revision="camera:fixed", landmarks=landmarks(world))
+        active = current_world(world, cam)
+        visibility = {"object_id": "shelf", "camera_revision": "camera:fixed",
+                      "capture_ref": cam["latest_capture_ref"], "visible": True,
+                      "target_identity_confirmed": True, "occluded": False,
+                      "bbox_client": [100, 40, 125, 95]}
+        common = dict(spatial_map=world, camera_calibration=cam, object_id="shelf",
+                      active_floor_id="FLOOR_1", camera_revision="camera:fixed",
+                      capture_ref=cam["latest_capture_ref"], visibility=visibility)
+        self.assertEqual(plan_semantic_3d_target(**common)["reason"], "ACTIVE_WORLD_UNVERIFIED")
+        self.assertEqual(plan_semantic_3d_target(**common, active_world=active)["state"], "FRAMING_CANDIDATE")
+        unknown = copy.deepcopy(world)
+        unknown["objects"]["shelf"]["category"] = "UNKNOWN_OBJECT"
+        recalibrated = calibrate_camera(unknown, camera_revision="camera:fixed",
+                                        landmarks=landmarks(unknown))
+        result = plan_spatial_target(unknown, recalibrated, active_world=active,
+                                     object_id="shelf", requested_floor="FLOOR_1",
+                                     camera_revision="camera:fixed",
+                                     capture_ref=cam["latest_capture_ref"], visibility=visibility)
+        self.assertEqual(result["reason"], "TARGET_CATEGORY_UNVERIFIED")
+        self.assertFalse(result["execute_allowed"])
+        self.assertIsNone(result["click_permit"])
 
     def test_camera_collinearity_cannot_fake_height_estimate(self):
         world = spatial()

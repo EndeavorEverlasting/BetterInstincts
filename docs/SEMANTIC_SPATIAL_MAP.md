@@ -38,3 +38,8 @@ python -m scripts.check_ontology
 \`\`\`
 
 **Proof ceiling:** Offline geometry, relational and local-camera projection test only. No real screenshot/classifier training, runtime calibration, player-controlled game interaction or merged PR #159 is claimed.
+
+
+## 2026-11-12 closer correction — external active-world provenance
+
+P83 verified that an **old map and old camera calibration could agree with each other** even when the actual game had moved to a different lot/build. The read-only targeting function now demands independent `active_world` evidence (source, lot_id, game_build, floor_id, camera_revision, capture_ref). Absent or mismatched evidence abstains. An `UNKNOWN_OBJECT` category cannot be promoted into a framing target. The room-map bridge passes this record through; it does not invent it from the stored map. Camera/capture/floor gating and player-first effect admission remain independent and intact. Source labels are not live proof by themselves.

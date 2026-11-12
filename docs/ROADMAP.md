@@ -1,3 +1,7 @@
+## 2026-11-12 — Closer hardening of semantic-world traversal
+
+Pure 3D targeting requires fresh **external** active-world identity (lot, build, floor, camera, capture, source), and unknown object categories abstain. This repairs a stale-map+stale-calibration pair; it is not a trained detector, a live input permit or a new requirement blocking BI-002. See `docs/SEMANTIC_SPATIAL_MAP.md`.
+
 ## 2026-11-12 — Semantic 3D map and camera relocalization support (P141 → Fifth Gear)
 
 Sparse map of each object’s independently attested story/elevation and support/containment relationships, plus local per-camera 3D→2D projection, added as a read-only advisor. The existing lot-floor graph and room traverse remain canonical, with no new input controller. This does **not** establish trained computer vision, real VIO, genuine game capture, or playable Sims SLAM. PR #159 sensor writer is separate and open. The next P08 gate is real exact-patch capture/annotation and accuracy evaluation before any screen effect. BI-002 hunger remains active. See `docs/SEMANTIC_SPATIAL_MAP.md` and `contracts/consultations/BI-SEMANTIC-SLAM-20261112.v1.json`.

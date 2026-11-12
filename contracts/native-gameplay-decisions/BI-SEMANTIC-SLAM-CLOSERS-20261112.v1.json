@@ -1,0 +1,23 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-SEMANTIC-SLAM-CLOSERS-20261112",
+  "purpose": "Reject stale active-world identities before generating read-only projected target coordinates.",
+  "files": [
+    {
+      "path": "betterinstincts/semantic_spatial_map.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure 3D target advising with independent active world attestation and semantic identity gate, no Sims or OS effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/room_map_traverse.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pass current-world evidence through existing pure room-map planner; never authorize a mouse click.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_STATIC_ONLY_NOT_REAL_SIMS_GAME"
+}
