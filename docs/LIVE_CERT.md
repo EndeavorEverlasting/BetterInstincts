@@ -7,6 +7,12 @@ Each `observation_ref` is a **distinct opaque evidence reference within one run*
 This guard checks string identity only; it does **not** authenticate screenshots, timecodes, observations, trial comparability or that any Sims session actually occurred. Maintainer review of original local game evidence, the 5+5 baseline/modified trials, rollback and player queue remains mandatory. No offline evidence, status percentage or CI run closes BI-002.
 
 
+## 2026-11-12 — closer proof-reference hygiene
+
+Trial `observation_ref` must be 3–160 characters, nonempty after trimming, free of leading/trailing whitespace and free of unprintable/control characters. A padded spelling, whitespace-only ID or hidden newline/NUL is **not** another independent capture. Invalid references raise `OBSERVATION_REF_INVALID` before appending a new row, and legacy/persisted invalid evidence causes `status` and `evaluate` to fail closed. Existing synthetically generated test IDs remain acceptable when properly shaped; this does not prove the underlying image or observed gameplay is genuine.
+
+Capture IDs are case-sensitive opaque references: the recorder **does not** guess a canonical image from the text or hash private screenshots. Genuine distinct capture verification, selected disposable save, exact patch, 5+5 gameplay trials, rollback and reviewer approval remain outside offline validation.
+
 ## What exists
 `scripts/live_cert.py` is a **local-only evidence recorder and evaluator**. It never reads Sims game files, installs a mod, inspects Sims processes, polls the filesystem, or collects telemetry. It stores at most 150 bounded rows under `dist/live-cert/<run-id>/` in the repository, excluded from Git. A completed numerical evaluation is **not** a game certificate; it returns `MEASUREMENTS_PASS_REVIEW_REQUIRED` for independent review.
 
