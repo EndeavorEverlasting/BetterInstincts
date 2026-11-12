@@ -5,6 +5,10 @@ These tests never perform screen input or certify installed Sims gameplay.
 import json
 import math
 import unittest
+from contextlib import contextmanager, redirect_stdout
+from io import StringIO
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from pathlib import Path
 
 from betterinstincts.funds_inject import (
@@ -32,7 +36,7 @@ class FundsInjectTests(unittest.TestCase):
         self.assertEqual(seq["open_console_chord"], ["CTRL", "SHIFT", "C"])
         self.assertFalse(seq["auto_fallback"])
         self.assertEqual(seq["max_household_funds"], 9_999_999)
-        self.assertEqual(cfg["version"], 4)
+        self.assertEqual(cfg["version"], 5)
 
     def test_subsidy_triggers_only_below_threshold(self):
         self.assertTrue(needs_subsidy_prompt(38))
@@ -152,7 +156,7 @@ class FundsInjectTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(raw["version"], 4)
+        self.assertEqual(raw["version"], 5)
         self.assertFalse(raw["inject_sequence"]["auto_fallback"])
         self.assertEqual(raw["subsidy"]["boost_to"], 1000000)
 
@@ -316,6 +320,262 @@ class FundsInjectTests(unittest.TestCase):
             code = main(argv[:argv.index("--funds-after-exact")] + argv[argv.index("--funds-after"):])
         self.assertEqual(code, 2)
         self.assertIn("POST_EXACT_FUNDS_OBSERVATION_REQUIRED", denied.getvalue())
+
+
+    def test_fallback_selection_is_order_independent(self):
+        cfg = load_contract()
+        # JSON object order is not a priority rule. kaching first must not win.
+        cfg["observed_noop_recovery"]["additive_commands"] = {
+            "kaching": 1000, "motherlode": 50000,
+        }
+        prior = plan_inject(amount=100_000, funds_observed=38, game_mode="live")
+        plan = plan_funds_recovery(
+            prior_plan=prior, funds_after=38,
+            prior_dispatch_ref="dispatch:exact-example-1",
+            evidence_ref="hud:post-exact-1", confirmed_noop=True, cfg=cfg,
+        )
+        self.assertEqual(plan["recovery_command"], "motherlode")
+        self.assertEqual(steps_to_commands(plan), ["testingcheats true", "motherlode"])
+
+    @staticmethod
+    @contextmanager
+    def _admitted_host_lease(*_args, **_kwargs):
+        yield lambda: {"screen_control_allowed": True,
+                       "foreground_process": {"is_sims": True}}
+
+    def test_recovery_rejects_chord_before_any_input(self):
+        from scripts import funds_inject as host
+        plan = self._noop_recovery()
+        with patch.object(host.sys, "platform", "win32"), \
+             patch.object(host, "_open_console_chord") as chord, \
+             patch.object(host, "_type_text") as typed:
+            with self.assertRaisesRegex(host.GateError, "RECOVERY_REQUIRES_READY_CONSOLE_NO_TOGGLE"):
+                host._execute_plan(plan, process_id=123, session_id="session",
+                                   console_open_method="chord", console_ready=False)
+            chord.assert_not_called()
+            typed.assert_not_called()
+
+    def test_host_identity_behavior_denies_wrong_pid_and_executable(self):
+        from betterinstincts.player_presence import PresenceProbe
+        from scripts import funds_inject as host
+        plan = self._noop_recovery()
+        for seen_pid, executable in ((999, "TS4_x64.exe"),
+                                     (123, "notepad.exe")):
+            probe = PresenceProbe(
+                foreground_is_sims=True, cursor_in_client=True,
+                probe_ok=True, last_input_age_ms=25_000,
+                foreground_process_id=seen_pid,
+                foreground_process_name=executable,
+            )
+            with self.subTest(pid=seen_pid, executable=executable), \
+                 patch.object(host.sys, "platform", "win32"), \
+                 patch("betterinstincts.screen_admit.admitted_screen_lease",
+                       self._admitted_host_lease), \
+                 patch("betterinstincts.host_listener.status",
+                       return_value={"state": "ACTIVE"}), \
+                 patch("betterinstincts.player_presence.probe_windows",
+                       return_value=probe), \
+                 patch.object(host, "_type_text") as typed, \
+                 patch.object(host, "_tap") as enter, \
+                 patch.object(host, "_open_console_chord") as chord:
+                with self.assertRaisesRegex(host.GateError, "GAME_FOREGROUND_OR_SESSION_LOST"):
+                    host._execute_plan(
+                        plan, process_id=123, session_id="session",
+                        console_open_method="operator-ready", console_ready=True,
+                    )
+                typed.assert_not_called()
+                enter.assert_not_called()
+                chord.assert_not_called()
+
+    def test_operator_ready_dispatch_skips_focus_chord_and_binds_pid(self):
+        from betterinstincts.player_presence import PresenceProbe
+        from scripts import funds_inject as host
+        probe = PresenceProbe(
+            foreground_is_sims=True, cursor_in_client=True,
+            probe_ok=True, last_input_age_ms=25_000,
+            foreground_process_id=123, foreground_process_name="TS4_x64.exe",
+        )
+        plan = self._noop_recovery()
+        observed_lease = {}
+        @contextmanager
+        def inspect_lease(*args, **kwargs):
+            observed_lease.update(kwargs)
+            yield lambda: {"screen_control_allowed": True,
+                           "foreground_process": {"is_sims": True}}
+        with patch.object(host.sys, "platform", "win32"), \
+             patch("betterinstincts.screen_admit.admitted_screen_lease",
+                   inspect_lease), \
+             patch("betterinstincts.host_listener.status",
+                   return_value={"state": "ACTIVE"}), \
+             patch("betterinstincts.player_presence.probe_windows",
+                   return_value=probe), \
+             patch.object(host, "_type_text") as typed, \
+             patch.object(host, "_tap") as enter, \
+             patch.object(host, "_open_console_chord") as chord, \
+             patch.object(host.time, "sleep", return_value=None):
+            result = host._execute_plan(
+                plan, process_id=123, session_id="session",
+                console_open_method="operator-ready", console_ready=True,
+                before_input=lambda: "dist/game-host/funds-recovery-claims/claimed.json",
+            )
+            self.assertEqual(result["process_id"], 123)
+            self.assertEqual(result["commands"], ["testingcheats true", "motherlode"])
+            self.assertEqual(typed.call_count, 2)
+            self.assertEqual(enter.call_count, 2)
+            self.assertEqual(result["open_console"], "OPERATOR_ATTESTED_READY_CONSOLE")
+            self.assertEqual(result["recovery_claim"],
+                             "dist/game-host/funds-recovery-claims/claimed.json")
+            self.assertIsNone(observed_lease["focus_fn"])
+            chord.assert_not_called()
+
+
+    def test_unexpected_adapter_failure_after_input_is_unknown_not_blocked(self):
+        from betterinstincts.player_presence import PresenceProbe
+        from scripts import funds_inject as host
+        probe = PresenceProbe(
+            foreground_is_sims=True, cursor_in_client=True,
+            probe_ok=True, last_input_age_ms=30_000,
+            foreground_process_id=123, foreground_process_name="TS4_x64.exe",
+        )
+        plan = self._noop_recovery()
+        with patch.object(host.sys, "platform", "win32"), \
+             patch("betterinstincts.screen_admit.admitted_screen_lease",
+                   self._admitted_host_lease), \
+             patch("betterinstincts.host_listener.status",
+                   return_value={"state": "ACTIVE"}), \
+             patch("betterinstincts.player_presence.probe_windows",
+                   return_value=probe), \
+             patch.object(host, "_type_text",
+                          side_effect=[None, RuntimeError("input-broken")]), \
+             patch.object(host, "_tap"), \
+             patch.object(host.time, "sleep", return_value=None):
+            with self.assertRaises(host.DispatchUncertain) as caught:
+                host._execute_plan(
+                    plan, process_id=123, session_id="session",
+                    console_open_method="operator-ready", console_ready=True,
+                )
+            self.assertEqual(caught.exception.commands_sent, ["testingcheats true"])
+            self.assertIn("INPUT_EFFECT_MAY_HAVE_OCCURRED", str(caught.exception))
+
+    def test_real_receipt_binding_and_single_use_claim(self):
+        from scripts import funds_inject as host
+        prior = plan_inject(amount=1_000_000, funds_observed=38, game_mode="live")
+        dispatch = "dispatch:" + "a" * 32
+        plan = plan_funds_recovery(
+            prior_plan=prior, funds_after=38,
+            prior_dispatch_ref=dispatch, evidence_ref="hud:post-exact",
+            confirmed_noop=True,
+        )
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            with patch.object(host, "ROOT", root), \
+                 patch.object(host, "OUTPUT", root / "dist" / "game-host"):
+                filepath = host._reserve_receipt(
+                    Path("dist/game-host/exact-001.json"), execute=True,
+                )
+                expected_live = {
+                    "state": "FUNDS_INJECT_DISPATCHED_NOT_VERIFIED",
+                    "dispatch_ref": dispatch,
+                    "commands": ["testingcheats true", "money 1000000"],
+                    "target_funds": 1_000_000,
+                    "funds_before_reported": 38,
+                    "game_mode": "live",
+                    "process_id": 123,
+                    "session_id": "session",
+                }
+                host._write_receipt(filepath, {"execute": True, "live": expected_live})
+                self.assertEqual(
+                    host._require_exact_predecessor(
+                        filepath, plan, process_id=123, session_id="session"),
+                    expected_live,
+                )
+                for wrong_pid, wrong_session in ((999, "session"), (123, "foreign")):
+                    with self.assertRaisesRegex(host.GateError, "PRIOR_EXACT_DISPATCH_MISMATCH"):
+                        host._require_exact_predecessor(
+                            filepath, plan, process_id=wrong_pid,
+                            session_id=wrong_session,
+                        )
+                plan["prior_dispatch_ref"] = "dispatch:" + "b" * 32
+                with self.assertRaisesRegex(host.GateError, "PRIOR_EXACT_DISPATCH_MISMATCH"):
+                    host._require_exact_predecessor(
+                        filepath, plan, process_id=123, session_id="session")
+                claim = host._claim_recovery_once(dispatch)
+                self.assertIn("funds-recovery-claims", claim)
+                with self.assertRaisesRegex(host.GateError, "RECOVERY_ALREADY_CLAIMED_NO_REPLAY"):
+                    host._claim_recovery_once(dispatch)
+
+    def test_receipt_preflight_denies_bad_or_existing_path(self):
+        from scripts import funds_inject as host
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            with patch.object(host, "ROOT", root), \
+                 patch.object(host, "OUTPUT", root / "dist" / "game-host"):
+                with self.assertRaisesRegex(host.GateError, "RECEIPT_OUTSIDE_DIST_GAME_HOST"):
+                    host._reserve_receipt(root / "not-ours.json", execute=True)
+                owned = host._reserve_receipt(
+                    Path("dist/game-host/unique.json"), execute=True)
+                self.assertTrue(owned.exists())
+                with self.assertRaisesRegex(host.GateError, "FUNDS_RECEIPT_ALREADY_EXISTS"):
+                    host._reserve_receipt(
+                        Path("dist/game-host/unique.json"), execute=True)
+                auto = host._reserve_receipt(None, execute=True)
+                self.assertTrue(auto.exists())
+                self.assertTrue(auto.is_relative_to(host.OUTPUT))
+                unfinished = json.loads(auto.read_text(encoding="utf-8"))
+                self.assertEqual(
+                    unfinished["state"], "PREPARED_EFFECT_OUTCOME_UNKNOWN_IF_UNFINALIZED"
+                )
+                self.assertEqual(
+                    unfinished["next_gate"], "RECONCILE_GAME_HUD_BEFORE_ANY_RETRY"
+                )
+
+    def test_post_dispatch_receipt_failure_preserves_live_receipt_in_stdout(self):
+        from scripts import funds_inject as host
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            live = {
+                "state": "FUNDS_INJECT_DISPATCHED_NOT_VERIFIED",
+                "dispatch_ref": "dispatch:" + "a" * 32,
+            }
+            output = StringIO()
+            with patch.object(host, "ROOT", root), \
+                 patch.object(host, "OUTPUT", root / "dist" / "game-host"), \
+                 patch.object(host, "_execute_plan", return_value=live), \
+                 patch.object(host, "_write_receipt",
+                              side_effect=OSError("test-disk-full")), \
+                 redirect_stdout(output):
+                code = host.main([
+                    "inject", "--amount", "100000", "--funds", "38",
+                    "--game-mode", "live", "--execute",
+                    "--process-id", "123", "--session-id", "session",
+                ])
+            result = json.loads(output.getvalue())
+            self.assertEqual(code, 3)
+            self.assertEqual(result["live"]["dispatch_ref"], live["dispatch_ref"])
+            self.assertEqual(result["persistence_state"],
+                             "RECEIPT_WRITE_FAILED_RECONCILE_NO_REPLAY")
+            self.assertIn("receipt", result)
+
+    def test_execution_needs_bound_prior_receipt_even_with_fake_valid_ref(self):
+        from scripts import funds_inject as host
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = StringIO()
+            with patch.object(host, "ROOT", root), \
+                 patch.object(host, "OUTPUT", root / "dist" / "game-host"), \
+                 patch.object(host, "_execute_plan") as dispatch, \
+                 redirect_stdout(output):
+                code = host.main([
+                    "recover", "--amount", "100000", "--funds-before", "38",
+                    "--funds-after", "38", "--game-mode", "live",
+                    "--prior-dispatch-ref", "dispatch:" + "f" * 32,
+                    "--evidence-ref", "hud:post-exact", "--confirmed-noop",
+                    "--console-open-method", "operator-ready", "--console-ready",
+                    "--execute", "--process-id", "123", "--session-id", "session",
+                ])
+                dispatch.assert_not_called()
+            self.assertEqual(code, 2)
+            self.assertIn("PRIOR_EXACT_DISPATCH_RECEIPT_REQUIRED", output.getvalue())
 
     def test_windows_host_process_identity_and_console_fallback_contract(self):
         cfg = load_contract()

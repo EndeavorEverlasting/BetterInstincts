@@ -11,6 +11,7 @@ Examples:
   python -m scripts.funds_inject inject --amount 1000000 --funds 38 --game-mode live
   python -m scripts.funds_inject inject --amount 1000000 --funds 38 --game-mode live --execute --process-id PID --session-id ACTIVE_SESSION
   python -m scripts.funds_inject verify --amount 1000000 --funds-before 38 --funds-after 1000000 --evidence-ref observed-hud-id
+  python -m scripts.funds_inject recover --amount 1000000 --funds-before 38 --funds-after 38 --prior-dispatch-ref dispatch:ACTUAL --prior-receipt dist/game-host/ACTUAL.json --evidence-ref hud:ACTUAL --confirmed-noop --game-mode live --console-open-method operator-ready --console-ready
 """
 from __future__ import annotations
 
@@ -40,6 +41,129 @@ OUTPUT = ROOT / "dist" / "game-host"
 
 class GateError(ValueError):
     pass
+
+
+class DispatchUncertain(GateError):
+    """Input may have occurred; never label it a clean BLOCKED or retry."""
+
+    def __init__(self, reason: str, *, commands_sent: list[str]):
+        super().__init__(reason)
+        self.commands_sent = list(commands_sent)
+
+
+
+RECEIPT_MAX_BYTES = 64_000
+
+
+def _safe_output_path(value: Path) -> Path:
+    """Never follow a user-selected receipt path outside ignored game-host."""
+    candidate = value if value.is_absolute() else ROOT / value
+    if (OUTPUT.is_symlink() or OUTPUT.parent.is_symlink()
+            or candidate.is_symlink()):
+        raise GateError("FUNDS_RECEIPT_SYMLINK_FORBIDDEN")
+    root = OUTPUT.resolve()
+    path = candidate.resolve()
+    if not path.is_relative_to(root) or path == root or path.suffix.lower() != ".json":
+        raise GateError("RECEIPT_OUTSIDE_DIST_GAME_HOST")
+    return path
+
+
+def _reserve_receipt(value: Path | None, *, execute: bool) -> Path | None:
+    """Reserve exclusive receipt name BEFORE any game/desktop side effect."""
+    if value is None and not execute:
+        return None
+    if value is None:
+        value = Path("dist/game-host") / ("funds-" + uuid.uuid4().hex + ".json")
+    path = _safe_output_path(value)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with path.open("x", encoding="utf-8") as sink:
+            sink.write(json.dumps({
+                "schema": "betterinstincts.funds-dispatch-receipt/v1",
+                "state": "PREPARED_EFFECT_OUTCOME_UNKNOWN_IF_UNFINALIZED",
+                "next_gate": "RECONCILE_GAME_HUD_BEFORE_ANY_RETRY",
+                "proof_ceiling": "NO_GAME_EFFECT_CLAIM",
+            }) + "\n")
+    except FileExistsError as exc:
+        raise GateError("FUNDS_RECEIPT_ALREADY_EXISTS") from exc
+    return path
+
+
+def _write_receipt(path: Path, result: dict) -> None:
+    """Finalize only this invocation's already reserved receipt."""
+    if path.is_symlink() or not path.is_file():
+        raise GateError("FUNDS_RECEIPT_CHANGED_AFTER_RESERVATION")
+    payload = json.dumps({
+        "schema": "betterinstincts.funds-dispatch-receipt/v1",
+        **result,
+    }, indent=2, sort_keys=True) + "\n"
+    if len(payload.encode("utf-8")) > RECEIPT_MAX_BYTES:
+        raise GateError("FUNDS_RECEIPT_TOO_LARGE")
+    path.write_text(payload, encoding="utf-8")
+
+
+def _require_exact_predecessor(
+    path_value: Path | None, plan: dict, *, process_id: int | None,
+    session_id: str | None,
+) -> dict:
+    """Bind a fallback to an actual previous local exact-money dispatch.
+
+    A human HUD reference is still an external attestation, not a sensor proof.
+    This independently rejects arbitrary strings presented as dispatch receipts.
+    """
+    if path_value is None:
+        raise GateError("PRIOR_EXACT_DISPATCH_RECEIPT_REQUIRED")
+    path = _safe_output_path(path_value)
+    if (not path.is_file() or path.is_symlink()
+            or path.stat().st_size > RECEIPT_MAX_BYTES):
+        raise GateError("PRIOR_EXACT_DISPATCH_RECEIPT_UNSAFE")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (ValueError, UnicodeDecodeError, OSError) as exc:
+        raise GateError("PRIOR_EXACT_DISPATCH_RECEIPT_INVALID") from exc
+    live = data.get("live") if isinstance(data, dict) else None
+    if not isinstance(live, dict):
+        raise GateError("PRIOR_EXACT_DISPATCH_NOT_OBSERVED")
+    target = plan.get("target_funds")
+    before = plan.get("funds_before_exact")
+    if (data.get("schema") != "betterinstincts.funds-dispatch-receipt/v1"
+            or data.get("execute") is not True
+            or live.get("state") != "FUNDS_INJECT_DISPATCHED_NOT_VERIFIED"
+            or live.get("commands") != ["testingcheats true", f"money {target}"]
+            or live.get("dispatch_ref") != plan.get("prior_dispatch_ref")
+            or live.get("game_mode") != plan.get("game_mode")
+            or live.get("funds_before_reported") != before
+            or live.get("target_funds") != target
+            or live.get("session_id") != session_id
+            or live.get("process_id") != process_id):
+        raise GateError("PRIOR_EXACT_DISPATCH_MISMATCH")
+    return live
+
+
+def _claim_recovery_once(dispatch_ref: str) -> str:
+    """Single-use durable, atomic claim BEFORE any fallback keyboard effect.
+
+    A crash after the claim is UNKNOWN, not permission to replay. The existing
+    predecessor must be re-observed or replaced by a new exact dispatch.
+    """
+    if (not isinstance(dispatch_ref, str)
+            or not dispatch_ref.startswith("dispatch:")
+            or len(dispatch_ref) != 41
+            or not all(c in "0123456789abcdef" for c in dispatch_ref[9:])):
+        raise GateError("UNTRUSTED_DISPATCH_ID")
+    root = OUTPUT / "funds-recovery-claims"
+    if root.is_symlink():
+        raise GateError("RECOVERY_CLAIMS_SYMLINK_FORBIDDEN")
+    root.mkdir(parents=True, exist_ok=True)
+    claim = root / (dispatch_ref[9:] + ".json")
+    try:
+        with claim.open("x", encoding="utf-8") as sink:
+            sink.write(json.dumps({"schema": "betterinstincts.funds-recovery-claim/v1",
+                                   "dispatch_ref": dispatch_ref,
+                                   "state": "CLAIMED_BEFORE_EFFECT_NO_REPLAY"}) + "\n")
+    except FileExistsError as exc:
+        raise GateError("RECOVERY_ALREADY_CLAIMED_NO_REPLAY") from exc
+    return str(claim.relative_to(ROOT))
 
 
 def _focus(process_id: int | None) -> dict:
@@ -123,6 +247,7 @@ def _execute_plan(
     idle_ms: int = 15000,
     console_open_method: str = "chord",
     console_ready: bool = False,
+    before_input=None,
 ) -> dict:
     """One bounded funding dispatch under explicit human-first admission.
 
@@ -139,6 +264,9 @@ def _execute_plan(
         raise GateError("UNSUPPORTED_CONSOLE_OPEN_METHOD")
     if console_open_method == "operator-ready" and console_ready is not True:
         raise GateError("OPERATOR_CONSOLE_FOCUS_ATTESTATION_REQUIRED")
+    if (plan.get("state") == "FUNDS_RECOVERY_PLAN_READY"
+            and (console_open_method != "operator-ready" or console_ready is not True)):
+        raise GateError("RECOVERY_REQUIRES_READY_CONSOLE_NO_TOGGLE")
     if plan.get("game_mode") not in {"live", "build", "buy"}:
         raise GateError("EXPLICIT_GAME_MODE_REQUIRED")
     if any(s.get("step") == "ENSURE_LIVE_MODE" for s in (plan.get("steps") or [])):
@@ -168,29 +296,46 @@ def _execute_plan(
         ):
             raise GateError("GAME_FOREGROUND_OR_SESSION_LOST")
 
+    dispatched = []
+    effect_started = False
+    claim_path = None
     try:
         with admitted_screen_lease(
             int(process_id),
             str(session_id),
             idle_ms=idle_ms,
-            focus_fn=lambda: _focus(process_id),
+            # An operator-armed console must ALREADY own foreground; never
+            # borrow focus and invalidate the operator's observed text cursor.
+            focus_fn=(None if console_open_method == "operator-ready"
+                      else lambda: _focus(process_id)),
         ) as ensure_ready:
             handoff = ensure_ready()
             verify_game_focus()
+            if before_input is not None:
+                claim_path = before_input()  # Atomic single-use claim after admission.
             if console_open_method == "chord":
+                effect_started = True
                 _open_console_chord()
                 time.sleep(0.55)
-            # Alternative: the operator has visually armed the existing console.
-            # Never blindly toggle Ctrl+Shift+C again when it may already be open.
-            dispatched = []
             for cmd in commands:
                 verify_game_focus()
+                effect_started = True
                 _type_text(cmd)
+                verify_game_focus()
                 _tap(0x0D)  # Enter
                 time.sleep(0.40)
                 dispatched.append(cmd)
-    except HandoffError as exc:
-        raise GateError("HOST_CONTROL_NOT_ADMITTED:" + str(exc)) from exc
+    except Exception as exc:
+        # Any unexpected input-adapter error after the first key may represent
+        # a partially dispatched cheat. Never silently drop this distinction.
+        if effect_started:
+            raise DispatchUncertain("INPUT_EFFECT_MAY_HAVE_OCCURRED:" + str(exc),
+                                    commands_sent=dispatched) from exc
+        if isinstance(exc, HandoffError):
+            raise GateError("HOST_CONTROL_NOT_ADMITTED:" + str(exc)) from exc
+        if isinstance(exc, GateError):
+            raise
+        raise GateError("FUNDS_PRE_EFFECT_GATE_FAILED:" + type(exc).__name__) from exc
     return {
         "state": "FUNDS_INJECT_DISPATCHED_NOT_VERIFIED",
         "dispatch_ref": "dispatch:" + uuid.uuid4().hex,
@@ -202,6 +347,8 @@ def _execute_plan(
         "game_mode": plan.get("game_mode"),
         "handoff": handoff,
         "session_id": session_id,
+        "process_id": process_id,
+        "recovery_claim": claim_path,
         "target_funds": plan.get("target_funds"),
         "funds_before_reported": plan.get("funds_observed"),
         "proof_ceiling": "INPUT_DISPATCH_ONLY_NOT_ACCEPTANCE_OR_BALANCE_PROOF",
@@ -317,7 +464,9 @@ def main(argv: list[str] | None = None) -> int:
     recover.add_argument("--funds-before", type=float, required=True)
     recover.add_argument("--funds-after", type=float, required=True)
     recover.add_argument("--evidence-ref", required=True, help="Distinct post-exact HUD observation")
-    recover.add_argument("--prior-dispatch-ref", required=True, help="Actual exact-money dispatch receipt ID")
+    recover.add_argument("--prior-dispatch-ref", required=True, help="Actual exact-money dispatch ID")
+    recover.add_argument("--prior-receipt", type=Path, default=None,
+                         help="Original exact-money result under dist/game-host (mandatory for --execute)")
     recover.add_argument("--confirmed-noop", action="store_true",
                          help="Operator confirms no pending exact-money effect")
     recover.add_argument("--game-mode", default="unknown")
@@ -348,6 +497,7 @@ def main(argv: list[str] | None = None) -> int:
                                     help="Required for operator-ready, confirmed live console focus")
 
     args = p.parse_args(argv)
+    receipt_path: Path | None = None
     try:
         if getattr(args, "execute", False):
             # Preserve the existing no-session denial before any other action.
@@ -358,6 +508,10 @@ def main(argv: list[str] | None = None) -> int:
                 require_execute_session(args.session_id, args.process_id)
             except HandoffError as exc:
                 raise GateError(str(exc)) from exc
+        receipt_path = _reserve_receipt(
+            getattr(args, "receipt", None),
+            execute=bool(getattr(args, "execute", False)),
+        )
         if args.command == "prompt":
             result = subsidy_prompt()
         elif args.command == "plan":
@@ -397,12 +551,17 @@ def main(argv: list[str] | None = None) -> int:
             )
             result = {"plan": plan, "execute": bool(args.execute)}
             if args.execute:
+                _require_exact_predecessor(
+                    args.prior_receipt, plan,
+                    process_id=args.process_id, session_id=args.session_id,
+                )
                 result["live"] = _execute_plan(
                     plan, process_id=args.process_id,
                     close_console=bool(args.close_console),
                     session_id=args.session_id, idle_ms=int(args.idle_ms),
                     console_open_method=args.console_open_method,
                     console_ready=bool(args.console_ready),
+                    before_input=lambda: _claim_recovery_once(plan["prior_dispatch_ref"]),
                 )
         elif args.command == "subsidy":
             choice = args.choice
@@ -448,20 +607,43 @@ def main(argv: list[str] | None = None) -> int:
                     console_ready=bool(args.console_ready),
                 )
 
-        receipt = getattr(args, "receipt", None)
-        if receipt is not None:
-            path = receipt if receipt.is_absolute() else ROOT / receipt
-            path = path.resolve()
-            if not path.is_relative_to(OUTPUT.resolve()):
-                raise GateError("RECEIPT_OUTSIDE_DIST_GAME_HOST")
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-            result["receipt"] = str(path.relative_to(ROOT))
-
+        if receipt_path is not None:
+            result["receipt"] = str(receipt_path.relative_to(ROOT))
+            try:
+                _write_receipt(receipt_path, result)
+            except (GateError, OSError, ValueError) as exc:
+                # INPUT ALREADY MAY HAVE OCCURRED. Never hide the dispatch ref.
+                result["receipt_write_error"] = type(exc).__name__ + ":" + str(exc)
+                result["persistence_state"] = "RECEIPT_WRITE_FAILED_RECONCILE_NO_REPLAY"
+                print(json.dumps(result, sort_keys=True))
+                return 3
         print(json.dumps(result, sort_keys=True))
         return 0
+    except DispatchUncertain as exc:
+        result = {
+            "state": "FUNDS_DISPATCH_UNCERTAIN_RECONCILE_NO_REPLAY",
+            "reason": str(exc),
+            "commands_sent": exc.commands_sent,
+            "next_gate": "OBSERVE_HUD_WITH_PLAYER_NO_AUTOMATIC_RETRY",
+            "proof_ceiling": "POSSIBLE_INPUT_EFFECT_NOT_VERIFIED",
+        }
+        if receipt_path is not None:
+            result["receipt"] = str(receipt_path.relative_to(ROOT))
+            try:
+                _write_receipt(receipt_path, result)
+            except (GateError, OSError, ValueError) as write_error:
+                result["receipt_write_error"] = type(write_error).__name__ + ":" + str(write_error)
+        print(json.dumps(result, sort_keys=True))
+        return 3
     except (FundsInjectError, GateError, OSError, ValueError, TypeError) as exc:
-        print(json.dumps({"state": "BLOCKED", "reason": str(exc)}, sort_keys=True))
+        result = {"state": "BLOCKED", "reason": str(exc)}
+        if receipt_path is not None:
+            result["receipt"] = str(receipt_path.relative_to(ROOT))
+            try:
+                _write_receipt(receipt_path, result)
+            except (GateError, OSError, ValueError):
+                result["persistence_state"] = "BLOCKED_RECEIPT_WRITE_FAILED_NO_EFFECT_CONFIRMED"
+        print(json.dumps(result, sort_keys=True))
         return 2
 
 

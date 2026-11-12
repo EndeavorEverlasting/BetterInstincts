@@ -1,3 +1,10 @@
+## 2026-11-12 — Moonwake /the-closers for household funds PR #194
+
+Current Moonwake `AGENTS.md`, `scripts/prompt_invocation_resolver.py`, and canonical catalog `harness/exports/prompt-invocation-catalog.v1.json` were consulted (catalog blob `8c281379ba7ccc871947391233b1db72f4a108ef`). Executed closer chain **P83 → P03 → P141 → P124 → P04**. IDs: P83 Agent Work Verifier & Iterative Advancer; P03 Repository Evidence + First Sprint Executor; P141 Repository Strategic Opportunity Scout; P124 Repository Code Readability & Structural Refactorer; P04 [PARALLEL] Repo-Aware Sprint + Harness Factoring Distributor.
+
+P83 found unclosed merged-PR review findings; P03 recovered current source and implemented safe fixes; P141 rejected a duplicate UI controller and prioritized input/provenance; P124 reused one existing funding planner and one host adapter; P04 separated cloud-reachable CI from operator-only Sims P08. Bounded consultation `contracts/consultations/BI-HOUSEHOLD-FUNDS-CLOSERS-20261112.v1.json`; machine effect route `contracts/native-gameplay-decisions/BI-HOUSEHOLD-FUNDS-CLOSERS-20261112.v1.json`; operational proof in `docs/LEDGER.md`. A code review, unit test, CI result or Git merge cannot certify a physical in-game funds change.
+
+
 ## 2026-11-10 — P04 Escape/U forensics canonical workload
 
 ## 2026-11-11 — P141 → /fifth-gear for BI-002 observation replay integrity

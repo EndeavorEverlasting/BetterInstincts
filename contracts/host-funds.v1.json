@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.host-funds/v1",
-  "version": 4,
+  "version": 5,
   "proof_ceiling": "EXACT_OR_SINGLE_ADDITIVE_DISPATCH_ONLY_UNTIL_EXTERNAL_HUD_ATTESTATION_NOT_GAME_CERTIFICATION",
   "local_observed": {
     "date": "2026-11-07",
@@ -91,7 +91,11 @@
       "no supplied after-HUD evidence -> FUNDS_NOT_VERIFIED",
       "never force F1, no fixed screen click, no automatic motherlode, no Esc spam",
       "exact money observed no-op -> require distinct dispatch and after-HUD refs, confirmation no pending effect, and new explicit recover invocation",
-      "remaining <1000 -> NO_EXACT_ADDITIVE_FALLBACK; preserve funds, do not overshoot"
+      "remaining <1000 -> NO_EXACT_ADDITIVE_FALLBACK; preserve funds, do not overshoot",
+      "recover --execute in chord mode -> RECOVERY_REQUIRES_READY_CONSOLE_NO_TOGGLE, no input",
+      "fabricated/mismatched prior exact receipt -> PRIOR_EXACT_DISPATCH_MISMATCH, no input",
+      "reused exact dispatch ref -> RECOVERY_ALREADY_CLAIMED_NO_REPLAY, no input",
+      "receipt write errors after input -> retain dispatch report and force reconciliation, never claim clean BLOCKED"
     ]
   },
   "invariants": [
@@ -108,7 +112,11 @@
     "never_claim_BI004_income_from_subsidy",
     "one_opt_in_fallback_command_per_invocation_observed_noop_only",
     "storefront_independent_by_verified_runtime_pid_not_install_directory",
-    "no_unverified_cross_platform_game_certification"
+    "no_unverified_cross_platform_game_certification",
+    "recovery_must_use_operator_ready_console_not_unobserved_toggle",
+    "recovery_proof_bound_to_local_exact_dispatch_receipt_same_pid_session",
+    "recovery_prior_dispatch_ref_single_use_no_replay",
+    "receipt_preflight_before_effect_and_dispatch_uncertainty_not_blocked"
   ],
   "documented_ea_reference": "https://www.ea.com/games/the-sims/the-sims-4/faq/cheats",
   "observed_noop_recovery": {
@@ -133,7 +141,12 @@
       "potential_overshoot",
       "blind_automatic_replay",
       "unsupported_mode_or_foreground"
-    ]
+    ],
+    "console_arming": "OPERATOR_READY_ONLY; RECOVERY_CHORD_FORBIDDEN_NO_UNKNOWN_TOGGLE",
+    "prior_dispatch_provenance": "EXACT_PRIOR_LOCAL_RECEIPT_REQUIRED_FOR_EXECUTION; ORIGINAL_PID_SESSION_AMOUNT_BEFORE_AND_GAME_MODE_MUST_MATCH",
+    "replay_prevention": "ATOMIC_SINGLE_USE_CLAIM_BEFORE_FIRST_RECOVERY_KEYSTROKE; UNKNOWN_DISPATCH_NO_REPLAY",
+    "receipt_preflight": "EXCLUSIVE_PATH_RESERVED_BEFORE_GAME_INPUT; NEVER_OVERWRITE; IF_POSTWRITE_FAIL_PRINT_DISPATCH_UNVERIFIED",
+    "proof_ceiling": "RECOVERY_REQUIRES_OPERATOR_HUD_ATTESTATION_AND_LOCAL_P08_GAMEPLAY_FOR_CERTIFICATION"
   },
   "runtime_compatibility": {
     "storefront_policy": "STORE_AGNOSTIC_WHEN_SAME_VERIFIED_THE_SIMS_4_WINDOWS_PROCESS",
