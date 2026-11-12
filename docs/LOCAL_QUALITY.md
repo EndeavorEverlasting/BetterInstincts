@@ -24,7 +24,7 @@ From a **clean, reviewed BetterInstincts checkout**:
 python -m scripts.local_quality plan
 ```
 
-A plan validates the exact manifest and current Git SHA; it does not invoke Entire, Docker, agent executors or any test code.
+A plan validates the exact manifest and current Git SHA; it does not invoke Entire, Docker, agent executors or any test code. For the actual run, use an independently reviewed launcher copy **outside** the agent-editable checkout; the local repository copy refuses host execution.
 
 ## Once-only host provisioning (operator-reviewed)
 
@@ -46,13 +46,21 @@ The checked-in Dockerfile installs dependencies at **image-build time** only; ru
 Identify the exact reviewed base commit (for example, from `git merge-base main HEAD`). Then, as an explicit operator-authorized execution rather than agent-owned Cursor shell:
 
 ```powershell
+# Review the repository revision, then copy the exact approved launcher to
+# an operator-controlled directory OUTSIDE the agent-editable checkout.
+$trusted = Join-Path $env:LOCALAPPDATA 'BetterInstincts\trusted-host'
+New-Item -ItemType Directory -Force -Path $trusted
+Copy-Item .\scripts\local_quality.py (Join-Path $trusted 'local_quality.py')
+Get-FileHash (Join-Path $trusted 'local_quality.py') -Algorithm SHA256
+# Verify this hash against the independently reviewed source before running.
+
 $base = git merge-base main HEAD
 # Use the exact commit reviewed independently, not an unchecked agent-supplied HEAD.
 $reviewedHead = '<reviewed-40-character-commit-sha>'
-python -m scripts.local_quality run --base-sha $base --expected-head $reviewedHead --authorize --engine docker
+python (Join-Path $trusted 'local_quality.py') run --repo . --base-sha $base --expected-head $reviewedHead --authorize --engine docker
 ```
 
-The runner requires a clean checkout, an existing base SHA, an exact operator-reviewed HEAD SHA, enabled Entire CLI, verifiable local-only checkpoints, a preinstalled sandbox image, and exactly the checked-in manifest. It executes the **verified immutable image ID**, not an untrusted mutable image tag, and rejects host executable paths shadowed by the agent-editable repository. It writes a private JSON receipt at:
+The runner requires a clean checkout, a separately reviewed launcher source outside the repository, an existing base SHA, an exact operator-reviewed HEAD SHA, enabled Entire CLI, verifiable local-only checkpoints, a preinstalled sandbox image, and exactly the checked-in manifest. It executes the **verified immutable image ID**, not an untrusted mutable image tag, and rejects host executable paths shadowed by the agent-editable repository. It writes a private JSON receipt at:
 
 `%LOCALAPPDATA%\BetterInstincts\host-quality\<head-prefix>-<pid>.json`
 
