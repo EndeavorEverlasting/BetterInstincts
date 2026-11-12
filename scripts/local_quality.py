@@ -217,7 +217,7 @@ def safe_extract_git_archive(archive, destination):
         for member in tf.getmembers():
             # Archive is extracted on the host before entering the sandbox:
             # reject Windows drive/UNC or backslash traversal as well as POSIX.
-            if (not member.name or '\\\\' in member.name or ':' in member.name
+            if (not member.name or '\\' in member.name or ':' in member.name
                     or any(ord(ch) < 32 for ch in member.name)):
                 raise ValueError('UNSAFE_ARCHIVE_PATH')
             p = PurePosixPath(member.name)
