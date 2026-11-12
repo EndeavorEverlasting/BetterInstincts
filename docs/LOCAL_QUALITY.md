@@ -47,10 +47,11 @@ Identify the exact reviewed base commit (for example, from `git merge-base main 
 
 ```powershell
 $base = git merge-base main HEAD
-python -m scripts.local_quality run --base-sha $base --authorize --engine docker
+$reviewedHead = git rev-parse HEAD
+python -m scripts.local_quality run --base-sha $base --expected-head $reviewedHead --authorize --engine docker
 ```
 
-The runner requires a clean checkout, an existing base SHA, enabled Entire CLI, verifiable local-only checkpoints, a preinstalled sandbox image, and exactly the checked-in manifest. It writes a private JSON receipt at:
+The runner requires a clean checkout, an existing base SHA, an exact operator-reviewed HEAD SHA, enabled Entire CLI, verifiable local-only checkpoints, a preinstalled sandbox image, and exactly the checked-in manifest. It executes the **verified immutable image ID**, not an untrusted mutable image tag, and rejects host executable paths shadowed by the agent-editable repository. It writes a private JSON receipt at:
 
 `%LOCALAPPDATA%\BetterInstincts\host-quality\<head-prefix>-<pid>.json`
 
