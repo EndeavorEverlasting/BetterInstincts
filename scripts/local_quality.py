@@ -94,7 +94,7 @@ def validate_contract(manifest, *, workflow_text=None):
             raise ValueError('CHECK_ARGV_INVALID')
         if argv[0] != 'python' and argv != ['git', 'diff', '--check', '{base_sha}...HEAD']:
             raise ValueError('CHECK_EXECUTABLE_NOT_ALLOWLISTED')
-        if argv[0] == 'python' and (len(argv) < 3 or argv[1] not in ('-m',) and not argv[1].startswith('scripts/')):
+        if argv[0] == 'python' and (len(argv) < 2 or (argv[1] == '-m' and len(argv) < 3) or (argv[1] != '-m' and not argv[1].startswith('scripts/'))):
             raise ValueError('CHECK_PYTHON_FORM_INVALID')
         if not isinstance(timeout, int) or not 1 <= timeout <= 300:
             raise ValueError('CHECK_TIMEOUT_INVALID')
@@ -249,7 +249,11 @@ def main(argv=None):
     if not entire_before['ready']:
         raise ValueError(entire_before['reason'])
     with tempfile.TemporaryDirectory(prefix='bi-isolated-checks-') as temp:
-        stage = Path(temp) / 'source'; stage.mkdir()
+        # The sandbox runs as an unprivileged UID: expose only staged, committed
+        # source with traversable directory permissions; never the live checkout.
+        os.chmod(temp, 0o755)
+        stage = Path(temp) / 'source'; stage.mkdir(mode=0o755)
+        os.chmod(stage, 0o755)
         proc = subprocess.run(['git', 'archive', '--format=tar', 'HEAD'], cwd=ROOT,
                               stdin=subprocess.DEVNULL, capture_output=True, timeout=30)
         if proc.returncode or len(proc.stdout) > 128 * 1024 * 1024:
