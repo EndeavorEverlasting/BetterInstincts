@@ -142,7 +142,7 @@ def validate_contract(manifest, *, workflow_text=None):
     if manifest.get('schema') != SCHEMA or manifest.get('default_image') != IMAGE:
         raise ValueError('CONTRACT_OR_IMAGE_INVALID')
     checks = manifest.get('checks')
-    if not isinstance(checks, list) or len(checks) < 30:
+    if not isinstance(checks, list) or len(checks) < 49:
         raise ValueError('REQUIRED_CHECKS_MISSING')
     names = set()
     for row in checks:
