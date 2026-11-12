@@ -215,6 +215,11 @@ def entire_probe(root):
 def safe_extract_git_archive(archive, destination):
     with tarfile.open(fileobj=io.BytesIO(archive), mode='r:') as tf:
         for member in tf.getmembers():
+            # Archive is extracted on the host before entering the sandbox:
+            # reject Windows drive/UNC or backslash traversal as well as POSIX.
+            if (not member.name or '\\\\' in member.name or ':' in member.name
+                    or any(ord(ch) < 32 for ch in member.name)):
+                raise ValueError('UNSAFE_ARCHIVE_PATH')
             p = PurePosixPath(member.name)
             if p.is_absolute() or any(part in ('..', '.') for part in p.parts):
                 raise ValueError('UNSAFE_ARCHIVE_PATH')
