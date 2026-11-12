@@ -20,7 +20,8 @@ REQUIRED = (
     ".github/CODEOWNERS", "docs/MAINTAINER_REVIEW.md",
     "betterinstincts/priority.py", "tests/test_priority.py",
     "docs/PROMPT_INVOCATIONS.md", "scripts/check_tracked_assets.py",
-    ".github/workflows/ci.yml",
+    "contracts/local-quality-checks.v1.json", "scripts/local_quality.py",
+    "tests/test_local_quality.py", "docs/LOCAL_QUALITY.md",
     "contracts/native-gameplay-authority.v1.json",
     "scripts/check_native_gameplay_authority.py",
     "tests/test_native_gameplay_authority.py",
@@ -169,6 +170,15 @@ def validate(root=ROOT):
     missing = [name for name in REQUIRED if not (root / name).is_file()]
     if missing:
         raise DoctrineViolation("MISSING_CANONICAL_PATH:" + ",".join(missing))
+    # Offline verification authority survives retirement of GitHub Actions.
+    # Validate the immutable quality contract's floor without executing agent
+    # editable tests or requiring an external provider.
+    quality = json.loads((root / "contracts/local-quality-checks.v1.json").read_text(encoding="utf-8"))
+    checks = quality.get("checks")
+    if quality.get("schema") != "betterinstincts.local-quality/v1" or not isinstance(checks, list) or len(checks) < 49:
+        raise DoctrineViolation("LOCAL_QUALITY_FLOOR_LOST")
+    if len({entry.get("id") for entry in checks if isinstance(entry, dict)}) != len(checks):
+        raise DoctrineViolation("LOCAL_QUALITY_CHECK_ID_COLLISION")
     content = (root / "AGENTS.md").read_text(encoding="utf-8")
     for marker in MARKERS:
         if marker not in content:

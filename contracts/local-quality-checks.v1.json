@@ -1,0 +1,531 @@
+{
+  "schema": "betterinstincts.local-quality/v1",
+  "contract_id": "ENTIRE_HOST_LOCAL_OFFLINE_QUALITY",
+  "default_image": "betterinstincts-policy:py311-pillow",
+  "source_workflow": ".github/workflows/ci.yml",
+  "source_workflow_blob": "c9fd16ee94550fd6cda9408e3d306426bb0bdccb",
+  "execution": "EXPLICIT_SANDBOX_ONLY",
+  "agent_executor_owner": "EndeavorEverlasting/Moonwake/scripts/entire_host_cycle.cjs",
+  "gameplay_proof": "NEVER_INFERRED_FROM_OFFLINE_CHECKS",
+  "checkpoint_privacy": "REQUIRE_LOCALLY_DISABLED_PUSH_FOR_PUBLIC_REPOSITORY",
+  "checks": [
+    {
+      "id": "ci-001",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_peripheral_boundary"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-002",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_peripheral_boundary",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-003",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_native_gameplay_authority",
+        "--json"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-004",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_native_gameplay_authority",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-005",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_native_gameplay_authority",
+        "--base-ref",
+        "{base_sha}"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-006",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_human_sovereignty",
+        "--json"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-007",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_human_sovereignty_governance",
+        "tests.test_human_first_harness",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-008",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_operator_boundary",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-009",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_ontology"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-010",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_ontology",
+        "--base-ref",
+        "{base_sha}"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-011",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "timeout_seconds": 300
+    },
+    {
+      "id": "ci-012",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_backward_compat",
+        "--base-ref",
+        "{base_sha}"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-013",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_horizon"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-014",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_horizon_continuity"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-015",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.eval_horizon"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-016",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.horizon_status"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-017",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.host_eval",
+        "--out",
+        "dist/host-eval/ci.json"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-018",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_host_eval",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-019",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_world_traversal_harness"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-020",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_world_traversal_harness",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-021",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_household_navigation"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-022",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_household_navigation",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-023",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.world_traversal_eval"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-024",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_world_traversal_learning",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-025",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.semantic_preflight",
+        "--consultation",
+        "contracts/consultations/BI-WORLD-HIGHLIGHT-TRAVERSAL-LEARNING-20261110.v1.json",
+        "--operation",
+        "repo_mutation",
+        "--file",
+        "betterinstincts/world_traversal_learning.py",
+        "--file",
+        "betterinstincts/host_stack.py"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-026",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.progression_eval",
+        "--out",
+        "dist/progression-eval/ci.json"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-027",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.progression_eval",
+        "--repo-only"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-028",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_progression_eval",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-029",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_event_balance",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-030",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_event_goals",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-031",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_fun_service",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-032",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_need_services",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-033",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_need_load_balance",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-034",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_domain_cascade",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-035",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_navigating_needs",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-036",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_moodlets",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-037",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_semantic_advisory",
+        "tests.test_ontology_gate",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-038",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.semantic_preflight",
+        "--consultation",
+        "contracts/consultations/BI-SEMANTIC-ORCHESTRATION-20261107.v1.json",
+        "--operation",
+        "repo_mutation",
+        "--file",
+        "betterinstincts/semantic_advisory.py"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-039",
+      "argv": [
+        "python",
+        "scripts/validate_doctrine.py"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-040",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_ontology"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-041",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_ontology",
+        "--base-ref",
+        "{base_sha}"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-042",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_hidden_object_scout",
+        "-v"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-043",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_hidden_object_p04"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-044",
+      "argv": [
+        "python",
+        "-m",
+        "scripts.check_scene_contract"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-045",
+      "argv": [
+        "python",
+        "scripts/check_tracked_assets.py"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-046",
+      "argv": [
+        "git",
+        "diff",
+        "--check",
+        "{base_sha}...HEAD"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-047",
+      "argv": [
+        "git",
+        "diff",
+        "--check",
+        "{base_sha}...HEAD"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-048",
+      "argv": [
+        "python",
+        "-m",
+        "betterinstincts.priority"
+      ],
+      "timeout_seconds": 150
+    },
+    {
+      "id": "ci-049",
+      "argv": [
+        "python",
+        "-m",
+        "compileall",
+        "-q",
+        "betterinstincts",
+        "scripts",
+        "tests"
+      ],
+      "timeout_seconds": 150
+    }
+  ]
+}

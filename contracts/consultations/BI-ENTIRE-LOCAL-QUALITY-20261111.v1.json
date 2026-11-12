@@ -1,0 +1,78 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-ENTIRE-LOCAL-QUALITY-20261111",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Create independent local, sandboxed offline quality execution covering every current GitHub Actions Python/static gate, observing Entire CLI checkpoints and reusing Moonwake's existing agent execution-continuity host rather than duplicating it. Keep live Windows and Sims gates independently open.",
+  "affected_concepts": [
+    "AGENT_EFFECT_PERIMETER",
+    "PLAYER_INTENT",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT",
+    "HOST_SESSION",
+    "OS_PERIPHERAL_AUTHORITY"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/VALIDATION.md",
+    "docs/DOCTRINE.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    ".github/workflows/ci.yml",
+    ".cursor/hooks/operator_boundary.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-025",
+    "BI-ONT-046",
+    "BI-ONT-047",
+    "BI-ONT-048"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SANDBOXED_SOURCE_TESTS_AND_ENTIRE_CLI_OBSERVATION_ON_ADOPTED_HOST_ONLY; NOT_SIM_GAMEPLAY_OR_WINDOWS_PHYSICAL_CERT",
+  "player_save_control_impact": "No actual game save, user workspace, Bluetooth, Windows service, keyboard, driver, local agent hook, GitHub account workflow setting, scheduler or other physical host setting is touched. No repo test executes with operator Windows privileges.",
+  "expected_outcome": "A host-side read-only plan and an opt-in, Entire-observed, networkless disposable-container runner execute all approved existing CI checks under an exact commit, with full parity verification, fail-closed privacy/sandbox admission and private receipts; Moonwake retains agent retry/continuity owner.",
+  "negative_tests": [
+    "Missing Entire, ambiguous checkpoint privacy or denied capability blocks execution",
+    "Absent preinstalled local sandbox image blocks without network pull",
+    "Dirty checkout and unknown or invalid git base deny",
+    "Unsafe git-archive paths and symlink members deny",
+    "Unregistered or missing workflow command fails parity",
+    "No privileged, host-network or game/peripheral operation in sandbox invocation",
+    "Only source CI checks pass; no game/live human-control proof claimed"
+  ],
+  "rollback_path": "Revert isolated feature PR; preserve existing Actions workflow, original safety gates, game files and entire configuration; do not replace existing host agent execution.",
+  "unresolved_unknowns": [
+    "Current Windows host Entire version, installed hooks, Codex trust and local-only settings unobserved",
+    "Actual installed Docker/Podman image and sandbox behavior on operator Windows unobserved",
+    "Physical Sims / Cursor keyboard/mouse control recovery separately gated",
+    "Workflow sunset requires independent host acceptance before removal"
+  ],
+  "files_expected": [
+    "scripts/local_quality.py",
+    "tests/test_local_quality.py",
+    "contracts/local-quality-checks.v1.json",
+    "docs/LOCAL_QUALITY.md",
+    "tooling/host-quality/Dockerfile",
+    "docs/VALIDATION.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "P141_SELECTED_BEFORE_FIFTH_GEAR_IMPLEMENTATION",
+  "source_main_sha": "11e21e4533e49c4481e23db64d3db44fe9c9ad4f",
+  "invocations": [
+    "P141",
+    "P95",
+    "P82",
+    "P08",
+    "P07",
+    "P124"
+  ]
+}

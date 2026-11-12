@@ -1,3 +1,13 @@
+## 2026-11-11 — P141 → Fifth Gear: independent Entire-backed local quality host
+
+**Parent:** Eliminate dependence on GitHub Actions for BetterInstincts offline quality while maintaining human input, save safety, and real physical Windows/Sims proof. Selected after P141 five-way comparison: Moonwake owns native-agent execution/Entire continuity; BetterInstincts owns an isolated local quality matrix and private receipts. Do not invent another orchestrator.
+
+**Current source:** one `.github/workflows/ci.yml`, manifest `contracts/local-quality-checks.v1.json` (49 Python and Git invocations; pip dependency provision moves to a reviewed container image), CLI `scripts/local_quality.py`, falsifiers `tests/test_local_quality.py`, runbook `docs/LOCAL_QUALITY.md` and `tooling/host-quality/Dockerfile`. Requires exact source/base, clean Git, local-only Entire probe and sandbox admission before executed tests; does not install agents, change host permissions, modify saves, or upload session transcripts. P95→P82→P08→P07→P124 roles preserve existing owners. Consultation written before mutation: `contracts/consultations/BI-ENTIRE-LOCAL-QUALITY-20261111.v1.json`.
+
+**Proof separation:** source commit and CI tests may prove harness logic; only operator Windows/local Entire readback can prove actual host activation and checkpoint presence. BI-002 game certification separately OPEN. Existing GitHub Actions remains as comparator until local parity is physically observed; its removal must be a separately evidenced substitution, not blind deletion. Current PR/CI/merge state must come from current provider proof.
+
+**NEXT:** run read-only plan and explicit sandboxed local acceptance with exact base SHA after host image and Entire checks; read back private receipt, independently validate physical Cursor canary, then retire legacy Actions only if full equivalence is observed.
+
 ## 2026-11-10 — Fifth Gear exact active-household funds injection (P95 → P82 → P08 → P07 → P124)
 
 ## 2026-11-11 — P141 → Fifth Gear: BI-002 trial observation replay guard
