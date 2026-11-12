@@ -52,7 +52,7 @@ Identify the exact reviewed base commit (for example, from `git merge-base main 
 $trusted = Join-Path $env:LOCALAPPDATA 'BetterInstincts\trusted-host'
 New-Item -ItemType Directory -Force -Path $trusted
 Copy-Item .\scripts\local_quality.py (Join-Path $trusted 'local_quality.py')
-$reviewedLauncherBlob = 'c5aac4cfcf500f268a11cdb036d6586210c3a7c2'
+$reviewedLauncherBlob = '00b4f4ca441c9524c166555c2d1e46154a8e7630'
 $installedLauncherBlob = git hash-object (Join-Path $trusted 'local_quality.py')
 if ($installedLauncherBlob -ne $reviewedLauncherBlob) { throw 'Launcher differs from the reviewed Git blob' }
 # The blob SHA above is pinned to this PR revision. Re-review before changing it.
