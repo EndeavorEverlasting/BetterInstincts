@@ -446,7 +446,12 @@ def evaluate_turn(
             # This restricts only a specifically requested agent Walk. It does
             # not cancel player actions or block the separate domain follow-up.
             queue_capacity = dict(queue_capacity)
-            if not traversal_voi_advice["sim"]["walk_candidate"]:
+            if player_directed or already_busy:
+                queue_capacity.update(
+                    gate="PLAYER_QUEUE_YIELD" if player_directed else "HOST_BUSY_YIELD",
+                    max_new_actions=0, enqueue_allowed=False,
+                )
+            elif not traversal_voi_advice["sim"]["walk_candidate"]:
                 queue_capacity.update(
                     gate="VOI_WALK_DENIED", max_new_actions=0,
                     enqueue_allowed=False,
