@@ -60,6 +60,29 @@ class LabCLITests(unittest.TestCase):
             with self.assertRaisesRegex(EvidenceError, "DUPLICATE_OBSERVATION_REF"):
                 status("replay-run", out)
 
+    def test_invalid_capture_id_is_denied_before_write_and_on_read(self):
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td)
+            location = init("invalid-ref-run", "1.111.2.1020",
+                            "windows", "synthetic-studio", out)
+            record("invalid-ref-run", row("baseline", 1, 100), out)
+            receipt = location / "observations.jsonl"
+            for bad in ("   ", " capture:one", "capture:one ",
+                        "capture:\none", "capture:\x00one"):
+                with self.subTest(observation_ref=repr(bad)):
+                    extra = row("modified", 1, 70)
+                    extra["observation_ref"] = bad
+                    original = receipt.read_bytes()
+                    with self.assertRaisesRegex(EvidenceError, "OBSERVATION_REF_INVALID"):
+                        record("invalid-ref-run", extra, out)
+                    self.assertEqual(receipt.read_bytes(), original)
+            invalid = row("modified", 2, 70)
+            invalid["observation_ref"] = " capture:one"
+            with receipt.open("a", encoding="utf-8") as sink:
+                sink.write(json.dumps(invalid) + "\n")
+            with self.assertRaisesRegex(EvidenceError, "OBSERVATION_REF_INVALID"):
+                status("invalid-ref-run", out)
+
     def test_run_id_traversal_rejected(self):
         for bad in ("../saves","x/../../saves","..","x","C:relative"):
             with self.assertRaises(EvidenceError):
