@@ -212,7 +212,8 @@ def evaluate_traversal_voi(observation: Mapping, *, goal: Mapping,
                       walk_candidate=True)
     out["queue_proposal"] = [
         {"kind": "WALK", "goal_id": goal["goal_id"],
-         "target_region": route["next_region"]},
+         "target_region": goal["target_region"],
+         "verified_route": list(route["route"])},
         {"kind": "GOAL_ACTION", "goal_id": goal["goal_id"],
          "domain": goal["domain"], "action_id": goal["action_id"],
          "target_id": goal["target_id"]},
