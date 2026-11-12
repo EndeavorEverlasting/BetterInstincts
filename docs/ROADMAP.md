@@ -1,3 +1,7 @@
+## 2026-11-12 — Semantic 3D map and camera relocalization support (P141 → Fifth Gear)
+
+Sparse map of each object’s independently attested story/elevation and support/containment relationships, plus local per-camera 3D→2D projection, added as a read-only advisor. The existing lot-floor graph and room traverse remain canonical, with no new input controller. This does **not** establish trained computer vision, real VIO, genuine game capture, or playable Sims SLAM. PR #159 sensor writer is separate and open. The next P08 gate is real exact-patch capture/annotation and accuracy evaluation before any screen effect. BI-002 hunger remains active. See `docs/SEMANTIC_SPATIAL_MAP.md` and `contracts/consultations/BI-SEMANTIC-SLAM-20261112.v1.json`.
+
 # BetterInstincts roadmap — no trajectory rediscovery
 
 **2026-11-12 Moonwake closer follow-up:** Merged funds PR #194 left review findings on console state, forged predecessor references, selection ordering, test quality and receipt failures. Bounded corrective branch maintains the existing planner/host adapter, adds proven pre-effect receipt binding and one-use claims, and updates the same local acceptance guide. Separate Windows Sims P08 certification remains open, independent of BI-002 hunger and BI-004 income. See [HOUSEHOLD_FUNDS_RECOVERY.md](HOUSEHOLD_FUNDS_RECOVERY.md) and [LEDGER.md](LEDGER.md).

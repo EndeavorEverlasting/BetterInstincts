@@ -235,4 +235,30 @@ __all__ = [
     "plan_room_map_traverse",
     "next_ring_direction",
     "plan_semantic_region_route",
+    "plan_semantic_3d_target",
 ]
+
+
+def plan_semantic_3d_target(
+    *,
+    spatial_map: Mapping[str, object],
+    camera_calibration: Mapping[str, object] | None,
+    object_id: str,
+    active_floor_id: str,
+    camera_revision: str,
+    capture_ref: str,
+    visibility: Mapping[str, object] | None = None,
+) -> dict:
+    """P95: world XYZ + floor + camera-local projection -> advisory room target.
+
+    Does not own the sensor, actual camera motion, click admission or game queue.
+    """
+    from betterinstincts.semantic_spatial_map import plan_spatial_target
+    return plan_spatial_target(
+        spatial_map, camera_calibration,
+        object_id=object_id,
+        requested_floor=active_floor_id,
+        camera_revision=camera_revision,
+        capture_ref=capture_ref,
+        visibility=visibility,
+    )
