@@ -15,11 +15,11 @@ class HostQualityTests(unittest.TestCase):
     def manifest(self):
         return {'schema': q.SCHEMA, 'default_image': q.IMAGE,
                 'checks': [{'id': 'check-' + str(i), 'argv': ['python', '-m', 'unittest', 'tests.test_' + str(i)],
-                            'timeout_seconds': 120} for i in range(32)]}
+                            'timeout_seconds': 120} for i in range(49)]}
 
     def test_required_contract_and_single_check_validation(self):
         m = self.manifest()
-        self.assertEqual(len(q.validate_contract(m)), 32)
+        self.assertEqual(len(q.validate_contract(m)), 49)
         m['checks'][0]['argv'] = ['git', 'reset', '--hard']
         with self.assertRaisesRegex(ValueError, 'EXECUTABLE_NOT_ALLOWLISTED'):
             q.validate_contract(m)
@@ -160,6 +160,27 @@ class HostQualityTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'LOCAL_SANDBOX_IMAGE_ID_UNVERIFIED'):
                 q.sandbox(Path('/repo'), Path('/stage'), data, 'a'*40,
                           engine='docker', image=q.IMAGE)
+
+
+
+    def test_minimum_baseline_cannot_shrink_after_actions_sunset(self):
+        m = self.manifest()
+        m['checks'] = m['checks'][:48]
+        with self.assertRaisesRegex(ValueError, 'REQUIRED_CHECKS_MISSING'):
+            q.validate_contract(m)
+
+    def test_readonly_plan_does_not_execute_entire_or_docker(self):
+        import contextlib
+        import io as _io
+        original = q.ROOT
+        report = _io.StringIO()
+        with mock.patch.object(q, 'git_info', return_value={'head': 'a' * 40}), \
+             mock.patch.object(q, 'entire_probe', side_effect=AssertionError('entire must not run')), \
+             mock.patch.object(q, 'sandbox', side_effect=AssertionError('sandbox must not run')), \
+             contextlib.redirect_stdout(report):
+            self.assertEqual(q.main(['plan']), 0)
+        self.assertEqual(json.loads(report.getvalue())['check_count'], 49)
+        self.assertEqual(original, q.ROOT)
 
 
 
