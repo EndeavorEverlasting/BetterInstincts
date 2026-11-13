@@ -25,7 +25,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from betterinstincts.computer_upgrade_parts import menu_catalog, plan_computer_purchase
+from betterinstincts.computer_upgrade_parts import (
+    menu_catalog, plan_computer_purchase, plan_computer_purchase_batch,
+    plan_computer_restock_batch,
+)
 from betterinstincts.upgrade_parts_force import (
     UpgradePartsForceError,
     acquisition_source_catalog,
@@ -79,6 +82,11 @@ def main(argv: list[str] | None = None) -> int:
     cp = sub.add_parser("computer-intent", help="Passive one-step-at-a-time computer purchase command plan; no UI effects")
     cp.add_argument("--part", default="robot_salvage_parts")
     cp.add_argument("--quantity", type=int, default=1)
+    batch = sub.add_parser("computer-batch-intent", help="Passive five-item picker quantities; NO clicks")
+    batch.add_argument("--requests", required=True, help="JSON object of part_id: quantity")
+    restock = sub.add_parser("computer-restock", help="Passive per-Sim stock deficit batch; NO clicks")
+    restock.add_argument("--targets", required=True, help="JSON object of per-part stock targets")
+    restock.add_argument("--pocket-counts", required=True, help="JSON object of freshly observed pocket quantities")
 
     how = sub.add_parser("how-to-buy", help="Print phone/computer Order path")
     how.add_argument("--part", default="robot_salvage_parts")
@@ -153,6 +161,13 @@ def main(argv: list[str] | None = None) -> int:
             return _print(menu_catalog())
         if args.cmd == "computer-intent":
             return _print(plan_computer_purchase(args.part, args.quantity))
+        if args.cmd == "computer-batch-intent":
+            return _print(plan_computer_purchase_batch(json.loads(args.requests)))
+        if args.cmd == "computer-restock":
+            return _print(plan_computer_restock_batch(
+                stock_targets=json.loads(args.targets),
+                pocket_counts=json.loads(args.pocket_counts),
+            ))
         if args.cmd == "how-to-buy":
             return _print(how_to_buy(args.part))
         if args.cmd == "plan":
