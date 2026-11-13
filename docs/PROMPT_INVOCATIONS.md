@@ -419,3 +419,7 @@ Canonical artifact: `plans/active/BI-PERIPHERAL-CLOSERS-20261111.md`. Pre-mutati
 ## 2026-11-12 — P141 → Fifth Gear natural semantic survey
 
 Portability and nonjerky observation strengthening: single pure planner `betterinstincts/observation_sweep.py`, explicit read-only DBPF evidence `betterinstincts/ea_geometry_intake.py`, and read-only room-map call seam. Evidence-first zero-movement reuse, stationary capture, revision/floor/novelty and previous-view guards, one smooth monotone candidate path and strict no-actuation status. Original room-map, native autonomy, save and P08 admission remain unchanged. Consultation committed before source mutation (`185b6b70563aa8335360fbc9d124a7cfc9adc559`), decision and regression tests added. Live Sims host certification and actual EA building resource decode remain open; no game-side proof claimed. See `docs/NATURAL_SEMANTIC_SURVEY.md`.
+
+## 2026-11-12 — P97 → P141 → Fifth Gear: semantic camera feedback hardening
+
+Prior-art source inspected ROS Nav2 smoother and active-perception/jerk trajectory research; selected existing observation_sweep as owner. Consultation committed before source. New policy defaults to no motion proposal without explicit opt-in, blocks pending outcomes, avoids last-eight view cycles, demands distinct evidence-source classes and uses quintic minimum-jerk waypoints. Pure functions only; no stealth sensing or Windows/game input, and no local P08 runtime certification. Test/CI/merge proof tracked at PR; BI-002 active. See docs/NATURAL_SEMANTIC_SURVEY.md and docs/PRIOR_ART.md.
