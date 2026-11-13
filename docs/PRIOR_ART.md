@@ -72,3 +72,17 @@ New requirement: learn operator-reviewed good gameplay opportunities in context 
 **License/dependency boundary:** none of the cited third-party source is copied or bundled. Individual versions, licenses and release identities should be pinned **before** any future direct incorporation; this sprint uses patterns and independently authored checker code only. An open-source README or documentation claim alone is not local runtime proof.
 
 **Selected integration:** P00 rev9 concepts + P01 extension to the *existing* source checker/contract + P82 hostile fixtures + P07 existing CI and reviewed PR + P124 single-owner consolidation. P08 physical host tests, real activated Cursor hook, SysAdminSuite recurrence trace and M343 diagnosis remain independent, unperformed host gates.
+
+
+## 2026-11-12 — P97 natural SLAM reassessment mechanics (source review)
+
+**Question:** make existing BetterInstincts camera survey predictable, useful, lower-motion and physically smoother without creating an unapproved desktop watcher. Local owner: `betterinstincts/observation_sweep.py` (prior revision used cubic easing, only the immediately previous view as history and two untyped evidence refs).
+
+| Reference | Directly inspected implementation/research | Disposition |
+| --- | --- | --- |
+| [ROS Navigation2 simple_smoother.cpp](https://github.com/ros-navigation/navigation2/blob/main/nav2_smoother/src/simple_smoother.cpp) | **OBSERVED_IMPLEMENTED**: bounded iterations and max-time abort, directional segments, retain last feasible path on invalid cost; source Apache-2.0 header. Nav2's environment and costmap differ from Sims, so no package or source copied. | **ADAPT** bound computation, reject unsafe routes, retain previous usable state and do not force a movement. |
+| [Macfarlane & Croft, jerk-bounded robotics trajectory planning](https://doi.org/10.1109/TRA.2002.807548) | **DOCUMENTED_RESEARCH**: fifth-order polynomials for low-jerk trajectories. Not a runnable Sims adapter; no source copied. | **ADAPT** independently implement quintic ease for continuous candidate waypoints. |
+| [Active Visual Perception: Opportunities and Challenges](https://pmc.ncbi.nlm.nih.gov/articles/PMC13708967/) | **DOCUMENTED_RESEARCH**: information-gain versus movement cost, uncertainty, observation feedback and real-world feasibility constraints; not direct BetterInstincts code. | **ADAPT** reject non-novel moves, block when post-motion evidence is pending, remember recent viewpoints. |
+| [WPILib license / trajectory ecosystem](https://github.com/wpilibsuite/allwpilib) | **LICENSE INSPECTED**, trajectory code not independently confirmed in this pass. | **UNKNOWN** direct mechanism; no code dependency or adoption. |
+
+**Gap map:** existing room/semantic map and camera planning = **ALREADY_SOLVED_INTERNALLY**; bounded, source-aware feedback and jitter avoidance = **AVAILABLE_TO_EMULATE_EXTERNALLY**; Sims-native input and exact-build sensor admission = **PROJECT_SPECIFIC_GAP / P08**; actual EA lot geometry extraction = **EVIDENCE_GAP**. P141 compared (1) invisible OS watcher, **REJECT**; (2) new dense SLAM engine, **REJECT**; (3) quintic motion alone, **INSUFFICIENT**; (4) single existing planner with explicit motion-proposal opt-in, independently classed evidence, post-motion lock and recent-view memory, **SELECT**. No hidden daemon, camera input, recordings or EA binary hooks introduced. P95/P82/P08/P07/P124 verify this candidate under the strict proof ceiling: offline pure-function tests only until local game authority.

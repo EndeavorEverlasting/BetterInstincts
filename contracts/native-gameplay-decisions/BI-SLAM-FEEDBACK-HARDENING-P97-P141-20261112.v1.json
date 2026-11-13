@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-SLAM-FEEDBACK-HARDENING-P97-P141-20261112",
+  "purpose": "Strengthen existing read-only camera advice with opt-in, provenance, pending-outcome and anti-oscillation gates plus minimum-jerk path; no game effects.",
+  "files": [
+    {
+      "path": "betterinstincts/observation_sweep.py",
+      "route": "POLICY_ONLY",
+      "reason": "Bounded deterministic camera survey candidate only, no game or OS input permitted.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_PLANNER_AND_SYNTHETIC_TESTS_NOT_GAME_OR_CAMERA_RUNTIME",
+  "next_gate": "Exact patch disposable Sims P08 host observation, with separately admitted PR159 sensor and user-approved host adapter."
+}

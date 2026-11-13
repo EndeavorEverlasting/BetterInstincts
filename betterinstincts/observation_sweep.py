@@ -10,6 +10,8 @@ from collections.abc import Mapping, Sequence
 
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:+-]{0,95}$")
 SOURCES = frozenset({"EA_LOT_GEOMETRY", "HOST_CALIBRATED", "OPERATOR_VERIFIED"})
+EVIDENCE_CLASSES = frozenset({"EA_FILE", "HOST_CAPTURE", "OPERATOR_REVIEW"})
+MAX_RECENT_VIEWS = 8
 PROOF = "OFFLINE_CONTINUOUS_SURVEY_PROPOSAL_NOT_LIVE_CAMERA_CERT"
 
 
@@ -64,12 +66,16 @@ def plan_observation_sweep(
     viewport_px: Sequence[int] = (1920, 1080),
     edge_band_px: int = 48,
     previous_view_id: str | None = None,
+    recent_view_ids: Sequence[str] = (),
+    pending_view_id: str | None = None,
+    motion_opt_in: bool = False,
     player_active: bool = False,
 ) -> dict:
     """Propose at most ONE smooth camera gesture when grounded novelty warrants it.
 
     Candidate fields: view_id, floor_id, camera_revision, source,
-    evidence_refs (two distinct attested refs), visible_objects, pan_delta_px.
+    evidence_refs and evidence_source_classes (two distinct classes),
+    visible_objects, pan_delta_px.
     These are supplied by a separately admitted sensor or EA geometry
     extractor, never inferred from this planner or a screenshot alone.
     """
@@ -88,6 +94,10 @@ def plan_observation_sweep(
     if type(player_active) is not bool:
         raise ObservationSweepError("INVALID_PLAYER_ACTIVE")
     previous = _id(previous_view_id, "PREVIOUS_VIEW_ID") if previous_view_id is not None else None
+    recent = _ids(recent_view_ids, "RECENT_VIEW_IDS", limit=MAX_RECENT_VIEWS)
+    pending = _id(pending_view_id, "PENDING_VIEW_ID") if pending_view_id is not None else None
+    if type(motion_opt_in) is not bool:
+        raise ObservationSweepError("INVALID_MOTION_OPT_IN")
     missing = tuple(sorted(set(required) - set(observed)))
     if player_active:
         return _result("YIELD_TO_PLAYER", missing=missing, next_gate="PLAYER_RELEASES_CONTROL")
@@ -96,6 +106,12 @@ def plan_observation_sweep(
     if not missing:
         return _result("REUSE_OBSERVED_COVERAGE", missing=missing, next_gate="NONE",
                        camera_revision=rev)
+    if pending is not None:
+        return _result("AWAIT_POST_MOTION_OBSERVATION", missing=missing,
+                       pending_view_id=pending, next_gate="RECONCILE_FRESH_POST_MOTION_CAPTURE")
+    if not motion_opt_in:
+        return _result("HOLD_MOTION_PROPOSAL_NOT_OPTED_IN", missing=missing,
+                       next_gate="EXPLICIT_OPERATOR_MOTION_PROPOSAL_OPT_IN")
 
     start = (w // 2, h // 2)
     accepted = []
@@ -113,16 +129,19 @@ def plan_observation_sweep(
         if item.get("floor_id") != floor or item.get("camera_revision") != rev:
             continue
         refs = _ids(item.get("evidence_refs"), "EVIDENCE_REFS", limit=8)
-        if len(refs) < 2:
+        classes = _ids(item.get("evidence_source_classes", ()), "EVIDENCE_SOURCE_CLASSES", limit=8)
+        if (len(refs) < 2 or len(refs) != len(classes)
+                or any(source_class not in EVIDENCE_CLASSES for source_class in classes)):
             continue
         coverage = set(_ids(item.get("visible_objects"), "VISIBLE_OBJECTS"))
         novel = sorted(coverage.intersection(missing))
-        if not novel or vid == previous:
+        if not novel or vid == previous or vid in recent:
             continue
         dx, dy = _point(item.get("pan_delta_px"), "PAN_DELTA")
         # A large excursion, a stay-on-spot scan, or a screen-edge touch is
         # not silently converted into a multi-hop path or a blind click.
-        if abs(dx) > min(240, w // 4) or abs(dy) > min(240, h // 4):
+        if (abs(dx) > min(240, w // 4) or abs(dy) > min(240, h // 4)
+                or (dx * dx + dy * dy) < 64):
             continue
         end = (start[0] + dx, start[1] + dy)
         if not (edge_band_px <= end[0] < w - edge_band_px
@@ -145,7 +164,8 @@ def plan_observation_sweep(
     waypoints: list[list[int]] = []
     for i in range(13):
         t = i / 12
-        eased = t * t * (3 - 2 * t)
+        # Quintic smoothstep: zero velocity and acceleration at both endpoints.
+        eased = t * t * t * (10 + t * (-15 + 6 * t))
         xy = [start[0] + round(dx * eased), start[1] + round(dy * eased)]
         if not waypoints or waypoints[-1] != xy:
             waypoints.append(xy)
@@ -154,8 +174,10 @@ def plan_observation_sweep(
         next_gate="HOST_RECHECK_PLAYER_SCENE_SAVE_LOT_BEFORE_AND_AFTER_CAPTURE",
         camera_revision=rev, selected_view_id=vid, predicted_novel_objects=novel,
         source=source, gesture_kind="RIGHT_DRAG_CONTINUOUS_CANDIDATE",
-        trajectory_client=waypoints, safe_rest_client=list(start),
+        trajectory_client=waypoints, trajectory_profile="MINIMUM_JERK_QUINTIC_C2",
+        safe_rest_client=list(start),
         requires_fresh_post_motion_capture=True, repeated_motion_allowed=False,
+        requires_explicit_motion_opt_in=True, requires_external_result_reconciliation=True,
     )
     result["gesture_count"] = 1
     return result
