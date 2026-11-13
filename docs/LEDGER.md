@@ -1886,4 +1886,3 @@ BI-002 hunger live certification remains open.
 EA Connect, save edits or OS settings. Verify GitHub CI and main merge
 independently. Next true gate: exact game build, source-verified EA-native
 integration, disposable Live Mode before/after purchase and player reclaim.
-
