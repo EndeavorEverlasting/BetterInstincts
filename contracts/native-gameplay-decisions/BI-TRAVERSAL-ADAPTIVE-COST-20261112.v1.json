@@ -22,7 +22,8 @@
       "route": "HOST_LAB_ONLY",
       "reason": "Explicit active session event port and private local model readback; host sensor and real effects remain independently owned.",
       "game_effect_claim": "NONE",
-      "successor_issue": 171
+      "successor_issue": 171,
+      "autonomy_runtime": false
     }
   ],
   "autonomy_runtime": false,
