@@ -406,7 +406,7 @@ class NanoCanPolicyTests(unittest.TestCase):
                     native_routes=[route(spatial_proof=spatial(**mutation))]),
                     sims=[sim(queue=[queue_entry(pending)])])
                 self.assertIsNone(result["queue_redirection_candidate"])
-                self.assertIsNotNone(result["proposal"])
+                self.assertIsNone(result["proposal"])
         result=evaluate(visit(dishes=[dish(pending_cleanup=[pending])],
                     native_routes=[route(spatial_proof=spatial())]),
                     sims=[sim(queue=[queue_entry(pending)])])
@@ -641,6 +641,40 @@ class NanoCanPolicyTests(unittest.TestCase):
         self.assertFalse(result["dispatch_authorized"])
         self.assertFalse(result["cancel_allowed"])
         self.assertFalse(result["desktop_input_allowed"])
+
+    def test_unpaired_route_never_races_existing_autonomous_item_queue(self):
+        pending = cleanup()
+        current = visit(lot_ref="lot:home", world_revision_ref="rev:lot:1",
+                        dishes=[dish(pending_cleanup=[pending])],
+                        native_routes=[route(spatial_proof=spatial(lot_ref="lot:old"))])
+        busy = sim(queue=[queue_entry(pending)])
+        result = evaluate(current, sims=[busy])
+        self.assertIsNone(result["queue_redirection_candidate"])
+        self.assertIsNone(result["proposal"])
+        # A separate free dish remains eligible, even when one is busy.
+        second = {**current,
+                  "dishes": [dish(pending_cleanup=[pending]), dish("dish:free")],
+                  "native_routes": current["native_routes"] +
+                      [route(dish_ref="dish:free")]}
+        free = evaluate(second, sims=[busy])
+        self.assertEqual(free["proposal"]["dish_ref"], "dish:free")
+        for phase in ("ACTIVE", "UNKNOWN"):
+            with self.subTest(phase=phase):
+                active = {**queue_entry(pending), "queue_phase": phase}
+                result = evaluate({**current, "native_routes": [
+                    route(spatial_proof=spatial())]}, sims=[sim(queue=[active])])
+                self.assertIsNone(result["proposal"])
+                self.assertIsNone(result["queue_redirection_candidate"])
+
+    def test_unresolved_native_cleanup_target_is_not_a_free_item(self):
+        row = {**queue_entry(cleanup()), "item_ref": None}
+        self.assertIsNone(evaluate(visit(), sims=[sim(queue=[row])])["proposal"])
+        independent = {**row, "cleanup_kind": None}
+        # Unknown native scope without target is not a proven cleanup claim;
+        # still does not grant any real game effect.
+        result = evaluate(visit(), sims=[sim(queue=[independent])])
+        self.assertIsNotNone(result["proposal"])
+        self.assertFalse(result["dispatch_authorized"])
 
 class NativeAutonomyIntegrationTests(unittest.TestCase):
     def test_nested_port_does_not_change_legacy_sim_outputs(self):

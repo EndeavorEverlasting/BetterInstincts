@@ -132,9 +132,22 @@ def _player_claims_item(item_ref: str, actors: Mapping, *, capture_ref: str) -> 
                       and _ref(row.get("origin_proof_ref")))
             target = row.get("item_ref")
             # Unidentified player or unknown target is a household-wide hold.
-            if (not _ref(target) and not native) or (target == item_ref and not native):
+            if ((not _ref(target) and
+                 (not native or row.get("cleanup_kind") in CLEANUP_DESTINATIONS))
+                    or (target == item_ref and not native)):
                 return True
     return False
+
+
+def _queued_item_claimed(item_ref: str, actors: Mapping) -> bool:
+    """An existing queued use of an item requires a proven paired replacement.
+
+    A source-qualified but busy item is not free for a separate NanoCan action.
+    """
+    return any(isinstance(actor.get("queue"), list)
+               and any(isinstance(row, Mapping) and row.get("item_ref") == item_ref
+                       for row in actor["queue"])
+               for actor in actors.values())
 
 
 def _spatial_route_proven(
@@ -405,8 +418,12 @@ def evaluate_nanocan_recycling(
             candidate_item, item_ref=candidate_ref, can_ref=candidate_can,
             route=candidate_route, observation=observation, actor_map=actor_map,
             game_build=game_build, capture_ref=capture_ref, proposal_key=proposal_key)
+        if paired is None and _queued_item_claimed(candidate_ref, actor_map):
+            continue
         ranked.append((0 if paired else 1, route_rank, candidate_ref,
                        candidate_can, candidate_route, paired))
+    if not ranked:
+        return finish("NATIVE_DISPOSAL_ROUTE_NOT_VERIFIED_OR_BUSY")
     _, _, item_ref, can_ref, route, paired_redirection = min(
         ranked, key=lambda c: c[:4])
     is_dish = _ref(route.get("dish_ref"))

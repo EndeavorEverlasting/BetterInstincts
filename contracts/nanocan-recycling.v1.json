@@ -150,7 +150,9 @@
     "queue_revision": "Require identical current observed revision, pending cleanup revision and exact queue slot revision",
     "queued_native_provenance": "game_build, source_kind, destination_kind, action_kind_verified and capture must agree across source-classification and actual queue row",
     "legacy_sink_compatibility": "sink_suppression_candidate is an alias only when same evidence-proven source SIM_AUTONOMY sink queue is an eligible atomic queue redirection; pending_sink alone no longer qualifies",
-    "unresolved_player_target": "Player/unknown queued action without an independently identified item_ref protects every possible item; missing/stale actor queue snapshot denies even actorless proposals"
+    "unresolved_player_target": "Player/unknown queued action without an independently identified item_ref protects every possible item; missing/stale actor queue snapshot denies even actorless proposals",
+    "unpaired_busy_item": "Do not offer a standalone native NanoCan proposal for an item referenced by any current queued action unless exactly same-item atomic redirect is proven; permit a different independently free item.",
+    "unresolved_native_cleanup_item": "An identified native cleanup kind without target object ID must hold all possible item proposals, not just player/unknown origin."
   },
   "waste_items": {
     "kinds": [
