@@ -116,7 +116,9 @@ class QueueSupervisionTests(unittest.TestCase):
 
     def test_duplicate_action_only_with_matching_semantics_and_source_proof(self):
         root = observation(actions=[
-            action(), action("WRITE", "slot:2", "PENDING"),
+            action(dedupe_safe=True, dedupe_proof_ref="proof:dedupe-first"),
+            action("WRITE", "slot:2", "PENDING",
+                   dedupe_safe=True, dedupe_proof_ref="proof:dedupe-second"),
         ])
         r = evaluate(root)
         self.assertEqual(r["gate"], "QUEUE_CONFLICT_CANDIDATE")
@@ -128,6 +130,20 @@ class QueueSupervisionTests(unittest.TestCase):
         root["sims"][0]["queue"][1]["semantic_key"] = "semantic:write:target1"
         root["sims"][0]["queue"][1].pop("semantic_proof_ref")
         self.assertIsNone(evaluate(root)["cancel_candidate"])
+        root["sims"][0]["queue"][1]["semantic_proof_ref"] = "proof:semantic"
+        root["sims"][0]["queue"][1]["dedupe_safe"] = False
+        self.assertIsNone(evaluate(root)["cancel_candidate"])
+        root["sims"][0]["queue"][1]["dedupe_safe"] = True
+        root["sims"][0]["queue"][1].pop("dedupe_proof_ref")
+        self.assertIsNone(evaluate(root)["cancel_candidate"])
+
+    def test_repeatable_identical_tasks_are_not_automatically_duplicates(self):
+        root = observation(actions=[
+            action(),
+            action("WRITE", "slot:2", "PENDING"),
+        ])
+        self.assertIsNone(evaluate(root)["cancel_candidate"])
+        self.assertNotEqual(evaluate(root)["gate"], "QUEUE_CONFLICT_CANDIDATE")
 
     def test_contradiction_requires_same_source_verified_exclusive_group(self):
         root = observation(actions=[
@@ -178,6 +194,15 @@ class QueueSupervisionTests(unittest.TestCase):
         root["queue_supervision"]["sims"][0]["active_activity"] = activity()
         meta.pop("decay_proof_ref")
         self.assertIsNone(evaluate(root)["cancel_candidate"])
+
+    def test_nearly_completed_source_attested_activity_is_not_cancelled(self):
+        root = observation(needs=dict(NEEDS, hunger=.24),
+                           profile=activity(elapsed=220.0))
+        r = evaluate(root)
+        self.assertTrue(r["duration"]["reliable_for_preemption"])
+        self.assertLess(r["duration"]["remaining_seconds"], 15)
+        self.assertEqual(r["gate"], "ACTIVITY_NEAR_COMPLETION")
+        self.assertIsNone(r["cancel_candidate"])
 
     def test_stalled_activity_reobserves_no_blind_timeout_cancel(self):
         root = observation(profile=activity(elapsed=800))
