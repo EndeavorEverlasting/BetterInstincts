@@ -52,7 +52,7 @@
       "protected_goal",
       "goal_proof_ref"
     ],
-    "duplicate": "same source-attested semantic_key across distinct queue slots; same string label alone is insufficient",
+    "duplicate": "Only identical source-attested semantic_key and independently source-proven dedupe_safe=true on BOTH queue slots with distinct dedupe_proof_ref; repeatable actions (two batches/skill loops) are not duplicates.",
     "contradiction": "same source-attested mutually exclusive conflict_group with different conflict_outcomes; same target alone is insufficient",
     "clock": "ACTIVE_SIM_SECONDS, not wall clock; pause excludes timeout and invalidates preemption",
     "duration": [
@@ -74,7 +74,8 @@
     "duration_samples": "At most 12 independently proven same-action, same-build completed samples; sample IDs deduplicated and median actual/modeled correction clamped to [0.5,2.0]. Unknown factor means unreliable duration prediction and blocks forecast-based preemption.",
     "preemption": "Verified critical six-needs may trigger one source-qualified running autonomous action candidate. Forecast requires two distinct calibrated completion samples, proven four modifiers, active game clock, need decay rates and 25% margin; no player queue or unproven active action.",
     "thrash_guard": "At least 90 ACTIVE_SIM_SECONDS since last verified switch, no guessing from unknown switch history; one action proposal per tick then reobserve.",
-    "stall": "Only after calibrated estimate is exceeded by >=75% and >=30s, with a separately observed STALLED progress signal; seek reobservation rather than cancel solely on timeout."
+    "stall": "Only after calibrated estimate is exceeded by >=75% and >=30s, with a separately observed STALLED progress signal; seek reobservation rather than cancel solely on timeout.",
+    "preemption_completion_guard": "Protect current activity when reliable forecast says <=15 active simulation seconds remain and stall is not independently observed."
   },
   "no_effects": {
     "cancel_allowed": false,
