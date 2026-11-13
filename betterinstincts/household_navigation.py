@@ -200,13 +200,28 @@ def plan_household_navigation(snapshot: Mapping[str, Any]) -> dict:
     _, _, target, path = min(options)
     if len(path) - 1 > limit:
         return _receipt(data, "NAVIGATION_ROUTE_BUDGET_HOLD", "ROUTE_EXCEEDS_STEP_BUDGET")
-    return _receipt(data, "NAVIGATION_RECOVERY_ROUTE" if stalled else "NAVIGATION_ROUTE_PROPOSED",
-                    "REPLAN_AROUND_NO_PROGRESS" if stalled else "VERIFIED_STABLE_ROUTE",
-                    route=list(path), next_region=path[1], target_region=target,
-                    excluded_unverified_passages=excluded, blocked_transitions=len(blocked),
-                    movement_channel="SIM_ROUTE_PROPOSAL_ONLY",
-                    learning_status=learning_status,
-                    learned_edge_count=learned_edges)
+    result = _receipt(data, "NAVIGATION_RECOVERY_ROUTE" if stalled else "NAVIGATION_ROUTE_PROPOSED",
+                      "REPLAN_AROUND_NO_PROGRESS" if stalled else "VERIFIED_STABLE_ROUTE",
+                      route=list(path), next_region=path[1], target_region=target,
+                      excluded_unverified_passages=excluded, blocked_transitions=len(blocked),
+                      movement_channel="SIM_ROUTE_PROPOSAL_ONLY",
+                      learning_status=learning_status,
+                      learned_edge_count=learned_edges)
+    # This opt-in model is a diagnostic only. Never use its score to create
+    # edges, override verified Dijkstra weights, or grant movement.
+    if "spatial_convolution" in data:
+        row = data["spatial_convolution"]
+        if not isinstance(row, Mapping) or row.get("from_region") != current or row.get("to_region") != path[1]:
+            result["spatial_learning_advisory"] = {
+                "status": "ABSTAIN_TARGET_MISMATCH", "blocked_probability": None, "execute_allowed": False,
+            }
+        else:
+            from betterinstincts.spatial_convolution import advise
+            result["spatial_learning_advisory"] = advise(
+                data, row.get("model"), row.get("patch"),
+                from_region=current, to_region=path[1],
+            )
+    return result
 
 
 __all__ = ["plan_household_navigation", "MAX_REGIONS", "MAX_PASSAGES", "MAX_TRACE"]

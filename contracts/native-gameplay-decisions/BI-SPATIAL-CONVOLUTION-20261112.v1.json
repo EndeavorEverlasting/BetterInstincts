@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/spatial_convolution.py",
+      "route": "POLICY_ONLY",
+      "reason": "Bounded read-only trainable spatial scoring, independent observed outcomes and opt-in profile model persistence; no game control",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/household_navigation.py",
+      "route": "POLICY_ONLY",
+      "reason": "Adds optional non-actuating convolutional advisory to existing independently gated region navigation without route changes",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}
