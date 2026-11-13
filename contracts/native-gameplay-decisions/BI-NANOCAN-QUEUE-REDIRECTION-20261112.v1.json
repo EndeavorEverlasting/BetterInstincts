@@ -1,0 +1,16 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-NANOCAN-QUEUE-REDIRECTION-20261112",
+  "purpose": "Extend the existing NanoCan native policy to inspect and suggest atomic player-safe queue redirection across sinks, dishwashers, ordinary bins and verified waste without actual game effects.",
+  "files": [
+    {
+      "path": "betterinstincts/nanocan_recycling.py",
+      "route": "POLICY_ONLY",
+      "reason": "Source-qualified NanoCan item/queue policy; no installed EA hook, clicker, or queue/money side effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_POLICY_ONLY_NO_EA_MOD_OR_REAL_SIMS_QUEUE_EXECUTION"
+}

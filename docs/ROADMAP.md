@@ -1,4 +1,6 @@
-## 2026-11-12 — Spatial convolution research-to-runtime gate
+## 2026-11-12 — NanoCan household waste and clean-up queue hardening
+
+Extend the existing native household autonomy port, not a new UI clicker: identify source-proven autonomous/whim/vanilla cleanup in **actual queue slots**; propose atomic replacement with a reachable, source-verified NanoCan native disposal for eligible dishes and garbage; preserve all player commands and unknown actions. Reconcile one observed disposal and causal payout at a time. Real native EA tuning/package and in-game A/B remain dependent on exact installed build/P08; no speculative SLAM or hunger gate precondition. See `docs/NANOCAN_RECYCLING.md`## 2026-11-12 — Spatial convolution research-to-runtime gate
 
 Optional trainable 3×3 convolution on evidence-backed 5×5 room/route patches has a bounded offline implementation and non-actuating navigation advisory. Before claiming learning in deployed Sims: acquire opt-in exact-patch EA/verified spatial geometry and repeated independently observed outcomes, run per-build holdout and CPU/performance measurement, then obtain native source/hook and disposable A/B with rollback. Do not block BI-002 hunger or change player/queue control. Source owner: `betterinstincts/spatial_convolution.py`; proof status belongs to CI and local game receipts, not this plan.
 
