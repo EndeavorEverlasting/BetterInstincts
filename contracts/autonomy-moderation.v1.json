@@ -100,6 +100,23 @@
       "desktop_input_allowed": false
     },
     "research_gate": "Use scripts/tuning_audit.py on explicit user-selected EA XML export read-only, compare Sims4Studio and installed game APIs for exact patch, do not write EA files",
-    "live_gate": "P08 exact-patch adapter and disposable household game validation required for claimed effects"
+    "live_gate": "P08 exact-patch adapter and disposable household game validation required for claimed effects",
+    "optional_recycling_extension": {
+      "input_key": "nanocan_recycling",
+      "schema": "betterinstincts.nanocan-recycling/v1",
+      "owner": "betterinstincts/nanocan_recycling.py",
+      "contract": "contracts/nanocan-recycling.v1.json",
+      "trigger": "Existing game-native household snapshot; not desktop input, not new poller",
+      "decision_scope": "One uniquely identified dirty empty dish per observed native household tick; no selected-Sim dependency for direct disposal",
+      "sink_policy": "Only propose suppressing verified SIM_AUTONOMY dish washing when safe native NanoCan disposal is already eligible; player or unknown queue never cancelled",
+      "reward_semantics": "Drag-equivalent per-member reward is separate from Sim disposal reward and requires source-proven exact-build equivalence plus independent actual-money evidence",
+      "effect_authority": {
+        "dispatch_authorized": false,
+        "cancel_allowed": false,
+        "desktop_input_allowed": false
+      },
+      "proof_ceiling": "OFFLINE_NANOCAN_POLICY_NOT_GAME_EFFECT",
+      "native_successor_issue": 171
+    }
   }
 }
