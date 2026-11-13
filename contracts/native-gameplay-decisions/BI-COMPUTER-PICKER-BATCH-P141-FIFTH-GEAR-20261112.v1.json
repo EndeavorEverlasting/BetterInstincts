@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-COMPUTER-PICKER-BATCH-P141-FIFTH-GEAR-20261112",
+  "purpose": "Observed computer picker quantity batching is POLICY_ONLY until exact patch EA-native source/hook and disposable gameplay certification; no external mouse automation engine claimed.",
+  "files": [
+    {
+      "path": "betterinstincts/computer_upgrade_parts.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure decision planner returns one revalidated proposed UI effect, does not dispatch OS input or operate the game",
+      "game_effect_claim": "NONE",
+      "successor_issue": 201
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "REMOTE_STATIC_AND_CI_ONLY_NO_GAME_RUNTIME_PROOF",
+  "next_gate": "A local disposable Windows The Sims 4 session on exact patch, with an authenticated host adapter, must observe actual rows/quantity count/cost, player yield and personal inventory/funds after Buy; then investigate native EA integration."
+}
