@@ -25,6 +25,15 @@ def servo(ref="servo:a", durability=.8, charge=.8, fun=.8, social=.8, **kwargs):
     return row
 
 
+def utilibot(ref="bot:gardener", kind="GARDENER_BOT", durability=.8, charge=.8, **kwargs):
+    row = {"bot_ref": ref, "kind": kind, "needs_verified": True,
+           "broken": False, "water_exposure": "NONE",
+           "needs": {"durability": durability, "charge": charge},
+           "maintenance_attempt": "NONE", "charge_attempt": "NONE"}
+    row.update(kwargs)
+    return row
+
+
 def actor(ref="sim:helper", kind="HUMAN", **kwargs):
     row = {"sim_ref":ref, "kind":kind, "queue_verified":True, "available":True,
            "player_reserved":False, "urgent_needs":False, "multitasking":False,
@@ -88,6 +97,7 @@ class UpkeepMicrosystemTests(unittest.TestCase):
         helper=actor("servo:helper","SERVO",
                      skills={"robotics":{"level":10,"verified":True}})
         out=evaluate(obs(
+            servos=[servo("servo:a",durability=.1),servo("servo:helper")],
             actors=[helper],
             observed_actions=[action("TUNE_UP_SERVO","servo:helper","servo:a")]))
         self.assertEqual(out["gate"],"UPKEEP_ACTION_READY")
@@ -95,22 +105,24 @@ class UpkeepMicrosystemTests(unittest.TestCase):
         self.assertEqual(out["next_actions"][0]["helper_kind"],"SERVO_PEER")
         self.assertEqual(out["next_actions"][0]["helper_robotics_level"],10.0)
 
-    def test_servo_peer_helper_prefers_human_when_both_available(self):
+    def test_verified_servo_peer_preferred_when_human_and_servo_both_available(self):
         human=actor("sim:helper","HUMAN")
         servo_helper=actor("servo:helper","SERVO",
                            skills={"robotics":{"level":10,"verified":True}})
         out=evaluate(obs(
+            servos=[servo("servo:a",durability=.1),servo("servo:helper")],
             actors=[servo_helper, human],
             observed_actions=[
                 action("TUNE_UP_SERVO","servo:helper","servo:a"),
                 action("TUNE_UP_SERVO","sim:helper","servo:a"),
             ]))
-        self.assertEqual(out["next_actions"][0]["actor_ref"],"sim:helper")
-        self.assertEqual(out["next_actions"][0]["helper_kind"],"HUMAN")
+        self.assertEqual(out["next_actions"][0]["actor_ref"],"servo:helper")
+        self.assertEqual(out["next_actions"][0]["helper_kind"],"SERVO_PEER")
 
     def test_servo_without_robotics_yields_skill_gap(self):
         helper=actor("servo:helper","SERVO")
         out=evaluate(obs(
+            servos=[servo("servo:a",durability=.1),servo("servo:helper")],
             actors=[helper],
             observed_actions=[action("TUNE_UP_SERVO","servo:helper","servo:a")]))
         self.assertEqual(out["gate"],"UPKEEP_HELPER_SKILL_GAP")
@@ -128,14 +140,15 @@ class UpkeepMicrosystemTests(unittest.TestCase):
                       {"UPKEEP_HELPER_SKILL_GAP","UPKEEP_NO_SAFE_ACTOR_OR_AFFORDANCE"})
         self.assertFalse(out["next_actions"])
 
-    def test_socialize_and_bills_remain_human_only(self):
+    def test_peer_social_is_allowed_only_if_observed_and_bills_remain_human_only(self):
         servo_helper=actor("servo:helper","SERVO",
                            skills={"robotics":{"level":10,"verified":True}})
         out=evaluate(obs(
-            servos=[servo(durability=.8,social=.1)],
+            servos=[servo("servo:a",durability=.8,social=.1),servo("servo:helper")],
             actors=[servo_helper],
             observed_actions=[action("SOCIALIZE_SERVO","servo:helper","servo:a")]))
-        self.assertFalse(out["next_actions"])
+        self.assertEqual(out["next_actions"][0]["action_id"], "SOCIALIZE_SERVO")
+        self.assertEqual(out["next_actions"][0]["actor_ref"], "servo:helper")
         out_bill=evaluate(obs(
             servos=[], bill=bill(), bill_payment_authorized=True,
             actors=[servo_helper],
@@ -298,6 +311,168 @@ class UpkeepMicrosystemTests(unittest.TestCase):
         for x in bad:
             with self.subTest(change=list(x)),self.assertRaises(HouseholdUpkeepError):
                 evaluate(obs(**x))
+
+
+
+class CooperativeRobotCareTests(unittest.TestCase):
+    """P82: bot maintenance is targeted, bounded and protected by helper motives."""
+
+    def test_gardener_bot_broken_repaired_by_verified_servo(self):
+        helper=actor("servo:helper","SERVO",skills={"robotics":{"level":7,"verified":True}})
+        o=obs(servos=[servo("servo:helper")],actors=[helper],
+              utilibots=[utilibot(broken=True,durability=0)],
+              observed_actions=[action("REPAIR_UTILIBOT","servo:helper","bot:gardener")])
+        out=evaluate(o)
+        self.assertEqual(out["gate"],"UPKEEP_ACTION_READY")
+        self.assertEqual(out["next_actions"][0]["action_id"],"REPAIR_UTILIBOT")
+        self.assertEqual(out["next_actions"][0]["target_kind"],"GARDENER_BOT")
+        self.assertEqual(out["next_actions"][0]["helper_kind"],"SERVO_PEER")
+        self.assertFalse(out["dispatch_authorized"])
+
+    def test_gardener_bot_watch_tune_up_and_charge_are_distinct(self):
+        helper=actor("sim:helper")
+        o=obs(servos=[],utilibots=[utilibot(durability=.3,charge=.9)],
+              actors=[helper],
+              observed_actions=[action("TUNE_UP_UTILIBOT",target_ref="bot:gardener")])
+        out=evaluate(o)
+        self.assertEqual(out["next_actions"][0]["action_id"],"TUNE_UP_UTILIBOT")
+        self.assertEqual(out["utilibot_health"][0]["health"],"WATCH")
+        o["utilibots"][0]["needs"]={"durability":.9,"charge":.2}
+        o["observed_actions"]=[action("RECHARGE_UTILIBOT",target_ref="bot:gardener")]
+        self.assertEqual(evaluate(o)["next_actions"][0]["action_id"],"RECHARGE_UTILIBOT")
+
+    def test_observed_fixomatic_module_can_repair_bot_without_verified_skill(self):
+        fixer=actor("servo:fixer","SERVO",
+                    modules={"fix_o_matic":{"enabled":True,"verified":True}})
+        out=evaluate(obs(servos=[servo("servo:fixer")],actors=[fixer],
+                         utilibots=[utilibot(broken=True,durability=0)],
+                         observed_actions=[action("REPAIR_UTILIBOT","servo:fixer","bot:gardener")]))
+        self.assertEqual(out["next_actions"][0]["helper_qualification"],"FIX_O_MATIC")
+        broken=actor("servo:fixer","SERVO",
+                     modules={"fix_o_matic":{"enabled":True,"verified":False}})
+        with self.assertRaisesRegex(HouseholdUpkeepError,"MODULE_PROOF"):
+            evaluate(obs(servos=[servo("servo:fixer")],actors=[broken],
+                         utilibots=[utilibot(broken=True,durability=0)]))
+
+    def test_servo_helper_reserve_must_be_verified_before_cooperation(self):
+        helper=actor("servo:helper","SERVO",skills={"robotics":{"level":10,"verified":True}})
+        for servos in ([servo("servo:a",durability=.1)],
+                       [servo("servo:a",durability=.1),servo("servo:helper",charge=.25)],
+                       [servo("servo:a",durability=.1),servo("servo:helper",durability=.2)],
+                       [servo("servo:a",durability=.1),servo("servo:helper",water_exposure="WET")]):
+            with self.subTest(c=[v["sim_ref"] for v in servos]):
+                out=evaluate(obs(servos=servos,actors=[helper],
+                                 observed_actions=[action("TUNE_UP_SERVO","servo:helper","servo:a")]))
+                self.assertFalse(out["next_actions"])
+
+    def test_low_charge_servo_chooses_its_own_recharge_before_helping(self):
+        helper=actor("servo:helper","SERVO",skills={"robotics":{"level":10,"verified":True}})
+        out=evaluate(obs(
+            servos=[servo("servo:a",durability=.1),
+                    servo("servo:helper",charge=.2)],
+            actors=[helper], observed_actions=[
+                action("TUNE_UP_SERVO","servo:helper","servo:a"),
+                action("RECHARGE_SERVO","servo:helper","servo:helper")]))
+        self.assertEqual(out["next_actions"][0]["action_id"],"RECHARGE_SERVO")
+        self.assertEqual(out["next_actions"][0]["target_ref"],"servo:helper")
+
+    def test_human_fallback_when_servo_helper_depleted(self):
+        helper=actor("servo:helper","SERVO",skills={"robotics":{"level":10,"verified":True}})
+        human=actor("sim:human","HUMAN")
+        out=evaluate(obs(
+            servos=[servo("servo:a",durability=.1),
+                    servo("servo:helper",charge=.2)],
+            actors=[helper,human], observed_actions=[
+                action("TUNE_UP_SERVO","servo:helper","servo:a"),
+                action("TUNE_UP_SERVO","sim:human","servo:a")]))
+        self.assertEqual(out["next_actions"][0]["actor_ref"],"sim:human")
+
+    def test_verified_self_tune_is_fallback_not_peer_path(self):
+        self_actor=actor("servo:a","SERVO")
+        base=obs(servos=[servo("servo:a",durability=.4,self_tune_verified=True)],
+                 actors=[self_actor],observed_actions=[
+                     action("SERVO_SELF_TUNE_UP","servo:a","servo:a")])
+        self.assertEqual(evaluate(base)["next_actions"][0]["action_id"],"SERVO_SELF_TUNE_UP")
+        base["servos"][0]["self_tune_verified"]=False
+        self.assertFalse(evaluate(base)["next_actions"])
+        base["servos"][0]["self_tune_verified"]=True
+        base["servos"][0]["needs"]["charge"] = .2
+        self.assertFalse(evaluate(base)["next_actions"])
+
+    def test_bot_pending_attempt_cannot_repeat(self):
+        for state in ("QUEUED","DISPATCHED"):
+            for key,aid in (("maintenance_attempt","REPAIR_UTILIBOT"),
+                            ("charge_attempt","RECHARGE_UTILIBOT")):
+                bot=utilibot(broken=aid=="REPAIR_UTILIBOT",durability=0 if aid=="REPAIR_UTILIBOT" else .8,
+                             charge=.1 if aid=="RECHARGE_UTILIBOT" else .8,
+                             **{key:state})
+                out=evaluate(obs(servos=[],utilibots=[bot],
+                                 observed_actions=[action(aid,target_ref="bot:gardener")]))
+                self.assertFalse(out["next_actions"])
+
+    def test_water_exposed_bot_never_autorepaired(self):
+        out=evaluate(obs(servos=[],utilibots=[
+            utilibot(broken=True,durability=0,water_exposure="WET")],
+            observed_actions=[action("REPAIR_UTILIBOT",target_ref="bot:gardener")]))
+        self.assertEqual(out["utilibot_health"][0]["water_exposure"],"WET")
+        self.assertFalse(out["next_actions"])
+
+    def test_wrong_or_stale_bot_affordance_never_matches(self):
+        o=obs(servos=[],utilibots=[utilibot(broken=True,durability=0)],
+              observed_actions=[action("REPAIR_UTILIBOT",
+                                       target_ref="bot:wrong")])
+        self.assertFalse(evaluate(o)["next_actions"])
+        o["observed_actions"]=[action("REPAIR_UTILIBOT",target_ref="bot:gardener",
+                                      capture_ref="capture:old")]
+        self.assertFalse(evaluate(o)["next_actions"])
+
+    def test_all_four_utilibot_types_are_supported_and_no_fake_sims(self):
+        kinds=("GARDENER_BOT","CLEANER_BOT","FIXER_BOT","PARTY_BOT")
+        robots=[utilibot("bot:"+kind.lower(),kind=kind,durability=.8,charge=.8)
+                for kind in kinds]
+        out=evaluate(obs(servos=[],utilibots=robots,observed_actions=[]))
+        self.assertEqual([x["kind"] for x in out["utilibot_health"]],list(kinds))
+        self.assertEqual(out["servo_health"],[])
+        self.assertEqual(out["gate"],"UPKEEP_MONITOR")
+
+    def test_bot_validation_rejects_fake_values_and_id_overlap(self):
+        invalid=(
+            [utilibot(needs={"hunger":.8})],
+            [utilibot(needs={"durability":float("nan"),"charge":.4})],
+            [utilibot("servo:a")],
+            [utilibot(needs_verified=False)],
+            [utilibot(water_exposure="UNKNOWN")],
+            [utilibot() for _ in range(17)],
+        )
+        for bots in invalid:
+            with self.subTest(bots=len(bots)),self.assertRaises(HouseholdUpkeepError):
+                evaluate(obs(utilibots=bots))
+
+    def test_player_owns_screen_even_when_gardener_bot_broken(self):
+        o=obs(servos=[],utilibots=[utilibot(broken=True,durability=0)],
+              observed_actions=[action("REPAIR_UTILIBOT",target_ref="bot:gardener")])
+        for flag in ("player_directed","already_busy","human_survival_hold","build_or_buy_mode"):
+            with self.subTest(flag=flag):
+                self.assertFalse(evaluate(o,**{flag:True})["next_actions"])
+        o["actors"][0]["queue"]=[{"action_id":"OTHER",
+                                  "origin":"PLAYER","target_ref":"other:task"}]
+        self.assertFalse(evaluate(o)["next_actions"])
+
+    def test_unverified_helper_module_does_not_prove_fixomatic(self):
+        helper=actor("servo:helper","SERVO",
+                     modules={"fix_o_matic":{"enabled":False,"verified":True}})
+        out=evaluate(obs(servos=[servo("servo:helper")],actors=[helper],
+                         utilibots=[utilibot(broken=True,durability=0)],
+                         observed_actions=[action("REPAIR_UTILIBOT","servo:helper","bot:gardener")]))
+        self.assertEqual(out["gate"],"UPKEEP_HELPER_SKILL_GAP")
+        self.assertFalse(out["next_actions"])
+
+    def test_no_bot_action_from_unverified_motives(self):
+        out=evaluate(obs(servos=[],utilibots=[
+            utilibot(needs_verified=False,needs=None,broken=False)]))
+        self.assertEqual(out["utilibot_health"][0]["health"],"UNVERIFIED")
+        self.assertFalse(out["next_actions"])
+
 
 
 class ServoFireLaundryPolicyTests(unittest.TestCase):
