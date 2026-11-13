@@ -19,6 +19,7 @@ SCHEMA = "betterinstincts.occult-needs/v1"
 MODEL_SCHEMA = "betterinstincts.occult-needs-model/v1"
 PATCH = re.compile(r"^[0-9]+(?:\.[0-9]+){3}$")
 REF = re.compile(r"^[A-Za-z0-9_.:-]{8,80}$")
+NOVEL_ACTION = re.compile(r"^[A-Z][A-Z0-9_]{2,63}$")
 PLATFORMS = frozenset(("windows", "linux", "macos"))
 PROOF = "OFFLINE_PROFILE_AND_REVIEWED_OUTCOME_ADVISORY_NOT_GAMEPLAY"
 MAX_EVENTS = 128
@@ -124,6 +125,24 @@ def _validate_model(model: Mapping, catalog: Mapping) -> dict:
                     if row["admission"] == "OBSERVED_INTERACTION_ONLY"
                 }):
             raise OccultNeedsError("MODEL_EVENT_NOT_IN_PROFILE")
+    novel = model.get("candidate_events", [])
+    if not isinstance(novel, list) or len(events) + len(novel) > MAX_EVENTS:
+        raise OccultNeedsError("LEARNING_MODEL_LIMIT")
+    for event in novel:
+        if not isinstance(event, dict) or set(event) != {
+            "observation_ref", "need", "action", "outcome"
+        }:
+            raise OccultNeedsError("INVALID_CANDIDATE_EVENT")
+        ref = event["observation_ref"]
+        if not isinstance(ref, str) or not REF.fullmatch(ref) or ref in seen:
+            raise OccultNeedsError("DUPLICATE_OR_INVALID_EVIDENCE")
+        seen.add(ref)
+        need, action = event["need"], event["action"]
+        if (need not in p["motives"] or not isinstance(action, str)
+                or not NOVEL_ACTION.fullmatch(action)
+                or event["outcome"] not in ("helpful", "harmful")
+                or action in {row["id"] for row in catalog["motives"][need]}):
+            raise OccultNeedsError("CANDIDATE_NOT_NOVEL_OR_IN_PROFILE")
     return model
 
 
@@ -135,7 +154,7 @@ def new_model(*, profile: str, game_version: str, platform: str,
     if p is None or p["status"] != "CATALOG_READY":
         raise OccultNeedsError("UNSUPPORTED_PROFILE")
     return {"schema": MODEL_SCHEMA, "profile": profile, "game_version": game_version,
-            "platform": platform, "events": []}
+            "platform": platform, "events": [], "candidate_events": []}
 
 
 def learn(model: Mapping, event: Mapping, *, catalog: Mapping | None = None) -> dict:
@@ -155,9 +174,10 @@ def learn(model: Mapping, event: Mapping, *, catalog: Mapping | None = None) -> 
     ref = event["observation_ref"]
     if not isinstance(ref, str) or not REF.fullmatch(ref):
         raise OccultNeedsError("INVALID_OBSERVATION_REFERENCE")
-    if ref in {old["observation_ref"] for old in valid["events"]}:
+    if ref in {old["observation_ref"] for field in ("events", "candidate_events")
+               for old in valid.get(field, ())}:
         raise OccultNeedsError("OBSERVATION_REPLAY")
-    if len(valid["events"]) >= MAX_EVENTS:
+    if len(valid["events"]) + len(valid.get("candidate_events", [])) >= MAX_EVENTS:
         raise OccultNeedsError("EVIDENCE_CAP_REACHED")
     need, action = event["need"], event["action"]
     if (need not in config["profiles"][valid["profile"]]["motives"]
@@ -174,6 +194,50 @@ def learn(model: Mapping, event: Mapping, *, catalog: Mapping | None = None) -> 
     return {**valid, "events": [
         *valid["events"], {"observation_ref": ref, "need": need,
                            "action": action, "outcome": event["outcome"]}
+    ]}
+
+
+def learn_candidate(model: Mapping, event: Mapping, *,
+                    catalog: Mapping | None = None) -> dict:
+    """Review one observed novel semantic action; persist only via an explicit caller."""
+    config = load_catalog() if catalog is None else catalog
+    valid = _validate_model(model, config)
+    expected = {
+        "observation_ref", "need", "action", "outcome", "operator_reviewed",
+        "opt_in", "scene_verified", "menu_observed", "before", "after",
+        "game_version", "platform"
+    }
+    if not isinstance(event, Mapping) or set(event) != expected:
+        raise OccultNeedsError("NOVEL_EVENT_FIELDS_REQUIRED")
+    if any(event[flag] is not True for flag in (
+        "operator_reviewed", "opt_in", "scene_verified", "menu_observed"
+    )):
+        raise OccultNeedsError("NOVEL_REVIEW_AND_MENU_PROOF_REQUIRED")
+    if (event["game_version"], event["platform"]) != (
+        valid["game_version"], valid["platform"]
+    ):
+        raise OccultNeedsError("MODEL_PATCH_PLATFORM_MISMATCH")
+    ref, need, action = event["observation_ref"], event["need"], event["action"]
+    if not isinstance(ref, str) or not REF.fullmatch(ref):
+        raise OccultNeedsError("INVALID_OBSERVATION_REFERENCE")
+    if ref in {old["observation_ref"] for field in ("events", "candidate_events")
+               for old in valid.get(field, ())}:
+        raise OccultNeedsError("OBSERVATION_REPLAY")
+    if len(valid["events"]) + len(valid.get("candidate_events", [])) >= MAX_EVENTS:
+        raise OccultNeedsError("EVIDENCE_CAP_REACHED")
+    if (need not in config["profiles"][valid["profile"]]["motives"]
+            or not isinstance(action, str) or not NOVEL_ACTION.fullmatch(action)
+            or action in {row["id"] for row in config["motives"][need]}):
+        raise OccultNeedsError("CANDIDATE_NOT_NOVEL_OR_IN_PROFILE")
+    before, after = _level(event["before"]), _level(event["after"])
+    if event["outcome"] not in ("helpful", "harmful"):
+        raise OccultNeedsError("INVALID_REVIEWED_OUTCOME")
+    if event["outcome"] == "helpful" and after - before < 0.02:
+        raise OccultNeedsError("HELPFUL_OUTCOME_NOT_MEASURED")
+    return {**valid, "candidate_events": [
+        *valid.get("candidate_events", []),
+        {"observation_ref": ref, "need": need, "action": action,
+         "outcome": event["outcome"]}
     ]}
 
 
@@ -258,6 +322,19 @@ def recommend(
             # Bayesian smoothed point estimate is ONLY a within-need tie-breaker.
             posterior = (helped + 1) / (n + 2) if learned else 0.5
             candidates.append((-int(learned), -posterior, order, action, helped, harmed))
+        if approved is not None:
+            novel = approved.get("candidate_events", [])
+            for order, action in enumerate(sorted({
+                row["action"] for row in novel if row["need"] == need
+            }), start=len(config["motives"][need])):
+                if action not in observed:
+                    continue
+                helped, harmed = _score(novel, need, action)
+                n = helped + harmed
+                if n < 3 or helped < 3 or helped / n < 0.75:
+                    continue  # Candidate is only promoted by repeated reviewed outcomes.
+                posterior = (helped + 1) / (n + 2)
+                candidates.append((-1, -posterior, order, action, helped, harmed))
         if candidates:
             _, _, _, chosen, helped, harmed = min(candidates)
             return {"state": "ADVISORY", "profile": profile, "need": need,
