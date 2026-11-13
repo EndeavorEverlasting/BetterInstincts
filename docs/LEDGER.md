@@ -1810,3 +1810,20 @@ behavior change; native route POLICY_ONLY. Guide: docs/OCCULT_NEEDS.md.
 **Proof ceiling:** provider source/CI only until exact Windows local Sims
 observations and native follow-on. MoonWake P08 real-game certification not
 observed; local `prompt_group_walk.py` process not invoked in this provider.
+
+## 2026-11-12 — Second occult-needs iteration: durable on-device learner
+
+After the typed catalog and offline policy landed on main via PR #205, the
+remaining parent gap was that reviewed learning ranked only canonical actions
+and lived in memory. This bounded successor introduces replay-safe
+`learn_candidate` for novel actually observed menu actions: explicit review,
+opt-in, before/after measured motive changes, exact patch, profile and
+current-availability gates, and 3+ independently reviewed helpful outcomes
+at >=75% helpful ratio for promotion. It also adds explicit user-selected,
+approved local JSON model save/load with deterministic profile filenames,
+SHA-256 compare-and-replace, symlink/cap guards, locking and readback. No
+automatic profile scan/creation, no gameplay input and no privileged I/O.
+Changed code is independently classified POLICY_ONLY / NON_GAMEPLAY;
+consultation predates mutation. Source guide: `docs/OCCULT_NEEDS.md`.
+**Proof ceiling:** offline CI and local file fixtures only, not actual EA
+motive/effect calibration. BI-002 hunger game gate stays ACTIVE.
