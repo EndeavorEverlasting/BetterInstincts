@@ -1,0 +1,110 @@
+{
+  "schema": "betterinstincts.nanocan-recycling-policy/v1",
+  "owner": "betterinstincts/nanocan_recycling.py",
+  "native_policy_owner": "betterinstincts/autonomy_moderation.py#evaluate_native_household_autonomy",
+  "native_route": "EA_TUNING_FIRST_THEN_SOURCE_PROVEN_EA_SCRIPT",
+  "native_adapter_status": "NOT_INSTALLED_NO_VERIFIED_EA_API",
+  "trigger": "explicit native household/dirty-dish observation, never a desktop/global poll",
+  "input_schema": "betterinstincts.nanocan-recycling/v1",
+  "output_schema": "betterinstincts.nanocan-recycling-result/v1",
+  "outcome_schema": "betterinstincts.nanocan-outcome/v1",
+  "objects": {
+    "dish": {
+      "state": "DIRTY_EMPTY",
+      "single_item_only": true,
+      "owner_scope": "CURRENT_HOME_HOUSEHOLD",
+      "do_not_dispose": [
+        "EDIBLE_FOOD",
+        "LEFTOVERS",
+        "PLAYER_RESERVED",
+        "UNKNOWN",
+        "FULL_STACK"
+      ]
+    },
+    "can": {
+      "kind": "NANOCAN_TOUCHLESS",
+      "require_current_lot": true,
+      "require_cooldown_ready": true,
+      "no_auto_purchase": true,
+      "no_move_or_replace": true
+    }
+  },
+  "routes": {
+    "NATIVE_DRAG_EQUIVALENT": {
+      "priority": 0,
+      "purpose": "Cursor-free EA-native operation proven to reproduce actual player-drag disposal reward.",
+      "requirements": [
+        "exact_native_source_ref",
+        "exact_installed_build",
+        "reward_equivalence_verified",
+        "reward_proof_ref",
+        "native_affordance_ref",
+        "exact_actorless_dish_and_can",
+        "fresh_source_state",
+        "player_not_active"
+      ],
+      "model": "COMMUNITY_REPORTED_UP_TO_10_SIMOLEONS_PER_HOUSEHOLD_MEMBER_PER_ITEM_UNCERTIFIED",
+      "payout_assumption": "Never assert as actual earnings until independent in-game before/after evidence.",
+      "current_status": "NO_VERIFIED_NATIVE_IMPLEMENTATION"
+    },
+    "NATIVE_SIM_DISPOSE": {
+      "priority": 1,
+      "purpose": "Ordinary native Sim trash disposal, not assumed to reproduce player-drag payout.",
+      "requirements": [
+        "exact_native_source_ref",
+        "exact_installed_build",
+        "native_affordance_ref",
+        "exact_actor_and_object",
+        "player_first_and_queue_verified"
+      ],
+      "model": "COMMUNITY_REPORTED_10_SIMOLEONS_PER_TRASH_EVENT_UNCERTIFIED",
+      "current_status": "NO_VERIFIED_NATIVE_IMPLEMENTATION"
+    }
+  },
+  "choice_policy": "Prefer confirmed drag-equivalent mechanic; use ordinary native Sim disposal as explicit lower-payout fallback only when observed and enabled; never inject simoleons or modify savings directly.",
+  "player_control": {
+    "global_player_presence_must_be_explicit_false": true,
+    "household_and_live_home_lot_verified": true,
+    "no_cancel_player_or_unknown_queue": true,
+    "never_discard_edible_or_reserved_dish": true,
+    "no_screen_input": true,
+    "no_os_hook": true,
+    "no_sink_suppression_without_ready_native_can_route": true,
+    "one_proposal_per_native_observation": true,
+    "needs_or_obligations_outprioritize_cleaning": true,
+    "never_claim_execution_from_proposal": true
+  },
+  "bounds": {
+    "max_dishes": 32,
+    "max_cans": 8,
+    "max_native_routes": 64,
+    "max_age_seconds": 180,
+    "max_actions_per_observation": 1
+  },
+  "attempts": [
+    "NONE",
+    "QUEUED",
+    "DISPATCHED",
+    "CONFIRMED"
+  ],
+  "route_proof": "Exact patch native interaction ID and reward mechanics must be independently inspected, not inferred from a community guide or user screenshot.",
+  "outcome": "Only independent attributed before/after household-funds evidence plus actual dish removal verifies earnings; after DISPATCHED, hold until reconciled; no retries on stale snapshots.",
+  "sources": [
+    "https://ultimatesimsguides.com/nanocan-touchless-trash-can/",
+    "https://forums.ea.com/discussions/the-sims-4-general-discussion-en/apartment-keys/1399098",
+    "https://modthesims.info/d/645491/nanocan-drag-and-drop-fix.html",
+    "https://modthesims.info/d/667082/off-grid-nanocan-trash-can.html"
+  ],
+  "p08_checks": [
+    "pin_exact_installed_game_build",
+    "inspect_read_only_EA_NanoCan_and_dish_disposal_tuning",
+    "compare_player_drag_and_Sim_disposal_funds_with_two_dishes",
+    "prove_native_cursor_free_reward_equivalence_or_record_unavailable",
+    "prove_sink_native_autonomy_candidate_only_when_NanoCan_ready",
+    "prove_player_manual_wash_remains_allowed",
+    "probe_cooldown_and_stacks",
+    "rollback_disposable_save_native_package",
+    "retain_BI002_hunger_gate"
+  ],
+  "proof_ceiling": "OFFLINE_CURSOR_FREE_NANOCAN_POLICY_NOT_INSTALLED_EA_HOOK_OR_MONEY"
+}

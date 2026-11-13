@@ -143,3 +143,17 @@ Exact policy: `contracts/household-upkeep.v1.json`; code:
 local EA tuning/native gameplay proof and disposable household evidence
 remain separate. BI-002 hunger remains ACTIVE and is not replaced by
 Servo cooperation.
+
+## 2026-11-13 — NanoCan household dish-to-income instinct
+
+Extend existing `autonomy_moderation.evaluate_native_household_autonomy`
+with a bounded opt-in read-only `nanocan_recycling` event for all
+household Sims. Distinguish manual player-drag and ordinary Sim
+trash-disposal payout, prefer source-verified cursor-free drag-equivalent
+native candidate, fall back only to verified ordinary Sim disposal;
+suppress autonomous sink-wash only with matched queue provenance and a
+ready NanoCan route. No unverified EA API, desktop cursor ownership, or
+fabricated Simoleons. `docs/NANOCAN_RECYCLING.md` and
+`contracts/nanocan-recycling.v1.json` own details. Actual gameplay
+needs exact-build read-only EA tuning inspection and P08 disposable
+comparison. BI-002 remains ACTIVE.

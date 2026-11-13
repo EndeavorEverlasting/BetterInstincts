@@ -1855,3 +1855,26 @@ route remains POLICY_ONLY. See `docs/HOUSEHOLD_UPKEEP.md`.
 **Proof ceiling:** offline repository CI; no game-side effect,
 disposable save tests, EA source IDs or Sims 4 runtime certification.
 BI-002 remains the active native hunger gate.
+
+## 2026-11-13 — Cursor-free NanoCan dish recycling
+
+**Operator objective:** Have household Sims (including suitable occult
+and Servo household members) convert dirty empty dishes into NanoCan
+money without a desktop mouse/cursor, rather than wash them at a sink.
+Critical prior-art finding: player drag/drop into NanoCan has a reported
+§10-per-household-member reward, while ordinary Sim garbage disposal is
+often only §10 total. Treat them as different native effect classes,
+not interchangeable and never fabricate game currency.
+
+**Implemented policy seam:** `betterinstincts/nanocan_recycling.py`
+read-only one-dish/one-can proposal with exact installed build/source,
+full fresh item and can proof, cooldown, queue, player, and lot safety.
+Attach it optionally under `betterinstincts/autonomy_moderation.py`
+native household evaluator. Report planning payout only as
+community-reported/uncertified; `reconcile_nanocan_outcome` requires
+actual attributed before/after funds + dish removal and does not
+mutate money. Consultation-before-mutation in
+`BI-NANOCAN-CURSOR-FREE-DISH-RECYCLING-20261113`; native review
+POLICY_ONLY. **Actual native Sims mod and P08 gameplay remain unproved.**
+The established BI-002 hunger parent remains active. Design + operator
+harness entry: `docs/NANOCAN_RECYCLING.md`.

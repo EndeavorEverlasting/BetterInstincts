@@ -246,3 +246,16 @@ grant game-effect authority.
 Current result: policy and offline regression coverage only.
 No installed mod, in-game hook, EA file mutation or real cancellation is
 asserted. See \`contracts/autonomy-moderation.v1.json#native_household_policy\`.
+
+## 2026-11-13 — Native household NanoCan dish-recycling port
+
+The optional `nanocan_recycling` observation attaches to the **existing**
+`evaluate_native_household_autonomy` call without changing its established
+per-Sim decisions. The pure module and canonical contract are
+`betterinstincts/nanocan_recycling.py` and
+`contracts/nanocan-recycling.v1.json`. It protects all household Sims'
+manual queues and does not use desktop drag, OS input, or a new loop.
+The high-payout player-drag reward differs from ordinary Sim disposal
+in community reports; the exact EA build and equivalent native callback are
+**not** verified. See `docs/NANOCAN_RECYCLING.md` for source gates and
+disposable-game payout certification. This is policy-only, not a shipped mod.
