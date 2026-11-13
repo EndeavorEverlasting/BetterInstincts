@@ -489,3 +489,22 @@ CI and PR promotion when checks pass; P124 owns structural integration
 and the exact parent state after merge. **Slash-host walker not invoked**:
 GitHub remote tools are not the local MoonWake runtime. No native game
 effect is certified. Source: `docs/NANOCAN_RECYCLING.md`.
+
+
+## 2026-11-12 — /the-closers on merged computer upgrade-parts PR #210
+
+MoonWake current manifest and prompt catalog resolve the mandatory ordered
+composition **P83 → P03 → P141 → P124 → P04**. Source verification:
+BetterInstincts PR #210 merged at
+`e8792d41c1ebe95e81b01f746d71693828a8b924`, full offline CI run
+`43343011762` passed, and later main advanced to `c50349ee` without
+removing the computer batch module. P83 detected absent pre-arrow pocket
+baseline and under-validated mutable queue decisions. P03 repaired these
+as a bounded policy-only sprint with a consultation pre-commit. P141
+selected one existing owner over a competing click engine/untested native
+hook. P124 kept the familiar planner/CooperativeScreenQueue and no new
+harness. P04 retained issue #213 for actual game-native purchase, calibrated
+five-row/modal evidence, per-Sim inventory/simoleons and removal proof.
+No local MoonWake prompt_group_walk or external agent dispatch was run from
+the GitHub provider. Offline validation/merge are independent of Live Mode
+certification; the latter remains NOT_RUN.
