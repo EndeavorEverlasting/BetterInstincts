@@ -481,3 +481,39 @@ def verify_computer_batch_purchase(
         "spend_observed": expected_total_cost,
         "action": None, "execute_allowed": False, "proof_ceiling": PROOF,
     }
+
+
+def enqueue_computer_batch_step(
+    queue: CooperativeScreenQueue, *, work_id: str,
+    decision: Mapping[str, Any],
+    validate_fresh_scene: Callable[[], Awaitable[bool]],
+    validate_fresh_picker: Callable[[dict[str, Any]], Awaitable[bool]],
+    perform_game_ui_effect: Callable[[dict[str, Any]], Awaitable[Any]],
+) -> None:
+    """Queue one arrow/Buy only after rechecking the exact observed picker.
+
+    The trusted adapter's fresh-picker validator must reobserve the same
+    active Sim, five row IDs, chosen row/button hitbox, selected count,
+    funds, total cost, and revision. A Boolean from stale cache is not proof.
+    """
+    action = decision.get("action")
+    if (decision.get("state") != "READY_TO_QUEUE"
+            or not isinstance(action, dict)
+            or action.get("kind") not in {
+                "INCREMENT_OBSERVED_PART_ROW", "CONFIRM_OBSERVED_PURCHASE"
+            }
+            or not isinstance(action.get("picker_revision"), str)
+            or not action["picker_revision"]
+            or not callable(validate_fresh_picker)):
+        raise UpgradePartsForceError("FRESH_BATCH_PICKER_ACTION_REQUIRED")
+
+    async def validate_both() -> bool:
+        if not await validate_fresh_scene():
+            return False
+        return await validate_fresh_picker(dict(action))
+
+    enqueue_computer_menu_step(
+        queue, work_id=work_id, decision=decision,
+        validate_fresh_scene=validate_both,
+        perform_game_ui_effect=perform_game_ui_effect,
+    )
