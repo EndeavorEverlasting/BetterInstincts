@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-CAS-FIRST-SESSION-P141-FIFTH-GEAR-20261112",
+  "purpose": "P141/Fifth Gear first-session skill prioritization and CAS handoff are advisory-only, not native gameplay, character edits or input effects.",
+  "files": [
+    {
+      "path": "betterinstincts/first_run.py",
+      "route": "HOST_LAB_ONLY",
+      "reason": "Bounded pure first-run skill recommendations share existing Windows launch owner; no EA API, sim/autonomy input, tuning or save writes.",
+      "game_effect_claim": "NONE",
+      "autonomy_runtime": false
+    }
+  ],
+  "host_adapter": "scripts/first_run.py (non-product host CLI; reviewed via CI and ontology consultation, outside product-module classifier)",
+  "runtime_admission": "Explicit double-click or clicked game launch only; CAS and player-directed actions remain player-owned",
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_HOST_PLANNING_ONLY_NOT_WINDOWS_GAMEPLAY_OR_CAS_CERTIFICATION",
+  "next_gate": "Local Windows P08 verify first-run path, visible CAS guidance, player-selected new game, any future game-native effects under independently permitted patch-specific testing"
+}

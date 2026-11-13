@@ -26,6 +26,20 @@ From the repository checkout:
 
 Existing bootstrap.py owns install, doctor, uninstall and the added Play The Sims 4 GUI handoff. betterinstincts/first_run.py owns read-only discovery and explicit launch policy. scripts/first_run.py owns both the chooser and the explicit auto CLI; scripts/smart_start.py owns read-only Windows process inventory, single-install/single-process admission and process dispatch evidence. contracts/launch-journey.v1.json records the state contract. scripts/game_host.py remains the calibrated local game-host owner requiring actual scene captures, screen permission and save safety, not silently invoked by this launcher.
 
+## Skill-aware first-session plan (new Sims)
+
+The existing GUI and CLI now produce deterministic, goal-aware skill priorities and an ordered first-session plan, in addition to the existing aspiration/trait suggestions. This is a player-owned, advisory-only route, not automatic Create-a-Sim editing or a way to grant skill levels during CAS.
+
+The planner begins with player CAS decisions, evaluates all six needs, prioritizes urgent survival over optional training, checks funds before equipment costs when income is pressured, and reassesses career demands, needs, free time and leisure. Players can select a preferred starting skill, which outranks generic goal weights. Suggestions use base-game, adult-oriented examples; age, packs, budget and actual outcomes must be verified in-game.
+
+CLI examples:
+- python -m scripts.first_run plan --mode new --goal balanced
+- python -m scripts.first_run plan --mode new --goal creative --preferred-skill painting --income-pressure
+- python -m scripts.first_run plan --mode new --goal career --critical-needs
+
+The first-run GUI offers preferred skill and early-earnings choices, then displays the top three skills and first-session gates. No save reads, OS input changes, clicks, automatic job enrollment, skill cheats, telemetry or game modifications occur. The automatic launcher still dispatches the game only; CAS and menus remain player-owned. Exact-patch local Windows/CAS certification and any future effect controller remain open under issue #201 and the existing BI-002 game gate.
+
+
 ## Moonwake Fifth Gear acceptance
 
 P95: download -> clone/fast-forward -> install -> discover -> player mode choice -> game launch -> game-owned save or CAS handoff.

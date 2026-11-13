@@ -14,14 +14,16 @@
     "GAMEPLAY_PROOF_PENDING",
     "AUTOMATIC_LAUNCH_ADMITTED_OR_GAME_SELECTION_REQUIRED",
     "PID_OBSERVED_BY_READ_ONLY_PROCESS_INVENTORY",
-    "MENU_STATE_NOT_OBSERVED_NO_AUTOMATED_SAVE"
+    "MENU_STATE_NOT_OBSERVED_NO_AUTOMATED_SAVE",
+    "PLAYER_FIRST_SESSION_SKILL_ADVISORY"
   ],
   "entrypoints": {
     "windows": "Start-BetterInstincts.cmd",
     "installer": "bootstrap.py",
     "ui": "python -m scripts.first_run gui",
     "offline": "python -m scripts.first_run plan --mode new",
-    "unattended_windows": "python -m scripts.first_run auto --fallback-gui"
+    "unattended_windows": "python -m scripts.first_run auto --fallback-gui",
+    "offline_contextual": "python -m scripts.first_run plan --mode new --goal creative --preferred-skill painting --income-pressure"
   },
   "invariants": {
     "canonical_checkout": "%USERPROFILE%/dev/BetterInstincts",
@@ -30,19 +32,22 @@
     "sims_executable": "Game/Bin/TS4_x64.exe or TS4.exe in known locations or explicitly selected path",
     "game_launch": "deliberate double-click/explicit CLI auto invocation or manual chooser click; no background auto launch; subprocess without shell",
     "save_selection": "player-only until separately verified authorized save identity + calibrated local scene/action gating; never blind Resume or auto-select unknown saves",
-    "cas": "player-only; suggestions not effects",
+    "cas": "Player creates the Sim; aspiration/traits are suggestions; base-game skill priorities are ranked advisory gameplay steps, never CAS-granted levels, automatic menu actions, or identity edits",
     "protected_data": "never read/write user saves or edit Sims game files",
     "host_proof": "process dispatch is not game load or Live Mode evidence",
     "active_process": "read-only bounded tasklist PID observation; if Sims already running, never launch a second copy; dispatch PID is not necessarily the actual game PID",
     "menu_learning": "NOT_OBSERVED unless future host captures independently certify scene/menu cues; no speculative detection or automatic menu clicks",
     "single_install_detection": "Two recognized executables (TS4_x64.exe and TS4.exe) sharing one validated Game/Bin path are a single installation; prefer x64. Separate validated Game/Bin roots stay ambiguous.",
-    "process_inventory_validity": "Every Windows tasklist /FO CSV /NH row must have five columns and numeric PID; malformed/truncated inventories deny launch; independent pre-dispatch snapshots require validated identities, and untrusted post-dispatch data withholds game PID proof."
+    "process_inventory_validity": "Every Windows tasklist /FO CSV /NH row must have five columns and numeric PID; malformed/truncated inventories deny launch; independent pre-dispatch snapshots require validated identities, and untrusted post-dispatch data withholds game PID proof.",
+    "first_session": "Goal/context/planned skill focus is player-supplied; six observed needs outrank optional practice, income/funds constrain paid equipment, player preferences outrank goal defaults; no claim to have observed outcomes"
   },
   "limitations": [
     "Read-only bounded default install discovery may require manual path selection",
     "Existing game-host image-template navigator is independent and requires separately observed calibrated screenshots and strict screen lease",
     "Gameplay and saved-session observations require an authorized Windows P08 run",
     "Unique-install Windows auto-launch is not automatic loading of the latest protected user save; save identity and scene-safe navigation require dedicated local proof",
-    "Read-only Windows tasklist basenames do not independently attest the full executable path; same-time competing double-click windows still require local concurrency certification."
+    "Read-only Windows tasklist basenames do not independently attest the full executable path; same-time competing double-click windows still require local concurrency certification.",
+    "First-session skill priorities are unmeasured relative heuristics (base-game, adult-oriented examples), not a certified optimal build or a machine-learning model; re-evaluate against player age, packs, actual needs and preferences",
+    "No autonomous CAS, skill-level granting, job enrollment or first-day queue manipulation is released without exact game-build local proof and player-first admission"
   ]
 }
