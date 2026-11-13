@@ -137,7 +137,8 @@ class UpkeepMicrosystemTests(unittest.TestCase):
             actors=[self_helper],
             observed_actions=[action("TUNE_UP_SERVO","servo:a","servo:a")]))
         self.assertIn(out["gate"],
-                      {"UPKEEP_HELPER_SKILL_GAP","UPKEEP_NO_SAFE_ACTOR_OR_AFFORDANCE"})
+                      {"UPKEEP_HELPER_SKILL_GAP","UPKEEP_NO_SAFE_ACTOR_OR_AFFORDANCE",
+                       "UPKEEP_HELPER_NEEDS_UNVERIFIED_OR_LOW"})
         self.assertFalse(out["next_actions"])
 
     def test_peer_social_is_allowed_only_if_observed_and_bills_remain_human_only(self):
@@ -350,9 +351,12 @@ class CooperativeRobotCareTests(unittest.TestCase):
         self.assertEqual(out["next_actions"][0]["helper_qualification"],"FIX_O_MATIC")
         broken=actor("servo:fixer","SERVO",
                      modules={"fix_o_matic":{"enabled":True,"verified":False}})
-        with self.assertRaisesRegex(HouseholdUpkeepError,"MODULE_PROOF"):
-            evaluate(obs(servos=[servo("servo:fixer")],actors=[broken],
-                         utilibots=[utilibot(broken=True,durability=0)]))
+        denied=evaluate(obs(servos=[servo("servo:fixer")],actors=[broken],
+                            utilibots=[utilibot(broken=True,durability=0)],
+                            observed_actions=[
+                                action("REPAIR_UTILIBOT","servo:fixer","bot:gardener")]))
+        self.assertEqual(denied["gate"], "UPKEEP_HELPER_SKILL_GAP")
+        self.assertFalse(denied["next_actions"])
 
     def test_servo_helper_reserve_must_be_verified_before_cooperation(self):
         helper=actor("servo:helper","SERVO",skills={"robotics":{"level":10,"verified":True}})
