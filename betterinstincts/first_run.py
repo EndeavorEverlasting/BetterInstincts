@@ -38,6 +38,142 @@ GOALS = {
 }
 MODES = ("existing", "new")
 
+# Base-game skill examples, not grants, CAS controls, or calibrated EA mechanics.
+# Each fit is a relative planning heuristic, NOT a measured skill/profit rate.
+SKILL_ROUTES = {
+    "cooking": {
+        "fit": (4, 1, 0, 0, 0, 2),
+        "action": "Prepare an affordable meal when hunger and the kitchen allow.",
+        "why": "Supports regular food preparation and household self-care.",
+    },
+    "gardening": {
+        "fit": (2, 3, 0, 1, 0, 3),
+        "action": "Inspect an affordable planting opportunity, then tend plants when needs permit.",
+        "why": "May support household supplies, selling and outdoor leisure.",
+    },
+    "handiness": {
+        "fit": (2, 2, 1, 1, 0, 1),
+        "action": "Practice safe repairs only when a suitable broken object exists.",
+        "why": "Supports home maintenance; unsafe repair targets are not a training shortcut.",
+    },
+    "painting": {
+        "fit": (0, 3, 0, 4, 0, 3),
+        "action": "Check the household budget before starting a painting.",
+        "why": "Connects creative play with potential sales, subject to costs.",
+    },
+    "writing": {
+        "fit": (0, 2, 1, 4, 0, 2),
+        "action": "Use an available computer to practice writing when needs are stable.",
+        "why": "Provides creative progression and possible longer-term earnings.",
+    },
+    "charisma": {
+        "fit": (0, 1, 3, 0, 4, 2),
+        "action": "Practice a friendly interaction or use a mirror where available.",
+        "why": "Supports relationship building and some career paths.",
+    },
+    "logic": {
+        "fit": (0, 0, 4, 1, 1, 2),
+        "action": "Practice with an available chess table or other verified logic activity.",
+        "why": "Supports analytical aspirations and some careers.",
+    },
+}
+
+# Dimensions: needs, income, career, creativity, social, leisure.
+GOAL_SKILL_WEIGHTS = {
+    "balanced": (4, 3, 2, 1, 1, 2),
+    "career": (2, 2, 6, 0, 2, 1),
+    "creative": (2, 2, 1, 6, 1, 3),
+    "social": (2, 1, 2, 1, 6, 2),
+}
+
+
+def recommend_first_session(
+    goal: str = "balanced", *,
+    critical_needs: bool = False,
+    income_pressure: bool = False,
+    preferred_skill: str | None = None,
+) -> dict[str, object]:
+    """Pure, bounded first-session advisory; never controls the game or profile.
+
+    Skills are earned in gameplay, not assigned during Create-a-Sim.
+    All inputs are explicit player context, never inferred from save files.
+    """
+    if goal not in GOALS:
+        raise FirstRunError("UNKNOWN_CAS_GOAL")
+    if type(critical_needs) is not bool or type(income_pressure) is not bool:
+        raise FirstRunError("INVALID_FIRST_SESSION_CONTEXT")
+    if preferred_skill is not None:
+        if not isinstance(preferred_skill, str):
+            raise FirstRunError("UNKNOWN_PREFERRED_SKILL")
+        preferred_skill = preferred_skill.strip().lower()
+        if preferred_skill not in SKILL_ROUTES:
+            raise FirstRunError("UNKNOWN_PREFERRED_SKILL")
+
+    weights = list(GOAL_SKILL_WEIGHTS[goal])
+    if income_pressure:
+        weights[1] += 3
+    scores = {
+        skill: sum(a * b for a, b in zip(route["fit"], weights))
+        + (30 if skill == preferred_skill else 0)
+        for skill, route in SKILL_ROUTES.items()
+    }
+    ranked = sorted(scores, key=lambda skill: (-scores[skill], skill))
+    focus = [
+        {"skill": name, "why": SKILL_ROUTES[name]["why"],
+         "starting_action": SKILL_ROUTES[name]["action"]}
+        for name in ranked[:3]
+    ]
+    decisions = [
+        {
+            "gate": "PLAYER_CAS_CHOICE",
+            "action": "In New Game, choose your Sim's identity, available aspiration and traits; no skill levels are assigned in CAS.",
+        },
+        {
+            "gate": "ALL_SIX_NEEDS_CHECK",
+            "action": "Observe hunger, bladder, energy, hygiene, fun and social before planning optional progression.",
+        },
+    ]
+    if critical_needs:
+        decisions.append({
+            "gate": "CRITICAL_NEEDS_FIRST",
+            "action": "Satisfy urgent survival needs before skill training, career optimization or earning.",
+        })
+    if income_pressure:
+        decisions.append({
+            "gate": "FUNDS_BEFORE_PURCHASE",
+            "action": "Inspect funds, bills and available work; prefer an affordable earning path before buying skill equipment.",
+        })
+    decisions.append({
+        "gate": "PLAYER_CHOSEN_SKILL",
+        "action": (
+            "Defer skill practice until urgent needs have been resolved and observed."
+            if critical_needs else
+            "When needs and budget allow, consider: " + focus[0]["starting_action"]
+        ),
+    })
+    decisions.append({
+        "gate": "REASSESS_AND_ALLOW_LEISURE",
+        "action": "After each observed outcome, reassess needs, time, funds, career obligations and the player's choices; preserve rest and leisure.",
+    })
+    return {
+        "state": "CAS_AND_FIRST_SESSION_ADVISORY_ONLY",
+        "goal": goal,
+        "context": {
+            "critical_needs": critical_needs,
+            "income_pressure": income_pressure,
+            "preferred_skill": preferred_skill,
+        },
+        "ranked_skill_focus": focus,
+        "first_session_decisions": decisions,
+        "training_deferred": critical_needs,
+        "cas_changes_applied": False,
+        "skill_levels_granted": False,
+        "automatic_input": False,
+        "gameplay_proved": False,
+        "proof_ceiling": "UNMEASURED_BASE_GAME_HEURISTIC_NOT_LIVE_CERTIFIED",
+    }
+
+
 
 class FirstRunError(ValueError):
     """An unattended action cannot meet the provenance or consent gate."""
@@ -118,7 +254,12 @@ def select_game(installs: list[Path], selected: str | Path | None = None) -> Pat
     return validate_game_exe(installs[0])
 
 
-def plan_journey(mode: str, goal: str = "balanced") -> dict[str, object]:
+def plan_journey(
+    mode: str, goal: str = "balanced", *,
+    critical_needs: bool = False,
+    income_pressure: bool = False,
+    preferred_skill: str | None = None,
+) -> dict[str, object]:
     if mode not in MODES:
         raise FirstRunError("CHOOSE_EXISTING_OR_NEW")
     if goal not in GOALS:
@@ -132,11 +273,16 @@ def plan_journey(mode: str, goal: str = "balanced") -> dict[str, object]:
             "automatic_input": False,
             "gameplay_proved": False,
         }
+    route = recommend_first_session(
+        goal, critical_needs=critical_needs,
+        income_pressure=income_pressure, preferred_skill=preferred_skill,
+    )
     return {
         "state": "PLAYER_CREATE_A_SIM_REQUIRED",
         "mode": mode,
         "next_step": "In The Sims 4 choose New Game; create/place your Sim before Live Mode.",
         "cas_advice": {"goal": goal, **GOALS[goal]},
+        "first_session": route,
         "cas_changes_applied": False,
         "automatic_input": False,
         "gameplay_proved": False,
