@@ -114,7 +114,7 @@ def recommend_first_session(
         weights[1] += 3
     scores = {
         skill: sum(a * b for a, b in zip(route["fit"], weights))
-        + (15 if skill == preferred_skill else 0)
+        + (30 if skill == preferred_skill else 0)
         for skill, route in SKILL_ROUTES.items()
     }
     ranked = sorted(scores, key=lambda skill: (-scores[skill], skill))
