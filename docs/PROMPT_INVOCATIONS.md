@@ -436,3 +436,15 @@ certification is not available through the GitHub provider and stays
 P124 retains existing lane and native-gameplay owners instead of forking a
 host click engine. Run of the actual local `prompt_group_walk.py` on a host
 and five independent AI processes is not asserted. See `docs/OCCULT_NEEDS.md`.
+
+## 2026-11-12 — MoonWake Fifth Gear iteration on local needs memory
+
+After PR #205, the objective audit identified two missing acceptance edges:
+retaining local reviewed outcomes across sessions and admitting learned novel
+actions into the candidate set. Follow-on P95/P82 iterative call-stack work
+uses exact motive/action schema and repeatable negative fixtures; P08 still
+needs local Windows Sims exact-build outcome trials. P07 ships bounded
+consultation-first code with native route review; P124 preserves one policy
+owner and explicit storage-only adapter. Source-only/offline tests and GitHub
+merge do not imply MoonWake's local CLI walker or independent agents were
+actually run. See `docs/OCCULT_NEEDS.md`.
