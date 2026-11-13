@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-LOCAL-SEMANTIC-VAE-CLOSERS-20261113",
+  "purpose": "MoonWake /the-closers P83/P03 profile-isolation repair of offline learner. Preserve EA native-first, player inputs, saves, camera and all proof ceilings.",
+  "files": [
+    {
+      "path": "betterinstincts/semantic_vae.py",
+      "route": "POLICY_ONLY",
+      "reason": "Namespaced local training checkpoint and scoped purge on explicit profile ID; pure offline representation learning and no game input or EA hook",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_PROFILE_SCOPED_MODEL_POLICY_ONLY",
+  "next_gate": "Real local Sims exact patch, independently attested semantic observations and measured holdout/calibration before any native EA game-effect integration"
+}

@@ -278,20 +278,35 @@ def advise(snapshot: Mapping, model: Mapping, patch: Mapping, *,
     return result
 
 
-def _local_path(snapshot: Mapping) -> Path:
+def _local_path(snapshot: Mapping, *, profile_id: str = "default") -> Path:
+    """Canonical local checkpoint; preserve v1 default path without migration.
+
+    Named installation profiles share neither training samples nor purge paths,
+    even when viewing exactly the same Sims world/game scope.
+    """
     from bootstrap import paths
+    from betterinstincts.installation_profiles import PROFILE_ID
+    if not isinstance(profile_id, str) or not PROFILE_ID.fullmatch(profile_id):
+        raise SemanticVAEError("INSTALLATION_PROFILE_ID_INVALID")
     base = paths()["use"].parent
     root = base / "runtime" / "semantic-vae"
     for directory in (base, root.parent, root):
         if directory.is_symlink():
             raise SemanticVAEError("LOCAL_STORAGE_SYMLINK_DENIED")
-    return root / (context_hash(snapshot) + ".json")
+    world_key = context_hash(snapshot)
+    if profile_id == "default":
+        checkpoint_key = world_key  # Existing local v1 users keep their data.
+    else:
+        checkpoint_key = hashlib.sha256(
+            ("semantic-vae-profile/v1:" + profile_id + ":" + world_key).encode()
+        ).hexdigest()
+    return root / (checkpoint_key + ".json")
 
 
-def load_local_model(snapshot: Mapping) -> dict:
+def load_local_model(snapshot: Mapping, *, profile_id: str = "default") -> dict:
     try:
         _context(snapshot)
-        path = _local_path(snapshot)
+        path = _local_path(snapshot, profile_id=profile_id)
         if path.is_symlink():
             raise SemanticVAEError("LOCAL_MODEL_SYMLINK_DENIED")
         if not path.exists():
@@ -305,13 +320,14 @@ def load_local_model(snapshot: Mapping) -> dict:
 
 
 def record_local_sample(snapshot: Mapping, event: Mapping, patch: Mapping, *,
-                        explicit_opt_in: bool = False) -> dict:
+                        explicit_opt_in: bool = False,
+                        profile_id: str = "default") -> dict:
     """One explicitly admitted write; local user-owned model and corpus only."""
     if explicit_opt_in is not True:
         raise SemanticVAEError("EXPLICIT_OPT_IN_REQUIRED")
     try:
         _sample(snapshot, event, patch)  # Validate before even creating a directory.
-        path = _local_path(snapshot)
+        path = _local_path(snapshot, profile_id=profile_id)
     except (SpatialConvolutionError, KeyError, TypeError, ValueError) as exc:
         raise SemanticVAEError("SOURCE_UNVERIFIED") from exc
     root = path.parent
@@ -331,7 +347,7 @@ def record_local_sample(snapshot: Mapping, event: Mapping, patch: Mapping, *,
     temporary = None
     try:
         os.close(fd)
-        old = load_local_model(snapshot)
+        old = load_local_model(snapshot, profile_id=profile_id)
         updated, state = learn(snapshot, event, patch, prior=old, explicit_opt_in=True)
         if state == "REPLAY_OR_BLOOM_COLLISION_IGNORED":
             return {"status": state, "trained": old["trained"],
@@ -359,13 +375,14 @@ def record_local_sample(snapshot: Mapping, event: Mapping, patch: Mapping, *,
         lock.unlink(missing_ok=True)
 
 
-def purge_local_model(snapshot: Mapping, *, explicit_confirm: bool = False) -> dict:
+def purge_local_model(snapshot: Mapping, *, explicit_confirm: bool = False,
+                      profile_id: str = "default") -> dict:
     """Erase exactly one scoped local model/corpus; never touch saves or other profiles."""
     if explicit_confirm is not True:
         raise SemanticVAEError("EXPLICIT_DELETE_CONFIRM_REQUIRED")
     try:
         _context(snapshot)
-        path = _local_path(snapshot)
+        path = _local_path(snapshot, profile_id=profile_id)
         if path.is_symlink():
             raise SemanticVAEError("LOCAL_MODEL_SYMLINK_DENIED")
         if not path.exists():
@@ -399,13 +416,16 @@ def record_if_enabled(snapshot: Mapping, event: Mapping, patch: Mapping, *,
         InstallationProfileError, view,
     )
     try:
-        enabled = view(profile_id=profile_id)["settings"]["learning.semantic_vae"]
+        selected = view(profile_id=profile_id)
+        enabled = selected["settings"]["learning.semantic_vae"]
+        selected_profile = selected["profile_id"]
     except (InstallationProfileError, KeyError, TypeError) as exc:
         raise SemanticVAEError("LOCAL_CONSENT_PROFILE_UNVERIFIED") from exc
     if enabled is not True:
         return {"status": "LOCAL_TRAINING_DISABLED", "execute_allowed": False,
                 "proof_ceiling": PROOF}
-    return record_local_sample(snapshot, event, patch, explicit_opt_in=True)
+    return record_local_sample(snapshot, event, patch, explicit_opt_in=True,
+                               profile_id=selected_profile)
 
 
 __all__ = ["SemanticVAEError", "SCHEMA", "PROOF", "empty_model", "learn",
