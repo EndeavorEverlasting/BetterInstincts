@@ -1,3 +1,7 @@
+## 2026-11-12 — Spatial convolution research-to-runtime gate
+
+Optional trainable 3×3 convolution on evidence-backed 5×5 room/route patches has a bounded offline implementation and non-actuating navigation advisory. Before claiming learning in deployed Sims: acquire opt-in exact-patch EA/verified spatial geometry and repeated independently observed outcomes, run per-build holdout and CPU/performance measurement, then obtain native source/hook and disposable A/B with rollback. Do not block BI-002 hunger or change player/queue control. Source owner: `betterinstincts/spatial_convolution.py`; proof status belongs to CI and local game receipts, not this plan.
+
 ## 2026-11-12 — First-run one-click closer hardening
 
 Following merged PR #200, correct one-install/two-executable false ambiguity (prefer TS4_x64), reject malformed Windows tasklist evidence on both pre-launch snapshots, and withhold post-launch PID when untrusted. The bounded offline test owner remains `tests/test_smart_start.py`, with consultation `BI-FIRST-RUN-CLOSERS-20261112`. Mainline/CI and real Windows/Sims gameplay evidence remain separate. Existing Issue #201 owns safe latest-save identity, host menu calibration, single-effect player-first navigation and P08 certification; the older native BI-002 hunger gate stays active.

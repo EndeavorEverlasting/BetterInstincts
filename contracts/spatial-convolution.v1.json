@@ -1,0 +1,82 @@
+{
+  "schema": "betterinstincts.spatial-convolution/v1",
+  "version": 1,
+  "purpose": "Bounded trainable spatial convolution on source-verified local 5x5 semantic floor grids and independently observed per-edge traversal outcomes",
+  "owner": "betterinstincts/spatial_convolution.py",
+  "model_schema": "betterinstincts.spatial-convolution.model/v1",
+  "patch_schema": "betterinstincts.spatial-convolution.patch/v1",
+  "pipeline": [
+    "attested_semantic_floor_grid",
+    "2_trainable_3x3x3_convolutions",
+    "relu",
+    "global_mean_pool",
+    "logistic_head",
+    "independent_outcome_label",
+    "single_step_bounded_sgd",
+    "holdout_prequential_brier_guard"
+  ],
+  "limits": {
+    "grid": [
+      5,
+      5,
+      3
+    ],
+    "filters": 2,
+    "kernel": [
+      3,
+      3
+    ],
+    "max_examples": 256,
+    "max_profiles": 64,
+    "bytes_per_model": 100000,
+    "learning_rate": 0.08
+  },
+  "learning": {
+    "explicit_opt_in": true,
+    "observed_outcome_only": true,
+    "accepted_sources": [
+      "GAME_ROUTE_PROBE",
+      "OPERATOR_VERIFIED_TRAVERSAL"
+    ],
+    "capture_replay_fingerprint": "SHA256_160_OF_EXACT_GAME_BUILD_AND_BEFORE_CAPTURE_REF",
+    "holdout": "HASH_MOD_5_ZERO_NEVER_TRAIN",
+    "minimum_training": 24,
+    "minimum_each_class": 6,
+    "minimum_holdout": 8,
+    "heldout_brier_improvement_required": 0.02,
+    "corrupt_or_cross_scope": "ABSTAIN",
+    "unknown_player_direction": "ABSTAIN",
+    "patch_provenance": [
+      "scope_id",
+      "lot_id",
+      "game_build",
+      "graph_revision",
+      "geometry_ref",
+      "source",
+      "floor"
+    ]
+  },
+  "integration": {
+    "planner": "betterinstincts.household_navigation.plan_household_navigation",
+    "surface": "spatial_convolution optional",
+    "read_only": true,
+    "never_adds_edges": true,
+    "never_changes_route": true,
+    "never_grants_effects": true
+  },
+  "storage": {
+    "automatic": false,
+    "local_only": true,
+    "per_profile_context_hash": true,
+    "atomic_write": true,
+    "no_follow_symlinks": true,
+    "no_network": true,
+    "no_raw_screenshots": true
+  },
+  "runtime": {
+    "live_certification": false,
+    "native_effect_successor_issue": 171,
+    "bi002_still_active": true
+  },
+  "proof_ceiling": "OFFLINE_LABELLED_CONVOLUTION_NOT_LIVE_SIM_OR_SENSOR_CERT"
+}
