@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-COMPUTER-BATCH-CLOSERS-20261112",
+  "purpose": "Close unsafe policy-to-queue transaction gaps in existing computer upgrade-parts batch while preserving native-first and human-first governance, no game effects.",
+  "files": [
+    {
+      "path": "betterinstincts/computer_upgrade_parts.py",
+      "route": "POLICY_ONLY",
+      "reason": "Strengthens pure advisory batch decision and deferred cooperative queue validation; no EA runtime or desktop input added.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 213
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_GITHUB_SOURCE_AND_CI_ONLY",
+  "next_gate": "Issue #213 exact-build EA hook, native mod, disposable Live Mode inventory/simoleons/override and rollback proof."
+}
