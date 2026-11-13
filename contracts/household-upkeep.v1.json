@@ -17,7 +17,7 @@
     "durability_critical": 0.2,
     "durability_watch": 0.5,
     "charge_critical": 0.15,
-    "charge_watch": 0.35,
+    "charge_watch": 0.45,
     "fun_watch": 0.35,
     "social_watch": 0.35
   },
@@ -28,7 +28,8 @@
     "max_observed_actions": 64,
     "max_capture_age_seconds": 180,
     "next_observation_recommendation_seconds": 30,
-    "max_new_queue_actions": 1
+    "max_new_queue_actions": 1,
+    "max_utilibots": 16
   },
   "bill_policy": {
     "observe_due_and_unpaid": true,
@@ -43,19 +44,32 @@
   },
   "servo_helper_policy": {
     "allow_servo_peer_helpers": true,
-    "prefer_human_helpers_first": true,
+    "prefer_human_helpers_first": false,
     "forbid_self_helper_on_peer_path": true,
     "min_robotics_level": 3,
     "required_verified_skill": "robotics",
     "skill_gap_gate": "UPKEEP_HELPER_SKILL_GAP",
     "skill_force_bundle": "servo_core",
-    "notes": "Conservative Robotics floor for peer Servo Tune Up/Repair proposals. Exact live menu unlocks remain observation-gated. HUMAN helpers stay preferred when available. SOCIALIZE_SERVO and PAY_BILLS remain HUMAN-only."
+    "notes": "When Servo helper's complete four-motive snapshot is current and reserves are safe, prioritize it for verified robotic repairs/tune-ups; human helpers remain fallback. Verified Fix-O-Matic may qualify Servo for Servo peer Tune Up or broken Utili-Bot repair only, with exact observed menu. Skill floor for other maintenance is a hypothesis, never replaces menu evidence. A target Servo can self-tune only with an explicitly verified enhancement and its own observed action.",
+    "prefer_verified_servo_peers_for_robot_care": true,
+    "require_verified_servo_helper_motives": true,
+    "min_helper_charge": 0.45,
+    "min_helper_durability": 0.35,
+    "verified_fix_o_matic_support": "TUNE_UP_SERVO_OR_REPAIR_UTILIBOT_WITH_EXPLICIT_ENABLED_MENU"
   },
   "servo_fire_risk": {
     "incident": "2026-11-09: a Servo with low Durability plus laundry (dryer lint) caused fires",
     "durability_gate": "Servo BROKEN or durability <= servo_thresholds.durability_critical blocks laundry autonomy until Repair/Tune Up is done and reobserved; unverified durability holds laundry autonomy (unknown -> no action)",
-    "block_laundry_when": ["BROKEN", "CRITICAL_DURABILITY", "DURABILITY_UNVERIFIED", "STALE_OBSERVATION"],
-    "prerequisite_actions": ["REPAIR_SERVO", "TUNE_UP_SERVO"],
+    "block_laundry_when": [
+      "BROKEN",
+      "CRITICAL_DURABILITY",
+      "DURABILITY_UNVERIFIED",
+      "STALE_OBSERVATION"
+    ],
+    "prerequisite_actions": [
+      "REPAIR_SERVO",
+      "TUNE_UP_SERVO"
+    ],
     "dryer_policy": {
       "clean_lint_trap_before_each_dryer_run": true,
       "lint_less_upgrade": "Lint-Less (Handiness dryer upgrade) removes the lint-fire risk",
@@ -87,10 +101,50 @@
     "no_game_save_or_structure_mutations": true,
     "never_use_ea_connect": true,
     "water_exposure_wet": "BLOCK_UNVERIFIED_SERVO_ACTION_AND_ALERT",
-    "prioritize_other_human_sims_for_tune_up": true,
+    "prioritize_other_human_sims_for_tune_up": false,
     "allow_verified_robotics_servo_peer_helpers": true,
     "prohibit_repeating_queued_or_dispatched_attempts": true,
-    "local_input_gate": "independent screen_admit + current UI/menu + player idleness + exact actor/target"
+    "local_input_gate": "independent screen_admit + current UI/menu + player idleness + exact actor/target",
+    "never_send_low_charge_or_wet_servo_as_helper": true,
+    "bot_water_exposure": "HOLD_REPAIR_AND_FLAG_PLAYER_REVIEW",
+    "no_automatic_utilibot_charger_placement": true
   },
-  "proof_ceiling": "OFFLINE_UPKEEP_PLANNING_NOT_LIVE_SIMS_SERVO_OR_BILL_PROOF"
+  "proof_ceiling": "OFFLINE_COOPERATIVE_SERVO_UTILIBOT_ADVISORY_NOT_GAMEPLAY",
+  "utilibot_policy": {
+    "pack": "Discover University",
+    "kinds": [
+      "GARDENER_BOT",
+      "CLEANER_BOT",
+      "FIXER_BOT",
+      "PARTY_BOT"
+    ],
+    "motives": [
+      "durability",
+      "charge"
+    ],
+    "thresholds": {
+      "durability_critical": 0.2,
+      "durability_watch": 0.5,
+      "charge_critical": 0.15,
+      "charge_watch": 0.45
+    },
+    "action_ids": {
+      "broken": "REPAIR_UTILIBOT",
+      "durability": "TUNE_UP_UTILIBOT",
+      "charge": "RECHARGE_UTILIBOT"
+    },
+    "bounds": {
+      "max_utilibots": 16
+    },
+    "requirements": [
+      "verified_current_bot_identity_and_kind",
+      "complete_observed_two_motive_snapshot",
+      "observed_exact_actor_target_action",
+      "independent_queue_and_attempt_state",
+      "no_water_exposure",
+      "local_sims_patch_and_pack_before_any_native_mutation"
+    ],
+    "outcomes": "DISPATCHED_IS_NOT_COMPLETED; independent fresh post-action durability/charge or broken-state observation needed",
+    "notes": "Gardener-Bot repair first class; other Utili-Bots share the structural policy. Candidate labels are semantic placeholders, never invented EA IDs. Charging may require a station or manual activation; no automated placement or purchase is authorized."
+  }
 }

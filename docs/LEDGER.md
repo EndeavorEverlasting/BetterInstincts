@@ -1836,3 +1836,22 @@ Changed code is independently classified POLICY_ONLY / NON_GAMEPLAY;
 consultation predates mutation. Source guide: `docs/OCCULT_NEEDS.md`.
 **Proof ceiling:** offline CI and local file fixtures only, not actual EA
 motive/effect calibration. BI-002 hunger game gate stays ACTIVE.
+
+## 2026-11-12 — Servo-to-Servo and Gardener-Bot cooperative maintenance
+
+**Parent objective:** Sim/Servo mutual care, Gardener-Bot repair,
+proactive safe battery and Durability maintenance in one existing
+household system. Before this work, `household_upkeep` already
+supported basic Servo peer tune-up with Robotics verification and
+self-charge candidates, but selected humans first and did not
+model Utili-Bots. Expanded existing policy to typed Utili-Bot repair,
+tune-up and charge targets, helper Servo Charge/Durability reserves,
+verified Fix-O-Matic repair qualification, peer Social,
+enhanced self-tune and Servo-first maintenance with human fallback.
+Separate candidate/queue/attempt/outcome, prevent excessive
+tune-up loops, keep wet robots and unknown observations safe.
+Consultation was committed before policy mutation; native review
+route remains POLICY_ONLY. See `docs/HOUSEHOLD_UPKEEP.md`.
+**Proof ceiling:** offline repository CI; no game-side effect,
+disposable save tests, EA source IDs or Sims 4 runtime certification.
+BI-002 remains the active native hunger gate.

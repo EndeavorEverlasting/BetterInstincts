@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-SERVO-COOPERATIVE-UTILIBOT-CARE-20261112",
+  "purpose": "Strengthen household-upkeep policy with Servo-to-Servo maintenance, Servo-helper safety reserves, and observed Gardener-Bot/Utili-Bot repairs, tune-ups and recharge planning.",
+  "files": [
+    {
+      "path": "betterinstincts/household_upkeep.py",
+      "route": "POLICY_ONLY",
+      "reason": "Observed-only per-household robot cooperation and maintenance recommendation; no EA script, game effects, HUD clicks or background input.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_TYPED_SERVO_UTILIBOT_POLICY_NOT_NATIVE_EA_AUTONOMY",
+  "next_gate": "Inspect exact installed EA tuning for Fix-O-Matic, mutual Tune Up, Utili-Bot charging and helper eligibility; test in disposable Sims build with dual capture and player takeover; BI-002 remains active."
+}
