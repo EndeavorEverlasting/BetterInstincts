@@ -81,6 +81,84 @@ class FirstRunTests(unittest.TestCase):
         with self.assertRaises(first.FirstRunError):
             first.plan_journey("new", "unknown")
 
+    def test_first_session_skill_route_fits_four_goals_without_game_effects(self):
+        expected = {
+            "balanced": "gardening",
+            "career": "charisma",
+            "creative": "painting",
+            "social": "charisma",
+        }
+        for goal, top_skill in expected.items():
+            with self.subTest(goal=goal):
+                route = first.plan_journey("new", goal)["first_session"]
+                self.assertEqual(route["ranked_skill_focus"][0]["skill"], top_skill)
+                self.assertEqual(len(route["ranked_skill_focus"]), 3)
+                self.assertFalse(route["automatic_input"])
+                self.assertFalse(route["cas_changes_applied"])
+                self.assertFalse(route["skill_levels_granted"])
+                self.assertFalse(route["gameplay_proved"])
+                self.assertEqual(route, first.recommend_first_session(goal))
+                self.assertIn("UNMEASURED", route["proof_ceiling"])
+
+    def test_player_preference_can_change_goal_default_without_cas_mutation(self):
+        selected = first.plan_journey(
+            "new", "career", preferred_skill="gardening",
+        )["first_session"]
+        self.assertEqual(selected["ranked_skill_focus"][0]["skill"], "gardening")
+        self.assertEqual(selected["context"]["preferred_skill"], "gardening")
+        self.assertFalse(selected["skill_levels_granted"])
+        self.assertEqual(
+            selected,
+            first.plan_journey("new", "career", preferred_skill=" Gardening ")["first_session"],
+        )
+
+    def test_critical_needs_and_income_pressure_gate_progression(self):
+        route = first.recommend_first_session(
+            "creative", critical_needs=True, income_pressure=True,
+        )
+        gates = [row["gate"] for row in route["first_session_decisions"]]
+        self.assertEqual(gates[:2], ["PLAYER_CAS_CHOICE", "ALL_SIX_NEEDS_CHECK"])
+        self.assertLess(gates.index("CRITICAL_NEEDS_FIRST"), gates.index("PLAYER_CHOSEN_SKILL"))
+        self.assertLess(gates.index("FUNDS_BEFORE_PURCHASE"), gates.index("PLAYER_CHOSEN_SKILL"))
+        self.assertTrue(route["training_deferred"])
+        self.assertIn("Defer", route["first_session_decisions"][-2]["action"])
+        self.assertFalse(first.recommend_first_session("creative")["training_deferred"])
+
+    def test_invalid_context_abstains_and_existing_save_remains_player_only(self):
+        for kwargs in (
+            {"preferred_skill": "untrusted-dlc-skill"},
+            {"preferred_skill": ""},
+            {"preferred_skill": 123},
+            {"critical_needs": "yes"},
+            {"income_pressure": 1},
+        ):
+            with self.subTest(kwargs=kwargs), self.assertRaises(first.FirstRunError):
+                first.recommend_first_session("balanced", **kwargs)
+        self.assertEqual(
+            first.plan_journey("existing")["save_selection"],
+            "PLAYER_ONLY_NO_AUTOMATIC_RESUME",
+        )
+        self.assertNotIn("first_session", first.plan_journey("existing"))
+        self.assertEqual(len(first.SKILL_ROUTES), 7)
+
+    def test_first_session_cli_planning_without_ea_process_or_saves(self):
+        import contextlib
+        import io
+        import json
+        from scripts.first_run import main
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = main([
+                "plan", "--mode", "new", "--goal", "creative",
+                "--preferred-skill", "handiness", "--critical-needs",
+                "--income-pressure",
+            ])
+        self.assertEqual(rc, 0)
+        route = json.loads(out.getvalue())["first_session"]
+        self.assertEqual(route["ranked_skill_focus"][0]["skill"], "handiness")
+        self.assertTrue(route["training_deferred"])
+        self.assertFalse(route["automatic_input"])
+
     def test_no_launch_without_exact_windows_host_and_click(self):
         game = self.executable()
         fake = Mock(return_value=Mock(pid=913))
