@@ -755,5 +755,47 @@
     ],
     "canonical_existing_dispatch": "betterinstincts/computer_upgrade_parts.py#propose_computer_purchase_step + enqueue_computer_menu_step",
     "planner_role": "READ_ONLY_SOURCE_AND_PORTRAIT_INTENT_SUPPORTS_EXISTING_COOPERATIVE_DISPATCH"
+  },
+  "computer_batch_picker": {
+    "schema": "betterinstincts.computer-upgrade-picker-batch/v1",
+    "decision_owner": "betterinstincts/computer_upgrade_parts.py#propose_computer_batch_step",
+    "restock_owner": "betterinstincts/computer_upgrade_parts.py#plan_computer_restock_batch",
+    "dispatch_owner": "betterinstincts/computer_upgrade_parts.py#enqueue_computer_batch_step",
+    "rows": "FIVE_FRESH_OBSERVED_LABELS_MATCHING_COMPUTER_MENU_PART_IDS",
+    "row_observations": [
+      "part_id",
+      "visible_label",
+      "selected_count",
+      "unit_price",
+      "increment_visible",
+      "increment_hitbox_verified"
+    ],
+    "dialog_observations": [
+      "picker_revision",
+      "total_count",
+      "total_cost",
+      "available_funds",
+      "buy_control_visible",
+      "buy_control_hitbox_verified"
+    ],
+    "source_of_price": "OBSERVED_PER_GAME_SESSION_NOT_HARDCODED_SCREENSHOT_PRICE",
+    "execution": "ONE_INCREMENT_PER_FRESH_PICKER_REVISION_THEN_EXACTLY_ONE_FINAL_BUY",
+    "spending": "EXPLICIT_SESSION_COMMAND_AND_APPROVED_TOTAL_CAP_AND_CURRENT_FUNDS",
+    "selected_sim": "OBSERVED_ACTIVE_SIM_AND_SELECTED_SIM_PERSONAL_POCKET_INVENTORY_ONLY",
+    "confirmation": "ALL_FIVE_SELECTED_QUANTITIES_EXACTLY_MATCH_REQUESTED_BATCH_AND_TOTAL_COUNT_AND_COST_RECONCILE",
+    "outcomes": "EXACT_PER_PART_PERSONAL_INVENTORY_DELTA_AND_SIMOLEON_DEBIT_OR_NEEDS_RECONCILIATION_NO_BLIND_RETRY",
+    "default_effect_permission": "DENY_UNLESS_PLAYER_IDLE_AND_PAUSED_LIVE_LOT_AND_FRESH_SCENE_PROBE_AND_NATIVE_CHANNEL_OR_DESKTOP_OPT_IN",
+    "no_fallbacks": [
+      "UNBOUNDED_CLICK_SPAM",
+      "STALE_ROW_COORDINATES",
+      "ASSUMED_GAME_PRICE",
+      "PARTIAL_PURCHASE_AUTO_RETRY",
+      "EA_CONNECT",
+      "BLUETOOTH_OR_OS_SERVICE_REPAIR",
+      "UNSELECTED_SIM_STOCK",
+      "SILENT_SPEND"
+    ],
+    "status": "OFFLINE_POLICY_ONLY_NO_EA_NATIVE_OR_SIMS4_RUNTIME_CERT",
+    "proof_ceiling": "OFFLINE_COMPUTER_MENU_QUEUE_NOT_LIVE_PURCHASE_PROOF"
   }
 }

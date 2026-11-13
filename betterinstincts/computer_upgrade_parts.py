@@ -17,7 +17,7 @@ from betterinstincts.workflow_interop import CooperativeScreenQueue
 
 PROOF = "OFFLINE_COMPUTER_MENU_QUEUE_NOT_LIVE_PURCHASE_PROOF"
 STAGES = frozenset({"PORTRAIT", "COMPUTER", "MENU", "PART_PICKER", "CONFIRM", "VERIFY"})
-EFFECT_KINDS = frozenset({"SELECT_OBSERVED_PORTRAIT", "OPEN_OBSERVED_COMPUTER", "SELECT_VISIBLE_LABEL", "CONFIRM_OBSERVED_PURCHASE"})
+EFFECT_KINDS = frozenset({"SELECT_OBSERVED_PORTRAIT", "OPEN_OBSERVED_COMPUTER", "SELECT_VISIBLE_LABEL", "INCREMENT_OBSERVED_PART_ROW", "CONFIRM_OBSERVED_PURCHASE"})
 MORE_CHOICES = frozenset({"more choices", "more choices...", "more choices…"})
 
 
@@ -263,3 +263,257 @@ def enqueue_computer_menu_step(
         return await perform_game_ui_effect(dict(action))
 
     queue.enqueue_effect(work_id, validate_fresh_scene, effect)
+
+
+# Picker quantities are transaction selections, not five independent purchases.
+# A host may request the next decision only after a NEW independently observed
+# picker revision; it must never replay a queued arrow click from stale UI.
+def _batch_quantities(requested: Mapping[str, int], cfg: dict) -> dict[str, int]:
+    if not isinstance(requested, Mapping) or not requested or len(requested) > 5:
+        raise UpgradePartsForceError("BATCH_REQUESTS_REQUIRED")
+    allowed = set(menu_catalog(cfg)["part_ids"])
+    result: dict[str, int] = {}
+    for part_id, count in requested.items():
+        if not isinstance(part_id, str) or part_id not in allowed:
+            raise UpgradePartsForceError("BATCH_PART_NOT_IN_COMPUTER_PICKER")
+        if type(count) is not int:
+            raise UpgradePartsForceError("BATCH_QUANTITY_MUST_BE_INTEGER")
+        result[part_id] = _clamp_quantity(count, cfg)
+    return result
+
+
+def plan_computer_purchase_batch(
+    requests: Mapping[str, int], *, cfg: dict | None = None,
+) -> dict:
+    """Read-only five-kind purchase intent. Not an input/admission permit."""
+    cfg = cfg or load_contract()
+    quantities = _batch_quantities(requests, cfg)
+    return {
+        "schema": "betterinstincts.computer-upgrade-batch-intent/v1",
+        "quantities": quantities,
+        "part_order": menu_catalog(cfg)["part_ids"],
+        "destination": "selected_sim_pocket_inventory",
+        "picker_route": "OBSERVED_COMPUTER_ORDER_PURCHASE_UPGRADE_PARTS",
+        "max_effects_per_decision": 1,
+        "reobserve_after_each_arrow": True,
+        "confirm_once_after_exact_totals": True,
+        "reconcile_inventory_and_funds_before_new_purchase": True,
+        "boot_action": "PASSIVE_NO_FOCUS_OR_INPUT",
+        "execute_allowed": False,
+        "proof_ceiling": PROOF,
+    }
+
+
+def plan_computer_restock_batch(
+    *, stock_targets: Mapping[str, int], pocket_counts: Mapping[str, int],
+    cfg: dict | None = None,
+) -> dict:
+    """Convert observed *personal* stock shortages to a passive picker plan."""
+    cfg = cfg or load_contract()
+    if not isinstance(stock_targets, Mapping) or not isinstance(pocket_counts, Mapping):
+        raise UpgradePartsForceError("PERSONAL_STOCK_OBSERVATIONS_REQUIRED")
+    allowed = set(menu_catalog(cfg)["part_ids"])
+    if not stock_targets or any(k not in allowed for k in stock_targets):
+        raise UpgradePartsForceError("COMPUTER_RESTOCK_TARGETS_INVALID")
+    shortages: dict[str, int] = {}
+    for part_id, target in stock_targets.items():
+        current = pocket_counts.get(part_id)
+        if type(target) is not int or not 0 <= target <= int(cfg["quantity"]["max"]):
+            raise UpgradePartsForceError("INVALID_STOCK_TARGET")
+        if type(current) is not int or current < 0:
+            raise UpgradePartsForceError("PERSONAL_STOCK_OBSERVATIONS_REQUIRED")
+        if current < target:
+            shortages[part_id] = target - current
+    if not shortages:
+        return {
+            "state": "STOCK_TARGETS_ALREADY_MET", "quantities": {},
+            "execute_allowed": False, "proof_ceiling": PROOF,
+        }
+    result = plan_computer_purchase_batch(shortages, cfg=cfg)
+    result["stock_targets"] = dict(stock_targets)
+    result["inventory_baseline"] = {pid: pocket_counts[pid] for pid in stock_targets}
+    return result
+
+
+def propose_computer_batch_step(
+    *, requests: Mapping[str, int], picker_rows: Sequence[Mapping[str, Any]],
+    picker_revision: str, last_acted_revision: str | None = None,
+    observed_total_count: int | None = None,
+    observed_total_cost: int | None = None,
+    observed_funds: int | None = None,
+    approved_spend_cap: int | None = None,
+    spending_authorized: bool = False,
+    inventory_before: Mapping[str, int] | None = None,
+    buy_control_visible: bool = False,
+    buy_control_hitbox_verified: bool = False,
+    explicit_command: bool = False,
+    game_mode: str = "LIVE", paused_verified: bool = False,
+    active_sim_observed: bool = False, computer_observed: bool = False,
+    inside_lot_verified: bool = False, human_active_or_unknown: bool = True,
+    native_capability_verified: bool = False,
+    desktop_fallback_opt_in: bool = False,
+    cfg: dict | None = None,
+) -> dict:
+    """Propose ONE increment or final Buy from a fresh five-row picker snapshot.
+
+    Rows must be supplied by a trusted live observer, not inferred from this
+    function or the user's example screenshot. The queue callback must compare
+    the revision and row hitbox again immediately before the effect.
+    """
+    cfg = cfg or load_contract()
+    quantities = _batch_quantities(requests, cfg)
+    gate = propose_computer_purchase_step(
+        part_id=next(iter(quantities)), stage="COMPUTER",
+        explicit_command=explicit_command, game_mode=game_mode,
+        paused_verified=paused_verified,
+        active_sim_observed=active_sim_observed,
+        computer_observed=computer_observed,
+        inside_lot_verified=inside_lot_verified,
+        human_active_or_unknown=human_active_or_unknown,
+        native_capability_verified=native_capability_verified,
+        desktop_fallback_opt_in=desktop_fallback_opt_in, cfg=cfg,
+    )
+    if gate["state"] != "READY_TO_QUEUE":
+        return gate
+    if (not isinstance(picker_revision, str) or not picker_revision.strip()
+            or len(picker_revision) > 128
+            or picker_revision == last_acted_revision):
+        return _hold("FRESH_PICKER_REVISION_REQUIRED")
+    if not isinstance(picker_rows, (list, tuple)) or len(picker_rows) != 5:
+        return _hold("FIVE_OBSERVED_PICKER_ROWS_REQUIRED")
+
+    allowed_ids = menu_catalog(cfg)["part_ids"]
+    rows: dict[str, Mapping[str, Any]] = {}
+    max_qty = int(cfg["quantity"]["max"])
+    for row in picker_rows:
+        if not isinstance(row, Mapping):
+            return _hold("INVALID_OBSERVED_PICKER_ROW")
+        pid = row.get("part_id")
+        if pid not in allowed_ids or pid in rows:
+            return _hold("INVALID_OR_DUPLICATE_PICKER_PART")
+        count, price = row.get("selected_count"), row.get("unit_price")
+        if (type(count) is not int or not 0 <= count <= max_qty
+                or type(price) is not int or price < 0):
+            return _hold("FRESH_PICKER_COUNT_AND_PRICE_REQUIRED")
+        # A row is identified from the observed label, not by a fixed XY.
+        # Screenshot uses singular "Part"; the contract catalog uses "Parts".
+        name = resolve_part(pid, cfg=cfg)["display_name"]
+        accepted = {_norm(name), _norm(name.removesuffix("s"))}
+        if _norm(row.get("visible_label")) not in accepted:
+            return _hold("OBSERVED_PART_ROW_LABEL_MISMATCH")
+        rows[pid] = row
+    if set(rows) != set(allowed_ids):
+        return _hold("FIVE_OBSERVED_PICKER_ROWS_REQUIRED")
+    if (type(observed_total_count) is not int or type(observed_total_cost) is not int
+            or observed_total_count < 0 or observed_total_cost < 0):
+        return _hold("FRESH_PICKER_TOTALS_REQUIRED")
+    selected_count = sum(row["selected_count"] for row in rows.values())
+    selected_cost = sum(row["selected_count"] * row["unit_price"] for row in rows.values())
+    if observed_total_count != selected_count or observed_total_cost != selected_cost:
+        return _hold("PICKER_TOTALS_DO_NOT_RECONCILE")
+    if spending_authorized is not True:
+        return _hold("PURCHASE_SPENDING_AUTHORIZATION_REQUIRED")
+    if any(type(v) is not int or v < 0 for v in
+           (observed_funds, approved_spend_cap)):
+        return _hold("FRESH_FUNDS_AND_SPEND_CAP_REQUIRED")
+    planned_cost = sum(quantities.get(pid, 0) * rows[pid]["unit_price"]
+                       for pid in allowed_ids)
+    if planned_cost > min(observed_funds, approved_spend_cap):
+        return _hold("BATCH_EXCEEDS_FUNDS_OR_APPROVED_SPENDING_CAP")
+    if any(rows[pid]["selected_count"] > quantities.get(pid, 0)
+           for pid in allowed_ids):
+        return _hold("PICKER_SELECTION_EXCEEDS_AUTHORIZED_BATCH")
+
+    for pid in allowed_ids:
+        row = rows[pid]
+        if row["selected_count"] < quantities.get(pid, 0):
+            if row.get("increment_visible") is not True:
+                return _hold("INCREMENT_CONTROL_NOT_VISIBLE")
+            if row.get("increment_hitbox_verified") is not True:
+                return _hold("INCREMENT_CONTROL_NOT_FRESHLY_VERIFIED")
+            action = _ready("INCREMENT_OBSERVED_PART_ROW", pid)
+            action["action"].update({
+                "expected_selected_count": row["selected_count"],
+                "expected_total_count": observed_total_count,
+                "picker_revision": picker_revision,
+            })
+            return action
+
+    if (not isinstance(inventory_before, Mapping)
+            or any(type(inventory_before.get(pid)) is not int
+                   or inventory_before[pid] < 0 for pid in allowed_ids)):
+        return _hold("FIVE_PART_PERSONAL_INVENTORY_BASELINE_REQUIRED")
+    if buy_control_visible is not True or buy_control_hitbox_verified is not True:
+        return _hold("BUY_CONTROL_NOT_FRESHLY_VERIFIED")
+    action = _ready("CONFIRM_OBSERVED_PURCHASE")
+    action["action"].update({
+        "expected_total_count": observed_total_count,
+        "expected_total_cost": observed_total_cost,
+        "picker_revision": picker_revision,
+    })
+    return action
+
+
+def verify_computer_batch_purchase(
+    *, requests: Mapping[str, int],
+    inventory_before: Mapping[str, int], inventory_after: Mapping[str, int],
+    funds_before: int, funds_after: int, expected_total_cost: int,
+    cfg: dict | None = None,
+) -> dict:
+    """One final Buy is complete only with exact pocket and funds readback."""
+    cfg = cfg or load_contract()
+    quantities = _batch_quantities(requests, cfg)
+    allowed = menu_catalog(cfg)["part_ids"]
+    if any(not isinstance(v, Mapping) for v in (inventory_before, inventory_after)):
+        return _hold("BATCH_OUTCOME_UNPROVEN", state="NEEDS_RECONCILIATION")
+    if (any(type(mapping.get(pid)) is not int or mapping[pid] < 0
+            for mapping in (inventory_before, inventory_after) for pid in allowed)
+            or any(type(n) is not int or n < 0 for n in
+                   (funds_before, funds_after, expected_total_cost))):
+        return _hold("BATCH_OUTCOME_UNPROVEN", state="NEEDS_RECONCILIATION")
+    deltas = {pid: inventory_after[pid] - inventory_before[pid] for pid in allowed}
+    if (any(deltas[pid] != quantities.get(pid, 0) for pid in allowed)
+            or funds_before - funds_after != expected_total_cost):
+        return _hold("BATCH_OUTCOME_UNPROVEN_RECONCILE_BEFORE_RETRY",
+                     state="NEEDS_RECONCILIATION")
+    return {
+        "state": "BATCH_PURCHASE_OBSERVED", "inventory_deltas": deltas,
+        "spend_observed": expected_total_cost,
+        "action": None, "execute_allowed": False, "proof_ceiling": PROOF,
+    }
+
+
+def enqueue_computer_batch_step(
+    queue: CooperativeScreenQueue, *, work_id: str,
+    decision: Mapping[str, Any],
+    validate_fresh_scene: Callable[[], Awaitable[bool]],
+    validate_fresh_picker: Callable[[dict[str, Any]], Awaitable[bool]],
+    perform_game_ui_effect: Callable[[dict[str, Any]], Awaitable[Any]],
+) -> None:
+    """Queue one arrow/Buy only after rechecking the exact observed picker.
+
+    The trusted adapter's fresh-picker validator must reobserve the same
+    active Sim, five row IDs, chosen row/button hitbox, selected count,
+    funds, total cost, and revision. A Boolean from stale cache is not proof.
+    """
+    action = decision.get("action")
+    if (decision.get("state") != "READY_TO_QUEUE"
+            or not isinstance(action, dict)
+            or action.get("kind") not in {
+                "INCREMENT_OBSERVED_PART_ROW", "CONFIRM_OBSERVED_PURCHASE"
+            }
+            or not isinstance(action.get("picker_revision"), str)
+            or not action["picker_revision"]
+            or not callable(validate_fresh_picker)):
+        raise UpgradePartsForceError("FRESH_BATCH_PICKER_ACTION_REQUIRED")
+
+    async def validate_both() -> bool:
+        if not await validate_fresh_scene():
+            return False
+        return await validate_fresh_picker(dict(action))
+
+    enqueue_computer_menu_step(
+        queue, work_id=work_id, decision=decision,
+        validate_fresh_scene=validate_both,
+        perform_game_ui_effect=perform_game_ui_effect,
+    )
