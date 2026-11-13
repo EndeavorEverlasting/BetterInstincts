@@ -165,7 +165,7 @@ class SemanticVAETests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with (mock_patch("bootstrap.paths", return_value={"use":Path(tmp)/"app"}),
                  mock_patch("betterinstincts.installation_profiles.view",
-                     return_value={"settings":{"learning.semantic_vae":True}})):
+                     return_value={"profile_id":"default","settings":{"learning.semantic_vae":True}})):
                 accepted = record_if_enabled(snapshot(), event(1), grid())
                 self.assertIn(accepted["status"], {"TRAINED_ON_DEVICE","HELDOUT_VALIDATION_ONLY"})
                 self.assertEqual(load_local_model(snapshot())["trained"] +
@@ -204,6 +204,65 @@ class SemanticVAETests(unittest.TestCase):
                 path.symlink_to(Path(tmp)/"unsafe.json")
                 with self.assertRaisesRegex(SemanticVAEError, "LOCAL_STORAGE_UNSAFE"):
                     record_local_sample(snapshot(), event(2), grid(), explicit_opt_in=True)
+
+    def test_named_profiles_isolate_identical_world_and_purge(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            use = Path(tmp) / "app"
+            world = snapshot()
+            with mock_patch("bootstrap.paths", return_value={"use": use}):
+                # Preserve the pre-closer v1 default-profile checkpoint location.
+                default = record_local_sample(world, event(1), grid(),
+                                              explicit_opt_in=True)
+                self.assertIn(default["status"], {"TRAINED_ON_DEVICE", "HELDOUT_VALIDATION_ONLY"})
+                default_path = (Path(tmp) / "runtime" / "semantic-vae" /
+                                (empty_model(world)["context_hash"] + ".json"))
+                self.assertTrue(default_path.is_file())
+                self.assertEqual(load_local_model(world, profile_id="household")["trained"] +
+                                 load_local_model(world, profile_id="household")["heldout"], 0)
+                named = record_local_sample(world, event(2), grid(),
+                                            explicit_opt_in=True, profile_id="household")
+                self.assertIn(named["status"], {"TRAINED_ON_DEVICE", "HELDOUT_VALIDATION_ONLY"})
+                self.assertEqual(load_local_model(world, profile_id="household")["trained"] +
+                                 load_local_model(world, profile_id="household")["heldout"], 1)
+                self.assertEqual(load_local_model(world)["trained"] +
+                                 load_local_model(world)["heldout"], 1)
+                self.assertEqual(len(list(default_path.parent.glob("*.json"))), 2)
+                with self.assertRaises(SemanticVAEError):
+                    record_local_sample(world, event(3), grid(),
+                                        explicit_opt_in=True, profile_id="../other")
+                with self.assertRaises(SemanticVAEError):
+                    purge_local_model(world, explicit_confirm=True, profile_id="../other")
+                self.assertEqual(purge_local_model(world, explicit_confirm=True,
+                                                   profile_id="household")["status"],
+                                 "LOCAL_MODEL_PURGED")
+                self.assertTrue(default_path.is_file())
+                self.assertEqual(load_local_model(world)["trained"] +
+                                 load_local_model(world)["heldout"], 1)
+                self.assertEqual(load_local_model(world, profile_id="household")["trained"] +
+                                 load_local_model(world, profile_id="household")["heldout"], 0)
+
+    def test_malformed_profile_readback_denies_training(self):
+        with mock_patch("betterinstincts.installation_profiles.view",
+                        return_value={"settings":{"learning.semantic_vae":True}}):
+            with self.assertRaisesRegex(SemanticVAEError, "LOCAL_CONSENT_PROFILE_UNVERIFIED"):
+                record_if_enabled(snapshot(), event(1), grid())
+
+    def test_named_profile_consent_is_strict_and_does_not_inherit_default(self):
+        world = snapshot()
+        with tempfile.TemporaryDirectory() as tmp:
+            with (mock_patch("bootstrap.paths", return_value={"use": Path(tmp) / "app"}),
+                  mock_patch("betterinstincts.installation_profiles.view",
+                             side_effect=lambda profile_id=None: {
+                                 "profile_id": profile_id or "default",
+                                 "settings": {"learning.semantic_vae": profile_id != "household"},
+                             })):
+                response = record_if_enabled(world, event(1), grid(),
+                                             profile_id="household")
+                self.assertEqual(response["status"], "LOCAL_TRAINING_DISABLED")
+                self.assertFalse((Path(tmp) / "runtime").exists())
+                other = record_if_enabled(world, event(1), grid(), profile_id="default")
+                self.assertIn(other["status"], {"TRAINED_ON_DEVICE", "HELDOUT_VALIDATION_ONLY"})
+
 
 
 if __name__ == "__main__":

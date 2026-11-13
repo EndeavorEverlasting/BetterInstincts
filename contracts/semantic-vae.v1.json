@@ -55,7 +55,8 @@
     "remote_exchange": false,
     "raw_game_images": false,
     "raw_sim_or_save_names": false,
-    "sample_retention": "ROLLING_LAST_128_VERIFIED_SEMANTIC_VECTORS_CHECKPOINT_KEEPS_WEIGHTS_AND_BLOOM"
+    "sample_retention": "ROLLING_LAST_128_VERIFIED_SEMANTIC_VECTORS_CHECKPOINT_KEEPS_WEIGHTS_AND_BLOOM",
+    "consent_rule": "Record only for selected installation profile with learning.semantic_vae enabled. Default OFF. Direct API requires explicit_opt_in=True and explicit profile_id if non-default."
   },
   "storage": {
     "owner": "bootstrap.paths()['use'].parent/runtime/semantic-vae/<opaque_context>.json",
@@ -64,7 +65,16 @@
     "reject_symlinks": true,
     "finite_models_only": true,
     "uninstall_preserves_user_state": true,
-    "not_inside_git_or_sims_saves": true
+    "not_inside_git_or_sims_saves": true,
+    "profile_isolation": {
+      "selector": "Active installation profile or explicit existing --profile; obtained through installation_profiles.view",
+      "default_profile_legacy_path": "Keep v1 context_hash(snapshot).json byte-compatible for existing default-profile models",
+      "named_profile_path": "SHA256('semantic-vae-profile/v1:' + profile_id + ':' + context_hash(snapshot)).json",
+      "no_silent_migration": true,
+      "write_read_purge_same_selected_profile": true,
+      "no_shared_named_profile_checkpoint": true,
+      "no_fallback_to_default_profile": true
+    }
   },
   "integration": {
     "camera_owner": "betterinstincts/camera_traverse.py",
@@ -73,7 +83,8 @@
     "no_graph_edge_creation": true,
     "no_sim_walk_grant": true,
     "no_camera_or_cursor_actuation": true,
-    "no_auto_install": true
+    "no_auto_install": true,
+    "cli": "scripts/semantic_vae.py supports --profile on all operations, with active selected by default"
   },
   "validation": [
     "python -m unittest tests.test_semantic_vae -v",

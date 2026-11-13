@@ -1,3 +1,25 @@
+## 2026-11-13 — The Closers: installation-profile isolation and CLI readback
+
+**P83 verified gap in original #221:** one user could have several local BetterInstincts installation profiles with separate opt-in settings, but the original on-disk filename keyed only game/save/lot/build/graph. On the same world, one named profile could read, continue training, or delete another profile's checkpoint despite distinct consent. This has now been repaired in the existing owner; not a new service, sensor or learning framework.
+
+**Rule:** All CLI operations (`enable`, `disable`, `status`, `train`, `purge`) resolve the **active** installation profile unless explicitly passed `--profile EXISTING_PROFILE`. Unknown profile IDs are rejected before any mutation. `record_if_enabled` passes its selected consent profile to the local training write. Low-level read/write/purge APIs also accept `profile_id` (default: `"default"`) and use the exact same storage selector.
+
+**Migration/retention:** Existing `default` profile data stays at the **unchanged original context-hash filename**; there is no implicit migration, overwrite or deletion. Named profiles now use an opaque hash of `profile_id + world context`, with no fallback into the default model or other named models. `purge` deletes only the selected profile and provided verified world context; `disable` preserves that data.
+
+```sh
+python -m scripts.semantic_vae status
+python -m scripts.semantic_vae status --profile family
+python -m scripts.semantic_vae enable --profile family --ack-local-data
+python -m scripts.semantic_vae train --profile family --snapshot S.json --event E.json --patch P.json
+python -m scripts.semantic_vae disable --profile family
+python -m scripts.semantic_vae purge --profile family --snapshot S.json --ack-delete-local-data
+python -m unittest tests.test_semantic_vae tests.test_semantic_vae_cli -v
+```
+
+The named profile must **already exist** through the canonical installation-profiles owner. The CLI cannot create it on an arbitrary supplied name. A profile is an installation-local preferences boundary for the same computer user, not an OS security account. Other OS users should have distinct OS-level user profiles. A direct call to `record_local_sample(..., explicit_opt_in=True, profile_id="family")` is an explicit lab/test data operation, not a silent host collector; applications should call the preference-checked `record_if_enabled` instead.
+
+**Evaluation limitation:** The prequential reconstruction metric is measured on synthetic/offline examples so far. It does not show the decoder improves route choices, camera tracking, object detection, real SLAM, or Sims gameplay. Existing graph/camera/VOI gates remain authoritative; no local P08 or actual MoonWake group-walk/agent-dispatch proof is implied. Next local owner: an operator-authorized exact-patch, active-session, source-calibrated observation adapter and independent real labeled holdout/CPU measurements; BI-002 hunger remains separate and ACTIVE.
+
 # Local semantic VAE learning — MoonWake Sixth Gear (2026-11-13)
 
 **Purpose.** Every opted-in BetterInstincts installation can learn from *its own* independently observed, admissible The Sims 4 navigation examples. The user's computer is a **local training workstation**, not an automatically exposed internet server. No central service, upload, background daemon or global telemetry is installed. **State:** genuine trainable Python prototype + local storage; not yet a running Sims mod, calibrated screenshot recognizer, real VIO/SLAM, or certified game integration.
