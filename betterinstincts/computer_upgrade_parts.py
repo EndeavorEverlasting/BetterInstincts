@@ -424,6 +424,25 @@ def propose_computer_batch_step(
            for pid in allowed_ids):
         return _hold("PICKER_SELECTION_EXCEEDS_AUTHORIZED_BATCH")
 
+    # The pocket baseline must precede *any* cart mutation: acquiring it only
+    # at Buy can leave an already modified cart that cannot be reconciled.
+    if (not isinstance(inventory_before, Mapping)
+            or any(type(inventory_before.get(pid)) is not int
+                   or inventory_before[pid] < 0 for pid in allowed_ids)):
+        return _hold("FIVE_PART_PERSONAL_INVENTORY_BASELINE_REQUIRED")
+    planned_count = sum(quantities.values())
+    authorized_snapshot = {
+        "spending_authorized": True,
+        "inventory_baseline_verified": True,
+        "observed_funds": observed_funds,
+        "approved_spend_cap": approved_spend_cap,
+        "planned_total_count": planned_count,
+        "planned_total_cost": planned_cost,
+        "expected_total_count": observed_total_count,
+        "expected_total_cost": observed_total_cost,
+        "picker_revision": picker_revision,
+    }
+
     for pid in allowed_ids:
         row = rows[pid]
         if row["selected_count"] < quantities.get(pid, 0):
@@ -432,25 +451,18 @@ def propose_computer_batch_step(
             if row.get("increment_hitbox_verified") is not True:
                 return _hold("INCREMENT_CONTROL_NOT_FRESHLY_VERIFIED")
             action = _ready("INCREMENT_OBSERVED_PART_ROW", pid)
+            action["action"].update(authorized_snapshot)
             action["action"].update({
                 "expected_selected_count": row["selected_count"],
-                "expected_total_count": observed_total_count,
-                "picker_revision": picker_revision,
+                "requested_quantity": quantities[pid],
+                "expected_unit_price": row["unit_price"],
             })
             return action
 
-    if (not isinstance(inventory_before, Mapping)
-            or any(type(inventory_before.get(pid)) is not int
-                   or inventory_before[pid] < 0 for pid in allowed_ids)):
-        return _hold("FIVE_PART_PERSONAL_INVENTORY_BASELINE_REQUIRED")
     if buy_control_visible is not True or buy_control_hitbox_verified is not True:
         return _hold("BUY_CONTROL_NOT_FRESHLY_VERIFIED")
     action = _ready("CONFIRM_OBSERVED_PURCHASE")
-    action["action"].update({
-        "expected_total_count": observed_total_count,
-        "expected_total_cost": observed_total_cost,
-        "picker_revision": picker_revision,
-    })
+    action["action"].update(authorized_snapshot)
     return action
 
 
@@ -507,13 +519,49 @@ def enqueue_computer_batch_step(
             or not callable(validate_fresh_picker)):
         raise UpgradePartsForceError("FRESH_BATCH_PICKER_ACTION_REQUIRED")
 
+    # The effect boundary must fail closed if another caller bypasses the
+    # planner or strips its budget/pocket proof. Scene/picker callbacks still
+    # need independent, trusted re-observation immediately before dispatch.
+    required_numbers = (
+        "observed_funds", "approved_spend_cap", "planned_total_count",
+        "planned_total_cost", "expected_total_count", "expected_total_cost",
+    )
+    if (action.get("spending_authorized") is not True
+            or action.get("inventory_baseline_verified") is not True
+            or any(type(action.get(k)) is not int or action[k] < 0
+                   for k in required_numbers)
+            or action["planned_total_count"] < 1
+            or action["expected_total_count"] > action["planned_total_count"]
+            or action["expected_total_cost"] > action["planned_total_cost"]
+            or action["planned_total_cost"] > min(
+                action["observed_funds"], action["approved_spend_cap"]
+            )):
+        raise UpgradePartsForceError("BATCH_SPEND_OR_BASELINE_ADMISSION_REQUIRED")
+    if action["kind"] == "INCREMENT_OBSERVED_PART_ROW":
+        if (action.get("label") not in menu_catalog()["part_ids"]
+                or any(type(action.get(k)) is not int or action[k] < 0
+                       for k in ("expected_selected_count", "requested_quantity",
+                                 "expected_unit_price"))
+                or action["requested_quantity"] < 1
+                or action["expected_selected_count"] >= action["requested_quantity"]):
+            raise UpgradePartsForceError("FRESH_INCREMENT_ROW_ADMISSION_REQUIRED")
+    elif (action.get("label") is not None
+          or action["expected_total_count"] != action["planned_total_count"]
+          or action["expected_total_cost"] != action["planned_total_cost"]):
+        raise UpgradePartsForceError("BATCH_NOT_READY_FOR_SINGLE_BUY")
+
+    # Copy the admitted receipt once; mutating the caller-owned decision after
+    # enqueue must never switch the kind or alter the approved spend envelope.
+    action_snapshot = dict(action)
+
     async def validate_both() -> bool:
         if not await validate_fresh_scene():
             return False
-        return await validate_fresh_picker(dict(action))
+        return await validate_fresh_picker(dict(action_snapshot))
 
     enqueue_computer_menu_step(
-        queue, work_id=work_id, decision=decision,
+        queue, work_id=work_id,
+        decision={"state": "READY_TO_QUEUE", "action": action_snapshot},
         validate_fresh_scene=validate_both,
         perform_game_ui_effect=perform_game_ui_effect,
     )

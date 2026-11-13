@@ -1,0 +1,110 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-COMPUTER-BATCH-CLOSERS-20261112",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "MoonWake /the-closers (P83→P03→P141→P124→P04) verifies merged upgrade-parts purchase picker, repairs missing personal-inventory baseline before any arrow, hardens final queue input against incomplete/modified spend decisions, and preserves issue #213 for the game-native automation gate.",
+  "operator_correction": "The real goal is eliminating repeated quantity clicks in the five-item computer Upgrade Parts modal, not merely finishing an offline plan. Previous PR #210 is merged with green CI but cannot certify actual game effects. Harden the existing owner; no second rapid clicker or false live claim.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "HOST_ACTION",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "MECHANIC_PATH"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "docs/UPGRADE_PARTS_FORCE.md",
+    "contracts/upgrade-parts-force.v1.json",
+    "betterinstincts/computer_upgrade_parts.py",
+    "betterinstincts/workflow_interop.py",
+    "tests/test_computer_upgrade_batch.py",
+    "contracts/native-gameplay-authority.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018",
+    "BI-ONT-019"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "GITHUB_SOURCE_AND_TESTS_ONLY_NOT_SIMS4_NATIVE_PURCHASE_RUNTIME",
+  "player_save_control_impact": "No game save, automatic input, service/driver/Bluetooth, controls, EA Connect or extra spend permitted. Preserve explicit command, human reclaim, fresh scene and picker observation, one queued effect, and per-Sim pocket and funds reconciliation.",
+  "expected_outcome": "Existing computer_upgrade_parts owner fails closed on missing five-item pocket baseline before any cart mutation; downstream queue requires a fully bounded observed action and frozen snapshot; negative tests, docs, native gameplay classification, and verified PR/main integration. Issue #213 remains game-native P08 owner.",
+  "negative_tests": [
+    "No increment without all five personal inventory counts",
+    "Malformed Buy without budget and totals fails at queue admission",
+    "Queue rejects total > approved cap or funds",
+    "Decision dict altered after enqueue cannot change sent effect",
+    "Existing five-item price/quantity and player-first tests remain green",
+    "No direct unsupported native EA invocation"
+  ],
+  "rollback_path": "Revert feature branch/merged PR only; no game or user data modified.",
+  "unresolved_unknowns": [
+    "Exact game-build EA native hook for purchase and item quantity missing in this provider runtime",
+    "No independent game scene/stock/funds observation for a live purchase",
+    "No local MoonWake prompt_group_walk process/agent adapter in this remote GitHub connector"
+  ],
+  "files_expected": [
+    "contracts/native-gameplay-decisions/BI-COMPUTER-BATCH-CLOSERS-20261112.v1.json",
+    "betterinstincts/computer_upgrade_parts.py",
+    "tests/test_computer_upgrade_batch.py",
+    "docs/UPGRADE_PARTS_FORCE.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "strategy": {
+    "candidates": [
+      {
+        "thesis": "Harden the existing cart decision-to-queue seam",
+        "evidence": "Unverified baseline can precede arrow and forged/mutated action can reach downstream queue",
+        "disposition": "SURVIVES"
+      },
+      {
+        "thesis": "Add a separate desktop bulk click service",
+        "evidence": "Would appear to remove repeated manual input",
+        "disposition": "REJECTED",
+        "why": "Second uncontrolled effects engine violates repo doctrine and existing owner"
+      },
+      {
+        "thesis": "Implement native EA purchase script now",
+        "evidence": "Player's actual goal and native-first repo doctrine",
+        "disposition": "DEFERRED",
+        "why": "Exact game build and supported EA hook/source not observed; remains issue #213"
+      },
+      {
+        "thesis": "Use Spawn Crafting Supplies cheats instead",
+        "evidence": "Existing optional research lab path",
+        "disposition": "REJECTED",
+        "why": "Does not satisfy paid computer-buy UX and silent cheats alter economy"
+      }
+    ],
+    "selected": "Harden existing cart decision-to-queue seam; preserve native execution as explicit successor"
+  },
+  "status": "CONSULTED_BEFORE_BEHAVIOR_MUTATION"
+}

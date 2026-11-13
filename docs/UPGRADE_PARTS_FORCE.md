@@ -169,3 +169,37 @@ Live Mode observation. A future opt-in restock profile may eliminate further
 repeated per-arrow approvals within a preapproved cap; this code never
 silently spends or chooses cheats/Spawn Crafting Supplies as a replacement.
 No EA Connect or OS/peripheral changes.
+
+
+## 2026-11-12 — MoonWake Closers: pre-cart proof and immutable dispatch
+
+P83 verified merged #210 but identified two transaction-integrity gaps:
+an arrow could be proposed before all five **selected Sim pocket-inventory**
+counts were independently observed, and queue admission accepted a stripped
+or altered `READY_TO_QUEUE` batch purchase action as long as the picker
+callback said yes. These are policy/host-adapter trust-boundary gaps,
+**not** evidence that a Sims game purchase was executed.
+
+P03 repaired the existing `betterinstincts/computer_upgrade_parts.py`
+owner. The *first arrow* and *Buy* now both require an all-five-part
+personal-inventory baseline. Each action receives an observed cart envelope
+including unit/total cost, planned quantity, funds, approved spending cap,
+fresh picker revision and explicit approval. The cooperative-queue boundary
+rejects missing/negative/noninteger limits, cart totals above caps, malformed
+increments and Buy when the exact requested cart count/cost has not been met.
+The queued action is a frozen **copy** of the admitted receipt: later
+mutations to the caller's decision cannot turn an increment into Buy.
+
+The trusted game adapter must **independently** reobserve that receipt's
+price/funds, selected Sim, picker revision/rows, scene and current hitbox
+immediately before dispatch; callback assertions alone are not proof.
+Unknown player activity yields and uncertain purchases reconcile rather
+than replay. The route stays POLICY_ONLY under the same
+`CooperativeScreenQueue`; no background clicker or EA-native hook was added.
+
+P141 rejected second UI engines and speculative native APIs without the
+current exact-patch EA tuning source. P124 kept the one existing code owner,
+legacy single-item menu behavior and five-kind calculator. P04's downstream
+game-native execution and disposable Live Mode proof remain in
+[issue #213](https://github.com/EndeavorEverlasting/BetterInstincts/issues/213);
+GitHub provider connectivity does not amount to a local Windows Sims host.

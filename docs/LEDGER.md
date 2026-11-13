@@ -1909,3 +1909,33 @@ mutate money. Consultation-before-mutation in
 POLICY_ONLY. **Actual native Sims mod and P08 gameplay remain unproved.**
 The established BI-002 hunger parent remains active. Design + operator
 harness entry: `docs/NANOCAN_RECYCLING.md`.
+
+
+## 2026-11-12 — /the-closers: computer upgrade-parts cart integrity
+
+**Parent remains:** automatic game-native computer purchasing for all five
+upgrade-part kinds without player arrow-by-arrow input. Previous PR #210
+was independently confirmed merged, and its offline CI passed. This audit
+does not upgrade policy code to an installed/verified Sims 4 mod.
+
+**P83 → P03:** Verified code and found missing pocket baseline before the
+first arrow and too-weak policy-to-queue batch receipt validation. Introduced
+the consultation first, kept the native route POLICY_ONLY and hardened the
+existing computer_upgrade_parts.py owner; added focused adversarial tests
+before submitting to full CI. No desktop input or save mutation.
+
+**P141:** Compared single-owner transaction hardening, direct EA-native hook
+with unknown patch, a second desktop click service and cheat-only supply
+spawn. Selected the existing owner; other routes rejected/deferred with
+exact game evidence needed for adoption.
+
+**P124:** Existing two-stage proposal/queue API and CLI preserved.
+Code debt classification: KEEP existing owner, STRENGTHEN batch queue
+boundary, DEFER native behavior to issue #213. No new commerce agent.
+
+**P04:** One serial GitHub source/CI integration lane; native game runtime
+cannot be dispatched from this provider. The existing open issue #213
+retains the exact-build EA-source/Live Mode/disposable-save obligation.
+No claim of local MoonWake walker or five external agents launched.
+Merge and CI are separate checkable states; inspect final PR and main
+before promoting this source receipt to provider-verified closure.
