@@ -9,16 +9,9 @@
       "reason": "Bounded pure first-run skill recommendations share existing Windows launch owner; no EA API, sim/autonomy input, tuning or save writes.",
       "game_effect_claim": "NONE",
       "autonomy_runtime": false
-    },
-    {
-      "path": "scripts/first_run.py",
-      "route": "HOST_LAB_ONLY",
-      "reason": "Existing opt-in local launcher GUI and plan CLI display advisory context only, without interacting with CAS or Sims menus.",
-      "game_effect_claim": "NONE",
-      "autonomy_runtime": false
     }
   ],
-  "host_adapter": "scripts/first_run.py",
+  "host_adapter": "scripts/first_run.py (non-product host CLI; reviewed via CI and ontology consultation, outside product-module classifier)",
   "runtime_admission": "Explicit double-click or clicked game launch only; CAS and player-directed actions remain player-owned",
   "autonomy_runtime": false,
   "proof_ceiling": "OFFLINE_HOST_PLANNING_ONLY_NOT_WINDOWS_GAMEPLAY_OR_CAS_CERTIFICATION",
