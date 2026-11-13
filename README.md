@@ -1,3 +1,7 @@
+## Local semantic autoencoder learning (opt-in research feature)
+
+BetterInstincts now includes an **offline, on-device semantic variational autoencoder** for independently verified room/route observations. The small trainable encoder and decoder learn from source-qualified 5×5×3 spatial patches, storing a bounded, private training corpus and model under the installation's user-profile runtime directory. **Cloning does not start data capture or training.** Opt in explicitly via `python -m scripts.semantic_vae enable --ack-local-data`; this only enables training from separately supplied, verified events, not a live game observer. Status, disable and exact-scope deletion are available. No screenshots or Sim/save names are stored, no central service is contacted, and decoded geometry never becomes permission to move the Sim/camera or click. This is not yet a trained or certified Sims 4 runtime integration. [Full design and commands](docs/SEMANTIC_VAE.md).
+
 # BetterInstincts
 **Smarter Sims. Better decisions. More interesting lives.**
 

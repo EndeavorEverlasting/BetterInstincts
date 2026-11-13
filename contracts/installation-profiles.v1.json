@@ -12,7 +12,8 @@
     "learning.build_placement_auto_map": true,
     "automation.cooperative_screen_queue": false,
     "automation.host_suggestions": false,
-    "privacy.local_evaluation_receipts": false
+    "privacy.local_evaluation_receipts": false,
+    "learning.semantic_vae": false
   },
   "bounds": {
     "max_profiles": 16,
@@ -25,7 +26,8 @@
     "Mandatory hard safety (save/presence/scene/15s idle/consent) cannot be turned off",
     "No network, global hooks, telemetry, game saves, silent services, or workstation settings",
     "Settings survive installer uninstall; uninstall never deletes user preferences",
-    "One writer via exclusive lock, bounded validated JSON, atomic replacement; bad files fail closed"
+    "One writer via exclusive lock, bounded validated JSON, atomic replacement; bad files fail closed",
+    "Semantic VAE training is opt-in, on-device, bounded to attested semantic patches; installing/cloning never activates sampling or remote upload"
   ],
   "proof_ceiling": "CONFIGURATION_FUNCTIONALITY_OFFLINE_ONLY"
 }

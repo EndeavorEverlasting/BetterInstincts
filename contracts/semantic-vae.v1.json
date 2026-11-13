@@ -1,0 +1,88 @@
+{
+  "schema": "betterinstincts.semantic-vae/v1",
+  "version": 1,
+  "owner": "betterinstincts/semantic_vae.py",
+  "model_schema": "betterinstincts.semantic-vae.model/v1",
+  "input_owner": "betterinstincts/spatial_convolution.py#_sample",
+  "identity_owner": "betterinstincts/traversal_cost_learning.py#context_hash",
+  "consent_owner": "contracts/installation-profiles.v1.json#learning.semantic_vae",
+  "purpose": "A user's local BetterInstincts instance can explicitly train its own spatial semantic VAE on verified 5x5x3 room patches without upstream upload or new game observers. Decoder outputs are hypotheses; source-verified Sims physics/route and camera independently own safe navigation.",
+  "domains": [
+    "WORLD_SEMANTIC_PATCH",
+    "SIM_TRAVERSAL_VERIFIED_OUTCOME"
+  ],
+  "shape": {
+    "floor_grid": [
+      5,
+      5,
+      3
+    ],
+    "flattened": 75,
+    "latent": 4,
+    "encoder": "LINEAR_GAUSSIAN_MEAN_LOGVAR",
+    "sampling": "REPARAMETERIZED_NORMAL",
+    "decoder": "LINEAR_SIGMOID_BERNOULLI",
+    "loss": "MEAN_BINARY_CROSS_ENTROPY_PLUS_BETA_KL",
+    "beta": 0.02,
+    "rate": 0.12
+  },
+  "bounds": {
+    "per_context_bytes": 125000,
+    "max_profile_files": 64,
+    "holdout_hash_mod": 5,
+    "minimum_training": 24,
+    "minimum_holdout": 8,
+    "heldout_improvement_vs_uniform_nats": 0.01,
+    "weights_abs_max": 4,
+    "max_lifetime_events": 10000,
+    "retained_semantic_examples": 128,
+    "replay_bloom_bytes": 16384
+  },
+  "learning": {
+    "opt_in_default": false,
+    "requires_active_local_profile": true,
+    "requires_validated_game_event": true,
+    "accepted_provenance": [
+      "GAME_ROUTE_PROBE_SENSOR_VERIFIED",
+      "OPERATOR_VERIFIED_TRAVERSAL_REVIEWED"
+    ],
+    "dedup": "SHA256_160_EXACT_BUILD_BEFORE_CAPTURE_PLUS_BOUNDED_BLOOM_4_HASHES_COLLISIONS_ABSTAIN",
+    "holdout_prequential": true,
+    "holdout_never_train": true,
+    "local_user_scoped": true,
+    "auto_collect": false,
+    "auto_train": false,
+    "remote_exchange": false,
+    "raw_game_images": false,
+    "raw_sim_or_save_names": false,
+    "sample_retention": "ROLLING_LAST_128_VERIFIED_SEMANTIC_VECTORS_CHECKPOINT_KEEPS_WEIGHTS_AND_BLOOM"
+  },
+  "storage": {
+    "owner": "bootstrap.paths()['use'].parent/runtime/semantic-vae/<opaque_context>.json",
+    "model_and_bounded_dataset_in_one_atomic_checkpoint": true,
+    "exclusive_writer": true,
+    "reject_symlinks": true,
+    "finite_models_only": true,
+    "uninstall_preserves_user_state": true,
+    "not_inside_git_or_sims_saves": true
+  },
+  "integration": {
+    "camera_owner": "betterinstincts/camera_traverse.py",
+    "navigation_owner": "betterinstincts/household_navigation.py",
+    "existing_cnn_owner": "betterinstincts/spatial_convolution.py",
+    "no_graph_edge_creation": true,
+    "no_sim_walk_grant": true,
+    "no_camera_or_cursor_actuation": true,
+    "no_auto_install": true
+  },
+  "validation": [
+    "python -m unittest tests.test_semantic_vae -v",
+    "python -m scripts.check_semantic_vae",
+    "python -m scripts.check_ontology",
+    "python -m scripts.check_native_gameplay_authority --json"
+  ],
+  "runtime_proof": "OFFLINE_ONLY_UNTIL_LOCAL_SIMS_4_PATCH_GAME_BUILD_CALIBRATION_AND_LABELED_HOLDOUT",
+  "bi002_active": true,
+  "execute_allowed": false,
+  "proof_ceiling": "OFFLINE_LOCAL_SEMANTIC_VAE_NOT_GAME_SLAM_OR_INPUT_CERT"
+}

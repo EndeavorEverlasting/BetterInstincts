@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-LOCAL-SEMANTIC-VAE-20261113",
+  "purpose": "A local, optional, sanitized semantic VAE learning worker for source-verified Sims 4 route geometry; no game or host effects.",
+  "files": [
+    {
+      "path": "betterinstincts/semantic_vae.py",
+      "route": "POLICY_ONLY",
+      "reason": "Explicit local dataset training and probabilistic reconstruction from independently validated geometry, not an EA game hook or host input adapter.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_LEARNING_WITH_NO_SIMS_RUNTIME_OR_NETWORK_PROOF",
+  "next_gate": "Obtain operator-approved local exact-patch source and real labeled game outcomes, calibrate holdout and CPU budgets on user host, then consider safe native downstream advisory without creating any click/movement authority."
+}
