@@ -1,0 +1,24 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-NANOCAN-CURSOR-FREE-DISH-RECYCLING-20261113",
+  "purpose": "Improve all household Sims dirty-dish cleanup using NanoCan as a better financial instinct, preserving drag-equivalent versus ordinary Sim disposal reward semantics and avoiding desktop cursor ownership.",
+  "files": [
+    {
+      "path": "betterinstincts/nanocan_recycling.py",
+      "route": "POLICY_ONLY",
+      "reason": "Read-only, bounded, exact-build, native-adapter-oriented dish disposal and actual rewards evidence reconciliation; no EA side effects, desktop input, patches, or game API calls.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/autonomy_moderation.py",
+      "route": "POLICY_ONLY",
+      "reason": "Optional port into the existing all-household-Sims native autonomy policy, without replacing queue evaluator or authorizing mutation.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_NATIVE_POLICY_NOT_SIM_DISH_CLEANUP_OR_NANOCAN_FUNDS",
+  "next_gate": "LOCAL_EA_EVIDENCE_REQUIRED: read-only inspect the installed exact-patch NanoCan/dirty-dish/touchless trashcan tuning and rewarded drag-drop versus Sim cleaning scripts; decide source-proven XML tuning versus embedded EA script; disposable household A/B payout trials and rollback; protect BI-002."
+}
