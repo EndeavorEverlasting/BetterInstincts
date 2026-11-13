@@ -104,6 +104,55 @@ def outcome(**changes):
     return row
 
 
+
+def waste(ref="waste:one", **changes):
+    row = dict(waste_ref=ref, capture_ref=CAP, kind="TRASH_PILE",
+               attempt="NONE", verified=True, player_reserved=False,
+               disposal_allowed=True, identity_proof_ref="ea:waste:catalog")
+    row.update(changes)
+    return row
+
+
+def waste_route(ref="waste:one", **changes):
+    row = route()
+    del row["dish_ref"]
+    row["waste_ref"] = ref
+    row.update(changes)
+    return row
+
+
+def cleanup(kind="DISH_TO_SINK", origin="SIM_AUTONOMY", ref="dish:a", **changes):
+    destinations={"DISH_TO_SINK":"SINK","DISH_TO_DISHWASHER":"DISHWASHER",
+                  "DISH_TO_STANDARD_BIN":"STANDARD_TRASH_CAN",
+                  "GARBAGE_TO_STANDARD_BIN":"STANDARD_TRASH_CAN"}
+    row = dict(item_ref=ref, actor_ref="sim:one", queue_slot_ref="queue:cleanup",
+               action_id="native:cleanup:interaction", origin=origin,
+               origin_proof_ref="proof:origin", native_action_source_ref="ea:native:cleanup",
+               destination_ref="world:standard-destination", capture_ref=CAP,
+               game_build=BUILD, action_kind_verified=True, source_kind="EA_TUNING",
+               cleanup_kind=kind, destination_kind=destinations[kind])
+    row.update(changes)
+    return row
+
+
+def queue_entry(cleanup_row):
+    return {k:cleanup_row[k] for k in ("queue_slot_ref", "action_id", "origin",
+            "origin_proof_ref", "item_ref", "cleanup_kind",
+            "destination_ref", "native_action_source_ref", "capture_ref")}
+
+
+def spatial(ref="dish:a", **changes):
+    row=dict(lot_ref="lot:home", game_build=BUILD, capture_ref=CAP, item_ref=ref,
+             can_ref="can:nano", source="SEMANTIC_3D",
+             source_ref="proof:current-lot-graph", world_revision_ref="rev:lot:1",
+             item_floor_id="FLOOR_1", can_floor_id="FLOOR_1",
+             item_identity_verified=True, can_identity_verified=True,
+             native_route_reachable_verified=True,
+             sim_route_reachable_verified=True, vertical_route_verified=False)
+    row.update(changes)
+    return row
+
+
 class NanoCanPolicyTests(unittest.TestCase):
     def test_single_player_drag_equivalent_candidate_is_not_a_game_effect(self):
         data = visit()
@@ -306,6 +355,211 @@ class NanoCanPolicyTests(unittest.TestCase):
                 with self.assertRaises(NanoCanRecyclingError):
                     reconcile_nanocan_outcome(outcome(**mutation))
 
+
+    def test_verified_cleanup_destinations_and_queue_origins_redirect_one_slot(self):
+        for kind, origin in (
+            ("DISH_TO_SINK","SIM_AUTONOMY"),
+            ("DISH_TO_DISHWASHER","SIM_AUTONOMY"),
+            ("DISH_TO_STANDARD_BIN","VANILLA_ROUTINE"),
+            ("DISH_TO_SINK","WHIM_AUTONOMY"),
+        ):
+            with self.subTest(kind=kind, origin=origin):
+                pending=cleanup(kind=kind,origin=origin)
+                result=evaluate(visit(lot_ref="lot:home", world_revision_ref="rev:lot:1",
+                    dishes=[dish(pending_cleanup=[pending])],
+                    native_routes=[route(spatial_proof=spatial())]),
+                    sims=[sim(queue=[queue_entry(pending)])])
+                pair=result["queue_redirection_candidate"]
+                self.assertIsNotNone(pair)
+                self.assertEqual(pair["queue_slot_ref"],"queue:cleanup")
+                self.assertEqual(pair["source_origin"],origin)
+                self.assertTrue(pair["requires_native_transaction"])
+                self.assertFalse(pair["cancel_first_without_replacement"])
+                self.assertEqual(pair["replacement_proposal_key"], result["proposal"]["proposal_key"])
+                self.assertFalse(result["cancel_allowed"])
+                self.assertFalse(result["dispatch_authorized"])
+                self.assertFalse(result["desktop_input_allowed"])
+
+    def test_stale_or_false_spatial_map_and_route_never_redirect(self):
+        pending=cleanup()
+        for mutation in (
+            {"lot_ref":"lot:other"},{"game_build":"wrong-build"},
+            {"capture_ref":"old-frame"},{"item_ref":"other"},
+            {"can_ref":"wrong-can"},{"source":"PIXEL_GUESS"},
+            {"world_revision_ref":None},{"item_identity_verified":False},
+            {"can_identity_verified":False},{"native_route_reachable_verified":False},
+            {"item_floor_id":"FLOOR_2"},{"source_ref":None},
+        ):
+            with self.subTest(mutation=mutation):
+                result=evaluate(visit(lot_ref="lot:home", world_revision_ref="rev:lot:1",
+                    dishes=[dish(pending_cleanup=[pending])],
+                    native_routes=[route(spatial_proof=spatial(**mutation))]),
+                    sims=[sim(queue=[queue_entry(pending)])])
+                self.assertIsNone(result["queue_redirection_candidate"])
+                self.assertIsNotNone(result["proposal"])
+        result=evaluate(visit(dishes=[dish(pending_cleanup=[pending])],
+                    native_routes=[route(spatial_proof=spatial())]),
+                    sims=[sim(queue=[queue_entry(pending)])])
+        self.assertIsNone(result["queue_redirection_candidate"])
+
+    def test_exact_queue_actor_item_origin_and_source_are_essential(self):
+        pending=cleanup()
+        for mutation in (
+            {"action_id":"another:action"},{"queue_slot_ref":"queue:other"},
+            {"origin":"PLAYER"},{"origin":"UNKNOWN"},
+            {"origin_proof_ref":"proof:other"},{"item_ref":"dish:other"},
+            {"native_action_source_ref":"ea:other"},{"destination_ref":"world:other"},
+            {"capture_ref":"other:frame"},
+        ):
+            with self.subTest(mutation=mutation):
+                queue={**queue_entry(pending),**mutation}
+                result=evaluate(visit(lot_ref="lot:home", world_revision_ref="rev:lot:1",
+                     dishes=[dish(pending_cleanup=[pending])],
+                     native_routes=[route(spatial_proof=spatial())]),
+                     sims=[sim(queue=[queue])])
+                self.assertIsNone(result["queue_redirection_candidate"])
+        for change in ({"player_command_present":True},
+                       {"player_owned":True},{"urgent_need":True},
+                       {"imminent_obligation":True},
+                       {"policy_opt_in":False},
+                       {"queue_verified":False},
+                       {"queue":[{"origin":"PLAYER","origin_proof_ref":"proof:manual"}]}):
+            with self.subTest(change=change):
+                result=evaluate(visit(lot_ref="lot:home", world_revision_ref="rev:lot:1",
+                    dishes=[dish(pending_cleanup=[pending])],
+                    native_routes=[route(spatial_proof=spatial())]),
+                    sims=[sim(**{**{"queue":[queue_entry(pending)]},**change})])
+                self.assertIsNone(result["queue_redirection_candidate"])
+
+    def test_whim_alone_without_verified_current_queue_is_not_an_action(self):
+        pending=cleanup(origin="WHIM_AUTONOMY")
+        obs=visit(lot_ref="lot:home", world_revision_ref="rev:lot:1", dishes=[dish(pending_cleanup=[pending])],
+                  native_routes=[route(spatial_proof=spatial())])
+        result=evaluate(obs,sims=[sim(queue=[])])
+        self.assertIsNone(result["queue_redirection_candidate"])
+        self.assertIsNotNone(result["proposal"])
+        for wrong in (
+            {"origin":"PLAYER"},
+            {"origin":"UNVERIFIED_WHIM"},
+            {"action_kind_verified":"yes"},
+            {"source_kind":"DESKTOP"},
+        ):
+            with self.subTest(wrong=wrong):
+                with self.assertRaises(NanoCanRecyclingError):
+                    evaluate(visit(dishes=[dish(pending_cleanup=[cleanup(**wrong)])]))
+
+    def test_verified_garbage_routes_to_nanocan_without_dish_reward_guess(self):
+        pending=cleanup(kind="GARBAGE_TO_STANDARD_BIN",ref="waste:one",
+                        origin="VANILLA_ROUTINE")
+        obs=visit(lot_ref="lot:home", world_revision_ref="rev:lot:1",dishes=[],waste_items=[waste(pending_cleanup=[pending])],
+                  native_routes=[waste_route(spatial_proof=spatial("waste:one"))])
+        result=evaluate(obs,sims=[sim(queue=[queue_entry(pending)])])
+        self.assertEqual(result["state"],"NANOCAN_NATIVE_DISPOSAL_CANDIDATE")
+        self.assertEqual(result["proposal"]["waste_ref"],"waste:one")
+        self.assertEqual(result["proposal"]["item_kind"],"TRASH_PILE")
+        self.assertIsNone(result["proposal"]["dish_ref"])
+        self.assertIsNone(result["reported_reward_estimate_simoleons"])
+        self.assertEqual(result["queue_redirection_candidate"]["item_ref"],"waste:one")
+        self.assertIsNone(result["sink_suppression_candidate"])
+
+    def test_garbage_refuse_unknown_reserved_dispatched_or_wrong_class(self):
+        for mutation in (
+            {"kind":"UNKNOWN"},{"kind":"EDIBLE_FOOD"},
+            {"identity_proof_ref":None},
+            {"attempt":"QUEUED"},{"attempt":"DISPATCHED"},
+            {"verified":False},{"player_reserved":True},
+            {"disposal_allowed":False},{"capture_ref":"capture:stale"},
+        ):
+            with self.subTest(mutation=mutation):
+                item=waste(**mutation)
+                if mutation.get("kind") in {"UNKNOWN","EDIBLE_FOOD"} or mutation.get("identity_proof_ref") is None and "identity_proof_ref" in mutation:
+                    with self.assertRaisesRegex(NanoCanRecyclingError,"NANOCAN_WASTE_ROW"):
+                        evaluate(visit(dishes=[],waste_items=[item],
+                                       native_routes=[waste_route()]))
+                else:
+                    result=evaluate(visit(dishes=[],waste_items=[item],
+                                          native_routes=[waste_route()]))
+                    self.assertIsNone(result["proposal"])
+        with self.assertRaisesRegex(NanoCanRecyclingError,"NANOCAN_WASTE_DUPLICATE"):
+            evaluate(visit(dishes=[],waste_items=[waste(),waste()]))
+
+    def test_native_sim_disposal_needs_same_actor_and_traversable_path(self):
+        pending=cleanup(kind="DISH_TO_DISHWASHER",origin="WHIM_AUTONOMY")
+        obs=visit(lot_ref="lot:home", world_revision_ref="rev:lot:1",dishes=[dish(pending_cleanup=[pending])],
+                  native_routes=[route("NATIVE_SIM_DISPOSE",
+                     reward_equivalence_verified=False, spatial_proof=spatial())])
+        self.assertIsNotNone(evaluate(obs,sims=[sim(queue=[queue_entry(pending)])])["queue_redirection_candidate"])
+        bad=copy.deepcopy(obs)
+        bad["native_routes"][0]["spatial_proof"]["sim_route_reachable_verified"]=False
+        self.assertIsNone(evaluate(bad,sims=[sim(queue=[queue_entry(pending)])])["queue_redirection_candidate"])
+        bad=copy.deepcopy(obs)
+        bad["native_routes"][0]["actor_ref"]="sim:other"
+        self.assertIsNone(evaluate(bad,sims=[sim(queue=[queue_entry(pending)])])["proposal"])
+
+    def test_cleanup_provenance_errors_and_duplicate_slots_rejected(self):
+        for item in (
+            dish(pending_cleanup="wrong"),
+            dish(pending_cleanup=[cleanup(),cleanup()]),
+            dish(pending_cleanup=[cleanup(destination_kind="NANOCAN")]),
+            dish(pending_cleanup=[cleanup(cleanup_kind="GARBAGE_TO_STANDARD_BIN")]),
+        ):
+            with self.subTest(item=item):
+                with self.assertRaises(NanoCanRecyclingError):
+                    evaluate(visit(dishes=[item]))
+        with self.assertRaisesRegex(NanoCanRecyclingError,"NANOCAN_ROUTE_PROOF"):
+            evaluate(visit(native_routes=[route(waste_ref="waste:another")]))
+        result=evaluate(visit(lot_ref="lot:home", world_revision_ref="rev:lot:1",native_routes=[route(spatial_proof=spatial())],
+                     dishes=[dish(pending_cleanup=[cleanup()])]),
+                     sims=[sim(queue=[queue_entry(cleanup())])])
+        self.assertIsNotNone(result["queue_redirection_candidate"])
+
+    def test_waste_outcome_requires_separate_removed_and_causal_proof(self):
+        original=outcome()
+        del original["dish_ref"]
+        original["waste_ref"]="waste:one"
+        original["waste_removed_verified"]=True
+        self.assertEqual(reconcile_nanocan_outcome(original)["state"],"VERIFIED_REWARD")
+        original["waste_removed_verified"]=False
+        self.assertEqual(reconcile_nanocan_outcome(original)["state"],"WASTE_DISPOSAL_NOT_PROVED")
+        original["waste_removed_verified"]=True
+        original["causal_reward_verified"]=False
+        self.assertEqual(reconcile_nanocan_outcome(original)["state"],"FUNDS_DELTA_NOT_ATTRIBUTED_TO_NANOCAN")
+
+    def test_player_owned_queue_on_other_sim_reserves_item_against_actorless_offer(self):
+        manual={"origin":"PLAYER","origin_proof_ref":"proof:manual",
+                "item_ref":"dish:a","action_id":"WASH_DISHES"}
+        out=evaluate(visit(native_routes=[route()]),
+                     sims=[sim("sim:one"), sim("sim:two",queue=[manual])])
+        self.assertIsNone(out["proposal"])
+        self.assertEqual(out["state"],"NATIVE_DISPOSAL_ROUTE_NOT_VERIFIED_OR_BUSY")
+        unknown={**manual,"origin":"UNKNOWN"}
+        self.assertIsNone(evaluate(visit(),sims=[sim(queue=[unknown])])["proposal"])
+        unrelated={**manual,"item_ref":"dish:other"}
+        self.assertIsNotNone(evaluate(visit(),sims=[sim(queue=[unrelated])])["proposal"])
+
+    def test_current_world_revision_rejects_old_spatial_attestation(self):
+        pending=cleanup()
+        data=visit(lot_ref="lot:home",world_revision_ref="rev:lot:2",
+                   dishes=[dish(pending_cleanup=[pending])],
+                   native_routes=[route(spatial_proof=spatial())])
+        result=evaluate(data,sims=[sim(queue=[queue_entry(pending)])])
+        self.assertIsNone(result["queue_redirection_candidate"])
+        data=copy.deepcopy(data)
+        data["world_revision_ref"]="rev:lot:1"
+        self.assertIsNotNone(evaluate(data,sims=[sim(queue=[queue_entry(pending)])])["queue_redirection_candidate"])
+
+    def test_paired_native_route_wins_over_unpaired_drag_route(self):
+        pending=cleanup()
+        obs=visit(lot_ref="lot:home",world_revision_ref="rev:lot:1",
+                  dishes=[dish(pending_cleanup=[pending])],
+                  native_routes=[
+                      route(spatial_proof=spatial(lot_ref="lot:old")),
+                      route("NATIVE_SIM_DISPOSE",reward_equivalence_verified=False,
+                            spatial_proof=spatial())])
+        result=evaluate(obs,sims=[sim(queue=[queue_entry(pending)])])
+        self.assertEqual(result["proposal"]["mode"],"NATIVE_SIM_DISPOSE")
+        self.assertIsNotNone(result["queue_redirection_candidate"])
+        self.assertEqual(result["reported_reward_estimate_simoleons"],10)
 
 class NativeAutonomyIntegrationTests(unittest.TestCase):
     def test_nested_port_does_not_change_legacy_sim_outputs(self):

@@ -17,6 +17,17 @@ ROUTES = ("NATIVE_DRAG_EQUIVALENT", "NATIVE_SIM_DISPOSE")
 ATTEMPTS = frozenset(("NONE", "QUEUED", "DISPATCHED", "CONFIRMED"))
 MAX_DISHES, MAX_CANS, MAX_ROUTES, MAX_AGE = 32, 8, 64, 180
 MAX_NATIVE_SIMS = 32
+MAX_WASTE_ITEMS, MAX_PENDING_CLEANUP = 32, 12
+WASTE_KINDS = frozenset(("TRASH_PILE", "EMPTY_CONTAINER", "SPOILED_GARBAGE",
+                         "OTHER_VERIFIED_GARBAGE"))
+NATIVE_QUEUE_ORIGINS = frozenset(("SIM_AUTONOMY", "WHIM_AUTONOMY",
+                                  "VANILLA_ROUTINE"))
+CLEANUP_DESTINATIONS = {
+    "DISH_TO_SINK": "SINK",
+    "DISH_TO_DISHWASHER": "DISHWASHER",
+    "DISH_TO_STANDARD_BIN": "STANDARD_TRASH_CAN",
+    "GARBAGE_TO_STANDARD_BIN": "STANDARD_TRASH_CAN",
+}
 
 
 class NanoCanRecyclingError(ValueError):
@@ -62,8 +73,147 @@ def _actor_safe(actor: Mapping) -> bool:
     queue = actor.get("queue")
     return (isinstance(queue, list) and len(queue) <= 24
             and all(isinstance(q, Mapping)
-                    and q.get("origin") == "SIM_AUTONOMY"
+                    and q.get("origin") in NATIVE_QUEUE_ORIGINS
                     and _ref(q.get("origin_proof_ref")) for q in queue))
+
+
+def _pending_cleanup(item: Mapping, *, item_ref: str) -> list[dict]:
+    """Validate native action IDs, not UI strings or guesses about an action."""
+    rows = item.get("pending_cleanup", [])
+    if not isinstance(rows, list) or len(rows) > MAX_PENDING_CLEANUP:
+        raise NanoCanRecyclingError("NANOCAN_PENDING_CLEANUP_BOUNDS_INVALID")
+    seen = set()
+    verified = []
+    for raw in rows:
+        if not isinstance(raw, Mapping):
+            raise NanoCanRecyclingError("NANOCAN_PENDING_CLEANUP_ROW_INVALID")
+        if (not all(_ref(raw.get(k)) for k in (
+                    "item_ref", "actor_ref", "queue_slot_ref", "action_id",
+                    "origin_proof_ref", "native_action_source_ref", "destination_ref",
+                    "capture_ref", "game_build"))
+                or raw.get("origin") not in NATIVE_QUEUE_ORIGINS
+                or raw.get("cleanup_kind") not in CLEANUP_DESTINATIONS
+                or raw.get("destination_kind") != CLEANUP_DESTINATIONS[raw["cleanup_kind"]]
+                or type(raw.get("action_kind_verified")) is not bool
+                or raw.get("source_kind") not in {"EA_TUNING", "EA_SCRIPT"}):
+            raise NanoCanRecyclingError("NANOCAN_PENDING_CLEANUP_PROOF_INVALID")
+        if (raw["cleanup_kind"].startswith("DISH_") != (item.get("dish_ref") == item_ref)):
+            raise NanoCanRecyclingError("NANOCAN_CLEANUP_ITEM_KIND_CONFLICT")
+        identity = (raw["actor_ref"], raw["queue_slot_ref"])
+        if identity in seen:
+            raise NanoCanRecyclingError("NANOCAN_DUPLICATE_CLEANUP_SLOT")
+        seen.add(identity)
+        verified.append(dict(raw))
+    return verified
+
+
+def _player_claims_item(item_ref: str, actors: Mapping) -> bool:
+    """A player/unknown queued use of this exact item protects it for every Sim.
+
+    A cursor-free policy cannot ignore a manual order from a different actor.
+    Only proven non-player queue entries leave this item unreserved.
+    """
+    for actor in actors.values():
+        queue = actor.get("queue")
+        if not isinstance(queue, list):
+            continue
+        for row in queue:
+            if not isinstance(row, Mapping):
+                continue
+            if (row.get("item_ref") == item_ref
+                    and (row.get("origin") not in NATIVE_QUEUE_ORIGINS
+                         or not _ref(row.get("origin_proof_ref")))):
+                return True
+    return False
+
+
+def _spatial_route_proven(
+    route: Mapping, *, observation: Mapping, item_ref: str, can_ref: str,
+    game_build: str, capture_ref: str,
+) -> bool:
+    """Bind a native route to independently observed objects and traversability.
+
+    This attestation is *not* a live SLAM detector or queue effect permission.
+    EA game routing, not camera pixels, must ultimately authorize pathfinding.
+    """
+    geometry = route.get("spatial_proof")
+    if not isinstance(geometry, Mapping) or not _ref(observation.get("lot_ref")):
+        return False
+    if (geometry.get("lot_ref") != observation["lot_ref"]
+            or not _ref(observation.get("world_revision_ref"))
+            or geometry.get("world_revision_ref") != observation["world_revision_ref"]
+            or geometry.get("game_build") != game_build
+            or geometry.get("capture_ref") != capture_ref
+            or geometry.get("item_ref") != item_ref
+            or geometry.get("can_ref") != can_ref
+            or geometry.get("source") not in {"EA_LOT_GRAPH", "SEMANTIC_3D"}
+            or not all(_ref(geometry.get(k)) for k in (
+                "source_ref", "world_revision_ref", "item_floor_id", "can_floor_id"))
+            or any(geometry.get(k) is not True for k in (
+                "item_identity_verified", "can_identity_verified",
+                "native_route_reachable_verified"))):
+        return False
+    if (route["mode"] == "NATIVE_SIM_DISPOSE"
+            and geometry.get("sim_route_reachable_verified") is not True):
+        return False
+    if (geometry["item_floor_id"] != geometry["can_floor_id"]
+            and geometry.get("vertical_route_verified") is not True):
+        return False
+    return True
+
+
+def _queue_cleanup_candidate(
+    item: Mapping, *, item_ref: str, can_ref: str, route: Mapping,
+    observation: Mapping, actor_map: Mapping, game_build: str,
+    capture_ref: str, proposal_key: str,
+) -> dict | None:
+    """One exact, coupled suppression+replacement suggestion; never dispatch."""
+    if not _spatial_route_proven(
+            route, observation=observation, item_ref=item_ref, can_ref=can_ref,
+            game_build=game_build, capture_ref=capture_ref):
+        return None
+    for cleanup in _pending_cleanup(item, item_ref=item_ref):
+        if (cleanup["item_ref"] != item_ref
+                or cleanup["capture_ref"] != capture_ref
+                or cleanup["game_build"] != game_build
+                or cleanup["action_kind_verified"] is not True):
+            continue
+        actor = actor_map.get(cleanup["actor_ref"])
+        if actor is None or actor.get("capture_ref") != capture_ref or not _actor_safe(actor):
+            continue
+        if (route["mode"] == "NATIVE_SIM_DISPOSE"
+                and route.get("actor_ref") != actor["sim_ref"]):
+            continue
+        matches = [q for q in actor["queue"]
+                   if all(q.get(k) == cleanup[k] for k in (
+                       "queue_slot_ref", "action_id", "origin", "origin_proof_ref",
+                       "item_ref", "cleanup_kind", "destination_ref",
+                       "native_action_source_ref", "capture_ref"))]
+        if len(matches) != 1:
+            continue
+        return {
+            "kind": "ATOMIC_NATIVE_CLEANUP_REDIRECTION_CANDIDATE",
+            "actor_ref": cleanup["actor_ref"],
+            "queue_slot_ref": cleanup["queue_slot_ref"],
+            "source_action_id": cleanup["action_id"],
+            "source_origin": cleanup["origin"],
+            "source_destination_kind": cleanup["destination_kind"],
+            "native_action_source_ref": cleanup["native_action_source_ref"],
+            "item_ref": item_ref, "can_ref": can_ref,
+            "replacement_proposal_key": proposal_key,
+            "spatial_source_ref": route["spatial_proof"]["source_ref"],
+            "requires_native_transaction": True,
+            "cancel_first_without_replacement": False,
+            "requires": [
+                "RECHECK_EXACT_SOURCE_QUEUE_SLOT_AND_ORIGIN",
+                "RECHECK_PLAYER_INTENT_AND_ACTIVE_GOAL",
+                "RECHECK_CURRENT_OBJECTS_LOT_AND_NATIVE_PATH",
+                "RECHECK_NANOCAN_COOLDOWN_AND_NATIVE_AFFORDANCE",
+                "NATIVE_ATOMIC_REPLACE_OR_PRESERVE_ORIGINAL_ACTION",
+                "OBSERVE_ITEM_REMOVAL_AND_INDEPENDENT_FUNDS_DELTA",
+            ],
+        }
+    return None
 
 
 def evaluate_nanocan_recycling(
@@ -90,6 +240,8 @@ def evaluate_nanocan_recycling(
             or observation.get("capture_ref") != capture_ref):
         raise NanoCanRecyclingError("NANOCAN_CONTEXT_MISMATCH")
     dishes = _rows(observation.get("dishes"), MAX_DISHES, "DISHES", "dish_ref")
+    waste = _rows(observation.get("waste_items", []), MAX_WASTE_ITEMS,
+                  "WASTE", "waste_ref")
     cans = _rows(observation.get("cans"), MAX_CANS, "CANS", "can_ref")
     routes = observation.get("native_routes")
     if not isinstance(routes, list) or len(routes) > MAX_ROUTES:
@@ -111,6 +263,15 @@ def evaluate_nanocan_recycling(
                 or any(type(dish.get(k)) is not bool for k in
                        ("verified", "player_reserved", "disposal_allowed"))):
             raise NanoCanRecyclingError("NANOCAN_DISH_ROW_INVALID")
+        _pending_cleanup(dish, item_ref=dish["dish_ref"])
+    for item in waste:
+        if (item.get("kind") not in WASTE_KINDS
+                or not _ref(item.get("identity_proof_ref"))
+                or item.get("attempt", "NONE") not in ATTEMPTS
+                or any(type(item.get(k)) is not bool for k in (
+                    "verified", "player_reserved", "disposal_allowed"))):
+            raise NanoCanRecyclingError("NANOCAN_WASTE_ROW_INVALID")
+        _pending_cleanup(item, item_ref=item["waste_ref"])
     for can in cans:
         if (can.get("kind") != "NANOCAN_TOUCHLESS"
                 or any(type(can.get(k)) is not bool for k in (
@@ -120,10 +281,10 @@ def evaluate_nanocan_recycling(
     for route in routes:
         if not isinstance(route, Mapping) or route.get("mode") not in ROUTES:
             raise NanoCanRecyclingError("NANOCAN_ROUTE_INVALID")
-        if not all(_ref(route.get(k)) for k in (
-            "dish_ref", "can_ref", "capture_ref", "ea_source_ref",
-            "native_affordance_ref",
-        )) or any(type(route.get(k)) is not bool for k in (
+        if (sum(_ref(route.get(k)) for k in ("dish_ref", "waste_ref")) != 1
+                or not all(_ref(route.get(k)) for k in (
+                    "can_ref", "capture_ref", "ea_source_ref", "native_affordance_ref",
+                ))) or any(type(route.get(k)) is not bool for k in (
             "available", "native_route_verified")):
             raise NanoCanRecyclingError("NANOCAN_ROUTE_PROOF_INVALID")
         if (route.get("game_build") != game_build
@@ -146,6 +307,7 @@ def evaluate_nanocan_recycling(
         "state": "REOBSERVE_NANOCAN",
         "proposal": None,
         "sink_suppression_candidate": None,
+        "queue_redirection_candidate": None,
         "reported_reward_estimate_simoleons": None,
         "reported_reward_is_game_proven": False,
         "dispatch_authorized": False,
@@ -171,25 +333,30 @@ def evaluate_nanocan_recycling(
             or observation.get("lot_verified") is not True
             or observation.get("queue_verified") is not True):
         return finish("NANOCAN_HOME_OPT_IN_OR_PROOF_REQUIRED")
-    if not dishes or not cans:
+    if (not dishes and not waste) or not cans:
         return finish("NO_ELIGIBLE_DISH_OR_NANOCAN")
 
     by_dish = {d["dish_ref"]: d for d in dishes}
+    by_waste = {w["waste_ref"]: w for w in waste}
     by_can = {c["can_ref"]: c for c in cans}
     choices = []
     for route in routes:
-        dish, can = by_dish.get(route["dish_ref"]), by_can.get(route["can_ref"])
-        if dish is None or can is None:
+        is_dish = _ref(route.get("dish_ref"))
+        item_ref = route["dish_ref"] if is_dish else route["waste_ref"]
+        item = (by_dish if is_dish else by_waste).get(item_ref)
+        can = by_can.get(route["can_ref"])
+        if item is None or can is None or _player_claims_item(item_ref, actor_map):
             continue
         if (route["capture_ref"] != capture_ref
                 or not route["available"] or not route["native_route_verified"]
-                or dish.get("capture_ref") != capture_ref
+                or item.get("capture_ref") != capture_ref
                 or can.get("capture_ref") != capture_ref):
             continue
-        if (dish["state"] != "DIRTY_EMPTY" or dish["stack_size"] != 1
-                or dish["attempt"] != "NONE"
-                or not dish["verified"] or dish["player_reserved"]
-                or not dish["disposal_allowed"]
+        if ((is_dish and (item["state"] != "DIRTY_EMPTY"
+                          or item["stack_size"] != 1))
+                or item["attempt"] != "NONE"
+                or not item["verified"] or item["player_reserved"]
+                or not item["disposal_allowed"]
                 or not can["verified"] or not can["usable"]
                 or can["broken"] or can["player_reserved"]
                 or not can["cooldown_ready"]):
@@ -203,40 +370,60 @@ def evaluate_nanocan_recycling(
                 continue
             if not _actor_safe(actor):
                 continue
-        choices.append((ROUTES.index(route["mode"]), dish["dish_ref"],
+        choices.append((ROUTES.index(route["mode"]), item_ref,
                         can["can_ref"], route))
     if not choices:
         return finish("NATIVE_DISPOSAL_ROUTE_NOT_VERIFIED_OR_BUSY")
-    _, dish_ref, can_ref, route = sorted(choices, key=lambda c: c[:3])[0]
+    # Prefer an exact replaceable autonomous queue action over an unpaired
+    # high-payout route. Preserve the old drag-first ranking otherwise.
+    ranked = []
+    for route_rank, candidate_ref, candidate_can, candidate_route in choices:
+        candidate_is_dish = _ref(candidate_route.get("dish_ref"))
+        candidate_item = (by_dish if candidate_is_dish else by_waste)[candidate_ref]
+        proposal_key = ":".join((capture_ref, candidate_ref, candidate_can,
+                                 candidate_route["mode"]))
+        paired = _queue_cleanup_candidate(
+            candidate_item, item_ref=candidate_ref, can_ref=candidate_can,
+            route=candidate_route, observation=observation, actor_map=actor_map,
+            game_build=game_build, capture_ref=capture_ref, proposal_key=proposal_key)
+        ranked.append((0 if paired else 1, route_rank, candidate_ref,
+                       candidate_can, candidate_route, paired))
+    _, _, item_ref, can_ref, route, paired_redirection = min(
+        ranked, key=lambda c: c[:4])
+    is_dish = _ref(route.get("dish_ref"))
+    selected = (by_dish if is_dish else by_waste)[item_ref]
     # A proposal is a plan, not a native queue action or a money mutation.
     result["proposal"] = {
         "kind": "CURSOR_FREE_NANOCAN_DISPOSAL_CANDIDATE",
         "mode": route["mode"],
-        "dish_ref": dish_ref,
+        "dish_ref": item_ref if is_dish else None,
+        "waste_ref": None if is_dish else item_ref,
+        "item_kind": "DIRTY_EMPTY_DISH" if is_dish else selected["kind"],
         "can_ref": can_ref,
         "actor_ref": route.get("actor_ref") if route["mode"] == "NATIVE_SIM_DISPOSE" else None,
         "capture_ref": capture_ref,
         "native_affordance_ref": route["native_affordance_ref"],
         "ea_source_ref": route["ea_source_ref"],
-        "proposal_key": ":".join((capture_ref, dish_ref, can_ref, route["mode"])),
+        "proposal_key": ":".join((capture_ref, item_ref, can_ref, route["mode"])),
         "may_post_money": False,
         "requires_independent_actual_funds_delta": True,
         "needs_installed_build_native_adapter": True,
     }
     member_count = observation.get("household_member_count")
-    if (observation.get("household_member_count_verified") is True
+    if (is_dish and observation.get("household_member_count_verified") is True
             and type(member_count) is int and 1 <= member_count <= 8):
         result["reported_reward_estimate_simoleons"] = (
             10 * member_count if route["mode"] == "NATIVE_DRAG_EQUIVALENT" else 10
         )
     # Sink suppression is ONLY a candidate when safe NanoCan disposal is
     # already eligible; never cancel a queue or override a manual wash.
-    sink = by_dish[dish_ref].get("pending_sink")
+    result["queue_redirection_candidate"] = paired_redirection
+    sink = selected.get("pending_sink") if is_dish else None
     sink_actor = actor_map.get(sink.get("actor_ref")) if isinstance(sink, Mapping) else None
     if (isinstance(sink, Mapping)
             and sink.get("action_id") == "WASH_DISHES"
             and sink.get("origin") == "SIM_AUTONOMY"
-            and sink.get("dish_ref") == dish_ref
+            and sink.get("dish_ref") == item_ref
             and sink.get("capture_ref") == capture_ref
             and _ref(sink.get("queue_slot_ref"))
             and _ref(sink.get("origin_proof_ref"))
@@ -249,7 +436,7 @@ def evaluate_nanocan_recycling(
             )):
         result["sink_suppression_candidate"] = {
             "queue_slot_ref": sink["queue_slot_ref"],
-            "dish_ref": dish_ref,
+            "dish_ref": item_ref,
             "requires": ["EA_NATIVE_AUTONOMY_TEST",
                          "RECHECK_PLAYER_QUEUE",
                          "RECHECK_NANOCAN_AVAILABLE"],
@@ -265,7 +452,10 @@ def reconcile_nanocan_outcome(receipt: Mapping) -> dict:
     """
     if not isinstance(receipt, Mapping) or receipt.get("schema") != OUTCOME_SCHEMA:
         raise NanoCanRecyclingError("NANOCAN_OUTCOME_SCHEMA_INVALID")
-    for key in ("proposal_key", "dish_ref", "can_ref", "before_capture_ref",
+    is_waste = _ref(receipt.get("waste_ref"))
+    if (is_waste == _ref(receipt.get("dish_ref"))):
+        raise NanoCanRecyclingError("NANOCAN_OUTCOME_ITEM_IDENTITY_INVALID")
+    for key in ("proposal_key", "can_ref", "before_capture_ref",
                 "after_capture_ref", "attempt_ref"):
         if not _ref(receipt.get(key)):
             raise NanoCanRecyclingError("NANOCAN_OUTCOME_IDENTITY_INVALID")
@@ -283,9 +473,10 @@ def reconcile_nanocan_outcome(receipt: Mapping) -> dict:
         "state": "NOT_VERIFIED",
         "modifies_household_funds": False,
     }
-    if (receipt.get("dish_removed_verified") is not True
+    if ((receipt.get("waste_removed_verified") if is_waste else
+         receipt.get("dish_removed_verified")) is not True
             or not _ref(receipt.get("disposal_proof_ref"))):
-        outcome["state"] = "DISH_DISPOSAL_NOT_PROVED"
+        outcome["state"] = "WASTE_DISPOSAL_NOT_PROVED" if is_waste else "DISH_DISPOSAL_NOT_PROVED"
     elif (receipt.get("causal_reward_verified") is not True
           or not _ref(receipt.get("causal_reward_proof_ref"))):
         outcome["state"] = "FUNDS_DELTA_NOT_ATTRIBUTED_TO_NANOCAN"

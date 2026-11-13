@@ -79,7 +79,9 @@
     "max_cans": 8,
     "max_native_routes": 64,
     "max_age_seconds": 180,
-    "max_actions_per_observation": 1
+    "max_actions_per_observation": 1,
+    "max_waste_items": 32,
+    "max_pending_cleanup_per_item": 12
   },
   "attempts": [
     "NONE",
@@ -93,7 +95,11 @@
     "https://ultimatesimsguides.com/nanocan-touchless-trash-can/",
     "https://forums.ea.com/discussions/the-sims-4-general-discussion-en/apartment-keys/1399098",
     "https://modthesims.info/d/645491/nanocan-drag-and-drop-fix.html",
-    "https://modthesims.info/d/667082/off-grid-nanocan-trash-can.html"
+    "https://modthesims.info/d/667082/off-grid-nanocan-trash-can.html",
+    "https://www.ea.com/games/the-sims/the-sims-4/news/update-9-22-2026",
+    "https://deaderpool-mccc.com/automationscan.html",
+    "https://modthesims.info/d/655016",
+    "https://www.curseforge.com/sims4/mods/waste-manager-overhaul/files/9083227"
   ],
   "p08_checks": [
     "pin_exact_installed_game_build",
@@ -104,7 +110,51 @@
     "prove_player_manual_wash_remains_allowed",
     "probe_cooldown_and_stacks",
     "rollback_disposable_save_native_package",
-    "retain_BI002_hunger_gate"
+    "retain_BI002_hunger_gate",
+    "identify_exact_native_queue_origin_and_dishwash_sink_standard_bin_interaction_IDs",
+    "verify_paired_queue_native_cancel_or_replace_not_player_commands",
+    "verify_3d_or_native_lot_graph_item_can_path_and_floor",
+    "verify_all_disposable_garbage_types_and_no_edible_or_reserved_objects",
+    "detect_other_mod_interaction_tuning_conflicts"
   ],
-  "proof_ceiling": "OFFLINE_CURSOR_FREE_NANOCAN_POLICY_NOT_INSTALLED_EA_HOOK_OR_MONEY"
+  "proof_ceiling": "OFFLINE_CURSOR_FREE_NANOCAN_POLICY_NOT_INSTALLED_EA_HOOK_OR_MONEY",
+  "cleanup_queue_redirection": {
+    "approved_intents": [
+      "DISH_TO_SINK",
+      "DISH_TO_DISHWASHER",
+      "DISH_TO_STANDARD_BIN",
+      "GARBAGE_TO_STANDARD_BIN"
+    ],
+    "queue_origins": [
+      "SIM_AUTONOMY",
+      "WHIM_AUTONOMY",
+      "VANILLA_ROUTINE"
+    ],
+    "native_action_identity": "Exact installed-build native queue slot, action ID, actor, item, origin proof, native source ref and destination ref must agree with currently observed queue entry",
+    "spatial_admission": "An externally attested current-home lot, exact game build, capture, named item and NanoCan objects, world revision, explicit floor relation and actual native route reachability are required before a paired queue-redirection proposal",
+    "game_native_preference": "Inspect EA tuning first; use EA embedded script only if source proven. An atomic replace-or-preserve-original transaction is required. No UI queue cancellation.",
+    "never_cancel_before_native_replacement": true,
+    "no_blanket_queue_clearing": true,
+    "no_player_or_unknown_command_cancel": true,
+    "no_guaranteed_admission_from_spatial_slam": true,
+    "destination_priority": "Replace only exact competing verified cleanup slot for same observed item, never unrelated queue or whim icons",
+    "maximum_per_observation": 1,
+    "proof_ceiling": "OFFLINE_POLICY_ONLY_NATIVE_ADAPTER_AND_GAMEPLAY_UNPROVEN",
+    "world_revision_binding": "spatial_proof.world_revision_ref must match a separately observed current lot world_revision_ref for the exact capture, build and lot; a remembered map cannot attest itself",
+    "player_item_reservation": "Any player-or-unknown household queue entry claiming the exact waste/dish item protects it from even actorless advice",
+    "choice_order": "Prefer exact proven atomic queue-replace candidate, then route payout priority and stable item/can ID; never cancel before replacement"
+  },
+  "waste_items": {
+    "kinds": [
+      "TRASH_PILE",
+      "EMPTY_CONTAINER",
+      "SPOILED_GARBAGE",
+      "OTHER_VERIFIED_GARBAGE"
+    ],
+    "max_items": 32,
+    "object_policy": "Verified truly disposable waste only; unknown, edible, valuable, personal or reserved objects are not eligible. Native item tags and exact interaction compatibility required.",
+    "payout": "Unknown until exact native game observation; do not reuse dish estimate.",
+    "outcome": "one independently observed disappearance and causal funds evidence per item; no automatic payout",
+    "identity_proof_ref_required": true
+  }
 }
