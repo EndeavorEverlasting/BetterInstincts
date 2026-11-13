@@ -1855,3 +1855,34 @@ route remains POLICY_ONLY. See `docs/HOUSEHOLD_UPKEEP.md`.
 **Proof ceiling:** offline repository CI; no game-side effect,
 disposable save tests, EA source IDs or Sims 4 runtime certification.
 BI-002 remains the active native hunger gate.
+
+
+## 2026-11-12 — P141 → MoonWake /fifth-gear computer picker batch
+
+**Operator objective:** Eliminate repeated manual computer upgrade-part
+purchases while preserving native Sims play, player sovereignty, per-Sim
+pocket stock and approved household spending.
+
+**P141:** Compared existing-owner observed-cart batch, speculative unverified
+native EA hook, independent rapid-click service and cheats-only bulk Spawn.
+Selected the observed-cart batch as the cheapest defensible policy slice;
+rejected a second desktop clicker and silent-cheat default; deferred EA
+native execution pending exact game-build evidence.
+
+**P95/P82:** Extend betterinstincts/computer_upgrade_parts.py with five-row
+cart quantities, price/funds/total budget checks, one click per new picker
+revision, one final Buy and exact funds/pocket inventory reconciliation.
+Tests cover five items, overspend, unobserved/stale rows, player takeover,
+incorrect totals, extra selections and partial outcomes. Existing single-
+item route preserved. Read-only batch and restock CLI, consultation,
+native gameplay decision and machine contract retain the design.
+
+**P08 proof ceiling:** No Windows The Sims 4 game process, actual EA-native
+purchase hook or independently observed live inventory delta accessible from
+the GitHub connector. Offline tests/CI and main merge are separate gates.
+BI-002 hunger live certification remains open.
+
+**P07/P124:** One existing purchase owner; no second clicker, no auto-run,
+EA Connect, save edits or OS settings. Verify GitHub CI and main merge
+independently. Next true gate: exact game build, source-verified EA-native
+integration, disposable Live Mode before/after purchase and player reclaim.

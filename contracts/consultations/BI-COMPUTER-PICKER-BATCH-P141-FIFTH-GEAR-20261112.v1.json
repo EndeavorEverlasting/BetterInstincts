@@ -1,0 +1,132 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-COMPUTER-PICKER-BATCH-P141-FIFTH-GEAR-20261112",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "P141 followed by MoonWake Fifth Gear: deterministic five-row Purchase Upgrade Parts picker batch planner, with per-arrow observed quantity reconciliation, dynamic costs, one final Buy action and inventory/funds verification; preserve existing computer_upgrade_parts + CooperativeScreenQueue ownership.",
+  "operator_correction": "The game picker shows five item rows with per-row increase arrows, a total item count/cost, funds, and one final confirmation. A human should not have to repeatedly purchase one unit or rediscover the nested Order route. No blind click spam or overriding player control.",
+  "repository_situation": "Existing computer_upgrade_parts.py can propose one observed effect; current CONFIRM/VERIFY is single-item. upgrade_parts_force.py owns DIY stock and per-Sim pocket inventory; no native purchase dispatcher or observed Sims runtime available in GitHub connector.",
+  "opportunity_signals": [
+    "Recurring manual UI repetition",
+    "Latent combination of existing five-part catalog, cooperative queue, and per-Sim stock budget",
+    "Missing transaction-level reconciliation for the picker quantity arrows"
+  ],
+  "competing_theses": [
+    {
+      "thesis": "Extend existing computer picker owner with quantity batch state machine",
+      "evidence": "Five-row menu, existing per-step guard and queue, screenshots",
+      "falsification": "Reject if observed selected quantities/total cost cannot be attested reliably",
+      "disposition": "SURVIVES"
+    },
+    {
+      "thesis": "Ship an EA native bulk-purchase script immediately",
+      "evidence": "Native-first doctrine and user desire for eventual hands-free gameplay",
+      "falsification": "No exact patch and EA hook evidence; unverified API risks saves and UI",
+      "disposition": "DEFERRED"
+    },
+    {
+      "thesis": "Add independent desktop rapid-clicker service",
+      "evidence": "UI arrows are repetitive",
+      "falsification": "Violates cooperative queue, player-first rule and single-owner doctrine",
+      "disposition": "REJECTED"
+    },
+    {
+      "thesis": "Always auto-spawn crafting supplies with cheats",
+      "evidence": "Existing lab bulk alternative",
+      "falsification": "Changes game economy, requires cheats, is not the user's computer purchase route",
+      "disposition": "REJECTED"
+    }
+  ],
+  "selected_thesis": "Existing-owner observed-picker batch state machine (one arrow per fresh observation; single Buy; exact post-purchase reconciliation)",
+  "recommended_route": "P95 then P82 then P08 then P07 then P124",
+  "p82_experiment_admission": {
+    "hypothesis": "For five observed rows, target quantities and live-observed unit prices, the planner never proposes more than one incremental click at a time, never exceeds authorized stock/spend, confirms once only at exact totals, and reconciles exact per-item/funds deltas.",
+    "baseline": "Existing single-item CONFIRM/VERIFY path, no quantity-arrow batch logic",
+    "comparator": "New batch picker plan/revalidate/verify path",
+    "prototype_boundary": "Pure Python existing owner; no game input, save reads/writes or bypass of CooperativeScreenQueue",
+    "measurements": [
+      "number of proposed effects per one call <=1",
+      "no confirmation on mismatched totals/cost",
+      "fail-closed on missing row/funds/inventory or interrupted player",
+      "all five items and cross-price arithmetic"
+    ],
+    "decision_rule": "PROMOTE if focused negative and positive fixture tests plus repository CI pass; WEAKEN on gaps in observed UI receipt contract; REJECT if guard can be bypassed; INCONCLUSIVE if source/CI cannot execute."
+  },
+  "affected_concepts": [
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "OBSERVATION",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "HOST_ACTION",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "MECHANIC_PATH"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "docs/UPGRADE_PARTS_FORCE.md",
+    "contracts/upgrade-parts-force.v1.json",
+    "betterinstincts/computer_upgrade_parts.py",
+    "betterinstincts/upgrade_parts_force.py",
+    "betterinstincts/workflow_interop.py",
+    "tests/test_computer_upgrade_parts.py"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "REMOTE_SOURCE_AND_CI_ONLY_UNTIL_DISPOSABLE_SIMS4_P08",
+  "player_save_control_impact": "No save edits, OS/peripheral effects, automatic game input or native gameplay authority. Existing explicit command, focus/player check, and cooperative one-effect queue retained.",
+  "negative_tests": [
+    "missing/duplicated/unknown picker row",
+    "missing or mismatch total count/cost",
+    "negative/boolean/noninteger quantity/price",
+    "over-budget or insufficient funds",
+    "player active/unknown, not paused or out-of-lot",
+    "no inventory baseline or post-purchase delta",
+    "selected amount exceeds requested target",
+    "no second unobserved increment or blind retry"
+  ],
+  "rollback_path": "Revert bounded branch PR; no installed Sims assets or saves mutated.",
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "PRE_IMPLEMENTATION_CONSULTATION_COMPLETE",
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018",
+    "BI-ONT-019"
+  ],
+  "expected_outcome": "An observed five-row cart planner with independent per-arrow freshness checks, one Buy, total funds and pocket delta reconciliation, read-only CLI, tests, machine contract, docs, and exact-native-gameplay route boundary.",
+  "unresolved_unknowns": [
+    "No exact game build/EA native purchase hook or actual Sims 4 runtime available in connected GitHub provider",
+    "No independently calibrated live picker row/button hitbox and inventory/funds observations",
+    "No game-native mod installed or game behavioral certification."
+  ],
+  "files_expected": [
+    "contracts/native-gameplay-decisions/BI-COMPUTER-PICKER-BATCH-P141-FIFTH-GEAR-20261112.v1.json",
+    "betterinstincts/computer_upgrade_parts.py",
+    "tests/test_computer_upgrade_batch.py",
+    "scripts/upgrade_parts_force.py",
+    "contracts/upgrade-parts-force.v1.json",
+    "docs/UPGRADE_PARTS_FORCE.md",
+    "docs/LEDGER.md"
+  ]
+}
