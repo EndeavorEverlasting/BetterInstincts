@@ -22,9 +22,15 @@ MAX_ACTIONS = 64
 MAX_CAPTURE_AGE_SECONDS = 180
 SERVO_NEEDS = frozenset({"durability", "charge", "fun", "social"})
 ACTIONS = {"TUNE_UP_SERVO", "REPAIR_SERVO", "RECHARGE_SERVO",
-           "SERVO_SELF_TUNE_UP", "SOCIALIZE_SERVO", "SERVO_FUN_ACTIVITY", "PAY_BILLS"}
-PEER_MAINTENANCE = frozenset({"TUNE_UP_SERVO", "REPAIR_SERVO"})
-HUMAN_ONLY_ACTIONS = frozenset({"SOCIALIZE_SERVO", "PAY_BILLS"})
+           "SERVO_SELF_TUNE_UP", "SOCIALIZE_SERVO", "SERVO_FUN_ACTIVITY", "PAY_BILLS",
+           "REPAIR_UTILIBOT", "TUNE_UP_UTILIBOT", "RECHARGE_UTILIBOT"}
+SERVO_MAINTENANCE = frozenset({"TUNE_UP_SERVO", "REPAIR_SERVO"})
+UTILIBOT_MAINTENANCE = frozenset({"REPAIR_UTILIBOT", "TUNE_UP_UTILIBOT"})
+PEER_MAINTENANCE = SERVO_MAINTENANCE | UTILIBOT_MAINTENANCE
+ROBOT_CARE = PEER_MAINTENANCE | {"RECHARGE_UTILIBOT"}
+HUMAN_ONLY_ACTIONS = frozenset({"PAY_BILLS"})
+UTILIBOT_NEEDS = frozenset({"durability", "charge"})
+UTILIBOT_KINDS = frozenset({"GARDENER_BOT", "CLEANER_BOT", "FIXER_BOT", "PARTY_BOT"})
 ATTEMPTS = {"NONE", "QUEUED", "DISPATCHED"}
 BILL_STATES = {"UNPAID", "PAID", "NOT_DUE", "UNKNOWN"}
 SKILL_LEVEL_MAX = 10
@@ -57,6 +63,21 @@ def load_contract() -> dict:
             or dryer.get("clean_lint_trap_before_each_dryer_run") is not True
             or dryer.get("unsupervised_dryer") != "FORBIDDEN_UNLESS_LINT_LESS_INSTALLED"):
         raise HouseholdUpkeepError("UPKEEP_FIRE_RISK_DRYER_POLICY_REQUIRED")
+    bot = cfg.get("utilibot_policy")
+    if (not isinstance(bot, Mapping)
+            or set(bot.get("kinds", ())) != UTILIBOT_KINDS
+            or set(bot.get("motives", ())) != UTILIBOT_NEEDS):
+        raise HouseholdUpkeepError("UPKEEP_UTILIBOT_POLICY_REQUIRED")
+    bounds = cfg.get("bounds") or {}
+    if type(bounds.get("max_utilibots")) is not int or not 1 <= bounds["max_utilibots"] <= 16:
+        raise HouseholdUpkeepError("UPKEEP_UTILIBOT_BOUND_INVALID")
+    for key in ("durability_critical", "durability_watch", "charge_critical", "charge_watch"):
+        if not _num(bot["thresholds"].get(key), upper=1):
+            raise HouseholdUpkeepError("UPKEEP_UTILIBOT_THRESHOLDS_INVALID")
+    hp = cfg.get("servo_helper_policy") or {}
+    for key in ("min_helper_charge", "min_helper_durability"):
+        if not _num(hp.get(key), upper=1):
+            raise HouseholdUpkeepError("UPKEEP_SERVO_HELPER_RESERVE_INVALID")
     return cfg
 
 
@@ -87,34 +108,56 @@ def _verified_skill_level(actor: Mapping, skill_id: str) -> float | None:
     return float(level) if _num(level, lower=0, upper=SKILL_LEVEL_MAX) else None
 
 
-def _actor_can_help(actor: Mapping, proposal: Mapping, *, min_robotics: float) -> bool:
-    """HUMAN helpers first-class; peer Servo only for maintenance with Robotics."""
-    action_id = proposal["action_id"]
-    target = proposal["target_ref"]
-    if action_id in HUMAN_ONLY_ACTIONS:
-        return actor.get("kind") == "HUMAN"
-    if action_id in PEER_MAINTENANCE:
-        if actor.get("sim_ref") == target:
-            return False
-        if actor.get("kind") == "HUMAN":
-            return True
-        if actor.get("kind") == "SERVO":
-            level = _verified_skill_level(actor, "robotics")
-            return level is not None and level >= min_robotics
+def _verified_module(actor: Mapping, name: str) -> bool:
+    """A capability is known only when the active host verified its module."""
+    modules = actor.get("modules")
+    entry = modules.get(name) if isinstance(modules, Mapping) else None
+    return isinstance(entry, Mapping) and entry.get("verified") is True and entry.get("enabled") is True
+
+
+def _servo_helper_ready(actor: Mapping, servos_by_ref: Mapping[str, Mapping],
+                        helper_policy: Mapping) -> bool:
+    """Do not divert an unobserved, damaged, wet or depleted Servo helper."""
+    self_row = servos_by_ref.get(actor["sim_ref"])
+    if not self_row or not self_row["needs_verified"]:
         return False
-    if action_id in {"RECHARGE_SERVO", "SERVO_FUN_ACTIVITY"}:
-        return actor.get("kind") == "SERVO" and actor.get("sim_ref") == target
-    return actor.get("kind") == "HUMAN"
+    needs = self_row["needs"]
+    return (not self_row["broken"] and self_row.get("water_exposure", "NONE") == "NONE"
+            and needs["charge"] >= helper_policy["min_helper_charge"]
+            and needs["durability"] >= helper_policy["min_helper_durability"])
 
 
-def _helper_iter(actors: list[dict]) -> list[dict]:
-    """Prefer HUMAN helpers, then Servo peers — preserves prior HUMAN-first policy."""
-    humans = [a for a in actors if a.get("kind") == "HUMAN"]
-    servos = [a for a in actors if a.get("kind") == "SERVO"]
-    return humans + servos
+def _actor_can_help(actor: Mapping, proposal: Mapping, *, min_robotics: float) -> bool:
+    """Qualified helper and exact target action, independent of input authority."""
+    action_id, target = proposal["action_id"], proposal["target_ref"]
+    kind = actor.get("kind")
+    if action_id in HUMAN_ONLY_ACTIONS:
+        return kind == "HUMAN"
+    if action_id in ROBOT_CARE:
+        if actor["sim_ref"] == target:
+            return False
+        if kind == "HUMAN":
+            return True
+        if kind == "SERVO":
+            level = _verified_skill_level(actor, "robotics")
+            return ((level is not None and level >= min_robotics)
+                    or (action_id == "REPAIR_UTILIBOT"
+                        and _verified_module(actor, "fix_o_matic")))
+        return False
+    if action_id == "SOCIALIZE_SERVO":
+        return actor["sim_ref"] != target and kind in {"HUMAN", "SERVO"}
+    if action_id in {"RECHARGE_SERVO", "SERVO_FUN_ACTIVITY", "SERVO_SELF_TUNE_UP"}:
+        return kind == "SERVO" and actor["sim_ref"] == target
+    return False
 
 
-def _validate(visit: Mapping) -> tuple[list[dict], list[dict], list[dict], Mapping | None]:
+def _helper_iter(actors: list[dict], *, prefer_servo: bool) -> list[dict]:
+    """Prefer eligible Servo peers for robot care; humans are fallbacks."""
+    humans = [a for a in actors if a["kind"] == "HUMAN"]
+    servos = [a for a in actors if a["kind"] == "SERVO"]
+    return servos + humans if prefer_servo else humans + servos
+
+def _validate(visit: Mapping) -> tuple[list[dict], list[dict], list[dict], list[dict], Mapping | None]:
     if not isinstance(visit, Mapping) or visit.get("schema") != SCHEMA:
         raise HouseholdUpkeepError("UPKEEP_SCHEMA_INVALID")
     servos, actors, actions = (visit.get(k) for k in ("servos", "actors", "observed_actions"))
@@ -124,6 +167,9 @@ def _validate(visit: Mapping) -> tuple[list[dict], list[dict], list[dict], Mappi
         raise HouseholdUpkeepError("UPKEEP_ACTORS_INVALID")
     if not isinstance(actions, list) or len(actions) > MAX_ACTIONS:
         raise HouseholdUpkeepError("UPKEEP_ACTIONS_INVALID")
+    bots = visit.get("utilibots", [])
+    if not isinstance(bots, list) or len(bots) > 16:
+        raise HouseholdUpkeepError("UPKEEP_UTILIBOTS_INVALID")
     ids: set[str] = set()
     cleaned_servos: list[dict] = []
     for row in servos:
@@ -150,7 +196,32 @@ def _validate(visit: Mapping) -> tuple[list[dict], list[dict], list[dict], Mappi
             raise HouseholdUpkeepError("UPKEEP_SERVO_ATTEMPT_INVALID")
         if row.get("charge_attempt", "NONE") not in ATTEMPTS:
             raise HouseholdUpkeepError("UPKEEP_SERVO_CHARGE_ATTEMPT_INVALID")
+        if row.get("self_tune_verified", False) not in (True, False) or type(row.get("self_tune_verified", False)) is not bool:
+            raise HouseholdUpkeepError("UPKEEP_SELF_TUNE_PROOF_INVALID")
         cleaned_servos.append(dict(row))
+    cleaned_bots: list[dict] = []
+    for row in bots:
+        if (not isinstance(row, Mapping) or not _ref(row.get("bot_ref"))
+                or row.get("kind") not in UTILIBOT_KINDS):
+            raise HouseholdUpkeepError("UPKEEP_UTILIBOT_IDENTITY_INVALID")
+        if row["bot_ref"] in ids:
+            raise HouseholdUpkeepError("UPKEEP_DUPLICATE_ROBOT_IDENTITY")
+        ids.add(row["bot_ref"])
+        if not _bool(row.get("needs_verified")) or not _bool(row.get("broken")):
+            raise HouseholdUpkeepError("UPKEEP_UTILIBOT_PROOF_INVALID")
+        meter = row.get("needs")
+        if row["needs_verified"]:
+            if not isinstance(meter, Mapping) or set(meter) != UTILIBOT_NEEDS:
+                raise HouseholdUpkeepError("UPKEEP_UTILIBOT_NEEDS_INVALID")
+            if not all(_num(v, upper=1) for v in meter.values()):
+                raise HouseholdUpkeepError("UPKEEP_UTILIBOT_MOTIVE_RANGE_INVALID")
+        elif meter is not None:
+            raise HouseholdUpkeepError("UPKEEP_UTILIBOT_UNVERIFIED_MOTIVES_MUST_BE_NULL")
+        if row.get("water_exposure", "NONE") not in {"NONE", "RISK", "WET"}:
+            raise HouseholdUpkeepError("UPKEEP_UTILIBOT_WATER_INVALID")
+        if any(row.get(k, "NONE") not in ATTEMPTS for k in ("maintenance_attempt", "charge_attempt")):
+            raise HouseholdUpkeepError("UPKEEP_UTILIBOT_ATTEMPT_INVALID")
+        cleaned_bots.append(dict(row))
     aid: set[str] = set()
     cleaned_actors: list[dict] = []
     for row in actors:
@@ -192,6 +263,14 @@ def _validate(visit: Mapping) -> tuple[list[dict], list[dict], list[dict], Mappi
                 cleaned_skills[skill_id] = dict(entry)
             row = dict(row)
             row["skills"] = cleaned_skills
+        modules = row.get("modules")
+        if modules is not None:
+            if not isinstance(modules, Mapping) or len(modules) > 8:
+                raise HouseholdUpkeepError("UPKEEP_ACTOR_MODULES_INVALID")
+            for module_id, record in modules.items():
+                if (not _ref(module_id) or not isinstance(record, Mapping)
+                        or not _bool(record.get("verified")) or not _bool(record.get("enabled"))):
+                    raise HouseholdUpkeepError("UPKEEP_ACTOR_MODULE_PROOF_INVALID")
         cleaned_actors.append(dict(row))
     cleaned_actions: list[dict] = []
     for row in actions:
@@ -218,7 +297,7 @@ def _validate(visit: Mapping) -> tuple[list[dict], list[dict], list[dict], Mappi
             raise HouseholdUpkeepError("UPKEEP_BILL_DUE_TIME_INVALID")
         if not _bool(bill.get("bill_verified")):
             raise HouseholdUpkeepError("UPKEEP_BILL_VERIFICATION_INVALID")
-    return cleaned_servos, cleaned_actors, cleaned_actions, bill
+    return cleaned_servos, cleaned_bots, cleaned_actors, cleaned_actions, bill
 
 
 LINT_STATES = {"CLEAN", "DIRTY", "UNKNOWN"}
@@ -322,7 +401,7 @@ def evaluate_household_upkeep(
         player_directed, already_busy, build_or_buy_mode, human_survival_hold
     )):
         raise HouseholdUpkeepError("UPKEEP_CALL_INVALID")
-    servos, actors, actions, bill = _validate(observation)
+    servos, bots, actors, actions, bill = _validate(observation)
     cfg = load_contract()
     levels = cfg["servo_thresholds"]
     instant = time.time() if now is None else now
@@ -340,6 +419,7 @@ def evaluate_household_upkeep(
         "gate": "UPKEEP_INSPECT",
         "action": "REOBSERVE_HOUSEHOLD",
         "servo_health": [],
+        "utilibot_health": [],
         "bill_health": None,
         "next_actions": [],
         "candidate_count": 0,
@@ -384,6 +464,10 @@ def evaluate_household_upkeep(
                 candidates.append(dict(rank=1 if vals["durability"] <= levels["durability_critical"] else 5,
                                        action_id="TUNE_UP_SERVO",
                                        target_ref=target, kind="SERVO_TUNE_UP"))
+                if (servo.get("self_tune_verified") is True
+                        and vals["durability"] > levels["durability_critical"]):
+                    candidates.append(dict(rank=8, action_id="SERVO_SELF_TUNE_UP",
+                                           target_ref=target, kind="SERVO_SELF_MAINTENANCE"))
         if vals["charge"] <= levels["charge_watch"] and not servo["broken"]:
             if servo.get("charge_attempt", "NONE") == "NONE":
                 candidates.append(dict(rank=2 if vals["charge"] <= levels["charge_critical"] else 6,
@@ -395,6 +479,52 @@ def evaluate_household_upkeep(
         if vals["fun"] <= levels["fun_watch"]:
             candidates.append(dict(rank=10, action_id="SERVO_FUN_ACTIVITY",
                                    target_ref=target, kind="SERVO_FUN"))
+    # Utili-Bots are game objects, not household Sims: never add human motives.
+    # The same observed-menu/actor/queue safety gate applies to all robot care.
+    bot_limits = cfg["utilibot_policy"]["thresholds"]
+    for bot in bots:
+        vals = bot.get("needs") or {}
+        status = "UNVERIFIED"
+        if bot["needs_verified"]:
+            if bot["broken"]:
+                status = "BROKEN"
+            elif (vals["durability"] <= bot_limits["durability_critical"]
+                  or vals["charge"] <= bot_limits["charge_critical"]):
+                status = "CRITICAL"
+            elif (vals["durability"] <= bot_limits["durability_watch"]
+                  or vals["charge"] <= bot_limits["charge_watch"]):
+                status = "WATCH"
+            else:
+                status = "STABLE"
+        result["utilibot_health"].append({
+            "bot_ref": bot["bot_ref"], "kind": bot["kind"],
+            "needs_verified": bot["needs_verified"], "needs": dict(vals),
+            "broken": bot["broken"], "health": status,
+            "water_exposure": bot.get("water_exposure", "NONE"),
+            "maintenance_attempt": bot.get("maintenance_attempt", "NONE"),
+            "charge_attempt": bot.get("charge_attempt", "NONE"),
+        })
+        if not bot["needs_verified"] or bot.get("water_exposure", "NONE") != "NONE":
+            continue
+        target = bot["bot_ref"]
+        if bot["broken"]:
+            if bot.get("maintenance_attempt", "NONE") == "NONE":
+                candidates.append(dict(rank=0, action_id="REPAIR_UTILIBOT",
+                                       target_ref=target, target_kind=bot["kind"],
+                                       kind="UTILIBOT_REPAIR"))
+        else:
+            if (vals["durability"] <= bot_limits["durability_watch"]
+                    and bot.get("maintenance_attempt", "NONE") == "NONE"):
+                candidates.append(dict(
+                    rank=4 if vals["durability"] <= bot_limits["durability_critical"] else 8,
+                    action_id="TUNE_UP_UTILIBOT", target_ref=target,
+                    target_kind=bot["kind"], kind="UTILIBOT_TUNE_UP"))
+            if (vals["charge"] <= bot_limits["charge_watch"]
+                    and bot.get("charge_attempt", "NONE") == "NONE"):
+                candidates.append(dict(
+                    rank=3 if vals["charge"] <= bot_limits["charge_critical"] else 7,
+                    action_id="RECHARGE_UTILIBOT", target_ref=target,
+                    target_kind=bot["kind"], kind="UTILIBOT_CHARGE"))
     if bill is not None:
         state, attempt = bill["state"], bill.get("attempt", "NONE")
         amount, funds, due = bill.get("amount"), bill.get("household_funds"), bill.get("due_in_sim_hours")
@@ -419,7 +549,7 @@ def evaluate_household_upkeep(
                 amount=amount,
             ))
     result["candidate_count"] = len(candidates)
-    maint = sorted((c for c in candidates if c["action_id"] in PEER_MAINTENANCE),
+    maint = sorted((c for c in candidates if c["action_id"] in SERVO_MAINTENANCE),
                    key=lambda c: (c["rank"], c["target_ref"], c["action_id"]))
     result["laundry_policy"] = _laundry_policy(
         result["servo_health"], _validate_laundry(observation.get("laundry")),
@@ -453,25 +583,44 @@ def evaluate_household_upkeep(
     if not _num(min_robotics, lower=0, upper=SKILL_LEVEL_MAX):
         raise HouseholdUpkeepError("UPKEEP_HELPER_ROBOTICS_THRESHOLD_INVALID")
     allow_servo_helpers = helper_policy.get("allow_servo_peer_helpers", True) is True
+    servo_by_ref = {s["sim_ref"]: s for s in servos}
     skill_gap_seen = False
+    helper_motive_gap_seen = False
     for proposal in candidates:
         if any(item["action_id"] == proposal["action_id"]
                and item.get("target_ref") == proposal["target_ref"]
                for actor in actors for item in actor["queue"]):
             continue
-        for actor in _helper_iter(actors):
+        for actor in _helper_iter(
+            actors,
+            prefer_servo=(proposal["action_id"] in ROBOT_CARE
+                          and helper_policy.get("prefer_verified_servo_peers_for_robot_care") is True),
+        ):
             if (not actor["available"] or actor["player_reserved"]
                     or actor["urgent_needs"]):
                 continue
-            if actor["kind"] == "SERVO" and proposal["action_id"] in PEER_MAINTENANCE:
-                if not allow_servo_helpers:
+            if actor["kind"] == "SERVO":
+                if proposal["action_id"] in ROBOT_CARE and not allow_servo_helpers:
                     continue
-                if actor["sim_ref"] == proposal["target_ref"]:
+                if proposal["action_id"] == "SERVO_SELF_TUNE_UP":
+                    source = servo_by_ref.get(actor["sim_ref"])
+                    if (not source or source.get("self_tune_verified") is not True
+                            or not source["needs_verified"] or source["broken"]
+                            or source.get("water_exposure", "NONE") != "NONE"
+                            or source["needs"]["charge"] < helper_policy["min_helper_charge"]):
+                        continue
+                elif proposal["action_id"] != "RECHARGE_SERVO" and not _servo_helper_ready(
+                    actor, servo_by_ref, helper_policy
+                ):
+                    helper_motive_gap_seen = True
                     continue
-                level = _verified_skill_level(actor, "robotics")
-                if level is None or level < min_robotics:
-                    skill_gap_seen = True
-                    continue
+                if proposal["action_id"] in ROBOT_CARE and actor["sim_ref"] != proposal["target_ref"]:
+                    level = _verified_skill_level(actor, "robotics")
+                    module_ok = (proposal["action_id"] == "REPAIR_UTILIBOT"
+                                 and _verified_module(actor, "fix_o_matic"))
+                    if not module_ok and (level is None or level < min_robotics):
+                        skill_gap_seen = True
+                        continue
             if not _actor_can_help(actor, proposal, min_robotics=min_robotics):
                 continue
             try:
@@ -496,20 +645,26 @@ def evaluate_household_upkeep(
             selected = {k: row[k] for k in
                         ("action_id", "actor_ref", "target_ref", "capture_ref")}
             selected["proposal_kind"] = proposal["kind"]
+            if "target_kind" in proposal:
+                selected["target_kind"] = proposal["target_kind"]
             selected["priority"] = proposal["rank"]
             selected["proposal_key"] = ":".join(
                 (capture_ref, actor["sim_ref"], proposal["action_id"], proposal["target_ref"])
             )
-            if actor["kind"] == "SERVO" and proposal["action_id"] in PEER_MAINTENANCE:
+            if actor["kind"] == "SERVO" and proposal["action_id"] in ROBOT_CARE:
                 selected["helper_kind"] = "SERVO_PEER"
                 selected["helper_robotics_level"] = _verified_skill_level(actor, "robotics")
-            elif proposal["action_id"] in PEER_MAINTENANCE:
+                selected["helper_qualification"] = (
+                    "FIX_O_MATIC" if proposal["action_id"] == "REPAIR_UTILIBOT"
+                    and _verified_module(actor, "fix_o_matic") else "ROBOTICS"
+                )
+            elif proposal["action_id"] in ROBOT_CARE:
                 selected["helper_kind"] = "HUMAN"
             if "amount" in proposal:
                 selected["observed_bill_amount"] = proposal["amount"]
             result["next_actions"] = [selected]
             return finish("UPKEEP_ACTION_READY", "QUEUE_ONE_VERIFIED_HOUSEHOLD_ACTION_THEN_REOBSERVE")
-    if skill_gap_seen and any(c["action_id"] in PEER_MAINTENANCE for c in candidates):
+    if skill_gap_seen and any(c["action_id"] in ROBOT_CARE for c in candidates):
         result["skill_force_hint"] = {
             "bundle": "servo_core",
             "skills": ["robotics", "handiness"],
@@ -521,4 +676,7 @@ def evaluate_household_upkeep(
             "UPKEEP_HELPER_SKILL_GAP",
             "LEVEL_HELPER_ROBOTICS_VIA_DIY_SKILL_FORCE_THEN_REOBSERVE",
         )
+    if helper_motive_gap_seen:
+        return finish("UPKEEP_HELPER_NEEDS_UNVERIFIED_OR_LOW",
+                      "RECHARGE_OR_VERIFY_SERVO_HELPER_BEFORE_COOPERATION")
     return finish("UPKEEP_NO_SAFE_ACTOR_OR_AFFORDANCE", "INSPECT_HOUSEHOLD_HELPER_QUEUE_OR_MENU")
