@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-OCCULT-NEEDS-ADVISORY-20261112",
+  "purpose": "Add opt-in, per-actual-motive advisory catalog and bounded local reviewed outcomes; retain existing EA-native mechanics ownership and never claim gameplay input.",
+  "files": [
+    {
+      "path": "betterinstincts/occult_needs.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure profile validation and learned ranking that never calls Sims or desktop input and never modifies a save.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_CATALOG_AND_REVIEWED_OUTCOMES_NOT_LOCAL_GAME",
+  "next_gate": "BI-002 disposable vanilla/modified hunger 5+5 and rollback; verify installed packs, actual motive panels, menu interactions and EA tuning before any native owner integration."
+}

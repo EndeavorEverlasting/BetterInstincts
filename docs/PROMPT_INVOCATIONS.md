@@ -424,6 +424,19 @@ Portability and nonjerky observation strengthening: single pure planner `betteri
 
 Prior-art source inspected ROS Nav2 smoother and active-perception/jerk trajectory research; selected existing observation_sweep as owner. Consultation committed before source. New policy defaults to no motion proposal without explicit opt-in, blocks pending outcomes, avoids last-eight view cycles, demands distinct evidence-source classes and uses quintic minimum-jerk waypoints. Pure functions only; no stealth sensing or Windows/game input, and no local P08 runtime certification. Test/CI/merge proof tracked at PR; BI-002 active. See docs/NATURAL_SEMANTIC_SURVEY.md and docs/PRIOR_ART.md.
 
+## 2026-11-12 — MoonWake /fifth-gear: profile-aware needs balancing
+
+Resolved current MoonWake `AGENTS.md`, the canonical prompt catalog and
+`harness/contracts/prompt-groups.v1.json`: **P95 → P82 → P08 → P07 → P124**.
+P95 recovered the existing six-need tandem services and designed typed
+profile/motive and evidence-aware advisory seams; P82's measured falsifiers
+live in `tests/test_occult_needs.py`; P08 local Sims exact-patch gameplay
+certification is not available through the GitHub provider and stays
+**NOT_RUN**. P07 covers consultation-first source implementation/CI/PR;
+P124 retains existing lane and native-gameplay owners instead of forking a
+host click engine. Run of the actual local `prompt_group_walk.py` on a host
+and five independent AI processes is not asserted. See `docs/OCCULT_NEEDS.md`.
+
 
 ## 2026-11-12 — P141 then MoonWake /fifth-gear: adaptive traversal ML
 

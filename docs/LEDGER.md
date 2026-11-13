@@ -1792,6 +1792,25 @@ Portability and nonjerky observation strengthening: single pure planner `betteri
 
 Prior-art source inspected ROS Nav2 smoother and active-perception/jerk trajectory research; selected existing observation_sweep as owner. Consultation committed before source. New policy defaults to no motion proposal without explicit opt-in, blocks pending outcomes, avoids last-eight view cycles, demands distinct evidence-source classes and uses quintic minimum-jerk waypoints. Pure functions only; no stealth sensing or Windows/game input, and no local P08 runtime certification. Test/CI/merge proof tracked at PR; BI-002 active. See docs/NATURAL_SEMANTIC_SURVEY.md and docs/PRIOR_ART.md.
 
+## 2026-11-12 — Six-needs and occult profile-specific action learning
+
+**Parent continuity:** BI-002 hunger real-game A/B 5+5, rollback and reviewed
+no-player-interruption remain ACTIVE. **Bounded offline extension:** versioned
+`contracts/occult-needs.v1.json` maps six adult motives to existing need-lanes
+and Fun action IDs; separate typed overlays handle Fairy Emotional Force,
+Servo Charge/Durability, Vampire Thirst/Energy and Mermaid Hydration. Other
+profiles either retain explicit six motives (alien, spellcaster, werewolf) or
+abstain for local verification. Action choices are exact-patch/profile/pack,
+observed-menu and player-gated; no actions are executed. Opt-in reviewed
+per-motive learning uses bounded opaque unique evidence, measured outcomes,
+smoothed ranking with minimum support, harmful-action suppression, and no
+automatic disk writes. No Sims API, resident daemon, game input, save edits,
+CV inference or auto-mod installation. Consultation committed before any
+behavior change; native route POLICY_ONLY. Guide: docs/OCCULT_NEEDS.md.
+**Proof ceiling:** provider source/CI only until exact Windows local Sims
+observations and native follow-on. MoonWake P08 real-game certification not
+observed; local `prompt_group_walk.py` process not invoked in this provider.
+
 
 ## 2026-11-12 — P141 → MoonWake Fifth Gear: local adaptive navigation costs
 

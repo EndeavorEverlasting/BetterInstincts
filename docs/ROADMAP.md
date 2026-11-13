@@ -116,3 +116,16 @@ Portability and nonjerky observation strengthening: single pure planner `betteri
 ## 2026-11-12 — P97 → P141 → Fifth Gear: semantic camera feedback hardening
 
 Prior-art source inspected ROS Nav2 smoother and active-perception/jerk trajectory research; selected existing observation_sweep as owner. Consultation committed before source. New policy defaults to no motion proposal without explicit opt-in, blocks pending outcomes, avoids last-eight view cycles, demands distinct evidence-source classes and uses quintic minimum-jerk waypoints. Pure functions only; no stealth sensing or Windows/game input, and no local P08 runtime certification. Test/CI/merge proof tracked at PR; BI-002 active. See docs/NATURAL_SEMANTIC_SURVEY.md and docs/PRIOR_ART.md.
+
+## 2026-11-12 — Optional occult need schemas and per-motive learning
+
+A source-only policy extension now catalogs the six ordinary motives and
+separate Fairy, Servo, Vampire and Mermaid motive sets, with scoped profiles
+for additional types. Machine contract: `contracts/occult-needs.v1.json`;
+evaluator: `betterinstincts/occult_needs.py`; owner guide:
+`docs/OCCULT_NEEDS.md`. Input requires explicit Sim type, complete observed
+motive set, current action availability, exact patch and installed packs.
+Learning is opt-in, reviewed, replay-safe, bounded and advisory, without
+automatic profile writes or new desktop/game effects. BI-002 remains the
+**active parent gate** until real 5+5 hunger trials, maintainer review and
+rollback; no new post-BI-002 milestone or unsupported native hook is claimed.
