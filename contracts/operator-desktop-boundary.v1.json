@@ -23,7 +23,7 @@
     ],
     "file_actions": {
       "delete": "DENY_ALL_AGENT_DELETE",
-      "write": "ALLOW_ONLY_RESOLVED_REPOSITORY_CHILD_EXCEPT_PROTECTED_POLICY",
+      "write": "ALLOW_ONE_UNAMBIGUOUS_REPOSITORY_CHILD_EXCEPT_PROTECTED_POLICY_AND_GAME_DATA",
       "blocked_paths": [
         "AGENTS.md",
         ".git/**",
@@ -44,10 +44,20 @@
         "scripts/check_human_sovereignty.py",
         "scripts/check_ontology.py",
         "tests/test_operator_boundary.py",
-        "tests/test_peripheral_boundary.py"
+        "tests/test_peripheral_boundary.py",
+        "**/saves/**",
+        "**/tray/**",
+        "**/mods/**",
+        "**/screenshots/**",
+        "**/recorded videos/**",
+        "**/the sims 4/**",
+        "**/*.save",
+        "**/*.save.*"
       ],
       "unknown_effectful_tools": "DENY",
-      "protected_user_data": "NEVER_EDIT_OR_DELETE_USER_SAVES_OR_OS_INPUT_SETTINGS"
+      "protected_user_data": "NEVER_EDIT_OR_DELETE_USER_SAVES_OR_OS_INPUT_SETTINGS",
+      "path_selection": "DENY_MULTIPLE_OR_CONFLICTING_TARGET_FIELDS_AND_UNREVIEWED_BULK_RENAME_MOVE_OPERATIONS",
+      "protected_game_data": "DENY_COPIED_USER_SAVE_OR_MOD_OR_TRAY_OR_SCREENSHOT_DATA_EVEN_INSIDE_REPOSITORY"
     },
     "forbidden_effects": [
       "STOP_OR_RESTART_BLUETOOTH_SERVICES",
