@@ -141,7 +141,7 @@ def _actor_can_help(actor: Mapping, proposal: Mapping, *, min_robotics: float) -
         if kind == "SERVO":
             level = _verified_skill_level(actor, "robotics")
             return ((level is not None and level >= min_robotics)
-                    or (action_id == "REPAIR_UTILIBOT"
+                    or (action_id in {"REPAIR_UTILIBOT", "TUNE_UP_SERVO"}
                         and _verified_module(actor, "fix_o_matic")))
         return False
     if action_id == "SOCIALIZE_SERVO":
@@ -616,7 +616,7 @@ def evaluate_household_upkeep(
                     continue
                 if proposal["action_id"] in ROBOT_CARE and actor["sim_ref"] != proposal["target_ref"]:
                     level = _verified_skill_level(actor, "robotics")
-                    module_ok = (proposal["action_id"] == "REPAIR_UTILIBOT"
+                    module_ok = (proposal["action_id"] in {"REPAIR_UTILIBOT", "TUNE_UP_SERVO"}
                                  and _verified_module(actor, "fix_o_matic"))
                     if not module_ok and (level is None or level < min_robotics):
                         skill_gap_seen = True
@@ -655,7 +655,7 @@ def evaluate_household_upkeep(
                 selected["helper_kind"] = "SERVO_PEER"
                 selected["helper_robotics_level"] = _verified_skill_level(actor, "robotics")
                 selected["helper_qualification"] = (
-                    "FIX_O_MATIC" if proposal["action_id"] == "REPAIR_UTILIBOT"
+                    "FIX_O_MATIC" if proposal["action_id"] in {"REPAIR_UTILIBOT", "TUNE_UP_SERVO"}
                     and _verified_module(actor, "fix_o_matic") else "ROBOTICS"
                 )
             elif proposal["action_id"] in ROBOT_CARE:
