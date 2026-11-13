@@ -231,9 +231,10 @@ def _urgent_need(row: Mapping, duration: Mapping) -> tuple[str | None, str | Non
             ttc = (normalized[need] - urgent) / rate
             if ttc < 0.75 * remaining:
                 candidates.append((ttc, normalized[need], need))
-    return (candidates[0][2], "FORECAST_CRITICAL_BEFORE_COMPLETION") if (
-        candidates := sorted(candidates)
-    ) else (None, None)
+    if candidates:
+        best = min(candidates)
+        return best[2], "FORECAST_CRITICAL_BEFORE_COMPLETION"
+    return None, None
 
 
 def evaluate_queue_supervision(
@@ -257,9 +258,12 @@ def evaluate_queue_supervision(
     if not isinstance(records, list) or not 1 <= len(records) <= MAX_SIMS:
         raise QueueSupervisionError("QUEUE_SUPERVISION_BOUNDS")
     native_by_id = {sim["sim_ref"]: sim for sim in sims}
-    if len(records) != len(native_by_id) or set(
-        r.get("sim_ref") for r in records if isinstance(r, Mapping)
-    ) != set(native_by_id):
+    if (
+        any(not isinstance(r, Mapping) or not _ref(r.get("sim_ref")) for r in records)
+        or len(records) != len(native_by_id)
+        or len({r["sim_ref"] for r in records}) != len(records)
+        or {r["sim_ref"] for r in records} != set(native_by_id)
+    ):
         raise QueueSupervisionError("QUEUE_SUPERVISION_SIM_SCOPE_MISMATCH")
     fresh = (
         type(now) in (float, int) and type(observed_at_unix) in (float, int)
@@ -359,8 +363,18 @@ def evaluate_queue_supervision(
         elif duration["suspected_stall"]:
             decision["gate"] = "STALLED_ACTIVITY_REOBSERVE"
         elif budget["enqueue_allowed"]:
-            decision["gate"] = "QUEUE_CAPACITY_AVAILABLE_ADVISORY"
-            decision["max_new_actions"] = budget["max_new_actions"]
+            # Headroom is not evidence that adding more work is coherent.
+            # Require source-attested semantics on every existing action;
+            # even a clean queue may only propose ONE addition per capture.
+            if any(
+                not _ref(a.get("semantic_key"))
+                or not _ref(a.get("semantic_proof_ref"))
+                for a in verified_queue
+            ):
+                decision["gate"] = "QUEUE_SEMANTICS_UNKNOWN"
+            else:
+                decision["gate"] = "QUEUE_CAPACITY_AVAILABLE_ADVISORY"
+                decision["max_new_actions"] = 1
         else:
             decision["gate"] = budget["gate"]
     return {
