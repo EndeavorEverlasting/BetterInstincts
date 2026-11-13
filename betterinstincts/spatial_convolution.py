@@ -50,7 +50,7 @@ def _context(snapshot: Mapping) -> str:
     if (snapshot.get("scene") != "LIVE_MODE"
             or snapshot.get("scene_revision") != snapshot.get("observed_scene_revision")
             or snapshot.get("human_present") is not False
-            or snapshot.get("player_directed") is True
+            or snapshot.get("player_directed") is not False
             or snapshot.get("position_source") not in {"GAME_STATE", "HOST_VERIFIED_OBSERVATION"}
             or not _token(snapshot.get("actor_id"))):
         raise SpatialConvolutionError("PLAYER_OR_SCENE_GATE")
@@ -93,9 +93,12 @@ def _edge(snapshot: Mapping, start: str, end: str) -> int:
 def _patch(snapshot: Mapping, patch: Mapping, start: str, end: str) -> list:
     floor = _edge(snapshot, start, end)
     if (not isinstance(patch, Mapping) or set(patch) !=
-            {"schema", "source", "graph_revision", "geometry_ref", "floor", "cells"}
+            {"schema", "source", "scope_id", "lot_id", "game_build", "graph_revision", "geometry_ref", "floor", "cells"}
             or patch.get("schema") != PATCH_SCHEMA
             or patch.get("source") not in {"EA_READ_ONLY", "OPERATOR_REVIEWED_GEOMETRY"}
+            or patch.get("scope_id") != snapshot.get("scope_id")
+            or patch.get("lot_id") != snapshot.get("lot_id")
+            or patch.get("game_build") != snapshot.get("game_build")
             or patch.get("graph_revision") != snapshot.get("graph_revision")
             or not _token(patch.get("geometry_ref"))
             or type(patch.get("floor")) is not int or patch["floor"] != floor):

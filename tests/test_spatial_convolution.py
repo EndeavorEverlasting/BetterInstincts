@@ -30,7 +30,9 @@ def grid(blocked=False):
             row.append([0, 1, 0] if is_blocked else [1, 0, int((x, y) == (4, 4))])
         cells.append(row)
     return {"schema": PATCH_SCHEMA, "source": "OPERATOR_REVIEWED_GEOMETRY",
-            "graph_revision": "graph-1", "geometry_ref": "geometry-1",
+            "scope_id": "lab-save/household/lot", "lot_id": "lab-lot",
+            "game_build": "synthetic-fixture", "graph_revision": "graph-1",
+            "geometry_ref": "geometry-1",
             "floor": 0, "cells": cells}
 
 
@@ -117,7 +119,7 @@ class SpatialConvolutionTests(unittest.TestCase):
         model, _ = learn(data, event(1), grid(), explicit_opt_in=True)
         for change in ({"human_present": True}, {"observed_scene_revision": "old"},
                        {"save_scope_id": "other-save"}, {"graph_revision": "other-graph"},
-                       {"player_directed": True}):
+                       {"player_directed": True}, {"player_directed": None}):
             other = copy.deepcopy(data)
             other.update(change)
             self.assertEqual(advise(other, model, grid(),
@@ -130,6 +132,17 @@ class SpatialConvolutionTests(unittest.TestCase):
         bad["source"] = "SCREENSHOT_GUESS"
         with self.assertRaises(SpatialConvolutionError):
             learn(data, event(3), bad, explicit_opt_in=True)
+        # A valid-looking floor grid from a different world/build must not
+        # become a training label for this household, even if revisions match.
+        for field, value in (("scope_id", "other-save"),
+                             ("lot_id", "other-lot"),
+                             ("game_build", "stale-build")):
+            foreign = grid()
+            foreign[field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(
+                SpatialConvolutionError, "PATCH_PROVENANCE"
+            ):
+                learn(data, event(5), foreign, explicit_opt_in=True)
 
     def test_advisory_is_integrated_without_mutating_route_or_effects(self):
         data = snapshot()

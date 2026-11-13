@@ -4,7 +4,7 @@
 
 ## Measured hypothesis and call stack
 
-A tiny convolution can learn spatial blockage patterns from independent observed outcomes when a fixed map graph alone cannot. It is **not** a magical general-purpose intelligence engine. An operator/verified EA source supplies a 5×5 local floor patch with three binary channels (`WALKABLE, BLOCKED, TARGET`), with at least 20 classified cells and exactly one reachable target cell. Two trainable 3×3×3 filters slide over the 5×5 patch; ReLU and 3×3 spatial average pooling feed a trainable logistic probability of BLOCKED. Online one-step SGD updates **both filters and output head**. No third-party ML package is required.
+A tiny convolution can learn spatial blockage patterns from independent observed outcomes when a fixed map graph alone cannot. It is **not** a magical general-purpose intelligence engine. An operator/verified EA source supplies a 5×5 local floor patch with three binary channels (`WALKABLE, BLOCKED, TARGET`), with at least 20 classified cells and exactly one reachable target cell. Each patch must also bind its scope, lot, exact game build, graph revision and geometry source to the currently verified world; an apparently valid grid from another save/lot/build is rejected. Two trainable 3×3×3 filters slide over the 5×5 patch; ReLU and 3×3 spatial average pooling feed a trainable logistic probability of BLOCKED. Online one-step SGD updates **both filters and output head**. No third-party ML package is required.
 
 ```
 verified floor patch + known graph edge + current scope
@@ -23,7 +23,7 @@ The holdout is selected from the *pre-action* capture reference hash, not from l
 
 ## Data authority and consent
 
-An outcome needs two distinct capture references, exact scope/patch/graph revision, source attestation (`GAME_ROUTE_PROBE` with verified sensor OR `OPERATOR_VERIFIED_TRAVERSAL` with human review), and observed target or blocked original region. Model fingerprints use SHA-256 of patch-build and pre-action capture identity; no raw Sim/save names are persisted. A stale scene, player takeover, unknown floor, unverified passage, malformed tensor, cross-save model, exhausted event budget or conflicting writer is denied. Only one bounded sample is processed per explicitly invoked call; no periodic sampling, OS hooks or telemetry are installed.
+An outcome needs two distinct capture references, exact scope/patch/graph revision, source attestation (`GAME_ROUTE_PROBE` with verified sensor OR `OPERATOR_VERIFIED_TRAVERSAL` with human review), and observed target or blocked original region. Model fingerprints use SHA-256 of patch-build and pre-action capture identity; no raw Sim/save names are persisted. A stale scene, unknown or active player direction, player takeover, cross-world patch, unknown floor, unverified passage, malformed tensor, cross-save model, exhausted event budget or conflicting writer is denied. Only one bounded sample is processed per explicitly invoked call; no periodic sampling, OS hooks or telemetry are installed.
 
 Call `learn(snapshot, event, patch, prior=model, explicit_opt_in=True)` for pure in-memory training, or `record_local_sample(snapshot, event, patch, explicit_opt_in=True)` for an atomic opt-in profile update. `load_local_model(snapshot)` does not scan other profiles. A future local adapter must independently establish sensor provenance and opt-in before invoking these; there is no automatic learning claimed in the packaged game.
 

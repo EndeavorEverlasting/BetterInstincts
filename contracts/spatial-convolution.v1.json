@@ -44,7 +44,17 @@
     "minimum_each_class": 6,
     "minimum_holdout": 8,
     "heldout_brier_improvement_required": 0.02,
-    "corrupt_or_cross_scope": "ABSTAIN"
+    "corrupt_or_cross_scope": "ABSTAIN",
+    "unknown_player_direction": "ABSTAIN",
+    "patch_provenance": [
+      "scope_id",
+      "lot_id",
+      "game_build",
+      "graph_revision",
+      "geometry_ref",
+      "source",
+      "floor"
+    ]
   },
   "integration": {
     "planner": "betterinstincts.household_navigation.plan_household_navigation",
