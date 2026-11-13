@@ -1,0 +1,345 @@
+{
+  "schema": "betterinstincts.occult-needs/v1",
+  "version": 1,
+  "owner": "docs/OCCULT_NEEDS.md",
+  "proof_ceiling": "OFFLINE_PROFILE_AND_REVIEWED_OUTCOME_ADVISORY_NOT_GAMEPLAY",
+  "limits": {
+    "max_events": 128,
+    "max_action_options": 32
+  },
+  "thresholds_ref": "contracts/needs.v1.json",
+  "ordinary_six": [
+    "bladder",
+    "hunger",
+    "energy",
+    "hygiene",
+    "fun",
+    "social"
+  ],
+  "sources": {
+    "base": "contracts/need-lanes.v1.json",
+    "fun": "contracts/fun-service.v1.json",
+    "fairy": "https://help.ea.com/en/articles/the-sims/the-sims-4/fairy-guide/",
+    "servo": "https://simscommunity.info/2019/11/15/the-sims-4-discover-university-all-about-servo/",
+    "occult": "LOCAL_EXACT_BUILD_MENU_AND_TUNING_REVIEW_REQUIRED"
+  },
+  "motives": {
+    "bladder": [
+      {
+        "id": "USE_TOILET",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "PRIVY_BUSH",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      }
+    ],
+    "hunger": [
+      {
+        "id": "QUICK_MEAL",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "COOK_MEAL",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "MICROWAVE_OR_GRILL",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      }
+    ],
+    "energy": [
+      {
+        "id": "SLEEP_IN_BED",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "TAKE_NAP",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "REST_ON_CHAIR",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      }
+    ],
+    "hygiene": [
+      {
+        "id": "TAKE_SHOWER",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "TAKE_BATH",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "WASH_HANDS",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      }
+    ],
+    "fun": [
+      {
+        "id": "PHONE_GAME",
+        "source": "contracts/fun-service.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "WATCH_TV",
+        "source": "contracts/fun-service.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "PLAY_INSTRUMENT",
+        "source": "contracts/fun-service.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      }
+    ],
+    "social": [
+      {
+        "id": "PHONE_CALL_OR_TEXT",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "SIT_AND_CHAT_HERE",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "FRIENDLY_CHAT",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "COMPUTER_SOCIAL",
+        "source": "contracts/need-lanes.v1.json",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      }
+    ],
+    "thirst": [
+      {
+        "id": "DRINK_PLASMA_PACK",
+        "source": "LOCAL_EXACT_BUILD_MENU_AND_TUNING_REVIEW_REQUIRED",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "DRINK_FROM_SIM",
+        "source": "LOCAL_EXACT_BUILD_MENU_AND_TUNING_REVIEW_REQUIRED",
+        "admission": "PLAYER_ONLY"
+      }
+    ],
+    "vampire_energy": [
+      {
+        "id": "DARK_MEDITATION",
+        "source": "LOCAL_EXACT_BUILD_MENU_AND_TUNING_REVIEW_REQUIRED",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "SLEEP_IN_COFFIN",
+        "source": "LOCAL_EXACT_BUILD_MENU_AND_TUNING_REVIEW_REQUIRED",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      }
+    ],
+    "hydration": [
+      {
+        "id": "SWIM",
+        "source": "LOCAL_EXACT_BUILD_MENU_AND_TUNING_REVIEW_REQUIRED",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "TAKE_SHOWER",
+        "source": "LOCAL_EXACT_BUILD_MENU_AND_TUNING_REVIEW_REQUIRED",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "TAKE_BATH",
+        "source": "LOCAL_EXACT_BUILD_MENU_AND_TUNING_REVIEW_REQUIRED",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      }
+    ],
+    "charge": [
+      {
+        "id": "RECHARGE_SELF",
+        "source": "LOCAL_EXACT_BUILD_MENU_AND_TUNING_REVIEW_REQUIRED",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      }
+    ],
+    "durability": [
+      {
+        "id": "REQUEST_TUNE_UP",
+        "source": "LOCAL_EXACT_BUILD_MENU_AND_TUNING_REVIEW_REQUIRED",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "SELF_TUNE_UP",
+        "source": "LOCAL_EXACT_BUILD_MENU_AND_TUNING_REVIEW_REQUIRED",
+        "admission": "OBSERVED_INTERACTION_ONLY",
+        "requires_capability": "servo_self_tune_up"
+      }
+    ],
+    "emotional_force": [
+      {
+        "id": "REGENERATE_EMOTIONAL_FORCE_SELF",
+        "source": "https://help.ea.com/en/articles/the-sims/the-sims-4/fairy-guide/",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "REGENERATE_EMOTIONAL_FORCE_HOME",
+        "source": "https://help.ea.com/en/articles/the-sims/the-sims-4/fairy-guide/",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      },
+      {
+        "id": "ABSORB_EMOTION",
+        "source": "https://help.ea.com/en/articles/the-sims/the-sims-4/fairy-guide/",
+        "admission": "OBSERVED_INTERACTION_ONLY"
+      }
+    ]
+  },
+  "profiles": {
+    "human": {
+      "pack": "base",
+      "motives": [
+        "bladder",
+        "hunger",
+        "energy",
+        "hygiene",
+        "fun",
+        "social"
+      ],
+      "auxiliary": [],
+      "status": "CATALOG_READY"
+    },
+    "alien": {
+      "pack": "Get to Work",
+      "motives": [
+        "bladder",
+        "hunger",
+        "energy",
+        "hygiene",
+        "fun",
+        "social"
+      ],
+      "auxiliary": [],
+      "status": "CATALOG_READY"
+    },
+    "spellcaster": {
+      "pack": "Realm of Magic",
+      "motives": [
+        "bladder",
+        "hunger",
+        "energy",
+        "hygiene",
+        "fun",
+        "social"
+      ],
+      "auxiliary": [
+        "spellcaster_charge"
+      ],
+      "status": "CATALOG_READY"
+    },
+    "werewolf": {
+      "pack": "Werewolves",
+      "motives": [
+        "bladder",
+        "hunger",
+        "energy",
+        "hygiene",
+        "fun",
+        "social"
+      ],
+      "auxiliary": [
+        "fury"
+      ],
+      "status": "CATALOG_READY"
+    },
+    "mermaid": {
+      "pack": "Island Living",
+      "motives": [
+        "bladder",
+        "hunger",
+        "energy",
+        "hydration",
+        "fun",
+        "social"
+      ],
+      "auxiliary": [],
+      "status": "CATALOG_READY"
+    },
+    "vampire": {
+      "pack": "Vampires",
+      "motives": [
+        "bladder",
+        "thirst",
+        "vampire_energy",
+        "hygiene",
+        "fun",
+        "social"
+      ],
+      "auxiliary": [],
+      "status": "CATALOG_READY"
+    },
+    "fairy": {
+      "pack": "Enchanted by Nature",
+      "motives": [
+        "energy",
+        "hygiene",
+        "fun",
+        "social",
+        "emotional_force"
+      ],
+      "auxiliary": [],
+      "status": "CATALOG_READY"
+    },
+    "servo": {
+      "pack": "Discover University",
+      "motives": [
+        "fun",
+        "social",
+        "durability",
+        "charge"
+      ],
+      "auxiliary": [
+        "water_damage_risk"
+      ],
+      "status": "CATALOG_READY"
+    },
+    "ghost": {
+      "pack": "Life & Death",
+      "motives": [],
+      "auxiliary": [],
+      "status": "LOCAL_MOTIVE_SCHEMA_REQUIRED"
+    },
+    "plantsim": {
+      "pack": "variable",
+      "motives": [],
+      "auxiliary": [],
+      "status": "LOCAL_MOTIVE_SCHEMA_REQUIRED"
+    },
+    "skeleton": {
+      "pack": "Jungle Adventure",
+      "motives": [],
+      "auxiliary": [],
+      "status": "LOCAL_MOTIVE_SCHEMA_REQUIRED"
+    }
+  },
+  "rules": [
+    "Profile is explicit and may not be deduced from available motive names or a screenshot.",
+    "A profile's full motive set must exactly match the observed current panel; otherwise abstain.",
+    "Auxiliary occult meters are not automatically treated as positive-recovery needs.",
+    "Only currently observed and available semantic actions can be advised; catalog entries are NOT executable Sims API identifiers.",
+    "PLAYER_ONLY candidates are never autonomously recommended.",
+    "No automatic data collection, disk writes, commands, UI effects, save mutation or background jobs.",
+    "Patch, pack, capabilities and reviewed outcomes gate advice; never train across patch/profile without review.",
+    "Human and occult advice cannot supersede player intent, existing six-need service health checks, or the BI-002 local hunger gate."
+  ]
+}
