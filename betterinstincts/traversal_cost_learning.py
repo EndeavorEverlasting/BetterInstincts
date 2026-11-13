@@ -44,13 +44,20 @@ def _token(value: object) -> bool:
     return isinstance(value, str) and TOKEN.fullmatch(value) is not None
 
 
+def _scope(value: object) -> bool:
+    # Repository scope identifiers may contain hierarchical separators. They
+    # are never written verbatim to the local model; only a digest is retained.
+    return (isinstance(value, str) and 1 <= len(value) <= 160
+            and all(ch.isalnum() or ch in "_./:-" for ch in value))
+
+
 def context_hash(snapshot: Mapping) -> str:
     """Opaque install-local routing context; no raw Sim/save names are retained."""
     if not isinstance(snapshot, Mapping):
         raise TraversalLearningError("SNAPSHOT_INVALID")
     fields = ("scope_id", "save_scope_id", "household_id", "lot_id",
               "game_build", "graph_revision")
-    if any(not _token(snapshot.get(field)) for field in fields):
+    if any(not _scope(snapshot.get(field)) for field in fields):
         raise TraversalLearningError("CONTEXT_IDENTITY_UNVERIFIED")
     material = json.dumps([snapshot[field] for field in fields],
                           separators=(",", ":"), ensure_ascii=True)
@@ -168,10 +175,12 @@ def learn_transition(snapshot: Mapping, event: Mapping, *,
         raise TraversalLearningError("LIVE_SCENE_PLAYER_OR_POSITION_UNVERIFIED")
     if not isinstance(event, Mapping) or set(event) != REQUIRED_EVENT:
         raise TraversalLearningError("EVENT_FIELDS_INVALID")
-    for field in ("event_ref", "scope_id", "actor_id", "scene_revision",
+    for field in ("event_ref", "actor_id", "scene_revision",
                   "from_region", "to_region", "before_capture_ref", "after_capture_ref"):
         if not _token(event.get(field)):
             raise TraversalLearningError("EVENT_IDENTITY_INVALID:" + field)
+    if not _scope(event.get("scope_id")):
+        raise TraversalLearningError("EVENT_SCOPE_INVALID")
     if (event["schema"] != EVENT_SCHEMA or event["scope_id"] != snapshot["scope_id"]
             or event["actor_id"] != snapshot.get("actor_id")
             or event["scene_revision"] != snapshot["scene_revision"]
