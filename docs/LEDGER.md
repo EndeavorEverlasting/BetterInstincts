@@ -1,3 +1,7 @@
+## 2026-11-12 — P141 → Fifth Gear: trainable spatial convolution advisory
+
+P141 selected a bounded, real 3×3 convolutional spatial learner over verified floor patches instead of broad RL, fixed hand-coded edge detectors, or takeover of independent visual sensor PR #159. The consultation `contracts/consultations/BI-SPATIAL-CONVOLUTION-P141-FIFTH-GEAR-20261112.v1.json` was committed before product changes on the isolated branch. P95/P82: source-checked 5×5×3 patches, two trainable convolution filters, ReLU/mean pooling and logistic head; replay-safe one-step SGD with 1/5 disjoint prequential holdout and a better-than-constant Brier threshold. P07/P124: optional non-actuating receipt in existing navigation; existing Dijkstra, camera, human, save and graph gates retain authority. P08 Windows Sims game/sensor certification is NOT_RUN in GitHub connector; offline CI and main merge are separately checked. BI-002 hunger is not closed. See `docs/SPATIAL_CONVOLUTION.md`.
+
 ## 2026-11-12 — MoonWake Closers: single-click launcher structural verification
 
 **Verified floor:** #200 merged on `main` at `17aaffb05763cf40e7cd8cb6ef7a1682dc06dde5` with successful GitHub offline CI. No Windows Sims launch, real save, game patch or menu capture was independently verified. P83 found two reproducible defects: dual recognized exes in the same Game/Bin erroneously produced MULTIPLE installs; a malformed tasklist result or untrusted later process snapshot could appear empty and admit new launch or overclaim a game PID.
