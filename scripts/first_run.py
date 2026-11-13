@@ -10,7 +10,7 @@ import sys
 from scripts.smart_start import auto_start
 
 from betterinstincts.first_run import (
-    FirstRunError, GOALS, discover_game_installs, launch_game,
+    FirstRunError, GOALS, SKILL_ROUTES, discover_game_installs, launch_game,
     plan_journey, select_game,
 )
 
@@ -25,7 +25,7 @@ def gui() -> int:
         raise FirstRunError("TKINTER_UNAVAILABLE_USE_CLI") from exc
     root = tk.Tk()
     root.title("BetterInstincts · Play The Sims 4")
-    root.geometry("690x410")
+    root.geometry("690x505")
     root.resizable(False, False)
     frame = ttk.Frame(root, padding=22)
     frame.pack(fill="both", expand=True)
@@ -65,13 +65,27 @@ def gui() -> int:
     ttk.Combobox(
         frame, textvariable=goal, values=list(GOALS), state="readonly", width=20,
     ).pack(anchor="w", pady=(4, 14))
+    preferred_skill = tk.StringVar(value="")
+    ttk.Label(frame, text="Optional first skill preference (gameplay, not CAS)").pack(anchor="w")
+    ttk.Combobox(
+        frame, textvariable=preferred_skill, values=["", *SKILL_ROUTES],
+        state="readonly", width=26,
+    ).pack(anchor="w", pady=(4, 8))
+    income_pressure = tk.BooleanVar(value=False)
+    ttk.Checkbutton(
+        frame, text="Plan for early earning before buying skill equipment",
+        variable=income_pressure,
+    ).pack(anchor="w", pady=(0, 10))
     status = tk.StringVar(value="The game starts only when you choose a mode below.")
     ttk.Label(frame, textvariable=status, wraplength=625).pack(anchor="w", pady=(0, 12))
 
     def begin(mode: str) -> None:
         try:
             exe = select_game(candidates, selected.get() or None)
-            advice = plan_journey(mode, goal.get())
+            advice = plan_journey(
+                mode, goal.get(), income_pressure=income_pressure.get(),
+                preferred_skill=preferred_skill.get() or None,
+            )
             receipt = launch_game(exe, user_clicked_launch=True)
             status.set("Game launch requested. Finish the next step in The Sims 4.")
             messagebox.showinfo(
@@ -79,7 +93,11 @@ def gui() -> int:
                 advice["next_step"] + (
                     "\n\nSuggested aspiration: " + str(advice["cas_advice"]["aspiration"])
                     + "\nSuggested traits: " + ", ".join(advice["cas_advice"]["traits"])
-                    + "\n\nSuggestions only; your character is never edited automatically."
+                    + "\nSuggested first skills: "
+                    + ", ".join(x["skill"] for x in advice["first_session"]["ranked_skill_focus"])
+                    + "\nFirst-session order: "
+                    + " → ".join(x["gate"] for x in advice["first_session"]["first_session_decisions"])
+                    + "\n\nThese are optional gameplay priorities, not CAS skills or actions."
                     if mode == "new" else
                     "\n\nYour existing save remains your choice. No automatic Resume click."
                 ) + "\n\n" + receipt["state"], parent=root,
@@ -105,11 +123,18 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("plan")
     p.add_argument("--mode", choices=("existing", "new"), required=True)
     p.add_argument("--goal", choices=tuple(GOALS), default="balanced")
-    p = sub.add_parser("launch")
+    launch_parser = sub.add_parser("launch")
+    p = launch_parser
     p.add_argument("--game-exe", type=Path, required=True)
     p.add_argument("--mode", choices=("existing", "new"), required=True)
     p.add_argument("--goal", choices=tuple(GOALS), default="balanced")
     p.add_argument("--confirm-launch", action="store_true")
+    for planning_parser in (sub.choices["plan"], launch_parser):
+        planning_parser.add_argument(
+            "--preferred-skill", choices=tuple(SKILL_ROUTES), default=None,
+        )
+        planning_parser.add_argument("--income-pressure", action="store_true")
+        planning_parser.add_argument("--critical-needs", action="store_true")
     args = parser.parse_args(argv)
     try:
         if args.command in (None, "gui"):
@@ -126,10 +151,18 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "discover":
             output = {"state": "READ_ONLY", "candidates": [str(x) for x in discover_game_installs()]}
         elif args.command == "plan":
-            output = plan_journey(args.mode, args.goal)
+            output = plan_journey(
+                args.mode, args.goal, critical_needs=args.critical_needs,
+                income_pressure=args.income_pressure,
+                preferred_skill=args.preferred_skill,
+            )
         else:
             output = {**launch_game(args.game_exe, user_clicked_launch=args.confirm_launch),
-                      "handoff": plan_journey(args.mode, args.goal)}
+                      "handoff": plan_journey(
+                          args.mode, args.goal, critical_needs=args.critical_needs,
+                          income_pressure=args.income_pressure,
+                          preferred_skill=args.preferred_skill,
+                      )}
         print(json.dumps(output, sort_keys=True))
         return 0
     except (FirstRunError, OSError, ValueError) as exc:
