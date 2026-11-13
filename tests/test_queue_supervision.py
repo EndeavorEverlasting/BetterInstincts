@@ -166,7 +166,7 @@ class QueueSupervisionTests(unittest.TestCase):
         root = observation(needs=needs)
         meta = root["queue_supervision"]["sims"][0]
         meta.update(
-            need_decay_per_active_second={"hunger": .001},
+            need_decay_per_active_second={"hunger": .002},
             decay_proof_ref="proof:hunger-rate",
         )
         r = evaluate(root)
