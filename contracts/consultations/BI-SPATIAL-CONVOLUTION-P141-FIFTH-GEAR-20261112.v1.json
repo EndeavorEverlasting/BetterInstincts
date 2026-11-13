@@ -1,0 +1,103 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SPATIAL-CONVOLUTION-P141-FIFTH-GEAR-20261112",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "P141 selects a bounded, trainable 3x3 convolutional spatial pattern learner on verified five-by-five semantic floor patches; existing household navigation remains graph authoritative. Local opt-in learning uses independently observed traversal outcomes and a disjoint prequential holdout gate before exposing scored advice.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "NAVIGATION_INTENT",
+    "NAVIGATION_PROGRESS",
+    "NAVIGATION_STALL",
+    "GOAL",
+    "CONTROL_PERMIT",
+    "PLAYER_INTENT",
+    "HOST_SESSION"
+  ],
+  "relevant_canonical_owners": [
+    "docs/AGENT_OPERATING_RULES.md",
+    "betterinstincts/household_navigation.py",
+    "betterinstincts/traversal_cost_learning.py",
+    "contracts/ontology.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-036",
+    "BI-ONT-037",
+    "BI-ONT-038",
+    "BI-ONT-039",
+    "BI-ONT-040",
+    "BI-ONT-041"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_TRAINABLE_SPATIAL_CONVOLUTION_WITH_PREQUENTIAL_VALIDATION_NOT_GAMEPLAY_OR_SENSOR_CERTIFICATION",
+  "player_save_control_impact": "No game/OS inputs, raw screenshots, EA game file reads, save writes, network or background scans. 3x3 convolution and bounded SGD are evaluated only on supplied semantically attested map patches with replay-safe independently reviewed outcomes. No automatic persistence; optional explicit invocation persists only hashed scoped model statistics in an existing local profile path. Player activity or stale scene refuses training; unvalidated models abstain.",
+  "strategic_theses": [
+    {
+      "thesis": "Deploy dense visual CNN to control Sims and camera",
+      "evidence": "Existing camera/SLAM seams and separately owned PR #159",
+      "falsification": "No host dataset, patch-aligned labels, native EA hooks or Windows live certification; overlaps independent sensor PR",
+      "disposition": "DEFERRED"
+    },
+    {
+      "thesis": "Build generic reinforcement-learning policy across all Sims actions",
+      "evidence": "Existing judgment, needs and navigation policies",
+      "falsification": "Unproven action/state reward ownership would bypass player sovereignty and require substantial game data",
+      "disposition": "REJECTED"
+    },
+    {
+      "thesis": "Add fixed handcrafted convolution filters as an edge detector",
+      "evidence": "Convolutional spatial patterns from verified maps are feasible",
+      "falsification": "Non-learning filters add little over existing graph, cannot adapt from observed outcomes",
+      "disposition": "WEAKENED"
+    },
+    {
+      "thesis": "Build dependency-free trainable convolutional route-risk advisory with replay and heldout gates",
+      "evidence": "Existing opted-in traversal cost learner, verified passages and offline navigation planner provide labels, scope and a usable advisory seam",
+      "falsification": "Would be useless without independent evidence and better-than-baseline holdout loss; deny unvalidated predictions and retain fixed Dijkstra behavior",
+      "disposition": "SURVIVES_SELECTED"
+    }
+  ],
+  "selected_thesis": "Train compact convolutional filters with observed traversal labels and route through verified household planner as non-actuating advisory; no extra ML dependency, sensor takeover or native gameplay claim.",
+  "investigation": "P95 compare fixed kernels vs trainable spatial filters, prototype 5x5 semantic floor patch -> 3x3 learned conv -> ReLU/mean pool -> sigmoid -> receipt; P82 test deterministic offline samples, replay/invalid input, holdout vs smoothed constant baseline, performance and fail-closed path. P08 requires local Sims runtime unavailable through GitHub provider; P07/P124 integrate only bounded code/tests/docs.",
+  "expected_outcome": "A model can improve prequential route-blocked predictions on structured labeled data without changing existing verified route selection, creating edges, moving the camera/Sim or granting input; portable no-numpy CPU bounded learning and explicit local profile storage.",
+  "negative_tests": [
+    "No consent or interrupted player refuses training/storage",
+    "Cross-patch/build/scene/graph/floor/save identity fails closed",
+    "Replaying same pre-capture under new event ID never retrains",
+    "Invalid NaN/infinite/malformed tensors or model weights denied",
+    "Heldout never trains on its own label",
+    "Until enough heldout evidence and improvement, recommendation abstains",
+    "No spatial patch preserves byte-equivalent legacy route and authority fields",
+    "No hidden desktop input, raw screen captures, uncontrolled polling or remote telemetry",
+    "No new graph edge or path authorization from prediction",
+    "No EA/gameplay certification claim from synthetic data"
+  ],
+  "rollback_path": "Revert isolated PR; optional bounded local model profiles may be deleted manually; no previous game data or routing schema is migrated.",
+  "unresolved_unknowns": [
+    "No local Sims 4 Windows runtime or exact EA geometry source accessible from GitHub connector",
+    "PR #159 separately owns host visual sensing",
+    "Real calibration must use independent local game events under player consent",
+    "BI-002 hunger remains independently unproven at Live Mode"
+  ],
+  "files_expected": [
+    "betterinstincts/spatial_convolution.py",
+    "betterinstincts/household_navigation.py",
+    "tests/test_spatial_convolution.py",
+    "contracts/spatial-convolution.v1.json",
+    "contracts/native-gameplay-decisions/BI-SPATIAL-CONVOLUTION-20261112.v1.json",
+    "docs/SPATIAL_CONVOLUTION.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "docs/ROADMAP.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Reuses real verified input/event contracts and testable offline seams; narrow conservative first conv capability is reversible, measurable, and orthogonal to existing native gameplay owner."
+}
