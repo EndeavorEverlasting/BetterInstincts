@@ -210,7 +210,9 @@ class TraversalCostLearningTests(unittest.TestCase):
                 self.assertEqual(load_local_model(other)["seen_count"], 0)
 
     def test_host_listener_requires_activated_session_and_opt_in(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        # The canonical listener encodes receipt paths relative to repository
+        # ROOT; stage this synthetic session inside that root, not /tmp.
+        with tempfile.TemporaryDirectory(dir=host_listener.ROOT) as tmp:
             use = Path(tmp) / "app"
             with (patch("bootstrap.paths", return_value={"use": use}),
                   patch.object(host_listener, "OUTPUT", Path(tmp) / "host-listener")):
