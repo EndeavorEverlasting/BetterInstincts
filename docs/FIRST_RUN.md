@@ -40,6 +40,22 @@ CLI examples:
 The first-run GUI offers preferred skill and early-earnings choices, then displays the top three skills and first-session gates. No save reads, OS input changes, clicks, automatic job enrollment, skill cheats, telemetry or game modifications occur. The automatic launcher still dispatches the game only; CAS and menus remain player-owned. Exact-patch local Windows/CAS certification and any future effect controller remain open under issue #201 and the existing BI-002 game gate.
 
 
+
+## MoonWake Closers — verified manual-launch admission (2026-11-13)
+
+The manual first-run chooser and the explicit `python -m scripts.first_run launch` CLI now reuse the **same read-only Windows tasklist admission** as automatic one-click startup. Before any manual dispatch they require a validated installed Game/Bin executable and explicit launch request, then perform bounded process snapshots; a running Sims instance is reused without launching another, while multiple games, ambiguous or untrusted inventories, or a concurrent start block the launch safely. An already-running process is evidence only of a process-name/PID snapshot, not of the selected executable path, correct save, scene or Live Mode.
+
+The GUI now resolves two executables within a **single** detected Game/Bin root to the 64-bit executable instead of incorrectly asking the player to choose between two identical installations. Multiple distinct game roots still need explicit selection.
+
+CLI remains explicit:
+
+```sh
+python -m scripts.first_run launch --game-exe "C:\\Program Files\\EA Games\\The Sims 4\\Game\\Bin\\TS4_x64.exe" --mode new --goal career --confirm-launch
+```
+
+The new-Sim goal/skill plan is validated before dispatch. No game menu, CAS traits or skills, latest-save identity or player queue is modified. Duplicate-launch checks are source/CI tested; simultaneous Windows launchers, actual PID identity, new CAS creation and gameplay remain local P08 gates. The first-run default `auto` entrypoint still launches without choosing New Game for the player. This closer intentionally fixes consistency rather than inventing a CAS-effect controller.
+
+
 ## Moonwake Fifth Gear acceptance
 
 P95: download -> clone/fast-forward -> install -> discover -> player mode choice -> game launch -> game-owned save or CAS handoff.
