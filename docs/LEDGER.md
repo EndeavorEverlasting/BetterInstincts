@@ -1819,3 +1819,20 @@ observed; local `prompt_group_walk.py` process not invoked in this provider.
 MoonWake order: P141 → P95 → P82 → P08 → P07 → P124. P95 designed current verified graph → opt-in observer → replay-resistant scoped model → deterministic weighted existing Dijkstra; P82 provided slow-path, failure, stale context, replay, player-control and storage falsifiers. P08 requires an actual Windows/Linux compatible Sims installation, exact patch, explicit operator-approved disposable session, real before/after route samples, model rollback, player takeover and a separately observed native goal action; **NOT RUN from the GitHub connector**. P07 implemented source, model, tests, local host listener port; P124 preserves existing navigation, camera, VOI, actual effect and host session owners, and separates policy-only from host-lab code.
 
 Pure route weights update using verified expected-versus-observed time plus failure EWMA, support shrinkage and fixed-point deterministic Dijkstra (`docs/TRAVERSAL_COST_LEARNING.md`). Zero samples/corruption/stale patch or graph => baseline; no input authority or save modification. The new listener port is explicitly activated and opt-in; *no background sensor, daemon, native EA hook, real game passage timing, or local installation activation is claimed*. CI/test/merge evidence must be read back independently; BI-002 hunger remains ACTIVE. This is a supporting movement optimization, not a replacement parent goal.
+
+## 2026-11-12 — Second occult-needs iteration: durable on-device learner
+
+After the typed catalog and offline policy landed on main via PR #205, the
+remaining parent gap was that reviewed learning ranked only canonical actions
+and lived in memory. This bounded successor introduces replay-safe
+`learn_candidate` for novel actually observed menu actions: explicit review,
+opt-in, before/after measured motive changes, exact patch, profile and
+current-availability gates, and 3+ independently reviewed helpful outcomes
+at >=75% helpful ratio for promotion. It also adds explicit user-selected,
+approved local JSON model save/load with deterministic profile filenames,
+SHA-256 compare-and-replace, symlink/cap guards, locking and readback. No
+automatic profile scan/creation, no gameplay input and no privileged I/O.
+Changed code is independently classified POLICY_ONLY / NON_GAMEPLAY;
+consultation predates mutation. Source guide: `docs/OCCULT_NEEDS.md`.
+**Proof ceiling:** offline CI and local file fixtures only, not actual EA
+motive/effect calibration. BI-002 hunger game gate stays ACTIVE.

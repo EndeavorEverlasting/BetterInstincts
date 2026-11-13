@@ -1,0 +1,23 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-OCCULT-NEEDS-LOCAL-LEARNING-20261112",
+  "purpose": "Extend existing pure on-device needs advisory with measured novel action discovery and explicit operator-approved profile persistence; no game action authority.",
+  "files": [
+    {
+      "path": "betterinstincts/occult_needs.py",
+      "route": "POLICY_ONLY",
+      "reason": "Review-gated candidate action history and ranking are pure off-game policy and never enqueue gameplay.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/occult_need_store.py",
+      "route": "NON_GAMEPLAY",
+      "reason": "Explicit local user-selected JSON snapshot storage has no Sims runtime hook, gameplay effects or input control.",
+      "game_effect_claim": "NONE"
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_REVIEWED_PROFILE_RECOMMENDATIONS_AND_EXPLICIT_LOCAL_SNAPSHOT_ONLY",
+  "next_gate": "Local game observed exact patch/pack/menu evidence, BI-002 hunger 5+5 and rollback. No local game effect proven."
+}

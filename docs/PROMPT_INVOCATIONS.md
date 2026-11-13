@@ -441,3 +441,15 @@ and five independent AI processes is not asserted. See `docs/OCCULT_NEEDS.md`.
 ## 2026-11-12 — P141 then MoonWake /fifth-gear: adaptive traversal ML
 
 Resolved exact P-number bodies from current MoonWake `AGENTS.md`, `harness/exports/prompt-invocation-catalog.v1.json`, `harness/contracts/prompt-groups.v1.json` and `skills/fifth-gear/SKILL.md`. **P141** (Repository Strategic Opportunity Scout) selected local replay-safe, support-shrunk observed passage timing/failure learning versus standalone RL and duplicate SLAM. Operator-ordered engineering composition: **P95** (Program Design & Call-Stack Prototype Architect) → **P82** (Prototype-Measure-Refine Delivery Loop) → **P08** (Live Runtime Proof Executor) → **P07** (Repo Sprint Executor) → **P124** (Repository Code Readability & Structural Refactorer). Source-first ontology consultation `BI-TRAVERSAL-ADAPTIVE-COST-P141-FIFTH-GEAR-20261112` committed before the behavior code. Structural owner: `betterinstincts/traversal_cost_learning.py` computes bounded advisory weights; existing `household_navigation.py` remains route authority and `host_listener.py` remains opt-in intake. P08 real Sims gameplay is **NOT_RUN** without a local authorized host, even if synthetic CI is green. GitHub-hosted connector execution of these contracts is distinct from invoking the *local* MoonWake `prompt_group_walk.py` process or five real delegated agents; neither local walker nor game instrumentation is claimed.
+
+## 2026-11-12 — MoonWake Fifth Gear iteration on local needs memory
+
+After PR #205, the objective audit identified two missing acceptance edges:
+retaining local reviewed outcomes across sessions and admitting learned novel
+actions into the candidate set. Follow-on P95/P82 iterative call-stack work
+uses exact motive/action schema and repeatable negative fixtures; P08 still
+needs local Windows Sims exact-build outcome trials. P07 ships bounded
+consultation-first code with native route review; P124 preserves one policy
+owner and explicit storage-only adapter. Source-only/offline tests and GitHub
+merge do not imply MoonWake's local CLI walker or independent agents were
+actually run. See `docs/OCCULT_NEEDS.md`.
