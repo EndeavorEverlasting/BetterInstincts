@@ -453,3 +453,20 @@ consultation-first code with native route review; P124 preserves one policy
 owner and explicit storage-only adapter. Source-only/offline tests and GitHub
 merge do not imply MoonWake's local CLI walker or independent agents were
 actually run. See `docs/OCCULT_NEEDS.md`.
+
+## 2026-11-12 — MoonWake /fifth-gear for Servo cooperative needs
+
+Current canonical MoonWake `AGENTS.md`, prompt catalog and
+`skills/fifth-gear/SKILL.md` resolve the sequence
+**P95 → P82 → P08 → P07 → P124**. The concrete parent objective:
+Servos help other Servos with Tune Ups, maintain Gardener-Bots, and
+proactively manage Charge/Durability instead of leaving household
+members idle or repeating unnecessary interactions. P95 reuses the
+existing upkeep service and distinguishes Servo household Sims from
+Utili-Bot objects; P82 tests observed actor/target/skill/reserve and
+attempt transitions; P08 exact Windows game runtime remains NOT_RUN
+through remote GitHub access; P07 implements bounded existing-owner
+code with CI/regressions; P124 keeps one household-upkeep owner and
+unchanged player-first native-gameplay boundary. User request does
+not authorize unsafe game installs or simulated live outcomes.
+Consultation: `BI-SERVO-COOPERATIVE-UTILIBOT-CARE-20261112`.
