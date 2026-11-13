@@ -121,3 +121,52 @@ Run `python -m scripts.upgrade_parts_force sources`, `acquisition --portraits ..
 ### 2026-11-10 Closers correction — Order-first is mandatory in the live executor
 
 The computer menu has **two independently observed phases**: `menu_scope=ROOT` may select `Order` only after it is visible (using bounded `More Choices` if necessary), then `menu_scope=ORDER` requires `order_menu_observed=true` before selecting the actual `Purchase Upgrade Parts` domain. A direct-looking part-purchase label in the root is **not** permission to skip Order. Re-read menu after every click; no hardcoded “two More Choices.” Every effect still requires the shared `CooperativeScreenQueue` lease, current selected portrait, explicit spend approval, fresh price/funds/cap/inventory baseline, and post-purchase pocket-stock receipt. See `docs/ACQUISITION_ROUTING.md` and `tests/test_computer_upgrade_parts.py`. Both games/live host and Windows Cursor activation remain unobserved in provider CI.
+
+
+## 2026-11-12 — computer picker: five kinds, one transaction
+
+The operator's screenshot shows one Purchase Upgrade Parts modal with five
+rows (Common, Electronic, Kitchen, Plumbing, Robot Salvage), a right arrow on
+each row, total count, total cost, available funds, and one bottom confirmation.
+The correct model is **one observed shopping cart**, not five separate paid
+purchases or an unbounded burst of clicks. The screenshot shows example costs
+§10/§120/§90/§30/§5; these are NOT fixed game-price assumptions.
+
+The existing computer_upgrade_parts.py owner now provides
+plan_computer_purchase_batch, plan_computer_restock_batch,
+propose_computer_batch_step, enqueue_computer_batch_step, and
+verify_computer_batch_purchase. This is not another store agent; the older
+single-item proposal remains backward-compatible.
+
+The quantity is a **cart selection**. Read all five labeled rows from the
+fresh modal, including the current selected count and unit price. Confirm
+these reconcile exactly with displayed Total Count and Total Cost. Check
+explicit spending authority, observed funds and a total cap sufficient
+for the entire requested cart. Propose only one increment of the first
+short row, annotated with its expected prior quantity and picker revision.
+After every cooperative-queue effect, reobserve the Sim, all rows, total
+cost, hitbox and revision. A reused revision, mismatched totals, player
+reclaim, missing hitbox, or unexpected selected items must deny.
+
+When the selected quantities exactly match the request, propose exactly
+one observed Buy. Afterwards, prove the selected Sim's **personal pocket**
+inventory deltas and simoleon debit. Uncertain and partial outcomes require
+reconciliation, never blind replay. The cropped screenshot does not furnish
+live screen coordinates, a native game API or a valid host input permit.
+
+Read-only commands (no cursor movement, purchase or game launch):
+
+```sh
+python -m scripts.upgrade_parts_force computer-batch-intent --requests '{"common_upgrade_parts":2,"robot_salvage_parts":1}'
+python -m scripts.upgrade_parts_force computer-restock --targets '{"common_upgrade_parts":20,"robot_salvage_parts":20}' --pocket-counts '{"common_upgrade_parts":18,"robot_salvage_parts":19}'
+```
+
+The versioned computer_batch_picker contract is in
+contracts/upgrade-parts-force.v1.json. This implementation is **POLICY_ONLY**,
+not a functioning installed Sims purchase mod. Native-first gameplay needs
+source-inspected exact-build EA tuning/script hooks and a disposable P08
+Live Mode observation. A future opt-in restock profile may eliminate further
+repeated per-arrow approvals within a preapproved cap; this code never
+silently spends or chooses cheats/Spawn Crafting Supplies as a replacement.
+No EA Connect or OS/peripheral changes.
+
