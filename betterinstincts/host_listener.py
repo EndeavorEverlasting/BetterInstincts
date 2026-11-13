@@ -1154,3 +1154,57 @@ def tick(
     _write_json(tick_path, receipt)
     receipt["receipt"] = str(tick_path.relative_to(ROOT))
     return receipt
+
+
+def _require_active_traversal_session(session_id: str, *, explicit_opt_in: bool) -> None:
+    """Observe only inside the existing explicitly activated listener lifecycle."""
+    if explicit_opt_in is not True:
+        raise HostListenerError("EXPLICIT_TRAVERSAL_LEARNING_OPT_IN_REQUIRED")
+    path = _session_dir(session_id) / "session.json"
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > 64_000:
+        raise HostListenerError("TRAVERSAL_LISTENER_NOT_ACTIVE")
+    try:
+        meta = json.loads(path.read_text(encoding="utf-8"))
+    except (ValueError, OSError) as exc:
+        raise HostListenerError("TRAVERSAL_LISTENER_METADATA_INVALID") from exc
+    if meta.get("state") != "ACTIVE" or meta.get("session_id") != session_id:
+        raise HostListenerError("TRAVERSAL_LISTENER_NOT_ACTIVE")
+
+
+def observe_traversal_transition(
+    session_id: str, snapshot: Mapping, event: Mapping, *,
+    explicit_opt_in: bool = False,
+) -> dict:
+    """Persist one independently observed route outcome, not a mouse event.
+
+    The selected sensor/caller must actually supply a genuine game route probe
+    or reviewed observation. This port never creates its own sensor or queue.
+    """
+    _require_active_traversal_session(session_id, explicit_opt_in=explicit_opt_in)
+    from betterinstincts.traversal_cost_learning import (
+        TraversalLearningError, record_local_transition,
+    )
+    try:
+        return record_local_transition(snapshot, event, explicit_opt_in=True)
+    except TraversalLearningError as exc:
+        raise HostListenerError("TRAVERSAL_EVIDENCE_REJECTED:" + str(exc)) from exc
+
+
+def plan_learned_traversal(
+    session_id: str, snapshot: Mapping, *, explicit_opt_in: bool = False,
+) -> dict:
+    """Apply the private per-profile model to the already-verified pure graph."""
+    _require_active_traversal_session(session_id, explicit_opt_in=explicit_opt_in)
+    from betterinstincts.household_navigation import plan_household_navigation
+    from betterinstincts.traversal_cost_learning import (
+        TraversalLearningError, load_local_model,
+    )
+    if not isinstance(snapshot, Mapping):
+        raise HostListenerError("TRAVERSAL_SNAPSHOT_INVALID")
+    supplied = dict(snapshot)
+    try:
+        supplied["traversal_cost_model"] = load_local_model(snapshot)
+    except TraversalLearningError:
+        # Corruption never promotes a prediction; retain base verified edges.
+        supplied["traversal_cost_model"] = None
+    return plan_household_navigation(supplied)
