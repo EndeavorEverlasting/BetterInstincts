@@ -1,3 +1,7 @@
+## 2026-11-13 — Local semantic VAE: on-device learning without a new game controller
+
+Selected by MoonWake /sixth-gear P141 as a bounded extension of the existing spatial-convolution evidence intake. Train a tiny Gaussian VAE encoder/decoder on independently verified 5×5×3 floor/route patches only after local profile opt-in; keep semantic corpus and weights user-scoped, bounded, replay-safe, and erasable per context. No central server, video capture, daemon, autotraining, or uploads; decoder is advisory and may not authorize Sim walks, camera movement, click or new graph edges. Offline validation cannot certify game-coupled learning. Local exact-patch source/CPU/holdout/EA game proof remains pending; BI-002 hunger is independent and ACTIVE. See `docs/SEMANTIC_VAE.md`.
+
 ## 2026-11-12 — NanoCan household waste and clean-up queue hardening
 
 Extend the existing native household autonomy port, not a new UI clicker: identify source-proven autonomous/whim/vanilla cleanup in **actual queue slots**; propose atomic replacement with a reachable, source-verified NanoCan native disposal for eligible dishes and garbage; preserve all player commands and unknown actions. Reconcile one observed disposal and causal payout at a time. Real native EA tuning/package and in-game A/B remain dependent on exact installed build/P08; no speculative SLAM or hunger gate precondition. See `docs/NANOCAN_RECYCLING.md`## 2026-11-12 — Spatial convolution research-to-runtime gate
