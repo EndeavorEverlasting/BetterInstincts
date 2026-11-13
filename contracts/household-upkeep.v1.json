@@ -50,12 +50,12 @@
     "required_verified_skill": "robotics",
     "skill_gap_gate": "UPKEEP_HELPER_SKILL_GAP",
     "skill_force_bundle": "servo_core",
-    "notes": "When Servo helper's complete four-motive snapshot is current and reserves are safe, prioritize it for verified robotic repairs/tune-ups; human helpers remain fallback. Verified Fix-O-Matic may qualify Servo for Utili-Bot repair only, with exact observed menu. Skill floor for other maintenance is a hypothesis, never replaces menu evidence. A target Servo can self-tune only with an explicitly verified enhancement and its own observed action.",
+    "notes": "When Servo helper's complete four-motive snapshot is current and reserves are safe, prioritize it for verified robotic repairs/tune-ups; human helpers remain fallback. Verified Fix-O-Matic may qualify Servo for Servo peer Tune Up or broken Utili-Bot repair only, with exact observed menu. Skill floor for other maintenance is a hypothesis, never replaces menu evidence. A target Servo can self-tune only with an explicitly verified enhancement and its own observed action.",
     "prefer_verified_servo_peers_for_robot_care": true,
     "require_verified_servo_helper_motives": true,
     "min_helper_charge": 0.45,
     "min_helper_durability": 0.35,
-    "verified_fix_o_matic_support": "REPAIR_UTILIBOT_WITH_EXPLICIT_ENABLED_MENU"
+    "verified_fix_o_matic_support": "TUNE_UP_SERVO_OR_REPAIR_UTILIBOT_WITH_EXPLICIT_ENABLED_MENU"
   },
   "servo_fire_risk": {
     "incident": "2026-11-09: a Servo with low Durability plus laundry (dryer lint) caused fires",
