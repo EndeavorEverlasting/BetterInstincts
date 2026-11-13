@@ -1,0 +1,31 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-TRAVERSAL-ADAPTIVE-COST-20261112",
+  "purpose": "Source-evidenced opt-in local edge cost learning and pure existing Sims region routing without new native gameplay hooks or input authority",
+  "files": [
+    {
+      "path": "betterinstincts/traversal_cost_learning.py",
+      "route": "POLICY_ONLY",
+      "reason": "Bounded offline mathematical cost calibration from opt-in supplied evidence; local profile I/O never operates Sims controls or files.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/household_navigation.py",
+      "route": "POLICY_ONLY",
+      "reason": "Scales only verified existing edge weights through existing Dijkstra planner; no game input.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_listener.py",
+      "route": "HOST_LAB_ONLY",
+      "reason": "Explicit active session event port and private local model readback; host sensor and real effects remain independently owned.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_MODEL_AND_PLANNER_TESTS_NOT_GAMEPLAY",
+  "next_gate": "Opted-in exact-build Sims approved disposable Live Mode trial with genuine verified transition observations, player interruption, rolled-back model, and independent BI-002 hunger trials"
+}
