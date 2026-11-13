@@ -1811,6 +1811,15 @@ behavior change; native route POLICY_ONLY. Guide: docs/OCCULT_NEEDS.md.
 observations and native follow-on. MoonWake P08 real-game certification not
 observed; local `prompt_group_walk.py` process not invoked in this provider.
 
+
+## 2026-11-12 — P141 → MoonWake Fifth Gear: local adaptive navigation costs
+
+**Parent:** BetterInstincts learns on the individual's computer how to favor shorter/reliable *verified* Sims routes over time, without inventing SLAM accuracy or spamming Walk. Current main baseline used: `54ca0c5cc342beade013b4e00fd7bf16e8370370`. P141 selected evidence-gated local edge timing and failure estimates over a separate RL locomotion controller or another raw SLAM sensor (PR #159 separately owns the latter). The P141 ontology consultation committed **before** policy edits: `contracts/consultations/BI-TRAVERSAL-ADAPTIVE-COST-P141-FIFTH-GEAR-20261112.v1.json`.
+
+MoonWake order: P141 → P95 → P82 → P08 → P07 → P124. P95 designed current verified graph → opt-in observer → replay-resistant scoped model → deterministic weighted existing Dijkstra; P82 provided slow-path, failure, stale context, replay, player-control and storage falsifiers. P08 requires an actual Windows/Linux compatible Sims installation, exact patch, explicit operator-approved disposable session, real before/after route samples, model rollback, player takeover and a separately observed native goal action; **NOT RUN from the GitHub connector**. P07 implemented source, model, tests, local host listener port; P124 preserves existing navigation, camera, VOI, actual effect and host session owners, and separates policy-only from host-lab code.
+
+Pure route weights update using verified expected-versus-observed time plus failure EWMA, support shrinkage and fixed-point deterministic Dijkstra (`docs/TRAVERSAL_COST_LEARNING.md`). Zero samples/corruption/stale patch or graph => baseline; no input authority or save modification. The new listener port is explicitly activated and opt-in; *no background sensor, daemon, native EA hook, real game passage timing, or local installation activation is claimed*. CI/test/merge evidence must be read back independently; BI-002 hunger remains ACTIVE. This is a supporting movement optimization, not a replacement parent goal.
+
 ## 2026-11-12 — Second occult-needs iteration: durable on-device learner
 
 After the typed catalog and offline policy landed on main via PR #205, the

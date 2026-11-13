@@ -1,0 +1,99 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-TRAVERSAL-ADAPTIVE-COST-P141-FIFTH-GEAR-20261112",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Local, bounded, replay-resistant online estimates for verified Sims region traversal time and failure; attach learned advisory edge costs to the existing deterministic household navigation planner without adding an actuator, desktop crawler, save mutation, or camera-as-Sim-motion confusion.",
+  "affected_concepts": [
+    "NAVIGATION_INTENT",
+    "NAVIGATION_PROGRESS",
+    "NAVIGATION_STALL",
+    "OBSERVATION",
+    "GOAL",
+    "CONTROL_PERMIT",
+    "PLAYER_INTENT",
+    "HOST_SESSION"
+  ],
+  "relevant_canonical_owners": [
+    "docs/AGENT_OPERATING_RULES.md",
+    "betterinstincts/household_navigation.py",
+    "betterinstincts/host_listener.py",
+    "contracts/ontology.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-036",
+    "BI-ONT-037",
+    "BI-ONT-038",
+    "BI-ONT-039",
+    "BI-ONT-040",
+    "BI-ONT-041"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_INCREMENTAL_ROUTE_COST_CALIBRATION_NOT_ACTUAL_SIMS_TRAVERSAL_OR_INPUT_CERT",
+  "player_save_control_impact": "Explicit opt-in existing host listener only; accepted host or reviewed source-provenance transition with two different capture references, no player interruption, and same exact scene/graph/scope. Persist only bounded aggregate edge statistics and hashed event identities in canonical user-scoped BetterInstincts runtime; never read/modify Sims saves, mouse settings, raw captures or EA files. Predictions never grant game effects.",
+  "strategic_theses": [
+    {
+      "thesis": "New full reinforcement-learning locomotion agent",
+      "falsification": "Sparse unverified native feedback, duplicate control ownership and no Sims live certification make action-policy learning premature",
+      "disposition": "REJECTED"
+    },
+    {
+      "thesis": "Expand SLAM/visual model as first learning gate",
+      "falsification": "Spatial perception already has an independent PR #159 owner; camera and geometry perception do not explain observed passage latency/failure",
+      "disposition": "DEFERRED"
+    },
+    {
+      "thesis": "Tune static Dijkstra graph costs manually",
+      "falsification": "Manual edits cannot adapt to repeated route outcomes and encourage unproven assumptions",
+      "disposition": "WEAKENED"
+    },
+    {
+      "thesis": "Bounded evidence-gated online edge cost learner attached to existing graph",
+      "falsification": "Without instrumented independent events it has no live learning; preserve baseline until evidence and explicitly report adapter coverage",
+      "disposition": "SURVIVES_SELECTED"
+    }
+  ],
+  "selected_thesis": "P141 chooses replay-resistant per-profile observed-edge cost learning; P95 defines the route-observation-scoring stack and failure seams, P82 evaluates deterministic route-choice changes, P08 remains local-Sims blocked, P07 implements and tests safely, P124 integrates within existing owners.",
+  "investigation": "Prototype two verified alternative paths with explicit baseline passage timing; feed distinct success/failure events, compare prequential route choice before/after, reject absent/stale/duplicate data. Human/game effect gate unchanged.",
+  "expected_outcome": "Opt-in active sessions progressively update local bounded model; exact save/lot/patch/graph scope prevents leakage; planner can rank a verified, cheaper alternative using shrunk latency and failure estimates; direct native actions, anti-WALK-spam, camera separation, player priority and no-effect receipts remain intact.",
+  "negative_tests": [
+    "No explicit listener opt-in or active session refuses writes",
+    "Unknown/camera-only/unreviewed source and stale scene or player interruption refuse learning",
+    "Replay across processes does not change aggregate",
+    "Changing save/lot/build/graph invalidates model",
+    "No sensor evidence, invalid learned model or missing expected timing preserves safe baseline",
+    "Failures raise bounded cost but never create edges or grant clicks",
+    "Concurrent writers cannot silently lose updates",
+    "No user saves/EA file/network/profile auto-scanning",
+    "Outcomes are not fabricated from a walk or camera pan",
+    "Dijkstra ties, budget, goal actions and player queue remain unchanged"
+  ],
+  "rollback_path": "Revert feature PR; locally retained optional model profiles can be manually deleted by user; no game saves, controller permissions or preexisting model schema changed.",
+  "unresolved_unknowns": [
+    "No accessible installed Sims 4 game host or verified native route callback through this GitHub provider",
+    "PR #159 separately owns raw sensors; this sprint cannot implement or certify them",
+    "Real travel-time metrics and model calibration require opt-in instrumented local sessions and EA exact-build evidence",
+    "BI-002 hunger live gameplay certification remains active"
+  ],
+  "files_expected": [
+    "contracts/traversal-cost-learning.v1.json",
+    "betterinstincts/traversal_cost_learning.py",
+    "betterinstincts/household_navigation.py",
+    "betterinstincts/host_listener.py",
+    "tests/test_traversal_cost_learning.py",
+    "contracts/native-gameplay-decisions/BI-TRAVERSAL-ADAPTIVE-COST-20261112.v1.json",
+    "docs/TRAVERSAL_COST_LEARNING.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "High leverage with existing graph and VOI; conservatively measurable and reversible; no claim of VIO SLAM camera precision from unobserved samples."
+}

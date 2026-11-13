@@ -437,6 +437,11 @@ P124 retains existing lane and native-gameplay owners instead of forking a
 host click engine. Run of the actual local `prompt_group_walk.py` on a host
 and five independent AI processes is not asserted. See `docs/OCCULT_NEEDS.md`.
 
+
+## 2026-11-12 — P141 then MoonWake /fifth-gear: adaptive traversal ML
+
+Resolved exact P-number bodies from current MoonWake `AGENTS.md`, `harness/exports/prompt-invocation-catalog.v1.json`, `harness/contracts/prompt-groups.v1.json` and `skills/fifth-gear/SKILL.md`. **P141** (Repository Strategic Opportunity Scout) selected local replay-safe, support-shrunk observed passage timing/failure learning versus standalone RL and duplicate SLAM. Operator-ordered engineering composition: **P95** (Program Design & Call-Stack Prototype Architect) → **P82** (Prototype-Measure-Refine Delivery Loop) → **P08** (Live Runtime Proof Executor) → **P07** (Repo Sprint Executor) → **P124** (Repository Code Readability & Structural Refactorer). Source-first ontology consultation `BI-TRAVERSAL-ADAPTIVE-COST-P141-FIFTH-GEAR-20261112` committed before the behavior code. Structural owner: `betterinstincts/traversal_cost_learning.py` computes bounded advisory weights; existing `household_navigation.py` remains route authority and `host_listener.py` remains opt-in intake. P08 real Sims gameplay is **NOT_RUN** without a local authorized host, even if synthetic CI is green. GitHub-hosted connector execution of these contracts is distinct from invoking the *local* MoonWake `prompt_group_walk.py` process or five real delegated agents; neither local walker nor game instrumentation is claimed.
+
 ## 2026-11-12 — MoonWake Fifth Gear iteration on local needs memory
 
 After PR #205, the objective audit identified two missing acceptance edges:

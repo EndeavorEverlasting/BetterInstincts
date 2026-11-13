@@ -4,6 +4,8 @@ from __future__ import annotations
 from heapq import heappop, heappush
 from typing import Any, Mapping
 
+from betterinstincts.traversal_cost_learning import apply_learned_costs
+
 MAX_REGIONS = 128
 MAX_PASSAGES = 512
 MAX_TRACE = 32
@@ -134,6 +136,9 @@ def plan_household_navigation(snapshot: Mapping[str, Any]) -> dict:
     if assembled is None:
         return _receipt(data, "NAVIGATION_ABSTAIN", "GRAPH_INVALID_OR_UNBOUNDED")
     graph, excluded = assembled
+    # Learning may rank only existing source-verified passages; it cannot add
+    # new edges, claim movement or bypass the current actor/scene gates.
+    graph, learning_status, learned_edges = apply_learned_costs(data, graph)
     current = data.get("current_region")
     if not isinstance(current, str) or current not in graph:
         return _receipt(data, "NAVIGATION_RELOCALIZE", "CURRENT_REGION_UNKNOWN_OR_OFF_LOT")
@@ -199,7 +204,9 @@ def plan_household_navigation(snapshot: Mapping[str, Any]) -> dict:
                     "REPLAN_AROUND_NO_PROGRESS" if stalled else "VERIFIED_STABLE_ROUTE",
                     route=list(path), next_region=path[1], target_region=target,
                     excluded_unverified_passages=excluded, blocked_transitions=len(blocked),
-                    movement_channel="SIM_ROUTE_PROPOSAL_ONLY")
+                    movement_channel="SIM_ROUTE_PROPOSAL_ONLY",
+                    learning_status=learning_status,
+                    learned_edge_count=learned_edges)
 
 
 __all__ = ["plan_household_navigation", "MAX_REGIONS", "MAX_PASSAGES", "MAX_TRACE"]
