@@ -357,4 +357,22 @@ def evaluate_native_household_autonomy(
         else:
             if decision["state"] == "PRESERVE_UNKNOWN":
                 decision["state"] = "PRESERVE_QUEUE_OR_YIELD"
+    # Game-native household policy extension: no selected portrait or desktop
+    # input. This optional, bounded port is absent from legacy observations.
+    if "nanocan_recycling" in observation:
+        from betterinstincts.nanocan_recycling import (
+            NanoCanRecyclingError, evaluate_nanocan_recycling,
+        )
+        try:
+            result["nanocan_recycling"] = evaluate_nanocan_recycling(
+                observation["nanocan_recycling"],
+                household_ref=observation["household_ref"],
+                game_build=observation["game_build"],
+                capture_ref=observation["capture_ref"],
+                player_active=observation.get("player_active"),
+                sims=sims,
+                now=instant,
+            )
+        except NanoCanRecyclingError as exc:
+            raise AutonomyModerationError(str(exc)) from exc
     return result

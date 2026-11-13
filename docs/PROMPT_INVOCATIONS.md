@@ -470,3 +470,22 @@ code with CI/regressions; P124 keeps one household-upkeep owner and
 unchanged player-first native-gameplay boundary. User request does
 not authorize unsafe game installs or simulated live outcomes.
 Consultation: `BI-SERVO-COOPERATIVE-UTILIBOT-CARE-20261112`.
+
+## 2026-11-13 — NanoCan dish-income instinct / MoonWake Fifth Gear
+
+**Parent:** All household Sims should use a NanoCan instead of wasting time
+washing eligible dirty, empty dishes; the best route should be cursor-free
+and preserve the manual drag-and-drop economics, not just §10 ordinary
+Sim disposal. Current MoonWake `AGENTS.md`, full prompt catalog and
+`skills/fifth-gear/SKILL.md` identify stages
+**P95 → P82 → P08 → P07 → P124**. P95 preserved one native
+household autonomy owner, modeled item/can/actor, source and money-event
+call stacks and differentiated the two reward classes. P82 bounded the
+policy, protection and outcome falsifiers in
+`tests/test_nanocan_recycling.py`; P08 actual local Windows Sims build,
+EA-native callback/tuning inspection, game money comparison and rollback
+remain NOT_RUN through GitHub. P07 owns consultation-first implementation,
+CI and PR promotion when checks pass; P124 owns structural integration
+and the exact parent state after merge. **Slash-host walker not invoked**:
+GitHub remote tools are not the local MoonWake runtime. No native game
+effect is certified. Source: `docs/NANOCAN_RECYCLING.md`.
