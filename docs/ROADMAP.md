@@ -129,3 +129,17 @@ Learning is opt-in, reviewed, replay-safe, bounded and advisory, without
 automatic profile writes or new desktop/game effects. BI-002 remains the
 **active parent gate** until real 5+5 hunger trials, maintainer review and
 rollback; no new post-BI-002 milestone or unsupported native hook is claimed.
+
+## 2026-11-12 — Servo cooperation and Gardener-Bot maintenance
+
+Strengthened **existing** `household_upkeep` rather than introducing
+a new micromanager. Add typed Gardener/Cleaner/Fixer/Party Utili-Bot Charge
+and Durability monitoring, strictly observed repair/tune-up/recharge actions,
+and verified Servo-first mutual assistance with helper-charge reserves,
+human fallback, enhanced self-tune proof and bounded queue dedupe.
+Exact policy: `contracts/household-upkeep.v1.json`; code:
+`betterinstincts/household_upkeep.py`; detailed policy:
+`docs/HOUSEHOLD_UPKEEP.md`. The feature is **offline advisory only**;
+local EA tuning/native gameplay proof and disposable household evidence
+remain separate. BI-002 hunger remains ACTIVE and is not replaced by
+Servo cooperation.
