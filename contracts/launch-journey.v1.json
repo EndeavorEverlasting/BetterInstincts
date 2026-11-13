@@ -34,12 +34,15 @@
     "protected_data": "never read/write user saves or edit Sims game files",
     "host_proof": "process dispatch is not game load or Live Mode evidence",
     "active_process": "read-only bounded tasklist PID observation; if Sims already running, never launch a second copy; dispatch PID is not necessarily the actual game PID",
-    "menu_learning": "NOT_OBSERVED unless future host captures independently certify scene/menu cues; no speculative detection or automatic menu clicks"
+    "menu_learning": "NOT_OBSERVED unless future host captures independently certify scene/menu cues; no speculative detection or automatic menu clicks",
+    "single_install_detection": "Two recognized executables (TS4_x64.exe and TS4.exe) sharing one validated Game/Bin path are a single installation; prefer x64. Separate validated Game/Bin roots stay ambiguous.",
+    "process_inventory_validity": "Every Windows tasklist /FO CSV /NH row must have five columns and numeric PID; malformed/truncated inventories deny launch; independent pre-dispatch snapshots require validated identities, and untrusted post-dispatch data withholds game PID proof."
   },
   "limitations": [
     "Read-only bounded default install discovery may require manual path selection",
     "Existing game-host image-template navigator is independent and requires separately observed calibrated screenshots and strict screen lease",
     "Gameplay and saved-session observations require an authorized Windows P08 run",
-    "Unique-install Windows auto-launch is not automatic loading of the latest protected user save; save identity and scene-safe navigation require dedicated local proof"
+    "Unique-install Windows auto-launch is not automatic loading of the latest protected user save; save identity and scene-safe navigation require dedicated local proof",
+    "Read-only Windows tasklist basenames do not independently attest the full executable path; same-time competing double-click windows still require local concurrency certification."
   ]
 }

@@ -1,3 +1,11 @@
+## 2026-11-12 — MoonWake Closers: single-click launcher structural verification
+
+**Verified floor:** #200 merged on `main` at `17aaffb05763cf40e7cd8cb6ef7a1682dc06dde5` with successful GitHub offline CI. No Windows Sims launch, real save, game patch or menu capture was independently verified. P83 found two reproducible defects: dual recognized exes in the same Game/Bin erroneously produced MULTIPLE installs; a malformed tasklist result or untrusted later process snapshot could appear empty and admit new launch or overclaim a game PID.
+
+**P03/P141:** A bounded closer consultation (P141 rejects speculative automatic Resume and timestamps, selects same-root dedup + process evidence hardening) was committed first. **P124:** reuse `scripts/smart_start.py`, with tests in `tests/test_smart_start.py` and source contract `contracts/launch-journey.v1.json`; keep known chooser, user save policy, native game mechanics and BI-002 untouched. **P04:** Issue #201 owns real Windows Sims menu/last-played identity + Live Mode local certification; no autonomously launched local agent is claimed. Exact branch CI/merge evidence is a separate gate before claiming integration.
+
+**Remaining true boundaries:** Unattended save selection and native gameplay are not implemented. An existing process name is not a verified executable path. Near-simultaneous independent double-click starts need a local Windows concurrency test/atomic single-instance design before a broad safety claim.
+
 ## 2026-11-12 — P141 → Fifth Gear: one-click Sims 4 launch reliability
 
 **Parent:** First-time BetterInstincts user double-clicks a Windows launcher and wants the game and latest session without extra interaction. Current implemented portion: unique Sims installation dispatched with read-only process/PID evidence. Unknown/user saves are never silently selected; exact most-recent game save identity and calibrated menu controls remain unproven. Git and Python 3.11+ remain prerequisites; clean-main fast-forward and uninstall protections remain unchanged.
