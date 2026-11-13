@@ -192,6 +192,21 @@ class ComputerBatchPlannerTests(unittest.TestCase):
                 )
 
 
+    def test_baseline_required_before_first_arrow_not_only_before_buy(self):
+        self.assertEqual(
+            picker(inventory_before={})["reason"],
+            "FIVE_PART_PERSONAL_INVENTORY_BASELINE_REQUIRED",
+        )
+        self.assertEqual(
+            picker(inventory_before={"common_upgrade_parts": 0})["reason"],
+            "FIVE_PART_PERSONAL_INVENTORY_BASELINE_REQUIRED",
+        )
+        self.assertEqual(
+            picker(inventory_before={pid: 0 for pid in IDS})["action"]["kind"],
+            "INCREMENT_OBSERVED_PART_ROW",
+        )
+
+
 def picker_rows():
     names = {p["id"]: p["display_name"] for p in menu_catalog()["parts"]}
     return [
@@ -280,6 +295,75 @@ class BatchQueueTests(unittest.IsolatedAsyncioTestCase):
                 validate_fresh_scene=noop, validate_fresh_picker=noop,
                 perform_game_ui_effect=noop,
             )
+
+
+    async def test_queue_cannot_buy_from_incomplete_or_overspend_receipt(self):
+        async def noop(*_):
+            return True
+
+        approved = picker({"common_upgrade_parts": 2, "robot_salvage_parts": 1})
+        self.assertEqual(approved["action"]["kind"], "CONFIRM_OBSERVED_PURCHASE")
+        for edit, reason in (
+            ({"approved_spend_cap": None}, "BATCH_SPEND_OR_BASELINE_ADMISSION_REQUIRED"),
+            ({"approved_spend_cap": 24}, "BATCH_SPEND_OR_BASELINE_ADMISSION_REQUIRED"),
+            ({"inventory_baseline_verified": False}, "BATCH_SPEND_OR_BASELINE_ADMISSION_REQUIRED"),
+            ({"spending_authorized": False}, "BATCH_SPEND_OR_BASELINE_ADMISSION_REQUIRED"),
+            ({"expected_total_count": 2}, "BATCH_NOT_READY_FOR_SINGLE_BUY"),
+            ({"expected_total_cost": 24}, "BATCH_NOT_READY_FOR_SINGLE_BUY"),
+        ):
+            with self.subTest(edit=edit), self.assertRaisesRegex(
+                UpgradePartsForceError, reason
+            ):
+                altered = {**approved, "action": {**approved["action"], **edit}}
+                enqueue_computer_batch_step(
+                    self.queue, work_id="forged", decision=altered,
+                    validate_fresh_scene=noop, validate_fresh_picker=noop,
+                    perform_game_ui_effect=noop,
+                )
+
+    async def test_queued_action_is_snapshot_not_mutable_caller_alias(self):
+        captured = []
+        async def scene():
+            return True
+        async def picker_rev(action):
+            captured.append(dict(action))
+            return True
+        async def effect(action):
+            captured.append(dict(action))
+
+        decision = picker()
+        enqueue_computer_batch_step(
+            self.queue, work_id="immutable", decision=decision,
+            validate_fresh_scene=scene, validate_fresh_picker=picker_rev,
+            perform_game_ui_effect=effect,
+        )
+        decision["action"]["kind"] = "CONFIRM_OBSERVED_PURCHASE"
+        decision["action"]["approved_spend_cap"] = 999999
+        decision["action"]["label"] = "kitchen_upgrade_parts"
+        self.assertEqual((await self.queue.run_once())["state"], "COMPLETED")
+        self.assertEqual(len(captured), 2)
+        self.assertEqual(captured[0]["kind"], "INCREMENT_OBSERVED_PART_ROW")
+        self.assertEqual(captured[1]["kind"], "INCREMENT_OBSERVED_PART_ROW")
+        self.assertEqual(captured[1]["approved_spend_cap"], 25)
+        self.assertEqual(captured[1]["label"], "common_upgrade_parts")
+
+    async def test_increment_budget_snapshot_not_strippable(self):
+        async def noop(*_):
+            return True
+        draft = picker()
+        self.assertEqual(draft["action"]["kind"], "INCREMENT_OBSERVED_PART_ROW")
+        for edit in ({"planned_total_cost": 500000},
+                     {"expected_selected_count": 2},
+                     {"requested_quantity": False}):
+            bad = {**draft, "action": {**draft["action"], **edit}}
+            with self.subTest(edit=edit), self.assertRaises(UpgradePartsForceError):
+                enqueue_computer_batch_step(
+                    self.queue, work_id="bad-increment",
+                    decision=bad,
+                    validate_fresh_scene=noop, validate_fresh_picker=noop,
+                    perform_game_ui_effect=noop,
+                )
+
 
 
 if __name__ == "__main__":
