@@ -1,0 +1,76 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-NANOCAN-QUEUE-EVIDENCE-CLOSERS-20261113",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "MoonWake Closers P83→P03→P141→P124→P04: tighten merged NanoCan native queue advisory ownership. Deny actorless recycling when player/unknown queue owns an unresolved item or household queue observation is stale; match native queue cleanup to verified exact build/source/destination, queued phase and current queue revision; retire legacy sink-only advice without full native spatial replacement proof. No live EA queue effect or desktop control.",
+  "affected_concepts": [
+    "ACTION_QUEUE",
+    "GAME_OBJECT",
+    "PLAYER_INTENT",
+    "AFFORDANCE",
+    "OBSERVATION",
+    "CLAIM",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "OUTCOME",
+    "HOST_SESSION",
+    "LOCATION",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/nanocan_recycling.py",
+    "betterinstincts/autonomy_moderation.py",
+    "contracts/nanocan-recycling.v1.json",
+    "contracts/native-gameplay-authority.v1.json",
+    "docs/NANOCAN_RECYCLING.md",
+    "docs/WORLD_TRAVERSAL_HARNESS.md",
+    "contracts/ontology.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-028",
+    "BI-ONT-029",
+    "BI-ONT-030"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_NANOCAN_QUEUE_POLICY_CLOSURE_NOT_REAL_EA_NATIVE_GAME_OR_PLAYER_INPUT_CERT",
+  "player_save_control_impact": "Only pure deterministic policy, fixtures, machine contract and documentation. No local Windows/Sims access, EA original/save mutation, native_mod package, input hook, camera capture, player queue click, crediting money or unbounded polling.",
+  "expected_outcome": "Unresolved player/unknown queue target and stale household evidence protect all candidate items; native replace candidate admits only matched queued-phase, current queue-revision, exact patch, source kind, destination and item; legacy sink signal becomes a strict alias of evidence-qualified atomic redirect; no loss of valid autonomous proposals in positive tests.",
+  "negative_tests": [
+    "Manual player WASH_DISHES without item_ref must suppress direct actorless disposal candidate",
+    "Unknown-origin queue without item_ref must suppress candidate; player action on known different item remains available",
+    "An unverified/stale household Sim queue snapshot must never license a disposal recommendation",
+    "Queue record with wrong game build, tuning source, destination type, revision, active phase or omitted phase denies native queue redirect",
+    "Queued action's phase UNKNOWN/ACTIVE abstains even though its native ID and slot match",
+    "Legacy pending_sink alone cannot create a misleading sink suppression candidate",
+    "Native proven sink queue returns backwards-compatible sink alias only when it matches same proven redirect",
+    "Approved native route remains advisory; no cancel, dispatch or OS effect; all previous tests and peripheral gates hold"
+  ],
+  "rollback_path": "Revert isolated closer PR from main; previous NanoCan contract and approved safety floor remain recoverable; no game/package/save changes.",
+  "unresolved_unknowns": [
+    "Native Sims exact installed patch queue origin phase/cancel hook, native target object IDs and game-ready package still require local authorized P08",
+    "Open PR #159 owns separate spatial sensor; never change it",
+    "BI-002 hunger priority remains separate and active"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-NANOCAN-QUEUE-EVIDENCE-CLOSERS-20261113.v1.json",
+    "betterinstincts/nanocan_recycling.py",
+    "tests/test_nanocan_recycling.py",
+    "contracts/nanocan-recycling.v1.json",
+    "contracts/native-gameplay-decisions/BI-NANOCAN-CLOSERS-20261113.v1.json",
+    "docs/NANOCAN_RECYCLING.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "docs/PROMPT_INVOCATIONS.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "P83 independently confirms #216 merged yet finds source-fidelity and item-claim blind spots. P03 selects source/queue safety correction. P141 compares native Mod now (blocked by exact patch), denser SLAM (not queue owner), broad autono moderation rewrite (duplicates owner), and existing NanoCan conservative provenance patch (selected). P124 retains one policy owner, tests both positive and malicious evidence, and preserves legacy output as strict alias. P04 routes exact patch native adapter to existing issue #171 with separate runtime ownership; no fabricated dispatch."
+}

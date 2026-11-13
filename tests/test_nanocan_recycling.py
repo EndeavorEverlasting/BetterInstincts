@@ -73,7 +73,7 @@ def visit(**changes):
         observed_at_unix=NOW, scene="LIVE", lot_scope="HOME",
         household_verified=True, lot_verified=True, queue_verified=True,
         policy_opt_in=True, household_member_count=4,
-        household_member_count_verified=True,
+        household_member_count_verified=True, queue_revision_ref="queue:rev1",
         dishes=[dish()], cans=[can()], native_routes=[route()],
     )
     row.update(changes)
@@ -130,6 +130,7 @@ def cleanup(kind="DISH_TO_SINK", origin="SIM_AUTONOMY", ref="dish:a", **changes)
                origin_proof_ref="proof:origin", native_action_source_ref="ea:native:cleanup",
                destination_ref="world:standard-destination", capture_ref=CAP,
                game_build=BUILD, action_kind_verified=True, source_kind="EA_TUNING",
+               queue_phase="QUEUED", queue_revision_ref="queue:rev1",
                cleanup_kind=kind, destination_kind=destinations[kind])
     row.update(changes)
     return row
@@ -138,7 +139,9 @@ def cleanup(kind="DISH_TO_SINK", origin="SIM_AUTONOMY", ref="dish:a", **changes)
 def queue_entry(cleanup_row):
     return {k:cleanup_row[k] for k in ("queue_slot_ref", "action_id", "origin",
             "origin_proof_ref", "item_ref", "cleanup_kind",
-            "destination_ref", "native_action_source_ref", "capture_ref")}
+            "destination_ref", "native_action_source_ref", "capture_ref",
+            "game_build", "source_kind", "destination_kind", "queue_phase",
+            "queue_revision_ref", "action_kind_verified")}
 
 
 def spatial(ref="dish:a", **changes):
@@ -287,8 +290,15 @@ class NanoCanPolicyTests(unittest.TestCase):
                           "origin":"SIM_AUTONOMY","origin_proof_ref":"proof:autonomy"}])
         obs=visit(dishes=[dish(pending_sink=sink)])
         result=evaluate(obs,sims=[actor])
-        self.assertEqual(result["sink_suppression_candidate"]["queue_slot_ref"],"queue:sink")
+        self.assertIsNone(result["sink_suppression_candidate"])
         self.assertFalse(result["cancel_allowed"])
+        # Legacy hints cannot bypass the complete native queue/route proof.
+        verified = cleanup()
+        observed = visit(lot_ref="lot:home", world_revision_ref="rev:lot:1",
+                         dishes=[dish(pending_sink=sink, pending_cleanup=[verified])],
+                         native_routes=[route(spatial_proof=spatial())])
+        proven = evaluate(observed, sims=[sim(queue=[queue_entry(verified)])])
+        self.assertEqual(proven["sink_suppression_candidate"]["queue_slot_ref"], "queue:cleanup")
         for mutation in ({"origin":"PLAYER"},{"action_id":"WASH_HANDS"},
                          {"queue_slot_ref":"queue:wrong"},
                          {"capture_ref":"capture:old"}):
@@ -396,7 +406,7 @@ class NanoCanPolicyTests(unittest.TestCase):
                     native_routes=[route(spatial_proof=spatial(**mutation))]),
                     sims=[sim(queue=[queue_entry(pending)])])
                 self.assertIsNone(result["queue_redirection_candidate"])
-                self.assertIsNotNone(result["proposal"])
+                self.assertIsNone(result["proposal"])
         result=evaluate(visit(dishes=[dish(pending_cleanup=[pending])],
                     native_routes=[route(spatial_proof=spatial())]),
                     sims=[sim(queue=[queue_entry(pending)])])
@@ -560,6 +570,111 @@ class NanoCanPolicyTests(unittest.TestCase):
         self.assertEqual(result["proposal"]["mode"],"NATIVE_SIM_DISPOSE")
         self.assertIsNotNone(result["queue_redirection_candidate"])
         self.assertEqual(result["reported_reward_estimate_simoleons"],10)
+
+    def test_unresolved_manual_queue_target_protects_all_candidate_items(self):
+        # A current known player command may refer to this dish even when the
+        # sensor has not established its item ID. Unrelated known items remain.
+        manual = {"origin": "PLAYER", "origin_proof_ref": "proof:manual",
+                  "action_id": "WASH_DISHES"}
+        self.assertIsNone(evaluate(visit(), sims=[
+            sim("sim:one"), sim("sim:two", queue=[manual])])["proposal"])
+        unknown = {**manual, "origin": "UNKNOWN"}
+        self.assertIsNone(evaluate(visit(), sims=[sim(queue=[unknown])])["proposal"])
+        known_unrelated = {**manual, "item_ref": "dish:other"}
+        self.assertIsNotNone(evaluate(visit(), sims=[sim(queue=[known_unrelated])])["proposal"])
+
+    def test_stale_or_unverified_household_queue_disallows_actorless_route(self):
+        for actor in (sim(capture_ref="capture:old"),
+                      sim(queue_verified=False),
+                      sim(queue="unbounded"),
+                      sim(player_command_present=True, queue=[])):
+            with self.subTest(actor=actor):
+                self.assertIsNone(evaluate(visit(), sims=[actor])["proposal"])
+        self.assertIsNone(evaluate(visit(), sims=[])["proposal"])
+
+    def test_native_queue_phase_and_identity_must_match_exact_observation(self):
+        pending = cleanup()
+        baseline = visit(lot_ref="lot:home", world_revision_ref="rev:lot:1",
+                         dishes=[dish(pending_cleanup=[pending])],
+                         native_routes=[route(spatial_proof=spatial())])
+        self.assertIsNotNone(evaluate(baseline, sims=[
+            sim(queue=[queue_entry(pending)])])["queue_redirection_candidate"])
+        bad_queue = (
+            {"game_build": "old:build"}, {"source_kind": "EA_SCRIPT"},
+            {"destination_kind": "DISHWASHER"}, {"queue_phase": "ACTIVE"},
+            {"queue_phase": "UNKNOWN"}, {"queue_revision_ref": "queue:older"},
+            {"action_kind_verified": False},
+        )
+        for altered in bad_queue:
+            with self.subTest(queue=altered):
+                queue = {**queue_entry(pending), **altered}
+                result = evaluate(baseline, sims=[sim(queue=[queue])])
+                self.assertIsNone(result["queue_redirection_candidate"])
+        for changed in (
+            {"queue_revision_ref": "queue:older"},
+            {"queue_revision_ref": None},
+        ):
+            with self.subTest(observation=changed):
+                result = evaluate({**baseline, **changed},
+                                  sims=[sim(queue=[queue_entry(pending)])])
+                self.assertIsNone(result["queue_redirection_candidate"])
+        active = {**pending, "queue_phase": "ACTIVE"}
+        active_obs = {**baseline, "dishes": [dish(pending_cleanup=[active])]}
+        self.assertIsNone(evaluate(active_obs, sims=[
+            sim(queue=[queue_entry(active)])])["queue_redirection_candidate"])
+        for missing in ("queue_phase", "queue_revision_ref"):
+            incomplete = pending.copy()
+            del incomplete[missing]
+            with self.subTest(missing=missing):
+                with self.assertRaisesRegex(NanoCanRecyclingError, "PENDING_CLEANUP_PROOF"):
+                    evaluate({**baseline, "dishes": [dish(pending_cleanup=[incomplete])]})
+
+    def test_native_sink_alias_never_authorizes_cancel_or_dispatch(self):
+        pending=cleanup()
+        observation=visit(lot_ref="lot:home", world_revision_ref="rev:lot:1",
+            dishes=[dish(pending_cleanup=[pending])],
+            native_routes=[route(spatial_proof=spatial())])
+        result=evaluate(observation, sims=[sim(queue=[queue_entry(pending)])])
+        self.assertEqual(result["sink_suppression_candidate"]["queue_slot_ref"],
+                         result["queue_redirection_candidate"]["queue_slot_ref"])
+        self.assertEqual(result["queue_redirection_candidate"]["queue_revision_ref"], "queue:rev1")
+        self.assertFalse(result["dispatch_authorized"])
+        self.assertFalse(result["cancel_allowed"])
+        self.assertFalse(result["desktop_input_allowed"])
+
+    def test_unpaired_route_never_races_existing_autonomous_item_queue(self):
+        pending = cleanup()
+        current = visit(lot_ref="lot:home", world_revision_ref="rev:lot:1",
+                        dishes=[dish(pending_cleanup=[pending])],
+                        native_routes=[route(spatial_proof=spatial(lot_ref="lot:old"))])
+        busy = sim(queue=[queue_entry(pending)])
+        result = evaluate(current, sims=[busy])
+        self.assertIsNone(result["queue_redirection_candidate"])
+        self.assertIsNone(result["proposal"])
+        # A separate free dish remains eligible, even when one is busy.
+        second = {**current,
+                  "dishes": [dish(pending_cleanup=[pending]), dish("dish:free")],
+                  "native_routes": current["native_routes"] +
+                      [route(dish_ref="dish:free")]}
+        free = evaluate(second, sims=[busy])
+        self.assertEqual(free["proposal"]["dish_ref"], "dish:free")
+        for phase in ("ACTIVE", "UNKNOWN"):
+            with self.subTest(phase=phase):
+                active = {**queue_entry(pending), "queue_phase": phase}
+                result = evaluate({**current, "native_routes": [
+                    route(spatial_proof=spatial())]}, sims=[sim(queue=[active])])
+                self.assertIsNone(result["proposal"])
+                self.assertIsNone(result["queue_redirection_candidate"])
+
+    def test_unresolved_native_cleanup_target_is_not_a_free_item(self):
+        row = {**queue_entry(cleanup()), "item_ref": None}
+        self.assertIsNone(evaluate(visit(), sims=[sim(queue=[row])])["proposal"])
+        independent = {**row, "cleanup_kind": None}
+        # Unknown native scope without target is not a proven cleanup claim;
+        # still does not grant any real game effect.
+        result = evaluate(visit(), sims=[sim(queue=[independent])])
+        self.assertIsNotNone(result["proposal"])
+        self.assertFalse(result["dispatch_authorized"])
 
 class NativeAutonomyIntegrationTests(unittest.TestCase):
     def test_nested_port_does_not_change_legacy_sim_outputs(self):
