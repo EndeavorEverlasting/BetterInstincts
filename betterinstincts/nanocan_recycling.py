@@ -126,6 +126,10 @@ def evaluate_nanocan_recycling(
         )) or any(type(route.get(k)) is not bool for k in (
             "available", "native_route_verified")):
             raise NanoCanRecyclingError("NANOCAN_ROUTE_PROOF_INVALID")
+        if (route.get("game_build") != game_build
+                or route.get("source_kind") not in {"EA_TUNING", "EA_SCRIPT"}
+                or route.get("mechanism_verified") is not True):
+            raise NanoCanRecyclingError("NANOCAN_NATIVE_BUILD_OR_SOURCE_PROOF_INVALID")
         if route["mode"] == "NATIVE_SIM_DISPOSE":
             if not _ref(route.get("actor_ref")):
                 raise NanoCanRecyclingError("NANOCAN_ROUTE_ACTOR_INVALID")
@@ -228,12 +232,21 @@ def evaluate_nanocan_recycling(
     # Sink suppression is ONLY a candidate when safe NanoCan disposal is
     # already eligible; never cancel a queue or override a manual wash.
     sink = by_dish[dish_ref].get("pending_sink")
+    sink_actor = actor_map.get(sink.get("actor_ref")) if isinstance(sink, Mapping) else None
     if (isinstance(sink, Mapping)
+            and sink.get("action_id") == "WASH_DISHES"
             and sink.get("origin") == "SIM_AUTONOMY"
             and sink.get("dish_ref") == dish_ref
             and sink.get("capture_ref") == capture_ref
             and _ref(sink.get("queue_slot_ref"))
-            and _ref(sink.get("origin_proof_ref"))):
+            and _ref(sink.get("origin_proof_ref"))
+            and sink_actor is not None and _actor_safe(sink_actor)
+            and any(
+                q.get("queue_slot_ref") == sink["queue_slot_ref"]
+                and q.get("action_id") == "WASH_DISHES"
+                and q.get("origin_proof_ref") == sink["origin_proof_ref"]
+                for q in sink_actor["queue"]
+            )):
         result["sink_suppression_candidate"] = {
             "queue_slot_ref": sink["queue_slot_ref"],
             "dish_ref": dish_ref,
