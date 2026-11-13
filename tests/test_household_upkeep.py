@@ -358,6 +358,21 @@ class CooperativeRobotCareTests(unittest.TestCase):
         self.assertEqual(denied["gate"], "UPKEEP_HELPER_SKILL_GAP")
         self.assertFalse(denied["next_actions"])
 
+    def test_fixomatic_can_tune_up_peer_servo_only_when_observed_and_verified(self):
+        peer=actor("servo:helper","SERVO",
+                   modules={"fix_o_matic":{"verified":True,"enabled":True}})
+        out=evaluate(obs(servos=[servo("servo:a",durability=.3),
+                                 servo("servo:helper")],
+                         actors=[peer],
+                         observed_actions=[action("TUNE_UP_SERVO","servo:helper","servo:a")]))
+        self.assertEqual(out["next_actions"][0]["action_id"],"TUNE_UP_SERVO")
+        self.assertEqual(out["next_actions"][0]["helper_qualification"],"FIX_O_MATIC")
+        peer["modules"]["fix_o_matic"]["enabled"]=False
+        denied=evaluate(obs(servos=[servo("servo:a",durability=.3),
+                                    servo("servo:helper")],actors=[peer],
+                            observed_actions=[action("TUNE_UP_SERVO","servo:helper","servo:a")]))
+        self.assertFalse(denied["next_actions"])
+
     def test_servo_helper_reserve_must_be_verified_before_cooperation(self):
         helper=actor("servo:helper","SERVO",skills={"robotics":{"level":10,"verified":True}})
         for servos in ([servo("servo:a",durability=.1)],
