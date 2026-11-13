@@ -194,6 +194,12 @@ def _queue_conflict(queue: list[Mapping]) -> tuple[Mapping, str] | None:
                 and later.get("semantic_key") == prior.get("semantic_key")
                 and _ref(later.get("semantic_proof_ref"))
                 and _ref(prior.get("semantic_proof_ref"))
+                # Repeating an action can be productive (e.g. multiple batches).
+                # Only non-stackable, source-proven duplicate effects can drop.
+                and later.get("dedupe_safe") is True
+                and prior.get("dedupe_safe") is True
+                and _ref(later.get("dedupe_proof_ref"))
+                and _ref(prior.get("dedupe_proof_ref"))
             ):
                 return later, "DUPLICATE_SEMANTIC_ACTION"
             if (
@@ -332,6 +338,15 @@ def evaluate_queue_supervision(
                     continue
                 if not _ref(current.get("serve_proof_ref")):
                     decision["gate"] = "CURRENT_ACTIVITY_PURPOSE_UNKNOWN"
+                    continue
+                # A trusted estimate of only seconds to finish should not
+                # discard the nearly completed action for a speculative gain.
+                if (
+                    duration["reliable_for_preemption"]
+                    and duration["remaining_seconds"] <= 15.0
+                    and not duration["suspected_stall"]
+                ):
+                    decision["gate"] = "ACTIVITY_NEAR_COMPLETION"
                     continue
                 if row.get("switch_history_verified") is not True:
                     decision["gate"] = "SWITCH_HISTORY_UNVERIFIED"
