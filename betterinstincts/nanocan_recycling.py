@@ -95,7 +95,9 @@ def _pending_cleanup(item: Mapping, *, item_ref: str) -> list[dict]:
                 or raw.get("cleanup_kind") not in CLEANUP_DESTINATIONS
                 or raw.get("destination_kind") != CLEANUP_DESTINATIONS[raw["cleanup_kind"]]
                 or type(raw.get("action_kind_verified")) is not bool
-                or raw.get("source_kind") not in {"EA_TUNING", "EA_SCRIPT"}):
+                or raw.get("source_kind") not in {"EA_TUNING", "EA_SCRIPT"}
+                or raw.get("queue_phase") not in {"QUEUED", "ACTIVE", "UNKNOWN"}
+                or not _ref(raw.get("queue_revision_ref"))):
             raise NanoCanRecyclingError("NANOCAN_PENDING_CLEANUP_PROOF_INVALID")
         if (raw["cleanup_kind"].startswith("DISH_") != (item.get("dish_ref") == item_ref)):
             raise NanoCanRecyclingError("NANOCAN_CLEANUP_ITEM_KIND_CONFLICT")
@@ -107,22 +109,30 @@ def _pending_cleanup(item: Mapping, *, item_ref: str) -> list[dict]:
     return verified
 
 
-def _player_claims_item(item_ref: str, actors: Mapping) -> bool:
-    """A player/unknown queued use of this exact item protects it for every Sim.
+def _player_claims_item(item_ref: str, actors: Mapping, *, capture_ref: str) -> bool:
+    """Protect an item if current household queue ownership is not resolved.
 
-    A cursor-free policy cannot ignore a manual order from a different actor.
-    Only proven non-player queue entries leave this item unreserved.
+    A manual/unknown command with no observed target might concern *any*
+    item. Missing or stale Sim queues never prove there is no player claim.
     """
+    if not actors:
+        return True
     for actor in actors.values():
         queue = actor.get("queue")
-        if not isinstance(queue, list):
-            continue
+        if (actor.get("capture_ref") != capture_ref
+                or actor.get("queue_verified") is not True
+                or not isinstance(queue, list) or len(queue) > 24):
+            return True
+        if actor.get("player_command_present") is True and not queue:
+            return True
         for row in queue:
             if not isinstance(row, Mapping):
-                continue
-            if (row.get("item_ref") == item_ref
-                    and (row.get("origin") not in NATIVE_QUEUE_ORIGINS
-                         or not _ref(row.get("origin_proof_ref")))):
+                return True
+            native = (row.get("origin") in NATIVE_QUEUE_ORIGINS
+                      and _ref(row.get("origin_proof_ref")))
+            target = row.get("item_ref")
+            # Unidentified player or unknown target is a household-wide hold.
+            if (not _ref(target) and not native) or (target == item_ref and not native):
                 return True
     return False
 
@@ -168,15 +178,18 @@ def _queue_cleanup_candidate(
     capture_ref: str, proposal_key: str,
 ) -> dict | None:
     """One exact, coupled suppression+replacement suggestion; never dispatch."""
-    if not _spatial_route_proven(
+    if (not _spatial_route_proven(
             route, observation=observation, item_ref=item_ref, can_ref=can_ref,
-            game_build=game_build, capture_ref=capture_ref):
+            game_build=game_build, capture_ref=capture_ref)
+            or not _ref(observation.get("queue_revision_ref"))):
         return None
     for cleanup in _pending_cleanup(item, item_ref=item_ref):
         if (cleanup["item_ref"] != item_ref
                 or cleanup["capture_ref"] != capture_ref
                 or cleanup["game_build"] != game_build
-                or cleanup["action_kind_verified"] is not True):
+                or cleanup["action_kind_verified"] is not True
+                or cleanup["queue_phase"] != "QUEUED"
+                or cleanup["queue_revision_ref"] != observation["queue_revision_ref"]):
             continue
         actor = actor_map.get(cleanup["actor_ref"])
         if actor is None or actor.get("capture_ref") != capture_ref or not _actor_safe(actor):
@@ -188,7 +201,10 @@ def _queue_cleanup_candidate(
                    if all(q.get(k) == cleanup[k] for k in (
                        "queue_slot_ref", "action_id", "origin", "origin_proof_ref",
                        "item_ref", "cleanup_kind", "destination_ref",
-                       "native_action_source_ref", "capture_ref"))]
+                       "native_action_source_ref", "capture_ref",
+                       "game_build", "source_kind", "destination_kind",
+                       "queue_phase", "queue_revision_ref"))
+                   and q.get("action_kind_verified") is True]
         if len(matches) != 1:
             continue
         return {
@@ -199,6 +215,8 @@ def _queue_cleanup_candidate(
             "source_origin": cleanup["origin"],
             "source_destination_kind": cleanup["destination_kind"],
             "native_action_source_ref": cleanup["native_action_source_ref"],
+            "queue_revision_ref": cleanup["queue_revision_ref"],
+            "source_kind": cleanup["source_kind"],
             "item_ref": item_ref, "can_ref": can_ref,
             "replacement_proposal_key": proposal_key,
             "spatial_source_ref": route["spatial_proof"]["source_ref"],
@@ -345,7 +363,8 @@ def evaluate_nanocan_recycling(
         item_ref = route["dish_ref"] if is_dish else route["waste_ref"]
         item = (by_dish if is_dish else by_waste).get(item_ref)
         can = by_can.get(route["can_ref"])
-        if item is None or can is None or _player_claims_item(item_ref, actor_map):
+        if item is None or can is None or _player_claims_item(
+                item_ref, actor_map, capture_ref=capture_ref):
             continue
         if (route["capture_ref"] != capture_ref
                 or not route["available"] or not route["native_route_verified"]
@@ -418,28 +437,15 @@ def evaluate_nanocan_recycling(
     # Sink suppression is ONLY a candidate when safe NanoCan disposal is
     # already eligible; never cancel a queue or override a manual wash.
     result["queue_redirection_candidate"] = paired_redirection
-    sink = selected.get("pending_sink") if is_dish else None
-    sink_actor = actor_map.get(sink.get("actor_ref")) if isinstance(sink, Mapping) else None
-    if (isinstance(sink, Mapping)
-            and sink.get("action_id") == "WASH_DISHES"
-            and sink.get("origin") == "SIM_AUTONOMY"
-            and sink.get("dish_ref") == item_ref
-            and sink.get("capture_ref") == capture_ref
-            and _ref(sink.get("queue_slot_ref"))
-            and _ref(sink.get("origin_proof_ref"))
-            and sink_actor is not None and _actor_safe(sink_actor)
-            and any(
-                q.get("queue_slot_ref") == sink["queue_slot_ref"]
-                and q.get("action_id") == "WASH_DISHES"
-                and q.get("origin_proof_ref") == sink["origin_proof_ref"]
-                for q in sink_actor["queue"]
-            )):
+    # Legacy sink field is now an alias of the *same proven* native
+    # redirection. An unverified pending_sink hint grants no suppression.
+    if (is_dish and paired_redirection is not None
+            and paired_redirection["source_destination_kind"] == "SINK"
+            and paired_redirection["source_origin"] == "SIM_AUTONOMY"):
         result["sink_suppression_candidate"] = {
-            "queue_slot_ref": sink["queue_slot_ref"],
+            "queue_slot_ref": paired_redirection["queue_slot_ref"],
             "dish_ref": item_ref,
-            "requires": ["EA_NATIVE_AUTONOMY_TEST",
-                         "RECHECK_PLAYER_QUEUE",
-                         "RECHECK_NANOCAN_AVAILABLE"],
+            "requires": paired_redirection["requires"],
         }
     return finish("NANOCAN_NATIVE_DISPOSAL_CANDIDATE")
 

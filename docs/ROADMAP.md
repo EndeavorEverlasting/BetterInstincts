@@ -1,3 +1,7 @@
+## 2026-11-13 — NanoCan closer safety guard
+
+Native cleanup queue redirection must preserve manual/unknown-target actions, current household queue snapshot, exact queued phase/revision/build/source/destination and same-object spatial evidence; legacy sink hints alone do not qualify. A future EA adapter under #171 must recheck these immediately before one atomic native replacement, retain the original on failed admission, and prove no player-interference using a disposable Sims session. Never treat offline policy as installed gameplay or make this a blocker for BI-002.
+
 ## 2026-11-13 — Local semantic VAE: on-device learning without a new game controller
 
 Selected by MoonWake /sixth-gear P141 as a bounded extension of the existing spatial-convolution evidence intake. Train a tiny Gaussian VAE encoder/decoder on independently verified 5×5×3 floor/route patches only after local profile opt-in; keep semantic corpus and weights user-scoped, bounded, replay-safe, and erasable per context. No central server, video capture, daemon, autotraining, or uploads; decoder is advisory and may not authorize Sim walks, camera movement, click or new graph edges. Offline validation cannot certify game-coupled learning. Local exact-patch source/CPU/holdout/EA game proof remains pending; BI-002 hunger is independent and ACTIVE. See `docs/SEMANTIC_VAE.md`.

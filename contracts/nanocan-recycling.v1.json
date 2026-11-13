@@ -115,7 +115,10 @@
     "verify_paired_queue_native_cancel_or_replace_not_player_commands",
     "verify_3d_or_native_lot_graph_item_can_path_and_floor",
     "verify_all_disposable_garbage_types_and_no_edible_or_reserved_objects",
-    "detect_other_mod_interaction_tuning_conflicts"
+    "detect_other_mod_interaction_tuning_conflicts",
+    "verify_actual_queue_action_phase_revision_and_native_source_against_current_game_before_any_native_replacement",
+    "verify_unknown_target_manual_queue_never_redirected_to_nanocan",
+    "verify_legacy_pending_sink_cannot_bypass_new_proven_queue_identity"
   ],
   "proof_ceiling": "OFFLINE_CURSOR_FREE_NANOCAN_POLICY_NOT_INSTALLED_EA_HOOK_OR_MONEY",
   "cleanup_queue_redirection": {
@@ -142,7 +145,12 @@
     "proof_ceiling": "OFFLINE_POLICY_ONLY_NATIVE_ADAPTER_AND_GAMEPLAY_UNPROVEN",
     "world_revision_binding": "spatial_proof.world_revision_ref must match a separately observed current lot world_revision_ref for the exact capture, build and lot; a remembered map cannot attest itself",
     "player_item_reservation": "Any player-or-unknown household queue entry claiming the exact waste/dish item protects it from even actorless advice",
-    "choice_order": "Prefer exact proven atomic queue-replace candidate, then route payout priority and stable item/can ID; never cancel before replacement"
+    "choice_order": "Prefer exact proven atomic queue-replace candidate, then route payout priority and stable item/can ID; never cancel before replacement",
+    "queue_phase": "Only confirmed QUEUED phase may be advised for replacement; ACTIVE/UNKNOWN are observed but not intervention candidates",
+    "queue_revision": "Require identical current observed revision, pending cleanup revision and exact queue slot revision",
+    "queued_native_provenance": "game_build, source_kind, destination_kind, action_kind_verified and capture must agree across source-classification and actual queue row",
+    "legacy_sink_compatibility": "sink_suppression_candidate is an alias only when same evidence-proven source SIM_AUTONOMY sink queue is an eligible atomic queue redirection; pending_sink alone no longer qualifies",
+    "unresolved_player_target": "Player/unknown queued action without an independently identified item_ref protects every possible item; missing/stale actor queue snapshot denies even actorless proposals"
   },
   "waste_items": {
     "kinds": [

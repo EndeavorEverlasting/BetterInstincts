@@ -1,0 +1,16 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-NANOCAN-CLOSERS-20261113",
+  "purpose": "Harden source-proven NanoCan queue redirection and manual-target reservations without executing any game or desktop effect.",
+  "files": [
+    {
+      "path": "betterinstincts/nanocan_recycling.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure observed-queue evidence gating, protection of unresolved player-target items, and source/phase/revision identity; not an EA runtime adapter.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_POLICY_CLOSER_NOT_INSTALLED_EA_GAMEPLAY"
+}
