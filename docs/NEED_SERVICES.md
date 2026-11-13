@@ -29,3 +29,13 @@ Navigating Needs panel tandem (`docs/NAVIGATING_NEEDS.md`) remains a separate Di
 ## Proof ceiling
 
 `HOST_NEED_SERVICES_REGISTRY_NOT_DAEMON_NOT_EA_API` (+ LB ceiling in NEED_LOAD_BALANCE). Live multi-Sim dispatch OPEN. Does not close BI-002.
+
+## Optional occult-specific need profiles (2026-11-12)
+
+[OCCULT_NEEDS.md](OCCULT_NEEDS.md) adds typed, offline-only profile/pack/motive
+schemas and independently reviewed candidate-action ranking. It references the
+existing six ordinary needs/fun lanes and cannot replace this tandem load
+balancer, detach logic, native game authority or BI-002 hunger certification.
+Unknown/hybrid/uncorroborated occult panels abstain rather than inherit six
+human motives. It does not enqueue actions, inspect screenshots, or persist a
+profile automatically.
