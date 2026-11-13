@@ -357,6 +357,35 @@ def evaluate_native_household_autonomy(
         else:
             if decision["state"] == "PRESERVE_UNKNOWN":
                 decision["state"] = "PRESERVE_QUEUE_OR_YIELD"
+    # Optional, version-bound queue/activity advisor over this SAME household
+    # queue snapshot. Never creates a second input or Sim-selection owner.
+    if "queue_supervision" in observation:
+        from betterinstincts.queue_supervision import (
+            QueueSupervisionError, evaluate_queue_supervision,
+        )
+        try:
+            supervision = evaluate_queue_supervision(
+                observation["queue_supervision"],
+                household_ref=observation["household_ref"],
+                game_build=observation["game_build"],
+                capture_ref=observation["capture_ref"],
+                sims=sims,
+                player_active=observation.get("player_active"),
+                observed_at_unix=stamp,
+                now=instant,
+            )
+        except QueueSupervisionError as exc:
+            raise AutonomyModerationError(str(exc)) from exc
+        result["queue_supervision"] = supervision
+        # A single owner of cancellation proposals per Sim per capture:
+        # queue/need replan supersedes the prior yield-only optimization port.
+        per_sim = {d["sim_ref"]: d for d in supervision["decisions"]}
+        for decision in result["decisions"]:
+            if per_sim[decision["sim_ref"]]["cancel_candidate"] is not None:
+                decision["suppress_candidate"] = None
+                decision["replacement_candidate"] = None
+                decision["state"] = "QUEUE_SUPERVISION_PRECEDENCE"
+
     # Game-native household policy extension: no selected portrait or desktop
     # input. This optional, bounded port is absent from legacy observations.
     if "nanocan_recycling" in observation:

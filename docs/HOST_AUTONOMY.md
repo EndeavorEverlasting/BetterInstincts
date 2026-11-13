@@ -1,3 +1,7 @@
+## Sixth Gear — coherent queue and time-to-need supervision (2026-11-13)
+
+The optional all-household native `queue_supervision` port in `betterinstincts/autonomy_moderation.py` accepts one bounded verified Sims queue per Sim. `betterinstincts/queue_supervision.py` reuses `queue_capacity.py` and the existing six-needs thresholds; it does not create a second game input engine. This adds source-qualified duplicate and mutually exclusive action detection, active-game-clock duration modeling using separate moodlet, temperament, balance and trait influences, replay-safe completed-task calibration, progress-stall reobservation, and need-aware/cooldown-guarded **proposals**. Zero actual cancel/enqueue/desktop effect authority is granted. Exact observational schema, negative tests and local EA game certification gates: `docs/QUEUE_SUPERVISION.md` and `contracts/queue-supervision.v1.json`. Legacy native household behavior remains unchanged when this optional port is absent.
+
 # Host autonomy program design (P95)
 
 **Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect

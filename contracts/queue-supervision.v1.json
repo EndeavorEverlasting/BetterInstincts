@@ -1,0 +1,98 @@
+{
+  "schema": "betterinstincts.queue-supervision/v1",
+  "version": 1,
+  "owner": "betterinstincts/queue_supervision.py",
+  "parent_host": "betterinstincts/autonomy_moderation.py#evaluate_native_household_autonomy",
+  "mode": "PURE_POLICY_ONLY",
+  "native_adapter_status": "NOT_INSTALLED_EXACT_EA_HOOK_UNVERIFIED",
+  "scope": "All Sims supplied in the existing native household snapshot, using the same queue rows as the native policy (not selected-portrait-only); one decision per Sim per verified capture.",
+  "entrypoint": "evaluate_queue_supervision",
+  "optional_native_input": "queue_supervision",
+  "game_build": "exact installed Sims patch identifier required; unknown/latest/any denied by native parent",
+  "queue_limit_policy": {
+    "legacy_owner": "betterinstincts/queue_capacity.py",
+    "multitasking_true_operator_band": [
+      2,
+      3
+    ],
+    "multitasking_false_operator_band": [
+      6,
+      7
+    ],
+    "multitasking_unknown": "DO_NOT_ENQUEUE",
+    "maximum_snapshot_rows": 16,
+    "not_a_game_constant": true,
+    "quota_policy": "Never blind-fill even with apparently available capacity; reobserve after every native accepted enqueue. All returned slots are advisory, never effect permission."
+  },
+  "identity_and_provenance": {
+    "root": [
+      "household_ref",
+      "game_build",
+      "capture_ref",
+      "sims"
+    ],
+    "per_sim_metadata": [
+      "sim_ref",
+      "capture_ref",
+      "queue_verified",
+      "multitasking",
+      "policy_opt_in",
+      "needs",
+      "needs_proof_ref",
+      "switch_history_verified"
+    ],
+    "queue_rows": [
+      "sim_ref",
+      "capture_ref",
+      "queue_slot_ref",
+      "action_id",
+      "queue_state",
+      "origin",
+      "origin_proof_ref",
+      "protected_goal",
+      "goal_proof_ref"
+    ],
+    "duplicate": "Only identical source-attested semantic_key and independently source-proven dedupe_safe=true on BOTH queue slots with distinct dedupe_proof_ref; repeatable actions (two batches/skill loops) are not duplicates.",
+    "contradiction": "same source-attested mutually exclusive conflict_group with different conflict_outcomes; same target alone is insufficient",
+    "clock": "ACTIVE_SIM_SECONDS, not wall clock; pause excludes timeout and invalidates preemption",
+    "duration": [
+      "base_seconds",
+      "base_proof_ref",
+      "elapsed_seconds",
+      "elapsed_proof_ref",
+      "game_build",
+      "action_id",
+      "factors",
+      "completed_samples"
+    ],
+    "supported_factors": [
+      "moodlet",
+      "temperament",
+      "balance",
+      "trait"
+    ],
+    "duration_samples": "At most 12 independently proven same-action, same-build completed samples; sample IDs deduplicated and median actual/modeled correction clamped to [0.5,2.0]. Unknown factor means unreliable duration prediction and blocks forecast-based preemption.",
+    "preemption": "Verified critical six-needs may trigger one source-qualified running autonomous action candidate. Forecast requires two distinct calibrated completion samples, proven four modifiers, active game clock, need decay rates and 25% margin; no player queue or unproven active action.",
+    "thrash_guard": "At least 90 ACTIVE_SIM_SECONDS since last verified switch, no guessing from unknown switch history; one action proposal per tick then reobserve.",
+    "stall": "Only after calibrated estimate is exceeded by >=75% and >=30s, with a separately observed STALLED progress signal; seek reobservation rather than cancel solely on timeout.",
+    "preemption_completion_guard": "Protect current activity when reliable forecast says <=15 active simulation seconds remain and stall is not independently observed."
+  },
+  "no_effects": {
+    "cancel_allowed": false,
+    "enqueue_allowed": false,
+    "desktop_input_allowed": false,
+    "save_writes_allowed": false,
+    "sim_process_control_allowed": false
+  },
+  "native_successor_issue": 171,
+  "active_game_certification_issue": 35,
+  "local_acceptance": [
+    "Exact version and pack source inspection of EA queue and duration hooks; compare native tuning versus script requirements",
+    "Observe actual queue size/multitasking and action identity across all household Sims; test duplicate/contradiction invalidation against same-game negative controls",
+    "Measure base and completed activity times in a consistent active simulation clock, with four genuinely attested modifiers and regression trials",
+    "5 vanilla and 5 modified disposable save trials with critical need, observed queue replacement, player takeover, paused clocks, cooldown and rollback",
+    "Never change protected saves, installed EA assets, global input/peripherals or autonomy settings; publish no private telemetry",
+    "Separate POLICY_MERGED from EA_MOD_BUILT, LOCAL_INSTALLED, LIVE_OBSERVED and GAME_CERTIFIED"
+  ],
+  "proof_ceiling": "OFFLINE_QUEUE_POLICY_NOT_SIMS_GAMEPLAY_CERTIFICATION"
+}
