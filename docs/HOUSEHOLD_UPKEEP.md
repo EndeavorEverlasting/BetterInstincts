@@ -12,9 +12,9 @@ The result recommends the next observation in 30 seconds, but that value is NOT 
 
 ## Servo: four needs, two main maintenance owners
 
-Servo needs are Durability, Charge, Fun and Social, not the human six-motive schema. Conservative policy defaults (not patch-certified EA tuning): Durability watch <=0.50 / critical <=0.20, Charge watch <=0.35 / critical <=0.15; Fun and Social watch <=0.35.
+Servo needs are Durability, Charge, Fun and Social, not the human six-motive schema. Conservative policy defaults (not patch-certified EA tuning): Durability watch <=0.50 / critical <=0.20, Charge watch <=0.45 / critical <=0.15; Fun and Social watch <=0.35.
 
-Durability low -> choose another eligible helper with an actually observed TUNE_UP_SERVO action targeting that exact Servo. Prefer HUMAN helpers first. When no HUMAN is available, a peer Servo (sim_ref != target) may be proposed only if its Robotics skill is verified at or above `servo_helper_policy.min_robotics_level` (default 3). If the only candidate helper is a Servo lacking verified Robotics, the gate is `UPKEEP_HELPER_SKILL_GAP` with a `diy_skill_force` servo_core hint — never invent panel PASS and never queue practice_skill. If broken, require the separate observed REPAIR_SERVO affordance. Charge low -> the Servo's own observed RECHARGE_SERVO interaction; do not misroute as human Energy. Low Fun -> observed SERVO_FUN_ACTIVITY by the Servo. Low Social -> observed SOCIALIZE_SERVO by an available human (HUMAN-only). PAY_BILLS remains HUMAN-only. Actor identity, queue, need urgency, player reservations and capacity all require fresh proof. Wet/water-exposed Servos hold unverified new actions and flag risk. Self Tune Up on the peer path is forbidden; Enhancement-3 self-maintenance stays a separate action_id. Exact live menu unlocks and salvage-parts cost are NOT assumed.
+Durability low -> choose another eligible helper with an actually observed TUNE_UP_SERVO action targeting that exact Servo. Prefer qualified, safely charged Servo peers for observed robot care; fall back to available human helpers. A Servo peer (sim_ref != target) needs verified current Charge/Durability reserves plus verified Robotics (default policy floor 3) or confirmed enabled Fix-O-Matic for observed peer Tune Up. If the only candidate helper is a Servo lacking verified Robotics, the gate is `UPKEEP_HELPER_SKILL_GAP` with a `diy_skill_force` servo_core hint — never invent panel PASS and never queue practice_skill. If broken, require the separate observed REPAIR_SERVO affordance. Charge low -> the Servo's own observed RECHARGE_SERVO interaction; do not misroute as human Energy. Low Fun -> observed SERVO_FUN_ACTIVITY by the Servo. Low Social -> observed SOCIALIZE_SERVO by a safe human or Servo peer; PAY_BILLS remains HUMAN-only. Actor identity, queue, need urgency, player reservations and capacity all require fresh proof. Wet/water-exposed Servos hold unverified new actions and flag risk. Self Tune Up never masquerades as a peer helping itself; verified self-enhancement stays a separate observed action_id. Exact live menu unlocks and salvage-parts cost are NOT assumed.
 
 Unknown/offscreen Servos use needs_verified:false with needs:null; inventing four numeric values is forbidden. Monitoring all observed Servos is bounded to 16 entries per capture. No per-frame scans, arbitrary game-mode switches or autonomous resource purchases.
 
@@ -104,7 +104,7 @@ Servo peers only help other robots when their **own** Servo four-motive
 snapshot is verified, not broken/wet, and Charge >=0.45 and Durability >=0.35;
 human household members remain the fallback. Their Robotics level must be
 explicitly verified >=3 or, for **repairing a broken Utili-Bot only**, their
-Fix-O-Matic module must be confirmed enabled and verified. These numeric
+Fix-O-Matic module must be confirmed enabled and verified for peer Servo Tune Up or broken Utili-Bot repair. These numeric
 levels are local policy hypotheses, not asserted EA unlock levels.
 Regardless of skill/module, the current actor-target action must actually
 be observed available; a module name alone never grants an execution permit.
