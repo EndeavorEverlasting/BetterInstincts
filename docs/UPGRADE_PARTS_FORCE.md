@@ -169,4 +169,3 @@ Live Mode observation. A future opt-in restock profile may eliminate further
 repeated per-arrow approvals within a preapproved cap; this code never
 silently spends or chooses cheats/Spawn Crafting Supplies as a replacement.
 No EA Connect or OS/peripheral changes.
-
