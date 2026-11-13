@@ -1,11 +1,15 @@
 """Deterministic five-row picker batch and player-first negative tests."""
+import tempfile
 import unittest
+from pathlib import Path
 
 from betterinstincts.computer_upgrade_parts import (
-    menu_catalog, plan_computer_purchase_batch, plan_computer_restock_batch,
+    enqueue_computer_batch_step, menu_catalog, plan_computer_purchase_batch, plan_computer_restock_batch,
     propose_computer_batch_step, verify_computer_batch_purchase,
 )
 from betterinstincts.upgrade_parts_force import UpgradePartsForceError
+from betterinstincts.player_presence import PresenceProbe
+from betterinstincts.workflow_interop import CooperativeScreenQueue
 
 
 IDS = menu_catalog()["part_ids"]
@@ -196,6 +200,86 @@ def picker_rows():
              increment_visible=True, increment_hitbox_verified=True)
         for pid in IDS
     ]
+
+
+
+class BatchQueueTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.age = 16000
+        async def fake_sleep(_seconds):
+            pass
+        self.queue = CooperativeScreenQueue(
+            lambda: PresenceProbe(False, False, last_input_age_ms=self.age),
+            lambda: True, lock_root=Path(self.tmp.name), sleep=fake_sleep,
+        )
+
+    async def test_stale_picker_revision_refuses_dispatch(self):
+        events = []
+        async def scene():
+            events.append("scene")
+            return True
+        async def picker_rev(action):
+            events.append("picker_rev")
+            return False
+        async def effect(action):
+            self.fail("stale picker must not send arrow")
+        enqueue_computer_batch_step(
+            self.queue, work_id="stale", decision=picker(),
+            validate_fresh_scene=scene, validate_fresh_picker=picker_rev,
+            perform_game_ui_effect=effect,
+        )
+        self.assertEqual((await self.queue.run_once())["state"], "NEEDS_REVALIDATION")
+        self.assertEqual(events, ["scene", "picker_rev"])
+
+    async def test_fresh_revalidated_picker_allows_only_one_effect(self):
+        events = []
+        async def scene():
+            events.append("scene")
+            return True
+        async def picker_rev(action):
+            events.append(action["picker_revision"])
+            return action["expected_selected_count"] == 0
+        async def effect(action):
+            events.append(action["kind"])
+        enqueue_computer_batch_step(
+            self.queue, work_id="fresh", decision=picker(),
+            validate_fresh_scene=scene, validate_fresh_picker=picker_rev,
+            perform_game_ui_effect=effect,
+        )
+        self.assertEqual((await self.queue.run_once())["state"], "COMPLETED")
+        self.assertEqual(events, ["scene", "frame-1", "INCREMENT_OBSERVED_PART_ROW"])
+        self.assertEqual(len(self.queue.completed), 1)
+
+    async def test_unknown_player_yields_before_callback(self):
+        async def scene():
+            self.fail("human reclaim should block")
+        async def picker_rev(action):
+            self.fail("human reclaim should block")
+        async def effect(action):
+            self.fail("human reclaim should block")
+        self.age = 0
+        enqueue_computer_batch_step(
+            self.queue, work_id="yield", decision=picker(),
+            validate_fresh_scene=scene, validate_fresh_picker=picker_rev,
+            perform_game_ui_effect=effect,
+        )
+        self.assertEqual((await self.queue.run_once())["state"], "WAITING_FOR_USER")
+
+    def test_batch_queue_rejects_unverified_action(self):
+        async def noop(*_):
+            return True
+        with self.assertRaisesRegex(UpgradePartsForceError,
+                                    "FRESH_BATCH_PICKER_ACTION_REQUIRED"):
+            enqueue_computer_batch_step(
+                self.queue, work_id="forged",
+                decision={"state": "READY_TO_QUEUE", "action": {
+                    "kind": "CONFIRM_OBSERVED_PURCHASE"
+                }},
+                validate_fresh_scene=noop, validate_fresh_picker=noop,
+                perform_game_ui_effect=noop,
+            )
 
 
 if __name__ == "__main__":
