@@ -1,3 +1,7 @@
+## 2026-11-12 — P141 / Fifth Gear: new-Sim skill-aware first session
+
+P141 strategic comparison: a bounded, player-first skill and productivity advisor survives; blind CAS click automation is deferred to local Windows/scene certification; automatic maximum-skill manipulation is rejected as unauthorized game behavior. Existing first_run owners are reused. The bounded implementation adds goal/skill-context planning, six-needs and funds gates, explicit preference precedence and negative tests. Moonwake ordered composition is P95 → P82 → P08 → P07 → P124, but real local P08 and the Moonwake walker remain NOT_RUN through the GitHub connector. No offline work certifies CAS, a running mod, BI-002 hunger or user save manipulation. Branch, CI, PR and main are independent proof dimensions.
+
 ## 2026-11-12 — MoonWake Closers: single-click launcher structural verification
 
 **Verified floor:** #200 merged on `main` at `17aaffb05763cf40e7cd8cb6ef7a1682dc06dde5` with successful GitHub offline CI. No Windows Sims launch, real save, game patch or menu capture was independently verified. P83 found two reproducible defects: dual recognized exes in the same Game/Bin erroneously produced MULTIPLE installs; a malformed tasklist result or untrusted later process snapshot could appear empty and admit new launch or overclaim a game PID.
