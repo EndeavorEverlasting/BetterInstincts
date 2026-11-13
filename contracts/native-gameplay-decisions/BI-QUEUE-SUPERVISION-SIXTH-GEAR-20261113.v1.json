@@ -1,0 +1,23 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-QUEUE-SUPERVISION-SIXTH-GEAR-20261113",
+  "purpose": "Extend existing game-native household policy with source-attested queue semantics, duration calibration and bounded priority replan proposals; no gameplay execution or desktop control.",
+  "files": [
+    {
+      "path": "betterinstincts/queue_supervision.py",
+      "route": "POLICY_ONLY",
+      "reason": "Bounded pure-Python policy evaluates observed per-Sim queue semantics, duration factors, recent game-clock outcomes and changing needs without EA queue or save effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/autonomy_moderation.py",
+      "route": "POLICY_ONLY",
+      "reason": "Optional existing household native policy seam composes queue supervision over the same observed Sim queues and prevents conflicting cancellation proposals without dispatch.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_POLICY_ONLY_NOT_EA_RUNTIME_HOOK_OR_REAL_CANCEL_OR_ENQUEUE"
+}
