@@ -134,3 +134,57 @@ rollback before claiming native behavior improvements.
 
 Revert the policy+catalog branch; there are no game mods, user saves,
 external settings, profiles or processes to remove.
+
+## Second bounded iteration: novel actions and persistent local evidence
+
+The original catalog remains immutable source guidance. A novel action may be
+observed for a current profile/motive, but **must not enter the ranked candidate
+set** merely because a menu item was seen. The optional
+`learn_candidate(model, event)` requires an exact-patch opt-in, reviewed,
+scene-verified **and menu-observed** episode with distinct opaque provenance,
+valid uppercase portable action ID and a measured beneficial motive delta
+(`after - before >= 0.02`). The model stores no screenshots or save data.
+The same observation reference is forbidden across catalog and novel-action
+learning streams. A novel action becomes eligible only with `>=3` distinct
+helpful events and at least 75% helpful evidence across at least three events.
+Recommendation still requires current observed action availability, typed
+motive set, pack, patch and player-first gates. A harmful-only novel candidate
+never gets recommended; an incomplete observation abstains.
+
+**Local on-device continuity is explicit, not ambient.**
+`betterinstincts.occult_need_store` provides `save_local_model` and
+`load_local_model`. A caller chooses an **already existing local folder**;
+there is no default directory, filesystem scan, background service or
+auto-start. Each snapshot filename is determined by explicit Sim profile,
+four-part game build and platform. Every write requires
+`operator_approved=True`. Replacing a previous file also requires that
+file's exact returned SHA-256 as `expected_sha256`; changes in the meantime
+cause a failure. Only reviewed bounded model data are serialized, with a
+256 KB limit, symlink refusal, single-owner lock, temporary file + atomic
+replace and readback verification. A separate user-visible host approval
+workflow is still necessary before any such write is invoked in a live game.
+
+Example using a deliberately created application-owned folder on the local
+computer (not a game/saves folder):
+
+```python
+from pathlib import Path
+from betterinstincts.occult_needs import new_model, learn_candidate
+from betterinstincts.occult_need_store import save_local_model, load_local_model
+
+folder = Path("MY_EXPLICIT_EXISTING_LOCAL_BI_PROFILE_FOLDER")
+model = new_model(profile="human", game_version="1.121.361.1020",
+                  platform="windows")
+# Only after reviewed observations: model = learn_candidate(model, event)
+first = save_local_model(model, directory=folder, operator_approved=True)
+loaded = load_local_model(directory=folder, profile="human",
+                          game_version="1.121.361.1020", platform="windows")
+# Later, after further reviewed events and fresh explicit approval:
+# save_local_model(updated_model, directory=folder,
+#                  operator_approved=True, expected_sha256=loaded["sha256"])
+```
+
+A Python unit test verifies the in-memory policy and explicit local-file
+behavior, **not** sustained real-game capture or user-approved app integration.
+Remote GitHub does not witness actual Windows player control, EA native tuning
+or occult action outcomes. BI-002 remains active.
