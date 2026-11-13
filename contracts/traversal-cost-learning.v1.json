@@ -1,0 +1,69 @@
+{
+  "schema": "betterinstincts.traversal-cost-learning/v1",
+  "version": 1,
+  "owner": "betterinstincts/traversal_cost_learning.py",
+  "parent": "contracts/household-navigation.v1.json",
+  "consultation": "contracts/consultations/BI-TRAVERSAL-ADAPTIVE-COST-P141-FIFTH-GEAR-20261112.v1.json",
+  "objective": "Opt-in, local, online adaptive route scoring from independent observed traversal outcomes; no novel edges, effect authority, or unverified successes.",
+  "scope": [
+    "scope_id",
+    "save_scope_id",
+    "household_id",
+    "lot_id",
+    "game_build",
+    "graph_revision"
+  ],
+  "run_admission": {
+    "listener": "EXISTING_EXPLICIT_ACTIVE_HOST_LISTENER",
+    "explicit_opt_in": true,
+    "sources": [
+      "GAME_ROUTE_PROBE_SENSOR_VERIFIED",
+      "OPERATOR_VERIFIED_TRAVERSAL_REVIEWED"
+    ],
+    "capture": "DISTINCT_BEFORE_AND_AFTER_PROVENANCE",
+    "scene": "FRESH_LIVE_MODE_AND_ACTOR",
+    "human": "ABSENT_AND_NOT_INTERRUPTED",
+    "passage": "CURRENT_VERIFIED_WALKABLE_PASSAGE_WITH_EXPECTED_MS_BASELINE",
+    "outcome": "SUCCESS_AT_DESTINATION_OR_BLOCKED_AT_ORIGIN",
+    "raw_media": false
+  },
+  "model": {
+    "observation": "r=clip(t_observed_ms/t_expected_ms,0.5,3)",
+    "duration_update": "m_n=(1-alpha_t)*m_(n-1)+alpha_t*r; alpha_t=1/min(successes,16)",
+    "failure_update": "f_n=(1-alpha_f)*f_(n-1)+alpha_f*1[failure]; alpha_f=1/min(observations,16)",
+    "support": "s_n=min(0.75,n/(n+6))",
+    "cost": "w_new=round(1000*w_base*clip(1+s_n*((m_n-1 if successes else 0)+1.5*f_n),0.75,2.5))",
+    "algorithm": "existing deterministic Dijkstra; learned integer fixed-point only; no graph topology mutation",
+    "safe_fallback": "no model, invalid context, stale revision or missing timing => original verified cost",
+    "replay": "hashed evidence identity Bloom filter, false positives abstain, no replay inflation",
+    "bounds": {
+      "max_events_per_profile": 20000,
+      "max_edges": 512,
+      "max_profiles": 64,
+      "max_model_bytes": 128000,
+      "seen_bloom_bytes": 16384,
+      "elapsed_ms": [
+        100,
+        300000
+      ],
+      "max_weight_factor": 2.5,
+      "min_weight_factor": 0.75
+    }
+  },
+  "storage": {
+    "root": "bootstrap.paths()['use'].parent / runtime / learning",
+    "files": "sha256(context).json user-scoped, atomic single writer, opt-in only",
+    "safety": "no network, auto scan, daemon, raw media, Sims saves, EA assets or per-frame hooks",
+    "privacy": "hashed context and replay identity, bounded aggregates only",
+    "migration": "unknown/stale model abort learning or fall back baseline; no implicit conversion"
+  },
+  "routing": {
+    "planner": "betterinstincts/household_navigation.py",
+    "guard": "betterinstincts/traversal_voi.py",
+    "camera": "betterinstincts/camera_traverse.py",
+    "listener": "betterinstincts/host_listener.py",
+    "effect": "betterinstincts/screen_admit.py"
+  },
+  "game_certification": "NOT_RUN_ON_THIS_PROVIDER",
+  "proof_ceiling": "OFFLINE_LOCAL_LEARNING_AND_ROUTE_RANKING_NOT_NATIVE_SIMS_GAMEPLAY"
+}
