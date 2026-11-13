@@ -159,6 +159,95 @@ class FirstRunTests(unittest.TestCase):
         self.assertTrue(route["training_deferred"])
         self.assertFalse(route["automatic_input"])
 
+
+    def test_gui_default_same_install_exe_pair_prefers_64_bit(self):
+        from scripts import first_run as cli
+        primary = self.executable()
+        legacy = self.executable("EA Games/The Sims 4/Game/Bin/TS4.exe")
+        self.assertEqual(
+            cli.default_install_selection([legacy, primary]), primary.resolve()
+        )
+        self.assertIsNone(cli.default_install_selection([]))
+        other = self.executable("Other/The Sims 4/Game/Bin/TS4_x64.exe")
+        self.assertIsNone(cli.default_install_selection([primary, other]))
+
+    def test_manual_game_admission_refuses_second_launch_and_preserves_save(self):
+        from scripts import first_run as cli
+        game = self.executable()
+        protected = self.root / "Documents/Electronic Arts/The Sims 4/saves/Slot_00000007.save"
+        protected.parent.mkdir(parents=True)
+        protected.write_bytes(b"protected original save")
+        from unittest.mock import Mock
+        already_running = Mock(return_value={
+            "state": "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH",
+            "observed_process_id": 522,
+            "save_selection": "PLAYER_ONLY_NO_AUTOMATIC_RESUME",
+        })
+        receipt = cli.launch_selected_game(
+            game, user_clicked_launch=True, admission=already_running
+        )
+        self.assertEqual(receipt["state"], "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH")
+        self.assertEqual(
+            already_running.call_args.kwargs["discoverer"](), [game.resolve()]
+        )
+        self.assertEqual(protected.read_bytes(), b"protected original save")
+
+    def test_manual_game_admission_fails_closed_on_unknowns(self):
+        from scripts import first_run as cli
+        game = self.executable()
+        admit = Mock(return_value={"state": "BLOCKED_MULTIPLE_ACTIVE_GAMES"})
+        with self.assertRaisesRegex(first.FirstRunError, "CONSENT"):
+            cli.launch_selected_game(game, user_clicked_launch=False, admission=admit)
+        admit.assert_not_called()
+        outsider = self.pf / "unrelated.exe"
+        outsider.write_bytes(b"other game")
+        with self.assertRaisesRegex(first.FirstRunError, "EXPECTED_INSTALLED"):
+            cli.launch_selected_game(outsider, user_clicked_launch=True, admission=admit)
+        admit.assert_not_called()
+        with self.assertRaisesRegex(first.FirstRunError, "NOT_ADMITTED"):
+            cli.launch_selected_game(game, user_clicked_launch=True, admission=admit)
+        with self.assertRaisesRegex(first.FirstRunError, "NOT_ADMITTED"):
+            cli.launch_selected_game(
+                game, user_clicked_launch=True,
+                admission=Mock(return_value={"state": "GAME_SELECTION_REQUIRED"}),
+            )
+
+    def test_cli_launch_exposes_advisory_and_requires_explicit_consent(self):
+        import contextlib
+        import io
+        import json
+        from scripts import first_run as cli
+        game = self.executable()
+        response = {
+            "state": "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH",
+            "save_selection": "PLAYER_ONLY_NO_AUTOMATIC_RESUME",
+        }
+        for confirmed in (False, True):
+            with self.subTest(confirmed=confirmed), patch.object(
+                cli, "launch_selected_game",
+                return_value=response if confirmed else None,
+                side_effect=None if confirmed else first.FirstRunError("EXPLICIT_GAME_LAUNCH_CONSENT_REQUIRED"),
+            ) as launch:
+                out = io.StringIO()
+                args = [
+                    "launch", "--game-exe", str(game),
+                    "--mode", "new", "--goal", "career",
+                    "--preferred-skill", "charisma",
+                ]
+                if confirmed:
+                    args.append("--confirm-launch")
+                with contextlib.redirect_stdout(out):
+                    result = cli.main(args)
+                payload = json.loads(out.getvalue())
+                if confirmed:
+                    self.assertEqual(result, 0)
+                    self.assertEqual(payload["handoff"]["first_session"]["goal"], "career")
+                    self.assertFalse(payload["handoff"]["automatic_input"])
+                    launch.assert_called_once_with(game, user_clicked_launch=True)
+                else:
+                    self.assertEqual(result, 2)
+                    self.assertEqual(payload["state"], "BLOCKED_PRESERVE")
+
     def test_no_launch_without_exact_windows_host_and_click(self):
         game = self.executable()
         fake = Mock(return_value=Mock(pid=913))

@@ -6,13 +6,52 @@ import argparse
 import json
 from pathlib import Path
 import sys
+from typing import Callable
 
-from scripts.smart_start import auto_start
+from scripts.smart_start import auto_start, select_unique_install
 
 from betterinstincts.first_run import (
-    FirstRunError, GOALS, SKILL_ROUTES, discover_game_installs, launch_game,
+    FirstRunError, GOALS, SKILL_ROUTES, discover_game_installs,
     plan_journey, select_game,
 )
+
+
+def default_install_selection(installs: list[Path]) -> Path | None:
+    """Choose an x64 executable when 32/64 builds share one install.
+
+    Missing or genuinely distinct installs need explicit player selection.
+    """
+    try:
+        return select_unique_install(installs)
+    except FirstRunError as exc:
+        if str(exc) in {
+            "SIMS4_NOT_FOUND_SELECT_INSTALLED_EXE",
+            "MULTIPLE_SIMS4_INSTALLATIONS_SELECT_ONE",
+        }:
+            return None
+        raise
+
+
+def launch_selected_game(
+    executable: str | Path, *,
+    user_clicked_launch: bool,
+    admission: Callable[..., dict] = auto_start,
+) -> dict:
+    """Manual GUI/CLI launch uses the same observed-process gate as auto.
+
+    No process inventory or game dispatch is attempted without explicit
+    player consent and a validated, selected installed executable.
+    """
+    if user_clicked_launch is not True:
+        raise FirstRunError("EXPLICIT_GAME_LAUNCH_CONSENT_REQUIRED")
+    target = select_game([], executable)
+    receipt = admission(discoverer=lambda: [target])
+    if not isinstance(receipt, dict) or receipt.get("state") not in {
+        "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF",
+        "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH",
+    }:
+        raise FirstRunError("GAME_LAUNCH_NOT_ADMITTED")
+    return receipt
 
 
 def gui() -> int:
@@ -36,7 +75,8 @@ def gui() -> int:
     ).pack(anchor="w", pady=(5, 14))
     candidates = discover_game_installs()
     labels = [str(path) for path in candidates]
-    selected = tk.StringVar(value=labels[0] if len(labels) == 1 else "")
+    default_exe = default_install_selection(candidates)
+    selected = tk.StringVar(value=str(default_exe) if default_exe else "")
     ttk.Label(frame, text="Game installation").pack(anchor="w")
     picker = ttk.Combobox(frame, textvariable=selected, values=labels, width=90, state="readonly")
     picker.pack(anchor="w", pady=(4, 4))
@@ -86,8 +126,11 @@ def gui() -> int:
                 mode, goal.get(), income_pressure=income_pressure.get(),
                 preferred_skill=preferred_skill.get() or None,
             )
-            receipt = launch_game(exe, user_clicked_launch=True)
-            status.set("Game launch requested. Finish the next step in The Sims 4.")
+            receipt = launch_selected_game(exe, user_clicked_launch=True)
+            if receipt["state"] == "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH":
+                status.set("The Sims 4 is already running; no duplicate was launched.")
+            else:
+                status.set("Game launch requested. Finish the next step in The Sims 4.")
             messagebox.showinfo(
                 "BetterInstincts · Next step",
                 advice["next_step"] + (
@@ -157,12 +200,14 @@ def main(argv: list[str] | None = None) -> int:
                 preferred_skill=args.preferred_skill,
             )
         else:
-            output = {**launch_game(args.game_exe, user_clicked_launch=args.confirm_launch),
-                      "handoff": plan_journey(
-                          args.mode, args.goal, critical_needs=args.critical_needs,
-                          income_pressure=args.income_pressure,
-                          preferred_skill=args.preferred_skill,
-                      )}
+            # Validate the complete advisory before any game-launch side effect.
+            advice = plan_journey(
+                args.mode, args.goal, critical_needs=args.critical_needs,
+                income_pressure=args.income_pressure,
+                preferred_skill=args.preferred_skill,
+            )
+            receipt = launch_selected_game(args.game_exe, user_clicked_launch=args.confirm_launch)
+            output = {**receipt, "handoff": advice}
         print(json.dumps(output, sort_keys=True))
         return 0
     except (FirstRunError, OSError, ValueError) as exc:

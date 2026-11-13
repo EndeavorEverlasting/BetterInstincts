@@ -72,7 +72,7 @@ def _checked_process_inventory(inventory: object) -> dict[int, str]:
     return inventory
 
 
-def _select_unique_install(installs: list[Path]) -> Path:
+def select_unique_install(installs: list[Path]) -> Path:
     """Count distinct installed Game/Bin roots, not 32-bit and 64-bit exes.
 
     The 64-bit executable is preferred when both recognized binaries belong
@@ -123,7 +123,7 @@ def auto_start(
             "proof_ceiling": "PROCESS_NAME_ONLY_NOT_GAME_OR_SAVE_CERTIFIED",
         }
     try:
-        target = _select_unique_install(discoverer())
+        target = select_unique_install(discoverer())
     except FirstRunError as exc:
         if str(exc) not in {
             "SIMS4_NOT_FOUND_SELECT_INSTALLED_EXE",

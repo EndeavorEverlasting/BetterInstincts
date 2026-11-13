@@ -154,6 +154,28 @@ class SmartStartTests(unittest.TestCase):
             self.assertEqual(result["state"], "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF")
             self.assertEqual(result["save_selection"], "PLAYER_ONLY_NO_AUTOMATIC_RESUME")
 
+
+    def test_unique_install_helper_is_shared_with_manual_chooser(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bin_dir = Path(tmp) / "EA Games/The Sims 4/Game/Bin"
+            bin_dir.mkdir(parents=True)
+            x64 = bin_dir / "TS4_x64.exe"
+            legacy = bin_dir / "TS4.exe"
+            x64.write_bytes(b"x64")
+            legacy.write_bytes(b"legacy")
+            self.assertEqual(
+                smart_start.select_unique_install([legacy, x64]), x64.resolve()
+            )
+            self.assertEqual(
+                smart_start.select_unique_install([x64]), x64.resolve()
+            )
+            other_dir = Path(tmp) / "Steam/The Sims 4/Game/Bin"
+            other_dir.mkdir(parents=True)
+            other = other_dir / "TS4_x64.exe"
+            other.write_bytes(b"fixture")
+            with self.assertRaisesRegex(FirstRunError, "MULTIPLE"):
+                smart_start.select_unique_install([x64, other])
+
     def test_two_distinct_install_directories_are_not_collapsed(self):
         with tempfile.TemporaryDirectory() as tmp:
             candidates = []

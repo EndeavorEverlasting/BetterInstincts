@@ -39,7 +39,9 @@
     "menu_learning": "NOT_OBSERVED unless future host captures independently certify scene/menu cues; no speculative detection or automatic menu clicks",
     "single_install_detection": "Two recognized executables (TS4_x64.exe and TS4.exe) sharing one validated Game/Bin path are a single installation; prefer x64. Separate validated Game/Bin roots stay ambiguous.",
     "process_inventory_validity": "Every Windows tasklist /FO CSV /NH row must have five columns and numeric PID; malformed/truncated inventories deny launch; independent pre-dispatch snapshots require validated identities, and untrusted post-dispatch data withholds game PID proof.",
-    "first_session": "Goal/context/planned skill focus is player-supplied; six observed needs outrank optional practice, income/funds constrain paid equipment, player preferences outrank goal defaults; no claim to have observed outcomes"
+    "first_session": "Goal/context/planned skill focus is player-supplied; six observed needs outrank optional practice, income/funds constrain paid equipment, player preferences outrank goal defaults; no claim to have observed outcomes",
+    "manual_launch": "GUI and explicit CLI launch use the same bounded read-only Windows process snapshots and unique validated Game/Bin install admission as the double-click auto path; block/withhold dispatch on unknown processes and never start a duplicate Sims process",
+    "manual_installed_exe_selection": "When TS4.exe and TS4_x64.exe share one valid Game/Bin root, GUI picks x64; distinct roots stay ambiguous until player explicitly selects one"
   },
   "limitations": [
     "Read-only bounded default install discovery may require manual path selection",
@@ -48,6 +50,7 @@
     "Unique-install Windows auto-launch is not automatic loading of the latest protected user save; save identity and scene-safe navigation require dedicated local proof",
     "Read-only Windows tasklist basenames do not independently attest the full executable path; same-time competing double-click windows still require local concurrency certification.",
     "First-session skill priorities are unmeasured relative heuristics (base-game, adult-oriented examples), not a certified optimal build or a machine-learning model; re-evaluate against player age, packs, actual needs and preferences",
-    "No autonomous CAS, skill-level granting, job enrollment or first-day queue manipulation is released without exact game-build local proof and player-first admission"
+    "No autonomous CAS, skill-level granting, job enrollment or first-day queue manipulation is released without exact game-build local proof and player-first admission",
+    "Manual GUI and CLI process observations remain name/PID-only; exact running image path, local multi-process races, game menu and CAS creation still require separate Windows P08 proof"
   ]
 }
