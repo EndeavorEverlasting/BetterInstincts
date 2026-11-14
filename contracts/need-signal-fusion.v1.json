@@ -18,7 +18,9 @@
     "read_only_health_check": true,
     "restart_sensor_process": "EXTERNAL_HOST_ADAPTER_ONLY_WITH_AUTHORIZATION",
     "background_daemon": "NOT_INSTALLED",
-    "when_both_fail": "REOBSERVE_NO_GAME_EFFECT"
+    "when_both_fail": "REOBSERVE_NO_GAME_EFFECT",
+    "context_bound_receipts": "Carried healthy/recovering source health must bind exact game build, selected Sim, profile, source identity and real producer adapter/calibration; changed context moves to quarantine and requires a distinct reset plus two probes.",
+    "monotonic_sample_timestamps": "A changed sample_ref is insufficient. Same or older wall-clock timestamps for an already healthy or recovering producer quarantine that source; failover remains possible."
   },
   "profiles": "Reuse exact CATREADY catalog profile motive keys (Servo: fun social durability charge; human: six needs), no fixed six for nonhuman",
   "native_rate": "Only version-pinned read-only EA-native hook with separate proof; number is normalized motive units per Sim minute and unavailable while paused",
@@ -29,5 +31,23 @@
   "no_queue_cancel": true,
   "no_os_repair": true,
   "no_user_save_access": true,
-  "proof_ceiling": "OFFLINE_FUSED_OBSERVATIONS_NOT_INSTALLED_RUNTIME_SENSORS"
+  "proof_ceiling": "OFFLINE_FUSED_OBSERVATIONS_NOT_INSTALLED_RUNTIME_SENSORS",
+  "native_rate_forecast": {
+    "mechanism": "CONDITIONAL_CONSTANT_SLOPE_POLICY_ONLY",
+    "policy_preemptive_level": 0.55,
+    "review_horizon_sim_minutes": 30,
+    "statement": "Source-proven unpaused native level and signed rate can form conditional linear Sim-minute estimate to policy-preemptive level 0.55; when estimate <=30 minutes, early high-priority advisory even while meter green. These are transparent heuristic thresholds, NOT EA tuning or observed chevron 3x.",
+    "calibration": "OFFLINE_HEURISTIC_NOT_SIMS_TUNING",
+    "requires": [
+      "game_unpaused",
+      "EA_NATIVE_verified_level",
+      "EA_NATIVE_rate_per_sim_minute",
+      "same_current_sim",
+      "same_exact_patch",
+      "no_current_sensor_conflict"
+    ],
+    "hud_arrow_multiplier_claim": false
+  },
+  "moodlet_observation_provenance": "Supplied moodlet observation must be verified, same selected Sim, exact game build, capture, timestamp within 60 seconds; a prior portrait's happy/bad mood never influences current Servo.",
+  "moodlet_positive_activity_gate": "Only preserve positive activity if every profile-specific current motive has a verified level >= policy 0.55, no conflict/reobserve requirement, and no rapid decline; unknown or low motive levels produce POSITIVE_MOOD_NEED_SAFETY_UNVERIFIED."
 }
