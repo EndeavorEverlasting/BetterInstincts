@@ -1,0 +1,23 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-SIXTH-GEAR-AGENT-CONTEXT-CONTINUITY-20261114",
+  "purpose": "Make independent agents converge on canonical goal, memory, retrieval owner and next safe gate without creating new game effects.",
+  "files": [
+    {
+      "path": "betterinstincts/agent_context.py",
+      "route": "POLICY_ONLY",
+      "reason": "Read-only context projection, source descriptions, portable handoff and failure diagnosis; no gameplay effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_stack.py",
+      "route": "POLICY_ONLY",
+      "reason": "Optional sidecar context report after existing host decision, never adjusts gameplay priority/next_gate or grants screen input.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_CONTEXT_AND_HOST_SIDECAR_NOT_GAME_AUTONOMY_OR_ACTUAL_CROSS_CHAT_INSTALL"
+}
