@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
+from betterinstincts.eco_resource_cycle import plan_eco_fabrication
 from betterinstincts.scenario_goals import ScenarioGoalsError, evaluate_scenario_turn
 from betterinstincts.school_day import SchoolDayError, evaluate_school_day_turn
 from betterinstincts.teen_homework import (
@@ -504,3 +505,15 @@ def evaluate_work_shift_tone(
         "WORK_HARD_ADMISSION_REQUIRED", handoff_ready=False,
         action="REVALIDATE_PATCH_PLAYER_SAVE_CAREER_TONE_THEN_OBSERVE_EFFECT",
     )
+
+
+def evaluate_green_technician_daily_task(
+    observation: Mapping[str, object], *, capture_ref: str, now: float | None = None
+) -> dict:
+    """Native-ready advisory for the Civil Designer Green Technician daily task.
+
+    Keeps teen homework and Work Hard tone independent. Crafting must match
+    the observed career panel and exact on-lot unlocked Fabricator recipe;
+    this function never consumes Bits/Pieces or mutates Sims gameplay.
+    """
+    return plan_eco_fabrication(observation, capture_ref=capture_ref, now=now)
