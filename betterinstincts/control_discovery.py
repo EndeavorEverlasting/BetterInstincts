@@ -22,6 +22,11 @@ QUEUE_STATES = frozenset({
     "NEEDS_REVALIDATION", "COMPLETED", "BUSY", "WAIT_BUDGET_REACHED",
 })
 OUTCOMES = frozenset({"HELPFUL", "HARMFUL", "NEUTRAL", "UNKNOWN"})
+DISCOVERY_KINDS = frozenset({
+    "ACTION_MENU", "OBJECT_AFFORDANCE", "QUEUED_ACTION",
+    "SENSOR_RECOVERY", "INTERRUPTION", "NEGATIVE_RESULT",
+})
+MAX_DISCOVERIES_PER_STEP = 6
 FALLBACK_REASONS = frozenset({
     "NATIVE_ROUTE_MISSING", "NATIVE_ROUTE_UNPROVEN",
     "EXISTING_RULE_FAILED", "DISPOSABLE_GAME_DIAGNOSTIC",
@@ -116,6 +121,28 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
             raise ControlDiscoveryError("POST_ACTION_CAPTURE_MUST_DIFFER")
         if step.get("queue_state") not in {"COMPLETED", "NEEDS_RECONCILIATION"}:
             raise ControlDiscoveryError("ACTION_NOT_OBSERVED_AS_ATTEMPTED")
+    elif event.get("kind") == "DISCOVERY":
+        # Reviewed semantic facts may arrive from the live listener while
+        # gameplay effects are paused. Never admit text dumps or raw input.
+        if set(event) != {"schema", "seq", "kind", "work_id",
+                          "discovery_kind", "fact_ref", "source_ref",
+                          "evidence_ref"}:
+            raise ControlDiscoveryError("DISCOVERY_FIELDS_INVALID")
+        _required(event, ("fact_ref", "source_ref", "evidence_ref"))
+        if event["discovery_kind"] not in DISCOVERY_KINDS:
+            raise ControlDiscoveryError("DISCOVERY_KIND_INVALID")
+        if event["work_id"] not in ledger["steps"]:
+            raise ControlDiscoveryError("UNPREPARED_DISCOVERY_DENIED")
+        step = ledger["steps"][event["work_id"]]
+        if step.get("codification") is not None:
+            raise ControlDiscoveryError("DISCOVERY_AFTER_CODIFICATION_DENIED")
+        discoveries = step.get("discoveries") or []
+        if len(discoveries) >= MAX_DISCOVERIES_PER_STEP:
+            raise ControlDiscoveryError("DISCOVERY_STEP_BUDGET_EXHAUSTED")
+        if any(d["fact_ref"] == event["fact_ref"]
+               and d["evidence_ref"] == event["evidence_ref"]
+               for d in discoveries):
+            raise ControlDiscoveryError("DUPLICATE_DISCOVERY_EVIDENCE")
     elif event.get("kind") == "CODIFICATION_RECEIPT":
         if set(event) != {"schema", "seq", "kind", "work_id",
                           "module_ref", "test_ref", "commit_ref", "review_ref"}:
@@ -144,6 +171,7 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
             "queue_state": "PREPARED",
             "outcome": None,
             "codification": None,
+            "discoveries": [],
         }
     elif event["kind"] == "QUEUE_STATUS":
         state["steps"][work_id]["queue_state"] = event["queue_state"]
@@ -154,6 +182,13 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
             outcome_ref=event["outcome_ref"],
             player_interrupted=event["player_interrupted"],
         )
+    elif event["kind"] == "DISCOVERY":
+        state["steps"][work_id]["discoveries"].append({
+            "discovery_kind": event["discovery_kind"],
+            "fact_ref": event["fact_ref"],
+            "source_ref": event["source_ref"],
+            "evidence_ref": event["evidence_ref"],
+        })
     elif event["kind"] == "CODIFICATION_RECEIPT":
         state["steps"][work_id]["codification"] = {
             "module_ref": event["module_ref"], "test_ref": event["test_ref"],
@@ -254,6 +289,7 @@ def codification_work_items(ledger: Mapping, *, offset: int = 0,
             "outcome_ref": step.get("outcome_ref"),
             "player_interrupted": step.get("player_interrupted"),
             "submitted_codification": step.get("codification"),
+            "discoveries": list(step.get("discoveries") or []),
             "next_gate": gate,
             "required_regression": [
                 "REPLAY_OBSERVED_BEHAVIOR_OR_FAILURE",
