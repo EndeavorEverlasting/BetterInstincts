@@ -1,0 +1,63 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SUPER-FERTILIZER-LIVE-CERT-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Bounded live garden sampling and one controlled ground-to-personal-inventory and fertilize trial on the operator-authorized disposable session.",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "SIM",
+    "PLAYER_INTENT",
+    "OBSERVATION",
+    "AFFORDANCE",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "RESOURCE_CLAIM"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/fertilizer_hover_recognition.py",
+    "betterinstincts/fertilizer_workflow.py",
+    "betterinstincts/gardening_service.py",
+    "scripts/game_capture.py",
+    "betterinstincts/lot_boundary.py",
+    "contracts/effect-authority.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "EXACT_GAME_BUILD:1.121.361.1020",
+  "evidence_ceiling": "OBSERVED_LOCAL_GARDEN_EFFECTS_WITH_INDEPENDENT_CAPTURE_AND_SEPARATE_REVIEW",
+  "player_save_control_impact": "Only the confirmed disposable garden and designated personal inventory; independent host seat, exact target, lot and queue admission before input; no save-file writes.",
+  "expected_outcome": "Independent before and after observations for one exact Super Fertilizer transfer and one eligible planter use, or a precise blocked gate.",
+  "negative_tests": [
+    "Unavailable interaction",
+    "Wrong item identity",
+    "Insufficient stock",
+    "Pending transfer",
+    "Player takeover",
+    "Stale camera or lot"
+  ],
+  "rollback_path": "Use the authorized unchanged lab baseline after discarding session changes, with independent rollback checks.",
+  "unresolved_unknowns": [
+    "Live object identity and affordances",
+    "Current lot and active Sim bindings",
+    "Native tuning provenance and mod status"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-SUPER-FERTILIZER-LIVE-CERT-20261114.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator confirmed the loaded disposable session; independent live authority gates still apply.",
+  "source_refs": [
+    "https://github.com/EndeavorEverlasting/BetterInstincts/issues/171"
+  ],
+  "recorded_date": "2026-11-14"
+}
