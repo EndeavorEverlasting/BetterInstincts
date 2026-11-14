@@ -254,6 +254,76 @@ class AgentControlRunTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(receipt["handoff"]["codification_coverage"]["counts"]["review_ready"], 1)
         self.assertEqual(host_listener.status("bi-control-01")["state"], "ACTIVE")
 
+    async def test_passive_observation_does_not_complete_waiting_screen_effect(self):
+        self.prepare()
+        first = await self.runner.pulse()
+        self.assertEqual(first["state"], "WAITING_FOR_USER")
+        observations = []
+
+        async def validate_read_only():
+            return True
+
+        async def safe_semantic_read():
+            observations.append("semantic:queue-observed")
+
+        queued = self.runner.observe_while_paused(
+            work_id="listen:queue", validate=validate_read_only,
+            observe=safe_semantic_read,
+        )
+        self.assertEqual(queued["pending_effect_work_id"], "work:plant2")
+        observed = await self.runner.pulse()
+        self.assertEqual(observed["state"], "LISTENER_OBSERVATION_COMPLETED")
+        self.assertEqual(observed["work_id"], "listen:queue")
+        self.assertEqual(observations, ["semantic:queue-observed"])
+        self.assertEqual(self.executed, [])
+        self.assertEqual(self.runner.last_queue_state, "WAITING_FOR_USER")
+        self.assertEqual(len(self.queue.pending), 1)
+        with self.assertRaisesRegex(AgentControlRunnerError, "NO_OBSERVED_EFFECT_ATTEMPT"):
+            self.runner.record_observed_outcome(
+                outcome="HELPFUL", after_capture_ref="capture:after",
+                outcome_ref="outcome:not-performed", player_interrupted=False,
+            )
+        # A human can keep using another application while the read-only
+        # listener has completed; only the existing trusted idle gate resumes.
+        self.age = 16000
+        resumed = await self.runner.wait_and_pulse(max_checks=3)
+        self.assertEqual(resumed["state"], "COMPLETED")
+        self.assertEqual(self.executed, ["real-effect"])
+        self.assertEqual(host_listener.status("bi-control-01")["state"], "ACTIVE")
+
+    async def test_passive_failure_cannot_be_misattributed_to_gameplay_effect(self):
+        self.prepare()
+        await self.runner.pulse()
+
+        async def validate_read_only():
+            return True
+
+        async def failing_read():
+            raise RuntimeError("semantic probe not calibrated")
+
+        self.runner.observe_while_paused(
+            work_id="listen:broken", validate=validate_read_only,
+            observe=failing_read,
+        )
+        failed = await self.runner.pulse()
+        self.assertEqual(failed["state"], "LISTENER_OBSERVATION_NEEDS_RECONCILIATION")
+        self.assertEqual(self.runner.last_queue_state, "WAITING_FOR_USER")
+        self.assertIn("listen:broken", self.queue.suspended)
+        self.assertEqual(self.executed, [])
+        self.age = 16000
+        resumed = await self.runner.wait_and_pulse(max_checks=3)
+        self.assertEqual(resumed["state"], "COMPLETED")
+        self.assertEqual(self.executed, ["real-effect"])
+
+    async def test_cannot_start_passive_observation_without_player_pause(self):
+        self.prepare()
+
+        async def valid(): return True
+        async def read(): return None
+
+        with self.assertRaisesRegex(AgentControlRunnerError, "PLAYER_PAUSE_REQUIRED"):
+            self.runner.observe_while_paused(work_id="listen:early", validate=valid, observe=read)
+
     async def test_partial_exception_requires_reconciliation_not_replay(self):
         async def incomplete():
             self.executed.append("attempted")
