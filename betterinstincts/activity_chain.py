@@ -162,9 +162,12 @@ def compile_activity_chain(snapshot: Mapping, steps: Sequence[Mapping],
     spent, elapsed = 0.0, 0.0
     position = snapshot["location"]
     queue = []
+    scheduled = set()
     waiting = set(nodes) - done
-    # A verified teleport capability is scoped to the current capture/Sim.
-    teleport = snapshot.get("teleport_unlocked") is True and _ref(snapshot.get("teleport_evidence_ref"))
+    # A verified teleport capability is scoped to this Sim and current capture.
+    teleport = (snapshot.get("teleport_unlocked") is True
+                and _ref(snapshot.get("teleport_evidence_ref"))
+                and snapshot.get("teleport_evidence_capture_ref") == capture_ref)
     while waiting:
         ready = [nodes[sid] for sid in waiting if set(nodes[sid]["after"]) <= done]
         if not ready:
@@ -199,9 +202,26 @@ def compile_activity_chain(snapshot: Mapping, steps: Sequence[Mapping],
         elapsed += required
         spent += row.get("cost", 0)
         done.add(row["id"])
+        scheduled.add(row["id"])
         waiting.remove(row["id"])
     gate = "PLAN_STAGED" if queue and mode == "PLANNING" else (
         "EFFECT_ADMISSION_REQUIRED" if queue else "INSUFFICIENT_EVIDENCE_OR_BUDGET")
+    # Do not spend on prerequisites whose dependent goal cannot finish safely
+    # inside the observed window; unscheduled zero-cost prep may be deferred.
+    purchased = {sid for sid in scheduled if nodes[sid].get("cost", 0) > 0}
+    if waiting and purchased:
+        def purchase_ancestor(sid: str, seen: set[str] | None = None) -> bool:
+            if sid in purchased:
+                return True
+            seen = set() if seen is None else seen
+            if sid in seen:
+                return False
+            seen.add(sid)
+            return any(purchase_ancestor(dep, seen) for dep in nodes[sid]["after"])
+        if any(purchase_ancestor(sid) for sid in waiting):
+            return _receipt(capture_ref, "DEFER_UNFINISHED_PURCHASE_CHAIN", mode=mode,
+                            deferred=sorted(set(nodes) - {row["step_id"] for row in completed}),
+                            retained_goal_ids=sorted(nodes), sim_ref=snapshot["sim_ref"])
     return _receipt(capture_ref, gate, mode=mode, steps=queue,
                     deferred=sorted(waiting), total_upper_minutes=elapsed,
                     projected_spend=spent, available_minutes=budget,
