@@ -15,6 +15,7 @@ from betterinstincts.need_service_base import SIX, threshold_pair
 
 SCHEMA = "betterinstincts.ecology-intent/v1"
 OBSERVATION = "betterinstincts.ecology-observation/v1"
+ACK_SCHEMA = "betterinstincts.ecology-native-queue-receipt/v1"
 NEEDS = SIX
 STEPS = ("PICKUP", "FERTILIZE")
 MAX_AGE_SECONDS = 60
@@ -410,7 +411,7 @@ def acknowledge_native_ecology_dispatch(intent: Mapping, receipt: Mapping) -> di
 
     if state["awaiting"] is None or state["dispatch_status"] != "PROPOSED":
         return {**result, "gate": "ECOLOGY_ACK_NO_PENDING_PROPOSAL"}
-    if not isinstance(receipt, Mapping):
+    if not isinstance(receipt, Mapping) or receipt.get("schema") != ACK_SCHEMA:
         return result
     if any(receipt.get(key) != state[key] for key in (
         "game_build", "household_ref", "sim_ref", "lot_ref",
