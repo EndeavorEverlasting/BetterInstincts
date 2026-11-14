@@ -1981,3 +1981,7 @@ before promoting this source receipt to provider-verified closure.
 ## 2026-11-13 — Awake household handoff
 
 Manual play recovered Charlee's six needs, verified peer Servo Tune Up, and started Olga's archaeology book. The host now proposes the first eligible awake actor when the selected member is asleep, recharging or away. See plans/active/BI-SIXTH-GEAR-AWAKE-HANDOFF-20261113.md. Native enqueue remains open under issue #171. BI-002 remains active.
+
+## 2026-11-14 — Deterministic sleep-to-next-portrait and household needs continuation
+**Parent:** each verified sleep/recharge/absence transition immediately yields to the next verified awake portrait in household order; no task or machine-learning discovery prerequisite. **P141:** extend PR #229 existing owner, reject a new desktop clicker/scheduler, reject requiring chores for attention. **P95/P82:** independent roster rotation, zero-task, critical-needs, optional completed-review receipt and negative proofs. **P08:** no exact EA native-game portrait effect available through GitHub; blocked for actual gameplay, not an offline code pass. **P07/P124:** policy, regression fixtures, mechanics coverage and host-stack advisory integration; no installed native effect asserted.** The returned handoff requires a fresh selected Sim identity, needs, queue and game effect authority; BI-002 remains ACTIVE. See `docs/HOUSEHOLD_ECONOMY.md`, mechanic `household-portrait-attention-rotation`, issue #171.
+
