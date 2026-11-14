@@ -33,7 +33,9 @@ def _ref(value: object) -> bool:
 
 
 def _number(value: object) -> bool:
-    return type(value) in (int, float) and math.isfinite(value)
+    if type(value) is int:
+        return 0 <= value <= 1_000_000_000_000
+    return type(value) is float and math.isfinite(value) and 0 <= value <= 1_000_000_000_000
 
 
 def evaluate_fertilizer_workflow(
@@ -176,7 +178,9 @@ def evaluate_fertilizer_workflow(
         if "sourcing" in observation:
             try:
                 source = plan_fertilizer_sources(
-                    observation["sourcing"], capture_ref=capture_ref, now=now
+                    observation["sourcing"], capture_ref=capture_ref, now=now,
+                    expected_sim_ref=sim_ref,
+                    expected_deficit_units=len(ready) - stock,
                 )
             except EcoResourceCycleError as exc:
                 raise FertilizerWorkflowError(str(exc)) from exc
