@@ -1333,6 +1333,7 @@ def evaluate_turn(
         }
     elif (
         not player_directed
+        and not build_or_buy_mode
         and household_economy_report is not None
         and household_economy_report["portrait_handoff"] is not None
         and (live_hud is None or live_hud["gate"] == "HUD_CONTEXT_READY")

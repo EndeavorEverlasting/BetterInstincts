@@ -90,6 +90,8 @@ class HouseholdEconomyTests(unittest.TestCase):
                          next_member["member_key"])
         player = evaluate_turn(capture_ref=CAP, player_directed=True, **args)
         self.assertNotEqual(player["next_gate"], "AWAKE_HOUSEHOLD_HANDOFF_READY")
+        build = evaluate_turn(capture_ref=CAP, build_or_buy_mode=True, **args)
+        self.assertNotEqual(build["next_gate"], "AWAKE_HOUSEHOLD_HANDOFF_READY")
         with self.assertRaisesRegex(HostStackError, "HOUSEHOLD_HANDOFF_CAPTURE_MISMATCH"):
             evaluate_turn(capture_ref="capture:other", **args)
 
