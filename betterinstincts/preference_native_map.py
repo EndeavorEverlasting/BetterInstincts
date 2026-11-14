@@ -185,6 +185,7 @@ def assess_native_preference_outcome(
             or not _ref(resumed.get("activity_ref"))
             or not _ref(resumed.get("capture_ref"))
             or resumed["capture_ref"] == effect["capture_ref"]
+            or resumed["capture_ref"] == binding["capture_ref"]
             or not _time(resumed.get("captured_at_epoch_ms"))
             or resumed["captured_at_epoch_ms"] <= effect["captured_at_epoch_ms"]):
         return _hold("POST_DIALOG_ACTIVITY_RESUMPTION_NOT_OBSERVED")
