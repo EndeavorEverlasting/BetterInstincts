@@ -9,7 +9,7 @@ from betterinstincts import host_listener
 from betterinstincts.agent_control_runner import AgentControlRunner, AgentControlRunnerError
 from betterinstincts.control_discovery import (
     SCHEMA, EVENT_SCHEMA, ControlDiscoveryError, compact_handoff,
-    coverage, ingest, new_session,
+    coverage, codification_work_items, ingest, new_session,
 )
 from betterinstincts.player_presence import PresenceProbe
 from betterinstincts.workflow_interop import CooperativeScreenQueue
@@ -80,6 +80,13 @@ class SemanticDiscoveryTests(unittest.TestCase):
         )
         self.assertEqual(coverage(state)["counts"]["receipt_submitted"], 1)
         self.assertEqual(coverage(state)["unresolved_total"], 0)
+        self.assertEqual(coverage(state)["source_verification_pending_total"], 1)
+        self.assertEqual(coverage(state)["source_verified_total"], 0)
+        self.assertFalse(coverage(state)["all_attempts_source_verified"])
+        self.assertEqual(
+            codification_work_items(state)["items"][0]["next_gate"],
+            "VERIFY_COMMIT_TEST_AND_MAIN_READBACK",
+        )
         self.assertEqual(
             state["steps"]["work:plant2"]["codification"]["status"],
             "RECEIPT_SUBMITTED_NOT_MERGE_VERIFIED",
@@ -128,6 +135,38 @@ class SemanticDiscoveryTests(unittest.TestCase):
                   module_ref="betterinstincts/gardening_service.py",
                   test_ref="tests/test_gardening.py",
                   commit_ref="commit:one", review_ref="review:one")
+
+    def test_every_attempt_has_paged_source_and_regression_work(self):
+        state = base()
+        for i in range(9):
+            state = prepared(state, "work:step%d" % i)
+        first = codification_work_items(state, limit=4)
+        second = codification_work_items(state, offset=first["next_offset"], limit=4)
+        last = codification_work_items(state, offset=second["next_offset"], limit=4)
+        ids = [item["work_id"] for page in (first, second, last) for item in page["items"]]
+        self.assertEqual(len(ids), 9)
+        self.assertEqual(len(set(ids)), 9)
+        self.assertIsNone(last["next_offset"])
+        self.assertTrue(all(item["required_regression"] for page in (first, second, last)
+                            for item in page["items"]))
+        self.assertTrue(all(not item["source_verified"] for page in (first, second, last)
+                            for item in page["items"]))
+        self.assertEqual(compact_handoff(state)["codification_work"]["total_attempted"], 9)
+        self.assertNotIn("events", compact_handoff(state))
+        with self.assertRaisesRegex(ControlDiscoveryError, "CODIFICATION_PAGE_INVALID"):
+            codification_work_items(state, limit=9)
+
+    def test_interrupted_attempt_remains_source_obligation(self):
+        state = prepared(base())
+        state = event(state, "QUEUE_STATUS", queue_state="NEEDS_RECONCILIATION")
+        state = event(state, "OUTCOME", outcome="UNKNOWN",
+                      after_capture_ref="capture:after",
+                      outcome_ref="observation:uncertain",
+                      player_interrupted=True)
+        item = codification_work_items(state)["items"][0]
+        self.assertEqual(item["next_gate"], "RECONCILE_INTERRUPTED_OUTCOME")
+        self.assertEqual(item["observed_outcome"], "UNKNOWN")
+        self.assertEqual(coverage(state)["total_attempts"], 1)
 
     def test_bounded_digest_no_raw_events(self):
         state = base()
