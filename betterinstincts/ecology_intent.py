@@ -58,6 +58,8 @@ def new_ecology_intent(
         "awaiting": None,
         "awaiting_capture_ref": None,
         "awaiting_item_count": None,
+        "dispatch_status": "NONE",
+        "awaiting_queue_ref": None,
         "verified_steps": [],
         "plan": [
             {"step": "PICKUP", "target_ref": item_ref},
@@ -85,6 +87,15 @@ def _validate_intent(intent: Mapping) -> None:
                 and (type(intent["last_inventory_count"]) is not int
                      or intent["last_inventory_count"] < 0))
             or intent.get("awaiting") not in (None, "PICKUP", "FERTILIZE")
+            or intent.get("dispatch_status") not in ("NONE", "PROPOSED", "QUEUED")
+            or (intent.get("awaiting_queue_ref") is not None
+                and not _ref(intent["awaiting_queue_ref"]))
+            or (intent["awaiting"] is None
+                and (intent["dispatch_status"] != "NONE" or intent["awaiting_queue_ref"] is not None))
+            or (intent["awaiting"] is not None and
+                (intent["dispatch_status"] == "NONE"
+                 or (intent["dispatch_status"] == "PROPOSED" and intent["awaiting_queue_ref"] is not None)
+                 or (intent["dispatch_status"] == "QUEUED" and not _ref(intent["awaiting_queue_ref"]))))
             or (intent["awaiting"] is None and
                 (intent.get("awaiting_capture_ref") is not None
                  or intent.get("awaiting_item_count") is not None))
@@ -177,7 +188,8 @@ def _outcome_verified(
             or outcome.get("before_capture_ref") != intent["awaiting_capture_ref"]
             or outcome.get("after_capture_ref") != observation["capture_ref"]
             or not _ref(outcome.get("proof_ref"))
-            or not _ref(outcome.get("native_action_ref"))):
+            or not _ref(outcome.get("native_action_ref"))
+            or outcome.get("native_queue_ref") != intent["awaiting_queue_ref"]):
         return False
     before, after = outcome.get("before_item_count"), outcome.get("after_item_count")
     if (type(before) is not int or type(after) is not int or before < 0
@@ -243,7 +255,8 @@ def reconcile_ecology_intent(intent: Mapping, observation: Mapping, *, now: floa
     paused = observation["paused"]
     mode = "PLANNING" if paused else "PLAY"
     previous_capture = state["last_capture_ref"]
-    if state["awaiting"] is not None and previous_capture is not None:
+    if (state["awaiting"] is not None and state["dispatch_status"] == "QUEUED"
+            and previous_capture is not None):
         if _outcome_verified(
             observation.get("outcome"), step=state["awaiting"],
             intent=state, observation=observation,
@@ -254,21 +267,26 @@ def reconcile_ecology_intent(intent: Mapping, observation: Mapping, *, now: floa
             state["awaiting"] = None
             state["awaiting_capture_ref"] = None
             state["awaiting_item_count"] = None
+            state["dispatch_status"] = "NONE"
+            state["awaiting_queue_ref"] = None
 
     # An independently witnessed native cancellation can release a pending
     # proposal. An absent/unknown queue entry alone never licenses replay.
     interruption = observation.get("interruption")
-    if state["awaiting"] is not None and isinstance(interruption, Mapping):
+    if (state["awaiting"] is not None and state["dispatch_status"] == "QUEUED"
+            and isinstance(interruption, Mapping)):
         if (interruption.get("step") == state["awaiting"]
                 and interruption.get("status") == "NATIVE_INTERRUPTED"
                 and interruption.get("cause") == "SIM_AUTONOMY"
                 and interruption.get("before_capture_ref") == state["awaiting_capture_ref"]
                 and interruption.get("after_capture_ref") == capture
                 and _ref(interruption.get("proof_ref"))
-                and _ref(interruption.get("native_queue_ref"))):
+                and interruption.get("native_queue_ref") == state["awaiting_queue_ref"]):
             state["awaiting"] = None
             state["awaiting_capture_ref"] = None
             state["awaiting_item_count"] = None
+            state["dispatch_status"] = "NONE"
+            state["awaiting_queue_ref"] = None
 
     # If we already own inventory at goal admission, pickup is unnecessary.
     if previous_capture is None and state["step"] == "PICKUP" and observation["inventory_count"] > 0:
@@ -290,6 +308,8 @@ def reconcile_ecology_intent(intent: Mapping, observation: Mapping, *, now: floa
         queue_gate = _queue_gate(observation, next_action, next_target)
         if queue_gate in {"PLAYER_QUEUE_FIRST", "QUEUE_ORIGIN_UNVERIFIED"}:
             return finish(queue_gate, mode=mode)
+        if state["dispatch_status"] == "PROPOSED":
+            return finish("ECOLOGY_AWAIT_NATIVE_DISPATCH_ACK", mode=mode)
         if queue_gate == "TASK_ALREADY_QUEUED":
             return finish("ECOLOGY_WAIT_FOR_QUEUED_STEP", mode=mode)
         return finish("ECOLOGY_AWAIT_INDEPENDENT_OUTCOME", mode=mode)
@@ -365,7 +385,69 @@ def reconcile_ecology_intent(intent: Mapping, observation: Mapping, *, now: floa
     state["awaiting"] = action
     state["awaiting_capture_ref"] = capture
     state["awaiting_item_count"] = observation["inventory_count"]
+    state["dispatch_status"] = "PROPOSED"
     return finish("ECOLOGY_PLAY_STEP_PROPOSED", proposal=proposal, mode=mode)
+
+
+
+def acknowledge_native_ecology_dispatch(intent: Mapping, receipt: Mapping) -> dict:
+    """Reconcile a game-native *queue attestation*, not a plan's intention.
+
+    A Play proposal sets PROPOSED but does not imply that EA queued anything.
+    The verified, exact-Sim native adapter must independently attest QUEUED
+    before any later outcome can advance the plan. A proven NOT_ENQUEUED
+    admission may release intent for a new capture; unknown/ambiguous
+    acknowledgements leave intent unchanged. This function performs no effects.
+    """
+    _validate_intent(intent)
+    state = copy.deepcopy(dict(intent))
+    result = {
+        "schema": "betterinstincts.ecology-dispatch-ack/v1",
+        "intent": state, "gate": "ECOLOGY_ACK_REOBSERVE",
+        "execute_allowed": False, "cancel_allowed": False,
+        "proof_ceiling": "OFFLINE_QUEUE_ATTESTATION_POLICY_NOT_EA_EFFECT",
+    }
+
+    if state["awaiting"] is None or state["dispatch_status"] != "PROPOSED":
+        return {**result, "gate": "ECOLOGY_ACK_NO_PENDING_PROPOSAL"}
+    if not isinstance(receipt, Mapping):
+        return result
+    if any(receipt.get(key) != state[key] for key in (
+        "game_build", "household_ref", "sim_ref", "lot_ref",
+    )):
+        return {**result, "gate": "ECOLOGY_ACK_SCOPE_MISMATCH"}
+    target = state["item_ref"] if state["awaiting"] == "PICKUP" else state["plant_ref"]
+    if (receipt.get("step") != state["awaiting"]
+            or receipt.get("target_ref") != target
+            or receipt.get("proposal_capture_ref") != state["awaiting_capture_ref"]
+            or not _ref(receipt.get("queue_capture_ref"))
+            or receipt["queue_capture_ref"] == state["awaiting_capture_ref"]
+            or receipt.get("queue_verified") is not True
+            or not _ref(receipt.get("queue_proof_ref"))
+            or not _ref(receipt.get("native_observation_ref"))
+            or receipt.get("player_active") is not False):
+        return result
+
+    status = receipt.get("status")
+    if status == "QUEUED":
+        if (receipt.get("queue_origin") != "HOST"
+                or not _ref(receipt.get("origin_proof_ref"))
+                or not _ref(receipt.get("native_queue_ref"))):
+            return result
+        state["dispatch_status"] = "QUEUED"
+        state["awaiting_queue_ref"] = receipt["native_queue_ref"]
+        return {**result, "gate": "ECOLOGY_NATIVE_QUEUE_ATTESTED"}
+    if status == "NOT_ENQUEUED":
+        if (receipt.get("effect_absent_verified") is not True
+                or not _ref(receipt.get("absence_proof_ref"))):
+            return result
+        state["awaiting"] = None
+        state["awaiting_capture_ref"] = None
+        state["awaiting_item_count"] = None
+        state["dispatch_status"] = "NONE"
+        state["awaiting_queue_ref"] = None
+        return {**result, "gate": "ECOLOGY_NATIVE_NONENQUEUE_CONFIRMED"}
+    return result
 
 
 def reconcile_household_ecology(
