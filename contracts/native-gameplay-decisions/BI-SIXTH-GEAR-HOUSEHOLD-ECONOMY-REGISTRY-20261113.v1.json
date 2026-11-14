@@ -1,0 +1,33 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/mechanics_registry.py",
+      "route": "POLICY_ONLY",
+      "reason": "Strict source coverage and reviewed outcome replan; no game effects or separate native scheduler.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/household_economy.py",
+      "route": "POLICY_ONLY",
+      "reason": "Bounded non-actuating household member allocation using observed roster/needs/skills and existing queue policy.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_stack.py",
+      "route": "POLICY_ONLY",
+      "reason": "Optional read-only household economy port after existing higher-priority needs and upkeep mechanisms.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_listener.py",
+      "route": "POLICY_ONLY",
+      "reason": "Validate and pass private user-authorized bounded household observation without game input.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

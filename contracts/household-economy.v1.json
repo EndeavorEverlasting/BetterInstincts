@@ -1,0 +1,71 @@
+{
+  "schema": "betterinstincts.household-economy-policy/v1",
+  "owner": "betterinstincts/household_economy.py",
+  "registry": "contracts/mechanics-registry.v1.json",
+  "identity_owner": "betterinstincts/household_judgment.py",
+  "queue_owner": "betterinstincts/queue_capacity.py",
+  "domain_owners": [
+    "betterinstincts/need_services.py",
+    "betterinstincts/need_load_balance.py",
+    "betterinstincts/domain_cascade.py",
+    "betterinstincts/career_service.py",
+    "betterinstincts/household_upkeep.py",
+    "betterinstincts/gardening_service.py"
+  ],
+  "mission": "A single Sim is a person, not a factory: wellbeing, fun, social time and temperament precede discretionary money throughput. More Sims permit distinct, fair and capacity-aware collaboration, provided each stays healthy and retains their own goals.",
+  "source_only": true,
+  "gameplay_effects_allowed": false,
+  "admission": {
+    "scope": "betterinstincts.household-scope/v1",
+    "roster": "exact locally attested original ordered roster; fingerprint must equal current independent observer",
+    "capture": "same unique active capture for all members and tasks",
+    "max_members": 16,
+    "max_tasks": 48,
+    "max_existing_reservations": 48,
+    "max_observed_task_failures": 48
+  },
+  "modes": {
+    "SOLO_WELLBEING_FIRST": {
+      "meaning": "Only one actor; each member's six needs and emotional state take priority over discretionary work",
+      "ordinary_work_needs_floor": 0.65,
+      "discretionary_yield_needs_floor": 0.8,
+      "wellbeing_fun_social_floor_for_yield": 0.8
+    },
+    "COOPERATIVE_HOUSEHOLD": {
+      "meaning": "Allocate at most one independently observed task per member, choosing current stable members by skill and preference then lower recent verified workload; do not infer productivity",
+      "ordinary_work_needs_floor": 0.45,
+      "discretionary_yield_needs_floor": 0.7,
+      "wellbeing_fun_social_floor_for_yield": 0.75
+    }
+  },
+  "task_origins": "Must be observed as truly available via existing domain owners; only source-present registry mechanics may be proposed. No guessed queue identities, resources, salaries or output.",
+  "constraints": [
+    "critical_needs",
+    "mood_and_temperament",
+    "player_reserved",
+    "already_busy",
+    "queue_verified",
+    "queue_capacity",
+    "resource_collision",
+    "verified_skill_minimum",
+    "disliked_task",
+    "unique_active_roster",
+    "one_member_per_turn",
+    "one_claim_per_resource",
+    "retained_deferred_goals",
+    "never_blind_retry_failed_outcomes"
+  ],
+  "output": {
+    "assigned": "one non-actuating proposal per eligible member",
+    "deferred": "all unassigned task IDs and reasons remain visible",
+    "money": "no numeric yield without later independent verified outcome",
+    "authority": "execute_allowed=false"
+  },
+  "continuation": {
+    "outcome": "Require distinct current proof_ref, exact task id and current capture; failed tasks held for replan",
+    "scope": "No cross-profile/save/household copying",
+    "registry": "Append missing mechanics to canonical registry in separate consulted revision, never silently treat gap as supported"
+  },
+  "proof_ceiling": "SOURCE_ONLY_OFFLINE_HOUSEHOLD_ALLOCATION_NOT_EA_CERTIFIED",
+  "active_parent": "BI-002 hunger still ACTIVE"
+}
