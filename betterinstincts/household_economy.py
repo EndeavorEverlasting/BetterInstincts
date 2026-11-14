@@ -15,12 +15,13 @@ from typing import Any
 from betterinstincts.household_judgment import require_fixed_roster, HouseholdJudgmentError
 from betterinstincts.mechanics_registry import load_registry, MechanicsRegistryError
 from betterinstincts.queue_capacity import evaluate_queue_capacity, QueueCapacityError
+from betterinstincts.career_service import evaluate_work_shift_tone, CareerServiceError
 
 SCHEMA = "betterinstincts.household-economy.observation/v1"
 SIX = frozenset(("hunger", "bladder", "energy", "hygiene", "fun", "social"))
 SERVO_NEEDS = frozenset(("charge", "durability", "fun", "social"))
 RECOVERING_OR_ABSENT = frozenset(("ASLEEP", "RECHARGING", "AWAY"))
-ACTIVITIES = RECOVERING_OR_ABSENT | {"AWAKE", "UNKNOWN"}
+ACTIVITIES = RECOVERING_OR_ABSENT | {"AWAKE", "UNKNOWN", "AT_WORK"}
 REF = re.compile(r"^[A-Za-z0-9:_./-]{3,180}$")
 MOODS = frozenset(("HAPPY", "STABLE", "STRAINED", "UNKNOWN"))
 TEMPERAMENTS = frozenset(("BALANCED", "IRRITABLE", "UNKNOWN"))
@@ -216,7 +217,7 @@ def _choose_member(task: Mapping, members: list[dict], allocated: set[str],
         if key not in task["eligible_member_keys"] or key in allocated:
             continue
         activity = row.get("activity", "UNKNOWN")
-        if activity in RECOVERING_OR_ABSENT or (verified_awake_required and activity != "AWAKE"):
+        if activity in RECOVERING_OR_ABSENT or activity == "AT_WORK" or (verified_awake_required and activity != "AWAKE"):
             continue
         if (row["player_reserved"] or row["busy"] or not row["available"]
                 or not row["queue_verified"]):
@@ -280,6 +281,25 @@ def evaluate_household_economy(observation: Mapping) -> dict:
     solo = len(members) == 1
     selected = next((row for row in members
                      if row["member_key"] == observation.get("selected_member_key")), None)
+    # One exact current-shift observation is required before advising a tone
+    # or releasing attention. A departing Sim is not proof of being at work.
+    work_tone = None
+    shift = observation.get("work_shift")
+    if shift is not None:
+        if selected is None or selected.get("activity") != "AT_WORK":
+            raise HouseholdEconomyError("WORK_SHIFT_SELECTED_ACTOR_NOT_AT_WORK")
+        try:
+            work_tone = evaluate_work_shift_tone(
+                shift, member_key=selected["member_key"],
+                capture_ref=observation["capture_ref"],
+                wellbeing_ready=(
+                    _need_state(selected, solo=solo, yield_work=True)
+                    == "WELFARE_RESERVE_MET"
+                ),
+                player_reserved=selected["player_reserved"],
+            )
+        except (CareerServiceError, TypeError, KeyError) as exc:
+            raise HouseholdEconomyError("WORK_SHIFT_EVIDENCE_INVALID:" + str(exc)) from exc
     handoff_from = None
     handoff_cause = None
     if selected is not None and not selected["player_reserved"]:
@@ -290,6 +310,10 @@ def evaluate_household_economy(observation: Mapping) -> dict:
               and selected.get("activity") == "AWAKE"):
             handoff_from = selected["member_key"]
             handoff_cause = "SELECTED_MEMBER_NEEDS_REVIEW_VERIFIED_COMPLETE"
+        elif (selected.get("activity") == "AT_WORK"
+              and work_tone is not None and work_tone["handoff_ready"]):
+            handoff_from = selected["member_key"]
+            handoff_cause = "SELECTED_MEMBER_AT_RABBIT_HOLE_WORK"
     allocated: set[str] = set()
     reserved = set(observation["reserved_resources"])
     failed = {row["task_ref"] for row in failures}
@@ -361,6 +385,7 @@ def evaluate_household_economy(observation: Mapping) -> dict:
     return {
         "schema": "betterinstincts.household-economy-plan/v1",
         "portrait_handoff": handoff,
+        "work_tone": work_tone,
         "scope_id": scope_id,
         "capture_ref": observation["capture_ref"],
         "mode": "SOLO_WELLBEING_FIRST" if solo else "COOPERATIVE_HOUSEHOLD",
