@@ -1,0 +1,71 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SUPER-FERTILIZER-EDGE-GUARDS-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "MoonWake Closers post-merge PR242 reviewer reconciliation: safely reject malformed unhashable hover source/identity inputs before set membership, and allow a single already-held fertilizer unit to fertilize one current eligible plant when the separate backyard pickup is pending, while never repeating that pickup or allowing insufficient FERTILIZE_ALL.",
+  "affected_concepts": [
+    "SIM",
+    "PLAYER_INTENT",
+    "OBSERVATION",
+    "AFFORDANCE",
+    "ACTION_QUEUE",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "RESOURCE_CLAIM",
+    "PROOF_RECEIPT",
+    "GOAL_THREAD"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/fertilizer_hover_recognition.py",
+    "betterinstincts/fertilizer_workflow.py",
+    "tests/test_fertilizer_hover_recognition.py",
+    "tests/test_fertilizer_workflow.py",
+    "contracts/gardening-service.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_SOURCE_POLICY_NO_GAME_EXECUTION",
+  "player_save_control_impact": "Only validates external semantic inputs and decides between existing one-action advice gates. No game input, save, cursor/keyboard changes, account settings, purchases or unreviewed queue mutations.",
+  "expected_outcome": "Malformed list/dict hover-source, bag identity, spatial category and pending status cannot raise raw TypeError. They become typed refusal. Partial pocket + separate pending pickup can yield one observed enabled FERTILIZE for a ready plant instead of freezing, while stock 0 + pending transfer remains waiting and existing queue/player guards remain in force. No FERTILIZE_ALL when 1 unit and 2 plants.",
+  "negative_tests": [
+    "source as list or map raises FertilizerHoverError, not TypeError",
+    "identity_source as list rejects using typed FertilizerWorkflowError",
+    "spatial map category as list refuses eligibility without crashing",
+    "pending transfer status as list typed error",
+    "partial pocket pending pickup chooses single-plant action when currently enabled",
+    "stock0 pending pickup stays on wait gate with no duplicate transfer",
+    "existing user-screenshot evidence remains identity-only"
+  ],
+  "rollback_path": "Revert small regression PR to verified merged #242 source; no live effects",
+  "unresolved_unknowns": [
+    "Real EA item drag, native UI/CV sensory link and installed Sims A/B remain #171",
+    "BI-002 still independent and active"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-SUPER-FERTILIZER-EDGE-GUARDS-20261114.v1.json",
+    "betterinstincts/fertilizer_hover_recognition.py",
+    "betterinstincts/fertilizer_workflow.py",
+    "tests/test_fertilizer_hover_recognition.py",
+    "tests/test_fertilizer_workflow.py",
+    "contracts/native-gameplay-decisions/BI-SUPER-FERTILIZER-EDGE-GUARDS-20261114.v1.json",
+    "docs/ECO_RESOURCE_CYCLE.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "P83 independently checked post-merge PR #242 CodeAnt findings: other comments on dropped availability already repaired and CI green, but list-source TypeError and partial-pocket/pending stall remain. P03 selects bounded two-owner fixes; P141 declines any new controller; P124 retains existing policy responsibilities; P04 routes local native proof to issue #171.",
+  "source_refs": [
+    "https://github.com/EndeavorEverlasting/BetterInstincts/pull/242",
+    "https://github.com/EndeavorEverlasting/BetterInstincts/issues/171"
+  ],
+  "recorded_date": "2026-11-14"
+}
