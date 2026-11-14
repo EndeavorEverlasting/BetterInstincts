@@ -1,0 +1,74 @@
+{
+  "schema": "betterinstincts.agent-session-continuity/v1",
+  "owner": "betterinstincts/agent_session_continuity.py",
+  "entrypoint": "python -m betterinstincts.agent_session_continuity --input PATH_TO_EXPLICIT_JSON",
+  "scope": "Read-only single-snapshot liveness triage for the local Codex game-host agent; downstream application of MoonWake canonical execution-boundary semantics, not a replacement generic controller or an effect permit.",
+  "parent": "Maintain explicitly supplied BetterInstincts parent objective until evidenced acceptance or genuine terminal authority/access/safety gate.",
+  "input": {
+    "schema": "betterinstincts.agent-session-continuity/v1",
+    "parent_objective": "nonempty exact operator mission",
+    "completion": {
+      "accepted": "boolean",
+      "evidence_refs": "nonempty references required when accepted"
+    },
+    "game": {
+      "state": [
+        "PAUSED",
+        "RUNNING",
+        "NOT_VISIBLE",
+        "UNKNOWN"
+      ],
+      "scene": [
+        "LIVE",
+        "OTHER",
+        "UNKNOWN"
+      ],
+      "save_scope": [
+        "DISPOSABLE_VERIFIED",
+        "PROTECTED",
+        "UNKNOWN"
+      ],
+      "capture_ref": "opaque, optional"
+    },
+    "player_presence": [
+      "INACTIVE",
+      "ACTIVE",
+      "UNKNOWN"
+    ],
+    "operator_gameplay_permission": "boolean; prior task intent only; not a per-effect permit",
+    "offline_work": {
+      "action": "specific bounded read-only engineering action, optional",
+      "ready": "boolean"
+    },
+    "host_access": {
+      "state": [
+        "AVAILABLE",
+        "UNAVAILABLE",
+        "UNKNOWN"
+      ],
+      "evidence_refs": "references mandatory to prove unavailable"
+    }
+  },
+  "nonterminal_decisions": [
+    "CONTINUE_OFFLINE",
+    "OBSERVE_GAME",
+    "PREPARE_GAME_EFFECT_ADMISSION",
+    "REOBSERVE_HOST",
+    "INVESTIGATE_NEXT_GATE"
+  ],
+  "safe_quiescence_decisions": [
+    "YIELD_TO_PLAYER",
+    "BLOCKED_EXACT"
+  ],
+  "terminal_decision": "COMPLETE_PROVEN",
+  "rules": [
+    "No time limit, narrative report, checked box or paused Sims game proves mission complete",
+    "Player active/unknown or protected/unknown save means zero game effects, even with gameplay permission",
+    "Screen/game effect always rechecks fresh dual idle probes, scene/PID/save/target and effect-authority independently; this CLI never grants or executes that permit",
+    "If P08 local game effect is blocked, continue available independent engineering work; do not claim the entire Sixth Gear group blocked",
+    "Unavailable host requires evidence; absent host proof is REOBSERVE_HOST or INVESTIGATE_NEXT_GATE, not a legitimate general terminal",
+    "Nonempty accepted completion evidence is required to close the parent; BI-002 hunger live certification needs its own independent 5+5 trial, rollback and patch receipt",
+    "All decisions are single-snapshot pure analysis; no daemon, timer polling, mouse/keyboard, game process control, saves, telemetry, host settings or filesystem writes"
+  ],
+  "proof_ceiling": "OFFLINE_CLASSIFICATION_ONLY; no agent stop-hook installation, host execution, game effect, gameplay certification or merge proof"
+}
