@@ -139,8 +139,9 @@ class FertilizerSourcingTests(unittest.TestCase):
                 except EcoResourceCycleError:
                     continue
                 self.assertEqual(out["gate"], "FERTILIZER_REOBSERVE")
-        with self.assertRaises(EcoResourceCycleError):
-            plan_fertilizer_sources(fert(), capture_ref=REF, now=enormous)
+        out = plan_fertilizer_sources(fert(), capture_ref=REF, now=enormous)
+        self.assertEqual(out["gate"], "FERTILIZER_REOBSERVE")
+        self.assertFalse(out["next_actions"])
 
     def test_sourcing_rejects_a_different_sim_or_false_parent_deficit(self):
         workflow = {
