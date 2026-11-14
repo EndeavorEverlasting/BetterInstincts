@@ -226,6 +226,135 @@ def observe_hover(
         lock_path.unlink(missing_ok=True)
 
 
+def open_control_discovery(
+    session_id: str, *, household_ref: str, goal_id: str,
+    game_patch: str, fallback_reason: str, explicit_opt_in: bool = False,
+) -> dict:
+    """Opt-in semantic journal beside the EXISTING active listener session.
+
+    No screen input, automatic activation, profile scanning or raw event logging.
+    """
+    from betterinstincts.control_discovery import (
+        ControlDiscoveryError, new_session,
+    )
+
+    if explicit_opt_in is not True:
+        raise HostListenerError("EXPLICIT_AGENT_DISCOVERY_OPT_IN_REQUIRED")
+    if status(session_id)["state"] != "ACTIVE":
+        raise HostListenerError("CONTROL_DISCOVERY_LISTENER_NOT_ACTIVE")
+    state_path = _session_dir(session_id) / "control-discovery.json"
+    if state_path.exists() or state_path.is_symlink():
+        raise HostListenerError("CONTROL_DISCOVERY_ALREADY_EXISTS")
+    try:
+        ledger = new_session(
+            session_id=session_id, household_ref=household_ref,
+            goal_id=goal_id, game_patch=game_patch,
+            fallback_reason=fallback_reason,
+            listener_active=True, explicit_opt_in=True,
+        )
+    except ControlDiscoveryError as exc:
+        raise HostListenerError(str(exc)) from exc
+    # One writer, no overwriting existing journal even after a process restart.
+    return _write_control_discovery(session_id, ledger, create_only=True)
+
+
+def _write_control_discovery(session_id: str, ledger: dict, *,
+                             create_only: bool = False,
+                             expected_seq: int | None = None) -> dict:
+    """Atomic, bounded, per-session journal update; never store raw UI data."""
+    import os
+    import tempfile
+
+    path = _session_dir(session_id)
+    target = path / "control-discovery.json"
+    lock = path / ".control-discovery-writer.lock"
+    if target.is_symlink() or lock.is_symlink():
+        raise HostListenerError("CONTROL_DISCOVERY_SYMLINK_DENIED")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        fd = os.open(lock, flags, 0o600)
+    except FileExistsError as exc:
+        raise HostListenerError("CONTROL_DISCOVERY_WRITER_BUSY") from exc
+    except OSError as exc:
+        raise HostListenerError("CONTROL_DISCOVERY_LOCK_FAILED") from exc
+    temp_path = None
+    try:
+        os.close(fd)
+        if create_only and target.exists():
+            raise HostListenerError("CONTROL_DISCOVERY_ALREADY_EXISTS")
+        if expected_seq is not None:
+            if target.is_symlink() or not target.is_file():
+                raise HostListenerError("CONTROL_DISCOVERY_JOURNAL_UNAVAILABLE")
+            try:
+                current = json.loads(target.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as exc:
+                raise HostListenerError("CONTROL_DISCOVERY_JOURNAL_INVALID") from exc
+            if current.get("next_seq") != expected_seq:
+                raise HostListenerError("CONTROL_DISCOVERY_STALE_WRITER")
+        raw = json.dumps(ledger, indent=2, sort_keys=True) + "\n"
+        if len(raw.encode("utf-8")) > 64_000:
+            raise HostListenerError("CONTROL_DISCOVERY_BUDGET_EXCEEDED")
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8",
+                                         dir=path, prefix=".control-",
+                                         suffix=".tmp", delete=False) as tmp:
+            temp_path = Path(tmp.name)
+            tmp.write(raw)
+        os.replace(temp_path, target)
+        temp_path = None
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+        lock.unlink(missing_ok=True)
+    return {
+        "schema": "betterinstincts.control-discovery-storage/v1",
+        "session_id": session_id, "event_count": len(ledger["events"]),
+        "relative_path": "dist/host-listener/" + session_id + "/control-discovery.json",
+        "execute_allowed": False,
+    }
+
+
+def record_control_discovery(
+    session_id: str, event: Mapping, *, explicit_opt_in: bool = False,
+) -> dict:
+    """Persist exactly one sanitized semantic event from an adopted adapter."""
+    from betterinstincts.control_discovery import (
+        ControlDiscoveryError, ingest, compact_handoff,
+    )
+
+    if explicit_opt_in is not True:
+        raise HostListenerError("EXPLICIT_AGENT_DISCOVERY_OPT_IN_REQUIRED")
+    if status(session_id)["state"] != "ACTIVE":
+        raise HostListenerError("CONTROL_DISCOVERY_LISTENER_NOT_ACTIVE")
+    path = _session_dir(session_id) / "control-discovery.json"
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > 64_000:
+        raise HostListenerError("CONTROL_DISCOVERY_JOURNAL_UNAVAILABLE")
+    # The per-session event seq plus exclusive journal writer guarantees only
+    # one accepted ordered update; concurrent writers must coordinate externally.
+    try:
+        ledger = json.loads(path.read_text(encoding="utf-8"))
+        updated = ingest(ledger, event)
+    except (ControlDiscoveryError, ValueError) as exc:
+        raise HostListenerError("CONTROL_DISCOVERY_INVALID:" + str(exc)) from exc
+    receipt = _write_control_discovery(session_id, updated,
+                                       expected_seq=ledger["next_seq"])
+    receipt["handoff"] = compact_handoff(updated)
+    return receipt
+
+
+def read_control_discovery(session_id: str) -> dict:
+    """A compact carry-forward for new agents; never return raw desktop data."""
+    from betterinstincts.control_discovery import compact_handoff
+    path = _session_dir(session_id) / "control-discovery.json"
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > 64_000:
+        raise HostListenerError("CONTROL_DISCOVERY_JOURNAL_UNAVAILABLE")
+    try:
+        return compact_handoff(json.loads(path.read_text(encoding="utf-8")))
+    except (ValueError, KeyError, TypeError) as exc:
+        raise HostListenerError("CONTROL_DISCOVERY_JOURNAL_INVALID") from exc
+
+
 def observe_object_action(
     session_id: str, supplied_event: Mapping, *, explicit_opt_in: bool = False,
 ) -> dict:
