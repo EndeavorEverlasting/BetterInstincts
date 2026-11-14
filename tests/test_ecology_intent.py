@@ -80,6 +80,7 @@ def outcome(before, after, step, before_count, after_count, **extra):
 
 def ack(state, before, status="QUEUED", **changes):
     receipt = {
+        "schema": "betterinstincts.ecology-native-queue-receipt/v1",
         "game_build": BUILD, "household_ref": state["household_ref"],
         "sim_ref": state["sim_ref"], "lot_ref": state["lot_ref"],
         "step": state["awaiting"],
@@ -127,6 +128,7 @@ class EcologyIntentTests(unittest.TestCase):
             {"queue_capture_ref": first["capture_ref"]},
             {"native_queue_ref": ""},
             {"proposal_capture_ref": "capture:stale"},
+            {"schema": "another.native.event/v1"},
         ):
             with self.subTest(attrs=attrs):
                 out = ack(state, first, **attrs)
