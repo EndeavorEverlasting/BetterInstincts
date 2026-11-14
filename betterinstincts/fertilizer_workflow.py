@@ -75,6 +75,18 @@ def _backyard_transfer_candidate(
     bags = scan.get("bags")
     if not isinstance(bags, list) or len(bags) > MAX_BACKYARD_BAGS:
         raise FertilizerWorkflowError("BACKYARD_SCAN_BAGS_INVALID")
+    # When the caller has already compiled the canonical semantic spatial
+    # map, cross-check discovered bag IDs there instead of trusting a
+    # second label-only object list.
+    world_map = scan.get("spatial_map")
+    if world_map is not None:
+        if (not isinstance(world_map, Mapping)
+                or world_map.get("schema") != "betterinstincts.semantic-spatial-map-doc/v1"
+                or world_map.get("lot_id") != scan["lot_ref"]
+                or world_map.get("game_build") != scan["game_build"]
+                or world_map.get("execute_allowed") is not False
+                or not isinstance(world_map.get("objects"), Mapping)):
+            raise FertilizerWorkflowError("BACKYARD_SPATIAL_MAP_SCOPE_INVALID")
     # Validate all current survey identities before choosing any bag.
     ready = []
     seen = set()
@@ -96,6 +108,16 @@ def _backyard_transfer_candidate(
         quantity = bag.get("quantity")
         if type(quantity) is not int or not 0 <= quantity <= 999:
             raise FertilizerWorkflowError("BACKYARD_BAG_STOCK_INVALID")
+        if world_map is not None:
+            mapped = world_map["objects"].get(ref)
+            if (not isinstance(mapped, Mapping)
+                    or mapped.get("category") != "FERTILIZER_BAG"
+                    or mapped.get("floor_id") != "OUTSIDE"
+                    or mapped.get("center") is None
+                    or mapped.get("pose_source") not in BACKYARD_IDENTITY_SOURCES
+                    or not isinstance(mapped.get("pose_refs"), list)
+                    or not mapped["pose_refs"]):
+                continue
         if (bag.get("item_kind") != "FERTILIZER_BAG"
                 or bag.get("fertilizer_eligible") is not True
                 or not _ref(bag.get("eligibility_evidence_ref"))
