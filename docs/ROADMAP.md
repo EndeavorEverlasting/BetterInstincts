@@ -262,3 +262,8 @@ Follow-on `/the-closers` of merged #255 verified current main source/CI and hard
 ## 2026-11-14 — BI-002 host reached, hunger measurement pending
 
 The exact-build Windows host was observed in paused Live Mode. Run `bi002-20261114` remains incomplete. Mod isolation is verified after restart, and a repeatable scenario with calibrated measurements is still pending. BI-002 remains the active gate. See `plans/active/BI-002.md` for the host observation and next trial requirements.
+
+
+## Reuse past experience before repeating a live experiment (2026-11-14)
+
+Prior vanilla/modded game observations are not forgotten on an agent/session restart. `docs/EXPERIENCE_RECALL.md` and `betterinstincts/experience_recall.py` implement a narrow semantic reuse index: store only a new distinct outcome, skip writes and research on an exact remembered hit, preserve provenance, hold contradictions, and independently evaluate the **current** dialog. Import existing locally verified Video Gaming Yes/No evidence without launching another Sims experiment. Do not close BI-002 hunger or claim native automatic gameplay from this offline memory feature.
