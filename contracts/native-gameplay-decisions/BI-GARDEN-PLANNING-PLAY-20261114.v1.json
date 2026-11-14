@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "route": "POLICY_ONLY",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171,
+      "reason": "Capture-bound garden planning and time-budget proposals without EA runtime calls",
+      "path": "betterinstincts/gardening_service.py"
+    }
+  ],
+  "schema": "betterinstincts.native-gameplay-decision/v1"
+}

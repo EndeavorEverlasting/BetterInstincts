@@ -1,0 +1,62 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-GARDEN-PLANNING-PLAY-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Bound existing per-Sim fertilizer continuation to explicit planning/play and available needs/attendance time.",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "SIM",
+    "PLAYER_INTENT",
+    "OBSERVATION",
+    "AFFORDANCE",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "RESOURCE_CLAIM"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/gardening_service.py",
+    "betterinstincts/fertilizer_workflow.py",
+    "betterinstincts/task_continuity.py",
+    "betterinstincts/host_stack.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "HOST_POLICY_ONLY",
+  "player_save_control_impact": "Pure bounded evaluation; no game files, dispatch, cancellation or save changes.",
+  "expected_outcome": "Planning records an exact proposal; Play re-evaluates the next step under current evidence and time limits.",
+  "negative_tests": [
+    "Stale need window",
+    "Insufficient time",
+    "Duplicate pending pickup"
+  ],
+  "rollback_path": "Revert isolated source commit.",
+  "unresolved_unknowns": [
+    "Native event bridge",
+    "Timing calibration and GP training data"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-GARDEN-PLANNING-PLAY-20261114.v1.json",
+    "betterinstincts/gardening_service.py",
+    "tests/test_fertilizer_workflow.py",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "contracts/native-gameplay-decisions/BI-GARDEN-PLANNING-PLAY-20261114.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator confirmed the loaded disposable session; independent live authority gates still apply.",
+  "source_refs": [
+    "https://github.com/EndeavorEverlasting/BetterInstincts/issues/171"
+  ],
+  "recorded_date": "2026-11-14"
+}

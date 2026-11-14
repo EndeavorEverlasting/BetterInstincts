@@ -63,6 +63,40 @@ def run_garden(ctx, *, needs=None, **kwargs):
 
 
 class FertilizerWorkflowTests(unittest.TestCase):
+    def test_ecology_replans_from_ground_to_pocket_then_verified_outcome(self):
+        window = dict(mode="PLANNING", mode_verified=True, capture_ref=CAPTURE,
+                      sim_ref="sim:garden", plant_ref="plant:a", sim_minutes_until_need_floor=60,
+                      pickup_upper_sim_minutes=15, fertilize_upper_sim_minutes=13)
+        bag = supply(location="GROUND", transferable=True)
+        ground = workflow(transfer_authorized=True, supplies=[bag])
+        actions = [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:a"),
+                   act("FERTILIZE", "plant:a")]
+        ctx = garden_context(ground, actions, ecology_window=window)
+        planning = run_garden(ctx)
+        self.assertEqual(planning["gate"], "GARDEN_ECOLOGY_PLANNED")
+        self.assertEqual(planning["planned_step"]["action_id"], actions[0]["action_id"])
+        self.assertEqual(planning["next_actions"], [])
+        self.assertEqual(planning["ecology_window"]["required_sim_minutes"], 28)
+
+        window["mode"] = "PLAY"
+        window["sim_minutes_until_need_floor"] = 28
+        self.assertEqual(run_garden(ctx)["gate"], "GARDEN_ECOLOGY_DEFER")
+        window["sim_minutes_until_need_floor"] = 60
+        ctx["minutes_until_obligation"] = 57
+        self.assertEqual(run_garden(ctx)["gate"], "GARDEN_ECOLOGY_DEFER")
+        ctx["minutes_until_obligation"] = 120
+        self.assertEqual(run_garden(ctx)["next_actions"][0]["action_id"], actions[0]["action_id"])
+
+        ctx["fertilizer_workflow"] = workflow()
+        held = run_garden(ctx)
+        self.assertEqual(held["next_actions"][0]["action_id"], "FERTILIZE")
+        self.assertEqual(held["ecology_window"]["required_sim_minutes"], 13)
+        window["sim_ref"] = "sim:other"
+        self.assertEqual(run_garden(ctx)["gate"], "GARDEN_ECOLOGY_REOBSERVE")
+        window["sim_ref"] = "sim:garden"
+        ctx["fertilizer_workflow"] = workflow(plants=[plant(state="VERIFIED_DONE")])
+        self.assertEqual(run_garden(ctx)["goal_state"], "VERIFIED_COMPLETE")
+
     def test_pocket_stock_selects_exact_plant_not_ground(self):
         w = workflow()
         original = copy.deepcopy(w)
