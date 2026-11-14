@@ -1,0 +1,86 @@
+{
+  "schema": "betterinstincts.activity-chain/v1",
+  "id": "PS-0241-universal-activity-chain",
+  "status": "OFFLINE_POLICY_NOT_GAME_CERTIFIED",
+  "owner": "betterinstincts/activity_chain.py",
+  "parent": "contracts/ontology.v1.json#concepts.COORDINATION_CYCLE",
+  "purpose": "Open-domain evidence-bound per-Sim activity DAG; staged planning/play, safe mobility alternatives, budgets, interruption reconciliation and optional bounded uncertainty estimates",
+  "inputs": {
+    "actor": [
+      "sim_ref",
+      "household_ref",
+      "location"
+    ],
+    "capture": [
+      "capture_ref",
+      "scene_verified",
+      "queue_verified",
+      "player_directed",
+      "needs_safe"
+    ],
+    "limits": [
+      "minutes_until_work",
+      "minutes_until_need_floor",
+      "reserve_minutes",
+      "available_funds"
+    ],
+    "steps": [
+      "id",
+      "domain",
+      "kind",
+      "location",
+      "evidence_ref",
+      "after",
+      "upper_minutes",
+      "cost",
+      "deadline_minutes",
+      "value",
+      "resources"
+    ],
+    "routing": [
+      "from",
+      "to",
+      "method",
+      "capture_ref",
+      "admitted",
+      "evidence_ref",
+      "upper_minutes"
+    ],
+    "continuity": [
+      "completed",
+      "inflight_step",
+      "blocked_resources"
+    ]
+  },
+  "modes": {
+    "PLANNING": "Compile deterministic multi-step candidate queue while gameplay remains paused; no dispatch",
+    "PLAY": "Reassess current evidence and require separate independent effect permit before each step; source-only policy never dispatches"
+  },
+  "mechanism": {
+    "graph": "Directed acyclic prerequisites with open-ended domain/activity classifications",
+    "path": "Observed/admitted travel edge; teleport only when independently observed unlocked for actor, otherwise walk when eligible",
+    "time": "Conservative upper-minute bounds; sum plus reserve must fit both work obligation and needs floor",
+    "money": "Cumulative acquisition costs fit verified funds; spending separately authorized and verified",
+    "recovery": "Completed steps require outcome evidence; in-flight blocks replay until observed reconciliation",
+    "learning": "Bounded homogeneous-cohort Gaussian process, RBF, Matern 3/2 or periodic kernel, at most 24 observations, advisory only"
+  },
+  "existing_owners": {
+    "domain_sensing": "betterinstincts/domain_cascade.py",
+    "goal_selection": "betterinstincts/semantic_advisory.py",
+    "task_state": "betterinstincts/task_continuity.py",
+    "screen_queue": "betterinstincts/workflow_interop.py",
+    "purchases": "betterinstincts/purchase_dialog.py",
+    "material": "betterinstincts/eco_resource_cycle.py",
+    "navigation_costs": "betterinstincts/traversal_cost_learning.py"
+  },
+  "invariants": [
+    "Player input outranks plans; no effect permit, screen automation, save editing, auto-listener or purchase side effect",
+    "Open domain names and explicit source-backed prerequisites; never invent native abilities or game facts",
+    "Unknown or stale evidence fails closed; unknown path remains deferred",
+    "Never duplicate an unresolved in-flight effect; preserve goal intent",
+    "Native execution requires separate exact-EA-build evidence and game verification under issue #171",
+    "BI-002 independent hunger gate remains open"
+  ],
+  "proof_ceiling": "OFFLINE_SOURCE_AND_FOCUSED_UNIT_TESTS",
+  "required_live_successor": "Bind evidence-producing domain adapters and native game-side executor; verify installation, player interrupts, exact-patch rollback and real-world timed chains"
+}
