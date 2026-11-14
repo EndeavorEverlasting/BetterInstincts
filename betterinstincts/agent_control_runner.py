@@ -105,6 +105,24 @@ class AgentControlRunner:
             "proof_ceiling": "PASSIVE_OBSERVATION_PENDING_NOT_GAME_EFFECT",
         }
 
+    def record_semantic_discovery(
+        self, *, work_id: str, discovery_kind: str,
+        fact_ref: str, source_ref: str, evidence_ref: str,
+    ) -> dict:
+        """Collect one sanitized insight without expanding model chat context.
+
+        Adopted sensors supply actual calibrated evidence. The existing
+        listener writes an atomic record beside its prepared action, including
+        during WAITING_FOR_USER; never log raw keys, external apps or images.
+        """
+        if status(self.session_id)["state"] != "ACTIVE":
+            raise AgentControlRunnerError("ACTIVE_LISTENER_REQUIRED")
+        return self._write(
+            "DISCOVERY", work_id,
+            discovery_kind=discovery_kind,
+            fact_ref=fact_ref, source_ref=source_ref, evidence_ref=evidence_ref,
+        )
+
     async def pulse(self) -> dict:
         """One opted-in activity attempt; waiting never closes computer use."""
         if self.current_work_id is None:
