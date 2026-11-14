@@ -94,5 +94,33 @@
     "journal_owner": "betterinstincts/control_discovery.py",
     "listener_owner": "betterinstincts/host_listener.py",
     "source": "contracts/control-discovery.v1.json"
+  },
+  "parent_turn_boundary": {
+    "owner": "betterinstincts/agent_context.py#assess_agent_turn_boundary",
+    "runner_port": "betterinstincts/agent_control_runner.py#AgentControlRunner.assess_parent_turn_boundary",
+    "schema": "betterinstincts.agent-turn-boundary/v1",
+    "scope": "ONE_READ_ONLY_SNAPSHOT_NOT_AUTOMATIC_CODEX_STOP_HOOK",
+    "input": "Existing validated parent handoff, explicit active listener and pending effect state, observed player presence, observed game RUNNING/PAUSED/NOT_VISIBLE/UNKNOWN, host access/proof, optional safe offline work and source-claimed acceptance refs.",
+    "nonterminal": [
+      "GAME_PAUSED_PARENT_OPEN",
+      "PENDING_EFFECT_KEEP_LISTENER",
+      "RECONCILE_PENDING_EFFECT_OUTCOME",
+      "CONTINUE_OFFLINE_WHILE_PLAYER_ACTIVE",
+      "CONTINUE_OFFLINE",
+      "VERIFY_CLAIMED_PARENT_ACCEPTANCE",
+      "OBSERVE_ACTIVE_GAME_GOAL",
+      "INVESTIGATE_NEXT_GATE",
+      "RECOVER_EXPLICIT_LISTENER",
+      "REOBSERVE_HOST_ACCESS"
+    ],
+    "quiescence": [
+      "YIELD_EFFECTS_KEEP_LISTENER",
+      "BLOCKED_EXACT_LOCAL_GAME_ACCESS"
+    ],
+    "claims": "No user-supplied acceptance_ref, 13-minute activity summary, queue completion, passive listener completion, or PAUSED game proves parent closure. Independently check every parent acceptance gate before real terminal state.",
+    "independent_block": "Actual observed local game host unavailability proof required for exact blocker; absent evidence means reobserve. If independent read-only work is ready, do it rather than stopping.",
+    "player_first": "Any ACTIVE/UNKNOWN player presence blocks effects while keeping existing active listener and pending work; reviewed read-only work may continue.",
+    "effects": "No screen, OS, EA native, saving, queue mutation, background poll or new dispatcher; prior control queue still exclusively admits one game effect.",
+    "proof_ceiling": "SOURCE_ONLY_TURN_ADVISORY_NOT_LOCAL_HOOK_OR_LIVE_GAME"
   }
 }
