@@ -63,6 +63,7 @@ def _validate_live_evidence(observation: dict, *, process_id: int) -> None:
     if (
         observation.get("observed_process_id") != process_id
         or observation.get("sim_selected") is not True
+        or observation.get("recipient_identity_verified") is not True
         or observation.get("player_queue_clear") is not True
         or observation.get("save_authorized") is not True
         or observation.get("game_build_confirmed") is not True
@@ -179,6 +180,7 @@ def execute_step(
         "state": "INPUT_DISPATCHED",
         "step": stage,
         "sim_ref": plan["sim_ref"],
+        "recipient_sim_id": plan["recipient_sim_id"],
         "topic_id": plan["topic_id"],
         "offer_kind": plan["offer_kind"],
         "capture_ref": plan["capture_ref"],

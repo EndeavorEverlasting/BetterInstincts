@@ -10,8 +10,8 @@ import json
 from collections.abc import Mapping
 from pathlib import Path
 
-from betterinstincts.decision_horizon import (
-    DecisionHorizonError, allocate_continuous_time, optimize_activity_plan,
+from betterinstincts.preference_recipient import (
+    RecipientEvidenceError, compare_recipient_continuations,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,32 +45,6 @@ def load_catalog(path: Path = CATALOG) -> dict:
 def _safe_id(value: object) -> bool:
     return (type(value) is str and 0 < len(value) <= 128
             and all(ch.isalnum() or ch in "._:-" for ch in value))
-
-
-def _compare_continuations(offer: Mapping, model: Mapping) -> dict:
-    """Compare matched, evidence-bound activity forecasts for a modal choice."""
-    snapshot = model["snapshot"]
-    if (snapshot["sim_ref"] != offer["sim_ref"]
-            or snapshot["capture_ref"] != offer["capture_ref"]):
-        raise PreferencePromptError("CONTINUATION_ACTOR_OR_CAPTURE_MISMATCH")
-    capture = offer["capture_ref"]
-    routes = model.get("routes", [])
-    plans = {
-        choice: optimize_activity_plan(snapshot, model[choice], routes, capture_ref=capture)
-        for choice in ("YES", "NO")
-    }
-    valid_gates = {"FORECAST_STAGED_NOT_DISPATCHABLE", "NO_POSITIVE_FEASIBLE_PLAN"}
-    if any(plan["gate"] not in valid_gates for plan in plans.values()):
-        raise PreferencePromptError("CONTINUATION_NEEDS_REVALIDATION")
-    allocation = allocate_continuous_time(plans["NO"]["available_minutes"], model["activities"])
-    time_price = allocation["shadow_price_lambda"]
-    scores = {
-        choice: round(plan["expected_net_utility"] - time_price * plan["projected_minutes"], 6)
-        for choice, plan in plans.items()
-    }
-    return {"capture_ref": capture, "sim_ref": offer["sim_ref"], "scores": scores,
-            "time_shadow_price": time_price, "resume_gate": "REOBSERVE_AFTER_DIALOG"}
-
 
 
 def evaluate_offer(
@@ -125,25 +99,27 @@ def evaluate_offer(
     goals = offer.get("goal_tags", [])
     if not isinstance(goals, (list, tuple)) or any(not _safe_id(v) for v in goals):
         return {**result, "reason": "GOALS_UNVERIFIED"}
-    policy = topic[kind]
-    if policy == "GOAL_ONLY":
-        positive_goals = set(topic.get(kind + "_goals", ()))
-        positive = bool(positive_goals.intersection(goals))
-        reason = "CATALOGUED_GOAL_ALIGNED" if positive else "NO_MATCHING_SIM_GOAL"
-    else:
-        positive = policy == "POSITIVE"
-        reason = "CATALOGUED_HEURISTIC"
-    continuation = None
-    if "continuation_model" in offer:
-        try:
-            continuation = _compare_continuations(offer, offer["continuation_model"])
-        except PreferencePromptError as exc:
-            return {**result, "reason": str(exc)}
-        except (DecisionHorizonError, KeyError, TypeError):
-            return {**result, "reason": "CONTINUATION_MODEL_INVALID"}
-        scores = continuation["scores"]
-        positive = positive and scores["YES"] > scores["NO"]
-        reason = "PREFERENCE_CONTINUATION_ADVANTAGE" if positive else "NO_PREFERENCE_CONTINUATION_ADVANTAGE"
+    # Catalog entries classify prompt topics; they are not benefit evidence.
+    # A recipient may be different from the selected household member.
+    if (not _safe_id(offer.get("recipient_sim_id"))
+            or "recipient_snapshot" not in offer
+            or "continuation_model" not in offer):
+        return {**result, "reason": "LIVE_RECIPIENT_SNAPSHOT_REQUIRED"}
+    try:
+        continuation = compare_recipient_continuations(
+            offer, offer["continuation_model"]
+        )
+    except RecipientEvidenceError as exc:
+        return {**result, "reason": str(exc)}
+    except (ValueError, KeyError, TypeError):
+        return {**result, "reason": "RECIPIENT_CONTINUATION_INVALID"}
+    scores = continuation["scores"]
+    advantage = scores["YES"] - scores["NO"]
+    # Avoid an unobserved/indifferent answer and false certainty from rounding.
+    if abs(advantage) <= 0.000001:
+        return {**result, "reason": "PREFERENCE_EFFECT_INDIFFERENT"}
+    positive = advantage > 0
+    reason = "RECIPIENT_YES_ADVANTAGE" if positive else "RECIPIENT_NO_ADVANTAGE"
     decision = "ACCEPT" if positive else "DECLINE"
     return {
         **result,
@@ -153,6 +129,8 @@ def evaluate_offer(
         "topic_id": offer["topic_id"],
         "offer_kind": kind,
         "sim_ref": offer["sim_ref"],
+        "recipient_sim_id": continuation["recipient_sim_id"],
+        "recipient_state_revision": continuation["state_revision"],
         "capture_ref": offer["capture_ref"],
         "requires_independent_stage_reobservation": bool(positive),
         **({"continuation": continuation} if continuation is not None else {}),
@@ -185,7 +163,8 @@ def plan_stage(
                 or offer.get("scene") != "live"
                 or offer.get("visible_buttons") != ["OK"]):
             raise PreferencePromptError("OK_DIALOG_NOT_REOBSERVED")
-        if any(offer.get(key) != prior.get(key) for key in ("sim_ref", "topic_id", "offer_kind")):
+        if any(offer.get(key) != prior.get(key) for key in
+               ("sim_ref", "recipient_sim_id", "topic_id", "offer_kind")):
             raise PreferencePromptError("OK_PROMPT_IDENTITY_CHANGED")
         if not _safe_id(offer.get("capture_ref")) or offer["capture_ref"] == prior.get("capture_ref"):
             raise PreferencePromptError("OK_REQUIRES_NEW_CAPTURE")
@@ -193,7 +172,8 @@ def plan_stage(
             raise PreferencePromptError("OK_CAPTURE_NOT_NEWER")
         # The prior YES was only possible after a positive assessment.
         return {"state": "STAGE_READY", "step": "OK", "target_role": "OK",
-                "sim_ref": offer["sim_ref"], "topic_id": offer["topic_id"],
+                "sim_ref": offer["sim_ref"], "recipient_sim_id": offer["recipient_sim_id"],
+                "topic_id": offer["topic_id"],
                 "offer_kind": offer["offer_kind"], "capture_ref": offer["capture_ref"],
                 "control_permit": None, "proof_ceiling": "PLAN_ONLY_NOT_INPUT"}
     result = evaluate_offer(offer, automation_opt_in=automation_opt_in,
@@ -202,6 +182,7 @@ def plan_stage(
     if stage not in result["steps"] or stage == "OK":
         raise PreferencePromptError("STAGE_NOT_AUTHORIZED_BY_POLICY")
     return {"state": "STAGE_READY", "step": stage, "target_role": stage,
-            "sim_ref": offer["sim_ref"], "topic_id": offer["topic_id"],
+            "sim_ref": offer["sim_ref"], "recipient_sim_id": result["recipient_sim_id"],
+            "topic_id": offer["topic_id"],
             "offer_kind": offer["offer_kind"], "capture_ref": offer["capture_ref"],
             "control_permit": None, "proof_ceiling": "PLAN_ONLY_NOT_INPUT"}

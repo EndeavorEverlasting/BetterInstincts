@@ -13,27 +13,31 @@ from scripts import preference_prompts as cli
 
 
 def observed(stage="YES", *, captured_at=None):
+    # Synthetic native-shaped test data only: never genuine game receipts.
+    from tests.test_preference_prompts import recipient_offer
     clock = int(time.time() * 1000) if captured_at is None else captured_at
-    return {
-        "dialog_class": (
-            "sim_preference_confirmation" if stage == "OK" else "sim_preference_offer"
-        ),
-        "dialog_stage": "confirmation" if stage == "OK" else "offer",
-        "scene": "live",
-        "sim_ref": "sim:1",
-        "topic_id": "gardening",
-        "offer_kind": "like",
-        "capture_ref": "capture:second" if stage == "OK" else "capture:first",
-        "visible_buttons": ["OK"] if stage == "OK" else ["YES", "NO"],
-        "captured_at_epoch_ms": clock,
+    if stage == "OK":
+        data = {
+            "dialog_class": "sim_preference_confirmation",
+            "dialog_stage": "confirmation", "scene": "live",
+            "sim_ref": "sim:selected-other", "recipient_sim_id": "1024001",
+            "topic_id": "video_gaming", "offer_kind": "like",
+            "capture_ref": "capture:second",
+            "visible_buttons": ["OK"], "captured_at_epoch_ms": clock,
+        }
+    else:
+        data = recipient_offer()
+        data["captured_at_epoch_ms"] = clock
+        data["recipient_snapshot"]["captured_at_epoch_ms"] = clock - 500
+    return {**data,
         "observed_process_id": 42,
         "sim_selected": True,
+        "recipient_identity_verified": True,
         "player_queue_clear": True,
         "save_authorized": True,
         "game_build_confirmed": True,
         "target_boxes": {stage: [400, 300, 480, 335]},
     }
-
 
 @contextmanager
 def admitted(*args, **kwargs):
