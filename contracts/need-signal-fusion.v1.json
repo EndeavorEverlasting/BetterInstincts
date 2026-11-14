@@ -1,0 +1,33 @@
+{
+  "schema": "betterinstincts.need-signal-fusion-policy/v1",
+  "owner": "betterinstincts/need_signal_fusion.py",
+  "existing_owners": [
+    "contracts/occult-needs.v1.json",
+    "betterinstincts/moodlets.py",
+    "betterinstincts/host_stack.py",
+    "betterinstincts/need_load_balance.py"
+  ],
+  "source_roles": {
+    "EA_NATIVE": "Read-only instantaneous in-game motive/buff sensor, exact patch and actual source hook inspection required. Static tuning or save file is NOT instantaneous runtime measurement.",
+    "HUD_CV": "Independently calibrated HUD semantic detection: arrow count 1..3 ordinal, direction and optional calibrated level; NEVER 3x numeric multiplier."
+  },
+  "source_health": {
+    "max_age_seconds": 60,
+    "max_cross_source_skew_seconds": 12,
+    "post_reset_distinct_probes_required": 2,
+    "read_only_health_check": true,
+    "restart_sensor_process": "EXTERNAL_HOST_ADAPTER_ONLY_WITH_AUTHORIZATION",
+    "background_daemon": "NOT_INSTALLED",
+    "when_both_fail": "REOBSERVE_NO_GAME_EFFECT"
+  },
+  "profiles": "Reuse exact CATREADY catalog profile motive keys (Servo: fun social durability charge; human: six needs), no fixed six for nonhuman",
+  "native_rate": "Only version-pinned read-only EA-native hook with separate proof; number is normalized motive units per Sim minute and unavailable while paused",
+  "moodlets": "Reuse betterinstincts.moodlets.evaluate_moodlets, no screenshot-derived unverified labels",
+  "player_first": true,
+  "never_auto_resume_pause": true,
+  "no_input": true,
+  "no_queue_cancel": true,
+  "no_os_repair": true,
+  "no_user_save_access": true,
+  "proof_ceiling": "OFFLINE_FUSED_OBSERVATIONS_NOT_INSTALLED_RUNTIME_SENSORS"
+}
