@@ -133,6 +133,7 @@ from betterinstincts.lot_boundary import (
 from betterinstincts.scenes import stamp_host_capture_game_version
 from betterinstincts.scene_ui_semantics import assess_live_hud, SceneUISemanticsError
 from betterinstincts.scenery_memory import record_scenery, SceneryMemoryError
+from betterinstincts.agent_context import AgentContextError, compile_agent_context
 
 
 class HostStackError(ValueError):
@@ -222,6 +223,7 @@ def evaluate_turn(
     eco_fabrication: Optional[Mapping[str, object]] = None,
     household_upkeep: Optional[Mapping[str, object]] = None,
     household_economy: Optional[Mapping[str, object]] = None,
+    agent_context_request: Optional[Mapping[str, object]] = None,
     discovery_hud: Optional[Mapping[str, object]] = None,
     autonomy_observation: Optional[Mapping[str, object]] = None,
     behavior_model: Optional[Mapping[str, object]] = None,
@@ -2190,6 +2192,31 @@ def evaluate_turn(
                           "CLAIM_NUMERIC_3X_FROM_CHEVRONS"],
         }
 
+    # Context is an optional read-only projection AFTER the existing gameplay
+    # policy decision. It cannot change next_gate, fallback or effect authority.
+    context_report = None
+    if agent_context_request is not None:
+        try:
+            if not isinstance(agent_context_request, Mapping):
+                raise AgentContextError("CONTEXT_REQUEST_INVALID")
+            context_report = compile_agent_context(
+                agent_context_request["handoff"],
+                agent_context_request.get("records", []),
+                intent=agent_context_request["intent"],
+                query_key=agent_context_request["query_key"],
+                capture_ref=capture_ref,
+                now=agent_context_request["now"],
+                budget_chars=agent_context_request.get("budget_chars", 4096),
+            )
+        except (AgentContextError, TypeError, KeyError) as exc:
+            context_report = {
+                "status": "CONTEXT_REOBSERVE_REQUIRED",
+                "reason": str(exc),
+                "execute_allowed": False,
+                "control_permit": None,
+                "proof_ceiling": "OFFLINE_CONTEXT_DENIED_NOT_GAME_EFFECT",
+            }
+
     return {
         "state": "HOST_TURN_EVALUATED",
         "capture_ref": capture_ref,
@@ -2231,6 +2258,7 @@ def evaluate_turn(
         "eco_fabrication": eco_fabrication_report,
         "household_upkeep": household_upkeep_report,
         "household_economy": household_economy_report,
+        "agent_context": context_report,
         "discovery_hud": discovery_report,
         "autonomy_moderation": autonomy_report,
         "behavior_valence": valence_report,
