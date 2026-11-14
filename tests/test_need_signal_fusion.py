@@ -415,7 +415,16 @@ class NeedSignalFusionTests(unittest.TestCase):
         partial = eval_need(snapshot(feeds=[native()],moodlet_observation=positive))
         self.assertEqual(partial["moodlet_guidance"],
                          "POSITIVE_MOOD_NEED_SAFETY_UNVERIFIED")
-        low = eval_need(snapshot(feeds=[hud()],moodlet_observation=positive))
+        # With three downward arrows, the falling need outranks the mood.
+        rapid = eval_need(snapshot(feeds=[hud()],moodlet_observation=positive))
+        self.assertEqual(rapid["moodlet_guidance"],
+                         "DECLINING_NEED_OUTRANKS_POSITIVE_MOOD")
+        # Even without a rapid trend, low Charge still denies "needs safe".
+        low_rows={m:{"level":.85,"direction":"FLAT"}
+                  for m in ("fun","social","durability","charge")}
+        low_rows["charge"]["level"] = .42
+        low = eval_need(snapshot(feeds=[hud(needs=low_rows)],
+                                 moodlet_observation=positive))
         self.assertEqual(low["moodlet_guidance"],
                          "POSITIVE_MOOD_NEED_SAFETY_UNVERIFIED")
         green_rows={m:{"level":.85,"direction":"FLAT"}
