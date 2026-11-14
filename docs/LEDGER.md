@@ -2072,3 +2072,9 @@ Recovered MoonWake canonical `/sixth-gear` **P141 → P95 → P82 → P08 → P0
 **P124:** Preserve `activity_chain`, `decision_horizon`, the existing household/need-rate/queue owners and exact runtime authority; one cohesive code owner with documented conservative need trajectory and denial-on-cap behavior. No broad refactor or behavior-for-appearance churn.
 
 **P04:** Independent source validations belong to CI_OR_REMOTE_RUNNER; source-proven EA game/runtime and protected disposable save are LOCAL_AGENT_RUNTIME, serial with shared game screen and native effect author. The local MoonWake walker and actual agent dispatch were not launched from GitHub/this chat. Durable local handoff: `docs/handoff/BI-PS0245-CLOSERS-LOCAL-NATIVE-GATE-20261114.md`. Preserve proof dimensions for source, tests, PR, mainline, installed mod and live game; verify exact updated branch/CI before treating this closer as merged. BI-002 remains ACTIVE.
+
+## 2026-11-14 — Exact-build BI-002 host preflight
+
+P08 observed the operator-authorized disposable session paused in Live Mode on Windows `1.121.361.1020`. The active profile had script mods enabled and contained the BetterInstincts Ecology script. The session was therefore ineligible for vanilla timing. Local recorder `bi002-20261114` evaluated `INCOMPLETE` with 0 vanilla, 0 modified and 0 rollback observations. An older recorder includes a partial attempt whose evidence label says eating did not begin. Its rows were preserved and excluded from the new run.
+
+BI-002 remains active. Establish a repeatable mod-disabled scenario with measured time to first bite, normalized hunger, simulation lag, queue behavior and exceptions. The modified phase still needs a verified Sims 4 Studio build and exact vanilla tuning export, then an authored reversible package, matched trials, rollback and independent review. No package was built or installed. The consultation is `BI-HUNGER-LIVE-CERT-20261114`.
