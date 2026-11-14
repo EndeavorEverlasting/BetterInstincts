@@ -542,8 +542,9 @@ def evaluate_career_event_turn(
 def reconcile_career_event_turn(
     decision: Mapping[str, object] | None,
     response: Mapping[str, object] | None,
-    *, activity: Mapping[str, object] | None,
+    *, effect: Mapping[str, object] | None,
+    activity: Mapping[str, object] | None,
 ) -> dict:
-    """Career-native response and resumed activity require separate receipts."""
+    """Career-native response, effect and resumed activity need independent receipts."""
     from betterinstincts.career_decisions import reconcile_career_event
-    return reconcile_career_event(decision, response, activity=activity)
+    return reconcile_career_event(decision, response, effect=effect, activity=activity)
