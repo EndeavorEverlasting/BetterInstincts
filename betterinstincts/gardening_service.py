@@ -138,6 +138,54 @@ def evaluate_gardening_turn(
 
     def finish(gate: str, action: str, *, inspections: tuple[str, ...] = ()) -> dict:
         result.update(gate=gate, action=action, inspection_targets=list(inspections))
+        if "ecology_window" not in context or gate != "GARDEN_ACTION_READY":
+            return result
+        window = context["ecology_window"]
+        workflow = context.get("fertilizer_workflow")
+        if not isinstance(window, Mapping) or not isinstance(workflow, Mapping):
+            raise GardeningServiceError("GARDEN_ECOLOGY_WINDOW_INVALID")
+        mode = window.get("mode")
+        selected = result["next_actions"][0]
+        step = selected["action_id"]
+        until_need = window.get("sim_minutes_until_need_floor")
+        pickup = window.get("pickup_upper_sim_minutes")
+        fertilize = window.get("fertilize_upper_sim_minutes")
+        clock_matches = (
+            window.get("capture_ref") == capture_ref
+            and window.get("sim_ref") == workflow.get("sim_ref")
+            and window.get("mode_verified") is True
+            and _text(window.get("plant_ref"))
+            and (step != "FERTILIZE" or selected["target_ref"] == window["plant_ref"])
+            and mode in ("PLANNING", "PLAY")
+        )
+        budget_verified = (
+            _number(until_need) and until_need >= 0
+            and _number(pickup) and pickup > 0
+            and _number(fertilize) and fertilize > 0
+        )
+        if not clock_matches or not budget_verified:
+            result.update(gate="GARDEN_ECOLOGY_REOBSERVE", action="VERIFY_MODE_AND_TIME_WINDOW",
+                          next_actions=[], goal_state="PENDING")
+            return result
+        if step not in ("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "FERTILIZE"):
+            result.update(gate="GARDEN_ECOLOGY_STEP_UNAVAILABLE", action="REOBSERVE_EXACT_CHAIN",
+                          next_actions=[], goal_state="PENDING")
+            return result
+        work = context.get("minutes_until_obligation")
+        available = until_need
+        if work is not None:
+            available = min(available, work - bounds["responsibility_reserve_sim_minutes"])
+        required = fertilize + (pickup if step == "TRANSFER_FERTILIZER_TO_SIM_INVENTORY" else 0)
+        result["ecology_window"] = {
+            "mode": mode, "available_sim_minutes": max(0, available),
+            "required_sim_minutes": required,
+        }
+        if available <= required:
+            result.update(gate="GARDEN_ECOLOGY_DEFER", action="KEEP_GOAL_FOR_NEXT_SAFE_WINDOW",
+                          next_actions=[], goal_state="PENDING")
+        elif mode == "PLANNING":
+            result.update(gate="GARDEN_ECOLOGY_PLANNED", action="PREPARE_THEN_REVALIDATE_IN_PLAY",
+                          planned_step=selected, next_actions=[], goal_state="PENDING")
         return result
 
     if player_directed:
@@ -277,6 +325,17 @@ def evaluate_gardening_turn(
         result["goal_state"] = "READY_FOR_ONE_OBSERVED_INTERACTION"
         return finish("GARDEN_ACTION_READY", "GARDEN_ONE_INTERACTION_THEN_REOBSERVE")
     if "fertilizer_workflow" in context:
+        if "ecology_window" in context:
+            window = context["ecology_window"]
+            workflow = context["fertilizer_workflow"]
+            if not isinstance(window, Mapping) or not isinstance(workflow, Mapping):
+                raise GardeningServiceError("GARDEN_ECOLOGY_WINDOW_INVALID")
+            target = window.get("plant_ref")
+            plants = workflow.get("plants")
+            if not _text(target) or not isinstance(plants, list) or len(plants) != 1:
+                return finish("GARDEN_ECOLOGY_REOBSERVE", "VERIFY_SINGLE_PLANT_GOAL")
+            if not isinstance(plants[0], Mapping) or plants[0].get("target_ref") != target:
+                return finish("GARDEN_ECOLOGY_REOBSERVE", "VERIFY_SINGLE_PLANT_GOAL")
         return fertilizer_step()
     for action_id in cfg["action_order"]:
         selected = next((row for row in actions if row["action_id"] == action_id), None)

@@ -1,3 +1,9 @@
+## 2026-11-14 — Fertilizer planning and play window
+
+The existing gardening host path accepts an optional capture- and Sim-bound ecology window. Planning emits one staged step; Play evaluates the current step anew. Pickup budgets both pickup and single-plant use; held stock budgets single-plant use. Available time is the lower of time to the needs floor and time to the next obligation after its reserve. Existing player, queue, stock and outcome checks retain authority.
+
+The observed trial advanced 14 Sim minutes for pickup and 13 more between fertilizer selection and the post-action readback. These are bounded observation intervals from one session. Runtime needs forecasts, native event delivery, persistent automatic queue reconciliation and installed mod activation remain open under #171.
+
 ## 2026-11-14 — Live Super Fertilizer pickup and single-plant use
 
 On Windows build 1.121.361.1020 in an operator-confirmed disposable session, two live tooltip captures identified a grounded Super Fertilizer bag beside the right-hand planter row. Native **Put in Inventory** queued while paused. After bounded normal-speed play, the exact bag was absent from its ground position and the selected Servo's personal inventory showed a new item with the matching Super Fertilizer tooltip. No drag was required.
