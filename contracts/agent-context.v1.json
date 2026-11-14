@@ -111,7 +111,8 @@
       "OBSERVE_ACTIVE_GAME_GOAL",
       "INVESTIGATE_NEXT_GATE",
       "RECOVER_EXPLICIT_LISTENER",
-      "REOBSERVE_HOST_ACCESS"
+      "REOBSERVE_HOST_ACCESS",
+      "CONTINUE_OFFLINE_NO_ACTIVE_LISTENER"
     ],
     "quiescence": [
       "YIELD_EFFECTS_KEEP_LISTENER",
@@ -121,6 +122,8 @@
     "independent_block": "Actual observed local game host unavailability proof required for exact blocker; absent evidence means reobserve. If independent read-only work is ready, do it rather than stopping.",
     "player_first": "Any ACTIVE/UNKNOWN player presence blocks effects while keeping existing active listener and pending work; reviewed read-only work may continue.",
     "effects": "No screen, OS, EA native, saving, queue mutation, background poll or new dispatcher; prior control queue still exclusively admits one game effect.",
-    "proof_ceiling": "SOURCE_ONLY_TURN_ADVISORY_NOT_LOCAL_HOOK_OR_LIVE_GAME"
+    "proof_ceiling": "SOURCE_ONLY_TURN_ADVISORY_NOT_LOCAL_HOOK_OR_LIVE_GAME",
+    "listener_missing": "If status is not ACTIVE, never describe a prepared effect as resumable through an active listener; classify recovery or separately available read-only source work without attempting screen effects.",
+    "external_input_validation": "Unexpected list/dict/unhashable enum inputs must fail with AgentContextError, not throw uncaught TypeError."
   }
 }
