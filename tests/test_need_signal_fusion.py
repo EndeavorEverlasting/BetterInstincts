@@ -274,7 +274,9 @@ class NeedSignalFusionTests(unittest.TestCase):
             "social":{"level":.83,"direction":"DOWN","arrow_count":3,
                       "arrow_proof_ref":"cue:down3"}})
         obs = snapshot(feeds=[frame],profile="human")
-        obs["feeds"][0]["observed_at_unix"] = time.time()
+        current = time.time()
+        obs["feeds"][0]["observed_at_unix"] = current
+        obs["moodlet_observation"]["observed_at_unix"] = current
         existing = evaluate_turn(levels,capture_ref="capture:host")
         self.assertIsNone(existing["need_signals"])
         after = evaluate_turn(levels, capture_ref="capture:host",
@@ -404,6 +406,27 @@ class NeedSignalFusionTests(unittest.TestCase):
             with self.subTest(value=value):
                 with self.assertRaisesRegex(NeedSignalError,"CONTEXT_INVALID"):
                     eval_need(snapshot(game_build=value))
+
+    def test_positive_mood_requires_full_and_safe_profile_needs(self):
+        positive = mood(emotion="HAPPY",moodlets=["playful"])
+        absent = eval_need(snapshot(feeds=[],moodlet_observation=positive))
+        self.assertEqual(absent["moodlet_guidance"],
+                         "POSITIVE_MOOD_NEED_SAFETY_UNVERIFIED")
+        partial = eval_need(snapshot(feeds=[native()],moodlet_observation=positive))
+        self.assertEqual(partial["moodlet_guidance"],
+                         "POSITIVE_MOOD_NEED_SAFETY_UNVERIFIED")
+        low = eval_need(snapshot(feeds=[hud()],moodlet_observation=positive))
+        self.assertEqual(low["moodlet_guidance"],
+                         "POSITIVE_MOOD_NEED_SAFETY_UNVERIFIED")
+        green_rows={m:{"level":.85,"direction":"FLAT"}
+                    for m in ("fun","social","durability","charge")}
+        all_safe = eval_need(snapshot(feeds=[hud(needs=green_rows)],
+                                      moodlet_observation=positive))
+        self.assertEqual(all_safe["moodlet_guidance"],
+                         "PRESERVE_POSITIVE_ACTIVITY_IF_NEEDS_SAFE")
+        self.assertFalse(all_safe["execute_allowed"])
+        self.assertFalse(all_safe["game_input_allowed"])
+
 
 
 if __name__ == "__main__":

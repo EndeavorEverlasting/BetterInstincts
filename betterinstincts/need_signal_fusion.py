@@ -322,8 +322,19 @@ def evaluate_need_signals(observation: Mapping[str, Any], *,
             mood_mode = "PRESERVE_POSITIVE_ACTIVITY_IF_NEEDS_SAFE"
         else:
             mood_mode = "NEUTRAL_OR_UNKNOWN_MOODLET"
-    if rapid and mood_mode == "PRESERVE_POSITIVE_ACTIVITY_IF_NEEDS_SAFE":
-        mood_mode = "DECLINING_NEED_OUTRANKS_POSITIVE_MOOD"
+    if mood_mode == "PRESERVE_POSITIVE_ACTIVITY_IF_NEEDS_SAFE":
+        # Cheerful does not imply safe needs. Only preserve a positive activity
+        # if *every* profile motive is freshly measured above a declared
+        # policy preemptive threshold with no rate or cross-source alarm.
+        if rapid:
+            mood_mode = "DECLINING_NEED_OUTRANKS_POSITIVE_MOOD"
+        elif not healthy or any(
+            row["level"] is None
+            or row["level"] < POLICY_PREEMPTIVE_LEVEL
+            or row["needs_reobservation"]
+            for row in motive_rows.values()
+        ):
+            mood_mode = "POSITIVE_MOOD_NEED_SAFETY_UNVERIFIED"
     if observation["player_active"]:
         priority = "PLAYER_FIRST"
     elif conflicts:

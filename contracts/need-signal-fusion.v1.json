@@ -48,5 +48,6 @@
     ],
     "hud_arrow_multiplier_claim": false
   },
-  "moodlet_observation_provenance": "Supplied moodlet observation must be verified, same selected Sim, exact game build, capture, timestamp within 60 seconds; a prior portrait's happy/bad mood never influences current Servo."
+  "moodlet_observation_provenance": "Supplied moodlet observation must be verified, same selected Sim, exact game build, capture, timestamp within 60 seconds; a prior portrait's happy/bad mood never influences current Servo.",
+  "moodlet_positive_activity_gate": "Only preserve positive activity if every profile-specific current motive has a verified level >= policy 0.55, no conflict/reobserve requirement, and no rapid decline; unknown or low motive levels produce POSITIVE_MOOD_NEED_SAFETY_UNVERIFIED."
 }
