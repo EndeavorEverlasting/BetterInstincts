@@ -14,6 +14,13 @@
       "reason": "Repair baseline backyard transfer and pocket precedence, accept separately qualified Super Fertilizer hover identities and observe-before-use source candidates without any game mutation.",
       "game_effect_claim": "NONE",
       "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/gardening_service.py",
+      "route": "POLICY_ONLY",
+      "reason": "Preserve the already-verified available action flag when existing gardening action observations are sanitized, without granting game effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
     }
   ]
 }
