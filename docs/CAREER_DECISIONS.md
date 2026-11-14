@@ -38,7 +38,7 @@ This permits automatic decisions for **known, complete** career events without a
 
 **Input:** `betterinstincts.career-event.observation/v1`; exact `event_ref` + `event_revision`, recipient Sim ID as unsigned-64 decimal text, optionally different selected HUD Sim, household, career/shift, full native response-ID list, current capture, exact dialog tuning ID, and complete outcome sets per option (each probability in basis points summing to 10,000, source refs, bounded effects, job-loss/irreversibility flag). Native source strings alone are not authenticated by this policy—local EA source/hook inspection and observed capture provenance belong to installed-game acceptance.
 
-**Output:** `RECOMMENDED_NATIVE_CHOICE` with a proposed specific response ID, expected utility and risk exclusions; **no input permit**. Repeated or ambiguously dispatched event identity is held. For a runtime claim, use distinct current response, effect, and resumed-activity captures; `reconcile_career_event_turn` checks their normalized shapes but cannot authenticate a caller-fabricated `EA_NATIVE` receipt.
+**Output:** `RECOMMENDED_NATIVE_CHOICE` with a proposed specific response ID, expected utility and risk exclusions; **no input permit**. An event reference is non-repeatable across UI/event revisions after any response attempt or uncertain result. Successful response receipts retain the original revision and distinct response/effect/resumption capture references. Repeated or ambiguously dispatched event identity is held. For a runtime claim, use distinct current response, effect, and resumed-activity captures; `reconcile_career_event_turn` checks their normalized shapes but cannot authenticate a caller-fabricated `EA_NATIVE` receipt.
 
 ### Progressive-disclosure map
 
