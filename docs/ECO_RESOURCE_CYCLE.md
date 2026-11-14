@@ -1,3 +1,36 @@
+## 2026-11-14 — MoonWake /the-closers: actual screenshot of Growfruit Super Fertilizer
+
+**New primary operator evidence:** A paused Sims 4 garden screenshot visibly shows a highlighted, individually identifiable ground item, with tooltip heading **SUPER FERTILIZER**, explanation **“Special fertilizer received from Jasmine as part of the Growfruit Challenge.”**, and displayed **§80**. The visible tooltip pointer is associated with the highlighted small grey object on the backyard ground. These facts rule out a generic bag-shaped classifier as the only valid route. The image does **not** show the installed game build, unique EA object ID, precise world geometry, available inventory drag affordance, active Sim's stock change or a successful fertilization.
+
+**Machine-readable privacy-safe fixture:** `contracts/fixtures/BI-SUPER-FERTILIZER-HOVER-20261114.v1.json` records only the visible item tooltip, approximate non-calibrated screen boxes and unknowns. The original screenshot, user HUD, household, balance, portraits and saves are **not published**. Synthetic fixture object IDs are not EA target references.
+
+**Recognition-to-advice call stack:**
+
+```text
+explicit live-host/calibrated CV hover observation
+  -> tooltip text + pointer-to-highlighted target + same capture
+  -> fertilizer_hover_recognition.recognize_super_fertilizer_hover
+       exact English SUPER FERTILIZER, description "special fertilizer"
+       source=USER_SCREENSHOT: candidate identity only; demand host reobservation
+       source=HOST_VERIFIED_HOVER: still identity only, never game authority
+  -> fertilizer_workflow._backyard_transfer_candidate
+       require actual actor/lot/build/ownership/eligibility/route/menu evidence
+       match source item and current observed enabled transfer affordance
+       propose ONE transfer; do not buy, sell, execute mouse or claim outcome
+  -> new independent selected-Sim personal inventory capture
+  -> current exact plant menu with real stock => FERTILIZE one plant
+  -> verified plant effect => completion, not earlier click or cooldown
+```
+
+A true `SUPER_FERTILIZER` candidate is admitted through `identity_source=HOVER_TOOLTIP` with a structured `hover_observation` of schema `betterinstincts.fertilizer-hover/v1`, `title`, `description`, `source`, `capture_ref`, `pointer_target_ref`, `highlighted_target_ref`, and `tooltip_attached_to_target=true`; all refs must represent one actual highlighted object in the same current capture. The live host must independently attest the proper household, exact Sim, lot, patch, scene, item ownership, personal-inventory destination, route, protected/reserved status, fertilizer eligibility, current usable transfer interaction and any pending transfer. A screenshot/class label alone never grants any item effect. The optional semantic spatial map accepts source-proven `FERTILIZER_BAG` and `SUPER_FERTILIZER` identity; it does **not** manufacture 3D world poses from the screenshot.
+
+**Post-merge PR #239 correction:** An optional backyard scan must not veto a genuinely usable pocket. If verified personal inventory already contains sufficient fertilizer, bypass the scan even when its data are malformed or a pickup is still reported pending. With partial pocket stock and no usable bag transfer, propose one separately observed `FERTILIZE` action rather than deadlocking; `FERTILIZE_ALL` still requires enough stock for all eligible plants. Explicitly prove any post-transfer inventory gain with a **different, later capture**; do not reuse the transfer's original capture in a readback regression fixture.
+
+**Real game P08 path:** As the screenshot shows a paused game and grounded fertilizing item, first investigate the **native drag of the existing ground item to the active Sim's inventory** using the exact installed version and permitted disposable test save, before inventing a pathfinding command or another purchase. Community reports suggest the Super Fertilizer from hidden Build/Buy can be manually dragged from ground to personal inventory, but no such gesture has been witnessed or certified in the user's installed game. Use only a foreground, player-first, explicitly authorized one-effect test; pause on operator activity, never overwrite the ordinary save, and compare inventory and selected planter outcomes before/after. Native in-game instrumentation and rollback remain issue #171, independent of BI-002 hunger.
+
+Historical EA evidence for Jasmine's super fertilizer: https://forums.ea.com/discussions/the-sims-franchise-discussion-en/march-22-2016-patch-notes/1385720
+Evidence of possible player-controlled ground-to-inventory drag (not an EA API): https://www.reddit.com/r/ModTheSims4/comments/1sss18x/mod_making_super_fertilizer_more_accessible/
+
 ## 2026-11-14 — Sixth Gear: use already-purchased backyard fertilizer bags first
 
 **Operator-observed parent fact:** Fertilizer bags have already been purchased and placed around the playable household backyard. BetterInstincts must detect those objects and transfer a usable bag into the **active Sim's personal inventory** before attempting the chosen planter. Do **not** infer missing fertilizer means buy more fertilizer.
