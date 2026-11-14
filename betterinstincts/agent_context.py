@@ -123,6 +123,8 @@ def continue_handoff(previous: Mapping, update: Mapping) -> dict:
     for key in ("corrections", "rejected_paths", "blockers"):
         if key in update:
             base[key] = _items(base[key] + _items(update[key]))
+    if "source_revision" in update and not _id(update.get("evidence_ref")):
+        raise AgentContextError("TRANSITION_EVIDENCE_REQUIRED")
     for key in ("next_gate", "active_goal_id", "source_revision"):
         if key in update:
             if not _id(update[key]):
@@ -162,7 +164,10 @@ def _record(record: Mapping, handoff: dict, capture_ref: str, now: float) -> dic
         "evidence_ref": record["evidence_ref"],
         "evidence_state": record["evidence_state"],
         "observed_at_unix": stamp,
-        "fresh": 0 <= now - stamp <= MAX_AGE_SECONDS,
+        "fresh": (0 <= now - stamp <= MAX_AGE_SECONDS
+                  if record["evidence_state"] == "LOCAL_OBSERVED"
+                  or record["kind"] in {"GOAL", "OBSERVATION"}
+                  else stamp <= now and record["source_revision"] == handoff["source_revision"]),
     }
 
 
@@ -245,16 +250,25 @@ def compile_agent_context(
             core["excluded"]["budget"] += 1
     matched = any(r["kind"] == intent and r["query_key"] == query_key for r in core["records"])
     core["status"] = "EVIDENCE_SELECTED" if matched else "RETRIEVAL_REQUIRED"
-    # Final budget check includes counter width and status length changes.
-    while core["records"] and len(_compact(core)) > budget_chars:
+    # Include the size metadata itself in the enforced serialized character
+    # budget. This is a character ceiling, never a measured tokenizer count.
+    core["char_budget"] = budget_chars
+    core["chars_used"] = 0
+    while True:
+        if not any(r["kind"] == intent and r["query_key"] == query_key
+                   for r in core["records"]):
+            core["status"] = "RETRIEVAL_REQUIRED"
+        for _ in range(5):
+            measured = len(_compact(core))
+            if measured == core["chars_used"]:
+                break
+            core["chars_used"] = measured
+        if len(_compact(core)) <= budget_chars:
+            break
+        if not core["records"]:
+            raise AgentContextError("MANDATORY_CONTEXT_EXCEEDS_BUDGET")
         core["records"].pop()
         core["excluded"]["budget"] += 1
-    if len(_compact(core)) > budget_chars:
-        raise AgentContextError("MANDATORY_CONTEXT_EXCEEDS_BUDGET")
-    if not any(r["kind"] == intent and r["query_key"] == query_key for r in core["records"]):
-        core["status"] = "RETRIEVAL_REQUIRED"
-    core["chars_used"] = len(_compact({k: v for k, v in core.items() if k != "chars_used"}))
-    core["char_budget"] = budget_chars
     return core
 
 
