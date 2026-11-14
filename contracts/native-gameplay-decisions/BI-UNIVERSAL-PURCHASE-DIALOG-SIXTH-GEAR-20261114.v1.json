@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-UNIVERSAL-PURCHASE-DIALOG-SIXTH-GEAR-20261114",
+  "purpose": "Explicitly classify heterogeneous purchase-dialog catalog, demand and cart logic as source-only policy; no EA game hooks, OS input or live game certification.",
+  "files": [
+    {
+      "path": "betterinstincts/purchase_dialog.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure portable catalog and cart policy; returns proposed atomic actions but cannot cause gameplay input, spending, or save mutation",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_SOURCE_AND_CI_ONLY",
+  "next_gate": "Inspect installed exact EA Sims build and interaction tuning or script hooks, bind native source evidence, build reversible game-side adapter, then disposable A/B with player-sovereignty and buy-then-inventory/funds readback."
+}
