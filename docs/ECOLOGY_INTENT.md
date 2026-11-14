@@ -176,3 +176,52 @@ workstation Python 3.11+ policy is not itself a Python 3.7
 game-loadable module. The local adapter must port compatible logic,
 compile, install and independently observe game import/events before
 claiming activation.
+
+
+## 2026-11-14 MoonWake Closers — native dispatch acknowledgement boundary
+
+The PS-0241 activity DAG (PR #254) and PS-0245 Bellman/KKT optimizer
+(PR #255) have joined PR #253 on main. Both planners still provide
+**advisory policies**; neither registers EA game events or replaces the
+single native-gameplay authority / exact patch issue #171.
+
+P83 found a real distinction missing in the original ecology reducer:
+a \`PLAY\` recommendation could be marked "awaiting" before any actual
+EA queue acceptance, allowing a later invented or mismatched completion
+to advance the goal and an empty queue to stall the intent forever.
+The Closers added an explicit two-phase handshake:
+
+1. \`reconcile_ecology_intent(...)\` in PLAY returns one proposal whose
+   state is \`dispatch_status=PROPOSED\`; it **is not a game action**.
+2. The real installed, patch-matched EA adapter may call
+   \`acknowledge_native_ecology_dispatch(intent, receipt)\` **only**
+   after checking that the intended exact Sim/household/lot/target
+   was actually enqueued, origin was HOST and player was inactive.
+   A QUEUED native receipt pins the unique native queue reference.
+3. An ambiguous or missing receipt leaves PROPOSED untouched; it
+   cannot advance from inventory movement or blindly re-enqueue.
+   An independently confirmed NOT_ENQUEUED receipt with no-effect
+   proof releases the unfinished intent for a **new observation**.
+4. Later native completion must prove the exact action, source
+   capture, source inventory baseline, matching native queue
+   reference, and independent after-state; a verified autonomous
+   interruption must identify that *same* queue reference before
+   the reducer may restore the original step. User/unknown queue
+   origin always wins.
+5. Paused PLANNING still never queues a native effect, and any
+   state or telemetry can resume only from a verified exact Sim.
+
+The adapter must not treat one source-provided JSON receipt as
+independent game proof. The P08 local host must verify callback
+registration, actual queue mutation, inventory and plant effects,
+player preemption and vanilla/modified rollback. This bridge is a
+**source-level contract, not a built or installed Sims 4 mod**.
+
+The shared mathematical owners remain unchanged:
+\`activity_chain.py\` owns dependency/time feasibility,
+\`decision_horizon.py\` owns Bellman/KKT bounded selection,
+\`ecology_forecast.py\` owns optional measured GP duration estimates,
+and \`ecology_intent.py\` owns garden-specific per-Sim in-flight
+continuity. They must not each enqueue separately; one
+verified version-specific EA native adapter under issue #171
+is the sole effect boundary.
