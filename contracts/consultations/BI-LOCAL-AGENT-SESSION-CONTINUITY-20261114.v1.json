@@ -1,0 +1,83 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-LOCAL-AGENT-SESSION-CONTINUITY-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "MoonWake /sixth-gear P141→P95→P82→P08→P07→P124 scoped to BetterInstincts local Codex prematurely ending an authorized gameplay session when The Sims 4 is merely paused or an interim P08 report was emitted. Admit a bounded, read-only, no-agent-loop decision seam to keep the parent goal open and classify safe next work without granting game inputs, save writes or OS effects.",
+  "affected_concepts": [
+    "HOST_SESSION",
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "CONTROL_PERMIT",
+    "GAME_SCENE",
+    "SAVE_SLOT",
+    "GAME_BUILD",
+    "OBSERVATION",
+    "GOAL_THREAD",
+    "INTERRUPTION",
+    "RESUME_CONDITION",
+    "PROOF_RECEIPT",
+    "COORDINATION_CYCLE"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/DOCTRINE.md",
+    "docs/ONTOLOGY.md",
+    "docs/LEDGER.md",
+    "docs/GAME_HOST.md",
+    "docs/LIVE_CERT.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "plans/active/BI-002.md",
+    "contracts/effect-authority.v1.json",
+    "contracts/host-listener.v1.json",
+    "betterinstincts/control_handoff.py",
+    "betterinstincts/screen_admit.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-014",
+    "BI-ONT-016",
+    "BI-ONT-037",
+    "BI-ONT-038"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "PURE_LOCAL_SESSION_TRIAGE_NOT_CODEX_STOP_HOOK_OR_GAMEPLAY",
+  "player_save_control_impact": "Does not click, unpause, save, delete, reload, scan input, alter Windows controls or change game/host settings. Player activity, unknown scene, save uncertainty and per-effect permit always guard screen work. A previously authorized request to play is not itself a fresh effect permit. No hidden background scheduler, no per-frame polling, no persistent telemetry.",
+  "expected_outcome": "Pure input-to-decision seam plus local CLI and negative tests: paused game is not goal completion; interim P08 block is not whole sixth-gear termination; continue source/analysis or prepare fresh host effect admission when permitted; preserve player takeover; stop only on evidenced completion or precisely identified unavailable required gate with no other actionable work.",
+  "negative_tests": [
+    "Paused live game with explicit operator play permission and no verified completion may not end the parent run",
+    "A report saying played thirteen minutes must not count as parent completion",
+    "No local P08 game effect evidence must not block all offline repo work",
+    "Active or unknown player presence must never authorize unpause or keyboard/mouse effects",
+    "Unknown save, game scene or unverified session denies effects but leaves safe read-only work available",
+    "Source evidence missing cannot convert an agent assertion into a terminal blocker",
+    "True completion requires nonempty acceptance evidence, not an arbitrary elapsed-time threshold",
+    "No standalone agent sleep loop, daemon, repeated blind clicks or user-save mutation"
+  ],
+  "rollback_path": "Revert the isolated pure-advisory code/contract/tests/docs PR; no game or host state touched.",
+  "unresolved_unknowns": [
+    "The screenshot is a single frozen frame and does not prove current foreground, live scene, save class, Sims build or user activity at future action time",
+    "Codex UI does not expose an assured pre-stop hook through this connected GitHub tool; local agent must invoke CLI by instruction or a separately certified host adapter",
+    "Actual local Windows game effects, game state and BI-002 5+5 hunger trials require host runtime",
+    "MoonWake PR #372 separately owns scoped launcher transport and is not merged as of initial inspection"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-LOCAL-AGENT-SESSION-CONTINUITY-20261114.v1.json",
+    "contracts/agent-session-continuity.v1.json",
+    "betterinstincts/agent_session_continuity.py",
+    "tests/test_agent_session_continuity.py",
+    "docs/AGENT_SESSION_CONTINUITY.md",
+    "docs/handoff/BI-LOCAL-AGENT-CONTINUITY-20261114.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "P141 compared stopping on elapsed time (reject), treating all paused-game observations as a host block (reject), a new autonomous game controller (reject), and pure session-liveness assessment piggybacking existing human-first host authority (select). P95 designs typed evidence; P82 falsifies false terminals/player/saves; P08 remains local Windows-only; P07/P124 implement a pure CLI/contract/tests and owner-aligned handoff without forking MoonWake's generic execution boundary engine."
+}
