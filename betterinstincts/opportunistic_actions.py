@@ -160,6 +160,8 @@ def plan_targeted_chat_whim(
         # One-target-at-a-time scheduler; cannot choose competing wishes.
         return _receipt("CHAT_WHIM_MULTIPLE_TARGETS_REVIEW", capture_ref=capture_ref)
     target = matches[0]
+    if target.casefold() in {"somebody", "someone", "anyone", "a sim", "a friend"}:
+        return None  # Generic social wish has no independently resolvable target.
     if player_directed or already_busy:
         return _receipt("CHAT_WHIM_PLAYER_FIRST", capture_ref=capture_ref,
                         target_name=target)
