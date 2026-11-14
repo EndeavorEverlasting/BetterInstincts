@@ -34,6 +34,7 @@ def workflow(**changes):
     row = {"schema": "betterinstincts.fertilizer-workflow/v1",
            "capture_ref": CAPTURE, "observed_at_unix": time.time(),
            "sim_ref": "sim:garden", "actor_verified": True, "inventory_verified": True,
+           "lot_ref": "lot:home", "game_build": "build:verified",
            "transfer_authorized": False, "plants": [plant()],
            "supplies": [supply()]}
     row.update(changes)
@@ -313,6 +314,26 @@ class BackyardFertilizerBagTests(unittest.TestCase):
         self.assertEqual(third["gate"], "FERTILIZER_ACTION_READY")
         self.assertEqual(third["next_actions"][0]["target_ref"], "plant:a")
         self.assertEqual(third["verified_done_targets"], [])
+
+    def test_stock_readback_fertilizes_despite_stale_backyard_survey(self):
+        # Once the selected Sim actually holds the item, only the newly
+        # observed plant affordance matters; old backyard surveys are stale.
+        out = evaluate(workflow(supplies=[supply("item:bag", qty=1)],
+                       backyard_scan=backyard_scan(capture_ref="capture:old")),
+                       [act("FERTILIZE", "plant:a")])
+        self.assertEqual(out["gate"], "FERTILIZER_ACTION_READY")
+        self.assertEqual(out["next_actions"][0]["action_id"], "FERTILIZE")
+        self.assertEqual(out["next_actions"][0]["target_ref"], "plant:a")
+        self.assertNotIn("backyard_scan", out)
+
+    def test_parent_lot_and_game_build_must_match_backyard_survey(self):
+        for parent in ({"lot_ref": "lot:other"},
+                       {"game_build": "build:other"},
+                       {"game_build": None}, {"lot_ref": None}):
+            with self.subTest(parent=parent), self.assertRaisesRegex(
+                    FertilizerWorkflowError, "BACKYARD_SCAN_PARENT"):
+                evaluate(workflow(supplies=[], backyard_scan=backyard_scan(), **parent),
+                         [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
 
     def test_no_requeue_if_pickup_in_flight(self):
         for status in ("QUEUED", "AWAITING_INVENTORY_READBACK"):
