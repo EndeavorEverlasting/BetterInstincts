@@ -1,0 +1,78 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SIXTH-GEAR-AGENT-CONTROL-CODIFICATION-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Bounded, player-first agent computer use as an admitted LAST_RESORT with active listener event capture and mandatory per-action review/codification to existing repository owners.",
+  "operator_correction": "Agents taking control is desirable when deterministic native/repository logic cannot finish the task; the agent must yield behavior on any human input but retain the computer-use session and recover after verified idle. Everything done during its control must be recorded as concise semantic events and converted to reusable repository logic through review/test gates.",
+  "affected_concepts": [
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "CONTROL_PERMIT",
+    "HOST_ACTION",
+    "OBSERVATION",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "GOAL_THREAD",
+    "LEARNING_MODEL",
+    "RESUME_CONDITION",
+    "GAMEPLAY_IMPLEMENTATION_ROUTE",
+    "DOMAIN_CAPABILITY"
+  ],
+  "relevant_canonical_owners": [
+    "contracts/ontology.v1.json",
+    "contracts/effect-authority.v1.json",
+    "contracts/control-handoff.v1.json",
+    "contracts/object-action-catalog.v1.json",
+    "betterinstincts/workflow_interop.py",
+    "betterinstincts/host_listener.py",
+    "betterinstincts/object_action_catalog.py",
+    "betterinstincts/agent_context.py",
+    "betterinstincts/control_discovery.py",
+    "betterinstincts/agent_control_runner.py",
+    "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md",
+    "plans/active/BI-002.md"
+  ],
+  "invariants_checked": [
+    "PLAYER_PRIORITY_ALL_APPS",
+    "IDLE_TWO_FRESH_PROBES",
+    "NO_BLIND_REPLAY",
+    "EXPLICIT_ACTIVE_LISTENER",
+    "NO_BACKGROUND_DAEMON",
+    "NO_OS_PREFERENCE_MUTATION",
+    "NO_USER_SAVE_EDIT",
+    "PER_EFFECT_CAPTURE",
+    "SOURCE_OWNER_CODIFICATION",
+    "NO_FAKE_MERGE_OR_NATIVE_GAME_PROOF"
+  ],
+  "scope": "Repository-level opt-in host-lab + source-only policy. Existing gameplay/native preference and player sovereignty remain unchanged.",
+  "strategic_discrimination": {
+    "rejected": [
+      "Never allow agent screen control (contradicts operator intent).",
+      "Replace idle listener with an unreviewed new OS hook.",
+      "Log every raw keystroke/screenshot as long-term memory.",
+      "Call one successful click a certified reusable game mechanic."
+    ],
+    "selected": "Reuse cooperative idle-interoperability queue and explicit active host listener; journal each atomic interaction in a bounded, compact, semantic local event ledger with codification obligations.",
+    "bounded_investigation": "Record PREPARE before every effect; pause on user activity without clearing work; emit a queue receipt and distinct post-action outcome; carry an unreviewed-to-code receipt and verify source/CI/main independently."
+  },
+  "game_build_scope": "LOCAL_GAME_HOST_EXPLICITLY_OPTED_IN_REQUIRED_FOR_ACTUAL_EFFECTS",
+  "evidence_ceiling": "SOURCE_JOURNAL_AND_OFFLINE_TESTS_NOT_INSTALLED_LOCAL_GAME_PROOF",
+  "player_save_control_impact": "No implicit listener activation or computer use. An explicitly activated trusted listener can continue passive reads when human-active; screen effects pause and recover only after trusted two-probe idle plus fresh scene/save/target/queue checks. Never touches user saves or OS services; no unapproved global recorder.",
+  "negative_tests": [
+    "No idle: no effect",
+    "No prior PREPARE journal: no effect",
+    "User comes back: waiting with pending action intact",
+    "Partial callback failure: quarantine/reconcile; no replay",
+    "All action attempts remain codification obligations even if harmful or unknown",
+    "No raw input/screenshot/name allowed in semantic journal"
+  ],
+  "rollback_path": "Revert feature branch host listener ports, runner and semantic ledger; pre-existing control queue, user inputs, native mods and saves unchanged.",
+  "unresolved_unknowns": [
+    "No calibrated local Sims runtime or host adapter observed through this GitHub connection; actual idle listener/live action requires local P08.",
+    "No automatic universal interception of independent agents; all computer-use adapters must adopt this runner explicitly.",
+    "Code receipts require independently verified commit/merge/EA gameplay before an action can be certified as codified."
+  ],
+  "owner": "betterinstincts/agent_control_runner.py",
+  "successor_issue": 171
+}
