@@ -49,6 +49,13 @@
       "HARVEST",
       "PLANT"
     ],
-    "waiting_behavior": "While stock missing, target cooling down or picker absent: one observed gardening maintenance action may be selected, without changing verified fertilization progress; exact player-task continuity never falls back."
+    "waiting_behavior": "While stock missing, target cooling down or picker absent: one observed gardening maintenance action may be selected, without changing verified fertilization progress; exact player-task continuity never falls back.",
+    "sourcing": {
+      "schema": "betterinstincts.fertilizer-sourcing/v1",
+      "owner": "betterinstincts/eco_resource_cycle.py#plan_fertilizer_sources",
+      "activation": "Opt-in nested fertilizer_workflow.sourcing only when selected Sim pocket lacks stock; after sourcing reobserve actual pocket inventory",
+      "eligibility": "Current actor/capture/queue/needs/player; only observed affordable and unreserved inputs; one source action",
+      "effect": "ADVISORY_ONLY_NO_PURCHASE_NO_HARVEST_EXECUTION"
+    }
   }
 }
