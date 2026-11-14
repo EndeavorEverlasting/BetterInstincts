@@ -67,7 +67,8 @@
       "waiting": "QUEUED or AWAITING_INVENTORY_READBACK prevents duplicate pickup; only new independently observed SIM_INVENTORY quantities count as fertilizer available for the existing observed Fertilize menu and verified plant outcome.",
       "fallbacks": "Stale survey, mismatched Sim/lot, unavailable route/menu, protected/not-eligible bag or unknown native transfer -> no action, preserve target and inspect existing bags; no auto-buy.",
       "proof_ceiling": "OFFLINE_BACKYARD_BAG_ADVICE_NOT_GAME_TRANSFER",
-      "native_successor_issue": 171
+      "native_successor_issue": 171,
+      "parent_guard": "The parent fertilizer_workflow must independently attest the same selected lot_ref and game_build as backyard_scan. The current selected Sim ref and capture must agree. When personally held stock is already sufficient, a stale backyard survey is bypassed and the existing fresh plant picker wins."
     }
   }
 }
