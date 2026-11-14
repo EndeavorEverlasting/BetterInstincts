@@ -56,6 +56,20 @@
       "activation": "Opt-in nested fertilizer_workflow.sourcing only when selected Sim pocket lacks stock; after sourcing reobserve actual pocket inventory",
       "eligibility": "Current actor/capture/queue/needs/player; only observed affordable and unreserved inputs; one source action",
       "effect": "ADVISORY_ONLY_NO_PURCHASE_NO_HARVEST_EXECUTION"
+    },
+    "backyard_bags": {
+      "owner": "betterinstincts/fertilizer_workflow.py#_backyard_transfer_candidate",
+      "schema": "betterinstincts.backyard-fertilizer-scan/v1",
+      "opt_in": "Only current selected Sim and authoritative same-lot bag survey supplied as fertilizer_workflow.backyard_scan; no world scanning daemon created.",
+      "priority": "Existing purchased, available, household-owned bags on verified backyard lot outrank any new purchases or other fertilizer-sourcing proposals whenever a verified survey is supplied.",
+      "discovery": "Exact current game build, capture, active Sim, lot and personal inventory destination; EA read-only object identity evidence (>=1) or calibrated multiview identity (>=2 distinct); known eligible fertilizer resource; lot and reachable route proof; no player-reserved or protected objects.",
+      "transfer": "One fresh observed TRANSFER_FERTILIZER_TO_SIM_INVENTORY affordance with target equal to proven bag_ref; exactly one bag unit proposed, rank accessible bags by observed bounded route steps; no inferred dragging, no actual game effect.",
+      "waiting": "QUEUED or AWAITING_INVENTORY_READBACK prevents duplicate pickup; only new independently observed SIM_INVENTORY quantities count as fertilizer available for the existing observed Fertilize menu and verified plant outcome.",
+      "fallbacks": "Stale survey, mismatched Sim/lot, unavailable route/menu, protected/not-eligible bag or unknown native transfer -> no action, preserve target and inspect existing bags; no auto-buy.",
+      "proof_ceiling": "OFFLINE_BACKYARD_BAG_ADVICE_NOT_GAME_TRANSFER",
+      "native_successor_issue": 171,
+      "parent_guard": "The parent fertilizer_workflow must independently attest the same selected lot_ref and game_build as backyard_scan. The current selected Sim ref and capture must agree. When personally held stock is already sufficient, a stale backyard survey is bypassed and the existing fresh plant picker wins.",
+      "spatial_map": "Optional current betterinstincts.semantic-spatial-map-doc/v1 with same game_build and lot_id, non-executing map and keyed objects; candidate item_ref must map to OUTSIDE FERTILIZER_BAG with source-proven 3D pose. Mismatched map scope fails closed; unknown object or pose cannot be chosen."
     }
   }
 }
