@@ -183,6 +183,7 @@ def evaluate_career_event(
             or len(set(offered)) != len(offered)):
         return _hold("COMPLETE_CAREER_RESPONSE_IDS_REQUIRED", event=event)
     scored = []
+    excluded_risky_response_ids = []
     for option in options:
         if (not isinstance(option, Mapping) or
                 not _int(option.get("response_id"), 0, 2**31 - 1) or
@@ -190,15 +191,22 @@ def evaluate_career_event(
                 not _ref(option.get("effect_basis_ref"))):
             return _hold("CAREER_OPTION_SOURCE_UNVERIFIED", event=event)
         score, reason = _outcomes(option, config)
+        if reason == "CAREER_IRREVERSIBLE_RISK_HOLD":
+            excluded_risky_response_ids.append(option["response_id"])
+            continue
         if reason:
             return _hold(reason, event=event)
         scored.append((option["response_id"], score))
-    if set(offered) != {key for key, _ in scored}:
+    offered_options = [opt["response_id"] for opt in options]
+    if set(offered) != set(offered_options):
         return _hold("CAREER_RESPONSE_OPTION_SET_MISMATCH", event=event)
-    if len({key for key, _ in scored}) != len(scored):
+    if len(set(offered_options)) != len(offered_options):
         return _hold("CAREER_DUPLICATE_RESPONSE_OPTION", event=event)
+    if not scored:
+        return _hold("NO_SAFE_CAREER_CHOICE_KNOWN", event=event)
     rank = sorted(scored, key=lambda x: (-x[1], x[0]))
-    if rank[0][1] - rank[1][1] < config["scoring"]["min_score_margin"]:
+    if (len(rank) > 1 and
+            rank[0][1] - rank[1][1] < config["scoring"]["min_score_margin"]):
         return _hold("CAREER_CHOICE_UTILITY_TIE_OR_WEAK_MARGIN", event=event)
     return {
         "schema": RESULT, "state": "RECOMMENDED_NATIVE_CHOICE",
@@ -211,7 +219,12 @@ def evaluate_career_event(
         "career_id": event["career_id"],
         "dialog_tuning_id": event["dialog_tuning_id"],
         "recommended_response_id": rank[0][0],
-        "score_margin": round(rank[0][1] - rank[1][1], 6),
+        "score_margin": (round(rank[0][1] - rank[1][1], 6)
+                         if len(rank) > 1 else None),
+        "excluded_risky_response_ids": excluded_risky_response_ids,
+        "selected_effect_basis_ref": next(
+            o["effect_basis_ref"] for o in options
+            if o["response_id"] == rank[0][0]),
         "all_scores": [{"response_id": k, "risk_adjusted_score": round(v, 6)}
                        for k, v in rank],
         "next": "NATIVE_ONE_RESPONSE_THEN_REOBSERVE_CAREER_AND_ACTIVITY",
@@ -224,9 +237,14 @@ def reconcile_career_event(
     decision: Mapping[str, Any] | None,
     response: Mapping[str, Any] | None,
     *,
+    effect: Mapping[str, Any] | None,
     activity: Mapping[str, Any] | None,
 ) -> dict:
-    """Only report a matched, distinct response and resumed activity shape."""
+    """Require separate native response, recipient effect and activity receipts.
+
+    A caller can forge all of these shapes. Local exact-build game observation
+    and genuine provenance review remain independently required for P08.
+    """
     if (not isinstance(decision, Mapping)
             or decision.get("state") != "RECOMMENDED_NATIVE_CHOICE"):
         return {"schema": ACK, "state": "UNVERIFIED",
@@ -236,24 +254,47 @@ def reconcile_career_event(
             or response.get("event_ref") != decision["event_ref"]
             or response.get("event_revision") != decision["event_revision"]
             or response.get("recipient_sim_id") != decision["recipient_sim_id"]
+            or type(response.get("response_id")) is not int
             or response.get("response_id") != decision["recommended_response_id"]
             or response.get("accepted") is not True
             or not _ref(response.get("capture_ref"))
-            or response["capture_ref"] == decision["capture_ref"]):
+            or response["capture_ref"] == decision["capture_ref"]
+            or not _int(response.get("captured_at_epoch_ms"), 1, 2**63 - 1)):
         return {"schema": ACK, "state": "UNVERIFIED",
                 "reason": "CAREER_NATIVE_RESPONSE_ACK_MISSING", "proof_ceiling": PROOF}
+    if (not isinstance(effect, Mapping)
+            or effect.get("source") != "EA_NATIVE"
+            or effect.get("event_ref") != decision["event_ref"]
+            or effect.get("recipient_sim_id") != decision["recipient_sim_id"]
+            or effect.get("response_id") != decision["recommended_response_id"]
+            or effect.get("effect_basis_ref") != decision["selected_effect_basis_ref"]
+            or effect.get("applied") is not True
+            or not _ref(effect.get("capture_ref"))
+            or effect["capture_ref"] in (decision["capture_ref"], response["capture_ref"])
+            or not _int(effect.get("captured_at_epoch_ms"), 1, 2**63 - 1)
+            or effect["captured_at_epoch_ms"] <= response["captured_at_epoch_ms"]
+            or not isinstance(effect.get("observed_deltas"), Mapping)
+            or not effect["observed_deltas"]
+            or not set(effect["observed_deltas"]).issubset(EFFECT_BOUNDS)
+            or any(not _number(v, EFFECT_BOUNDS[k])
+                   for k, v in effect["observed_deltas"].items())):
+        return {"schema": ACK, "state": "UNVERIFIED",
+                "reason": "CAREER_NATIVE_EFFECT_OBSERVATION_MISSING", "proof_ceiling": PROOF}
     if (not isinstance(activity, Mapping)
             or activity.get("source") != "EA_NATIVE"
             or activity.get("event_ref") != decision["event_ref"]
             or activity.get("recipient_sim_id") != decision["recipient_sim_id"]
             or activity.get("resumed") is not True
             or not _ref(activity.get("capture_ref"))
-            or activity["capture_ref"] in (decision["capture_ref"], response["capture_ref"])
-            or not _ref(activity.get("activity_ref"))):
+            or activity["capture_ref"] in (
+                decision["capture_ref"], response["capture_ref"], effect["capture_ref"])
+            or not _ref(activity.get("activity_ref"))
+            or not _int(activity.get("captured_at_epoch_ms"), 1, 2**63 - 1)
+            or activity["captured_at_epoch_ms"] <= effect["captured_at_epoch_ms"]):
         return {"schema": ACK, "state": "UNVERIFIED",
                 "reason": "CAREER_ACTIVITY_RESUMPTION_UNOBSERVED", "proof_ceiling": PROOF}
     return {
-        "schema": ACK, "state": "RESPONSE_AND_RESUMPTION_SHAPE_MATCH",
+        "schema": ACK, "state": "RESPONSE_EFFECT_AND_RESUMPTION_SHAPE_MATCH",
         "event_ref": decision["event_ref"], "recipient_sim_id": decision["recipient_sim_id"],
         "response_id": decision["recommended_response_id"],
         "activity_ref": activity["activity_ref"],
