@@ -55,6 +55,116 @@ def task(s, ident, mech, kind="YIELD", priority=3, resource=None,
 
 
 class HouseholdEconomyTests(unittest.TestCase):
+    def test_sleep_handoff_requires_no_chore_or_existing_task(self):
+        s = snapshot(3)
+        s["selected_member_key"] = s["members"][0]["member_key"]
+        s["members"][0]["activity"] = "ASLEEP"
+        s["members"][1]["activity"] = "AWAKE"
+        s["members"][2]["activity"] = "AWAKE"
+        self.assertEqual(s["tasks"], [])
+        result = evaluate_household_economy(s)
+        handoff = result["portrait_handoff"]
+        self.assertEqual(handoff["to_member_key"], s["members"][1]["member_key"])
+        self.assertIsNone(handoff["task_ref"])
+        self.assertEqual(handoff["reason"], "SELECTED_MEMBER_RECOVERING_OR_AWAY")
+        self.assertTrue(handoff["new_capture_required"])
+        self.assertEqual(set(handoff["need_keys"]), set(NEEDS))
+        self.assertFalse(handoff["execute_allowed"])
+        host = evaluate_turn(NEEDS, location_kind="home", available_objects=[],
+                             queue=[], capture_ref=CAP, household_economy=s,
+                             already_busy=True)
+        self.assertEqual(host["next_gate"], "AWAKE_HOUSEHOLD_HANDOFF_READY")
+
+    def test_critical_needs_target_is_selected_even_when_work_ineligible(self):
+        s = snapshot(3)
+        s["selected_member_key"] = s["members"][0]["member_key"]
+        s["members"][0]["activity"] = "ASLEEP"
+        s["members"][1]["activity"] = "AWAKE"
+        s["members"][1]["needs"]["hunger"] = 0.04
+        s["members"][2]["activity"] = "AWAKE"
+        s["tasks"].append(task(s, "garden13", "gardening"))
+        result = evaluate_household_economy(s)
+        self.assertEqual(result["portrait_handoff"]["to_member_key"],
+                         s["members"][1]["member_key"])
+        # Allocation has a distinct wellbeing floor; portrait selection does
+        # not strand a hungry actor just because they cannot garden.
+        self.assertNotIn(s["members"][1]["member_key"], result["workload_claims"])
+
+    def test_portrait_order_wraps_once_and_skips_unverified_or_reserved(self):
+        s = snapshot(4)
+        s["selected_member_key"] = s["members"][3]["member_key"]
+        s["members"][3]["activity"] = "ASLEEP"
+        s["members"][0]["activity"] = "AWAY"
+        s["members"][1]["activity"] = "UNKNOWN"
+        s["members"][2]["activity"] = "AWAKE"
+        self.assertEqual(evaluate_household_economy(s)["portrait_handoff"]["to_member_key"],
+                         s["members"][2]["member_key"])
+        s["members"][2]["player_reserved"] = True
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+        s["members"][2]["player_reserved"] = False
+        s["members"][2]["queue_verified"] = False
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+
+    def test_one_member_all_sleeping_and_missing_identity_do_not_loop(self):
+        s = snapshot(1)
+        s["selected_member_key"] = s["members"][0]["member_key"]
+        s["members"][0]["activity"] = "ASLEEP"
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+        s = snapshot(3)
+        s["selected_member_key"] = s["members"][1]["member_key"]
+        for member in s["members"]:
+            member["activity"] = "RECHARGING"
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+        s.pop("selected_member_key")
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+
+    def test_completed_verified_need_review_rotates_then_waits_for_fresh_capture(self):
+        s = snapshot(3)
+        s["selected_member_key"] = s["members"][0]["member_key"]
+        for member in s["members"]:
+            member["activity"] = "AWAKE"
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+        s["attention_review"] = {
+            "member_key": s["members"][0]["member_key"],
+            "capture_ref": CAP,
+            "proof_ref": "capture:current-needs-review-ok",
+            "state": "VERIFIED_COMPLETE",
+        }
+        result = evaluate_household_economy(s)
+        self.assertEqual(result["portrait_handoff"]["to_member_key"],
+                         s["members"][1]["member_key"])
+        self.assertEqual(result["portrait_handoff"]["reason"],
+                         "SELECTED_MEMBER_NEEDS_REVIEW_VERIFIED_COMPLETE")
+        # The next observed selected member must get a *new* capture; the old
+        # completion does not spin over remaining portraits in one frame.
+        s["selected_member_key"] = s["members"][1]["member_key"]
+        s.pop("attention_review")
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+
+    def test_replayed_stale_or_unbound_attention_review_denied(self):
+        s = snapshot(2)
+        s["selected_member_key"] = s["members"][0]["member_key"]
+        s["members"][0]["activity"] = "AWAKE"
+        s["members"][1]["activity"] = "AWAKE"
+        s["attention_review"] = {
+            "member_key": s["members"][0]["member_key"],
+            "capture_ref": CAP,
+            "proof_ref": "capture:review-1",
+            "state": "VERIFIED_COMPLETE",
+        }
+        for field, value in (("member_key", s["members"][1]["member_key"]),
+                             ("capture_ref", "capture:old"),
+                             ("proof_ref", ""),
+                             ("state", "CLAIMED_COMPLETE")):
+            broken = copy.deepcopy(s)
+            broken["attention_review"][field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(
+                    HouseholdEconomyError, "ATTENTION_REVIEW_PROOF_INVALID"):
+                evaluate_household_economy(broken)
+        s["player_active"] = True
+        with self.assertRaisesRegex(HouseholdEconomyError, "PLAYER_PRESENCE"):
+            evaluate_household_economy(s)
+
     def test_handoff_uses_awake_servo_and_preserves_recovery(self):
         s = snapshot(3)
         selected, unavailable, servo = s["members"]
