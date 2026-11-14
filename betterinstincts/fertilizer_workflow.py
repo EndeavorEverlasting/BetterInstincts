@@ -10,6 +10,10 @@ import math
 import time
 from collections.abc import Mapping
 
+from betterinstincts.eco_resource_cycle import (
+    EcoResourceCycleError, plan_fertilizer_sources,
+)
+
 SCHEMA = "betterinstincts.fertilizer-workflow/v1"
 MAX_PLANTS = 32
 MAX_SUPPLIES = 32
@@ -169,6 +173,20 @@ def evaluate_fertilizer_workflow(
         if ground:
             return finish("INSPECT_TRANSFER_AFFORDANCE", "FIND_EXACT_INVENTORY_DRAG_PATH")
     if stock < 1:
+        if "sourcing" in observation:
+            try:
+                source = plan_fertilizer_sources(
+                    observation["sourcing"], capture_ref=capture_ref, now=now
+                )
+            except EcoResourceCycleError as exc:
+                raise FertilizerWorkflowError(str(exc)) from exc
+            result["source_plan"] = source
+            if source["gate"] == "FERTILIZER_SOURCE_READY":
+                return finish(
+                    "FERTILIZER_SOURCE_ACTION_READY",
+                    "SOURCE_ONE_SAFE_ITEM_THEN_REOBSERVE_POCKET",
+                    source["next_actions"][0],
+                )
         return finish("FERTILIZER_SUPPLY_REQUIRED", "INSPECT_EXISTING_FERTILIZER_SOURCES")
 
     # The native batch command is version/pack dependent. It must be ACTUALLY
