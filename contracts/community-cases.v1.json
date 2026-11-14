@@ -1,0 +1,50 @@
+{
+  "schema": "betterinstincts.community-learning.cases-contract/v1",
+  "owner": "scripts/community_cases.py",
+  "source_owner": "betterinstincts/judgment_learning.py",
+  "source_requirement": "Only separately opted-in operator-reviewed semantic judgment examples supplied as an explicit file",
+  "transfer_schema": "betterinstincts.community-learning.cases/v1",
+  "review_class": "UNREVIEWED_UNATTESTED_CONTRIBUTOR_DATA",
+  "allowed_fields": [
+    "game_version",
+    "platform",
+    "context",
+    "action",
+    "outcome",
+    "case_sha256"
+  ],
+  "disallowed": [
+    "raw capture references",
+    "screenshots",
+    "save paths",
+    "Sim or household identities",
+    "OS device data",
+    "scripts",
+    "hidden identifiers"
+  ],
+  "controls": {
+    "max_cases": 128,
+    "max_bundle_bytes": 65536,
+    "exact_profile": true,
+    "replay_digest": true,
+    "unknown_fields": "DENY",
+    "network": false,
+    "auto_collect": false,
+    "auto_upload": false,
+    "auto_train": false,
+    "auto_approve": false,
+    "gameplay_effect": false
+  },
+  "ci": "python -m scripts.community_cases audit-repo",
+  "proof_ceiling": "STRUCTURAL_REVIEW_ONLY_NO_CONSENT_PROVENANCE_GAMEPLAY_OR_HOST_GENERALIZATION_CERT",
+  "human_review": [
+    "confirm consent and rights",
+    "privacy/membership-inference review",
+    "independent source and holdouts",
+    "poisoning and contradictory-case review",
+    "benchmark against existing model",
+    "player queue, patch and rollback tests",
+    "maintainer approval"
+  ],
+  "bi002": "ACTIVE_UNCHANGED"
+}
