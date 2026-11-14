@@ -1,3 +1,35 @@
+## 2026-11-14 — Sixth Gear: use already-purchased backyard fertilizer bags first
+
+**Operator-observed parent fact:** Fertilizer bags have already been purchased and placed around the playable household backyard. BetterInstincts must detect those objects and transfer a usable bag into the **active Sim's personal inventory** before attempting the chosen planter. Do **not** infer missing fertilizer means buy more fertilizer.
+
+**Deterministic existing-owner route**
+
+```text
+host_stack.evaluate_turn(gardening=current observed context)
+  -> gardening_service (player/needs/school/queue/selected-Sim admission)
+  -> fertilizer_workflow (exact plant readiness, pocket stock, continuity)
+    -> optional backyard_scan (EA-native or calibrated multi-view bag identity)
+       - require same Sim, lot, installed game build and fresh capture
+       - require real fertilizer eligibility, household ownership, no reservation
+       - require verified reachable on-lot path and enabled exact bag transfer
+       - prefer shortest observed route; propose ONE bag-to-pocket interaction
+       - queued / awaiting readback -> never repeat or claim acquisition
+    -> REOBSERVE selected Sim personal inventory
+    -> only real pocket fertilizer stock and enabled plant menu permit
+       one FERTILIZE / FERTILIZE_ALL candidate
+    -> only verified per-plant outcome counts as finished
+```
+
+**Opt-in source schema:** `gardening.fertilizer_workflow.backyard_scan` is `betterinstincts.backyard-fertilizer-scan/v1` with `sim_ref`, `lot_ref`, `game_build`, `capture_ref`, `observed_at_unix`, `scene_verified`, `active_sim_verified`, `inventory_destination_verified` and `bags` (maximum 32 objects). Each bag observation must include exact `item_ref`, `item_kind=FERTILIZER_BAG`, `identity_source=EA_READ_ONLY` with one grounded object evidence ref or `CALIBRATED_MULTIVIEW` with two distinct evidence refs; `fertilizer_eligible=true` with `eligibility_evidence_ref`, `quantity`, `location=GROUND`, `zone=BACKYARD`, matching `lot_ref`, `lot_status=VERIFIED_ON_LOT`, `household_owned=true`, `player_reserved=false`, `protected=false`, `route_reachable=true`, `route_evidence_ref`, `route_steps` 0–64 and `transferable=true`. Even a correct bag requires a current observed `TRANSFER_FERTILIZER_TO_SIM_INVENTORY` interaction to the exact `item_ref`. A bag **label** alone never qualifies. A pending transfer includes `status=QUEUED` or `AWAITING_INVENTORY_READBACK`, bag/Sim/lot/action refs and prevents immediate replay.
+
+**Canonical spatial recognition:** When `backyard_scan.spatial_map` is available, the detector also cross-checks `betterinstincts.semantic-spatial-map-doc/v1`: same lot and installed build, non-executing current map, object ID present and classified `FERTILIZER_BAG`, `floor_id=OUTSIDE`, and an independent EA-read-only or calibrated multiview world pose. Mismatched maps or unknown/indoor/unlocated objects do not produce transfers. The spatial map is not itself a live native object sensor or authority to touch game state.
+
+**Additional parent guard:** enabling `backyard_scan` also requires `gardening.fertilizer_workflow.lot_ref` and `game_build` to independently match the observed survey. Once the Sim's personal pocket has sufficient independently observed fertilizer, the stale backyard survey is bypassed; the fresh plant menu and per-plant completion owner take precedence. Missing or mismatched lot/build fails closed before a bag transfer candidate can be proposed.
+
+The survey is an **input port**, not an implemented live game sensor. The policy does **not** execute drag/drop, choose a physical screen coordinate, move game objects, install an EA mod, or change saves. Actual object identity, version-specific native pickup-to-inventory semantics, the selected Sim's pocket change and fertilizer menu use require a compatible EA tuning/script source and a disposable-game A/B+rollback under issue #171. A particular purchased bag may be a decorative container or special fertilizer; eligibility must be verified on the installed pack/patch rather than guessed. Protected user saves and autonomy OFF remain authoritative.
+
+Regression: `tests/test_fertilizer_workflow.py::BackyardFertilizerBagTests` plus existing gardening and eco suites. Existing `GROUND` transfer path without a backyard scan remains backward compatible. BI-002 hunger retains independent live certification ownership.
+
 ## 2026-11-14 — /the-closers: source validation and career-task idempotence
 
 Post-merge review of PR #237 found five concrete source defects (CodeAnt: two inline findings plus three nitpicks). The bounded closer repair preserves the original source-only, player-first workflow.

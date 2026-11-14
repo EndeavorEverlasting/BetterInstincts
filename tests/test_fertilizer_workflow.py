@@ -34,6 +34,7 @@ def workflow(**changes):
     row = {"schema": "betterinstincts.fertilizer-workflow/v1",
            "capture_ref": CAPTURE, "observed_at_unix": time.time(),
            "sim_ref": "sim:garden", "actor_verified": True, "inventory_verified": True,
+           "lot_ref": "lot:home", "game_build": "build:verified",
            "transfer_authorized": False, "plants": [plant()],
            "supplies": [supply()]}
     row.update(changes)
@@ -231,6 +232,253 @@ class FertilizerWorkflowTests(unittest.TestCase):
         out = run_garden(ctx)
         self.assertEqual(out["gate"], "GARDEN_ACTION_READY")
         self.assertEqual(out["next_actions"][0]["action_id"], "FERTILIZE")
+
+
+
+def backyard_bag(ref="item:bag", **changes):
+    row = {
+        "item_ref": ref, "item_kind": "FERTILIZER_BAG",
+        "identity_source": "EA_READ_ONLY", "identity_evidence_refs": ["ea:tgi"],
+        "fertilizer_eligible": True, "eligibility_evidence_ref": "ea:fertilizer",
+        "quantity": 1, "location": "GROUND", "zone": "BACKYARD",
+        "lot_ref": "lot:home", "lot_status": "VERIFIED_ON_LOT",
+        "household_owned": True, "player_reserved": False, "protected": False,
+        "route_reachable": True, "route_evidence_ref": "route:verified",
+        "route_steps": 3, "transferable": True,
+    }
+    row.update(changes)
+    return row
+
+
+def backyard_scan(**changes):
+    row = {
+        "schema": "betterinstincts.backyard-fertilizer-scan/v1",
+        "sim_ref": "sim:garden", "lot_ref": "lot:home",
+        "game_build": "build:verified", "capture_ref": CAPTURE,
+        "observed_at_unix": time.time(), "scene_verified": True,
+        "active_sim_verified": True, "inventory_destination_verified": True,
+        "bags": [backyard_bag()],
+    }
+    row.update(changes)
+    return row
+
+
+class BackyardFertilizerBagTests(unittest.TestCase):
+    def test_discovered_owned_bag_to_selected_sim_inventory_is_one_proposal(self):
+        w = workflow(supplies=[], backyard_scan=backyard_scan())
+        original = copy.deepcopy(w)
+        out = evaluate(w, [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+        self.assertEqual(out["gate"], "FERTILIZER_BACKYARD_TRANSFER_READY")
+        self.assertEqual(len(out["next_actions"]), 1)
+        self.assertEqual(out["next_actions"][0]["item_ref"], "item:bag")
+        self.assertEqual(out["next_actions"][0]["destination_sim_ref"], "sim:garden")
+        self.assertEqual(out["next_actions"][0]["quantity"], 1)
+        self.assertEqual(out["inventory_units"], 0)
+        self.assertFalse(out["dispatch_authorized"])
+        self.assertEqual(w, original)
+
+    def test_prefer_nearest_proven_reachable_bag_not_first_or_cheapest_purchase(self):
+        survey = backyard_scan(bags=[
+            backyard_bag("item:far", route_steps=13),
+            backyard_bag("item:near", route_steps=2),
+            backyard_bag("item:offlot", lot_ref="lot:neighbor", route_steps=1),
+        ])
+        out = evaluate(workflow(supplies=[], backyard_scan=survey,
+                                sourcing={"schema": "fake:purchase"}),
+                       [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:far"),
+                        act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:near")])
+        self.assertEqual(out["next_actions"][0]["item_ref"], "item:near")
+        self.assertEqual(out["gate"], "FERTILIZER_BACKYARD_TRANSFER_READY")
+        self.assertNotIn("source_plan", out)
+
+    def test_two_step_readback_then_exact_plant_without_false_success(self):
+        first = evaluate(workflow(supplies=[], backyard_scan=backyard_scan()),
+                         [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+        self.assertEqual(first["inventory_units"], 0)
+        self.assertEqual(first["verified_done_targets"], [])
+        pending = backyard_scan(pending_transfer={
+            "status": "AWAITING_INVENTORY_READBACK", "bag_ref": "item:bag",
+            "sim_ref": "sim:garden", "lot_ref": "lot:home",
+            "action_ref": "queue:pickup",
+        })
+        second = evaluate(workflow(supplies=[], backyard_scan=pending),
+                          [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+        self.assertEqual(second["gate"], "FERTILIZER_BACKYARD_TRANSFER_PENDING")
+        self.assertFalse(second["next_actions"])
+        # Only an independently observed pocket stock in a subsequent capture
+        # can satisfy the existing plant picker; transfer proposal never counts.
+        new_capture = backyard_scan(bags=[])
+        third = evaluate(workflow(supplies=[supply("item:bag", qty=1)],
+                                  backyard_scan=new_capture),
+                         [act("FERTILIZE", "plant:a")])
+        self.assertEqual(third["gate"], "FERTILIZER_ACTION_READY")
+        self.assertEqual(third["next_actions"][0]["target_ref"], "plant:a")
+        self.assertEqual(third["verified_done_targets"], [])
+
+    def test_stock_readback_fertilizes_despite_stale_backyard_survey(self):
+        # Once the selected Sim actually holds the item, only the newly
+        # observed plant affordance matters; old backyard surveys are stale.
+        out = evaluate(workflow(supplies=[supply("item:bag", qty=1)],
+                       backyard_scan=backyard_scan(capture_ref="capture:old")),
+                       [act("FERTILIZE", "plant:a")])
+        self.assertEqual(out["gate"], "FERTILIZER_ACTION_READY")
+        self.assertEqual(out["next_actions"][0]["action_id"], "FERTILIZE")
+        self.assertEqual(out["next_actions"][0]["target_ref"], "plant:a")
+        self.assertNotIn("backyard_scan", out)
+
+    def test_parent_lot_and_game_build_must_match_backyard_survey(self):
+        for parent in ({"lot_ref": "lot:other"},
+                       {"game_build": "build:other"},
+                       {"game_build": None}, {"lot_ref": None}):
+            with self.subTest(parent=parent), self.assertRaisesRegex(
+                    FertilizerWorkflowError, "BACKYARD_SCAN_PARENT"):
+                evaluate(workflow(supplies=[], backyard_scan=backyard_scan(), **parent),
+                         [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+
+    def test_registered_semantic_spatial_map_confirms_physical_bag_identity(self):
+        world = {
+            "schema": "betterinstincts.semantic-spatial-map-doc/v1",
+            "lot_id": "lot:home", "game_build": "build:verified",
+            "execute_allowed": False,
+            "objects": {
+                "item:bag": {
+                    "category": "FERTILIZER_BAG", "floor_id": "OUTSIDE",
+                    "pose_source": "EA_READ_ONLY", "pose_refs": ["ea:pose"],
+                    "center": [1, 2, 0], "size": [1, 1, 1],
+                },
+                "item:chair": {
+                    "category": "CHAIR", "floor_id": "OUTSIDE",
+                    "pose_source": "EA_READ_ONLY", "pose_refs": ["ea:chair"],
+                    "center": [3, 4, 0], "size": [1, 1, 1],
+                },
+            }, "relations": [],
+        }
+        observed = [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")]
+        accepted = evaluate(workflow(supplies=[], backyard_scan=backyard_scan(
+            spatial_map=world)), observed)
+        self.assertEqual(accepted["gate"], "FERTILIZER_BACKYARD_TRANSFER_READY")
+        for bad_row in (
+            {"category": "UNKNOWN_OBJECT"},
+            {"floor_id": "FLOOR_1"},
+            {"center": None},
+            {"pose_source": "NONE"},
+        ):
+            with self.subTest(bad_row=bad_row):
+                modified = copy.deepcopy(world)
+                modified["objects"]["item:bag"].update(bad_row)
+                denied = evaluate(workflow(supplies=[], backyard_scan=backyard_scan(
+                    spatial_map=modified)), observed)
+                self.assertEqual(denied["gate"], "FERTILIZER_BACKYARD_BAGS_NOT_FOUND")
+                self.assertFalse(denied["next_actions"])
+        with self.assertRaisesRegex(FertilizerWorkflowError, "SPATIAL_MAP_SCOPE"):
+            evaluate(workflow(supplies=[], backyard_scan=backyard_scan(
+                spatial_map={**world, "lot_id": "lot:unrelated"})), observed)
+
+    def test_no_requeue_if_pickup_in_flight(self):
+        for status in ("QUEUED", "AWAITING_INVENTORY_READBACK"):
+            with self.subTest(status=status):
+                scan = backyard_scan(pending_transfer={
+                    "status": status, "bag_ref": "item:bag",
+                    "sim_ref": "sim:garden", "lot_ref": "lot:home",
+                    "action_ref": "queue:itembag",
+                })
+                out = evaluate(workflow(supplies=[], backyard_scan=scan),
+                               [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+                self.assertEqual(out["gate"], "FERTILIZER_BACKYARD_TRANSFER_PENDING")
+                self.assertFalse(out["next_actions"])
+
+    def test_missing_current_transfer_affordance_does_not_guess_drag(self):
+        out = evaluate(workflow(supplies=[], backyard_scan=backyard_scan()),
+                       [act("FERTILIZE", "plant:a")])
+        self.assertEqual(out["gate"], "FERTILIZER_BACKYARD_TRANSFER_AFFORDANCE_REQUIRED")
+        self.assertFalse(out["next_actions"])
+
+    def test_unverified_bag_and_wrong_lot_or_owner_are_ignored(self):
+        mutations = [
+            {"item_kind": "SEED_PACKET"}, {"fertilizer_eligible": False},
+            {"location": "HOUSEHOLD_INVENTORY"}, {"lot_ref": "lot:other"},
+            {"lot_status": "UNKNOWN"}, {"household_owned": False},
+            {"player_reserved": True}, {"protected": True},
+            {"route_reachable": False}, {"transferable": False}, {"quantity": 0},
+            {"zone": "STREET"},
+        ]
+        for changes in mutations:
+            with self.subTest(changes=changes):
+                bag = backyard_bag(**changes)
+                out = evaluate(workflow(supplies=[], backyard_scan=backyard_scan(bags=[bag])),
+                               [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+                self.assertEqual(out["gate"], "FERTILIZER_BACKYARD_BAGS_NOT_FOUND")
+                self.assertFalse(out["next_actions"])
+
+    def test_stale_or_wrong_actor_scan_refuses_supply(self):
+        for changes in (
+            {"capture_ref": "capture:old"},
+            {"observed_at_unix": time.time() - 190},
+            {"scene_verified": False},
+            {"active_sim_verified": False},
+            {"inventory_destination_verified": False},
+        ):
+            with self.subTest(changes=changes):
+                out = evaluate(workflow(supplies=[], backyard_scan=backyard_scan(**changes)),
+                               [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+                self.assertEqual(out["gate"], "FERTILIZER_BACKYARD_REOBSERVE")
+                self.assertFalse(out["next_actions"])
+        with self.assertRaisesRegex(FertilizerWorkflowError, "ACTOR_MISMATCH"):
+            evaluate(workflow(supplies=[], backyard_scan=backyard_scan(sim_ref="sim:other")),
+                     [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+
+    def test_identity_and_route_must_have_independent_proof(self):
+        invalid = [
+            {"identity_source": "SCREEN_LABEL"}, {"identity_evidence_refs": []},
+            {"identity_evidence_refs": ["ea:one", "ea:one"]},
+            {"identity_source": "CALIBRATED_MULTIVIEW", "identity_evidence_refs": ["view:one"]},
+            {"route_steps": True}, {"route_steps": -1}, {"route_steps": 65},
+            {"quantity": True}, {"quantity": -1},
+        ]
+        for changes in invalid:
+            with self.subTest(changes=changes), self.assertRaises(FertilizerWorkflowError):
+                evaluate(workflow(supplies=[], backyard_scan=backyard_scan(
+                    bags=[backyard_bag(**changes)])),
+                    [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+
+    def test_duplicate_bag_id_and_invalid_pending_transfer_denied(self):
+        for bad_scan in (
+            backyard_scan(bags=[backyard_bag(), backyard_bag()]),
+            backyard_scan(pending_transfer={"status": "QUEUED", "bag_ref": "item:bag",
+                "sim_ref": "sim:other", "lot_ref": "lot:home", "action_ref": "queue:x"}),
+        ):
+            with self.assertRaises(FertilizerWorkflowError):
+                evaluate(workflow(supplies=[], backyard_scan=bad_scan),
+                         [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+
+    def test_player_and_needs_priority_remain_above_backyard(self):
+        ctx = garden_context(workflow(supplies=[], backyard_scan=backyard_scan()),
+                             [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+        out = run_garden(ctx)
+        self.assertEqual(out["gate"], "GARDEN_ACTION_READY")
+        self.assertEqual(out["next_actions"][0]["item_ref"], "item:bag")
+        self.assertFalse(out["dispatch_authorized"])
+        self.assertEqual(run_garden(ctx, player_directed=True)["gate"], "GARDEN_PLAYER_FIRST")
+        self.assertFalse(run_garden(ctx, already_busy=True)["next_actions"])
+        self.assertEqual(run_garden(ctx, needs={**NEEDS, "hunger": .02})["gate"],
+                         "GARDEN_INSPECT_NEED_ACTIONS")
+
+    def test_exact_player_target_and_no_finished_or_cooling_plant(self):
+        w = workflow(supplies=[], plants=[plant("plant:a"), plant("plant:b")],
+                     backyard_scan=backyard_scan())
+        out = evaluate(w, [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")],
+                       exact_target="plant:b", required_action="FERTILIZE",
+                       expected_sim_ref="sim:garden")
+        self.assertEqual(out["gate"], "FERTILIZER_BACKYARD_TRANSFER_READY")
+        completed = evaluate(workflow(supplies=[], plants=[plant(state="VERIFIED_DONE")],
+                        backyard_scan=backyard_scan()),
+                        [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+        self.assertEqual(completed["gate"], "FERTILIZER_VERIFIED_COMPLETE")
+        cooling = evaluate(workflow(supplies=[], plants=[plant(ready=False)],
+                      backyard_scan=backyard_scan()),
+                      [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+        self.assertEqual(cooling["gate"], "FERTILIZER_WAIT_ELIGIBILITY")
+
 
 
 if __name__ == "__main__":
