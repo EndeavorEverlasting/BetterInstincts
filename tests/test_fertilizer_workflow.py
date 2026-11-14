@@ -352,6 +352,17 @@ class BackyardFertilizerBagTests(unittest.TestCase):
             [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
         self.assertEqual(out["gate"], "FERTILIZER_BACKYARD_BAGS_NOT_FOUND")
 
+    def test_gardening_service_preserves_enabled_flag_without_admitting_disabled(self):
+        row = act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")
+        w = workflow(supplies=[], backyard_scan=backyard_scan())
+        enabled = run_garden(garden_context(w, [row]))
+        self.assertEqual(enabled["gate"], "GARDEN_ACTION_READY")
+        self.assertIs(enabled["next_actions"][0]["available"], True)
+        disabled = dict(row, available=False)
+        rejected = run_garden(garden_context(w, [disabled]))
+        self.assertNotEqual(rejected["gate"], "GARDEN_ACTION_READY")
+        self.assertFalse(rejected["next_actions"])
+
     def test_current_transfer_action_must_be_enabled_not_just_named(self):
         action = act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")
         action["available"] = False
