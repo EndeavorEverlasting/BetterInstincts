@@ -55,6 +55,119 @@ def task(s, ident, mech, kind="YIELD", priority=3, resource=None,
 
 
 class HouseholdEconomyTests(unittest.TestCase):
+    def _work_household(self, count=3):
+        row = snapshot(count)
+        row["selected_member_key"] = row["members"][0]["member_key"]
+        for index, member in enumerate(row["members"]):
+            member["activity"] = "AT_WORK" if index == 0 else "AWAKE"
+        row["work_shift"] = {
+            "schema": "betterinstincts.work-shift.observation/v1",
+            "member_key": row["selected_member_key"],
+            "capture_ref": CAP,
+            "shift_ref": "shift:career001",
+            "state": "AT_WORK",
+            "work_mode": "RABBIT_HOLE",
+            "promotion_requirements": "MET",
+            "daily_task": "COMPLETE",
+            "performance": "BELOW_TARGET",
+            "current_tone": "NORMAL",
+            "tone_owner": "GAME",
+            "work_hard_available": True,
+        }
+        return row
+
+    def test_work_tone_precedes_handoff_with_no_chores(self):
+        row = self._work_household()
+        row["members"][0]["busy"] = True
+        result = evaluate_household_economy(row)
+        self.assertEqual(result["work_tone"]["gate"], "WORK_HARD_ADMISSION_REQUIRED")
+        self.assertIsNone(result["portrait_handoff"])
+        self.assertFalse(result["work_tone"]["execute_allowed"])
+        plan = evaluate_turn(
+            NEEDS, location_kind="home", available_objects=[], queue=[],
+            capture_ref=CAP, household_economy=row, already_busy=True,
+        )
+        self.assertEqual(plan["next_gate"], "CAREER_WORK_HARD_ADMISSION_REQUIRED")
+        self.assertFalse(plan["fallback"]["execute_allowed"])
+
+    def test_observed_work_hard_then_immediate_next_awake_and_needs(self):
+        row = self._work_household()
+        # A new independent game capture must attest the changed tone.
+        fresh = "capture:work-tone-confirmed002"
+        row["capture_ref"] = fresh
+        row["work_shift"]["capture_ref"] = fresh
+        row["work_shift"]["current_tone"] = "WORK_HARD"
+        for member in row["members"]:
+            member["capture_ref"] = fresh
+        row["members"][1]["needs"]["hunger"] = 0.08
+        result = evaluate_household_economy(row)
+        self.assertEqual(result["work_tone"]["gate"], "WORK_HARD_OBSERVED_HANDOFF_READY")
+        handoff = result["portrait_handoff"]
+        self.assertEqual(handoff["to_member_key"], row["members"][1]["member_key"])
+        self.assertEqual(handoff["reason"], "SELECTED_MEMBER_AT_RABBIT_HOLE_WORK")
+        self.assertTrue(handoff["new_capture_required"])
+        self.assertIn("hunger", handoff["need_keys"])
+        self.assertIsNone(handoff["task_ref"])
+        plan = evaluate_turn(
+            NEEDS, location_kind="home", available_objects=[], queue=[],
+            capture_ref=fresh, household_economy=row, already_busy=True,
+        )
+        self.assertEqual(plan["next_gate"], "AWAKE_HOUSEHOLD_HANDOFF_READY")
+
+    def test_unmet_promotion_releases_attention_without_overworking(self):
+        row = self._work_household()
+        row["work_shift"]["daily_task"] = "INCOMPLETE"
+        result = evaluate_household_economy(row)
+        self.assertEqual(result["work_tone"]["gate"], "PROMOTION_OPPORTUNITY_NOT_PROVEN")
+        self.assertEqual(result["portrait_handoff"]["to_member_key"],
+                         row["members"][1]["member_key"])
+        row["members"][0]["needs"]["energy"] = 0.1
+        result = evaluate_household_economy(row)
+        self.assertEqual(result["work_tone"]["gate"], "WELLBEING_FIRST_SKIP_WORK_HARD")
+        self.assertIsNotNone(result["portrait_handoff"])
+
+    def test_active_career_never_auto_abandons_sim(self):
+        row = self._work_household()
+        row["work_shift"]["work_mode"] = "ACTIVE_CAREER"
+        result = evaluate_household_economy(row)
+        self.assertEqual(result["work_tone"]["gate"], "ACTIVE_OR_UNKNOWN_CAREER_HOLD")
+        self.assertIsNone(result["portrait_handoff"])
+
+    def test_working_member_is_not_an_available_home_chore_worker(self):
+        row = self._work_household()
+        row["work_shift"]["daily_task"] = "INCOMPLETE"
+        row["members"][0]["skills"]["gardening"] = {"verified": True, "level": 10}
+        row["members"][1]["activity"] = "ASLEEP"
+        row["members"][2]["activity"] = "AWAY"
+        row["tasks"].append(task(row, "garden-working", "gardening"))
+        result = evaluate_household_economy(row)
+        self.assertEqual(result["assigned_count"], 0)
+        self.assertIsNone(result["portrait_handoff"])
+
+    def test_work_shift_identity_and_player_presence_fail_closed(self):
+        for broken in (
+            {"member_key": "sim:somebody-else"},
+            {"capture_ref": "capture:old"},
+        ):
+            row = self._work_household()
+            row["work_shift"].update(broken)
+            with self.subTest(broken=broken), self.assertRaisesRegex(
+                HouseholdEconomyError, "WORK_SHIFT_EVIDENCE_INVALID"
+            ):
+                evaluate_household_economy(row)
+        row = self._work_household()
+        row["members"][0]["activity"] = "AWAKE"
+        with self.assertRaisesRegex(HouseholdEconomyError, "WORK_SHIFT_SELECTED_ACTOR"):
+            evaluate_household_economy(row)
+        row = self._work_household()
+        row["members"][0]["player_reserved"] = True
+        result = evaluate_household_economy(row)
+        self.assertEqual(result["work_tone"]["gate"], "PLAYER_RESERVED_WORK_SHIFT")
+        self.assertIsNone(result["portrait_handoff"])
+        row["player_active"] = True
+        with self.assertRaisesRegex(HouseholdEconomyError, "PLAYER_PRESENCE"):
+            evaluate_household_economy(row)
+
     def test_sleep_handoff_requires_no_chore_or_existing_task(self):
         s = snapshot(3)
         s["selected_member_key"] = s["members"][0]["member_key"]
