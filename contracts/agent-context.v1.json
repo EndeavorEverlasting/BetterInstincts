@@ -1,0 +1,91 @@
+{
+  "schema": "betterinstincts.agent-context/v1",
+  "version": 1,
+  "owner": "betterinstincts/agent_context.py",
+  "purpose": "Read-only, bounded and portable context window for independent agents across chats; restore authoritative intent while selecting only fresh provenance-bearing context from existing domain owners.",
+  "invocation": "compile_agent_context(handoff, records, intent, query_key, capture_ref, now, budget_chars)",
+  "handoff": {
+    "schema": "betterinstincts.agent-context/v1",
+    "required": [
+      "household_ref",
+      "game_build",
+      "parent_objective",
+      "active_goal_id",
+      "next_gate",
+      "source_revision"
+    ],
+    "preserved": [
+      "corrections",
+      "rejected_paths",
+      "blockers"
+    ],
+    "transition": "source-qualified evidence_ref required; parent and household scope cannot silently change"
+  },
+  "data_layers": {
+    "goal": "betterinstincts/task_continuity.py; betterinstincts/selected_sim_continuity.py",
+    "mechanic": "betterinstincts/mechanics_registry.py; betterinstincts/object_action_catalog.py",
+    "relation": "contracts/ontology.v1.json; betterinstincts/semantic_spatial_map.py",
+    "observation": "betterinstincts/need_signal_fusion.py; betterinstincts/moodlets.py",
+    "authority": "contracts/effect-authority.v1.json; betterinstincts/control_handoff.py"
+  },
+  "retrieval_router": {
+    "GOAL": "lookup_goal",
+    "MECHANIC": "lookup_mechanic",
+    "RELATION": "query_relationships",
+    "OBSERVATION": "inspect_observation",
+    "AUTHORITY": "check_authority"
+  },
+  "routing_semantics": "Names and descriptions are allowlisted read-only owner suggestions, NOT callable connections and NOT proof of actual retrieval. The owner independently performs authorized lookup before using advice.",
+  "source_fields": [
+    "fact_id",
+    "kind",
+    "query_key",
+    "claim",
+    "source_owner",
+    "source_revision",
+    "evidence_ref",
+    "evidence_state",
+    "observed_at_unix",
+    "household_ref",
+    "game_build",
+    "capture_ref for GOAL and OBSERVATION"
+  ],
+  "source_states": [
+    "LOCAL_OBSERVED",
+    "REVIEWED_SOURCE",
+    "CANDIDATE"
+  ],
+  "bounds": {
+    "max_records": 64,
+    "max_age_seconds": 180,
+    "min_budget_characters": 512,
+    "max_budget_characters": 16384,
+    "max_handoff_items_per_field": 16,
+    "unit": "actual JSON character estimate, NOT tokens or measured model context usage"
+  },
+  "conflicts": "Same fact_id with divergent claims, owners or revisions is excluded; stale and candidates are not promoted.",
+  "status": [
+    "EVIDENCE_SELECTED",
+    "RETRIEVAL_REQUIRED"
+  ],
+  "diagnosis": [
+    "DATA_LAYER",
+    "RETRIEVAL_LAYER",
+    "DECISION_LAYER",
+    "SUPPORTED"
+  ],
+  "invariants": [
+    "Never replace, truncate or dilute parent objective, corrections, rejected paths or blockers to fit a context budget",
+    "Missing or inadequate mandatory context fails closed; no speculative context compression",
+    "Wrong household, game build or capture observations deny even if the claim is plausible",
+    "Read-only records do not override real-time player intent, selected Sim queue, fresh authorization or scene/save/lot gates",
+    "Graph retrieval is conditional on relationship questions and sourced edges; no graph query is a required stage",
+    "Host evaluation may expose packet optionally but cannot use it to change the effect admission decision",
+    "No profile discovery, arbitrary save/file writes, background agent, telemetry, raw chat logging or new OS hooks",
+    "Never claim an agent was installed, a tool executed, or a native Sims outcome was observed from an offline packet"
+  ],
+  "native_gameplay_route": "POLICY_ONLY",
+  "native_successor_issue": 171,
+  "active_parent": "BI-002 hunger certification remains active; this context service is nonblocking.",
+  "proof_ceiling": "OFFLINE_CONTEXT_PROJECTION_NOT_CROSS_CHAT_PROVIDER_PERSISTENCE_OR_GAMEPLAY"
+}
