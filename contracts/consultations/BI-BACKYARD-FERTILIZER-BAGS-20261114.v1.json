@@ -1,0 +1,83 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-BACKYARD-FERTILIZER-BAGS-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "MoonWake /sixth-gear parent: detect existing already-purchased fertilizer bags distributed around the current Sims backyard, prioritize safe pickup into the selected Sim personal inventory, verify inventory readback, then fertilize the explicitly intended planter without duplicate transfers or shopping.",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "HOST_SESSION",
+    "GAME_OBJECT",
+    "AFFORDANCE",
+    "ACTION_QUEUE",
+    "PLAYER_INTENT",
+    "OBSERVATION",
+    "CLAIM",
+    "ACTION_PROPOSAL",
+    "GOAL_THREAD",
+    "RESOURCE_CLAIM",
+    "ACQUISITION_SOURCE",
+    "LOCATION",
+    "OUTCOME",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/fertilizer_workflow.py",
+    "betterinstincts/gardening_service.py",
+    "betterinstincts/household_navigation.py",
+    "betterinstincts/semantic_spatial_map.py",
+    "contracts/gardening-service.v1.json",
+    "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-028",
+    "BI-ONT-029",
+    "BI-ONT-030"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SOURCE_POLICY_FOR_BACKYARD_BAGS_NOT_INSTALLED_GAMEPLAY",
+  "player_save_control_impact": "Read-only observed object/route identity advice plus one transfer candidate; no UI drag/click, purchases, inventory mutation, game-save writes, EA game-file copies, global polling, OS peripheral changes, background daemons, or gameplay success claims.",
+  "expected_outcome": "An opt-in captured current-lot backyard bag survey validates precise identities and selected Sim/lot, protects unavailable/reserved/uncertain objects, proposes only a source-observed transfer into personal inventory, waits for readback/queued action, then reuses the exact existing planter fertilization path; older observations without the new survey retain compatibility.",
+  "negative_tests": [
+    "Misclassified bag and label-only detection cannot move items",
+    "Wrong lot or Sim, stale capture, unproved route or menu, reserved/non-household items fail closed",
+    "One pending transfer cannot be proposed repeatedly",
+    "In-pocket inventory is never inferred solely from a transfer request",
+    "Finished target and cooling plant are not refertilized",
+    "Other plant or household player action cannot be replaced",
+    "Existing non-backyard transfer and source paths remain intact"
+  ],
+  "rollback_path": "Revert isolated scoped PR; no live game or save mutations in this source-only phase",
+  "unresolved_unknowns": [
+    "No connected installed Windows Sims 4 EA tuning/native hook for inspected patches, no real world object and item-transfer signal stream; required to deliver actual in-game autonomous bag movement via P08 issue #171",
+    "Pack/mod-specific fertilizer bags may not qualify in actual plant Fertilize menus; require installed-build inspection and verified pocket/plant eligibility",
+    "BI-002 hunger remains independent and active"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-BACKYARD-FERTILIZER-BAGS-20261114.v1.json",
+    "betterinstincts/fertilizer_workflow.py",
+    "tests/test_fertilizer_workflow.py",
+    "contracts/gardening-service.v1.json",
+    "contracts/native-gameplay-decisions/BI-BACKYARD-FERTILIZER-BAGS-20261114.v1.json",
+    "docs/ECO_RESOURCE_CYCLE.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "docs/PROMPT_INVOCATIONS.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "P141 alternatives: replacing transfer with buy-loop rejects existing paid stock; unbounded background screen scanner rejected; generic location-label match rejected; selecting current capture-scoped backyard inventory evidence within existing fertilizer_workflow preserves ownership and local-only EA-native successor. Proceed to bounded P95/P82 source validation.",
+  "source_refs": [
+    "https://github.com/EndeavorEverlasting/BetterInstincts/pull/238",
+    "https://github.com/EndeavorEverlasting/BetterInstincts/issues/171",
+    "https://help.ea.com/en/articles/the-sims/the-sims-4/gardening-guide/"
+  ],
+  "recorded_date": "2026-11-14"
+}
