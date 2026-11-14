@@ -39,7 +39,18 @@ def _count(value: object) -> bool:
 
 
 def _money(value: object) -> bool:
-    return type(value) in (int, float) and math.isfinite(value) and 0 <= value <= 1000000
+    # Check integer bounds *before* float conversion: very large ints overflow
+    # math.isfinite, bypassing the caller's typed error handling.
+    if type(value) is int:
+        return 0 <= value <= 1_000_000
+    return type(value) is float and math.isfinite(value) and 0 <= value <= 1_000_000
+
+
+def _timestamp(value: object) -> bool:
+    # Prevent float/int arithmetic overflow with unbounded external timestamps.
+    if type(value) is int:
+        return 0 <= value <= 1_000_000_000_000
+    return type(value) is float and math.isfinite(value) and 0 <= value <= 1_000_000_000_000
 
 
 def _rows(value: object, name: str) -> list:
@@ -57,8 +68,7 @@ def _admit(observation: Mapping, schema: str, capture_ref: str, now: float | Non
     stamp = observation.get("observed_at_unix")
     at = time.time() if now is None else now
     if (
-        type(stamp) not in (int, float) or not math.isfinite(stamp)
-        or type(at) not in (int, float) or not math.isfinite(at)
+        not _timestamp(stamp) or not _timestamp(at)
         or not 0 <= at - stamp <= MAX_AGE
         or observation.get("capture_ref") != capture_ref
         or observation.get("scene_verified") is not True
@@ -86,7 +96,9 @@ def _receipt(schema: str, capture_ref: str, gate: str, action: str, **kwargs) ->
 
 
 def plan_fertilizer_sources(
-    observation: Mapping, *, capture_ref: str, now: float | None = None
+    observation: Mapping, *, capture_ref: str, now: float | None = None,
+    expected_sim_ref: str | None = None,
+    expected_deficit_units: int | None = None,
 ) -> dict:
     """Choose one *observed* safe source when the existing pocket is short.
 
@@ -98,6 +110,10 @@ def plan_fertilizer_sources(
     deficit = observation.get("deficit_units")
     if not _count(deficit):
         raise EcoResourceCycleError("FERTILIZER_DEFICIT_INVALID")
+    if expected_sim_ref is not None and observation.get("sim_ref") != expected_sim_ref:
+        raise EcoResourceCycleError("FERTILIZER_SOURCE_ACTOR_MISMATCH")
+    if expected_deficit_units is not None and deficit != expected_deficit_units:
+        raise EcoResourceCycleError("FERTILIZER_SOURCE_DEFICIT_MISMATCH")
     cash, reserve = observation.get("cash"), observation.get("cash_reserve")
     if not _money(cash) or not _money(reserve) or reserve > cash:
         raise EcoResourceCycleError("FERTILIZER_BUDGET_INVALID")
@@ -135,20 +151,32 @@ def plan_fertilizer_sources(
                 or qty <= held):
             continue
         take = min(deficit, qty - held)
-        if cost * take > cash - reserve:
+        if cost:
+            if row.get("purchase_reviewed") is not True:
+                continue
+            # Bounded binary search also handles tiny fractional unit prices
+            # without constructing an unbounded float->int quotient.
+            lower, upper = 0, take
+            spendable = cash - reserve
+            while lower < upper:
+                mid = (lower + upper + 1) // 2
+                if cost * mid <= spendable:
+                    lower = mid
+                else:
+                    upper = mid - 1
+            take = lower
+        if not take:
             continue
-        if cost and row.get("purchase_reviewed") is not True:
-            continue
-        # Prefer verified zero-cost surplus and low opportunity-cost sources.
+        # Respect consumed opportunity cost before a category tie-breaker.
         candidates.append((
-            SOURCE_PRIORITY[row["kind"]], value * take + cost * take,
-            ident, row, take,
+            value * take + cost * take, SOURCE_PRIORITY[row["kind"]],
+            -take, ident, row, take,
         ))
     if not candidates:
         report.update(gate="FERTILIZER_SOURCE_UNKNOWN_OR_UNAFFORDABLE",
                       action="INSPECT_SURPLUS_PRODUCE_MANURE_OR_PURCHASE_OPTIONS")
         return report
-    _, _, _, chosen, take = min(candidates, key=lambda v: v[:3])
+    _, _, _, _, chosen, take = min(candidates, key=lambda v: v[:4])
     report.update(
         gate="FERTILIZER_SOURCE_READY",
         action="SOURCE_ONE_OBSERVED_FERTILIZER_ITEM_THEN_REOBSERVE",
@@ -168,6 +196,7 @@ def _rank_recycling_trials(observation: Mapping, capture_ref: str) -> list[dict]
     data = _rows(observation.get("recycle_outcomes", []), "RECYCLE_OUTCOMES")
     totals = defaultdict(lambda: [0, 0, 0, 0.0])
     proofs = set()
+    capture_pairs = set()
     for row in data:
         if not isinstance(row, Mapping) or not _ref(row.get("source_class")):
             raise EcoResourceCycleError("RECYCLE_OUTCOME_ID_INVALID")
@@ -181,11 +210,16 @@ def _rank_recycling_trials(observation: Mapping, capture_ref: str) -> list[dict]
         if row.get("player_interrupted") is not False:
             continue
         # Only source-proven outcomes within this patch and actor scope count.
-        if (row.get("game_build") != observation.get("game_build")
+        if (not _ref(observation.get("game_build"))
+                or row.get("game_build") != observation["game_build"]
                 or row.get("sim_ref") != observation.get("sim_ref")
                 or not _ref(row.get("before_ref")) or not _ref(row.get("after_ref"))
                 or row["before_ref"] == row["after_ref"]):
             continue
+        pair = (row["before_ref"], row["after_ref"])
+        if pair in capture_pairs:
+            raise EcoResourceCycleError("RECYCLE_OUTCOME_CAPTURE_REPLAY")
+        capture_pairs.add(pair)
         t = totals[row["source_class"]]
         t[0] += 1
         t[1] += bits
@@ -228,9 +262,22 @@ def plan_eco_fabrication(
     if state != "READY":
         result.update(gate="ECO_" + state, action="REOBSERVE_OR_YIELD_WITH_GOAL_HELD")
         return result
+    if not _ref(observation.get("game_build")):
+        result.update(gate="ECO_BUILD_UNVERIFIED",
+                      action="INSPECT_EXACT_INSTALLED_PATCH_BEFORE_ECO_ACTION")
+        return result
     task = observation.get("daily_task")
     if (observation.get("career_track") == "GREEN_TECHNICIAN"
             and task == "FABRICATE_ECO_UPGRADE_PART"):
+        task_status = observation.get("daily_task_status")
+        if task_status == "COMPLETE":
+            result.update(gate="ECO_CAREER_TASK_COMPLETE",
+                          action="NO_DUPLICATE_CAREER_FABRICATION")
+            return result
+        if task_status != "PENDING":
+            result.update(gate="ECO_CAREER_TASK_STATUS_UNKNOWN",
+                          action="READ_CURRENT_CAREER_PANEL_BEFORE_FABRICATING")
+            return result
         target_recipe = "FABRICATED_ECO_UPGRADE_PART"
     else:
         target_recipe = observation.get("goal_recipe_id")
