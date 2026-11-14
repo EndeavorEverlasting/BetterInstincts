@@ -55,6 +55,11 @@ from betterinstincts.scenario_goals import evaluate_scenario_turn
 from betterinstincts.discovery_hud import DiscoveryHudError, evaluate_discovery_hud
 from betterinstincts.autonomy_moderation import AutonomyModerationError, evaluate_autonomy_moderation
 from betterinstincts.behavior_valence import BehaviorValenceError, evaluate_behavior_valence
+from betterinstincts.opportunistic_actions import (
+    OpportunisticActionError,
+    plan_school_homework_window,
+    plan_targeted_chat_whim,
+)
 from betterinstincts.school_day import (
     SchoolDayError,
     evaluate_school_day_turn,
@@ -158,6 +163,7 @@ def evaluate_turn(
     homework_pending: bool = False,
     inventory_has_homework: Optional[bool] = None,
     homework_on_lot: Optional[bool] = None,
+    school_homework_window: Optional[Mapping[str, object]] = None,
     school_day_active: bool = False,
     school_goals_incomplete: Sequence[str] = (),
     school_phase: Optional[str] = None,
@@ -171,6 +177,7 @@ def evaluate_turn(
     sim_library: Sequence[Mapping[str, object]] = (),
     social_lookup_ran: bool = False,
     invitee_occult_status: Optional[str] = None,
+    queued_social_targets: Sequence[Mapping[str, object]] = (),
     pinned_whims: Sequence[str] = (),
     emotion: Optional[str] = None,
     moodlets: Sequence[str] = (),
@@ -321,6 +328,8 @@ def evaluate_turn(
             route=voi_snapshot.get("route"),
         )
     social_opportunity = None
+    school_homework_plan = None
+    targeted_chat_plan = None
     school_day = None
     navigating_needs = None
     teen_homework = None
@@ -473,6 +482,31 @@ def evaluate_turn(
                 objects_on_current_lot=on_lot,
                 location_kind=location_kind,
                 capture_ref=capture_ref,
+            )
+        # Observed class-transition homework and target-specific chat wishes are
+        # optional read-only ports; existing school/queue and invite owners remain.
+        if school_homework_window is not None:
+            school_homework_plan = plan_school_homework_window(
+                school_homework_window, capture_ref=capture_ref,
+                school_phase=school_phase or "morning_free_time",
+                school_day_active=school_day_active,
+                location_kind=effective_location,
+                homework_pending=homework_pending,
+                inventory_has_homework=inventory_has_homework,
+                queue=tuple(queue or ()), player_directed=player_directed,
+                already_busy=already_busy, multitasking=multitasking,
+                survival_critical=tuple(n for n in ("hunger", "bladder", "energy")
+                                        if needs[n] < 0.35),
+            )
+        if whim_labels:
+            targeted_chat_plan = plan_targeted_chat_whim(
+                tuple(whim_labels), tuple(sim_library),
+                capture_ref=capture_ref, queue=tuple(queue or ()),
+                queued_social_targets=tuple(queued_social_targets),
+                player_directed=player_directed, already_busy=already_busy,
+                survival_critical=tuple(n for n in ("hunger", "bladder", "energy")
+                                        if needs[n] < 0.35),
+                multitasking=multitasking,
             )
         if should_attach_social_opportunity(
             social_prompt_active=social_prompt_active,
@@ -745,6 +779,7 @@ def evaluate_turn(
         BalanceServiceError,
         SchoolDayError,
         SocialOpportunityError,
+        OpportunisticActionError,
         FunServiceError,
         NeedServicesError,
         NavigatingNeedsError,
@@ -1609,6 +1644,22 @@ def evaluate_turn(
             "survival_critical": school_day["survival_critical"],
             "forbidden": ["SCHOOL_GOAL_SPAM_WHILE_STARVING", "RESUME"],
         }
+    elif (school_homework_plan is not None
+          and school_homework_plan["gate"] in {
+              "HOMEWORK_WINDOW_READY", "HOMEWORK_WINDOW_CONTINUE",
+          }):
+        # Explicit same-capture homework affordance takes precedence over the
+        # older school-premises *heuristic*, never over survival/player/class.
+        next_gate = school_homework_plan["gate"]
+        fallback = {
+            "mechanism": school_homework_plan["action"],
+            "owner": "betterinstincts/opportunistic_actions.py",
+            "contract": "contracts/opportunistic-actions.v1.json",
+            "next_actions": school_homework_plan["next_actions"],
+            "execute_allowed": False,
+            "forbidden": ["CANCEL_GO_TO_CLASS", "BLIND_HOMEWORK_SPAM",
+                          "OVERRIDE_PLAYER_QUEUE", "CLAIM_COMPLETION"],
+        }
     elif school_day is not None and school_day["gate"] == "SCHOOL_DAY_GOAL_PROGRESS":
         next_gate = "SCHOOL_DAY_GOAL_PROGRESS"
         goal_plan = school_day.get("goal_plan") or {}
@@ -1717,6 +1768,24 @@ def evaluate_turn(
             "primary_route": teen_homework.get("primary_route"),
             "preferred_routes": teen_homework.get("preferred_routes") or [],
             "forbidden": ["CLAIM_BI006_CLOSURE", "RESUME"],
+        }
+    elif (targeted_chat_plan is not None and targeted_chat_plan["gate"] in {
+        "CHAT_WHIM_ON_LOT_READY", "CHAT_WHIM_RELATIONSHIP_READY",
+        "CHAT_WHIM_INVITE_REVIEW", "CHAT_WHIM_TARGET_LOOKUP_REQUIRED",
+        "CHAT_WHIM_TARGET_REOBSERVE", "CHAT_WHIM_QUEUE_REOBSERVE",
+        "CHAT_WHIM_AFFORDANCE_UNKNOWN", "CHAT_WHIM_MULTIPLE_TARGETS_REVIEW",
+    }):
+        next_gate = targeted_chat_plan["gate"]
+        fallback = {
+            "mechanism": targeted_chat_plan["action"],
+            "owner": "betterinstincts/opportunistic_actions.py",
+            "contract": "contracts/opportunistic-actions.v1.json",
+            "target_name": targeted_chat_plan.get("target_name"),
+            "target_sim_id": targeted_chat_plan.get("target_sim_id"),
+            "next_actions": targeted_chat_plan["next_actions"],
+            "execute_allowed": False,
+            "forbidden": ["BLIND_RELATIONSHIP_CLICK", "INVITE_UNKNOWN_OCCULT",
+                          "CANCEL_PLAYER_QUEUE", "CHAT_UNVERIFIED_TARGET"],
         }
     elif navigating_needs is not None and navigating_needs["gate"] == "BUILD_OR_BUY_YIELD":
         next_gate = "BUILD_OR_BUY_YIELD"
@@ -1997,6 +2066,8 @@ def evaluate_turn(
         "sim_profile": sim_profile,
         "school_day": school_day,
         "teen_homework": teen_homework,
+        "school_homework_window": school_homework_plan,
+        "targeted_chat_whim": targeted_chat_plan,
         "career_service": (
             compact_career_service(career_service) if career_service is not None else None
         ),
