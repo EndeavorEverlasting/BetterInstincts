@@ -52,7 +52,7 @@ def recognize_super_fertilizer_hover(
     ) != item_ref or observation.get("tooltip_attached_to_target") is not True:
         raise FertilizerHoverError("FERTILIZER_HOVER_TARGET_UNBOUND")
     source = observation.get("source")
-    if source not in SOURCES:
+    if not isinstance(source, str) or source not in SOURCES:
         raise FertilizerHoverError("FERTILIZER_HOVER_SOURCE_INVALID")
     title = _text(observation.get("title"), 100)
     description = _text(observation.get("description"), 300)

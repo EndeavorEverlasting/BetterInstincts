@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/fertilizer_hover_recognition.py",
+      "route": "POLICY_ONLY",
+      "reason": "Fail closed on unhashable semantic hover sources with typed errors before any action recommendation.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/fertilizer_workflow.py",
+      "route": "POLICY_ONLY",
+      "reason": "Validate captured item categories and pending-transfer status before lookup while allowing independently observed partial pocket stock to fertilize a single plant without replaying pending pickup.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

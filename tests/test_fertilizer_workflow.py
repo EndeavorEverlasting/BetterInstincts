@@ -539,6 +539,70 @@ class BackyardFertilizerBagTests(unittest.TestCase):
             evaluate(workflow(supplies=[], backyard_scan=backyard_scan(
                 spatial_map={**world, "lot_id": "lot:unrelated"})), observed)
 
+    def test_partial_pocket_pending_transfer_uses_one_plant_without_second_pickup(self):
+        pending = backyard_scan(pending_transfer={
+            "status": "QUEUED", "bag_ref": "item:bag",
+            "sim_ref": "sim:garden", "lot_ref": "lot:home",
+            "action_ref": "queue:inflight",
+        })
+        row = workflow(
+            plants=[plant("plant:a"), plant("plant:b")],
+            supplies=[supply("item:held", qty=1),
+                      supply("item:ground", location="GROUND", qty=2, transferable=True)],
+            transfer_authorized=True, backyard_scan=pending,
+        )
+        result = evaluate(row, [
+            act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag"),
+            act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:ground"),
+            act("FERTILIZE_ALL", "plant:a"), act("FERTILIZE", "plant:a"),
+        ])
+        self.assertEqual(result["gate"], "FERTILIZER_ACTION_READY")
+        self.assertEqual(len(result["next_actions"]), 1)
+        self.assertEqual(result["next_actions"][0]["action_id"], "FERTILIZE")
+        self.assertEqual(result["backyard_scan"]["gate"], "FERTILIZER_BACKYARD_TRANSFER_PENDING")
+        self.assertEqual(result["inventory_units"], 1)
+        self.assertFalse(result["dispatch_authorized"])
+        empty = evaluate(workflow(supplies=[], backyard_scan=pending), [
+            act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+        self.assertEqual(empty["gate"], "FERTILIZER_BACKYARD_TRANSFER_PENDING")
+        self.assertFalse(empty["next_actions"])
+
+    def test_external_unhashable_bag_fields_never_escape_typed_refusal(self):
+        for field in ("identity_source", "pending_transfer"):
+            with self.subTest(field=field), self.assertRaises(FertilizerWorkflowError):
+                if field == "identity_source":
+                    scan = backyard_scan(bags=[backyard_bag(identity_source=[])])
+                else:
+                    scan = backyard_scan(pending_transfer={
+                        "status": [], "bag_ref": "item:bag",
+                        "sim_ref": "sim:garden", "lot_ref": "lot:home",
+                        "action_ref": "queue:pending",
+                    })
+                evaluate(workflow(supplies=[], backyard_scan=scan),
+                         [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+        for field in ("item_kind", "category", "pose_source"):
+            with self.subTest(field=field):
+                bag = backyard_bag()
+                scan = backyard_scan(bags=[bag])
+                if field == "item_kind":
+                    bag[field] = []
+                else:
+                    scan["spatial_map"] = {
+                        "schema": "betterinstincts.semantic-spatial-map-doc/v1",
+                        "lot_id": "lot:home", "game_build": "build:verified",
+                        "execute_allowed": False,
+                        "objects": {"item:bag": {
+                            "category": "FERTILIZER_BAG", "floor_id": "OUTSIDE",
+                            "pose_source": "EA_READ_ONLY", "pose_refs": ["ea:pose"],
+                            "center": [1, 2, 0],
+                        }},
+                    }
+                    scan["spatial_map"]["objects"]["item:bag"][field] = []
+                out = evaluate(workflow(supplies=[], backyard_scan=scan),
+                               [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
+                self.assertEqual(out["gate"], "FERTILIZER_BACKYARD_BAGS_NOT_FOUND")
+                self.assertFalse(out["next_actions"])
+
     def test_no_requeue_if_pickup_in_flight(self):
         for status in ("QUEUED", "AWAITING_INVENTORY_READBACK"):
             with self.subTest(status=status):
