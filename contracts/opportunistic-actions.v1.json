@@ -1,0 +1,86 @@
+{
+  "schema": "betterinstincts.opportunistic-actions/v1",
+  "owner": "betterinstincts/opportunistic_actions.py",
+  "host_owner": "betterinstincts/host_stack.py",
+  "listener_owner": "betterinstincts/host_listener.py",
+  "status": "OFFLINE_POLICY_SOURCE_ONLY_NOT_NATIVE_EA_GAMEPLAY",
+  "premise": "A verified individual game affordance may supersede a conservative school-premises heuristic while retaining mandatory class and player obligations. A target-specific chat whim is a goal that needs a real verified action route rather than passive disappearance.",
+  "school_homework": {
+    "applies": [
+      "before_class",
+      "class_transition",
+      "class_time"
+    ],
+    "must_have": [
+      "same_capture_ref",
+      "exact_game_version",
+      "source_kind_GAME_UI_VERIFIED_or_EA_NATIVE_VERIFIED",
+      "same_school_phase",
+      "school_day_active",
+      "sim_on_school_premises",
+      "homework_pending",
+      "book_in_inventory",
+      "class_attendance_preserved",
+      "observed_homework_available_or_running",
+      "valid_queue_budget_or_existing_homework"
+    ],
+    "positive_gates": [
+      "HOMEWORK_WINDOW_READY",
+      "HOMEWORK_WINDOW_CONTINUE"
+    ],
+    "negative_gates": [
+      "HOMEWORK_WINDOW_REOBSERVE",
+      "HOMEWORK_WINDOW_PLAYER_FIRST",
+      "HOMEWORK_WINDOW_SURVIVAL_FIRST",
+      "HOMEWORK_WINDOW_CONTEXT_NOT_ADMITTED",
+      "HOMEWORK_WINDOW_ATTEND_CLASS_FIRST",
+      "HOMEWORK_WINDOW_ALREADY_QUEUED",
+      "HOMEWORK_WINDOW_AFFORDANCE_MISSING",
+      "HOMEWORK_WINDOW_QUEUE_CAPACITY_HOLD"
+    ],
+    "forbidden": [
+      "CANCEL_GO_TO_CLASS",
+      "OVERRIDE_PLAYER_QUEUE",
+      "BLIND_RUN_DURING_CLASS",
+      "ASSUME_HOMEWORK_DONE",
+      "INVENT_GAME_AFFORDANCE",
+      "REPLACE_STUDY_LOCATION_POLICY_AT_HOME"
+    ],
+    "source": "operator observed one game seam; per-build operational generality requires local P08"
+  },
+  "chat_whim": {
+    "trigger": "Exact observed 'Chat with <Sim>' or 'Talk to <Sim>' label in existing whims/pinned_whims",
+    "identity": "unique exact normalized Sims library match + same capture + opaque sim_id",
+    "on_lot": "CHAT_ON_LOT observed -> exact on-lot Sim interaction",
+    "off_lot": "RELATIONSHIP_CHAT observed -> R keyboard shortcut -> exact relationship card -> observed chat",
+    "invite_fallback": "INVITE_OVER observed + target confirmed off-lot + unique lookup and known safe occult -> invitation review then fresh on-lot chat",
+    "queue_dedup": "exact sim_id+action_kind+current capture or reobserve unknown chat labels; no blind duplicate",
+    "primary_gates": [
+      "CHAT_WHIM_ON_LOT_READY",
+      "CHAT_WHIM_RELATIONSHIP_READY",
+      "CHAT_WHIM_INVITE_REVIEW"
+    ],
+    "untrusted_gates": [
+      "CHAT_WHIM_TARGET_LOOKUP_REQUIRED",
+      "CHAT_WHIM_TARGET_REOBSERVE",
+      "CHAT_WHIM_QUEUE_REOBSERVE",
+      "CHAT_WHIM_QUEUE_CAPACITY_HOLD",
+      "CHAT_WHIM_AFFORDANCE_UNKNOWN",
+      "CHAT_WHIM_MULTIPLE_TARGETS_REVIEW"
+    ],
+    "forbidden": [
+      "GUESS_TARGET_BY_NAME_PARTIAL",
+      "INVITE_UNKNOWN_OCCULT",
+      "SPAM_R",
+      "SENDINPUT_FROM_POLICY",
+      "FORCE_CHAT_OVER_PLAYER_ORDER",
+      "CLAIM_WHIM_SATISFIED_BEFORE_OBSERVED_OUTCOME"
+    ]
+  },
+  "effect_authority": "NONE; all next_actions are candidates, not executable commands. Existing native gameplay or admitted host lab must independently observe target, mode, source, consent and effect outcome.",
+  "proof_ceiling": "SOURCE_VALIDATED_HOST_NEXT_GATE_NOT_NATIVE_EA_EFFECT_OR_LIVE_GAME_CERT",
+  "parent_gates": [
+    "BI-002 hunger live certification still ACTIVE",
+    "Exact-patch high-school homework window and R relationship chat require independent P08 game observation"
+  ]
+}
