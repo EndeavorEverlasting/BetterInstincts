@@ -1,0 +1,77 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PS0241-CLOSERS-NATIVE-ACK-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Close false-progress and stalled-intent gaps between offline Play proposals and actual native EA queue dispatch; explicitly distinguish proposal, queue attestation, denial/no-effect and witnessed completion while preserving all maths and player-first decisions.",
+  "affected_concepts": [
+    "SIM",
+    "ACTION_QUEUE",
+    "GOAL_THREAD",
+    "OBSERVATION",
+    "NEED_STATE",
+    "PLAYER_INTENT",
+    "INTERRUPTION",
+    "TIME_WINDOW",
+    "RESUME_CONDITION",
+    "PROOF_RECEIPT",
+    "GAME_BUILD"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/ecology_intent.py",
+    "betterinstincts/task_continuity.py",
+    "betterinstincts/queue_supervision.py",
+    "betterinstincts/activity_chain.py",
+    "betterinstincts/decision_horizon.py",
+    "contracts/native-gameplay-authority.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-043",
+    "BI-ONT-044"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "STATIC_POLICY_ACK_CONTRACT_ONLY_NO_NATIVE_QUEUE_EFFECT",
+  "player_save_control_impact": "Pure immutable in-memory state validation. No Sims install, OS, save, native effects, mod script loading or desktop actions. Human and unknown-origin controls always win.",
+  "expected_outcome": "Do not treat a policy proposal as an EA queue effect; require source-bound, fresh native queue acceptance before claiming in-flight; absent-effect refusal releases pending intent safely; independently attested outcome and interruption pin the native queue identity and original capture.",
+  "negative_tests": [
+    "No acknowledgement means no completion",
+    "Wrong queue identity or cross-Sim acknowledgement rejected",
+    "Unobserved refusal does not permit retry",
+    "Verified non-enqueue permits retry on new capture",
+    "Duplicated acknowledgement refused",
+    "Player or unknown provenance cannot attest native queue",
+    "Telemetry between native enqueue and outcome does not lose identity"
+  ],
+  "rollback_path": "Revert the isolated feature-branch policy change; retain previous main source as last known good. Do not alter user game or saves.",
+  "unresolved_unknowns": [
+    "Exact installed EA native queue event origin/provenance signatures",
+    "Self-loading Python 3.7 Sims script mod installation",
+    "Actual live vanilla/modified and rollback P08"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-PS0241-CLOSERS-NATIVE-ACK-20261114.v1.json",
+    "contracts/native-gameplay-decisions/BI-PS0241-CLOSERS-NATIVE-ACK-20261114.v1.json",
+    "betterinstincts/ecology_intent.py",
+    "tests/test_ecology_intent.py",
+    "docs/ECOLOGY_INTENT.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "P83 found a policy proposal being immediately promoted to awaiting actual action without queue confirmation. P03 selects minimal two-phase attestation. P141 compares new agent clicker (REJECT), merged generic planners replacing ecology (WEAKENED premature), preserving existing independent controls with one native admission seam (SELECT); P124 keeps native side effect ownership in issue 171. P04 dispatch only through a proven local adapter.",
+  "source_refs": [
+    "https://github.com/EndeavorEverlasting/BetterInstincts/pull/253",
+    "https://github.com/EndeavorEverlasting/BetterInstincts/pull/254",
+    "https://github.com/EndeavorEverlasting/BetterInstincts/pull/255",
+    "https://github.com/EndeavorEverlasting/BetterInstincts/issues/171"
+  ],
+  "recorded_date": "2026-11-14"
+}
