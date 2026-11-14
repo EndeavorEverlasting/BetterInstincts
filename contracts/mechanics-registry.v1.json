@@ -1,0 +1,567 @@
+{
+  "schema": "betterinstincts.mechanics-registry/v1",
+  "revision": 1,
+  "purpose": "Source-backed, never-finished domain coverage map. Machine-readable mechanical ownership, missing capability gaps, dependencies and verified proof ceilings must evolve with independently observed outcomes; neither a static TODO nor a new central gameplay controller.",
+  "canonical_owner": "contracts/mechanics-registry.v1.json",
+  "policy_owner": "betterinstincts/mechanics_registry.py",
+  "possible_scopes": [
+    "SIM",
+    "HOUSEHOLD",
+    "WORLD"
+  ],
+  "statuses": {
+    "SOURCE_PRESENT": "Source file exists; not an assertion of live gameplay effect",
+    "GAP": "No implementing code owner established; retain visible gap until selected and tested"
+  },
+  "invariant": "Existing domain code is authoritative; registry is a coverage index and replan advisor. Adding a mechanic never grants UI/native effects, changes account data or advances BI-002.",
+  "mechanics": [
+    {
+      "id": "need-hunger",
+      "domain": "needs",
+      "scope": "SIM",
+      "owner": "betterinstincts/need_services.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_need_services.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "need-bladder",
+      "domain": "needs",
+      "scope": "SIM",
+      "owner": "betterinstincts/need_services.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_need_services.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "need-energy",
+      "domain": "needs",
+      "scope": "SIM",
+      "owner": "betterinstincts/need_services.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_need_services.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "need-hygiene",
+      "domain": "needs",
+      "scope": "SIM",
+      "owner": "betterinstincts/need_services.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_need_services.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "need-fun",
+      "domain": "wellbeing",
+      "scope": "SIM",
+      "owner": "betterinstincts/fun_service.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_fun_service.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "need-social",
+      "domain": "wellbeing",
+      "scope": "SIM",
+      "owner": "betterinstincts/need_services.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_need_services.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "mood-temperament",
+      "domain": "wellbeing",
+      "scope": "SIM",
+      "owner": "betterinstincts/balance_service.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_balance_service.py"
+      ],
+      "dependencies": [
+        "need-fun",
+        "need-social"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "observed-moodlets",
+      "domain": "wellbeing",
+      "scope": "SIM",
+      "owner": "betterinstincts/moodlets.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_moodlets.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "personality-preferences",
+      "domain": "wellbeing",
+      "scope": "SIM",
+      "owner": "betterinstincts/sim_profile.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_sim_profile.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "personal-leisure",
+      "domain": "wellbeing",
+      "scope": "SIM",
+      "owner": "betterinstincts/fun_service.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_fun_service.py"
+      ],
+      "dependencies": [
+        "need-fun"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "player-queue-sovereignty",
+      "domain": "safety",
+      "scope": "SIM",
+      "owner": "betterinstincts/autonomy_moderation.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_autonomy_moderation.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "action-queue-capacity",
+      "domain": "safety",
+      "scope": "SIM",
+      "owner": "betterinstincts/queue_capacity.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_queue_study.py"
+      ],
+      "dependencies": [
+        "player-queue-sovereignty"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "school-attendance",
+      "domain": "education",
+      "scope": "SIM",
+      "owner": "betterinstincts/school_day.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_school_day.py"
+      ],
+      "dependencies": [
+        "player-queue-sovereignty"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "homework-completion",
+      "domain": "education",
+      "scope": "SIM",
+      "owner": "betterinstincts/teen_homework.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_teen_homework.py"
+      ],
+      "dependencies": [
+        "school-attendance"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "late-homework-opportunity",
+      "domain": "education",
+      "scope": "SIM",
+      "owner": "betterinstincts/opportunistic_actions.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_opportunistic_actions.py"
+      ],
+      "dependencies": [
+        "homework-completion"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "career-progress",
+      "domain": "economy",
+      "scope": "SIM",
+      "owner": "betterinstincts/career_service.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_career_service.py"
+      ],
+      "dependencies": [
+        "need-hunger"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "skills-practice",
+      "domain": "progression",
+      "scope": "SIM",
+      "owner": "betterinstincts/diy_skill_force.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_diy_skill_force.py"
+      ],
+      "dependencies": [
+        "need-energy"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "aspiration-progress",
+      "domain": "progression",
+      "scope": "SIM",
+      "owner": "betterinstincts/aspiration_service.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_aspiration_service.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "income-earning",
+      "domain": "economy",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/budget_eval.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_decision_eval.py"
+      ],
+      "dependencies": [
+        "need-hunger"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "bill-payment",
+      "domain": "economy",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/household_upkeep.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_household_upkeep.py"
+      ],
+      "dependencies": [
+        "income-earning"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "household-repairs",
+      "domain": "upkeep",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/household_upkeep.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_household_upkeep.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "servo-care",
+      "domain": "upkeep",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/household_upkeep.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_household_upkeep.py"
+      ],
+      "dependencies": [
+        "household-repairs"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "gardening",
+      "domain": "upkeep",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/gardening_service.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_gardening_service.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "nano-recycle",
+      "domain": "upkeep",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/nanocan_recycling.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_nanocan_recycling.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "household-navigation",
+      "domain": "mobility",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/household_navigation.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_household_navigation.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "room-census",
+      "domain": "mobility",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/room_census.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_room_census.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "named-social-whim",
+      "domain": "relationships",
+      "scope": "SIM",
+      "owner": "betterinstincts/opportunistic_actions.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_opportunistic_actions.py"
+      ],
+      "dependencies": [
+        "need-social"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "safe-invite",
+      "domain": "relationships",
+      "scope": "SIM",
+      "owner": "betterinstincts/social_opportunity.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_social_opportunity.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "chance-event-decisions",
+      "domain": "life-events",
+      "scope": "SIM",
+      "owner": "betterinstincts/chance_event_research.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_chance_event_research.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "cooperative-role-allocation",
+      "domain": "coordination",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/household_economy.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_household_economy.py"
+      ],
+      "dependencies": [
+        "player-queue-sovereignty",
+        "mood-temperament"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "household-yield-accounting",
+      "domain": "economy",
+      "scope": "HOUSEHOLD",
+      "owner": null,
+      "evidence_state": "GAP",
+      "tests": [],
+      "dependencies": [
+        "cooperative-role-allocation"
+      ],
+      "next_gate": "P95_OWNER_DISCOVERY",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "family-care",
+      "domain": "life-events",
+      "scope": "HOUSEHOLD",
+      "owner": null,
+      "evidence_state": "GAP",
+      "tests": [],
+      "dependencies": [
+        "need-social"
+      ],
+      "next_gate": "P95_OWNER_DISCOVERY",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "pet-care",
+      "domain": "life-events",
+      "scope": "HOUSEHOLD",
+      "owner": null,
+      "evidence_state": "GAP",
+      "tests": [],
+      "dependencies": [
+        "need-fun"
+      ],
+      "next_gate": "P95_OWNER_DISCOVERY",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "relationship-continuity",
+      "domain": "relationships",
+      "scope": "HOUSEHOLD",
+      "owner": null,
+      "evidence_state": "GAP",
+      "tests": [],
+      "dependencies": [
+        "named-social-whim"
+      ],
+      "next_gate": "P95_OWNER_DISCOVERY",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "shared-equipment-claims",
+      "domain": "coordination",
+      "scope": "HOUSEHOLD",
+      "owner": null,
+      "evidence_state": "GAP",
+      "tests": [],
+      "dependencies": [
+        "cooperative-role-allocation"
+      ],
+      "next_gate": "P95_OWNER_DISCOVERY",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "long-horizon-replanning",
+      "domain": "coordination",
+      "scope": "HOUSEHOLD",
+      "owner": null,
+      "evidence_state": "GAP",
+      "tests": [],
+      "dependencies": [
+        "cooperative-role-allocation"
+      ],
+      "next_gate": "P95_OWNER_DISCOVERY",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "household-fairness-learning",
+      "domain": "coordination",
+      "scope": "HOUSEHOLD",
+      "owner": null,
+      "evidence_state": "GAP",
+      "tests": [],
+      "dependencies": [
+        "cooperative-role-allocation"
+      ],
+      "next_gate": "P95_OWNER_DISCOVERY",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    }
+  ],
+  "next_revision": "Use scripts/mechanics_registry.py status and pure reconcile with distinct observed outcome evidence to prioritize incomplete coverage; Git-reviewed consultation and new proof are required for a persisted registry revision.",
+  "proof_ceiling": "CATALOG_SOURCE_MAPPING_NOT_LIVE_EA_EFFECT_OR_COMPLETE_COVERAGE"
+}
