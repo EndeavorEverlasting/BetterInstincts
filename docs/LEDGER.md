@@ -2084,3 +2084,7 @@ P08 observed the operator-authorized disposable session paused in Live Mode on W
 BI-002 remains active. Establish a repeatable mod-disabled scenario with measured time to first bite, normalized hunger, simulation lag, queue behavior and exceptions. The modified phase still needs a verified Sims 4 Studio build and exact vanilla tuning export, then an authored reversible package, matched trials, rollback and independent review. No package was built or installed. The consultation is `BI-HUNGER-LIVE-CERT-20261114`.
 
 After the operator restarted, the running executable reported Windows `1.121.361.1020`, the options showed `modsdisabled = 1` and `scriptmodsenabled = 0`, and a fresh window observation showed the disposable household paused in Live Mode with the selected Sim asleep. This clears the mod-isolation prerequisite for a vanilla session. The paused scene gives no trial timing, calibrated numeric hunger or simulation-lag sample. The recorder still contains zero gameplay rows.
+
+## 2026-11-14 - Preference offer stopped vanilla hunger setup
+
+A Video Gaming like offer paused the disposable Windows 1.121.361.1020 session before the first hunger trial. The operator classified the offer as beneficial. The canonical preference policy now recommends Yes for that like and No for catalogued offers without a qualifying benefit. Unknown dialogs and player overrides remain protected. No live response or hunger trial was recorded.

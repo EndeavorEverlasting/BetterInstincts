@@ -37,9 +37,16 @@ class PreferencePromptTests(unittest.TestCase):
 
     def test_mischief_dislike_can_be_positive_with_matching_goal(self):
         row = offer(kind="dislike", topic="mischief")
-        self.assertEqual(evaluate_offer(row, automation_opt_in=True)["decision"], "HOLD")
+        self.assertEqual(evaluate_offer(row, automation_opt_in=True)["steps"], ["NO"])
         row["goal_tags"] = ["avoid_mischief"]
         self.assertEqual(evaluate_offer(row, automation_opt_in=True)["decision"], "ACCEPT")
+
+    def test_video_gaming_like_is_beneficial_and_dislike_is_declined(self):
+        for kind, step in (("like", "YES"), ("dislike", "NO")):
+            with self.subTest(kind=kind):
+                result = evaluate_offer(offer(kind, "video_gaming"), automation_opt_in=True)
+                self.assertEqual(result["steps"][0], step)
+                self.assertIsNone(result["control_permit"])
 
     def test_all_unsafe_or_untrusted_conditions_hold(self):
         base = offer()
@@ -49,6 +56,7 @@ class PreferencePromptTests(unittest.TestCase):
             {**base, "dialog_class": "reward_trait"},
             {**base, "scene": "build"},
             {**base, "visible_buttons": ["YES"]},
+            {**base, "visible_buttons": ["YES", "NO", "YES"]},
             {**base, "sim_ref": ""},
             {**base, "offer_kind": "maybe"},
             {**base, "goal_tags": ["\nunsafe"]},

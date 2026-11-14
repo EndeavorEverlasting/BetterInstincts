@@ -78,7 +78,7 @@ def evaluate_offer(
     buttons = offer.get("visible_buttons")
     if not isinstance(buttons, (list, tuple)) or any(type(b) is not str for b in buttons):
         return {**result, "reason": "BUTTONS_UNVERIFIED"}
-    if set(buttons) != {"YES", "NO"}:
+    if len(buttons) != 2 or set(buttons) != {"YES", "NO"}:
         return {**result, "reason": "BUTTONS_UNVERIFIED"}
     if player_directed or offer.get("player_directed") is True:
         return {**result, "reason": "PLAYER_DIRECTED"}
@@ -98,16 +98,16 @@ def evaluate_offer(
     policy = topic[kind]
     if policy == "GOAL_ONLY":
         positive_goals = set(topic.get(kind + "_goals", ()))
-        if not positive_goals.intersection(goals):
-            return {**result, "reason": "NO_MATCHING_SIM_GOAL"}
-        positive = True
+        positive = bool(positive_goals.intersection(goals))
+        reason = "CATALOGUED_GOAL_ALIGNED" if positive else "NO_MATCHING_SIM_GOAL"
     else:
         positive = policy == "POSITIVE"
+        reason = "CATALOGUED_HEURISTIC"
     decision = "ACCEPT" if positive else "DECLINE"
     return {
         **result,
         "decision": decision,
-        "reason": "CATALOGUED_GOAL_ALIGNED" if policy == "GOAL_ONLY" else "CATALOGUED_HEURISTIC",
+        "reason": reason,
         "steps": ["YES", "OK"] if positive else ["NO"],
         "topic_id": offer["topic_id"],
         "offer_kind": kind,
