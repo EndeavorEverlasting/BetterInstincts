@@ -250,3 +250,7 @@ Source-only bounded semi-Markov planning extends the existing PS-0241 activity c
 ## 2026-11-14 — PS-0245 Closers and native game gate
 
 Follow-on `/the-closers` of merged #255 verified current main source/CI and hardened the stochastic policy's transient need floors, zero-utility/no-op selection and search-cap abstention in the existing `decision_horizon.py` owner. Evidence and local execution path: `docs/DECISION_HORIZON.md` and `docs/handoff/BI-PS0245-CLOSERS-LOCAL-NATIVE-GATE-20261114.md`. Keep PS-0241 observation/DAG, signed needs-rate fusion, moodlets, queue continuity, per-portrait intent and native autonomy owners distinct. **Next unproven parent gate:** source-proven exact EA patch, installed autoactivated native policy, matched disposable game trial, player interruption and rollback under issue #171. BI-002 hunger 5+5+rollback remains independently ACTIVE; do not substitute offline CI or host input for it.
+
+## 2026-11-14 — BI-002 host reached, hunger measurement pending
+
+The exact-build Windows host was observed in paused Live Mode. Run `bi002-20261114` remains incomplete. Mod isolation is verified after restart, and a repeatable scenario with calibrated measurements is still pending. BI-002 remains the active gate. See `plans/active/BI-002.md` for the host observation and next trial requirements.

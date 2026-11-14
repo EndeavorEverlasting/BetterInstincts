@@ -1,0 +1,20 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-HUNGER-LIVE-CERT-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Exact-build local BI-002 hunger certification on the operator-confirmed disposable session, subject to independent vanilla, measurement, and effect admission.",
+  "affected_concepts": ["NEED_STATE", "OBSERVATION", "CLAIM", "HOST_SESSION", "GAME_SCENE", "CONTROL_PERMIT", "PROOF_RECEIPT"],
+  "relevant_canonical_owners": ["contracts/needs.v1.json", "contracts/effect-authority.v1.json", "contracts/save-policy.v1.json", "docs/LIVE_CERT.md", "plans/active/BI-002.md", "scripts/live_cert.py"],
+  "invariants_checked": ["BI-ONT-001", "BI-ONT-002", "BI-ONT-003", "BI-ONT-004", "BI-ONT-005", "BI-ONT-006", "BI-ONT-007", "BI-ONT-008", "BI-ONT-009", "BI-ONT-010", "BI-ONT-011", "BI-ONT-012", "BI-ONT-013", "BI-ONT-014", "BI-ONT-015", "BI-ONT-016", "BI-ONT-017", "BI-ONT-018"],
+  "game_build_scope": "EXACT_GAME_BUILD:1.121.361.1020",
+  "evidence_ceiling": "LOCAL_OBSERVATION_PENDING_MATCHED_BI_002_TRIALS_AND_REVIEW",
+  "player_save_control_impact": "Keep existing saves and installed mods intact. Any test effect requires fresh player, session, scene and save admission.",
+  "expected_outcome": "Collect measured vanilla, modified and rollback rows when admitted and preserve a zero-row receipt if the vanilla setup cannot be verified.",
+  "negative_tests": ["Reject an enabled mod configuration as unverified vanilla", "Exclude attempts without observed eating or measured lag", "Retain UNKNOWN_VERSION release status"],
+  "rollback_path": "Discard unsaved trial progress only when needed and remove only an experiment-authored package if installed.",
+  "unresolved_unknowns": ["Exact vanilla hunger resource and Studio build", "Vanilla isolation and source of numeric lag measurements"],
+  "files_expected": ["contracts/consultations/BI-HUNGER-LIVE-CERT-20261114.v1.json", "docs/LEDGER.md", "plans/active/BI-002.md", "docs/ROADMAP.md"],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "The receipt scopes the local investigation and does not grant permission for game input or authorize a package with unverified provenance."
+}
