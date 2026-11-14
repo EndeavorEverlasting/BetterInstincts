@@ -1,3 +1,7 @@
+## Career event choices are not Work Hard tones
+
+The Work Hard policy below remains the owner for rabbit-hole shift tones and attention handoff. **Career-event/chance-card decisions** are different, modal, recipient-specific choices and are now exposed through `career_service.evaluate_career_event_turn` and `contracts/career-decisions.v1.json`, with details in [CAREER_DECISIONS.md](CAREER_DECISIONS.md). A risky event may require weighing possible performance, pay, skill, mood and relationships; don't blindly choose a visible option or infer Yes/No IDs from the Work panel. Source-only choices have no game-effect permit; an installed game-native response hook and separate P08 observation remain required.
+
 # Career performance budgeting (horizon BI-006 lane)
 
 Teen **High School Student** daily homework routing lives under [`docs/TEEN_HOMEWORK.md`](TEEN_HOMEWORK.md) and `contracts/teen-homework.v1.json`.
