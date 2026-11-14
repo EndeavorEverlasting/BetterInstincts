@@ -1,3 +1,24 @@
+## 2026-11-14 — Sixth Gear: recipient-bound Yes/No continuation (stacked over draft #261)
+
+**Changed source:** `betterinstincts/preference_recipient.py` owns native-recipient evidence validation and bounded branch comparison. `betterinstincts/preference_prompts.py` still owns modal stage policy, and `scripts/preference_prompts.py` still owns one independently gated click. A Video Gaming or other catalog heuristic is *no longer sufficient* for a Yes/No recommendation: missing native offer-recipient snapshot, model or proven predicted branch effects yields HOLD. Player direction, unknown prompt, absent opt-in and stale dialog also HOLD.
+
+**Exact identity:** the offered-to Sim is `recipient_sim_id` (canonical unsigned 64-bit *decimal string*, without lossy numeric conversion). It can differ from `sim_ref`, which names the currently selected/observed HUD actor. Each staged response includes recipient ID; a later OK requires a new capture and an identity-matching prior YES receipt. The native live producer must supply `betterinstincts.preference-recipient-snapshot/v1` with `source=EA_NATIVE`, `read_origin=RUNNING_GAME_MEMORY`, same capture, native hook/state revision, current motives, traits, skill levels, age/aspiration/species, current activity, career time budget and actual recipient/household IDs. Its timestamp must precede the offer by no more than 2 seconds. The host verifies this provenance; **no actual recipient snapshot has yet been observed**.
+
+**The same continuation plan:** `continuation_model.continuation_steps` is one shared evidence-bound activity list with optional shared routes. Both branches use the *same* recipient needs/skills/work deadlines and the same planner; `branch_effects.YES/NO` can modify only bounded need, skill, mood or money deltas on the same step IDs, each with its own basis reference. A different chain, a different chosen forecast path, incomplete feasibility, an unobserved skill or a tied score is HOLD. Bellman continuation and KKT time price are reused; branch comparison emits no input permit. A counterfactual planner-local copy binds the recipient as the forecast actor and reports the *actual* selected Sim separately; this is not a claim that the in-game selection changed or that action execution is authorized.
+
+**Schema vs live values:** The local operator's `EA recipient field map` reported `SaveGameData.sims/SimData.sim_id, household_id, attributes`, character and trackers, `commodity_tracker` need/value/change timestamp, and `sim_careers` work/assignment constraints from installed `1.121.361.1020` `generated.zip`. The map is local under ignored `dist/` and was not directly read through this GitHub session; no field numbers or current values are invented in Git. An unauthorised disk save is not a live source. The native producer must inspect exact hook signatures and provide a fresh recipient snapshot from the running game before any automatic preference response is considered.
+
+**Actual game proof still open:** the prior native `SimTravel` observation does not establish `InteractionComplete`, a preference choice, or queue/activity resumption. The source comparator can be tested offline, but the live P08 must observe offer → correct recipient → motive/character/career native read → accepted/declined input under player/queue authority → observed confirmation → revalidated continuation → activity resumed. Maintain protected save, exact patch, opt-in, offline game and rollback gates. Keep PR #261 draft and the local agent's head intact; this work is a separately scoped stacked branch.
+
+**Checks from local checkout:**
+
+```sh
+python -m unittest tests.test_preference_prompts tests.test_preference_host_adapter -v
+python -m scripts.check_native_gameplay_authority --base-ref <PR_BASE_SHA>
+python -m scripts.semantic_preflight --consultation contracts/consultations/BI-PREFERENCE-RECIPIENT-SIXTH-GEAR-20261114.v1.json --operation repo_mutation --file betterinstincts/preference_prompts.py --file betterinstincts/preference_recipient.py
+python -m scripts.check_human_sovereignty --json
+```
+
 # Skill-triggered likes and dislikes — human-first decision microsystem
 
 **Owner:** `betterinstincts/preference_prompts.py` / `contracts/preference-prompts.v1.json`. **Host caller:** `betterinstincts/host_stack.py` (from `host_listener.py`). **Observed single-step input:** `scripts/preference_prompts.py`. **Screen ownership:** `betterinstincts/screen_admit.py`, never this catalog.
