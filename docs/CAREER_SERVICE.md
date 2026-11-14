@@ -1,3 +1,7 @@
+## Career-event autonomy is a separate peer lane
+
+This document's sticky teen-homework service is unchanged. For **adult/part-time career chance cards**, follow [CAREER_DECISIONS.md](CAREER_DECISIONS.md) → `contracts/career-decisions.v1.json` → existing `career_service.evaluate_career_event_turn`. For rabbit-hole **Work Hard** tone and portrait handoff, use [CAREER_PERFORMANCE.md](CAREER_PERFORMANCE.md). The Career HUD is Live panel J, but chance-card response IDs come from exact dialog tuning/event observation, not bottom-right panel coordinates. These routes are in four compact [glossary](GLOSSARY.md#career-and-work-routing) terms; agents only demand-load the relevant detailed contract. An installed native event handler remains distinct from pure policy and current game P08 has not been proved here.
+
 # Career service — async microsystem (P95)
 
 **Prompt:** TokenCorridor P95 — Program Design & Call-Stack Prototype Architect
