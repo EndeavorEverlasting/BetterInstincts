@@ -107,7 +107,8 @@ def _backyard_transfer_candidate(
         steps = bag.get("route_steps")
         refs = bag.get("identity_evidence_refs")
         if (type(steps) is not int or not 0 <= steps <= MAX_ROUTE_STEPS
-                or bag.get("identity_source") not in BACKYARD_IDENTITY_SOURCES
+                or not isinstance(bag.get("identity_source"), str)
+                or bag["identity_source"] not in BACKYARD_IDENTITY_SOURCES
                 or not isinstance(refs, list) or not 1 <= len(refs) <= 4
                 or any(not _ref(x) for x in refs) or len(set(refs)) != len(refs)
                 or (bag.get("identity_source") == "CALIBRATED_MULTIVIEW" and len(refs) < 2)):
@@ -138,14 +139,17 @@ def _backyard_transfer_candidate(
         if world_map is not None:
             mapped = world_map["objects"].get(ref)
             if (not isinstance(mapped, Mapping)
-                    or mapped.get("category") not in FERTILIZER_ITEM_KINDS
+                    or not isinstance(mapped.get("category"), str)
+                    or mapped["category"] not in FERTILIZER_ITEM_KINDS
                     or mapped.get("floor_id") != "OUTSIDE"
                     or mapped.get("center") is None
-                    or mapped.get("pose_source") not in SPATIAL_POSE_SOURCES
+                    or not isinstance(mapped.get("pose_source"), str)
+                    or mapped["pose_source"] not in SPATIAL_POSE_SOURCES
                     or not isinstance(mapped.get("pose_refs"), list)
                     or not mapped["pose_refs"]):
                 continue
-        if (bag.get("item_kind") not in FERTILIZER_ITEM_KINDS
+        if (not isinstance(bag.get("item_kind"), str)
+                or bag["item_kind"] not in FERTILIZER_ITEM_KINDS
                 or bag.get("fertilizer_eligible") is not True
                 or not _ref(bag.get("eligibility_evidence_ref"))
                 or bag.get("location") != "GROUND"
@@ -173,7 +177,8 @@ def _backyard_transfer_candidate(
     transfer = scan.get("pending_transfer")
     if transfer is not None:
         if (not isinstance(transfer, Mapping)
-                or transfer.get("status") not in {"QUEUED", "AWAITING_INVENTORY_READBACK"}
+                or not isinstance(transfer.get("status"), str)
+                or transfer["status"] not in {"QUEUED", "AWAITING_INVENTORY_READBACK"}
                 or not _ref(transfer.get("bag_ref"))
                 or transfer.get("sim_ref") != sim_ref
                 or transfer.get("lot_ref") != scan["lot_ref"]
@@ -338,6 +343,7 @@ def evaluate_fertilizer_workflow(
     # bags outrank any new sourcing/purchases. This is an opt-in read-only port;
     # missing/failed proof does not fall through to an unsafe generic drag.
     scan = observation.get("backyard_scan")
+    pickup_pending = False
     if scan is not None and stock < len(ready):
         try:
             candidate = _backyard_transfer_candidate(
@@ -358,7 +364,11 @@ def evaluate_fertilizer_workflow(
                 return finish(candidate["gate"], candidate["action"],
                               candidate["next_actions"][0])
             if candidate["gate"] == "FERTILIZER_BACKYARD_TRANSFER_PENDING":
-                return finish(candidate["gate"], candidate["action"])
+                if stock == 0:
+                    return finish(candidate["gate"], candidate["action"])
+                # One already-held unit remains useful even while a *different*
+                # item pickup is queued. Never issue another transfer this turn.
+                pickup_pending = True
             if stock == 0:
                 # A known backyard source awaiting identity/affordance proof
                 # should not trigger another purchase.
@@ -369,7 +379,8 @@ def evaluate_fertilizer_workflow(
 
     # Prefer to prepare enough supply for the currently observed eligible set,
     # rather than repeatedly failing a menu picker while items lie on the floor.
-    if stock < len(ready) and observation.get("transfer_authorized") is True:
+    if (stock < len(ready) and not pickup_pending
+            and observation.get("transfer_authorized") is True):
         for item in ground:
             selected = observed("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", item["item_ref"])
             if selected is not None:
