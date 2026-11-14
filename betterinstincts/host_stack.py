@@ -23,6 +23,9 @@ from betterinstincts.fun_service import (
     should_attach_fun_service,
 )
 from betterinstincts.gardening_service import GardeningServiceError, evaluate_gardening_turn
+from betterinstincts.household_economy import (
+    HouseholdEconomyError, evaluate_household_economy,
+)
 from betterinstincts.household_upkeep import (
     HouseholdUpkeepError, evaluate_household_upkeep,
 )
@@ -213,6 +216,7 @@ def evaluate_turn(
     navigating_needs_profile: str = "navigating_needs",
     gardening: Optional[Mapping[str, object]] = None,
     household_upkeep: Optional[Mapping[str, object]] = None,
+    household_economy: Optional[Mapping[str, object]] = None,
     discovery_hud: Optional[Mapping[str, object]] = None,
     autonomy_observation: Optional[Mapping[str, object]] = None,
     behavior_model: Optional[Mapping[str, object]] = None,
@@ -352,6 +356,7 @@ def evaluate_turn(
     need_services = None
     gardening_report = None
     household_upkeep_report = None
+    household_economy_report = None
     discovery_report = None
     autonomy_report = None
     valence_report = None
@@ -754,6 +759,10 @@ def evaluate_turn(
                 school_day_active=school_day_active,
                 homework_pending=homework_pending,
             )
+        if household_economy is not None:
+            # Independent verified household roster/tasks, no new game authority.
+            # Existing needs, upkeep and career planners retain their owners.
+            household_economy_report = evaluate_household_economy(household_economy)
         if household_upkeep is not None:
             _, needs_floor = threshold_pair()
             household_upkeep_report = evaluate_household_upkeep(
@@ -785,6 +794,7 @@ def evaluate_turn(
         NavigatingNeedsError,
         GardeningServiceError,
         HouseholdUpkeepError,
+        HouseholdEconomyError,
         DiscoveryHudError,
         AutonomyModerationError,
         BehaviorValenceError,
@@ -2031,6 +2041,21 @@ def evaluate_turn(
             "owner": "betterinstincts/household_upkeep.py",
             **household_upkeep_report,
         }
+    elif (household_economy_report is not None
+          and household_economy_report["gate"] in {
+              "COOPERATIVE_ALLOCATION_READY", "SOLO_RESPONSIBILITY_READY",
+          }):
+        # A voluntary, observed cross-member coordination suggestion only;
+        # priority below active player, survival, school, career and upkeep.
+        next_gate = household_economy_report["gate"]
+        fallback = {
+            "owner": "betterinstincts/household_economy.py",
+            "contract": "contracts/household-economy.v1.json",
+            **household_economy_report,
+            "execute_allowed": False,
+            "forbidden": ["CANCEL_PLAYER_QUEUE", "EXHAUST_SINGLE_SIM",
+                          "UNOBSERVED_INCOME_EFFECT", "AUTO_ASSIGN_UNKNOWN_SIM"],
+        }
     elif gardening_report is not None:
         next_gate = gardening_report["gate"]
         fallback = {"owner": "betterinstincts/gardening_service.py", **gardening_report}
@@ -2092,6 +2117,7 @@ def evaluate_turn(
         "build_optimize": build_optimize,
         "gardening": gardening_report,
         "household_upkeep": household_upkeep_report,
+        "household_economy": household_economy_report,
         "discovery_hud": discovery_report,
         "autonomy_moderation": autonomy_report,
         "behavior_valence": valence_report,
