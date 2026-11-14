@@ -386,3 +386,121 @@ def evaluate_career_service(
             obligation.get("resume_condition") if obligation_held and obligation else None
         ),
     }
+
+# Adult/part-time shift attention is a separate pure career-policy port.
+# Teen homework's existing evaluate_career_service contract is unchanged.
+WORK_SHIFT_SCHEMA = "betterinstincts.work-shift.observation/v1"
+WORK_SHIFT_FIELDS = frozenset({
+    "schema", "member_key", "capture_ref", "shift_ref", "state", "work_mode",
+    "promotion_requirements", "daily_task", "performance",
+    "current_tone", "tone_owner", "work_hard_available",
+})
+
+
+def evaluate_work_shift_tone(
+    shift: Mapping[str, object],
+    *,
+    member_key: str,
+    capture_ref: str,
+    wellbeing_ready: bool,
+    player_reserved: bool,
+) -> dict:
+    """Advisory Work Hard eligibility for ONE independently observed shift.
+
+    Work Hard is not promotion proof. Live EA tone/portrait effects need their
+    own exact-build native adapter and player/save/effect admission. The
+    result is safe to evaluate on any offline CI host.
+    """
+    import re
+
+    def ident(value: object) -> bool:
+        return (isinstance(value, str)
+                and bool(re.fullmatch(r"[A-Za-z0-9:_./-]{3,180}", value)))
+
+    if (not isinstance(shift, Mapping) or set(shift) != WORK_SHIFT_FIELDS
+            or shift.get("schema") != WORK_SHIFT_SCHEMA):
+        raise CareerServiceError("WORK_SHIFT_SCHEMA_INVALID")
+    if (not ident(member_key) or not ident(capture_ref)
+            or not ident(shift["shift_ref"])
+            or shift["member_key"] != member_key
+            or shift["capture_ref"] != capture_ref):
+        raise CareerServiceError("WORK_SHIFT_IDENTITY_OR_CAPTURE_MISMATCH")
+    enums = {
+        "state": {"AT_WORK"},
+        "work_mode": {"RABBIT_HOLE", "ACTIVE_CAREER", "UNKNOWN"},
+        "promotion_requirements": {"MET", "UNMET", "UNKNOWN"},
+        "daily_task": {"COMPLETE", "NOT_REQUIRED", "INCOMPLETE", "UNKNOWN"},
+        "performance": {"BELOW_TARGET", "READY", "UNKNOWN"},
+        "current_tone": {"NORMAL", "WORK_HARD", "OTHER", "UNKNOWN"},
+        "tone_owner": {"GAME", "HOST", "PLAYER", "UNKNOWN"},
+    }
+    for key, allowed in enums.items():
+        if type(shift[key]) is not str or shift[key] not in allowed:
+            raise CareerServiceError("WORK_SHIFT_FIELD_INVALID:" + key)
+    if any(type(value) is not bool for value in (
+        wellbeing_ready, player_reserved, shift["work_hard_available"],
+    )):
+        raise CareerServiceError("WORK_SHIFT_BOOLEAN_INVALID")
+
+    def result(gate: str, *, handoff_ready: bool, action: str) -> dict:
+        return {
+            "schema": "betterinstincts.work-shift-tone-plan/v1",
+            "member_key": member_key,
+            "capture_ref": capture_ref,
+            "shift_ref": shift["shift_ref"],
+            "gate": gate,
+            "recommended_tone": (
+                "WORK_HARD" if gate == "WORK_HARD_ADMISSION_REQUIRED" else None
+            ),
+            "handoff_ready": handoff_ready,
+            "next": action,
+            "execute_allowed": False,
+            "promotion_guaranteed": False,
+            "proof_ceiling": "OFFLINE_WORK_TONE_POLICY_NOT_NATIVE_EFFECT",
+        }
+
+    if shift["work_mode"] != "RABBIT_HOLE":
+        return result(
+            "ACTIVE_OR_UNKNOWN_CAREER_HOLD", handoff_ready=False,
+            action="REOBSERVE_CAREER_MODE_KEEP_SELECTED_ACTOR",
+        )
+    if player_reserved:
+        return result(
+            "PLAYER_RESERVED_WORK_SHIFT", handoff_ready=False,
+            action="PRESERVE_PLAYER_SELECTED_ACTOR_AND_TONE",
+        )
+    if shift["current_tone"] == "WORK_HARD":
+        return result(
+            "WORK_HARD_OBSERVED_HANDOFF_READY", handoff_ready=True,
+            action="VERIFY_NEW_SELECTED_PORTRAIT_AND_NEEDS",
+        )
+    # The user may have selected a tone for skills, socialization or rest.
+    # An unknown owner is also NOT an invitation to override it.
+    if (shift["tone_owner"] in {"PLAYER", "UNKNOWN"}
+            or shift["current_tone"] in {"OTHER", "UNKNOWN"}):
+        return result(
+            "PRESERVE_EXISTING_OR_UNKNOWN_WORK_TONE", handoff_ready=True,
+            action="PRESERVE_TONE_THEN_SELECT_NEXT_AWAKE",
+        )
+    if not wellbeing_ready:
+        return result(
+            "WELLBEING_FIRST_SKIP_WORK_HARD", handoff_ready=True,
+            action="PROTECT_MOTIVES_THEN_SELECT_NEXT_AWAKE",
+        )
+    if (shift["promotion_requirements"] != "MET"
+            or shift["daily_task"] not in {"COMPLETE", "NOT_REQUIRED"}
+            or shift["performance"] != "BELOW_TARGET"):
+        return result(
+            "PROMOTION_OPPORTUNITY_NOT_PROVEN", handoff_ready=True,
+            action="PRESERVE_NORMAL_TONE_TRACK_REQUIREMENTS_AND_HANDOFF",
+        )
+    if not shift["work_hard_available"]:
+        return result(
+            "WORK_HARD_NOT_OBSERVED_AVAILABLE", handoff_ready=True,
+            action="PRESERVE_TONE_THEN_SELECT_NEXT_AWAKE",
+        )
+
+    return result(
+        "WORK_HARD_ADMISSION_REQUIRED", handoff_ready=False,
+        action="REVALIDATE_PATCH_PLAYER_SAVE_CAREER_TONE_THEN_OBSERVE_EFFECT",
+    )
