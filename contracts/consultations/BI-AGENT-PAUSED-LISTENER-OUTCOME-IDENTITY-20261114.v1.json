@@ -1,0 +1,65 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-AGENT-PAUSED-LISTENER-OUTCOME-IDENTITY-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Correct source/event identity on paused passive observations so listener events cannot be mistaken for completed player-safe agent effects, and retain durable codification obligations until repository-level validation.",
+  "affected_concepts": [
+    "PLAYER_PRESENCE",
+    "HOST_SESSION",
+    "GOAL",
+    "GOAL_THREAD",
+    "OBSERVATION",
+    "ACTION_QUEUE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "RESUME_CONDITION"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/agent_control_runner.py",
+    "betterinstincts/workflow_interop.py",
+    "betterinstincts/control_discovery.py",
+    "betterinstincts/host_listener.py",
+    "contracts/workflow-interoperability.v1.json",
+    "contracts/control-discovery.v1.json",
+    "docs/CONTROL_DISCOVERY.md",
+    "docs/AGENT_CONTEXT.md"
+  ],
+  "invariants_checked": [
+    "PLAYER_FIRST",
+    "REPLAY_NOT_ALLOWED",
+    "PASSIVE_OBSERVATION_NOT_ACTION",
+    "KEEP_ACTIVE_CONTROL_SESSION_DURING_PLAYER_INPUT",
+    "FRESH_RESUME_PROBES",
+    "NO_PREMATURE_CODIFICATION_CLOSURE",
+    "BI-002_STAYS_ACTIVE"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_INTEROP_ROUTING_NOT_LOCAL_GAME_CONTROL",
+  "player_save_control_impact": "No new capture mechanism, host OS hooks, screen input, player-save accesses, profile traversal or background monitoring; all observations use existing explicit authorized listener lane.",
+  "strategic_discrimination": {
+    "parent_objective": "Use agent computer control as a last resort, pause actions but retain listener while operator acts, automatically collect every observed action and turn it into deterministic, regression-tested repository logic.",
+    "rejected": [
+      "Treat passive observation COMPLETED as a successful screen action",
+      "Close a codification requirement merely on an unverified commit reference",
+      "Install a background idle daemon or new desktop observer"
+    ],
+    "selected": "Tag passive observation result source and preserve pending action identity; resume with fresh gates; keep codification receipts separately pending independent source verification.",
+    "first_discriminating_test": "Under active user input enqueue passive observation for the paused agent: observation completes, effect does not; after idle rechecks effect executes exactly once; outcome stays a distinct receipt."
+  },
+  "expected_outcome": "Passive listener can collect bounded evidence during player activity without falsely logging action completion; every controlled attempted effect remains visible as a codification or verification obligation.",
+  "negative_tests": [
+    "Unexpected passive observation timeout cannot mark agent effect completed",
+    "Human active blocks effect but not reviewed passive observation",
+    "Resume after idle uses fresh scene and presence checks",
+    "Submitted code receipt is not merged/main proof"
+  ],
+  "rollback_path": "Revert small source/test additions; existing queue, listener and action flow remain.",
+  "unresolved_unknowns": [
+    "Real installed Sims, trusted desktop idle sensor and native effect proof need local P08; GitHub branch/unit tests do not certify gameplay."
+  ],
+  "owner": "betterinstincts/workflow_interop.py",
+  "successor_issue": 171
+}
