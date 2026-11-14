@@ -1376,6 +1376,38 @@
         "contracts/native-gameplay-authority.v1.json",
         "docs/DOCTRINE.md"
       ]
+    },
+    "CAREER_PANEL_J": {
+      "definition": "Career/Work Live HUD panel opens with J (not aspirations G); observed panel identity and exact Sim/career data must be verified after opening.",
+      "owners": [
+        "contracts/ui-microsystems.v1.json",
+        "docs/UI_MICROSYSTEMS.md",
+        "docs/CAREER_DECISIONS.md"
+      ]
+    },
+    "CAREER_EVENT_CHOICE": {
+      "definition": "Career chance-card choice evaluated for exact recipient Sim ID with all option IDs, source-backed outcome probabilities and effects; no generic screen-click or invented benefit.",
+      "owners": [
+        "contracts/career-decisions.v1.json",
+        "betterinstincts/career_service.py",
+        "docs/CAREER_DECISIONS.md"
+      ]
+    },
+    "CAREER_WORK_TONE": {
+      "definition": "Work Hard is a qualified, wellbeing-sensitive rabbit-hole career tone, not a chance-card option or promised promotion. Preserve player-owned tones and switch to next awake Sim only after verified work-state handoff.",
+      "owners": [
+        "contracts/career-service.v1.json",
+        "docs/CAREER_PERFORMANCE.md",
+        "docs/CAREER_DECISIONS.md"
+      ]
+    },
+    "CAREER_NATIVE_GATE": {
+      "definition": "Career-event autonomy needs a version-pinned in-game EA observer/response hook with actual receipt and player-first controls. Source tests and HUD screenshots are not live effect certification.",
+      "owners": [
+        "contracts/native-gameplay-authority.v1.json",
+        "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md",
+        "docs/CAREER_DECISIONS.md"
+      ]
     }
   }
 }
