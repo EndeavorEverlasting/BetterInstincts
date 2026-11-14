@@ -82,6 +82,7 @@ def eco(**changes):
     row = dict(base("betterinstincts.eco-fabrication/v1"),
                career_track="GREEN_TECHNICIAN",
                daily_task="FABRICATE_ECO_UPGRADE_PART",
+               daily_task_status="PENDING",
                game_build="build:observed", fabrication_skill=1,
                bits=0, pieces=0, recipes=[recipe()],
                recycler_available=True, fabricator_available=True,
@@ -115,6 +116,48 @@ class FertilizerSourcingTests(unittest.TestCase):
                                               capture_ref=REF, now=NOW)
                 self.assertEqual(out["gate"], "FERTILIZER_SOURCE_UNKNOWN_OR_UNAFFORDABLE")
                 self.assertFalse(out["next_actions"])
+
+    def test_partial_affordable_purchase_and_reserve_preservation(self):
+        # Three units cost 24, but the reserved household money leaves only 20.
+        row = fert(deficit_units=3, cash=80, cash_reserve=60,
+                   sources=[source("source:stall", "GARDEN_STALL",
+                                   unit_cash_cost=8, purchase_reviewed=True)])
+        out = plan_fertilizer_sources(row, capture_ref=REF, now=NOW)
+        self.assertEqual(out["gate"], "FERTILIZER_SOURCE_READY")
+        self.assertEqual(out["next_actions"][0]["quantity"], 2)
+        self.assertLessEqual(8 * out["units_planned"], row["cash"] - row["cash_reserve"])
+        self.assertFalse(out["dispatch_authorized"])
+
+    def test_extreme_money_and_timestamp_fail_as_typed_validation(self):
+        enormous = 10**10000
+        for row in (fert(cash=enormous), fert(cash_reserve=enormous),
+                    fert(sources=[source(unit_cash_cost=enormous)]),
+                    fert(observed_at_unix=enormous)):
+            with self.subTest(field=str(list(row.keys())[-1])):
+                try:
+                    out = plan_fertilizer_sources(row, capture_ref=REF, now=NOW)
+                except EcoResourceCycleError:
+                    continue
+                self.assertEqual(out["gate"], "FERTILIZER_REOBSERVE")
+        out = plan_fertilizer_sources(fert(), capture_ref=REF, now=enormous)
+        self.assertEqual(out["gate"], "FERTILIZER_REOBSERVE")
+        self.assertFalse(out["next_actions"])
+
+    def test_sourcing_rejects_a_different_sim_or_false_parent_deficit(self):
+        workflow = {
+            "schema": "betterinstincts.fertilizer-workflow/v1",
+            "capture_ref": REF, "observed_at_unix": NOW,
+            "sim_ref": "sim:main", "actor_verified": True, "inventory_verified": True,
+            "transfer_authorized": False,
+            "plants": [{"target_ref": "plant:a", "state": "PENDING",
+                        "fertilize_ready": True}], "supplies": [],
+        }
+        workflow["sourcing"] = fert(deficit_units=1, sim_ref="sim:other")
+        with self.assertRaisesRegex(Exception, "FERTILIZER_SOURCE_ACTOR_MISMATCH"):
+            evaluate_fertilizer_workflow(workflow, [], capture_ref=REF, now=NOW)
+        workflow["sourcing"] = fert(deficit_units=9)
+        with self.assertRaisesRegex(Exception, "FERTILIZER_SOURCE_DEFICIT_MISMATCH"):
+            evaluate_fertilizer_workflow(workflow, [], capture_ref=REF, now=NOW)
 
     def test_stale_player_unknown_needs_and_done(self):
         for change, gate in (
@@ -221,6 +264,36 @@ class CareerFabricationTests(unittest.TestCase):
                 out = plan_eco_fabrication(eco(**change), capture_ref=REF, now=NOW)
                 self.assertFalse(out["next_actions"])
                 self.assertFalse(out["dispatch_authorized"])
+
+    def test_same_evidence_pair_cannot_be_counted_twice(self):
+        first = outcome("proof:a", "SCRAP", 10, 10)
+        second = outcome("proof:b", "SCRAP", 10, 10,
+                         before_ref=first["before_ref"],
+                         after_ref=first["after_ref"])
+        with self.assertRaisesRegex(EcoResourceCycleError, "CAPTURE_REPLAY"):
+            plan_eco_fabrication(eco(recycle_outcomes=[first, second]),
+                                 capture_ref=REF, now=NOW)
+
+    def test_missing_patch_cannot_create_recycling_training_grade(self):
+        first = outcome("proof:a", "SCRAP", 10, 10, game_build=None)
+        second = outcome("proof:b", "SCRAP", 10, 10, game_build=None)
+        out = plan_eco_fabrication(eco(game_build=None, recycle_outcomes=[first, second]),
+                                   capture_ref=REF, now=NOW)
+        self.assertEqual(out["gate"], "ECO_BUILD_UNVERIFIED")
+        self.assertEqual(out["ranking"], [])
+        self.assertFalse(out["next_actions"])
+
+    def test_career_completion_or_unknown_status_does_not_refabricate(self):
+        for status, gate in (("COMPLETE", "ECO_CAREER_TASK_COMPLETE"),
+                             (None, "ECO_CAREER_TASK_STATUS_UNKNOWN"),
+                             ("UNKNOWN", "ECO_CAREER_TASK_STATUS_UNKNOWN")):
+            with self.subTest(status=status):
+                out = plan_eco_fabrication(
+                    eco(bits=15, pieces=10, daily_task_status=status),
+                    capture_ref=REF, now=NOW
+                )
+                self.assertEqual(out["gate"], gate)
+                self.assertEqual(out["next_actions"], [])
 
     def test_outcome_replay_and_invalid_yields_denied(self):
         a = outcome("proof:a", "TRASH", 10, 10)

@@ -1,3 +1,16 @@
+## 2026-11-14 — /the-closers: source validation and career-task idempotence
+
+Post-merge review of PR #237 found five concrete source defects (CodeAnt: two inline findings plus three nitpicks). The bounded closer repair preserves the original source-only, player-first workflow.
+
+- Numeric input limits are checked before float conversion: enormous integer money or clock values cannot escape through `math.isfinite` or timestamp subtraction.
+- A reviewed paid fertilizer source may supply **only the affordable integer quantity**, never spend below the cash reserve. Zero affordable units remains blocked; no purchase is executed.
+- Nested `fertilizer_workflow.sourcing` must match the parent **selected Sim** and exact currently ready plant deficit (after eligible plant filtering). Mismatched actor or invented deficit is rejected.
+- Recycler history cannot promote reused before/after capture pairs even with distinct outcome IDs. A **nonempty exact build reference** is required before any recycling recommendation; unknown-build history has no decision grade.
+- For the Green Technician's `FABRICATE_ECO_UPGRADE_PART` obligation, the current career-panel `daily_task_status` must be `PENDING`. `COMPLETE` yields `ECO_CAREER_TASK_COMPLETE` (no duplicate crafting); missing/unknown status yields `ECO_CAREER_TASK_STATUS_UNKNOWN` and a career-panel reobservation.
+- All fixes are **policy only**, not native Sims behavior or local game proof. Issue #171 owns exact-patch EA interaction/observer integration, disposable A/B and rollback. BI-002 hunger remains independent.
+
+Regression suite: `tests/test_eco_resource_cycle.py`; governing decision `contracts/native-gameplay-decisions/BI-ECO-CLOSERS-20261114.v1.json`; consultation `contracts/consultations/BI-ECO-CLOSERS-20261114.v1.json`.
+
 # Eco materials, gardening fertilizer, and Green Technician production
 
 ## Parent outcome and current proof
