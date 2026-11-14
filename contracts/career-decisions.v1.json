@@ -60,7 +60,7 @@
   "probability_scale": 10000,
   "default_behavior": "HOLD when no complete effect model or unique decisive non-irreversible choice; future source-backed safe-default may be added under a separate review, never guess numeric response IDs.",
   "native_behavior": "When installed and exact local-game EA career event source is certified, existing native adapter may consume one recommended response after player-first, selected actor/event and game save checks. This file never emits an effect permit.",
-  "replay_rule": "Compare previously native-acknowledged event_ref+event_revision before action; no second response on ambiguous outcome; effect and activity resume observed with distinct captures.",
+  "replay_rule": "An event_ref uniquely binds one career popup across event/layout revisions; any prior attempt, acknowledged response or uncertain result for this event_ref prevents repeat dispatch. Reconciliation preserves event_ref + event_revision and distinct response/effect/resume captures.",
   "progressive_disclosure": {
     "start": "docs/GLOSSARY.md#career-and-work-routing",
     "detail": "docs/CAREER_DECISIONS.md",
@@ -68,5 +68,6 @@
     "existing": "docs/CAREER_PERFORMANCE.md",
     "native": "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md"
   },
-  "proof_ceiling": "OFFLINE_CAREER_DECISION_POLICY_NOT_NATIVE_AUTONOMY_OR_LIVE_CERTIFIED"
+  "proof_ceiling": "OFFLINE_CAREER_DECISION_POLICY_NOT_NATIVE_AUTONOMY_OR_LIVE_CERTIFIED",
+  "proof_rule": "Never infer a successful effect from a response. Require separate native ACK, actual recipient career-effect delta and resumed activity with disjoint capture refs, ordered timestamps and same career event identity. Receipt-shape checks are not authenticated live P08 evidence."
 }
