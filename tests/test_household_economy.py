@@ -164,6 +164,16 @@ class HouseholdEconomyTests(unittest.TestCase):
         s["player_active"] = True
         with self.assertRaisesRegex(HouseholdEconomyError, "PLAYER_PRESENCE"):
             evaluate_household_economy(s)
+        s["player_active"] = False
+        s["members"][0]["activity"] = "ASLEEP"
+        with self.assertRaisesRegex(HouseholdEconomyError,
+                                    "ATTENTION_REVIEW_ACTOR_NOT_VERIFIED_AVAILABLE"):
+            evaluate_household_economy(s)
+        s["members"][0]["activity"] = "AWAKE"
+        s["members"][0]["player_reserved"] = True
+        with self.assertRaisesRegex(HouseholdEconomyError,
+                                    "ATTENTION_REVIEW_ACTOR_NOT_VERIFIED_AVAILABLE"):
+            evaluate_household_economy(s)
 
     def test_handoff_uses_awake_servo_and_preserves_recovery(self):
         s = snapshot(3)
