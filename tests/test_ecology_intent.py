@@ -7,7 +7,7 @@ import unittest
 
 from betterinstincts.ecology_intent import (
     EcologyIntentError, new_ecology_intent, reconcile_ecology_intent,
-    reconcile_household_ecology, NEEDS, OBSERVATION,
+    reconcile_household_ecology, acknowledge_native_ecology_dispatch, NEEDS, OBSERVATION,
 )
 from betterinstincts.ecology_forecast import (
     EcologyForecastError, compare_duration_models,
@@ -71,12 +71,106 @@ def outcome(before, after, step, before_count, after_count, **extra):
         "before_capture_ref": before["capture_ref"],
         "after_capture_ref": after["capture_ref"],
         "before_item_count": before_count, "after_item_count": after_count,
-        "native_action_ref": "ea:action:123", "proof_ref": "proof:outcome:1",
+        "native_action_ref": "ea:action:123", "native_queue_ref": "ea:queue:1",
+        "proof_ref": "proof:outcome:1",
         **extra,
     }
 
 
+
+def ack(state, before, status="QUEUED", **changes):
+    receipt = {
+        "schema": "betterinstincts.ecology-native-queue-receipt/v1",
+        "game_build": BUILD, "household_ref": state["household_ref"],
+        "sim_ref": state["sim_ref"], "lot_ref": state["lot_ref"],
+        "step": state["awaiting"],
+        "target_ref": state["item_ref"] if state["awaiting"] == "PICKUP" else state["plant_ref"],
+        "proposal_capture_ref": before["capture_ref"],
+        "queue_capture_ref": before["capture_ref"] + ":native",
+        "queue_verified": True,
+        "queue_proof_ref": "proof:nativequeue:1",
+        "native_observation_ref": "ea:queue:event:1",
+        "player_active": False,
+        "status": status,
+        "queue_origin": "HOST",
+        "origin_proof_ref": "proof:nativeorigin:1",
+        "native_queue_ref": "ea:queue:1",
+        "effect_absent_verified": status == "NOT_ENQUEUED",
+        "absence_proof_ref": "proof:noeffect:1",
+    }
+    receipt.update(changes)
+    return acknowledge_native_ecology_dispatch(state, receipt)
+
+
+
 class EcologyIntentTests(unittest.TestCase):
+
+    def test_proposal_cannot_promote_to_game_outcome_without_native_queue_ack(self):
+        first = observed(paused=False)
+        proposed = reconcile_ecology_intent(intent(), first, now=NOW)
+        second = observed(seq=2, paused=False, inventory_count=1)
+        second["outcome"] = outcome(first, second, "PICKUP", 0, 1)
+        unacked = reconcile_ecology_intent(proposed["intent"], second, now=NOW)
+        self.assertEqual(unacked["gate"], "ECOLOGY_AWAIT_NATIVE_DISPATCH_ACK")
+        self.assertEqual(unacked["intent"]["step"], "PICKUP")
+        self.assertEqual(unacked["intent"]["dispatch_status"], "PROPOSED")
+        self.assertFalse(unacked["execute_allowed"])
+
+    def test_native_ack_rejects_wrong_queue_provenance_and_duplicates(self):
+        first = observed(paused=False)
+        proposed = reconcile_ecology_intent(intent(), first, now=NOW)
+        state = proposed["intent"]
+        for attrs in (
+            {"sim_ref": "sim:other"},
+            {"queue_origin": "PLAYER"},
+            {"queue_origin": "UNKNOWN"},
+            {"player_active": True},
+            {"queue_capture_ref": first["capture_ref"]},
+            {"native_queue_ref": ""},
+            {"proposal_capture_ref": "capture:stale"},
+            {"schema": "another.native.event/v1"},
+        ):
+            with self.subTest(attrs=attrs):
+                out = ack(state, first, **attrs)
+                self.assertNotEqual(out["gate"], "ECOLOGY_NATIVE_QUEUE_ATTESTED")
+                self.assertEqual(out["intent"], state)
+        accepted = ack(state, first)
+        self.assertEqual(accepted["intent"]["dispatch_status"], "QUEUED")
+        duplicate = ack(accepted["intent"], first)
+        self.assertEqual(duplicate["gate"], "ECOLOGY_ACK_NO_PENDING_PROPOSAL")
+        self.assertEqual(duplicate["intent"], accepted["intent"])
+
+    def test_rejected_enqueue_requires_proven_no_effect_then_fresh_replan(self):
+        first = observed(paused=False)
+        proposed = reconcile_ecology_intent(intent(), first, now=NOW)
+        ambiguous = ack(
+            proposed["intent"], first, status="NOT_ENQUEUED",
+            effect_absent_verified=False,
+        )
+        self.assertEqual(ambiguous["gate"], "ECOLOGY_ACK_REOBSERVE")
+        self.assertEqual(ambiguous["intent"]["dispatch_status"], "PROPOSED")
+        denied = ack(proposed["intent"], first, status="NOT_ENQUEUED")
+        self.assertEqual(denied["gate"], "ECOLOGY_NATIVE_NONENQUEUE_CONFIRMED")
+        self.assertIsNone(denied["intent"]["awaiting"])
+        self.assertEqual(denied["intent"]["step"], "PICKUP")
+        second = observed(seq=2, paused=False)
+        retried = reconcile_ecology_intent(denied["intent"], second, now=NOW)
+        self.assertEqual(retried["gate"], "ECOLOGY_PLAY_STEP_PROPOSED")
+        self.assertEqual(retried["proposal"]["step"], "PICKUP")
+
+    def test_queue_identity_mismatch_does_not_complete_or_requeue(self):
+        first = observed(paused=False)
+        proposal = reconcile_ecology_intent(intent(), first, now=NOW)
+        accepted = ack(proposal["intent"], first)
+        second = observed(seq=2, paused=False, inventory_count=1)
+        second["outcome"] = outcome(
+            first, second, "PICKUP", 0, 1, native_queue_ref="ea:unrelated",
+        )
+        res = reconcile_ecology_intent(accepted["intent"], second, now=NOW)
+        self.assertEqual(res["gate"], "ECOLOGY_AWAIT_INDEPENDENT_OUTCOME")
+        self.assertEqual(res["intent"]["verified_steps"], [])
+        self.assertEqual(res["intent"]["dispatch_status"], "QUEUED")
+
     def test_paused_plan_survives_and_no_game_effect(self):
         state = intent()
         before = copy.deepcopy(state)
@@ -96,18 +190,22 @@ class EcologyIntentTests(unittest.TestCase):
         play = reconcile_ecology_intent(intent(), first, now=NOW)
         self.assertEqual(play["gate"], "ECOLOGY_PLAY_STEP_PROPOSED")
         self.assertEqual(play["intent"]["awaiting"], "PICKUP")
+        self.assertEqual(play["intent"]["dispatch_status"], "PROPOSED")
+        pickup_ack = ack(play["intent"], first)
+        self.assertEqual(pickup_ack["gate"], "ECOLOGY_NATIVE_QUEUE_ATTESTED")
         second = observed(seq=2, paused=False, inventory_count=1)
         second["outcome"] = outcome(first, second, "PICKUP", 0, 1)
-        fert = reconcile_ecology_intent(play["intent"], second, now=NOW)
+        fert = reconcile_ecology_intent(pickup_ack["intent"], second, now=NOW)
         self.assertEqual(fert["gate"], "ECOLOGY_PLAY_STEP_PROPOSED")
         self.assertEqual(fert["proposal"]["step"], "FERTILIZE")
         self.assertEqual(fert["intent"]["verified_steps"], ["PICKUP"])
+        fert_ack = ack(fert["intent"], second)
         third = observed(seq=3, paused=False, inventory_count=0, plant_state="GOOD")
         third["outcome"] = outcome(
             second, third, "FERTILIZE", 1, 0,
             before_plant_state="DEPLETED", after_plant_state="GOOD",
         )
-        end = reconcile_ecology_intent(fert["intent"], third, now=NOW)
+        end = reconcile_ecology_intent(fert_ack["intent"], third, now=NOW)
         self.assertEqual(end["gate"], "ECOLOGY_VERIFIED_COMPLETE")
         self.assertEqual(end["intent"]["verified_steps"], ["PICKUP", "FERTILIZE"])
         self.assertEqual(end["remaining_steps"], [])
@@ -117,7 +215,7 @@ class EcologyIntentTests(unittest.TestCase):
         first = observed(paused=False)
         play = reconcile_ecology_intent(intent(), first, now=NOW)
         second = observed(seq=2, paused=False, inventory_count=1)
-        out = reconcile_ecology_intent(play["intent"], second, now=NOW)
+        out = reconcile_ecology_intent(ack(play["intent"], first)["intent"], second, now=NOW)
         self.assertEqual(out["gate"], "ECOLOGY_AWAIT_INDEPENDENT_OUTCOME")
         self.assertEqual(out["intent"]["step"], "PICKUP")
         self.assertEqual(out["intent"]["awaiting"], "PICKUP")
@@ -139,7 +237,7 @@ class EcologyIntentTests(unittest.TestCase):
         first = observed(paused=False)
         play = reconcile_ecology_intent(intent(), first, now=NOW)
         second = observed(seq=2, paused=False)
-        waiting = reconcile_ecology_intent(play["intent"], second, now=NOW)
+        waiting = reconcile_ecology_intent(ack(play["intent"], first)["intent"], second, now=NOW)
         self.assertEqual(waiting["gate"], "ECOLOGY_AWAIT_INDEPENDENT_OUTCOME")
         third = observed(seq=3, paused=False)
         third["interruption"] = {
@@ -148,7 +246,7 @@ class EcologyIntentTests(unittest.TestCase):
             "before_capture_ref": first["capture_ref"],
             "after_capture_ref": third["capture_ref"],
             "proof_ref": "proof:interruption:3",
-            "native_queue_ref": "ea:queue:slot3",
+            "native_queue_ref": "ea:queue:1",
         }
         restored = reconcile_ecology_intent(waiting["intent"], third, now=NOW)
         self.assertEqual(restored["gate"], "ECOLOGY_PLAY_STEP_PROPOSED")
@@ -159,7 +257,7 @@ class EcologyIntentTests(unittest.TestCase):
         initial = observed(paused=False)
         proposed = reconcile_ecology_intent(intent(), initial, now=NOW)
         intermediate = observed(seq=2, paused=False)
-        pending = reconcile_ecology_intent(proposed["intent"], intermediate, now=NOW)
+        pending = reconcile_ecology_intent(ack(proposed["intent"], initial)["intent"], intermediate, now=NOW)
         self.assertEqual(pending["gate"], "ECOLOGY_AWAIT_INDEPENDENT_OUTCOME")
         self.assertEqual(pending["intent"]["awaiting_capture_ref"], initial["capture_ref"])
         self.assertEqual(pending["intent"]["awaiting_item_count"], 0)
