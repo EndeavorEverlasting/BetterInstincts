@@ -13,7 +13,8 @@ def snapshot(**kw):
            location="home", mode="PLANNING", scene_verified=True, queue_verified=True,
            player_directed=False, needs_safe=True, minutes_until_work=100,
            minutes_until_need_floor=80, reserve_minutes=10, available_funds=100,
-           teleport_unlocked=True, teleport_evidence_ref="e:teleport", completed=[])
+           teleport_unlocked=True, teleport_evidence_ref="e:teleport",
+           teleport_evidence_capture_ref="cap:1", completed=[])
     x.update(kw)
     return x
 
@@ -44,6 +45,20 @@ class ActivityChainTests(unittest.TestCase):
         rr=[route("home", "garden", "WALK", 15), route("home", "garden", "TELEPORT", 1)]
         r=compile_activity_chain(snapshot(teleport_unlocked=False), s, rr, capture_ref="cap:1")
         self.assertEqual(r["steps"][0]["method"], "WALK")
+
+    def test_stale_teleport_unlock_uses_walking(self):
+        rr=[route("home", "garden", "WALK", 12), route("home", "garden", "TELEPORT", 1)]
+        p=compile_activity_chain(snapshot(teleport_evidence_capture_ref="cap:old"),
+                                 [row("a", "garden")],rr,capture_ref="cap:1")
+        self.assertEqual(p["steps"][0]["method"],"WALK")
+
+    def test_unfinished_dependent_purchase_is_not_started(self):
+        steps=[row("buy", "home", cost=10, duration=3),
+               row("craft", "home", ["buy"], domain="career", duration=25)]
+        p=compile_activity_chain(snapshot(minutes_until_work=16), steps,capture_ref="cap:1")
+        self.assertEqual(p["gate"],"DEFER_UNFINISHED_PURCHASE_CHAIN")
+        self.assertEqual(p["steps"],[])
+        self.assertEqual(p["deferred"],["buy","craft"])
 
     def test_work_and_need_budget_preserves_deferred(self):
         steps=[row("first", "home", duration=4), row("later", "home", ["first"], duration=25)]
