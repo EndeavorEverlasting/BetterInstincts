@@ -11,15 +11,15 @@ import math
 from collections.abc import Mapping
 
 from betterinstincts.ecology_forecast import compare_duration_models
+from betterinstincts.need_service_base import SIX, threshold_pair
 
 SCHEMA = "betterinstincts.ecology-intent/v1"
 OBSERVATION = "betterinstincts.ecology-observation/v1"
-NEEDS = frozenset(("hunger", "bladder", "energy", "hygiene", "fun", "social"))
+NEEDS = SIX
 STEPS = ("PICKUP", "FERTILIZE")
 MAX_AGE_SECONDS = 60
 MAX_QUEUE = 16
 MAX_SIMS = 32
-NEED_FLOOR = 0.25
 WORK_RESERVE_MINUTES = 30.0
 TIME_SAFETY_MULTIPLIER = 1.25
 
@@ -56,6 +56,8 @@ def new_ecology_intent(
         "last_sequence": -1,
         "last_inventory_count": None,
         "awaiting": None,
+        "awaiting_capture_ref": None,
+        "awaiting_item_count": None,
         "verified_steps": [],
         "plan": [
             {"step": "PICKUP", "target_ref": item_ref},
@@ -83,6 +85,13 @@ def _validate_intent(intent: Mapping) -> None:
                 and (type(intent["last_inventory_count"]) is not int
                      or intent["last_inventory_count"] < 0))
             or intent.get("awaiting") not in (None, "PICKUP", "FERTILIZE")
+            or (intent["awaiting"] is None and
+                (intent.get("awaiting_capture_ref") is not None
+                 or intent.get("awaiting_item_count") is not None))
+            or (intent["awaiting"] is not None and
+                (not _ref(intent.get("awaiting_capture_ref"))
+                 or type(intent.get("awaiting_item_count")) is not int
+                 or intent["awaiting_item_count"] < 0))
             or not isinstance(intent.get("verified_steps"), list)
             or any(step not in STEPS for step in intent["verified_steps"])
             or len(intent["verified_steps"]) > 2
@@ -99,6 +108,8 @@ def _time_window(observation: Mapping) -> tuple[float | None, str]:
     needs = observation.get("needs")
     if not isinstance(needs, Mapping) or set(needs) != NEEDS:
         return None, "NEEDS_UNVERIFIED"
+    # Reuse the shared proactive needs threshold, not a private ecology constant.
+    _, need_floor = threshold_pair()
     until_floor = 1_000_000.0
     for name in NEEDS:
         row = needs[name]
@@ -107,10 +118,10 @@ def _time_window(observation: Mapping) -> tuple[float | None, str]:
         value, decay = row.get("value"), row.get("decay_per_sim_minute")
         if not _num(value, 0, 1) or not _num(decay, 0, 1):
             return None, "NEEDS_UNVERIFIED"
-        if value <= NEED_FLOOR:
+        if value <= need_floor:
             return 0.0, "CRITICAL_NEED"
         if decay > 0:
-            until_floor = min(until_floor, (value - NEED_FLOOR) / decay)
+            until_floor = min(until_floor, (value - need_floor) / decay)
 
     if not _ref(observation.get("work_proof_ref")):
         return None, "WORK_DEADLINE_UNVERIFIED"
@@ -163,14 +174,14 @@ def _outcome_verified(
             or outcome.get("sim_ref") != intent["sim_ref"]
             or outcome.get("target_ref") != (
                 intent["item_ref"] if step == "PICKUP" else intent["plant_ref"])
-            or outcome.get("before_capture_ref") != intent["last_capture_ref"]
+            or outcome.get("before_capture_ref") != intent["awaiting_capture_ref"]
             or outcome.get("after_capture_ref") != observation["capture_ref"]
             or not _ref(outcome.get("proof_ref"))
             or not _ref(outcome.get("native_action_ref"))):
         return False
     before, after = outcome.get("before_item_count"), outcome.get("after_item_count")
     if (type(before) is not int or type(after) is not int or before < 0
-            or after < 0 or before != intent["last_inventory_count"]
+            or after < 0 or before != intent["awaiting_item_count"]
             or after != observation["inventory_count"]):
         return False
     if step == "PICKUP":
@@ -232,8 +243,6 @@ def reconcile_ecology_intent(intent: Mapping, observation: Mapping, *, now: floa
     paused = observation["paused"]
     mode = "PLANNING" if paused else "PLAY"
     previous_capture = state["last_capture_ref"]
-    previous_count = state["last_inventory_count"]
-    previous_step = state["step"]
     if state["awaiting"] is not None and previous_capture is not None:
         if _outcome_verified(
             observation.get("outcome"), step=state["awaiting"],
@@ -243,6 +252,8 @@ def reconcile_ecology_intent(intent: Mapping, observation: Mapping, *, now: floa
             state["verified_steps"].append(completed)
             state["step"] = "FERTILIZE" if completed == "PICKUP" else "DONE"
             state["awaiting"] = None
+            state["awaiting_capture_ref"] = None
+            state["awaiting_item_count"] = None
 
     # An independently witnessed native cancellation can release a pending
     # proposal. An absent/unknown queue entry alone never licenses replay.
@@ -251,11 +262,13 @@ def reconcile_ecology_intent(intent: Mapping, observation: Mapping, *, now: floa
         if (interruption.get("step") == state["awaiting"]
                 and interruption.get("status") == "NATIVE_INTERRUPTED"
                 and interruption.get("cause") == "SIM_AUTONOMY"
-                and interruption.get("before_capture_ref") == previous_capture
+                and interruption.get("before_capture_ref") == state["awaiting_capture_ref"]
                 and interruption.get("after_capture_ref") == capture
                 and _ref(interruption.get("proof_ref"))
                 and _ref(interruption.get("native_queue_ref"))):
             state["awaiting"] = None
+            state["awaiting_capture_ref"] = None
+            state["awaiting_item_count"] = None
 
     # If we already own inventory at goal admission, pickup is unnecessary.
     if previous_capture is None and state["step"] == "PICKUP" and observation["inventory_count"] > 0:
@@ -350,6 +363,8 @@ def reconcile_ecology_intent(intent: Mapping, observation: Mapping, *, now: floa
     # A suggestion offered in Play is only a pending intent. Native dispatch
     # must run under separately version-pinned and game-certified authority.
     state["awaiting"] = action
+    state["awaiting_capture_ref"] = capture
+    state["awaiting_item_count"] = observation["inventory_count"]
     return finish("ECOLOGY_PLAY_STEP_PROPOSED", proposal=proposal, mode=mode)
 
 
