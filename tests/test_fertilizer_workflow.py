@@ -335,6 +335,45 @@ class BackyardFertilizerBagTests(unittest.TestCase):
                 evaluate(workflow(supplies=[], backyard_scan=backyard_scan(), **parent),
                          [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
 
+    def test_registered_semantic_spatial_map_confirms_physical_bag_identity(self):
+        world = {
+            "schema": "betterinstincts.semantic-spatial-map-doc/v1",
+            "lot_id": "lot:home", "game_build": "build:verified",
+            "execute_allowed": False,
+            "objects": {
+                "item:bag": {
+                    "category": "FERTILIZER_BAG", "floor_id": "OUTSIDE",
+                    "pose_source": "EA_READ_ONLY", "pose_refs": ["ea:pose"],
+                    "center": [1, 2, 0], "size": [1, 1, 1],
+                },
+                "item:chair": {
+                    "category": "CHAIR", "floor_id": "OUTSIDE",
+                    "pose_source": "EA_READ_ONLY", "pose_refs": ["ea:chair"],
+                    "center": [3, 4, 0], "size": [1, 1, 1],
+                },
+            }, "relations": [],
+        }
+        observed = [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")]
+        accepted = evaluate(workflow(supplies=[], backyard_scan=backyard_scan(
+            spatial_map=world)), observed)
+        self.assertEqual(accepted["gate"], "FERTILIZER_BACKYARD_TRANSFER_READY")
+        for bad_row in (
+            {"category": "UNKNOWN_OBJECT"},
+            {"floor_id": "FLOOR_1"},
+            {"center": None},
+            {"pose_source": "NONE"},
+        ):
+            with self.subTest(bad_row=bad_row):
+                modified = copy.deepcopy(world)
+                modified["objects"]["item:bag"].update(bad_row)
+                denied = evaluate(workflow(supplies=[], backyard_scan=backyard_scan(
+                    spatial_map=modified)), observed)
+                self.assertEqual(denied["gate"], "FERTILIZER_BACKYARD_BAGS_NOT_FOUND")
+                self.assertFalse(denied["next_actions"])
+        with self.assertRaisesRegex(FertilizerWorkflowError, "SPATIAL_MAP_SCOPE"):
+            evaluate(workflow(supplies=[], backyard_scan=backyard_scan(
+                spatial_map={**world, "lot_id": "lot:unrelated"})), observed)
+
     def test_no_requeue_if_pickup_in_flight(self):
         for status in ("QUEUED", "AWAITING_INVENTORY_READBACK"):
             with self.subTest(status=status):
