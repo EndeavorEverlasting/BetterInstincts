@@ -47,6 +47,7 @@ MAX_ROUTE_STEPS = 64
 def _backyard_transfer_candidate(
     scan: Mapping, actions: list[dict], *, sim_ref: str,
     capture_ref: str, now: float,
+    expected_lot_ref: str | None, expected_game_build: str | None,
 ) -> dict:
     """Read a bounded, same-lot bag survey; never move an actual game object.
 
@@ -67,6 +68,10 @@ def _backyard_transfer_candidate(
         raise FertilizerWorkflowError("BACKYARD_SCAN_ACTOR_MISMATCH")
     if not _ref(scan.get("lot_ref")) or not _ref(scan.get("game_build")):
         raise FertilizerWorkflowError("BACKYARD_SCAN_LOT_OR_BUILD_INVALID")
+    if not _ref(expected_lot_ref) or scan["lot_ref"] != expected_lot_ref:
+        raise FertilizerWorkflowError("BACKYARD_SCAN_PARENT_LOT_MISMATCH")
+    if not _ref(expected_game_build) or scan["game_build"] != expected_game_build:
+        raise FertilizerWorkflowError("BACKYARD_SCAN_PARENT_BUILD_MISMATCH")
     bags = scan.get("bags")
     if not isinstance(bags, list) or len(bags) > MAX_BACKYARD_BAGS:
         raise FertilizerWorkflowError("BACKYARD_SCAN_BAGS_INVALID")
@@ -274,10 +279,16 @@ def evaluate_fertilizer_workflow(
     # If the local host supplies a fresh backyard survey, the bought ground
     # bags outrank any new sourcing/purchases. This is an opt-in read-only port;
     # missing/failed proof does not fall through to an unsafe generic drag.
-    if "backyard_scan" in observation:
+    scan = observation.get("backyard_scan")
+    if scan is not None and (
+        stock < len(ready)
+        or (isinstance(scan, Mapping) and scan.get("pending_transfer") is not None)
+    ):
         candidate = _backyard_transfer_candidate(
-            observation["backyard_scan"], actions, sim_ref=sim_ref,
+            scan, actions, sim_ref=sim_ref,
             capture_ref=capture_ref, now=at,
+            expected_lot_ref=observation.get("lot_ref"),
+            expected_game_build=observation.get("game_build"),
         )
         result["backyard_scan"] = candidate
         if candidate["gate"] == "FERTILIZER_BACKYARD_TRANSFER_PENDING":
