@@ -1,3 +1,11 @@
+## 2026-11-14 — Closers follow-up: malformed hover data and partially held stock
+
+Post-merge CodeAnt review of #242 revealed two additional source-only defects. `fertilizer_hover_recognition` now validates external JSON `source` as a **string** before set membership, returning `FertilizerHoverError` for a list/dictionary instead of escaping with raw `TypeError`; the existing backyard planner also validates identity source, item kind, spatial-map category/pose source, and pending transfer status before any set membership. Negative tests cover malformed JSON-like values.
+
+If the selected Sim has **one or more independently observed pocket units** and a separate fertilizer pickup is still queued, the planner now protects that pending pickup from duplication **while permitting one enabled `FERTILIZE` action** on a ready plant. It refuses to invent sufficient stock for `FERTILIZE_ALL`. If there are **zero** pocket units and transfer is pending, the action remains `WAIT_FOR_EXACT_ITEM_INVENTORY_READBACK_NO_REPEAT`. `gardening_service` remains the owner of player/busy/needs admission; existing-source policy never executes an interaction.
+
+Tests: `tests/test_fertilizer_hover_recognition.py` and `tests/test_fertilizer_workflow.py`. This does not change the current installed Sims native gameplay/host P08 gate, still issue #171.
+
 ## 2026-11-14 — MoonWake /the-closers: actual screenshot of Growfruit Super Fertilizer
 
 **New primary operator evidence:** A paused Sims 4 garden screenshot visibly shows a highlighted, individually identifiable ground item, with tooltip heading **SUPER FERTILIZER**, explanation **“Special fertilizer received from Jasmine as part of the Growfruit Challenge.”**, and displayed **§80**. The visible tooltip pointer is associated with the highlighted small grey object on the backyard ground. These facts rule out a generic bag-shaped classifier as the only valid route. The image does **not** show the installed game build, unique EA object ID, precise world geometry, available inventory drag affordance, active Sim's stock change or a successful fertilization.
