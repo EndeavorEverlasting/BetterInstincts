@@ -1,6 +1,6 @@
 # PS-0241 — Ecology planning/play and per-Sim intent continuity
 
-**Status:** source implementation and offline test candidate. **Not an installed Sims 4
+**Status:** source policy merged on main; native integration and live proof still open. **Not an installed Sims 4
 mod; native auto-activation and in-game certification are still open in
 [issue #171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).**
 The local agent reported game patch \`1.121.361.1020\`, an empty Mods folder
@@ -130,7 +130,7 @@ Public cross-check references:
 
 ## Current proof states
 
-- **Source:** implementation committed on feature branch; CI status separately verified.
+- **Source:** PRs #253 (ecology), #254 (activity chains), and #255 (mathematical planner) merged to main; CI and native-game proof remain separate.
 - **Native package:** not built / not installed.
 - **Automatically triggered game events:** not observed.
 - **Earlier manual garden transfer and plant effect:** operator/local-agent reported
@@ -193,7 +193,8 @@ The Closers added an explicit two-phase handshake:
 
 1. \`reconcile_ecology_intent(...)\` in PLAY returns one proposal whose
    state is \`dispatch_status=PROPOSED\`; it **is not a game action**.
-2. The real installed, patch-matched EA adapter may call
+2. The real installed, patch-matched EA adapter must supply a
+   `betterinstincts.ecology-native-queue-receipt/v1` receipt and may call
    \`acknowledge_native_ecology_dispatch(intent, receipt)\` **only**
    after checking that the intended exact Sim/household/lot/target
    was actually enqueued, origin was HOST and player was inactive.
