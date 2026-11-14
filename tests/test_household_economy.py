@@ -8,7 +8,7 @@ from betterinstincts.household_judgment import bind_household_scope
 from betterinstincts.household_economy import (
     HouseholdEconomyError, evaluate_household_economy,
 )
-from betterinstincts.host_stack import evaluate_turn
+from betterinstincts.host_stack import HostStackError, evaluate_turn
 from betterinstincts.host_listener import _load_observation, HostListenerError
 
 CAP = "capture:household-economy-test001"
@@ -55,6 +55,44 @@ def task(s, ident, mech, kind="YIELD", priority=3, resource=None,
 
 
 class HouseholdEconomyTests(unittest.TestCase):
+    def test_handoff_uses_awake_servo_and_preserves_recovery(self):
+        s = snapshot(3)
+        selected, unavailable, servo = s["members"]
+        s["selected_member_key"] = selected["member_key"]
+        unavailable["activity"] = "RECHARGING"
+        servo.update(activity="AWAKE", sim_kind="SERVO",
+                     needs=dict.fromkeys(("charge", "durability", "fun", "social"), 0.9))
+        s["tasks"].append(task(s, "garden01", "gardening"))
+        for state in ("ASLEEP", "RECHARGING", "AWAY"):
+            with self.subTest(state=state):
+                selected["activity"] = state
+                plan = evaluate_household_economy(s)
+                self.assertEqual(plan["workload_claims"], [servo["member_key"]])
+                self.assertEqual(plan["portrait_handoff"]["to_member_key"], servo["member_key"])
+                self.assertFalse(plan["portrait_handoff"]["execute_allowed"])
+
+        servo["activity"] = "UNKNOWN"
+        plan = evaluate_household_economy(s)
+        self.assertEqual(plan["assigned_count"], 0)
+        self.assertIsNone(plan["portrait_handoff"])
+
+    def test_host_exposes_one_handoff_for_current_capture(self):
+        s = snapshot(2)
+        selected, next_member = s["members"]
+        selected["activity"] = "ASLEEP"
+        next_member["activity"] = "AWAKE"
+        s["selected_member_key"] = selected["member_key"]
+        s["tasks"].append(task(s, "garden01", "gardening"))
+        args = dict(needs=NEEDS, location_kind="home", available_objects=[], queue=[], household_economy=s)
+        plan = evaluate_turn(capture_ref=CAP, already_busy=True, **args)
+        self.assertEqual(plan["next_gate"], "AWAKE_HOUSEHOLD_HANDOFF_READY")
+        self.assertEqual(plan["fallback"]["portrait_handoff"]["to_member_key"],
+                         next_member["member_key"])
+        player = evaluate_turn(capture_ref=CAP, player_directed=True, **args)
+        self.assertNotEqual(player["next_gate"], "AWAKE_HOUSEHOLD_HANDOFF_READY")
+        with self.assertRaisesRegex(HostStackError, "HOUSEHOLD_HANDOFF_CAPTURE_MISMATCH"):
+            evaluate_turn(capture_ref="capture:other", **args)
+
     def test_single_person_fun_and_temperament_outrank_discretionary_income(self):
         s = snapshot()
         s["tasks"].append(task(s, "earn001", "income-earning"))

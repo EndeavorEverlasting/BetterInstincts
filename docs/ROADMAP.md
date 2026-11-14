@@ -179,3 +179,5 @@ fabricated Simoleons. `docs/NANOCAN_RECYCLING.md` and
 `contracts/nanocan-recycling.v1.json` own details. Actual gameplay
 needs exact-build read-only EA tuning inspection and P08 disposable
 comparison. BI-002 remains ACTIVE.
+
+Awake household handoff uses the existing household economy and host turn. See [play evidence and next live canary](../plans/active/BI-SIXTH-GEAR-AWAKE-HANDOFF-20261113.md).

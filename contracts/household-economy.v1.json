@@ -67,5 +67,27 @@
     "registry": "Append missing mechanics to canonical registry in separate consulted revision, never silently treat gap as supported"
   },
   "proof_ceiling": "SOURCE_ONLY_OFFLINE_HOUSEHOLD_ALLOCATION_NOT_EA_CERTIFIED",
-  "active_parent": "BI-002 hunger still ACTIVE"
+  "active_parent": "BI-002 hunger still ACTIVE",
+  "portrait_handoff": {
+    "trigger": "The selected roster member is observed ASLEEP, RECHARGING or AWAY in the current host capture.",
+    "target": "First eligible allocation to an explicitly AWAKE member, ranked by existing task priorities, skills and preferences.",
+    "effect": "One advisory selection. Reobserve selected identity, queue ownership and exact affordance before any enqueue.",
+    "member_needs": {
+      "HUMAN": [
+        "hunger",
+        "bladder",
+        "energy",
+        "hygiene",
+        "fun",
+        "social"
+      ],
+      "SERVO": [
+        "charge",
+        "durability",
+        "fun",
+        "social"
+      ]
+    },
+    "legacy": "Snapshots without selected_member_key retain allocation behavior and never emit a portrait handoff."
+  }
 }

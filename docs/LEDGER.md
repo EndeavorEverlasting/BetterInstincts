@@ -1977,3 +1977,7 @@ retains the exact-build EA-source/Live Mode/disposable-save obligation.
 No claim of local MoonWake walker or five external agents launched.
 Merge and CI are separate checkable states; inspect final PR and main
 before promoting this source receipt to provider-verified closure.
+
+## 2026-11-13 — Awake household handoff
+
+Manual play recovered Charlee's six needs, verified peer Servo Tune Up, and started Olga's archaeology book. The host now proposes the first eligible awake actor when the selected member is asleep, recharging or away. See plans/active/BI-SIXTH-GEAR-AWAKE-HANDOFF-20261113.md. Native enqueue remains open under issue #171. BI-002 remains active.

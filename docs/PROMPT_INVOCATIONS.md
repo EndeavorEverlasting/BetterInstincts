@@ -538,3 +538,7 @@ five-row/modal evidence, per-Sim inventory/simoleons and removal proof.
 No local MoonWake prompt_group_walk or external agent dispatch was run from
 the GitHub provider. Offline validation/merge are independent of Live Mode
 certification; the latter remains NOT_RUN.
+
+## 2026-11-13 — Awake household handoff
+
+Moonwake /sixth-gear scoped to the observed household play, in canonical order P141, P95, P82, P08, P07, P124. See [stage evidence](../plans/active/BI-SIXTH-GEAR-AWAKE-HANDOFF-20261113.md).

@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/household_economy.py",
+      "route": "POLICY_ONLY",
+      "reason": "Capture-bound household actor selection and allocation advice. Native actor and queue effects require source-proven integration.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_stack.py",
+      "route": "POLICY_ONLY",
+      "reason": "Capture-bound household actor selection and allocation advice. Native actor and queue effects require source-proven integration.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}
