@@ -1,3 +1,7 @@
+## 2026-11-14 — Adaptive bottom-right HUD semantic state (offline/source)
+
+Host-side inventory image adapter classifies eight operator-supplied screenshot geometries using two independent pixel cues, with continuous normalized height and `COLLAPSED` / `CONDENSED` / `EXPANDED` / `UNKNOWN`. Generic physical-bounds semantics are ready for other panels once independently calibrated; no unsupported visual or patch claims. Goal-dependent posture proposals (`SINGLE_ITEM`, `INVENTORY_AUDIT`, `FINISHED`) are read-only and fail closed on player activity, unknown panel owner/focus, stale Sim/scene and missing calibrated grip. Integration owner remains the existing screen queue and native game adapter: next local task is exact-patch UI calibration, consent-safe one-effect trial with post-observation, and separate installed-native certification under #171. Full reference: `docs/HUD_PANEL_STATE.md`.
+
 ## 2026-11-14 — PS-0241 open-domain mathematical activity planner (source-only)
 
 Cross-domain activity chains share a bounded DAG and optional small-cohort Gaussian duration forecaster instead of ecology-only action macros. A Sim can plan observed purchase → stock verification → transfer to personal inventory → route via unlocked teleport or walk → craft a career artifact → observe outcome while accounting for work/needs and funds. Player-first/scene/save/queue/native gates stay external. Full notes in docs/ACTIVITY_CHAIN.md. Prototype and tests are not native-gameplay certification; issue #171 owns game runtime; garden PR #252 remains independent.
