@@ -1,0 +1,80 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SERVO-NEED-RATE-MULTIMODAL-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "MoonWake Sixth Gear P141→P95→P82→P08→P07→P124: source-qualified rate/direction sensing for the screenshot Servo's four needs, existing moodlet-aware priorities, independent native-game/HUD CV observations, bounded failover and health-reset recovery. Do not misread three red arrows as numerically measured 3x.",
+  "affected_concepts": [
+    "SIM",
+    "GAME_BUILD",
+    "NEED",
+    "NEED_STATE",
+    "MOODLET",
+    "OBSERVATION",
+    "CLAIM",
+    "ACTION_PROPOSAL",
+    "PLAYER_INTENT",
+    "HOST_SESSION",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "contracts/occult-needs.v1.json",
+    "betterinstincts/occult_needs.py",
+    "betterinstincts/moodlets.py",
+    "contracts/moodlets.v1.json",
+    "betterinstincts/host_stack.py",
+    "betterinstincts/need_services.py",
+    "betterinstincts/need_load_balance.py",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md",
+    "docs/WORLD_TRAVERSAL_HARNESS.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-028",
+    "BI-ONT-029",
+    "BI-ONT-030"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_NEED_MULTIMODAL_POLICY_NO_LIVE_EA_SENSOR_OR_HUD_CV_CLASSIFIER",
+  "player_save_control_impact": "Pure deterministic bounded policy. No game file writes, real-time hooks, background process, OS input, per-frame screenshots, automatic sensor restart, user save mutation, or live Sims effects.",
+  "expected_outcome": "Reuse servo motive profile Fun/Social/Durability/Charge distinct from six ordinary needs. Detect trend direction and categorical arrow tiers; accept numeric per-Sim-minute rates only with native proof; fuse independently received fresh native and calibrated HUD frames, detect disagreement, use healthy fallback, quarantine/re-admit recovering sources using distinct health-check samples, and reuse existing moodlets. Host caller receives advisory diagnosis without overriding player intent or running a game effect.",
+  "negative_tests": [
+    "Three red down chevrons are ordinal FAST_DECLINE, never invented 3× multiplier",
+    "Paused screenshot does not prove motion during paused time",
+    "Native-only and calibrated HUD-only can continue as degraded fallback",
+    "Stale cross-Sim/build/capture or unsupported static EA_FILE cannot claim live rate",
+    "Native UP versus HUD DOWN yields conflict, never confident trend",
+    "Recovery requires reset and two distinct healthy probes, no blind retry",
+    "User commands protected; no cancellation or screenshot/acquisition from policy",
+    "Servo 4 needs work, ordinary 6-need host retains compatibility",
+    "Moodlet positive feeling does not hide urgent Social decline"
+  ],
+  "rollback_path": "Revert scoped PR. No persistent model or gameplay state migration.",
+  "unresolved_unknowns": [
+    "Actual installed patch native motive/buff runtime API unknown; static tuning is not current game state",
+    "Calibrated HUD computer vision and native source readers are not running in connected GitHub runtime",
+    "Local P08 disposable Sims session unavailable, BI-002 hunger active, PR159 spatial sensor separate"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-SERVO-NEED-RATE-MULTIMODAL-20261114.v1.json",
+    "betterinstincts/need_signal_fusion.py",
+    "contracts/need-signal-fusion.v1.json",
+    "tests/test_need_signal_fusion.py",
+    "betterinstincts/host_stack.py",
+    "contracts/native-gameplay-decisions/BI-NEED-SIGNAL-FUSION-20261114.v1.json",
+    "docs/NEED_SIGNAL_FUSION.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "docs/PROMPT_INVOCATIONS.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "P141 compared six-need-only level deltas (rejects Servo/rates), pure CV alone (stale/ambiguous icons), EA-native alone (unavailable local API and patch), a new daemon (duplicates host) and bounded dual-source policy through existing moodlets/occult/host seams (selected). P95/P82 implement falsifiable pure call stacks; P08 real game blocked; P07/P124 verify CI and integrate without false live claims."
+}
