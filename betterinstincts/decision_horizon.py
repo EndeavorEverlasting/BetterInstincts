@@ -264,9 +264,12 @@ def optimize_activity_plan(
     def search(current: PlanningState, path: tuple[dict, ...],
                score: float, survival: float) -> None:
         nonlocal expansions, best
-        if (score > best[0] + 1e-9
-                or (abs(score - best[0]) <= 1e-9 and path
-                    and (not best[1] or current.elapsed < best[2].elapsed))):
+        # Zero expected utility is a no-op, not a tiebreaker that may churn
+        # the queue. Use shorter paths only among positive-value candidates.
+        if (score > 1e-9 and
+                (score > best[0] + 1e-9
+                 or (abs(score - best[0]) <= 1e-9 and path
+                     and best[1] and current.elapsed < best[2].elapsed))):
             best = (score, path, current)
         if len(path) >= max_depth or expansions >= max_expansions:
             return
@@ -294,6 +297,12 @@ def optimize_activity_plan(
                     # Conservative linear need-rate forecast: action benefits
                     # occur after transit/interaction, not before.
                     during = before + rates[need] * minutes
+                    # An end-of-action benefit cannot retroactively prevent
+                    # a motive falling below its hard floor during travel.
+                    # Linear rate extrema occur at the interval endpoints.
+                    if min(before, during) < floors[need] - 1e-9:
+                        first_blockers.add("NEED_FLOOR_TRANSIENT")
+                        break
                     after = min(100.0, max(0.0, during + effects.get(need, 0.0)))
                     if after < floors[need] - 1e-9:
                         first_blockers.add("NEED_FLOOR")
@@ -359,7 +368,11 @@ def optimize_activity_plan(
     gate = "BOUNDED_SEARCH_PARTIAL_REVIEW" if truncated else (
         "FORECAST_STAGED_NOT_DISPATCHABLE" if path else "NO_POSITIVE_FEASIBLE_PLAN")
     return _receipt(
-        capture_ref, gate, next_step=path[0] if path else None,
+        capture_ref, gate,
+        # An expansion-limited search is provisional: no action recommendation
+        # should escape before bounded evaluation can finish or re-observe.
+        next_step=(path[0] if path and not truncated else None),
+        provisional_due_to_budget=bool(path) and truncated,
         forecast_steps=list(path), expected_net_utility=round(score, 6),
         projected_minutes=round(projected.elapsed, 6),
         projected_funds=round(projected.funds, 6),
