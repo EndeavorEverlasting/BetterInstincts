@@ -22,3 +22,7 @@ Parent remains BI-002. Manual observation used Windows Sims 4 1.121.361.1020 and
 - No confirmed autonomous action displaced an operator-owned queue in this run. Preserve unknown ownership. Existing autonomy moderation and preference owners remain the route for further native proof.
 
 Next live canary under issue #171: bind a disposable current-patch roster, verify a sleep transition, observe one actor handoff and one eligible task enqueue, then show the sleeping and player-owned queues remain intact. Record target engagement and rollback.
+
+## 2026-11-14 continuation — sleep-to-portrait is independent of chores
+The initial PR #229 only proposed a portrait when another eligible work allocation existed. The operator corrected the first parent gate: even with **no queued tasks**, sleeping/recharging/away means immediately rotate attention to the next verified AWAKE household portrait, wrap the original roster and reobserve the selected Sim's needs and queue. A critically hungry awake Sim must not be excluded by the chore allocation wellbeing floor. With one Sim/all asleep/no permitted awake Sim, preserve the paused/recovery state and never spin. Optional `attention_review` completion receipt (actor/capture/proof) advances another awake portrait one step, always requiring a new capture. `host_stack` remains the existing plan port; no native game input or installed logic is claimed, so issue #171 retains actual current-game actor selection as the local P08 gate.
+
