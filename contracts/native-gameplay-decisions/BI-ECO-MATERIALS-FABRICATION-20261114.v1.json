@@ -1,0 +1,33 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/eco_resource_cycle.py",
+      "route": "POLICY_ONLY",
+      "reason": "Evaluate verified material sources, inventory resources and craft affordances without any game effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/fertilizer_workflow.py",
+      "route": "POLICY_ONLY",
+      "reason": "Extend the existing one-action fertilizer advice when personal fertilizer stock is absent.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/career_service.py",
+      "route": "POLICY_ONLY",
+      "reason": "Expose the observed Civil Designer Green Technician daily task without changing teen career behaviors.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_stack.py",
+      "route": "POLICY_ONLY",
+      "reason": "Compose the existing career turn with optional safe eco advice; no host input or native game execution.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

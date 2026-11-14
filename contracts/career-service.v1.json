@@ -136,5 +136,22 @@
     "native_successor_issue": 171,
     "execute_allowed": false,
     "proof_ceiling": "OFFLINE_WORK_TONE_POLICY_NOT_EA_WORK_HARD_CERTIFICATION"
+  },
+  "green_technician_fabrication": {
+    "schema": "betterinstincts.eco-fabrication/v1",
+    "policy_owner": "betterinstincts/career_service.py#evaluate_green_technician_daily_task",
+    "plan_owner": "betterinstincts/eco_resource_cycle.py#plan_eco_fabrication",
+    "host_port": "host_stack.evaluate_turn(eco_fabrication=observed)",
+    "career_track": "GREEN_TECHNICIAN",
+    "daily_task": "FABRICATE_ECO_UPGRADE_PART",
+    "required_recipe_id": "FABRICATED_ECO_UPGRADE_PART",
+    "cost_source": "EXACT_OBSERVED_UNLOCKED_RECIPE_BITS_AND_PIECES_NOT_HARDCODED",
+    "recycler_rule": "PROTECT_PLAYER_AND_REQUIRED_ITEMS; USE_REPLAY_UNIQUE_MEASURED_RESULTS; ONE_SAFE_COLD_START_TRASH_TRIAL",
+    "fab_rule": "INSPECT_EXISTING_COMMUNITY_STATIONS_BEFORE_REVIEWING_BUY; ONE_OBSERVED_CRAFT_ADVICE; VERIFY_CRAFT_AND_CAREER_SEPARATELY",
+    "budget_rule": "NEVER_PREDICT_YIELD_FROM_ITEM_PRICE_OR_TITLE",
+    "player_rule": "SAFE_NEEDS_AND_PLAYER_OR_QUEUE_YIELD_FIRST",
+    "native_successor_issue": 171,
+    "execute_allowed": false,
+    "proof_ceiling": "OFFLINE_ECO_MATERIAL_ADVISORY_NOT_GAMEPLAY"
   }
 }
