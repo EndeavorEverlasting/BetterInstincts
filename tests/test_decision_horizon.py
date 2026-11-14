@@ -122,8 +122,14 @@ class BellmanPlannerTests(unittest.TestCase):
     def test_no_action_without_stock_even_if_prior_step_marked_complete(self):
         completed = [{"step_id": "purchase", "outcome_ref": "proof-purchase",
                       "outcome_capture_ref": CAPTURE}]
-        result = plan(snapshot(completed=completed), chain(), routes(),
-                      horizon_minutes=5)
+        # Include a fresh observed home-to-garden route so the inventory
+        # precondition, rather than route availability, is the tested gate.
+        home_garden = {"from": "home", "to": "garden", "method": "WALK",
+                       "upper_minutes": 2, "admitted": True,
+                       "capture_ref": CAPTURE,
+                       "evidence_ref": "walk-home-garden"}
+        result = plan(snapshot(completed=completed), chain(),
+                      routes() + [home_garden], horizon_minutes=5)
         self.assertIsNone(result["next_step"])
         self.assertIn("INVENTORY_PRECONDITION",
                       result["binding_or_blocking_constraints"])
