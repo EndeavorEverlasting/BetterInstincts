@@ -1,0 +1,72 @@
+{
+  "schema": "betterinstincts.career-decisions/v1",
+  "version": 1,
+  "purpose": "Native-first deterministic career chance-card selection across observed career tracks/household Sims; reusable utility/risk model without agent/human UI clicks",
+  "owners": {
+    "entrypoint": "betterinstincts/career_service.py#evaluate_career_event_turn",
+    "policy": "betterinstincts/career_decisions.py",
+    "native_successor_issue": 171,
+    "career_panel": "contracts/ui-microsystems.v1.json#panels.career",
+    "work_shift": "betterinstincts/career_service.py#evaluate_work_shift_tone",
+    "glossary": "docs/GLOSSARY.md"
+  },
+  "event_schema": "betterinstincts.career-event.observation/v1",
+  "event_kind": "CAREER_CHANCE_CARD",
+  "exact_source": "EA_NATIVE RUNNING_GAME_MEMORY from verified local hook (not authenticated by Python dictionary alone)",
+  "supported_career_modes": [
+    "RABBIT_HOLE",
+    "ACTIVE_CAREER",
+    "PART_TIME"
+  ],
+  "required_identity": [
+    "game_build",
+    "dialog_tuning_id",
+    "event_ref",
+    "event_revision",
+    "native_hook_ref",
+    "capture_ref",
+    "recipient_sim_id",
+    "career_id",
+    "career_level",
+    "response_ids"
+  ],
+  "option_requirement": "All present offered options independently observed; exact response IDs known; each option has all known probability outcomes and evidence references. Never infer odds from wording.",
+  "effect_keys": [
+    "performance",
+    "simoleons",
+    "skill",
+    "mood",
+    "fun",
+    "social",
+    "reputation",
+    "relationship"
+  ],
+  "scoring": {
+    "weights": {
+      "performance": 6,
+      "simoleons": 0.04,
+      "skill": 4,
+      "mood": 0.6,
+      "fun": 0.7,
+      "social": 0.6,
+      "reputation": 2,
+      "relationship": 1.2
+    },
+    "risk_aversion": 0.2,
+    "min_score_margin": 0.25,
+    "max_termination_probability_bps": 0,
+    "allow_irreversible_outcome": false
+  },
+  "probability_scale": 10000,
+  "default_behavior": "HOLD when no complete effect model or unique decisive non-irreversible choice; future source-backed safe-default may be added under a separate review, never guess numeric response IDs.",
+  "native_behavior": "When installed and exact local-game EA career event source is certified, existing native adapter may consume one recommended response after player-first, selected actor/event and game save checks. This file never emits an effect permit.",
+  "replay_rule": "Compare previously native-acknowledged event_ref+event_revision before action; no second response on ambiguous outcome; effect and activity resume observed with distinct captures.",
+  "progressive_disclosure": {
+    "start": "docs/GLOSSARY.md#career-and-work-routing",
+    "detail": "docs/CAREER_DECISIONS.md",
+    "machine": "contracts/career-decisions.v1.json",
+    "existing": "docs/CAREER_PERFORMANCE.md",
+    "native": "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md"
+  },
+  "proof_ceiling": "OFFLINE_CAREER_DECISION_POLICY_NOT_NATIVE_AUTONOMY_OR_LIVE_CERTIFIED"
+}
