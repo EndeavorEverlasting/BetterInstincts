@@ -1,0 +1,58 @@
+{
+  "schema": "betterinstincts.experience-recall-contract/v1",
+  "version": 1,
+  "owner": "betterinstincts/experience_recall.py",
+  "entrypoint": "scripts/experience_recall.py",
+  "storage": "dist/experience-recall/experiences.json",
+  "activation": "EXPLICIT_LOCAL_RECORD_AND_RECALL_ONLY",
+  "purpose": "Avoid repeated investigation and game restart for already-observed experiences; store a new semantic experience once and reuse previously reviewed facts on later matching encounters.",
+  "identity": {
+    "fields": [
+      "domain",
+      "game_build",
+      "installation_profile",
+      "mechanic_id",
+      "choice_id"
+    ],
+    "digest": "SHA256_OF_CANONICAL_JSON",
+    "omit": [
+      "Sim name",
+      "household ID",
+      "save path",
+      "screen capture",
+      "source prose",
+      "runtime PID"
+    ],
+    "required_consistency": "Exact build, installation/mod/pack profile, mechanic, choice"
+  },
+  "insert_only_when_new": true,
+  "duplicate_semantics": "ALREADY_KNOWN_WITH_NO_FILESYSTEM_WRITE",
+  "conflicts": "CONFLICT_REVIEW_REQUIRED_NO_OVERWRITE",
+  "eviction": "NEVER_SILENTLY_EVICT",
+  "max_records": 128,
+  "max_bytes": 128000,
+  "provenance_levels": [
+    "SOURCE_INSPECTED",
+    "OPERATOR_REPORTED_LIVE",
+    "LOCAL_ARTIFACT_VERIFIED",
+    "NATIVE_RECEIPT"
+  ],
+  "source_quality": "Caller supplied provenance is not independently authenticated by this module; higher assurance requires local receipt inspection.",
+  "recall_semantics": {
+    "hit": "PAST_EXPERIENCE_RECALLED",
+    "missing": "NEW_EXPERIENCE",
+    "current_dialog_completed": false,
+    "current_outcome_proven": false,
+    "current_dialog_requires_fresh_admission": true,
+    "control_permit": null,
+    "execute_allowed": false
+  },
+  "integration": {
+    "chance_cards": "betterinstincts/chance_event_research.py remains authoritative for chance-card review and existing memo semantics.",
+    "judgment_learning": "betterinstincts/judgment_learning.py remains the reviewed teaching/training owner.",
+    "preference_choices": "betterinstincts/preference_prompts.py and stacked PR #263 remain authorities for actual Yes/No policy and EA response IDs.",
+    "game_native": "No native EA script hook, game startup, mod activation, game I/O, screenshot polling or desktop actuator in this index."
+  },
+  "independent_parent": "BI-002 hunger 5 vanilla + 5 modified/rollback remains separately live-certified.",
+  "proof_ceiling": "OFFLINE_SEMANTIC_RECALL_NOT_NATIVE_GAMEPLAY_CERTIFICATION"
+}
