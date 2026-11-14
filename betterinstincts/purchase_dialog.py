@@ -258,17 +258,27 @@ def propose_dialog_cart_step(
         if pending.get("kind") == "CONFIRM_OBSERVED_PURCHASE":
             return _hold("PURCHASE_OUTCOME_REQUIRES_RECONCILIATION",
                          cart=state, state="NEEDS_RECONCILIATION")
-        if (pending.get("kind") != "INCREMENT_OBSERVED_ROW"
-                or view["revision"] == pending.get("revision")):
+        if view["revision"] == pending.get("revision"):
             return _hold("PENDING_EFFECT_REQUIRES_FRESH_READBACK", cart=state)
-        pid = pending.get("item_id")
-        row = by_id.get(pid)
-        if (row is None or row["selected_count"] != pending.get("next_count")
-                or observed_total_count != pending.get("next_total_count")
-                or observed_total_cost != pending.get("next_total_cost")):
-            return _hold("PENDING_CART_EFFECT_NOT_RECONCILED",
-                         cart=state, state="NEEDS_RECONCILIATION")
-        selected[pid] = row["selected_count"]
+        if pending.get("kind") in ("SCROLL_UP_ONE_PAGE", "SCROLL_DOWN_ONE_PAGE"):
+            before_index = pending.get("from_page_index")
+            movement = page_index - before_index if type(before_index) is int else 0
+            if (movement == 0 or
+                    (pending["kind"] == "SCROLL_UP_ONE_PAGE" and movement >= 0) or
+                    (pending["kind"] == "SCROLL_DOWN_ONE_PAGE" and movement <= 0)):
+                return _hold("SCROLL_EFFECT_NOT_RECONCILED",
+                             cart=state, state="NEEDS_RECONCILIATION")
+        elif pending.get("kind") == "INCREMENT_OBSERVED_ROW":
+            pid = pending.get("item_id")
+            row = by_id.get(pid)
+            if (row is None or row["selected_count"] != pending.get("next_count")
+                    or observed_total_count != pending.get("next_total_count")
+                    or observed_total_cost != pending.get("next_total_cost")):
+                return _hold("PENDING_CART_EFFECT_NOT_RECONCILED",
+                             cart=state, state="NEEDS_RECONCILIATION")
+            selected[pid] = row["selected_count"]
+        else:
+            return _hold("CART_PENDING_STATE_INVALID", cart=state)
         state["pending"] = None
     expected_count = sum(selected.values())
     expected_cost = sum(v * catalog["items"][k]["unit_price"] for k, v in selected.items())
@@ -309,6 +319,8 @@ def propose_dialog_cart_step(
         if (direction == "SCROLL_UP_ONE_PAGE" and view["at_top"]) or (
                 direction == "SCROLL_DOWN_ONE_PAGE" and view["at_bottom"]):
             return _hold("SCROLL_ENDPOINT_CONTRADICTS_TARGET_PAGE", cart=state)
+        state["pending"] = {"kind": direction, "revision": view["revision"],
+                            "from_page_index": page_index}
         return _propose(direction, cart=state, revision=view["revision"],
                         actor_id=view["actor_id"], menu_id=view["menu_id"])
     if not buy_control_visible or not buy_control_hitbox_verified:
@@ -331,6 +343,9 @@ def verify_dialog_purchase(*, catalog: Mapping[str, Any], cart: Mapping[str, Any
     if not isinstance(cart, Mapping) or not isinstance(catalog, Mapping):
         return base
     pending = cart.get("pending")
+    if (cart.get("actor_id") != catalog.get("actor_id")
+            or cart.get("menu_id") != catalog.get("menu_id")):
+        return base
     if (not isinstance(pending, Mapping) or
             pending.get("kind") != "CONFIRM_OBSERVED_PURCHASE"):
         return base
