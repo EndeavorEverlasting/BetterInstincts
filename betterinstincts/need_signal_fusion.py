@@ -104,7 +104,7 @@ def _read_feed(
         else:
             if arrow is not None or (rate is not None and
                     (not _finite(rate) or abs(float(rate)) > MAX_RATE
-                     or not _ref(raw.get("rate_proof_ref"))))):
+                     or not _ref(raw.get("rate_proof_ref")))):
                 return _health(source, state="QUARANTINED", reason="NATIVE_RATE_PROOF_INVALID"), {}
             if rate is not None:
                 sign = "UP" if rate > 0 else "DOWN" if rate < 0 else "FLAT"
