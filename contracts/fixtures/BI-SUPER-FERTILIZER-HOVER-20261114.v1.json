@@ -1,0 +1,56 @@
+{
+  "schema": "betterinstincts.super-fertilizer-hover-reference/v1",
+  "source": "USER_SUPPLIED_SCREENSHOT",
+  "observed_date": "2026-11-14",
+  "image_dimensions_px": [
+    1919,
+    1079
+  ],
+  "source_image_in_public_repository": false,
+  "privacy": "Only nonpersonal tooltip and hover-association facts retained; no raw screenshot, portraits, balance, Sims names, paths, save IDs, or unverified EA item identity.",
+  "screenshot_extract": {
+    "scene": "THE_SIMS_4_PAUSED_GARDEN",
+    "tooltip_title": "SUPER FERTILIZER",
+    "tooltip_description": "Special fertilizer received from Jasmine as part of the Growfruit Challenge.",
+    "displayed_value": "§80",
+    "pointer_points_to_visible_ground_item": true,
+    "visible_ground_item_highlighted": true,
+    "approximate_tooltip_bbox_px": [
+      1004,
+      190,
+      1244,
+      305
+    ],
+    "approximate_hovered_object_bbox_px": [
+      1104,
+      304,
+      1152,
+      341
+    ],
+    "bbox_is_gameplay_calibration": false,
+    "item_kind_candidate": "SUPER_FERTILIZER"
+  },
+  "unproven": [
+    "EA in-game object ID",
+    "installed game build",
+    "selected Sim and inventory owner",
+    "lot ownership",
+    "ground item quantity",
+    "whether transfer-to-pocket is supported",
+    "Fertilize menu eligibility",
+    "in-game effect after cursor interaction"
+  ],
+  "synthetic_recognition_example": {
+    "schema": "betterinstincts.fertilizer-hover/v1",
+    "source": "USER_SCREENSHOT",
+    "capture_ref": "capture:fixture",
+    "pointer_target_ref": "item:illustrative",
+    "highlighted_target_ref": "item:illustrative",
+    "tooltip_attached_to_target": true,
+    "title": "SUPER FERTILIZER",
+    "description": "Special fertilizer received from Jasmine as part of the Growfruit Challenge.",
+    "displayed_value": "§80"
+  },
+  "synthetic_ref_warning": "item:illustrative is strictly a regression-test placeholder and not an observed EA object identifier. Never use this screenshot fixture as a local game event or action permit.",
+  "provenance": "user screenshot uploaded directly to ChatGPT in this conversation"
+}

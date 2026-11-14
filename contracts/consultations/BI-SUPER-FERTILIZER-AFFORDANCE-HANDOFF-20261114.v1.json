@@ -1,0 +1,60 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SUPER-FERTILIZER-AFFORDANCE-HANDOFF-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Repair discovered cross-owner integration error: gardening_service._observed_actions verifies available=true on a current action but strips the verified field, causing the stricter existing fertilizer_workflow to refuse even an enabled Super Fertilizer bag transfer candidate. Preserve reviewed availability on the existing sanitized action envelope.",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "SIM",
+    "PLAYER_INTENT",
+    "OBSERVATION",
+    "AFFORDANCE",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "RESOURCE_CLAIM"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/gardening_service.py",
+    "betterinstincts/fertilizer_workflow.py",
+    "tests/test_fertilizer_workflow.py",
+    "contracts/gardening-service.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "VERIFIED_AVAILABLE_FIELD_PROPAGATION_ONLY_NOT_GAMEPLAY_EFFECT",
+  "player_save_control_impact": "Preserve one verified boolean within existing read-only action data; no new game input, monitoring, saves, OS changes, unreviewed item or queue mutations.",
+  "expected_outcome": "Gardening service emits available:true only for actions that already passed available===true filter; fertilizer workflow still denies explicit unavailable:false direct calls and permits same capture identity checked by the existing planner. Regression suite green.",
+  "negative_tests": [
+    "available:false cannot enter gardening action list",
+    "Missing optional source scan cannot override known player intent",
+    "Unavailable direct target remains denied in fertilizer workflow"
+  ],
+  "rollback_path": "Revert isolated PR; no external game effects",
+  "unresolved_unknowns": [
+    "Actual live input/actuation needs current Windows Sims native evidence issue #171"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-SUPER-FERTILIZER-AFFORDANCE-HANDOFF-20261114.v1.json",
+    "betterinstincts/gardening_service.py",
+    "tests/test_fertilizer_workflow.py",
+    "contracts/native-gameplay-decisions/BI-SUPER-FERTILIZER-HOVER-20261114.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "CI run 43605500842 on PR242 failed exactly one integration test, because previously authenticated availability was dropped by the action serializer. P83 verified raw logs; P03 selected smallest canonical producer correction; P124 keeps the filter in same gardening owner rather than relaxing input evidence at consumer.",
+  "source_refs": [
+    "https://github.com/EndeavorEverlasting/BetterInstincts/pull/242",
+    "https://github.com/EndeavorEverlasting/BetterInstincts/pull/239"
+  ],
+  "recorded_date": "2026-11-14"
+}

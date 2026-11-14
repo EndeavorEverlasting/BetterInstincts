@@ -69,7 +69,23 @@
       "proof_ceiling": "OFFLINE_BACKYARD_BAG_ADVICE_NOT_GAME_TRANSFER",
       "native_successor_issue": 171,
       "parent_guard": "The parent fertilizer_workflow must independently attest the same selected lot_ref and game_build as backyard_scan. The current selected Sim ref and capture must agree. When personally held stock is already sufficient, a stale backyard survey is bypassed and the existing fresh plant picker wins.",
-      "spatial_map": "Optional current betterinstincts.semantic-spatial-map-doc/v1 with same game_build and lot_id, non-executing map and keyed objects; candidate item_ref must map to OUTSIDE FERTILIZER_BAG with source-proven 3D pose. Mismatched map scope fails closed; unknown object or pose cannot be chosen."
+      "spatial_map": "Optional current betterinstincts.semantic-spatial-map-doc/v1 with same game_build and lot_id, non-executing map and keyed objects; candidate item_ref must map to OUTSIDE FERTILIZER_BAG with source-proven 3D pose. Mismatched map scope fails closed; unknown object or pose cannot be chosen.",
+      "supported_item_kinds": [
+        "FERTILIZER_BAG",
+        "SUPER_FERTILIZER"
+      ],
+      "hover_identity": {
+        "schema": "betterinstincts.fertilizer-hover/v1",
+        "owner": "betterinstincts/fertilizer_hover_recognition.py",
+        "activation": "Optional identity_source=HOVER_TOOLTIP on a backyard bag with bounded hover_observation and current item_ref; title exactly Super Fertilizer and description identifies special fertilizer.",
+        "identity": "Independent exact highlighted_target_ref and pointer_target_ref must both match current bag item_ref and capture; matching tooltip alone cannot prove an EA object ID.",
+        "screenshots": "USER_SCREENSHOT may identify source candidate only; no current actor/lot/build/route, no enabled drag interaction, no inventory movement or fertilizer menu eligibility proved.",
+        "current_host": "HOST_VERIFIED_HOVER can identify a currently highlighted exact bag but still needs all the original lot, actor, eligibility, personal inventory, player, route and enabled exact transfer affordance gates.",
+        "price": "The visible §80 is an item display value, not a purchase price or authorization to buy/sell.",
+        "spatial": "Canonical semantic map may classify SUPER_FERTILIZER or legacy FERTILIZER_BAG; world pose must remain source-proven, never inferred from one still screenshot."
+      },
+      "pocket_precedence": "Verified personal pocket stock meeting all ready plants bypasses optional backyard scan, including pending or malformed scans; positive partial stock can still fertilize one eligible plant if no bag transfer candidate is ready; batch requires full stock.",
+      "readback": "A transfer proposal never credits fertilizer. Post-transfer proof needs fresh independent personal-inventory observation with a genuinely distinct capture reference and separate plant outcome."
     }
   }
 }

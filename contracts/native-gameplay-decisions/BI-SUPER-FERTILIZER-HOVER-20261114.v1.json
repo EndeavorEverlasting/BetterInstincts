@@ -1,0 +1,26 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/fertilizer_hover_recognition.py",
+      "route": "POLICY_ONLY",
+      "reason": "Parse bounded captured Super Fertilizer tooltip and associated highlighted item as a semantic identity candidate without OCR, user screenshot input or EA game effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/fertilizer_workflow.py",
+      "route": "POLICY_ONLY",
+      "reason": "Repair baseline backyard transfer and pocket precedence, accept separately qualified Super Fertilizer hover identities and observe-before-use source candidates without any game mutation.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/gardening_service.py",
+      "route": "POLICY_ONLY",
+      "reason": "Preserve the already-verified available action flag when existing gardening action observations are sanitized, without granting game effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}
