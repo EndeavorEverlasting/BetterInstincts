@@ -13,6 +13,9 @@ from collections.abc import Mapping
 from betterinstincts.eco_resource_cycle import (
     EcoResourceCycleError, plan_fertilizer_sources,
 )
+from betterinstincts.fertilizer_hover_recognition import (
+    FertilizerHoverError, recognize_super_fertilizer_hover,
+)
 
 SCHEMA = "betterinstincts.fertilizer-workflow/v1"
 MAX_PLANTS = 32
@@ -39,7 +42,9 @@ def _number(value: object) -> bool:
 
 
 BACKYARD_SCAN_SCHEMA = "betterinstincts.backyard-fertilizer-scan/v1"
-BACKYARD_IDENTITY_SOURCES = {"EA_READ_ONLY", "CALIBRATED_MULTIVIEW"}
+BACKYARD_IDENTITY_SOURCES = {"EA_READ_ONLY", "CALIBRATED_MULTIVIEW", "HOVER_TOOLTIP"}
+FERTILIZER_ITEM_KINDS = {"FERTILIZER_BAG", "SUPER_FERTILIZER"}
+SPATIAL_POSE_SOURCES = {"EA_READ_ONLY", "CALIBRATED_MULTIVIEW"}
 MAX_BACKYARD_BAGS = 32
 MAX_ROUTE_STEPS = 64
 
@@ -89,6 +94,8 @@ def _backyard_transfer_candidate(
             raise FertilizerWorkflowError("BACKYARD_SPATIAL_MAP_SCOPE_INVALID")
     # Validate all current survey identities before choosing any bag.
     ready = []
+    hover_reobserve = []
+    hover_eligibility = []
     seen = set()
     for bag in bags:
         if not isinstance(bag, Mapping) or not _ref(bag.get("item_ref")):
@@ -108,17 +115,37 @@ def _backyard_transfer_candidate(
         quantity = bag.get("quantity")
         if type(quantity) is not int or not 0 <= quantity <= 999:
             raise FertilizerWorkflowError("BACKYARD_BAG_STOCK_INVALID")
+        # The in-world tooltip is better identification evidence than the
+        # apparent shape of a grey bag, but it never supplies ownership,
+        # fertilizer eligibility, action authority or a world-space pose.
+        if bag.get("identity_source") == "HOVER_TOOLTIP":
+            try:
+                hover = recognize_super_fertilizer_hover(
+                    bag.get("hover_observation"), capture_ref=capture_ref,
+                    item_ref=ref,
+                )
+            except FertilizerHoverError as exc:
+                raise FertilizerWorkflowError(str(exc)) from exc
+            if not hover["recognized"] or hover["item_kind"] != bag.get("item_kind"):
+                continue
+            if hover["host_reobservation_required"]:
+                hover_reobserve.append(ref)
+                continue
+            if (bag.get("fertilizer_eligible") is not True
+                    or not _ref(bag.get("eligibility_evidence_ref"))):
+                hover_eligibility.append(ref)
+                continue
         if world_map is not None:
             mapped = world_map["objects"].get(ref)
             if (not isinstance(mapped, Mapping)
-                    or mapped.get("category") != "FERTILIZER_BAG"
+                    or mapped.get("category") not in FERTILIZER_ITEM_KINDS
                     or mapped.get("floor_id") != "OUTSIDE"
                     or mapped.get("center") is None
-                    or mapped.get("pose_source") not in BACKYARD_IDENTITY_SOURCES
+                    or mapped.get("pose_source") not in SPATIAL_POSE_SOURCES
                     or not isinstance(mapped.get("pose_refs"), list)
                     or not mapped["pose_refs"]):
                 continue
-        if (bag.get("item_kind") != "FERTILIZER_BAG"
+        if (bag.get("item_kind") not in FERTILIZER_ITEM_KINDS
                 or bag.get("fertilizer_eligible") is not True
                 or not _ref(bag.get("eligibility_evidence_ref"))
                 or bag.get("location") != "GROUND"
@@ -155,6 +182,14 @@ def _backyard_transfer_candidate(
         return {**base, "gate": "FERTILIZER_BACKYARD_TRANSFER_PENDING",
                 "action": "WAIT_FOR_EXACT_ITEM_INVENTORY_READBACK_NO_REPEAT"}
     if not ready:
+        if hover_reobserve:
+            return {**base, "gate": "FERTILIZER_BACKYARD_HOVER_REOBSERVE",
+                    "action": "RECONFIRM_TOOLTIP_IN_CURRENT_GAME_HOST",
+                    "hover_identity_candidates": hover_reobserve}
+        if hover_eligibility:
+            return {**base, "gate": "FERTILIZER_BACKYARD_ELIGIBILITY_REQUIRED",
+                    "action": "VERIFY_SUPER_FERTILIZER_ITEM_ELIGIBILITY",
+                    "hover_identity_candidates": hover_eligibility}
         return {**base, "gate": "FERTILIZER_BACKYARD_BAGS_NOT_FOUND",
                 "action": "REINSPECT_ACCESSIBLE_EXISTING_BACKYARD_BAGS"}
     # Existing action envelope comes from gardening_service's fresh affordance
@@ -163,6 +198,7 @@ def _backyard_transfer_candidate(
         selected = next((row for row in actions if
                          row.get("action_id") == "TRANSFER_FERTILIZER_TO_SIM_INVENTORY"
                          and row.get("target_ref") == ref
+                         and row.get("available") is True
                          and row.get("capture_ref") == capture_ref), None)
         if selected is not None:
             return {**base,
@@ -302,22 +338,34 @@ def evaluate_fertilizer_workflow(
     # bags outrank any new sourcing/purchases. This is an opt-in read-only port;
     # missing/failed proof does not fall through to an unsafe generic drag.
     scan = observation.get("backyard_scan")
-    if scan is not None and (
-        stock < len(ready)
-        or (isinstance(scan, Mapping) and scan.get("pending_transfer") is not None)
-    ):
-        candidate = _backyard_transfer_candidate(
-            scan, actions, sim_ref=sim_ref,
-            capture_ref=capture_ref, now=at,
-            expected_lot_ref=observation.get("lot_ref"),
-            expected_game_build=observation.get("game_build"),
-        )
-        result["backyard_scan"] = candidate
-        if candidate["gate"] == "FERTILIZER_BACKYARD_TRANSFER_PENDING":
-            return finish(candidate["gate"], candidate["action"])
-        if stock < len(ready):
-            return finish(candidate["gate"], candidate["action"],
-                          candidate["next_actions"][0] if candidate["next_actions"] else None)
+    if scan is not None and stock < len(ready):
+        try:
+            candidate = _backyard_transfer_candidate(
+                scan, actions, sim_ref=sim_ref,
+                capture_ref=capture_ref, now=at,
+                expected_lot_ref=observation.get("lot_ref"),
+                expected_game_build=observation.get("game_build"),
+            )
+        except FertilizerWorkflowError:
+            # Optional malformed/stale discovery may not confiscate
+            # independently verified fertilizer already in the Sim's pocket.
+            if stock == 0:
+                raise
+            candidate = None
+        if candidate is not None:
+            result["backyard_scan"] = candidate
+            if candidate["gate"] == "FERTILIZER_BACKYARD_TRANSFER_READY":
+                return finish(candidate["gate"], candidate["action"],
+                              candidate["next_actions"][0])
+            if candidate["gate"] == "FERTILIZER_BACKYARD_TRANSFER_PENDING":
+                return finish(candidate["gate"], candidate["action"])
+            if stock == 0:
+                # A known backyard source awaiting identity/affordance proof
+                # should not trigger another purchase.
+                return finish(candidate["gate"], candidate["action"])
+        # With 1+ real inventory units, a failed optional bag scan must not
+        # block the existing single-plant FERTILIZE option (not FERTILIZE_ALL).
+
 
     # Prefer to prepare enough supply for the currently observed eligible set,
     # rather than repeatedly failing a menu picker while items lie on the floor.
