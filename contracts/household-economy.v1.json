@@ -69,10 +69,10 @@
   "proof_ceiling": "SOURCE_ONLY_OFFLINE_HOUSEHOLD_ALLOCATION_NOT_EA_CERTIFIED",
   "active_parent": "BI-002 hunger still ACTIVE",
   "portrait_handoff": {
-    "trigger": "Immediately when the selected member is observed ASLEEP/RECHARGING/AWAY, even with no tasks; optionally on verified current-capture completed needs review of the selected AWAKE member.",
+    "trigger": "Immediately when the selected member is observed ASLEEP/RECHARGING/AWAY, even with no tasks; optionally on verified current-capture completed needs review of the selected AWAKE member. Also on selected AT_WORK only when same-capture work_shift reports verified rabbit-hole employment and career tone decision permits handoff.",
     "target": "Next explicitly AWAKE, non-player-reserved, queue-verified roster member in original portrait order, wrapping once and never selecting the source; not dependent on skill, chores or discretionary yield eligibility.",
     "effect": "Policy only. A real native portrait selection needs independently certified current-patch EA hook; subsequent observation of selected identity and per-Sim needs must use a fresh capture before needs/queue work. No gameplay effect or click authority from this plan.",
-    "rotation": "Single proposal per source capture; optional attention_review requires member_key, capture_ref, unique evidence proof_ref and state VERIFIED_COMPLETE. No timer, background loop, repeated blind click, or repeated rotation on old proof.",
+    "rotation": "Single proposal per source capture; optional attention_review requires member_key, capture_ref, unique evidence proof_ref and state VERIFIED_COMPLETE. No timer, background loop, repeated blind click, or repeated rotation on old proof. A promotion-ready Work Hard candidate is a pre-handoff barrier; an actual new capture must show Work Hard active before at-work handoff, or a safe decline yields immediate rotation.",
     "member_needs": {
       "HUMAN": [
         "hunger",
@@ -94,5 +94,16 @@
     "proof_owner": "tests/test_household_economy.py",
     "registry_mechanic": "household-portrait-attention-rotation",
     "native_successor_issue": 171
+  },
+  "work_shift": {
+    "policy_owner": "betterinstincts/career_service.py#evaluate_work_shift_tone",
+    "host_owner": "betterinstincts/host_stack.py",
+    "observed_activity": "AT_WORK",
+    "result_key": "work_tone",
+    "gate": "CAREER_WORK_HARD_ADMISSION_REQUIRED",
+    "handoff_gate": "AWAKE_HOUSEHOLD_HANDOFF_READY",
+    "work_tone_first": "A recommended Work Hard tone defers portrait handoff until independently observed. Already-active Work Hard, unmet or unknown promotion readiness, unsafe welfare, protected player tone or unavailable tone cause no work-tone effect; an observed ordinary rabbit-hole worker can then release the portrait.",
+    "active_career": "ACTIVE_CAREER and UNKNOWN career modes do NOT release the selected actor",
+    "proof_ceiling": "OFFLINE_POLICY_ONLY_NOT_NATIVE_GAMEPLAY_EFFECT"
   }
 }
