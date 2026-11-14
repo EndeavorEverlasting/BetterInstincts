@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-PS0241-UNIVERSAL-ACTIVITY-CHAIN-20261114",
+  "purpose": "Explicitly classify cross-domain activity DAG and bounded Gaussian process policy as source-only logic, not an EA gameplay hook",
+  "files": [
+    {
+      "path": "betterinstincts/activity_chain.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure planner and statistical estimator return advisory receipts; cannot click, dispatch, buy, alter saves or unpause",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_SOURCE_AND_CI_ONLY",
+  "next_gate": "Version-pinned native game-side adapter with live checked player interrupt, exact Sim/lot/scene and target evidence, per-effect reconciliation, verified disposable baseline and rollback"
+}
