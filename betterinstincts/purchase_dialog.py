@@ -6,6 +6,7 @@ A newly observed viewport/revision is needed after every proposed action.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from collections.abc import Awaitable, Callable, Mapping
 from typing import Any
 
@@ -91,6 +92,26 @@ def _page(page: Mapping[str, Any]) -> tuple[dict | None, str | None]:
 
 def _same_scope(catalog: Mapping[str, Any], view: Mapping[str, Any]) -> bool:
     return all(catalog.get(key) == view[key] for key in ("menu_id", "actor_id", "source"))
+
+
+def _observed_viewport_span(catalog: Mapping[str, Any], rows: list[dict]) -> tuple[int, int] | None:
+    """Locate a fresh viewport by ordered catalog identities, not its old window.
+
+    After scrolling back from an end-clamped page, valid visible rows may form
+    a new window. Admit only a contiguous, correctly ordered known subset;
+    unknown, rearranged or skipped items must never guide a blind scroll.
+    """
+    items = catalog.get("items")
+    if not isinstance(items, Mapping) or not items:
+        return None
+    positions = {item_id: i for i, item_id in enumerate(items)}
+    try:
+        indices = [positions[row["item_id"]] for row in rows]
+    except (KeyError, TypeError):
+        return None
+    if indices != list(range(indices[0], indices[0] + len(indices))):
+        return None
+    return indices[0], indices[-1]
 
 
 def _catalog_state(view: Mapping[str, Any]) -> dict:
@@ -237,10 +258,8 @@ def propose_dialog_cart_step(
                 catalog["items"][r["item_id"]]["unit_price"] != r["unit_price"] or
                 catalog["items"][r["item_id"]]["label"] != r["label"]):
             return _hold("VISIBLE_ROW_NOT_IN_FRESH_CATALOG", cart=cart)
-    current_sig = [list(x) for x in view["signature"]]
-    page_index = next((i for i, x in enumerate(catalog["pages"])
-                       if x["signature"] == current_sig), None)
-    if page_index is None:
+    span = _observed_viewport_span(catalog, view["rows"])
+    if span is None:
         return _hold("CURRENT_VIEWPORT_NOT_CATALOGED", cart=cart)
     state = {"selected": {}, "pending": None, "actor_id": view["actor_id"],
              "menu_id": view["menu_id"]} if cart is None else dict(cart)
@@ -261,8 +280,8 @@ def propose_dialog_cart_step(
         if view["revision"] == pending.get("revision"):
             return _hold("PENDING_EFFECT_REQUIRES_FRESH_READBACK", cart=state)
         if pending.get("kind") in ("SCROLL_UP_ONE_PAGE", "SCROLL_DOWN_ONE_PAGE"):
-            before_index = pending.get("from_page_index")
-            movement = page_index - before_index if type(before_index) is int else 0
+            before_index = pending.get("from_start_index")
+            movement = span[0] - before_index if type(before_index) is int else 0
             if (movement == 0 or
                     (pending["kind"] == "SCROLL_UP_ONE_PAGE" and movement >= 0) or
                     (pending["kind"] == "SCROLL_DOWN_ONE_PAGE" and movement <= 0)):
@@ -280,6 +299,8 @@ def propose_dialog_cart_step(
         else:
             return _hold("CART_PENDING_STATE_INVALID", cart=state)
         state["pending"] = None
+    # An observed increment survives subsequent holds (budget/availability).
+    state["selected"] = selected
     expected_count = sum(selected.values())
     expected_cost = sum(v * catalog["items"][k]["unit_price"] for k, v in selected.items())
     if (expected_count != observed_total_count or expected_cost != observed_total_cost
@@ -311,16 +332,16 @@ def propose_dialog_cart_step(
                             revision=view["revision"], actor_id=view["actor_id"],
                             expected_selected_count=row["selected_count"],
                             approved_spend_cap=approved_spend_cap)
-        target_page = next((i for i, p in enumerate(catalog["pages"])
-                            if pid in p["item_ids"]), None)
-        if target_page is None or target_page == page_index:
+        target_position = list(catalog["items"]).index(pid)
+        if span[0] <= target_position <= span[1]:
             return _hold("TARGET_ITEM_VIEWPORT_UNRESOLVED", cart=state)
-        direction = "SCROLL_UP_ONE_PAGE" if target_page < page_index else "SCROLL_DOWN_ONE_PAGE"
+        direction = ("SCROLL_UP_ONE_PAGE" if target_position < span[0]
+                     else "SCROLL_DOWN_ONE_PAGE")
         if (direction == "SCROLL_UP_ONE_PAGE" and view["at_top"]) or (
                 direction == "SCROLL_DOWN_ONE_PAGE" and view["at_bottom"]):
             return _hold("SCROLL_ENDPOINT_CONTRADICTS_TARGET_PAGE", cart=state)
         state["pending"] = {"kind": direction, "revision": view["revision"],
-                            "from_page_index": page_index}
+                            "from_start_index": span[0]}
         return _propose(direction, cart=state, revision=view["revision"],
                         actor_id=view["actor_id"], menu_id=view["menu_id"])
     if not buy_control_visible or not buy_control_hitbox_verified:
@@ -387,7 +408,10 @@ def enqueue_dialog_step(queue: Any, *, work_id: str, decision: Mapping[str, Any]
             not callable(validate_fresh_scene) or not callable(perform_game_ui_effect)):
         raise ValueError("FRESH_WHITELISTED_EFFECT_REQUIRED")
 
+    # Deferred work must never read a caller-owned mutable decision again.
+    admitted_action = deepcopy(action)
+
     async def effect() -> Any:
-        return await perform_game_ui_effect(dict(action))
+        return await perform_game_ui_effect(deepcopy(admitted_action))
 
     queue.enqueue_effect(work_id, validate_fresh_scene, effect)
