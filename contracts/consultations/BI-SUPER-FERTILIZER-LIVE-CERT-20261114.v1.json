@@ -52,7 +52,8 @@
     "Native tuning provenance and mod status"
   ],
   "files_expected": [
-    "contracts/consultations/BI-SUPER-FERTILIZER-LIVE-CERT-20261114.v1.json"
+    "contracts/consultations/BI-SUPER-FERTILIZER-LIVE-CERT-20261114.v1.json",
+    "docs/LEDGER.md"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "decision_rationale": "Operator confirmed the loaded disposable session; independent live authority gates still apply.",
