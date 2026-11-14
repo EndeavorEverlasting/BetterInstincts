@@ -299,3 +299,115 @@ def diagnose_context_failure(
         "layer": layer, "next_gate": gate, "execute_allowed": False,
         "proof_ceiling": "OFFLINE_DIAGNOSIS_NOT_GAME_ACTION",
     }
+
+# A generic model summary, elapsed play time, and paused Sims screen never
+# certify the operator's parent goal. Preserve the single agent-context owner.
+TURN_BOUNDARY_SCHEMA = "betterinstincts.agent-turn-boundary/v1"
+TURN_EFFECT_STATES = frozenset({
+    "WAITING_FOR_USER", "WAITING_FOR_AGENT", "NEEDS_REVALIDATION",
+    "NEEDS_RECONCILIATION", "COMPLETED", "BUSY", "WAIT_BUDGET_REACHED",
+})
+
+
+def assess_agent_turn_boundary(
+    handoff: Mapping,
+    *,
+    listener_active: bool,
+    effect_pending: bool,
+    effect_state: str | None,
+    player_presence: str,
+    game_state: str,
+    safe_offline_action: str | None = None,
+    host_access: str = "UNKNOWN",
+    host_unavailable_ref: str | None = None,
+    claimed_acceptance_refs: Sequence[str] = (),
+) -> dict:
+    """Classify one read-only next gate; never certify a Codex stop or game effect.
+
+    Source refs, even 'success' refs, are claims until independently reviewed.
+    The current control runner remains ACTIVE on user interruption. Ordinary
+    game PAUSED or passive listener COMPLETED cannot terminate the parent.
+    """
+    parent = _validate_handoff(handoff)
+    if (type(listener_active) is not bool or type(effect_pending) is not bool
+            or effect_state is not None and effect_state not in TURN_EFFECT_STATES):
+        raise AgentContextError("TURN_EFFECT_STATE_INVALID")
+    if player_presence not in {"ACTIVE", "INACTIVE", "UNKNOWN"}:
+        raise AgentContextError("TURN_PLAYER_PRESENCE_INVALID")
+    if game_state not in {"PAUSED", "RUNNING", "NOT_VISIBLE", "UNKNOWN"}:
+        raise AgentContextError("TURN_GAME_STATE_INVALID")
+    if host_access not in {"AVAILABLE", "UNAVAILABLE", "UNKNOWN"}:
+        raise AgentContextError("TURN_HOST_ACCESS_INVALID")
+    if (safe_offline_action is not None
+            and (not isinstance(safe_offline_action, str)
+                 or not safe_offline_action.strip() or len(safe_offline_action) > 240)):
+        raise AgentContextError("TURN_OFFLINE_ACTION_INVALID")
+    if host_unavailable_ref is not None and not _id(host_unavailable_ref):
+        raise AgentContextError("TURN_HOST_EVIDENCE_INVALID")
+    if (not isinstance(claimed_acceptance_refs, (list, tuple))
+            or len(claimed_acceptance_refs) > 16
+            or any(not _id(x) for x in claimed_acceptance_refs)
+            or len(set(claimed_acceptance_refs)) != len(claimed_acceptance_refs)):
+        raise AgentContextError("TURN_ACCEPTANCE_REFS_INVALID")
+
+    def choose(gate: str, next_action: str, *, quiesce: bool = False) -> dict:
+        return {
+            "schema": TURN_BOUNDARY_SCHEMA,
+            "household_ref": parent["household_ref"],
+            "active_goal_id": parent["active_goal_id"],
+            "parent_objective": parent["parent_objective"],
+            "gate": gate,
+            "next_action": next_action,
+            "turn_quiescence_supported": quiesce,
+            "parent_complete": False,
+            "terminal_stop_proven": False,
+            "listener_remains_active": listener_active,
+            "effect_pending": effect_pending,
+            "execute_allowed": False,
+            "proof_ceiling": "READ_ONLY_BOUNDARY_NOT_INDEPENDENT_PARENT_ACCEPTANCE_OR_GAME_EFFECT",
+        }
+
+    # Player activity blocks screen effects, but not the listener or an
+    # independently ready read-only source/test action.
+    if player_presence != "INACTIVE":
+        if safe_offline_action is not None:
+            return choose("CONTINUE_OFFLINE_WHILE_PLAYER_ACTIVE",
+                          safe_offline_action.strip())
+        return choose("YIELD_EFFECTS_KEEP_LISTENER",
+                      "REOBSERVE_TRUSTED_IDLE_WITH_EXISTING_LISTENER", quiesce=True)
+
+    # Do not call a queue's COMPLETED / passive listener COMPLETED the game's
+    # outcome, and never drop an unresolved prepared action on agent turn end.
+    if effect_pending:
+        if effect_state in {"COMPLETED", "NEEDS_RECONCILIATION"}:
+            return choose("RECONCILE_PENDING_EFFECT_OUTCOME",
+                          "OBSERVE_REAL_GAME_OUTCOME_AND_RETAIN_CODIFICATION")
+        return choose("PENDING_EFFECT_KEEP_LISTENER",
+                      "REVALIDATE_AND_ADVANCE_EXISTING_EFFECT_QUEUE")
+
+    if safe_offline_action is not None:
+        return choose("CONTINUE_OFFLINE", safe_offline_action.strip())
+
+    # No operator-summary or caller-supplied acceptance references alone can
+    # upgrade completion. They demand independent acceptance verification.
+    if claimed_acceptance_refs:
+        return choose("VERIFY_CLAIMED_PARENT_ACCEPTANCE",
+                      "INDEPENDENTLY_MATCH_PROOFS_TO_EVERY_PARENT_ACCEPTANCE_GATE")
+    if not listener_active:
+        return choose("RECOVER_EXPLICIT_LISTENER",
+                      "RECHECK_LOCAL_AUTHORITY_AND_START_APPROVED_LISTENER_IF_PERMITTED")
+    if host_access == "UNAVAILABLE":
+        if host_unavailable_ref is None:
+            return choose("REOBSERVE_HOST_ACCESS",
+                          "OBTAIN_ACTUAL_LOCAL_HOST_UNAVAILABILITY_EVIDENCE")
+        return choose("BLOCKED_EXACT_LOCAL_GAME_ACCESS",
+                      "RESUME_ON_HOST_RECOVERY_REVERIFY_SAVE_SCENE_AND_PLAYER",
+                      quiesce=True)
+    if game_state == "PAUSED":
+        return choose("GAME_PAUSED_PARENT_OPEN",
+                      "FRESH_PID_SCENE_SAVE_PLAYER_AND_ONE_EFFECT_ADMISSION")
+    if game_state == "RUNNING":
+        return choose("OBSERVE_ACTIVE_GAME_GOAL",
+                      "REOBSERVE_SELECTED_SIM_QUEUE_NEEDS_AND_NEXT_TASK")
+    return choose("INVESTIGATE_NEXT_GATE",
+                  "RECOVER_CURRENT_HOST_SCENE_AND_INDEPENDENT_SOURCE_WORK")
