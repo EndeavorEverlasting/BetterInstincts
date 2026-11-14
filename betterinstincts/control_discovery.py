@@ -203,8 +203,75 @@ def coverage(ledger: Mapping) -> dict:
         "unresolved_total": len(outstanding),
         "unresolved": outstanding[:MAX_SUMMARY_ITEMS],
         "unresolved_truncated": max(0, len(outstanding) - MAX_SUMMARY_ITEMS),
+        # A source/test/commit receipt is an assertion awaiting independent
+        # provider/mainline verification, not proof that game logic was shipped.
+        "source_verification_pending_total": summarized["receipt_submitted"],
+        "source_verified_total": 0,
+        "all_attempts_source_verified": len(steps) == 0,
         "control_permit": None, "execute_allowed": False,
         "proof_ceiling": "CODIFICATION_CANDIDATES_NOT_MERGED_GAMEPLAY",
+    }
+
+
+
+def codification_work_items(ledger: Mapping, *, offset: int = 0,
+                            limit: int = 4) -> dict:
+    """Expose every attempted action as a small, cursor-paged source task.
+
+    This is a deterministic semantic projection of the existing journal;
+    no extra screenshots, raw input logs, token history or profile reads.
+    A receipt cannot close source verification without provider readback.
+    """
+    if not isinstance(ledger, Mapping) or ledger.get("schema") != SCHEMA:
+        raise ControlDiscoveryError("LEDGER_SCHEMA_INVALID")
+    if not isinstance(ledger.get("steps"), dict):
+        raise ControlDiscoveryError("STEP_STORE_INVALID")
+    if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 8:
+        raise ControlDiscoveryError("CODIFICATION_PAGE_INVALID")
+    keys = sorted(ledger["steps"])
+    items = []
+    for work_id in keys[offset:offset + limit]:
+        step = ledger["steps"][work_id]
+        if step.get("codification") is not None:
+            gate = "VERIFY_COMMIT_TEST_AND_MAIN_READBACK"
+        elif step.get("player_interrupted") is True:
+            gate = "RECONCILE_INTERRUPTED_OUTCOME"
+        elif step.get("outcome") is not None:
+            gate = "IMPLEMENT_SOURCE_RULE_AND_REGRESSION_TEST"
+        else:
+            gate = "CAPTURE_AND_REVIEW_ACTUAL_OUTCOME"
+        items.append({
+            "work_id": work_id,
+            "goal_id": ledger["goal_id"],
+            "fallback_reason": ledger["fallback_reason"],
+            "game_patch": ledger["game_patch"],
+            "action_ref": step["action_ref"],
+            "object_class_ref": step["object_class_ref"],
+            "before_capture_ref": step["before_capture_ref"],
+            "queue_state": step["queue_state"],
+            "observed_outcome": step.get("outcome"),
+            "after_capture_ref": step.get("after_capture_ref"),
+            "outcome_ref": step.get("outcome_ref"),
+            "player_interrupted": step.get("player_interrupted"),
+            "submitted_codification": step.get("codification"),
+            "next_gate": gate,
+            "required_regression": [
+                "REPLAY_OBSERVED_BEHAVIOR_OR_FAILURE",
+                "DENY_PLAYER_QUEUE_OVERRIDE",
+                "RECHECK_STALE_SCENE_AND_TARGET",
+                "VERIFY_IDEMPOTENCE_AND_NO_BLIND_REPLAY",
+            ],
+            "source_verified": False,
+        })
+    next_offset = offset + len(items)
+    return {
+        "schema": "betterinstincts.codification-work-items/v1",
+        "total_attempted": len(keys),
+        "offset": offset,
+        "next_offset": next_offset if next_offset < len(keys) else None,
+        "items": items,
+        "execute_allowed": False,
+        "proof_ceiling": "SOURCE_TASKS_NOT_REPOSITORY_MERGE_PROOF",
     }
 
 
@@ -218,6 +285,7 @@ def compact_handoff(ledger: Mapping) -> dict:
         "fallback_reason": ledger["fallback_reason"],
         "events_count": len(ledger["events"]),
         "codification_coverage": result,
+        "codification_work": codification_work_items(ledger, limit=4),
         "requires_fresh_control_admission": True,
         "proof_ceiling": "COMPACT_SEMANTIC_MEMORY_NOT_GAME_EFFECT",
     }
