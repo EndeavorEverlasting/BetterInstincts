@@ -1,3 +1,7 @@
+## 2026-11-14 — PS-0241 generalized cross-domain activity DAG and GP timing
+
+Source original: Prompt Scratch → Idea Inbox A11 (PS-0241). Separate branch introduces evidence-bound DAG planning for purchase → personal inventory → observed walking/unlocked teleport → career artifact → verification, with work/needs deadlines, budget and resilient per-Sim queue reconciliation. The existing domain cascade/semantic/task/queue/purchase/traversal owners remain authoritative; garden Planning/Play PR #252 remains untouched. Cross-capture completed steps require fresh revalidation before being excluded from plans. Bounded RBF/Matérn/periodic GP forecasts remain advisory and cohort-isolated. Source-only Python focused tests passed locally; no installed mod, native effect dispatch, local MoonWake walker or Sims live certification was observed. Native successor #171; independent BI-002 hunger certification remains open. Details: docs/ACTIVITY_CHAIN.md.
+
 ## 2026-11-14 — PS-0241 native-first ecology planning/play continuity and installer floor
 
 **Parent:** The user requires an installed BetterInstincts native mod, automatically operating whenever time before work and six-need floors permits; no desktop agent should be needed during normal play. Local-agent proof: manual Super Fertilizer ground-to-Servo inventory transfer followed by Sixam Mosquito Trap Depleted→Good on build `1.121.361.1020`. That was not mod automation; Mods contained only `Resource.cfg`. Open native parent #171 and concurrent draft planning/time-window PR #252 remain distinct.

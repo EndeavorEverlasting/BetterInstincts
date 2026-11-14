@@ -1,0 +1,108 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PS0241-UNIVERSAL-ACTIVITY-CHAIN-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "PS-0241: source-only open-domain DAG planner and bounded Gaussian-process duration estimation. Compose evidence-qualified per-Sim shopping, inventory transfer, movement/teleport, crafting, career, ecology and other activities with planning/play modes and interruption-proof queue continuation. Reuse native authority, task continuity, semantic advisory, domain cascade, purchase and navigation owners.",
+  "operator_correction": "Prompt Scratch Idea Inbox A11 describes queued ecology execution before work/needs obligations, separate paused planning and live play, resilient recovery after game autonomy interruptions, bounded Gaussian process learning. Current request generalizes this mathematical and procedural model across every Sims 4 domain rather than ecology alone.",
+  "repository_situation": "Current main has domain_cascade, semantic_advisory, task_continuity, workflow_interop, purchase_dialog, eco_resource_cycle and traversal_cost_learning. Open PR #252 adds ecology-only planning/play; this separate source-only general layer does not overwrite it. Native issue #171 and BI-002 remain independent.",
+  "competing_theses": [
+    {
+      "thesis": "Replace domain_cascade with monolithic universal agent scheduler",
+      "falsification": "Duplicates mature domain policy and grants unsupported game action authority",
+      "disposition": "REJECT"
+    },
+    {
+      "thesis": "Hard-code ecology, career and shopping scripts separately",
+      "falsification": "Cross-domain prerequisites and reordering still require agents to rediscover generic orchestration",
+      "disposition": "REJECT"
+    },
+    {
+      "thesis": "Use GP as the sole scheduler and infer game permissions from smoothness",
+      "falsification": "Discontinuous unlocks and player permissions cannot be inferred by regression, and dense GP scales poorly",
+      "disposition": "REJECT"
+    },
+    {
+      "thesis": "Add bounded evidence-driven DAG composition and advisory homogeneous-cohort GP seam, leaving effects to owners",
+      "falsification": "Reject if unverified shortcuts, duplicate effects, stale observations or budget overruns occur",
+      "disposition": "SELECT"
+    }
+  ],
+  "selected_thesis": "Pure open-domain activity DAG with explicit action dependencies, observed mobility routes, conservative time/funds limits, retained per-Sim plans and opt-in cohort-isolated GP forecasts.",
+  "recommended_route": "P141 -> P95 -> P82 -> P08 -> P07 -> P124",
+  "affected_concepts": [
+    "SIM",
+    "HOUSEHOLD",
+    "ACTIVITY",
+    "GOAL_THREAD",
+    "ACTION_QUEUE",
+    "RESOURCE_CLAIM",
+    "TIME_WINDOW",
+    "OBSERVATION",
+    "CONTROL_PERMIT",
+    "INTERRUPTION",
+    "RESUME_CONDITION",
+    "COORDINATION_CYCLE"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "contracts/ontology.v1.json",
+    "betterinstincts/domain_cascade.py",
+    "betterinstincts/semantic_advisory.py",
+    "betterinstincts/task_continuity.py",
+    "betterinstincts/workflow_interop.py",
+    "betterinstincts/traversal_cost_learning.py",
+    "betterinstincts/purchase_dialog.py",
+    "betterinstincts/eco_resource_cycle.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "PURE_PYTHON_FOCUSED_POLICY_TESTS_NOT_EA_GAME",
+  "player_save_control_impact": "No runtime game effect, OS input, automation start, save writes, unapproved purchases or queue cancellation. Existing player presence, scene, save, lot, funds and native game-effect gates remain authoritative.",
+  "expected_outcome": "Composed acquisition→inventory→travel/teleport→craft/use graphs with deterministic due-date ordering, conservative projected budget, never replay unresolved steps, and evidence-isolated bounded GP estimates. Preview only; native dispatch forbidden.",
+  "negative_tests": [
+    "Cycles and unknown prerequisites",
+    "Missing observed route",
+    "Teleport not actually unlocked",
+    "Insufficient funds",
+    "Insufficient time before work or needs floor",
+    "Player resumes control",
+    "Stale capture",
+    "Unreconciled in-flight transaction",
+    "Unproved completed steps",
+    "Mixed GP cohorts",
+    "GP duplicate evidence",
+    "Unbounded counts and nonfinite inputs"
+  ],
+  "rollback_path": "Revert isolated feature branch, no game installation or save touched.",
+  "unresolved_unknowns": [
+    "Actual EA-native current-build hooks, affordances and unlocked teleport evidence",
+    "Native persistence/adapters and exact save-qualified queue state",
+    "End-to-end local player interrupt and safe game certification under issue #171",
+    "GP hyperparameter calibration and large-scale methods require observed cross-context trials"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-PS0241-UNIVERSAL-ACTIVITY-CHAIN-20261114.v1.json",
+    "contracts/native-gameplay-decisions/BI-PS0241-UNIVERSAL-ACTIVITY-CHAIN-20261114.v1.json",
+    "betterinstincts/activity_chain.py",
+    "contracts/activity-chain.v1.json",
+    "tests/test_activity_chain.py",
+    "docs/ACTIVITY_CHAIN.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "status": "ADMITTED_BEFORE_GITHUB_BEHAVIOR_CHANGE"
+}
