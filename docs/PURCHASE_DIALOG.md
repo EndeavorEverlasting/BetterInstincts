@@ -21,6 +21,16 @@ The same structured observation schema handles an arbitrary `menu_id` + `source`
 
 The initial viewport can be halfway down the 9 currently pictured unique items. It first seeks the top; then two overlapping observed pages expose Acorn, Aura Petal, Basil, Daisy, Lemon, Lightning Root Leaf, Lump of Moss, Sage and Small Critter Bone, with the screenshot's respective unit prices §35, §7, §11, §12, §30, §70, §9, §15 and §55. If an observed recipe needs 2 Lemons and that Sim has 1 available, the plan requests **1 Lemon**, not 999 of every item. If two offscreen resources are truly required, the engine scrolls toward their cataloged pages and reconciles one cart modification at a time before the single Buy.
 
+## Post-merge Closers: bounded action, cart and viewport invariants (2026-11-14)
+
+The original merged PR #250 was **CI-green**, but later Codex and CodeAnt reviews identified three untested edge cases (four comments, including a duplicate):
+
+- **Deferred queue integrity:** `enqueue_dialog_step` must deep-copy its admitted, whitelisted action **before** the cooperative queue stores the closure. Even if the caller mutates the decision, item, spend cap or nested metadata during the 15-second idle wait, the deferred effect receives only the original independently snapshotted contents. The existing queue still performs fresh player/scene checks immediately before effects.
+- **Persistent cart reconciliation:** when a quantity increment is proven by the next observed row count and global count/cost, commit that selection to the returned cart **before** testing whether the spend cap or household funds have changed. A budget hold must not erase an already selected item, authorize more spending, or trigger another increment. Resume only with fresh proof and sufficient authorization.
+- **Observed scroll continuum:** a list discovered through windows 1–5, 5–9 and 8–12 can legally reappear as 4–8 when scrolling back from the clamped bottom. Locate a current viewport using **contiguous, correctly ordered known item identities**, not an exact previous window signature. The action's direction is reconciled using the observed start ordinal and a fresh viewport revision. Unknown, reordered or gapped rows remain denied. The original page-signature guard is preserved for initial catalog scanning.
+
+These are **repository-owned offline policy corrections**. New tests exercise deferred tampering, budget-hold resume, irregular intermediate positions and malformed viewport order. They do not establish installed game-native interaction, purchase success or a local MoonWake stage-walker run. Native game/Mods proof remains owned by issue #171.
+
 ## P141 → P95 → P82 → P08 → P07 → P124 evidence boundary
 
 - **P141:** Existing fixed five-row computer-parts picker and cooperative queue are the preferred owners; reject universal clickers, hardcoded coordinates and unapproved blanket purchase.

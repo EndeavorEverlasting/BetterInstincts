@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import unittest
+import asyncio
 
 from betterinstincts.purchase_dialog import (
     derive_demand, discover_dialog_page, propose_dialog_cart_step,
-    verify_dialog_purchase, MAX_PAGES, TRIGGERS,
+    verify_dialog_purchase, enqueue_dialog_step, MAX_PAGES, TRIGGERS,
 )
 
 
@@ -256,6 +257,102 @@ class PurchaseDialogTests(unittest.TestCase):
             with self.subTest(changes=changes):
                 self.assertEqual(verify_dialog_purchase(**{**base, **changes})["state"],
                                  "NEEDS_RECONCILIATION")
+
+
+    def test_deferred_queue_effect_is_copied_at_admission(self):
+        """No later caller mutation may turn an authorized click into a new effect."""
+        from betterinstincts.workflow_interop import CooperativeScreenQueue
+
+        queue = CooperativeScreenQueue(probe=lambda: None, session_active=lambda: True)
+        original = {"kind": "INCREMENT_OBSERVED_ROW", "item_id": "acorn",
+                    "approved_spend_cap": 35, "metadata": {"selected": 1}}
+        decision = {"state": "READY_TO_QUEUE", "action": original}
+        observed = []
+
+        async def validate():
+            return True
+
+        async def perform(action):
+            observed.append(action)
+
+        enqueue_dialog_step(queue, work_id="acorn-once", decision=decision,
+                            validate_fresh_scene=validate, perform_game_ui_effect=perform)
+        original["kind"] = "UNAPPROVED_WINDOWS_EFFECT"
+        original["approved_spend_cap"] = 100000
+        original["item_id"] = "unrequested_item"
+        original["metadata"]["selected"] = 999
+        decision["state"] = "OTHER"
+
+        async def checkpoint():
+            return None
+
+        asyncio.run(queue.pending[0].action(checkpoint))
+        self.assertEqual(observed, [{
+            "kind": "INCREMENT_OBSERVED_ROW", "item_id": "acorn",
+            "approved_spend_cap": 35, "metadata": {"selected": 1},
+        }])
+
+    def test_reconciled_selection_survives_spending_hold_and_resumes(self):
+        catalog = scan_advanced()
+        requested = {"acorn": 1}
+        first = cart_step(catalog, page("p1", TOP, bottom=False), requests=requested)
+        self.assertEqual(first["action"]["kind"], "INCREMENT_OBSERVED_ROW")
+        after_increment = page("p2", [("acorn", "Acorn", 35, 1), *TOP[1:]],
+                               bottom=False)
+        held = cart_step(catalog, after_increment, requests=requested,
+                         cart=first["cart"], count=1, cost=35, spend_cap=34)
+        self.assertEqual(held["reason"], "APPROVED_CAP_OR_FUNDS_EXCEEDED")
+        self.assertEqual(held["cart"]["selected"], {"acorn": 1})
+        self.assertIsNone(held["cart"]["pending"])
+        restored = cart_step(catalog, page("p3", [("acorn", "Acorn", 35, 1),
+                                                   *TOP[1:]], bottom=False),
+                             requests=requested, cart=held["cart"],
+                             count=1, cost=35, spend_cap=100)
+        self.assertEqual(restored["action"]["kind"], "CONFIRM_OBSERVED_PURCHASE")
+        self.assertEqual(restored["action"]["expected_total_cost"], 35)
+
+    def test_scroll_can_land_on_contiguous_unseen_viewport_window(self):
+        full = [("item" + str(i), "Item " + str(i), i)
+                for i in range(1, 13)]
+        first = discover_dialog_page(page("scan1", full[:5], bottom=False))
+        second = discover_dialog_page(page("scan2", full[4:9], top=False,
+                                           bottom=False), catalog=first["catalog"])
+        scanned = discover_dialog_page(page("scan3", full[7:12], top=False),
+                                       catalog=second["catalog"])
+        self.assertEqual(scanned["state"], "COMPLETE")
+        catalog = scanned["catalog"]
+        requests = {"item4": 1}
+        baseline = {"item4": 0}
+        move = cart_step(catalog, page("cartbottom", full[7:12], top=False),
+                         requests=requests, inventory_before=baseline)
+        self.assertEqual(move["action"]["kind"], "SCROLL_UP_ONE_PAGE")
+        self.assertEqual(move["cart"]["pending"]["from_start_index"], 7)
+        # The actual scroll position after moving up is NOT a prior scan page.
+        new_view = page("intermediate", full[3:8], top=False, bottom=False)
+        increment = cart_step(catalog, new_view, requests=requests,
+                              inventory_before=baseline, cart=move["cart"])
+        self.assertEqual(increment["action"]["kind"], "INCREMENT_OBSERVED_ROW")
+        self.assertEqual(increment["action"]["item_id"], "item4")
+
+    def test_reordered_or_gapped_viewports_cannot_guide_scroll(self):
+        all_items = [("item" + str(i), "Item " + str(i), i)
+                     for i in range(1, 13)]
+        s1 = discover_dialog_page(page("scan1", all_items[:5], bottom=False))
+        s2 = discover_dialog_page(page("scan2", all_items[4:9],
+                                       top=False, bottom=False),
+                                   catalog=s1["catalog"])
+        s3 = discover_dialog_page(page("scan3", all_items[7:12], top=False),
+                                   catalog=s2["catalog"])
+        catalog = s3["catalog"]
+        for invalid in ([all_items[3], all_items[5], all_items[6]],
+                        [all_items[4], all_items[3], all_items[5]]):
+            with self.subTest(invalid=invalid):
+                denied = cart_step(catalog, page("bad", invalid, top=False,
+                                                 bottom=False),
+                                   requests={"item4": 1},
+                                   inventory_before={"item4": 0})
+                self.assertEqual(denied["reason"],
+                                 "CURRENT_VIEWPORT_NOT_CATALOGED")
 
 
 if __name__ == "__main__":

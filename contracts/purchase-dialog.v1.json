@@ -115,7 +115,9 @@
     "repeated_viewport": "HOLD_DO_NOT_SCROLL",
     "offscreen_target": "MOVE_ONE_VERIFIED_PAGE_TOWARD_CATALOGED_TARGET_THEN_REOBSERVE",
     "mutation_after_scroll": "REQUIRE_FRESH_PAGE_MOVEMENT_READBACK",
-    "unknown_bottom": "HOLD_DO_NOT_INFER_FULL_CATALOG"
+    "unknown_bottom": "HOLD_DO_NOT_INFER_FULL_CATALOG",
+    "intermediate_viewports": "CURRENT FRESH viewport may have unseen window boundaries; admit only a contiguous, correctly ordered known item-ID span, independent of discovery's exact page signatures",
+    "scroll_reconciliation": "Track visible span start index before action; require fresh revision and directionally correct position movement afterwards; reject unchanged, reordered or unknown rows"
   },
   "dynamic_trigger_registry": {
     "registry_extension": "Add evidence-backed trigger and its consumer test; do not require new purchase engine per DLC",
@@ -176,7 +178,15 @@
     "cost_rule": "Requested quantity * observed price, scoped to household funds and explicit cap",
     "success_proof": "Exact selected-Sim item inventory delta and exact household funds debit after one Buy",
     "failure_rule": "Stop, reconcile, never blind retry or re-buy",
-    "execute_allowed": false
+    "execute_allowed": false,
+    "deferred_action_integrity": "Deep-copy admitted whitelisted proposed action before queuing. Deferred execution uses a second independent copy, never caller-mutated decision",
+    "reconciled_cart_hold": "Persist readback-confirmed selected quantities immediately after clearing pending increment, before later spending/funds holds; preserve retained intent",
+    "regression_suite": [
+      "tests.test_purchase_dialog.test_deferred_queue_effect_is_copied_at_admission",
+      "tests.test_purchase_dialog.test_reconciled_selection_survives_spending_hold_and_resumes",
+      "tests.test_purchase_dialog.test_scroll_can_land_on_contiguous_unseen_viewport_window",
+      "tests.test_purchase_dialog.test_reordered_or_gapped_viewports_cannot_guide_scroll"
+    ]
   },
   "operational_boundary": {
     "native_gameplay_authority": "POLICY_ONLY",

@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-PURCHASE-DIALOG-CLOSERS-20261114",
+  "purpose": "Review-owned post-merge repair of source-only purchase dialog queue-snapshot and visible window state semantics. No EA-native action or Sims game effect is claimed.",
+  "files": [
+    {
+      "path": "betterinstincts/purchase_dialog.py",
+      "route": "POLICY_ONLY",
+      "reason": "Only changes deterministic observed-viewport indexing, reconciled cart state and immutable proposed action data before the existing cooperative queue",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "GITHUB_SOURCE_CI_ONLY_NOT_NATIVE_GAMEPLAY",
+  "next_gate": "On exact installed Sims patch, verify EA-native observation, shop purchase and inventory/funds receipts with a disposable game session, player handoff, and rollback."
+}
