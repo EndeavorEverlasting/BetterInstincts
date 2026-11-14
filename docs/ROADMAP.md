@@ -1,3 +1,7 @@
+## 2026-11-14 — Control fallback evidence becomes permanent repository logic
+
+The agent computer-use fallback remains **permitted as a last resort**, under existing player-first, idle, save/scene and queue authority. Pausing screen effects during human operation keeps the listener and its intended work active. Reviewed passive observations have distinct event identity so they cannot forge a completed gameplay action. Each effect and semantic discovery now projects into a bounded, cursor-paged codification work item with success/failure/interrupt evidence and required regression gates. Submitted code references await independent mainline verification; **not yet native Sims autonomy proof**. Native/game P08 remains tracked under issue #171, BI-002 hunger first. See `docs/CONTROL_DISCOVERY.md`.
+
 ## 2026-11-14 — Last-resort agent control with automatic discovery accountability
 
 Preserve a composable **native-first → opt-in controlled discovery → observe/review → codify source and tests** pipeline. An agent is allowed to operate the Sims screen when admitted as the last resort; control is suspended, not torn down, when the operator resumes using any app. Reuse `CooperativeScreenQueue` and the existing explicit `host_listener`; persistent bounded semantic journal captures each action, its success/failure/unknown result, and unclosed codification obligations. Low-context summary carries open discoveries to new chat agents; independent source/mainline proof and actual Sims P08 remain separate. See `docs/CONTROL_DISCOVERY.md`.

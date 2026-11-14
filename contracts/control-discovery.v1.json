@@ -41,6 +41,7 @@
       "PREPARE",
       "QUEUE_STATUS",
       "OUTCOME",
+      "DISCOVERY",
       "CODIFICATION_RECEIPT"
     ],
     "sequence": "strict per-session monotonic one-writer seq and optimistic CAS before atomic write",
@@ -48,14 +49,36 @@
     "max_events": 128,
     "max_disk_bytes": 64000,
     "outcome_requires": "separate post-action capture, proof ref and interruption classification",
-    "codification_requires": "reviewed distinct post-action outcome and module+test+commit+review references; receipt alone not merged proof"
+    "codification_requires": "reviewed distinct post-action outcome and module+test+commit+review references; receipt alone not merged proof",
+    "discovery": {
+      "fields": [
+        "discovery_kind",
+        "fact_ref",
+        "source_ref",
+        "evidence_ref"
+      ],
+      "allowed_kinds": [
+        "ACTION_MENU",
+        "OBJECT_AFFORDANCE",
+        "QUEUED_ACTION",
+        "SENSOR_RECOVERY",
+        "INTERRUPTION",
+        "NEGATIVE_RESULT"
+      ],
+      "max_per_step": 6,
+      "scope": "an already prepared controlled step",
+      "provenance": "sanitized reviewed sensor/agent semantic record, never raw input or screenshot",
+      "timing": "while admitted, while waiting for player, or during post-effect observation before codification receipt"
+    }
   },
   "pause_resume": {
     "human_activity": "WAITING_FOR_USER, do not dispatch, do not close listener or computer-use session",
     "idle": "existing minimum 15000ms and two independent fresh probes before each effect, plus scene, save, queue, target and desktop lock checks",
     "partial": "NEEDS_RECONCILIATION; human/host must observe and rebuild remaining work",
     "manual_control": "human commands remain primary, no cancellation/reordering of player queue",
-    "listener": "must already be activated explicitly; passive observations only from trusted read-only adapters"
+    "listener": "must already be activated explicitly; passive observations only from trusted read-only adapters",
+    "passive_observation_identity": "Every CooperativeScreenQueue passive observation outcome includes effect_class PASSIVE_OBSERVATION + its own work_id; the runner never logs that as a gameplay QUEUE_STATUS or permits an action outcome on its strength.",
+    "listener_collection": "AgentControlRunner.observe_while_paused enqueues only reviewed passive callbacks; record_semantic_discovery journals sanitized semantic findings to the active listener."
   },
   "codification": {
     "obligation": "100 percent of controlled atomic steps must have an auditable proposed outcome and a successor module/test receipt; keep missed/uncertain work open",
@@ -69,7 +92,9 @@
       "live Sims certified"
     ],
     "successor_policy": "Promote recurring safe decisions to EA tuning or exact-patch native script when evidenced; deterministic policy tests first; retain opt-in host fallback when genuinely necessary.",
-    "merge_proof": "external GitHub mainline/source readback required; event CODIFICATION_RECEIPT is only a submitted claim"
+    "merge_proof": "external GitHub mainline/source readback required; event CODIFICATION_RECEIPT is only a submitted claim",
+    "source_verification_gate": "An actor-supplied CODIFICATION_RECEIPT is a claim only. Coverage reports source_verification_pending_total separately and never says a claimed commit is main-verified; provider mainline code+test readback is required.",
+    "paged_work_items": "control_discovery.codification_work_items(ledger, offset, limit<=8) returns EVERY attempted action, its observed outcome, discovered facts, pending source gate and regression requirements in small batches."
   },
   "privacy": {
     "capture": "only sanitized class/action identifiers and opaque provenance refs; never raw key/mouse events, screenshots, Sim names, user save paths, or external app content",

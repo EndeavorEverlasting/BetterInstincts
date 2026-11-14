@@ -22,6 +22,11 @@ QUEUE_STATES = frozenset({
     "NEEDS_REVALIDATION", "COMPLETED", "BUSY", "WAIT_BUDGET_REACHED",
 })
 OUTCOMES = frozenset({"HELPFUL", "HARMFUL", "NEUTRAL", "UNKNOWN"})
+DISCOVERY_KINDS = frozenset({
+    "ACTION_MENU", "OBJECT_AFFORDANCE", "QUEUED_ACTION",
+    "SENSOR_RECOVERY", "INTERRUPTION", "NEGATIVE_RESULT",
+})
+MAX_DISCOVERIES_PER_STEP = 6
 FALLBACK_REASONS = frozenset({
     "NATIVE_ROUTE_MISSING", "NATIVE_ROUTE_UNPROVEN",
     "EXISTING_RULE_FAILED", "DISPOSABLE_GAME_DIAGNOSTIC",
@@ -116,6 +121,28 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
             raise ControlDiscoveryError("POST_ACTION_CAPTURE_MUST_DIFFER")
         if step.get("queue_state") not in {"COMPLETED", "NEEDS_RECONCILIATION"}:
             raise ControlDiscoveryError("ACTION_NOT_OBSERVED_AS_ATTEMPTED")
+    elif event.get("kind") == "DISCOVERY":
+        # Reviewed semantic facts may arrive from the live listener while
+        # gameplay effects are paused. Never admit text dumps or raw input.
+        if set(event) != {"schema", "seq", "kind", "work_id",
+                          "discovery_kind", "fact_ref", "source_ref",
+                          "evidence_ref"}:
+            raise ControlDiscoveryError("DISCOVERY_FIELDS_INVALID")
+        _required(event, ("fact_ref", "source_ref", "evidence_ref"))
+        if event["discovery_kind"] not in DISCOVERY_KINDS:
+            raise ControlDiscoveryError("DISCOVERY_KIND_INVALID")
+        if event["work_id"] not in ledger["steps"]:
+            raise ControlDiscoveryError("UNPREPARED_DISCOVERY_DENIED")
+        step = ledger["steps"][event["work_id"]]
+        if step.get("codification") is not None:
+            raise ControlDiscoveryError("DISCOVERY_AFTER_CODIFICATION_DENIED")
+        discoveries = step.get("discoveries") or []
+        if len(discoveries) >= MAX_DISCOVERIES_PER_STEP:
+            raise ControlDiscoveryError("DISCOVERY_STEP_BUDGET_EXHAUSTED")
+        if any(d["fact_ref"] == event["fact_ref"]
+               and d["evidence_ref"] == event["evidence_ref"]
+               for d in discoveries):
+            raise ControlDiscoveryError("DUPLICATE_DISCOVERY_EVIDENCE")
     elif event.get("kind") == "CODIFICATION_RECEIPT":
         if set(event) != {"schema", "seq", "kind", "work_id",
                           "module_ref", "test_ref", "commit_ref", "review_ref"}:
@@ -144,6 +171,7 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
             "queue_state": "PREPARED",
             "outcome": None,
             "codification": None,
+            "discoveries": [],
         }
     elif event["kind"] == "QUEUE_STATUS":
         state["steps"][work_id]["queue_state"] = event["queue_state"]
@@ -154,6 +182,13 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
             outcome_ref=event["outcome_ref"],
             player_interrupted=event["player_interrupted"],
         )
+    elif event["kind"] == "DISCOVERY":
+        state["steps"][work_id]["discoveries"].append({
+            "discovery_kind": event["discovery_kind"],
+            "fact_ref": event["fact_ref"],
+            "source_ref": event["source_ref"],
+            "evidence_ref": event["evidence_ref"],
+        })
     elif event["kind"] == "CODIFICATION_RECEIPT":
         state["steps"][work_id]["codification"] = {
             "module_ref": event["module_ref"], "test_ref": event["test_ref"],
@@ -203,8 +238,76 @@ def coverage(ledger: Mapping) -> dict:
         "unresolved_total": len(outstanding),
         "unresolved": outstanding[:MAX_SUMMARY_ITEMS],
         "unresolved_truncated": max(0, len(outstanding) - MAX_SUMMARY_ITEMS),
+        # A source/test/commit receipt is an assertion awaiting independent
+        # provider/mainline verification, not proof that game logic was shipped.
+        "source_verification_pending_total": summarized["receipt_submitted"],
+        "source_verified_total": 0,
+        "all_attempts_source_verified": len(steps) == 0,
         "control_permit": None, "execute_allowed": False,
         "proof_ceiling": "CODIFICATION_CANDIDATES_NOT_MERGED_GAMEPLAY",
+    }
+
+
+
+def codification_work_items(ledger: Mapping, *, offset: int = 0,
+                            limit: int = 4) -> dict:
+    """Expose every attempted action as a small, cursor-paged source task.
+
+    This is a deterministic semantic projection of the existing journal;
+    no extra screenshots, raw input logs, token history or profile reads.
+    A receipt cannot close source verification without provider readback.
+    """
+    if not isinstance(ledger, Mapping) or ledger.get("schema") != SCHEMA:
+        raise ControlDiscoveryError("LEDGER_SCHEMA_INVALID")
+    if not isinstance(ledger.get("steps"), dict):
+        raise ControlDiscoveryError("STEP_STORE_INVALID")
+    if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 8:
+        raise ControlDiscoveryError("CODIFICATION_PAGE_INVALID")
+    keys = sorted(ledger["steps"])
+    items = []
+    for work_id in keys[offset:offset + limit]:
+        step = ledger["steps"][work_id]
+        if step.get("codification") is not None:
+            gate = "VERIFY_COMMIT_TEST_AND_MAIN_READBACK"
+        elif step.get("player_interrupted") is True:
+            gate = "RECONCILE_INTERRUPTED_OUTCOME"
+        elif step.get("outcome") is not None:
+            gate = "IMPLEMENT_SOURCE_RULE_AND_REGRESSION_TEST"
+        else:
+            gate = "CAPTURE_AND_REVIEW_ACTUAL_OUTCOME"
+        items.append({
+            "work_id": work_id,
+            "goal_id": ledger["goal_id"],
+            "fallback_reason": ledger["fallback_reason"],
+            "game_patch": ledger["game_patch"],
+            "action_ref": step["action_ref"],
+            "object_class_ref": step["object_class_ref"],
+            "before_capture_ref": step["before_capture_ref"],
+            "queue_state": step["queue_state"],
+            "observed_outcome": step.get("outcome"),
+            "after_capture_ref": step.get("after_capture_ref"),
+            "outcome_ref": step.get("outcome_ref"),
+            "player_interrupted": step.get("player_interrupted"),
+            "submitted_codification": step.get("codification"),
+            "discoveries": list(step.get("discoveries") or []),
+            "next_gate": gate,
+            "required_regression": [
+                "REPLAY_OBSERVED_BEHAVIOR_OR_FAILURE",
+                "DENY_PLAYER_QUEUE_OVERRIDE",
+                "RECHECK_STALE_SCENE_AND_TARGET",
+                "VERIFY_IDEMPOTENCE_AND_NO_BLIND_REPLAY",
+            ],
+            "source_verified": False,
+        })
+    next_offset = offset + len(items)
+    return {
+        "schema": "betterinstincts.codification-work-items/v1",
+        "total_attempted": len(keys),
+        "offset": offset,
+        "next_offset": next_offset if next_offset < len(keys) else None,
+        "items": items,
+        "execute_allowed": False,
+        "proof_ceiling": "SOURCE_TASKS_NOT_REPOSITORY_MERGE_PROOF",
     }
 
 
@@ -218,6 +321,7 @@ def compact_handoff(ledger: Mapping) -> dict:
         "fallback_reason": ledger["fallback_reason"],
         "events_count": len(ledger["events"]),
         "codification_coverage": result,
+        "codification_work": codification_work_items(ledger, limit=4),
         "requires_fresh_control_admission": True,
         "proof_ceiling": "COMPACT_SEMANTIC_MEMORY_NOT_GAME_EFFECT",
     }
