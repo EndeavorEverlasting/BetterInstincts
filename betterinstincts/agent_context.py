@@ -330,13 +330,15 @@ def assess_agent_turn_boundary(
     """
     parent = _validate_handoff(handoff)
     if (type(listener_active) is not bool or type(effect_pending) is not bool
-            or effect_state is not None and effect_state not in TURN_EFFECT_STATES):
+            or (effect_state is not None
+                and (not isinstance(effect_state, str)
+                     or effect_state not in TURN_EFFECT_STATES))):
         raise AgentContextError("TURN_EFFECT_STATE_INVALID")
-    if player_presence not in {"ACTIVE", "INACTIVE", "UNKNOWN"}:
+    if not isinstance(player_presence, str) or player_presence not in {"ACTIVE", "INACTIVE", "UNKNOWN"}:
         raise AgentContextError("TURN_PLAYER_PRESENCE_INVALID")
-    if game_state not in {"PAUSED", "RUNNING", "NOT_VISIBLE", "UNKNOWN"}:
+    if not isinstance(game_state, str) or game_state not in {"PAUSED", "RUNNING", "NOT_VISIBLE", "UNKNOWN"}:
         raise AgentContextError("TURN_GAME_STATE_INVALID")
-    if host_access not in {"AVAILABLE", "UNAVAILABLE", "UNKNOWN"}:
+    if not isinstance(host_access, str) or host_access not in {"AVAILABLE", "UNAVAILABLE", "UNKNOWN"}:
         raise AgentContextError("TURN_HOST_ACCESS_INVALID")
     if (safe_offline_action is not None
             and (not isinstance(safe_offline_action, str)
@@ -367,6 +369,15 @@ def assess_agent_turn_boundary(
             "proof_ceiling": "READ_ONLY_BOUNDARY_NOT_INDEPENDENT_PARENT_ACCEPTANCE_OR_GAME_EFFECT",
         }
 
+    # An inactive listener cannot preserve or resume a screen effect. This
+    # guard outranks pending-work and player-yield classification; it never
+    # starts a listener or alters input authority.
+    if not listener_active:
+        if safe_offline_action is not None:
+            return choose("CONTINUE_OFFLINE_NO_ACTIVE_LISTENER",
+                          safe_offline_action.strip())
+        return choose("RECOVER_EXPLICIT_LISTENER",
+                      "RECHECK_LOCAL_AUTHORITY_AND_START_APPROVED_LISTENER_IF_PERMITTED")
     # Player activity blocks screen effects, but not the listener or an
     # independently ready read-only source/test action.
     if player_presence != "INACTIVE":
@@ -393,9 +404,6 @@ def assess_agent_turn_boundary(
     if claimed_acceptance_refs:
         return choose("VERIFY_CLAIMED_PARENT_ACCEPTANCE",
                       "INDEPENDENTLY_MATCH_PROOFS_TO_EVERY_PARENT_ACCEPTANCE_GATE")
-    if not listener_active:
-        return choose("RECOVER_EXPLICIT_LISTENER",
-                      "RECHECK_LOCAL_AUTHORITY_AND_START_APPROVED_LISTENER_IF_PERMITTED")
     if host_access == "UNAVAILABLE":
         if host_unavailable_ref is None:
             return choose("REOBSERVE_HOST_ACCESS",
