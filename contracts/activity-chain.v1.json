@@ -44,7 +44,8 @@
       "capture_ref",
       "admitted",
       "evidence_ref",
-      "upper_minutes"
+      "upper_minutes",
+      "teleport_evidence_capture_ref"
     ],
     "continuity": [
       "completed",
@@ -79,7 +80,8 @@
     "Unknown or stale evidence fails closed; unknown path remains deferred",
     "Never duplicate an unresolved in-flight effect; preserve goal intent",
     "Native execution requires separate exact-EA-build evidence and game verification under issue #171",
-    "BI-002 independent hunger gate remains open"
+    "BI-002 independent hunger gate remains open",
+    "A planned acquisition whose dependent downstream goal cannot fit the same current safe window must not spend unless an existing owner explicitly resolves partial preparation"
   ],
   "proof_ceiling": "OFFLINE_SOURCE_AND_FOCUSED_UNIT_TESTS",
   "required_live_successor": "Bind evidence-producing domain adapters and native game-side executor; verify installation, player interrupts, exact-patch rollback and real-world timed chains"
