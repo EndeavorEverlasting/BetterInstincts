@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-PS0245-CLOSERS-FEASIBILITY-20261114",
+  "purpose": "Review PS-0245 source-only transient need trajectory, positive action utility and truncated-search abstention",
+  "files": [
+    {
+      "path": "betterinstincts/decision_horizon.py",
+      "route": "POLICY_ONLY",
+      "reason": "Tightens pure advisory stochastic planning safety but adds no native Sims interaction hook, desktop control or queue mutation",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_POLICY_TESTED_NOT_NATIVE_GAMEPLAY",
+  "next_gate": "Exact installed EA patch source inspection, native package/Mods activation and matched disposable game tests via issue #171"
+}
