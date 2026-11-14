@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-EXPERIENCE-RECALL-20261114",
+  "purpose": "Classify reusable past-experience memory as offline policy only, never an EA game mutation or desktop actuation.",
+  "files": [
+    {
+      "path": "betterinstincts/experience_recall.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure bounded prior-experience receipt ledger and replay-safe recall that only returns advisory historical evidence without executing Sims gameplay.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_HISTORICAL_EVIDENCE_INDEX_ONLY",
+  "next_gate": "Use existing local game receipts to write distinct previously observed cases once, re-read them without game restart, and leave BI-002 live gameplay certification independent."
+}
