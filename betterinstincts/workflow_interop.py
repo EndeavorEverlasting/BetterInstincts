@@ -176,26 +176,26 @@ class CooperativeScreenQueue:
         """
         item = self.pending_observations[0]
         decision = assess_effect("PASSIVE_OBSERVATION", session_active=bool(self.session_active()))
+        identity = {"effect_class": "PASSIVE_OBSERVATION", "work_id": item.work_id}
         if not decision["execute_allowed"]:
-            return {"state": "WAITING_FOR_USER", "pending": len(self.pending) + len(self.pending_observations)}
+            return {"state": "WAITING_FOR_USER", "pending": len(self.pending) + len(self.pending_observations), **identity}
         self._running = True
         try:
             valid = await asyncio.wait_for(item.validate(), timeout=MAX_OBSERVATION_SECONDS)
             if valid is not True:
                 self._suspend_observation(item, "NEEDS_REVALIDATION")
-                return {"state": "NEEDS_REVALIDATION", "pending": len(self.pending) + len(self.pending_observations)}
+                return {"state": "NEEDS_REVALIDATION", "pending": len(self.pending) + len(self.pending_observations), **identity}
             if not self.session_active():
-                return {"state": "WAITING_FOR_USER", "pending": len(self.pending) + len(self.pending_observations)}
+                return {"state": "WAITING_FOR_USER", "pending": len(self.pending) + len(self.pending_observations), **identity}
             await asyncio.wait_for(item.observe(), timeout=MAX_OBSERVATION_SECONDS)
             self.pending_observations.popleft()
             self.completed.append(item.work_id)
             self._event("COMPLETED_OBSERVATION", item.work_id)
-            return {"state": "COMPLETED", "pending": len(self.pending) + len(self.pending_observations),
-                    "effect_class": "PASSIVE_OBSERVATION"}
+            return {"state": "COMPLETED", "pending": len(self.pending) + len(self.pending_observations), **identity}
         except Exception as exc:
             self._suspend_observation(item, "NEEDS_RECONCILIATION")
             return {"state": "NEEDS_RECONCILIATION", "pending": len(self.pending) + len(self.pending_observations),
-                    "error_type": type(exc).__name__}
+                    "error_type": type(exc).__name__, **identity}
         finally:
             self._running = False
 
