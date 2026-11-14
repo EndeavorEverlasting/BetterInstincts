@@ -289,6 +289,56 @@ class PersistentListenerTests(unittest.TestCase):
 
 
 class AgentControlRunTests(unittest.IsolatedAsyncioTestCase):
+    @staticmethod
+    def parent_handoff():
+        return {
+            "schema": "betterinstincts.agent-context/v1",
+            "household_ref": "household:opaque",
+            "game_build": "patch:verified-for-test",
+            "parent_objective": "Keep household Sims safe and continue goals.",
+            "active_goal_id": "goal:fertilizer",
+            "next_gate": "FRESH_OUTCOME_OBSERVATION",
+            "source_revision": "commit:tested",
+            "corrections": ["Protect human screen control."],
+            "rejected_paths": ["Blind repeat."],
+            "blockers": [],
+        }
+
+    async def test_existing_runner_boundary_preserves_effect_during_human_pause(self):
+        self.prepare()
+        paused = await self.runner.pulse()
+        self.assertEqual(paused["state"], "WAITING_FOR_USER")
+        decision = self.runner.assess_parent_turn_boundary(
+            self.parent_handoff(), player_presence="ACTIVE",
+            game_state="PAUSED",
+        )
+        self.assertEqual(decision["gate"], "YIELD_EFFECTS_KEEP_LISTENER")
+        self.assertTrue(decision["listener_remains_active"])
+        self.assertTrue(decision["effect_pending"])
+        self.assertFalse(decision["parent_complete"])
+        self.assertEqual(len(self.queue.pending), 1)
+        decision = self.runner.assess_parent_turn_boundary(
+            self.parent_handoff(), player_presence="ACTIVE",
+            game_state="PAUSED", safe_offline_action="Read queued work outcomes",
+        )
+        self.assertEqual(decision["gate"], "CONTINUE_OFFLINE_WHILE_PLAYER_ACTIVE")
+        self.assertEqual(len(self.queue.pending), 1)
+        self.assertEqual(host_listener.status("bi-control-01")["state"], "ACTIVE")
+
+    async def test_completed_input_not_parent_completion_without_outcome(self):
+        self.age = 16000
+        self.prepare()
+        done = await self.runner.pulse()
+        self.assertEqual(done["state"], "COMPLETED")
+        result = self.runner.assess_parent_turn_boundary(
+            self.parent_handoff(), player_presence="INACTIVE",
+            game_state="RUNNING", claimed_acceptance_refs=["receipt:click-done"],
+        )
+        self.assertEqual(result["gate"], "RECONCILE_PENDING_EFFECT_OUTCOME")
+        self.assertFalse(result["terminal_stop_proven"])
+        self.assertEqual(self.runner.current_work_id, "work:plant2")
+        self.assertEqual(host_listener.status("bi-control-01")["state"], "ACTIVE")
+
     async def asyncSetUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
