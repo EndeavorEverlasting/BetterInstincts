@@ -139,8 +139,13 @@ def compile_activity_chain(snapshot: Mapping, steps: Sequence[Mapping],
     for row in completed:
         if (not isinstance(row, Mapping) or row.get("step_id") not in nodes
                 or row["step_id"] in done or not _ref(row.get("outcome_ref"))
-                or row.get("outcome_capture_ref") != capture_ref):
+                or not _ref(row.get("outcome_capture_ref"))):
             raise ActivityChainError("ACTIVITY_COMPLETION_PROOF_INVALID")
+        if row["outcome_capture_ref"] != capture_ref and (
+                row.get("revalidated_capture_ref") != capture_ref
+                or row.get("still_valid") is not True):
+            return _receipt(capture_ref, "REVALIDATE_PREVIOUS_COMPLETIONS", mode=mode,
+                            retained_goal_ids=sorted(nodes), requires_revalidation=row["step_id"])
         done.add(row["step_id"])
     inflight = snapshot.get("inflight_step")
     if inflight is not None:
