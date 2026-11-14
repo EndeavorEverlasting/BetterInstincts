@@ -69,9 +69,10 @@
   "proof_ceiling": "SOURCE_ONLY_OFFLINE_HOUSEHOLD_ALLOCATION_NOT_EA_CERTIFIED",
   "active_parent": "BI-002 hunger still ACTIVE",
   "portrait_handoff": {
-    "trigger": "The selected roster member is observed ASLEEP, RECHARGING or AWAY in the current host capture.",
-    "target": "First eligible allocation to an explicitly AWAKE member, ranked by existing task priorities, skills and preferences.",
-    "effect": "One advisory selection. Reobserve selected identity, queue ownership and exact affordance before any enqueue.",
+    "trigger": "Immediately when the selected member is observed ASLEEP/RECHARGING/AWAY, even with no tasks; optionally on verified current-capture completed needs review of the selected AWAKE member.",
+    "target": "Next explicitly AWAKE, non-player-reserved, queue-verified roster member in original portrait order, wrapping once and never selecting the source; not dependent on skill, chores or discretionary yield eligibility.",
+    "effect": "Policy only. A real native portrait selection needs independently certified current-patch EA hook; subsequent observation of selected identity and per-Sim needs must use a fresh capture before needs/queue work. No gameplay effect or click authority from this plan.",
+    "rotation": "Single proposal per source capture; optional attention_review requires member_key, capture_ref, unique evidence proof_ref and state VERIFIED_COMPLETE. No timer, background loop, repeated blind click, or repeated rotation on old proof.",
     "member_needs": {
       "HUMAN": [
         "hunger",
@@ -88,6 +89,10 @@
         "social"
       ]
     },
-    "legacy": "Snapshots without selected_member_key retain allocation behavior and never emit a portrait handoff."
+    "legacy": "No selected_member_key and no verified attention_review leave ordinary task allocations unchanged; no handoff.",
+    "owner": "betterinstincts/household_economy.py",
+    "proof_owner": "tests/test_household_economy.py",
+    "registry_mechanic": "household-portrait-attention-rotation",
+    "native_successor_issue": 171
   }
 }
