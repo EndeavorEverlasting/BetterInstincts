@@ -239,6 +239,20 @@ def evaluate_need_signals(observation: Mapping[str, Any], *,
             "needs_reobservation": not aligned or discord or chosen is None,
         }
 
+    activity = observation.get("current_activity")
+    if activity is not None:
+        if (not isinstance(activity, Mapping)
+                or activity.get("verified") is not True
+                or not _ref(activity.get("source_ref"))
+                or activity.get("capture_ref") != capture
+                or activity.get("kind") not in {
+                    "DANCING", "SOCIALIZING", "RECHARGING", "OTHER",
+                }):
+            raise NeedSignalError("CURRENT_ACTIVITY_EVIDENCE_INVALID")
+    findings = []
+    if (activity is not None and activity.get("kind") == "DANCING"
+            and "social" in rapid):
+        findings.append("DANCING_IS_NOT_REPAIRING_RAPID_SOCIAL_DECAY")
     # Existing moodlets owner performs the interpretation. No new catalog,
     # emotion classifier or inference from an unseen buff icon.
     moods = observation.get("moodlet_observation")
@@ -274,15 +288,22 @@ def evaluate_need_signals(observation: Mapping[str, Any], *,
         priority = "MONITOR_DECLINING_NEEDS"
     else:
         priority = "CONTINUE_OR_REOBSERVE"
+    all_times = [normalized[source][motive]["observed_at_unix"]
+                 for source in healthy for motive in normalized[source]]
+    both_aligned = (len(healthy) == 2 and all_times and
+                    max(all_times) - min(all_times) <= MAX_CROSS_SOURCE_SKEW)
     state = ("SOURCES_UNAVAILABLE" if not healthy else
-             "DUAL_SOURCE_CORROBORATION" if len(healthy) == 2 else
+             "DUAL_SOURCE_CORROBORATION" if both_aligned else
+             "DUAL_SOURCE_ASYNCHRONOUS" if len(healthy) == 2 else
              "SINGLE_SOURCE_FALLBACK")
     return {
         "schema": RESULT, "state": state, "profile": profile,
         "sim_ref": sim_ref, "game_build": build, "capture_ref": capture,
         "motives": motive_rows, "source_health": health, "healthy_sources": healthy,
         "priority": priority, "rapid_declines": rapid,
-        "conflicts": conflicts, "moodlet_guidance": mood_mode,
+        "conflicts": conflicts, "findings": findings,
+        "current_activity": activity["kind"] if activity is not None else None,
+        "moodlet_guidance": mood_mode,
         "moodlets": moodlet_eval, "game_paused": observation["game_paused"],
         "player_active": observation["player_active"],
         "next_actions": (["REQUEST_FRESH_INDEPENDENT_OBSERVATION"] if conflicts

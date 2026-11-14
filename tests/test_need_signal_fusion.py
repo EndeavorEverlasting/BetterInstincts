@@ -142,7 +142,7 @@ class NeedSignalFusionTests(unittest.TestCase):
     def test_asynchronous_samples_do_not_claim_corroborated_same_moment(self):
         later = hud(stamp=NOW - 25)
         result = eval_need(snapshot(feeds=[native(), later]))
-        self.assertEqual(result["state"], "DUAL_SOURCE_CORROBORATION")
+        self.assertEqual(result["state"], "DUAL_SOURCE_ASYNCHRONOUS")
         self.assertEqual(result["motives"]["social"]["ordinal_rate_tier"],
                          "ASYNCHRONOUS_NOT_CORROBORATED")
         self.assertTrue(result["motives"]["social"]["needs_reobservation"])
@@ -248,6 +248,20 @@ class NeedSignalFusionTests(unittest.TestCase):
         with self.assertRaisesRegex(NeedSignalError,"MOODLET_EVIDENCE_INVALID"):
             eval_need(snapshot(moodlet_observation={"source_ref":"x",
                              "capture_ref":"capture:host","moodlets":"Fine"}))
+
+    def test_verified_dancing_when_social_is_falling_is_diagnosed_not_canceled(self):
+        observed = snapshot(feeds=[hud()], current_activity={
+            "kind":"DANCING", "source_ref":"operator:activity",
+            "capture_ref":"capture:host", "verified":True})
+        report = eval_need(observed)
+        self.assertIn("DANCING_IS_NOT_REPAIRING_RAPID_SOCIAL_DECAY", report["findings"])
+        self.assertEqual(report["current_activity"], "DANCING")
+        self.assertFalse(report["queue_cancel_allowed"])
+        self.assertFalse(report["game_input_allowed"])
+        bad = copy.deepcopy(observed)
+        bad["current_activity"]["capture_ref"] = "capture:stale"
+        with self.assertRaisesRegex(NeedSignalError, "CURRENT_ACTIVITY"):
+            eval_need(bad)
 
     def test_host_six_need_opt_in_sidecar_preserves_original_callers(self):
         from betterinstincts.host_stack import evaluate_turn

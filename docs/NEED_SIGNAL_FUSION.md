@@ -1,7 +1,7 @@
 # Need Signal Fusion — Sixth Gear (2026-11-14)
 
-**Owner:** `betterinstincts/need_signal_fusion.py` and `contracts/need-signal-fusion.v1.json`.  
-**Public entrypoint:** `evaluate_need_signals(observation, *, now=None, prior_health=None)`.  
+**Owner:** `betterinstincts/need_signal_fusion.py` and `contracts/need-signal-fusion.v1.json`.
+**Public entrypoint:** `evaluate_need_signals(observation, *, now=None, prior_health=None)`.
 **Proof ceiling:** OFFLINE POLICY. The repository has not installed an actual game-native live reader, calibrated computer-vision detector, sensor processes or asynchronous recovery service on the operator's Windows Sims host.
 
 ## Original observed problem
@@ -88,3 +88,7 @@ P95 implements source/provenance/health/moodlet state; P82 falsifies invalid pro
 **P08 actual acceptance on a user-consented disposable Sims host:** identify installed game build, Discover University pack and exact native motive/buff API using read-only EA tuning inspection. Confirm two successive *unpaused* native values versus HUD arrows on the Servo; compare measured rate, source conflicts and recoveries; verify moodlet identities, user activity and no game/OS/save effects. Only then consider an actual native observer implementation and calibrated CV sensor. Respect independent BI-002 hunger gate and unrelated PR #159 spatial writer.
 
 Background public reading: [SimsCommunity Servo mechanics](https://simscommunity.info/2019/11/15/the-sims-4-discover-university-all-about-servo/) and [Oops19 read-only TuningInspector](https://github.com/Oops19/TS4-TuningInspector).
+
+## P82 second-pass precision
+
+When both sensors are healthy but their observations differ by more than the alignment window, the result is `DUAL_SOURCE_ASYNCHRONOUS`, not corroborated. A separately verified `current_activity: {kind: DANCING, source_ref, capture_ref, verified: true}` can produce `DANCING_IS_NOT_REPAIRING_RAPID_SOCIAL_DECAY` when the Social triple-down concern is observed. This is a **diagnostic**, not permission to cancel a Sim's dancing, unpause a paused game, or fabricate a better activity without native affordance evidence.
