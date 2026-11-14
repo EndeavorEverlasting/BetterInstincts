@@ -146,6 +146,9 @@ class PersistentListenerTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
+        self.root_override = patch.object(host_listener, "ROOT", Path(self.tmp.name))
+        self.root_override.start()
+        self.addCleanup(self.root_override.stop)
         self.override = patch.object(host_listener, "OUTPUT", Path(self.tmp.name))
         self.override.start()
         self.addCleanup(self.override.stop)
@@ -193,6 +196,9 @@ class AgentControlRunTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
+        self.root_override = patch.object(host_listener, "ROOT", Path(self.tmp.name))
+        self.root_override.start()
+        self.addCleanup(self.root_override.stop)
         self.listener_patch = patch.object(host_listener, "OUTPUT", Path(self.tmp.name) / "events")
         self.listener_patch.start()
         self.addCleanup(self.listener_patch.stop)
