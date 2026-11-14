@@ -1,0 +1,26 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/opportunistic_actions.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure source-qualified homework/chat opportunity planner that cannot emit native game or OS input effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_stack.py",
+      "route": "POLICY_ONLY",
+      "reason": "Attach validated school homework and social whim advice to existing evaluator without game effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_listener.py",
+      "route": "POLICY_ONLY",
+      "reason": "Validate existing active listener input and pass bounded source observations; no desktop execution.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

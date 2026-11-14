@@ -1,3 +1,7 @@
+## 2026-11-13 — Class-transition homework and target-specific chat whims
+
+The host policy now recognizes an independently observed homework opportunity during the late-school/class transition rather than accepting a universal premises denial, but it never cancels class or the player's queued intent. Named chat whims now produce exact-target routes: verified on-lot Chat, R Relationships → exact card → Chat, or source-safe invite review. Source-integrated only; actual EA/native menu and effect success require exact-patch local P08 proof plus reobservation, then the existing native-gameplay path. No competing UI clicker, hidden daemon or inferred homework completion. BI-002 hunger certification remains ACTIVE. See docs/OPPORTUNISTIC_ACTIONS.md.
+
 ## 2026-11-13 — NanoCan closer safety guard
 
 Native cleanup queue redirection must preserve manual/unknown-target actions, current household queue snapshot, exact queued phase/revision/build/source/destination and same-object spatial evidence; legacy sink hints alone do not qualify. A future EA adapter under #171 must recheck these immediately before one atomic native replacement, retain the original on failed admission, and prove no player-interference using a disposable Sims session. Never treat offline policy as installed gameplay or make this a blocker for BI-002.

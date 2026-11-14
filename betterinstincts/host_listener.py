@@ -429,6 +429,13 @@ def _load_observation(raw: Mapping) -> dict:
     sim_library = raw.get("sim_library") or ()
     if not isinstance(sim_library, (list, tuple)):
         raise HostListenerError("OBSERVATION_SIM_LIBRARY_INVALID")
+    school_window = raw.get("school_homework_window")
+    if school_window is not None and not isinstance(school_window, Mapping):
+        raise HostListenerError("OBSERVATION_HOMEWORK_WINDOW_INVALID")
+    social_queue = raw.get("queued_social_targets") or ()
+    if (not isinstance(social_queue, (list, tuple)) or len(social_queue) > 16
+            or any(not isinstance(item, Mapping) for item in social_queue)):
+        raise HostListenerError("OBSERVATION_SOCIAL_QUEUE_INVALID")
     life_stage = raw.get("life_stage")
     if life_stage is not None and not isinstance(life_stage, str):
         raise HostListenerError("OBSERVATION_LIFE_STAGE_INVALID")
@@ -588,6 +595,7 @@ def _load_observation(raw: Mapping) -> dict:
         "homework_pending": bool(raw.get("homework_pending", False)),
         "inventory_has_homework": inv if isinstance(inv, bool) else None,
         "homework_on_lot": on_lot_hw if isinstance(on_lot_hw, bool) else None,
+        "school_homework_window": dict(school_window) if school_window is not None else None,
         "multitasking": multitasking,
         "sim_room_id": raw.get("sim_room_id"),
         "sim_seated": sim_seated,
@@ -652,6 +660,7 @@ def _load_observation(raw: Mapping) -> dict:
             str(raw["social_invitee_name"]) if raw.get("social_invitee_name") else None
         ),
         "sim_library": tuple(sim_library),
+        "queued_social_targets": tuple(dict(item) for item in social_queue),
         "social_lookup_ran": bool(raw.get("social_lookup_ran", False)),
         "invitee_occult_status": (
             str(raw["invitee_occult_status"]) if raw.get("invitee_occult_status") else None
@@ -1009,6 +1018,7 @@ def tick(
             homework_pending=obs["homework_pending"],
             inventory_has_homework=obs["inventory_has_homework"],
             homework_on_lot=obs["homework_on_lot"],
+            school_homework_window=obs["school_homework_window"],
             sim_at_school=obs["sim_at_school"],
             camera_lot_kind=obs["camera_lot_kind"],
             social_prompt_active=obs["social_prompt_active"],
@@ -1016,6 +1026,7 @@ def tick(
             social_prompt_text=obs["social_prompt_text"],
             social_invitee_name=obs["social_invitee_name"],
             sim_library=obs["sim_library"],
+            queued_social_targets=obs["queued_social_targets"],
             social_lookup_ran=obs["social_lookup_ran"],
             invitee_occult_status=obs["invitee_occult_status"],
             life_stage=obs["life_stage"],
