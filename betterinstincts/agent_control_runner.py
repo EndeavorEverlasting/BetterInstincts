@@ -80,6 +80,31 @@ class AgentControlRunner:
         self.last_queue_state = None
         return receipt
 
+    def observe_while_paused(
+        self, *, work_id: str,
+        validate: Callable[[], Awaitable[bool]],
+        observe: Callable[[], Awaitable[object]],
+    ) -> dict:
+        """Use the EXISTING approved passive listener lane during a player pause.
+
+        The caller must supply a reviewed no-focus/no-input observer; this does
+        not enable new monitoring or install a background activity listener.
+        The waiting screen-effect work_id is retained and distinct from this
+        observation's work_id.
+        """
+        if self.current_work_id is None or self.last_queue_state != "WAITING_FOR_USER":
+            raise AgentControlRunnerError("PLAYER_PAUSE_REQUIRED_FOR_OBSERVATION")
+        if status(self.session_id)["state"] != "ACTIVE":
+            raise AgentControlRunnerError("ACTIVE_LISTENER_REQUIRED")
+        self.queue.enqueue_observation(work_id, validate, observe)
+        return {
+            "state": "LISTENER_OBSERVATION_QUEUED",
+            "work_id": work_id,
+            "pending_effect_work_id": self.current_work_id,
+            "execute_allowed": False,
+            "proof_ceiling": "PASSIVE_OBSERVATION_PENDING_NOT_GAME_EFFECT",
+        }
+
     async def pulse(self) -> dict:
         """One opted-in activity attempt; waiting never closes computer use."""
         if self.current_work_id is None:
@@ -88,8 +113,24 @@ class AgentControlRunner:
             raise AgentControlRunnerError("LISTENER_INACTIVE")
         result = await self.queue.run_once()
         queue_state = result["state"]
+        # A listener's COMPLETED or failure is NOT a screen-action result.
+        # Otherwise a passive read while the player is typing can falsely
+        # complete the pending gameplay action and accept an outcome receipt.
+        if result.get("effect_class") == "PASSIVE_OBSERVATION":
+            return {
+                **result,
+                "state": "LISTENER_OBSERVATION_" + queue_state,
+                "pending_effect_work_id": self.current_work_id,
+                "session_id": self.session_id,
+                "behavior_paused_for_player": self.last_queue_state == "WAITING_FOR_USER",
+                "listener_remains_active": True,
+                "needs_outcome_evidence": False,
+                "proof_ceiling": "PASSIVE_LISTENER_EVENT_NOT_GAME_EFFECT",
+            }
         if queue_state not in QUEUE_STATES:
             raise AgentControlRunnerError("UNEXPECTED_QUEUE_STATE")
+        if queue_state == "COMPLETED" and self.current_work_id not in self.queue.completed:
+            raise AgentControlRunnerError("EFFECT_COMPLETION_IDENTITY_UNPROVEN")
         if queue_state != self.last_queue_state:
             self._write("QUEUE_STATUS", self.current_work_id,
                         queue_state=queue_state)
@@ -113,7 +154,7 @@ class AgentControlRunner:
         result = {}
         for _ in range(max_checks):
             result = await self.pulse()
-            if result["state"] not in {"WAITING_FOR_USER", "WAITING_FOR_AGENT"}:
+            if result["state"] not in {"WAITING_FOR_USER", "WAITING_FOR_AGENT"} and not result["state"].startswith("LISTENER_OBSERVATION_"):
                 return result
             await self.queue.sleep(self.queue.poll_seconds)
         return {
