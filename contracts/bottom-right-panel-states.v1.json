@@ -1,0 +1,109 @@
+{
+  "schema": "betterinstincts.bottom-right-panel-states/v1",
+  "owner": "betterinstincts/hud_panel_state.py",
+  "purpose": "Host-side, deterministic semantic state observation and requested posture for the Sims 4 bottom-right HUD, avoiding repeated model screenshot interpretation.",
+  "states": {
+    "COLLAPSED": "This module is not visibly open; independent other-panel state unknown.",
+    "CONDENSED": "Open from minimum through any intermediate height below maximum.",
+    "EXPANDED": "Open at measured maximum or within 3 percent of maximum.",
+    "UNKNOWN": "Image, cue identity, geometry, mode, patch or other required proof is unverified."
+  },
+  "dimensions": {
+    "panel_id": "Canonical semantic module name (owned by ui_microsystems), independent of visibility.",
+    "visibility": "COLLAPSED | CONDENSED | EXPANDED | UNKNOWN",
+    "expansion": "Continuous normalized [0,1] within calibrated min/max; cannot infer item scroll.",
+    "inventory_scroll": "UNKNOWN until an independent scrollbar/content sensor provides it.",
+    "selected_sim": "UNKNOWN from these HUD pixel anchors; active Sim requires native/host identity.",
+    "ownership": "HOST | OPERATOR | UNKNOWN; only explicitly host-owned panels can be proposed for mutation.",
+    "current_visible_panel_id": "A separate verified focus signal. Do not assume that no inventory panel means no other panel."
+  },
+  "inventory_sensor": {
+    "kind": "HOST_ONLY_PIXEL_BANDS_WITH_TWO_INDEPENDENT_CUES",
+    "game_build": "1.121.361.1020",
+    "client_dimensions": [
+      1919,
+      1079
+    ],
+    "source": "Eight user-supplied paused Sims screenshots, 2026-11-14. Images used for local evaluation, not stored in repository.",
+    "title_band": "Blue Filter Items... text 1520<=x<1660, 180<=y<880; blue row count >=40; header y = best_y-30",
+    "sell_band": "Blue Drag here to sell text 1640<=x<1800, 965<=y<1020; blue row count >=50",
+    "calibrated_min_header_y": 727,
+    "calibrated_max_header_y": 217,
+    "disagree": "UNKNOWN",
+    "unsupported_patch_or_size": "UNKNOWN",
+    "note": "Not an invariant of other DLC themes, UI scales, resolution profiles or non-inventory panels."
+  },
+  "module_namespace_source": "contracts/ui-microsystems.v1.json, plus existing ui_chrome bottom-right panel hotkeys",
+  "intent_policy": {
+    "QUICK_STATUS": "CONDENSED",
+    "SINGLE_ITEM": "CONDENSED",
+    "LONG_LIST": "EXPANDED",
+    "INVENTORY_AUDIT": "EXPANDED",
+    "SCROLL_SEARCH": "EXPANDED",
+    "FINISHED": "COLLAPSED only if host-owned"
+  },
+  "mandatory_gates": [
+    "Operator idle, panel host-owned, fresh game scene, fresh selected-Sim identity",
+    "No current different panel observed; preserve operator-selected UI",
+    "Use existing ui_chrome hotkey catalog for open/close only after separate effect admission",
+    "Use calibrated fixed_ui_click_map/screen_atlas grip for resize only; unknown hitbox blocks",
+    "Use existing CooperativeScreenQueue and player-presence lease for any future effect",
+    "Reobserve panel after any admitted one-effect request before another",
+    "Never conflate panel resize with internal scrollbar traversal",
+    "Preserve paused sleep interaction, queued intent, saves, OS peripherals"
+  ],
+  "execution": {
+    "default_allowed": false,
+    "host_code_never_sends_input": true,
+    "auto_capture": false,
+    "auto_poll": false,
+    "autonomy_runtime": false
+  },
+  "acceptance": {
+    "operator_screenshots": [
+      {
+        "frame": 1,
+        "expected": "COLLAPSED"
+      },
+      {
+        "frame": 2,
+        "expected": "CONDENSED"
+      },
+      {
+        "frame": 3,
+        "expected": "EXPANDED"
+      },
+      {
+        "frame": 4,
+        "expected": "CONDENSED"
+      },
+      {
+        "frame": 5,
+        "expected": "CONDENSED"
+      },
+      {
+        "frame": 6,
+        "expected": "CONDENSED"
+      },
+      {
+        "frame": 7,
+        "expected": "CONDENSED"
+      },
+      {
+        "frame": 8,
+        "expected": "CONDENSED"
+      }
+    ],
+    "probe_results": "Eight out of eight supplied frames matched on host-side offline detector. Not a live game effect.",
+    "negative_cases": [
+      "unsupported resolution",
+      "wrong patch/mode",
+      "one missing cue",
+      "different panel focused",
+      "player input or operator-owned panel",
+      "unknown selected Sim or stale scene"
+    ]
+  },
+  "native_successor_issue": 171,
+  "proof_ceiling": "OFFLINE_IMAGE_CLASSIFICATION_AND_SOURCE_POLICY_ONLY_NOT_LIVE_UI_DISPATCH"
+}

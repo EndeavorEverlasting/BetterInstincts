@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-BOTTOM-RIGHT-PANEL-STATE-SIXTH-GEAR-20261114",
+  "purpose": "Declare a bounded host-lab HUD pixel observation and advisory posture policy; no Sims gameplay execution, Windows input, background scanning or independent automation runtime.",
+  "files": [
+    {
+      "path": "betterinstincts/hud_panel_state.py",
+      "route": "HOST_LAB_ONLY",
+      "reason": "Read-only, user-supplied image pixel classifier and semantic non-executable panel posture requests; no installed EA effect or desktop input.",
+      "game_effect_claim": "NONE",
+      "autonomy_runtime": false
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_SCREENSHOT_PROBE_AND_TESTS_NOT_NATIVE_GAMEPLAY",
+  "next_gate": "Use exact-patch calibrated existing screen_atlas and CooperativeScreenQueue for deliberate one-effect controlled trials; leave installed native observer dispatch and garden BI-002 independent."
+}
