@@ -164,6 +164,12 @@ def _validate(raw: Mapping, mechanics: Mapping) -> tuple[list[dict], list[dict],
                                                  or not 0 <= skill["level"] <= 10))
                     or (not skill["verified"] and skill["level"] is not None)):
                 raise HouseholdEconomyError("UNVERIFIED_MEMBER_SKILLS_INVALID")
+    if review is not None:
+        reviewed = next(row for row in members
+                        if row["member_key"] == review["member_key"])
+        if (reviewed.get("activity") != "AWAKE" or reviewed["player_reserved"]
+                or not reviewed["queue_verified"]):
+            raise HouseholdEconomyError("ATTENTION_REVIEW_ACTOR_NOT_VERIFIED_AVAILABLE")
     tasks = raw["tasks"]
     for task in tasks:
         if (not isinstance(task, Mapping) or set(task) != {
