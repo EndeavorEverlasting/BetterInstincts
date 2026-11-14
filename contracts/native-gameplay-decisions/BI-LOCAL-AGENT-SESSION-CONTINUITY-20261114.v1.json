@@ -1,0 +1,16 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-LOCAL-AGENT-SESSION-CONTINUITY-20261114",
+  "purpose": "Route BetterInstincts local Codex session-liveness classifier under native-first policy while preserving human control and making no in-game effect claim.",
+  "files": [
+    {
+      "path": "betterinstincts/agent_session_continuity.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure deterministic local-session triage classifies pause, player presence, protected save, host evidence and original parent acceptance without dispatching game input, editing saves or implementing an EA native runtime.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_HOST_SESSION_TRIAGE_NOT_NATIVE_GAMEPLAY_CERTIFICATION"
+}
