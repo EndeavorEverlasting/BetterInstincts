@@ -34,16 +34,22 @@
     "plans/active/BI-002.md"
   ],
   "invariants_checked": [
-    "PLAYER_PRIORITY_ALL_APPS",
-    "IDLE_TWO_FRESH_PROBES",
-    "NO_BLIND_REPLAY",
-    "EXPLICIT_ACTIVE_LISTENER",
-    "NO_BACKGROUND_DAEMON",
-    "NO_OS_PREFERENCE_MUTATION",
-    "NO_USER_SAVE_EDIT",
-    "PER_EFFECT_CAPTURE",
-    "SOURCE_OWNER_CODIFICATION",
-    "NO_FAKE_MERGE_OR_NATIVE_GAME_PROOF"
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-031",
+    "BI-ONT-032",
+    "BI-ONT-033",
+    "BI-ONT-034",
+    "BI-ONT-035"
   ],
   "scope": "Repository-level opt-in host-lab + source-only policy. Existing gameplay/native preference and player sovereignty remain unchanged.",
   "strategic_discrimination": {
@@ -56,7 +62,7 @@
     "selected": "Reuse cooperative idle-interoperability queue and explicit active host listener; journal each atomic interaction in a bounded, compact, semantic local event ledger with codification obligations.",
     "bounded_investigation": "Record PREPARE before every effect; pause on user activity without clearing work; emit a queue receipt and distinct post-action outcome; carry an unreviewed-to-code receipt and verify source/CI/main independently."
   },
-  "game_build_scope": "LOCAL_GAME_HOST_EXPLICITLY_OPTED_IN_REQUIRED_FOR_ACTUAL_EFFECTS",
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
   "evidence_ceiling": "SOURCE_JOURNAL_AND_OFFLINE_TESTS_NOT_INSTALLED_LOCAL_GAME_PROOF",
   "player_save_control_impact": "No implicit listener activation or computer use. An explicitly activated trusted listener can continue passive reads when human-active; screen effects pause and recover only after trusted two-probe idle plus fresh scene/save/target/queue checks. Never touches user saves or OS services; no unapproved global recorder.",
   "negative_tests": [
@@ -74,5 +80,25 @@
     "Code receipts require independently verified commit/merge/EA gameplay before an action can be certified as codified."
   ],
   "owner": "betterinstincts/agent_control_runner.py",
-  "successor_issue": 171
+  "successor_issue": 171,
+  "files_expected": [
+    "betterinstincts/agent_context.py",
+    "betterinstincts/host_stack.py",
+    "betterinstincts/control_discovery.py",
+    "betterinstincts/host_listener.py",
+    "betterinstincts/agent_control_runner.py",
+    "scripts/control_discovery_cli.py",
+    "tests/test_agent_context.py",
+    "tests/test_control_discovery.py",
+    "contracts/agent-context.v1.json",
+    "contracts/control-discovery.v1.json",
+    "contracts/native-gameplay-decisions/BI-SIXTH-GEAR-AGENT-CONTEXT-CONTINUITY-20261114.v1.json",
+    "docs/AGENT_CONTEXT.md",
+    "docs/CONTROL_DISCOVERY.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "docs/PROMPT_INVOCATIONS.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Bounded repository-owned policy and explicit opted-in host-lab adapter. Actual game effects still require player-first admission, exact patch, listener and independent runtime proof."
 }
