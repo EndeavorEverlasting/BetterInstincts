@@ -15,8 +15,7 @@ Native gameplay: EA tuning/scripts; GUI lab-only. See detailed rules.
 ## Invariants
 
 - **Player first:** explicit user control wins; no uncontrolled loops. Preserve any chosen interaction shape.
-- **Save-safe:** Unknown/user saves protected. Never edit/delete/migrate/overwrite saves or game files; never delete Slot_00000007.
-- **Save age correction (P00):** Of *already attested and eligible* `LAB_DISPOSABLE` candidates, prefer the **oldest** for lab trials, NOT the newest. Recent saves receive greater preservation priority. Age/timestamps alone never classify a save as disposable, nor permit selection, auto-Resume, writes or overwrites. `contracts/save-policy.v1.json` and `docs/SAVE_CANDIDATE_PRIORITY.md` own the P01 read-only ranking harness.
+- **Save-safe:** User/unknown saves protected; no edit/delete/migrate/overwrite/Resume (Slot_00000007). Oldest eligible lab first.
 - **Build structure / FLOOR_2:** before any Build/Buy purchase or mutation, census all floors/rooms, back up to My Library and verify model readback. Retain `admit_live_structure_effect`; unknown coverage denies. Details: docs/BUILD_LIBRARY_CHECKPOINT.md.
 - **Storage:** no arbitrary profile writes, auto-discovery, daemons, telemetry or unbounded logs.
 - **Performance:** bounded work; no per-frame global scans or unmeasured hooks.
