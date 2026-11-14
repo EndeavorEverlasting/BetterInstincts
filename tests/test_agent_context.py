@@ -66,6 +66,7 @@ class AgentContextTests(unittest.TestCase):
         self.assertFalse(packet["retrieval"]["invoked"])
         self.assertIn("player", packet["handoff"]["corrections"][0].lower())
         self.assertLessEqual(packet["chars_used"], packet["char_budget"])
+        self.assertEqual(packet["chars_used"], len(json.dumps(packet, sort_keys=True, separators=(",", ":"), ensure_ascii=True)))
 
     def test_deterministic_order_and_duplicate_evidence_dedup(self):
         one = record()
@@ -78,7 +79,8 @@ class AgentContextTests(unittest.TestCase):
 
     def test_stale_candidate_and_unrelated_do_not_promote(self):
         packet = build([
-            record("fact:stale", observed_at_unix=NOW - 181),
+            record("fact:stale", observed_at_unix=NOW - 181,
+                   evidence_state="LOCAL_OBSERVED"),
             record("fact:idea", evidence_state="CANDIDATE"),
             record("fact:career", kind="MECHANIC", query_key="career"),
         ])
@@ -87,6 +89,14 @@ class AgentContextTests(unittest.TestCase):
         self.assertEqual(packet["excluded"]["stale"], 1)
         self.assertEqual(packet["excluded"]["candidate"], 1)
         self.assertEqual(packet["excluded"]["irrelevant"], 1)
+
+    def test_pinned_old_static_sources_survive_chats_but_old_revision_does_not(self):
+        old = record(observed_at_unix=NOW - 100000)
+        self.assertEqual(build([old])["status"], "EVIDENCE_SELECTED")
+        changed = dict(old, source_revision="commit:stale")
+        packet = build([changed])
+        self.assertEqual(packet["status"], "RETRIEVAL_REQUIRED")
+        self.assertEqual(packet["excluded"]["stale"], 1)
 
     def test_conflicting_sources_fail_closed(self):
         packet = build([
@@ -167,6 +177,26 @@ class AgentContextTests(unittest.TestCase):
                                   ["edge:warranty-owner"])["layer"], "SUPPORTED")
         self.assertFalse(diagnose(["edge:warranty-owner"],
                                   ["edge:warranty-owner"])["execute_allowed"])
+
+    def test_host_sidecar_does_not_change_gameplay_decision(self):
+        from betterinstincts.host_stack import evaluate_turn
+        needs = dict(hunger=.85, bladder=.85, energy=.85,
+                     hygiene=.85, fun=.85, social=.85)
+        base = evaluate_turn(needs, capture_ref=CAPTURE)
+        attached = evaluate_turn(
+            needs, capture_ref=CAPTURE,
+            agent_context_request={
+                "handoff": handoff(), "records": [record()],
+                "intent": "MECHANIC", "query_key": "fertilizer", "now": NOW,
+            })
+        self.assertEqual(attached["next_gate"], base["next_gate"])
+        self.assertEqual(attached["fallback"], base["fallback"])
+        self.assertEqual(attached["agent_context"]["status"], "EVIDENCE_SELECTED")
+        self.assertFalse(attached["agent_context"]["execute_allowed"])
+        denied = evaluate_turn(needs, capture_ref=CAPTURE,
+                               agent_context_request={"invalid": True})
+        self.assertEqual(denied["next_gate"], base["next_gate"])
+        self.assertEqual(denied["agent_context"]["status"], "CONTEXT_REOBSERVE_REQUIRED")
 
     def test_insufficient_budget_never_silently_drops_parent(self):
         bloated = handoff(parent_objective="A" * 500,
