@@ -136,6 +136,63 @@ class SemanticDiscoveryTests(unittest.TestCase):
                   test_ref="tests/test_gardening.py",
                   commit_ref="commit:one", review_ref="review:one")
 
+    def test_passive_semantic_discovery_captured_for_codification(self):
+        state = prepared(base())
+        state = event(
+            state, "DISCOVERY", discovery_kind="OBJECT_AFFORDANCE",
+            fact_ref="fact:fertilizer-menu", source_ref="sensor:calibrated",
+            evidence_ref="capture:menu-observed",
+        )
+        self.assertEqual(state["steps"]["work:plant2"]["discoveries"][0]["fact_ref"],
+                         "fact:fertilizer-menu")
+        work = codification_work_items(state)["items"][0]
+        self.assertEqual(len(work["discoveries"]), 1)
+        self.assertEqual(work["discoveries"][0]["source_ref"], "sensor:calibrated")
+        self.assertEqual(compact_handoff(state)["codification_work"]["items"][0]["discoveries"],
+                         work["discoveries"])
+        with self.assertRaisesRegex(ControlDiscoveryError, "DUPLICATE_DISCOVERY"):
+            event(
+                state, "DISCOVERY", discovery_kind="OBJECT_AFFORDANCE",
+                fact_ref="fact:fertilizer-menu", source_ref="sensor:calibrated",
+                evidence_ref="capture:menu-observed",
+            )
+        with self.assertRaisesRegex(ControlDiscoveryError, "DISCOVERY_FIELDS_INVALID"):
+            event(
+                state, "DISCOVERY", discovery_kind="ACTION_MENU",
+                fact_ref="fact:menu", source_ref="sensor:calibrated",
+                evidence_ref="capture:menu", raw_keystrokes="PRIVATE",
+            )
+
+    def test_discoveries_have_finite_budget_and_cannot_arrive_after_claimed_code(self):
+        state = prepared(base())
+        for i in range(6):
+            state = event(
+                state, "DISCOVERY", discovery_kind="ACTION_MENU",
+                fact_ref="fact:menu%d" % i,
+                source_ref="sensor:calibrated",
+                evidence_ref="capture:menu%d" % i,
+            )
+        with self.assertRaisesRegex(ControlDiscoveryError, "DISCOVERY_STEP_BUDGET"):
+            event(
+                state, "DISCOVERY", discovery_kind="ACTION_MENU",
+                fact_ref="fact:extra", source_ref="sensor:calibrated",
+                evidence_ref="capture:extra",
+            )
+        state = event(state, "QUEUE_STATUS", queue_state="COMPLETED")
+        state = event(state, "OUTCOME", outcome="HELPFUL",
+                      after_capture_ref="capture:after",
+                      outcome_ref="outcome:verified", player_interrupted=False)
+        state = event(state, "CODIFICATION_RECEIPT",
+                      module_ref="betterinstincts/gardening_service.py",
+                      test_ref="tests/test_gardening.py",
+                      commit_ref="commit:source", review_ref="review:pending")
+        with self.assertRaisesRegex(ControlDiscoveryError, "DISCOVERY_AFTER_CODIFICATION"):
+            event(
+                state, "DISCOVERY", discovery_kind="ACTION_MENU",
+                fact_ref="fact:late", source_ref="sensor:calibrated",
+                evidence_ref="capture:late",
+            )
+
     def test_every_attempt_has_paged_source_and_regression_work(self):
         state = base()
         for i in range(9):
@@ -329,6 +386,20 @@ class AgentControlRunTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(resumed["state"], "COMPLETED")
         self.assertEqual(self.executed, ["real-effect"])
         self.assertEqual(host_listener.status("bi-control-01")["state"], "ACTIVE")
+
+    async def test_collect_semantic_discovery_while_user_operates(self):
+        self.prepare()
+        paused = await self.runner.pulse()
+        self.assertEqual(paused["state"], "WAITING_FOR_USER")
+        receipt = self.runner.record_semantic_discovery(
+            work_id="work:plant2", discovery_kind="OBJECT_AFFORDANCE",
+            fact_ref="fact:fertilizer", source_ref="sensor:reviewed",
+            evidence_ref="capture:menu",
+        )
+        item = receipt["handoff"]["codification_work"]["items"][0]
+        self.assertEqual(item["discoveries"][0]["fact_ref"], "fact:fertilizer")
+        self.assertEqual(self.executed, [])
+        self.assertEqual(self.runner.last_queue_state, "WAITING_FOR_USER")
 
     async def test_passive_failure_cannot_be_misattributed_to_gameplay_effect(self):
         self.prepare()
