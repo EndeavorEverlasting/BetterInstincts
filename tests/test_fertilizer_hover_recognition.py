@@ -79,6 +79,12 @@ class SuperFertilizerHoverRecognitionTests(unittest.TestCase):
             with self.subTest(delta=delta), self.assertRaises(FertilizerHoverError):
                 self.recognize(self.sample(**delta))
 
+    def test_unhashable_external_hover_source_fails_as_typed_error(self):
+        for source in ([], {}, ["USER_SCREENSHOT"], {"value": "HOST_VERIFIED_HOVER"}):
+            with self.subTest(source=str(source)), self.assertRaisesRegex(
+                    FertilizerHoverError, "HOVER_SOURCE_INVALID"):
+                self.recognize(self.sample(source=source))
+
     def test_invalid_text_never_becomes_an_identified_object(self):
         for delta in (
             {"title": None},
