@@ -1,6 +1,13 @@
 ## 2026-11-14 — MoonWake Sixth Gear: garden planning and play
 
 P141 compared sequential screen automation, a new scheduler and the existing gardening/continuity path. P95 chose the existing host evaluator with a capture-bound timing window. P82 exercised the ground, pocket and verified plant sequence with deadline and actor mismatch falsifiers. P08 source evidence is the prior exact-patch live native workflow in #251; it does not certify the new host policy. P07/P124 integrated the opt-in input in the existing gardening entry point and retained legacy caller behavior. The local walker and autonomous installed workflow were not verified.
+## 2026-11-14 — PS-0241 universal activities (MoonWake Sixth Gear scoped)
+
+Recovered the exact PS-0241 A11 source and current MoonWake composition P141 → P95 → P82 → P08 → P07 → P124. Strategic alternatives contrasted a monolithic scheduler, hardcoded per-domain scripts, a GP-only scheduler, and additive evidence-bound DAG composition; selected the additive owner-preserving seam. P95/P82 source prototype + focused Python adversarial tests; cross-observation completion was repaired to require current revalidation. P08 cannot be completed from the connected GitHub provider; local Sixth Gear walker/independent agent dispatch are not claimed. P07/P124 source branch and PR gates remain separate from CI, merge and native Sims runtime proof. Existing ecology Planning/Play PR #252 and current BI-002 live gate remain independent. Contract and proof: docs/ACTIVITY_CHAIN.md.
+
+## 2026-11-14 — PS-0241 /sixth-gear ecology native runtime foundation
+
+Current MoonWake `AGENTS.md`, `skills/sixth-gear/SKILL.md`, `harness/contracts/prompt-groups.v1.json` and full catalog resolve the exact chain **P141 → P95 → P82 → P08 → P07 → P124**. The scoped parent is native game self-activation, durable per-Sim ecology plans and interruption-safe Play revalidation with work/needs budgets and optional measured GP. This GitHub-connected source execution recovered live repo, issue #171 and PR #252 and added policy, test and native packaging gates. It **did not** run the local MoonWake `prompt_group_walk.py`, spawn local agents, observe Sims events, install a playable mod or certify an EA hook. P08 remains local version-pinned and unproven; P07/P124 source changes must not be called native activation. Current owned mechanics and proof limits: `docs/ECOLOGY_INTENT.md`.
 
 ## 2026-11-14 — MoonWake /sixth-gear: universal scrollable purchase dialogs across Sims portraits
 
@@ -593,3 +600,12 @@ Moonwake /sixth-gear scoped to the observed household play, in canonical order P
 
 ## 2026-11-14 — MoonWake /sixth-gear: deterministic household portrait attention
 Resolved canonical current six-stage sequence **P141 → P95 → P82 → P08 → P07 → P124** via MoonWake `AGENTS.md`, prompt groups contract and skill. P141 selected direct extension of existing PR #229 household allocator over alternative host clicker/ML-first/controller rewrite; P95 implements source-bound next-portrait attention independent of chores; P82 tests critical needs, roster order and proof denial; P08 real Windows patch/EA integration unobserved; P07/P124 source/tests/contracts/registry and parent continuity integration. GitHub-side work is not a claim of local MoonWake walker execution or parallel agents. See `docs/HOUSEHOLD_ECONOMY.md` and native successor issue #171.
+
+
+## 2026-11-14 — /sixth-gear PS-0245: mathematical planning
+Resolved current canonical MoonWake group to **P141 → P95 → P82 → P08 → P07 → P124**. Scope: PS-0245 Bellman finite-horizon semi-Markov planning, discrete feasibility versus Lagrange/KKT continuous relaxation, uncertainty, and PS-0241 dependency chains. P141 rejects monolithic controller, blanket Gaussian-process dependency and independent desktop clickers; P95/P82 design and test a bounded read-only overlay; P08 native runtime proof **BLOCKED_LOCAL_GAME_ACCESS**; P07/P124 commit bounded implementation, CI and correct owner integration only. The GitHub connector did not run MoonWake's local `prompt_group_walk.py`. PR #255, `docs/DECISION_HORIZON.md` and `contracts/decision-horizon.v1.json` are the evidence pointers. No game/native activation, unsafe queue input or automatic merge is asserted by this note.
+
+
+## 2026-11-14 — /the-closers on PS-0245
+
+Current MoonWake manifest and full catalog resolve **P83 → P03 → P141 → P124 → P04**. The prompt sequence is not a novel P-number. P83 verified merged #255 plus offline CI; P03 repaired mid-action need-floor and zero-utility/search-cap safety semantics in `decision_horizon.py`; P141 selected existing-owner safety correction over a second planner, blanket GP or source-unverified EA integration; P124 kept source ownership cohesive; P04 placed the next actual native game/effect proof with the local agent under issue #171, recording its runtime partition and serial collision boundary. Local MoonWake `prompt_group_walk.py` has **not been executed** through the remote provider; no physical agent launch or game observed. Read `docs/handoff/BI-PS0245-CLOSERS-LOCAL-NATIVE-GATE-20261114.md` and current GitHub PR/CI state for next exact action.

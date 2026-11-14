@@ -1,0 +1,23 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-PS-0241-ECOLOGY-INTENT-20261114",
+  "purpose": "Add bounded source-level per-Sim ecology intent continuity and evaluated timing forecasts, preserving the existing native-first autonomy and live-cert gates.",
+  "files": [
+    {
+      "path": "betterinstincts/ecology_intent.py",
+      "route": "POLICY_ONLY",
+      "reason": "Portable intent reducer independently plans and reconciles per-Sim garden steps but never hooks the Sims runtime, queues actions, or modifies saves.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/ecology_forecast.py",
+      "route": "POLICY_ONLY",
+      "reason": "Small bounded standard-library Gaussian-process duration comparison is advisory and cannot control the game without verified native integration.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_POLICY_ONLY_NO_INSTALLABLE_EA_SCRIPT_AND_NO_LIVE_GAMEPLAY"
+}
