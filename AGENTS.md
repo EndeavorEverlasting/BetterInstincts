@@ -15,7 +15,7 @@ Native gameplay: EA tuning/scripts; GUI lab-only. See detailed rules.
 ## Invariants
 
 - **Player first:** explicit user control wins; no uncontrolled loops. Preserve any chosen interaction shape.
-- **Save-safe:** User/unknown saves protected; no edit/delete/migrate/overwrite/Resume (Slot_00000007). Oldest eligible lab first.
+- **Save-safe:** Unknown/user saves protected; no edit/delete/migrate/overwrite/Resume (Slot_00000007). Oldest eligible lab first.
 - **Build structure / FLOOR_2:** before any Build/Buy purchase or mutation, census all floors/rooms, back up to My Library and verify model readback. Retain `admit_live_structure_effect`; unknown coverage denies. Details: docs/BUILD_LIBRARY_CHECKPOINT.md.
 - **Storage:** no arbitrary profile writes, auto-discovery, daemons, telemetry or unbounded logs.
 - **Performance:** bounded work; no per-frame global scans or unmeasured hooks.
