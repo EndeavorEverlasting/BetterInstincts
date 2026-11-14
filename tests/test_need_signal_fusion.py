@@ -54,16 +54,23 @@ def hud(*, stamp=NOW, sample="hud:1", **changes):
     return row
 
 
+def mood(**changes):
+    row = {
+        "source_ref": "operator:emotion-note", "capture_ref": "capture:host",
+        "sim_ref": SIM, "game_build": BUILD, "observed_at_unix": NOW,
+        "verified": True, "emotion": "FINE", "moodlets": [],
+    }
+    row.update(changes)
+    return row
+
+
 def snapshot(feeds=None, *, profile="servo", paused=True, **changes):
     row = {
         "schema": "betterinstincts.need-signal-fusion/v1",
         "profile": profile, "sim_ref": SIM, "game_build": BUILD,
         "capture_ref": "capture:host", "game_paused": paused,
         "player_active": False, "feeds": [native(), hud()] if feeds is None else feeds,
-        "moodlet_observation": {
-            "source_ref": "operator:emotion-note", "capture_ref": "capture:host",
-            "emotion": "FINE", "moodlets": [],
-        },
+        "moodlet_observation": mood(),
     }
     row.update(changes)
     return row
@@ -189,8 +196,8 @@ class NeedSignalFusionTests(unittest.TestCase):
 
     def test_positive_emotion_must_not_hide_social_decline(self):
         obs = snapshot(feeds=[hud()],
-            moodlet_observation={"source_ref": "mood:source",
-                "capture_ref":"capture:host","emotion":"HAPPY","moodlets":["playful"]})
+            moodlet_observation=mood(source_ref="mood:source", emotion="HAPPY",
+                                     moodlets=["playful"]))
         result = eval_need(obs)
         self.assertEqual(result["moodlets"]["emotion"], "HAPPY")
         self.assertEqual(result["moodlet_guidance"], "DECLINING_NEED_OUTRANKS_POSITIVE_MOOD")
@@ -198,9 +205,8 @@ class NeedSignalFusionTests(unittest.TestCase):
         self.assertEqual(result["moodlets"]["relief"], ["be_silly", "tell_jokes"])
 
     def test_negative_moodlets_reuse_existing_owner_not_new_decision_engine(self):
-        obs = snapshot(feeds=[native()], moodlet_observation={
-            "source_ref":"mood:source","capture_ref":"capture:host",
-            "emotion":"ANGRY","moodlets":["scared"]})
+        obs = snapshot(feeds=[native()], moodlet_observation=mood(source_ref="mood:source", emotion="ANGRY",
+                                    moodlets=["scared"]))
         result=eval_need(obs)
         self.assertEqual(result["moodlet_guidance"], "REVIEW_NEGATIVE_MOODLET_RELIEF")
         self.assertIn("social", result["moodlets"]["need_pressure"])
@@ -212,9 +218,8 @@ class NeedSignalFusionTests(unittest.TestCase):
         self.assertFalse(report["execute_allowed"])
 
     def test_unknown_visible_moodlet_is_not_invented(self):
-        obs=snapshot(feeds=[hud()], moodlet_observation={
-            "source_ref":"mood:source","capture_ref":"capture:host",
-            "emotion":"FINE","moodlets":["Cheerful Treat"]})
+        obs=snapshot(feeds=[hud()], moodlet_observation=mood(source_ref="mood:source", emotion="FINE",
+                                    moodlets=["Cheerful Treat"]))
         result=eval_need(obs)
         self.assertIn("UNKNOWN_MOODLET_LABEL", result["moodlets"]["findings"])
 
@@ -246,8 +251,7 @@ class NeedSignalFusionTests(unittest.TestCase):
                 report=eval_need(snapshot(feeds=[hud(needs=row)]))
                 self.assertEqual(report["state"],"SOURCES_UNAVAILABLE")
         with self.assertRaisesRegex(NeedSignalError,"MOODLET_EVIDENCE_INVALID"):
-            eval_need(snapshot(moodlet_observation={"source_ref":"x",
-                             "capture_ref":"capture:host","moodlets":"Fine"}))
+            eval_need(snapshot(moodlet_observation=mood(source_ref="x",moodlets="Fine")))
 
     def test_verified_dancing_when_social_is_falling_is_diagnosed_not_canceled(self):
         observed = snapshot(feeds=[hud()], current_activity={
@@ -285,6 +289,121 @@ class NeedSignalFusionTests(unittest.TestCase):
         with self.assertRaisesRegex(HostStackError, "NON_SIX_MOTIVE"):
             evaluate_turn(levels,capture_ref="capture:host",
                           need_signal_observation=snapshot())
+
+    def test_native_green_level_and_steep_measured_rate_predict_early_warning(self):
+        fast = native(needs={
+            "social": {"level": .80, "direction": "DOWN",
+                       "rate_per_sim_minute": -.02,
+                       "rate_proof_ref": "ea:two-readings"},
+        })
+        moving = eval_need(snapshot(feeds=[fast], paused=False))
+        row = moving["motives"]["social"]
+        self.assertAlmostEqual(row["conditional_sim_minutes_to_policy_preemptive"], 12.5)
+        self.assertEqual(row["forecast_policy_preemptive_level"], .55)
+        self.assertIn("social", moving["rapid_declines"])
+        self.assertEqual(moving["priority"], "DIAGNOSE_RAPID_NEED_DECLINE")
+        self.assertIsNone(row["rate_multiplier_claim"])
+        self.assertFalse(moving["game_input_allowed"])
+        # A paused HUD/native state does not measure or predict moving decay.
+        paused = eval_need(snapshot(feeds=[fast], paused=True))
+        self.assertIsNone(paused["motives"]["social"]["conditional_sim_minutes_to_policy_preemptive"])
+        self.assertIsNone(paused["motives"]["social"]["native_rate_per_sim_minute"])
+        self.assertNotIn("social", paused["rapid_declines"])
+        slow = eval_need(snapshot(feeds=[native()],paused=False))
+        self.assertNotIn("social", slow["rapid_declines"])
+
+    def test_health_receipts_bind_sim_patch_and_native_adapter(self):
+        base = eval_need(snapshot(feeds=[native()]))
+        receipt = base["source_health"]["EA_NATIVE"]
+        self.assertEqual(receipt["context"]["sim_ref"], SIM)
+        self.assertEqual(receipt["context"]["adapter_ref"], "ea:runtime:motive-observer")
+        for altered in (
+            {"sim_ref":"sim:other"},
+            {"game_build":"1.121.362.1020"},
+            {"profile":"human"},
+            {"source_ref":"source:other"},
+            {"native_hook_ref":"ea:other-hook"},
+        ):
+            with self.subTest(altered=altered):
+                new_profile = altered.get("profile", "servo")
+                motives = {"social":{"level":.69,"direction":"DOWN",
+                    "rate_per_sim_minute":-.004,"rate_proof_ref":"ea:sample:delta"}}
+                feed = native(sample="native:2",stamp=NOW+1,
+                              profile=new_profile, needs=motives, **{
+                                k:v for k,v in altered.items() if k!="profile"})
+                obs = snapshot(feeds=[feed], profile=new_profile,
+                    sim_ref=altered.get("sim_ref",SIM),
+                    game_build=altered.get("game_build",BUILD),
+                    moodlet_observation=mood(
+                        sim_ref=altered.get("sim_ref",SIM),
+                        game_build=altered.get("game_build",BUILD),
+                        observed_at_unix=NOW+1))
+                result = eval_need(obs, now=NOW+1,
+                                   prior_health=base["source_health"])
+                self.assertEqual(result["source_health"]["EA_NATIVE"]["state"],
+                                 "QUARANTINED")
+                self.assertEqual(result["source_health"]["EA_NATIVE"]["reason"],
+                                 "SOURCE_CONTEXT_CHANGED_RESET_REQUIRED")
+                self.assertEqual(result["state"], "SOURCES_UNAVAILABLE")
+
+    def test_adapter_context_change_requires_recovery_and_two_fresh_probes(self):
+        original = eval_need(snapshot(feeds=[hud()]))
+        switched = eval_need(snapshot(feeds=[
+            hud(sample="hud:2",stamp=NOW+1,calibration_ref="calibration:new")]),
+            now=NOW+1,prior_health=original["source_health"])
+        self.assertEqual(switched["source_health"]["HUD_CV"]["state"],"QUARANTINED")
+        first = eval_need(snapshot(feeds=[
+            hud(sample="hud:3",stamp=NOW+2,calibration_ref="calibration:new",
+                reset_ref="reset:new",reset_probe_passed=True)]),
+            now=NOW+2,prior_health=switched["source_health"])
+        self.assertEqual(first["source_health"]["HUD_CV"]["state"],"RECOVERING")
+        last = eval_need(snapshot(feeds=[
+            hud(sample="hud:4",stamp=NOW+3,calibration_ref="calibration:new",
+                reset_ref="reset:new",reset_probe_passed=True)]),
+            now=NOW+3,prior_health=first["source_health"])
+        self.assertEqual(last["source_health"]["HUD_CV"]["state"],"HEALTHY")
+        self.assertEqual(last["healthy_sources"],["HUD_CV"])
+
+    def test_changed_sample_id_cannot_replay_older_or_equal_sensor_time(self):
+        first=eval_need(snapshot(feeds=[hud(stamp=NOW-3)]))
+        for stamp in (NOW-4,NOW-3):
+            with self.subTest(stamp=stamp):
+                second=eval_need(snapshot(feeds=[
+                    hud(stamp=stamp,sample=f"hud:later-{stamp}")]),
+                    prior_health=first["source_health"])
+                self.assertEqual(second["state"],"SOURCES_UNAVAILABLE")
+                self.assertEqual(second["source_health"]["HUD_CV"]["reason"],
+                                 "SOURCE_SAMPLE_NOT_MONOTONIC")
+        current=eval_need(snapshot(feeds=[hud(sample="hud:2",stamp=NOW)]),
+                          prior_health=first["source_health"])
+        self.assertEqual(current["source_health"]["HUD_CV"]["state"],"HEALTHY")
+
+    def test_moodlet_provenance_rejects_other_sim_patch_stale_or_unverified(self):
+        for altered in (
+            {"sim_ref":"sim:other"},
+            {"game_build":"1.121.362.1020"},
+            {"observed_at_unix":NOW-65},
+            {"observed_at_unix":NOW+1},
+            {"verified":False},
+            {"capture_ref":"capture:other"},
+            {"source_ref":None},
+        ):
+            with self.subTest(altered=altered):
+                with self.assertRaisesRegex(NeedSignalError,"MOODLET_EVIDENCE_INVALID"):
+                    eval_need(snapshot(feeds=[hud()],
+                        moodlet_observation=mood(**altered)))
+        # Unknown emotion is allowed as an unknown advisory only when the
+        # current actor/timestamp/source is independently supplied.
+        result=eval_need(snapshot(feeds=[hud()],
+                            moodlet_observation=mood(emotion="NEW_PACK_BUFF")))
+        self.assertEqual(result["moodlets"]["emotion"],"UNKNOWN")
+        self.assertFalse(result["execute_allowed"])
+
+    def test_unqualified_game_build_cannot_masquerade_as_exact_patch(self):
+        for value in ("latest","unknown","1.121","1.121.361.1020-old"):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(NeedSignalError,"CONTEXT_INVALID"):
+                    eval_need(snapshot(game_build=value))
 
 
 if __name__ == "__main__":
