@@ -69,8 +69,8 @@ def snapshot(feeds=None, *, profile="servo", paused=True, **changes):
     return row
 
 
-def eval_need(obs=None, **kwargs):
-    return evaluate_need_signals(snapshot() if obs is None else obs, now=NOW, **kwargs)
+def eval_need(obs=None, *, now=NOW, **kwargs):
+    return evaluate_need_signals(snapshot() if obs is None else obs, now=now, **kwargs)
 
 
 class NeedSignalFusionTests(unittest.TestCase):
@@ -248,6 +248,29 @@ class NeedSignalFusionTests(unittest.TestCase):
         with self.assertRaisesRegex(NeedSignalError,"MOODLET_EVIDENCE_INVALID"):
             eval_need(snapshot(moodlet_observation={"source_ref":"x",
                              "capture_ref":"capture:host","moodlets":"Fine"}))
+
+    def test_host_six_need_opt_in_sidecar_preserves_original_callers(self):
+        from betterinstincts.host_stack import evaluate_turn
+        levels = {k: .8 for k in ("hunger", "bladder", "energy", "hygiene", "fun", "social")}
+        frame = hud(profile="human",needs={
+            "social":{"level":.83,"direction":"DOWN","arrow_count":3,
+                      "arrow_proof_ref":"cue:down3"}})
+        obs = snapshot(feeds=[frame],profile="human")
+        obs["feeds"][0]["observed_at_unix"] = time.time()
+        existing = evaluate_turn(levels,capture_ref="capture:host")
+        self.assertIsNone(existing["need_signals"])
+        after = evaluate_turn(levels, capture_ref="capture:host",
+                              need_signal_observation=obs)
+        self.assertEqual(after["need_signals"]["priority"],
+                         "PAUSED_RAPID_DECAY_INDICATOR_REVIEW")
+        self.assertFalse(after["need_signals"]["execute_allowed"])
+
+    def test_host_refuses_servo_six_need_padding(self):
+        from betterinstincts.host_stack import HostStackError, evaluate_turn
+        levels = {k: .8 for k in ("hunger", "bladder", "energy", "hygiene", "fun", "social")}
+        with self.assertRaisesRegex(HostStackError, "NON_SIX_MOTIVE"):
+            evaluate_turn(levels,capture_ref="capture:host",
+                          need_signal_observation=snapshot())
 
 
 if __name__ == "__main__":

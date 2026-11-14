@@ -50,6 +50,7 @@ from betterinstincts.build_library_checkpoint import (
 from betterinstincts.build_optimize import BuildOptimizeError, evaluate_build_optimize
 from betterinstincts.build_spatial import BuildSpatialError, build_order_plan, inventory_spatial
 from betterinstincts.moodlets import MoodletError, evaluate_moodlets
+from betterinstincts.need_signal_fusion import NeedSignalError, evaluate_need_signals
 from betterinstincts.navigating_needs import (
     NavigatingNeedsError,
     evaluate_navigating_needs_turn,
@@ -147,6 +148,7 @@ def evaluate_turn(
     sim_absent: bool = False,
     capture_ref: str = "capture:host-turn",
     prior_needs: Optional[Mapping[str, float]] = None,
+    need_signal_observation: Optional[Mapping[str, object]] = None,
     host_action: Optional[str] = None,
     viewport: Optional[Mapping[str, object]] = None,
     viewport_context: Optional[Mapping[str, object]] = None,
@@ -360,6 +362,7 @@ def evaluate_turn(
     discovery_report = None
     autonomy_report = None
     valence_report = None
+    need_signal_report = None
     try:
         if autonomy_observation is not None:
             # This peer is read-only for every domain, not just gardening.
@@ -436,6 +439,19 @@ def evaluate_turn(
             event_active=event_active,
             capture_ref=capture_ref,
         )
+        if need_signal_observation is not None:
+            # Existing six-need host remains distinct from typed Servo/occult
+            # motive observations; never invent absent human motives.
+            if not isinstance(need_signal_observation, Mapping):
+                raise HostStackError("NEED_SIGNAL_OBSERVATION_INVALID")
+            signal = dict(need_signal_observation)
+            if signal.get("capture_ref") != capture_ref:
+                raise HostStackError("NEED_SIGNAL_HOST_CAPTURE_MISMATCH")
+            if signal.get("profile") not in {"human", "alien", "spellcaster", "werewolf"}:
+                raise HostStackError("NON_SIX_MOTIVE_PROFILE_USE_TYPED_FUSION_ENTRYPOINT")
+            signal["player_active"] = bool(
+                signal.get("player_active") or player_directed or already_busy)
+            need_signal_report = evaluate_need_signals(signal)
         whim_labels = list(whims) + [w for w in pinned_whims if w not in whims]
         sim_profile = evaluate_sim_profile(
             sim_name=sim_name,
@@ -782,6 +798,7 @@ def evaluate_turn(
         BehaviorEvalError,
         EventBalanceError,
         MoodletError,
+        NeedSignalError,
         SimProfileError,
         BuildOptimizeError,
         TeenHomeworkError,
@@ -2119,6 +2136,31 @@ def evaluate_turn(
     elif instincts.get("state") == "BLOCKED_MISSING_OBJECTS":
         next_gate = "PLACE_OR_LOCATE_REQUIRED_OBJECTS"
 
+    # Signal review may replace an idle/save suggestion, never an existing
+    # player, survival, school, event or source-qualified native need gate.
+    if (need_signal_report is not None
+            and need_signal_report["priority"] in {
+                "DIAGNOSE_RAPID_NEED_DECLINE",
+                "PAUSED_RAPID_DECAY_INDICATOR_REVIEW",
+            }
+            and next_gate in {
+                "EXECUTE_INSTINCTS_PLAN",
+                "LAB_SAVE_AS_BI_CONT_WHEN_AUTHORIZED",
+            }
+            and not player_directed and not already_busy):
+        next_gate = "REVIEW_NEED_RATE_ANOMALY"
+        fallback = {
+            "mechanism": "READ_ONLY_NEED_SIGNAL_DIAGNOSIS",
+            "owner": "betterinstincts/need_signal_fusion.py",
+            "contract": "contracts/need-signal-fusion.v1.json",
+            "rapid_declines": need_signal_report["rapid_declines"],
+            "source_health": need_signal_report["source_health"],
+            "game_paused": need_signal_report["game_paused"],
+            "execute_allowed": False,
+            "forbidden": ["BLIND_UNPAUSE", "OVERRIDE_PLAYER_QUEUE",
+                          "CLAIM_NUMERIC_3X_FROM_CHEVRONS"],
+        }
+
     return {
         "state": "HOST_TURN_EVALUATED",
         "capture_ref": capture_ref,
@@ -2128,6 +2170,7 @@ def evaluate_turn(
         "queue_capacity": queue_capacity,
         "traversal_voi": traversal_voi_advice,
         "moodlets": moodlet_eval,
+        "need_signals": need_signal_report,
         "sim_profile": sim_profile,
         "school_day": school_day,
         "teen_homework": teen_homework,
