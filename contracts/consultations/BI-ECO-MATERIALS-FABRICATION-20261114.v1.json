@@ -2,7 +2,7 @@
   "schema": "betterinstincts.ontology-consultation/v1",
   "id": "BI-ECO-MATERIALS-FABRICATION-20261114",
   "ontology": "contracts/ontology.v1.json",
-  "ontology_blob_sha": "76decc442501b8708a66577dc192e11b57625a8a",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
   "proposed_capability": "MoonWake /sixth-gear: close missing fertilizer sourcing, recycler input choice, Bits/Pieces economics and Green Technician Eco-Upgrade Part career-task chain with deterministic player-first, current-observation-only, one-step planning; measure recycling outcomes and source value without inventing yields or installed-game certification.",
   "affected_concepts": [
     "GAME_OBJECT",
