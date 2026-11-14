@@ -1,0 +1,81 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-AGENT-PAUSED-LISTENER-OUTCOME-IDENTITY-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Preserve authorized last-resort agent computer control while pausing behavior during operator activity, differentiate passive listener result identity from gameplay effects, and capture every calibrated discovery as a bounded deterministic source-and-test obligation.",
+  "affected_concepts": [
+    "PLAYER_PRESENCE",
+    "HOST_SESSION",
+    "GOAL",
+    "GOAL_THREAD",
+    "OBSERVATION",
+    "ACTION_QUEUE",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "RESUME_CONDITION"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/DOCTRINE.md",
+    "docs/ONTOLOGY.md",
+    "docs/CONTROL_DISCOVERY.md",
+    "docs/ASYNC_INTEROP.md",
+    "contracts/control-discovery.v1.json",
+    "contracts/workflow-interoperability.v1.json",
+    "contracts/effect-authority.v1.json",
+    "betterinstincts/workflow_interop.py",
+    "betterinstincts/agent_control_runner.py",
+    "betterinstincts/control_discovery.py",
+    "betterinstincts/host_listener.py",
+    "plans/active/BI-002.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-014",
+    "BI-ONT-016"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_INTEROP_ROUTING_AND_SEMANTIC_DISCOVERY_NOT_LIVE_GAMEPLAY",
+  "player_save_control_impact": "No new screen input, save access, raw key/mouse capture, OS hooks, daemon or background activation. An explicitly active listener and approved passive adapter can observe without focusing or modifying Sims. Each screen action still requires existing human-first idle, exclusive lock, scene/save/queue/target admission.",
+  "expected_outcome": "A trusted read-only listener can finish while the operator is active without being misidentified as a completed agent gameplay effect. The same pending screen action survives player interruption and resumes only upon fresh idle/admission. Every attempted effect and reviewed semantic discovery can be paged into a source-code and regression-test backlog; submission claims remain unverified until provider readback.",
+  "negative_tests": [
+    "Listener returns COMPLETED with a distinct work_id while gameplay action is paused: no gameplay effect or outcome is accepted",
+    "Failing passive listener returns reconciliation under its own ID, never the pending action",
+    "User input blocks gameplay effects until fresh two-probe 15-second idle, even after safe semantic observation",
+    "Unknown/cross-scope/raw discovery fields and duplicate evidence are rejected",
+    "Every attempted action appears in bounded codification pages including interrupted and harmful outcomes",
+    "Submitted codification receipt is not considered independently merged or game certified"
+  ],
+  "rollback_path": "Revert only optional listener result tagging, discovery capture and codification projections; retain the verified native-first, player-first and host queue owners, BI-002 work and last-known-good profile.",
+  "unresolved_unknowns": [
+    "This provider session cannot inspect actual installed Sims runtime or physical user idle sensor",
+    "Local MoonWake walker stage execution and runtime native P08 must be certified on the host",
+    "Committed source and test evidence is independent of eventual game-native behavior and player consent"
+  ],
+  "files_expected": [
+    "betterinstincts/workflow_interop.py",
+    "betterinstincts/agent_control_runner.py",
+    "betterinstincts/control_discovery.py",
+    "tests/test_control_discovery.py",
+    "contracts/control-discovery.v1.json",
+    "contracts/workflow-interoperability.v1.json",
+    "contracts/native-gameplay-decisions/BI-AGENT-PAUSED-LISTENER-OUTCOME-IDENTITY-20261114.v1.json",
+    "docs/CONTROL_DISCOVERY.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "docs/ROADMAP.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "MoonWake Sixth Gear P141 rejects duplicate UI daemon, false listener completion and source-claim-as-merge; P95/P82 introduce typed passive source identification and replay/negative tests; P08 remains local-game-only; P07/P124 integrate under existing runtime, provenance and player-first owners. Retain code/tests for every learned action instead of recomputing across contexts."
+}
