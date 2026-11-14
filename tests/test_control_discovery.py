@@ -9,7 +9,7 @@ from betterinstincts import host_listener
 from betterinstincts.agent_control_runner import AgentControlRunner, AgentControlRunnerError
 from betterinstincts.control_discovery import (
     SCHEMA, EVENT_SCHEMA, ControlDiscoveryError, compact_handoff,
-    coverage, ingest, new_session,
+    coverage, codification_work_items, ingest, new_session,
 )
 from betterinstincts.player_presence import PresenceProbe
 from betterinstincts.workflow_interop import CooperativeScreenQueue
@@ -80,6 +80,13 @@ class SemanticDiscoveryTests(unittest.TestCase):
         )
         self.assertEqual(coverage(state)["counts"]["receipt_submitted"], 1)
         self.assertEqual(coverage(state)["unresolved_total"], 0)
+        self.assertEqual(coverage(state)["source_verification_pending_total"], 1)
+        self.assertEqual(coverage(state)["source_verified_total"], 0)
+        self.assertFalse(coverage(state)["all_attempts_source_verified"])
+        self.assertEqual(
+            codification_work_items(state)["items"][0]["next_gate"],
+            "VERIFY_COMMIT_TEST_AND_MAIN_READBACK",
+        )
         self.assertEqual(
             state["steps"]["work:plant2"]["codification"]["status"],
             "RECEIPT_SUBMITTED_NOT_MERGE_VERIFIED",
@@ -128,6 +135,95 @@ class SemanticDiscoveryTests(unittest.TestCase):
                   module_ref="betterinstincts/gardening_service.py",
                   test_ref="tests/test_gardening.py",
                   commit_ref="commit:one", review_ref="review:one")
+
+    def test_passive_semantic_discovery_captured_for_codification(self):
+        state = prepared(base())
+        state = event(
+            state, "DISCOVERY", discovery_kind="OBJECT_AFFORDANCE",
+            fact_ref="fact:fertilizer-menu", source_ref="sensor:calibrated",
+            evidence_ref="capture:menu-observed",
+        )
+        self.assertEqual(state["steps"]["work:plant2"]["discoveries"][0]["fact_ref"],
+                         "fact:fertilizer-menu")
+        work = codification_work_items(state)["items"][0]
+        self.assertEqual(len(work["discoveries"]), 1)
+        self.assertEqual(work["discoveries"][0]["source_ref"], "sensor:calibrated")
+        self.assertEqual(compact_handoff(state)["codification_work"]["items"][0]["discoveries"],
+                         work["discoveries"])
+        with self.assertRaisesRegex(ControlDiscoveryError, "DUPLICATE_DISCOVERY"):
+            event(
+                state, "DISCOVERY", discovery_kind="OBJECT_AFFORDANCE",
+                fact_ref="fact:fertilizer-menu", source_ref="sensor:calibrated",
+                evidence_ref="capture:menu-observed",
+            )
+        with self.assertRaisesRegex(ControlDiscoveryError, "DISCOVERY_FIELDS_INVALID"):
+            event(
+                state, "DISCOVERY", discovery_kind="ACTION_MENU",
+                fact_ref="fact:menu", source_ref="sensor:calibrated",
+                evidence_ref="capture:menu", raw_keystrokes="PRIVATE",
+            )
+
+    def test_discoveries_have_finite_budget_and_cannot_arrive_after_claimed_code(self):
+        state = prepared(base())
+        for i in range(6):
+            state = event(
+                state, "DISCOVERY", discovery_kind="ACTION_MENU",
+                fact_ref="fact:menu%d" % i,
+                source_ref="sensor:calibrated",
+                evidence_ref="capture:menu%d" % i,
+            )
+        with self.assertRaisesRegex(ControlDiscoveryError, "DISCOVERY_STEP_BUDGET"):
+            event(
+                state, "DISCOVERY", discovery_kind="ACTION_MENU",
+                fact_ref="fact:extra", source_ref="sensor:calibrated",
+                evidence_ref="capture:extra",
+            )
+        state = event(state, "QUEUE_STATUS", queue_state="COMPLETED")
+        state = event(state, "OUTCOME", outcome="HELPFUL",
+                      after_capture_ref="capture:after",
+                      outcome_ref="outcome:verified", player_interrupted=False)
+        state = event(state, "CODIFICATION_RECEIPT",
+                      module_ref="betterinstincts/gardening_service.py",
+                      test_ref="tests/test_gardening.py",
+                      commit_ref="commit:source", review_ref="review:pending")
+        with self.assertRaisesRegex(ControlDiscoveryError, "DISCOVERY_AFTER_CODIFICATION"):
+            event(
+                state, "DISCOVERY", discovery_kind="ACTION_MENU",
+                fact_ref="fact:late", source_ref="sensor:calibrated",
+                evidence_ref="capture:late",
+            )
+
+    def test_every_attempt_has_paged_source_and_regression_work(self):
+        state = base()
+        for i in range(9):
+            state = prepared(state, "work:step%d" % i)
+        first = codification_work_items(state, limit=4)
+        second = codification_work_items(state, offset=first["next_offset"], limit=4)
+        last = codification_work_items(state, offset=second["next_offset"], limit=4)
+        ids = [item["work_id"] for page in (first, second, last) for item in page["items"]]
+        self.assertEqual(len(ids), 9)
+        self.assertEqual(len(set(ids)), 9)
+        self.assertIsNone(last["next_offset"])
+        self.assertTrue(all(item["required_regression"] for page in (first, second, last)
+                            for item in page["items"]))
+        self.assertTrue(all(not item["source_verified"] for page in (first, second, last)
+                            for item in page["items"]))
+        self.assertEqual(compact_handoff(state)["codification_work"]["total_attempted"], 9)
+        self.assertNotIn("events", compact_handoff(state))
+        with self.assertRaisesRegex(ControlDiscoveryError, "CODIFICATION_PAGE_INVALID"):
+            codification_work_items(state, limit=9)
+
+    def test_interrupted_attempt_remains_source_obligation(self):
+        state = prepared(base())
+        state = event(state, "QUEUE_STATUS", queue_state="NEEDS_RECONCILIATION")
+        state = event(state, "OUTCOME", outcome="UNKNOWN",
+                      after_capture_ref="capture:after",
+                      outcome_ref="observation:uncertain",
+                      player_interrupted=True)
+        item = codification_work_items(state)["items"][0]
+        self.assertEqual(item["next_gate"], "RECONCILE_INTERRUPTED_OUTCOME")
+        self.assertEqual(item["observed_outcome"], "UNKNOWN")
+        self.assertEqual(coverage(state)["total_attempts"], 1)
 
     def test_bounded_digest_no_raw_events(self):
         state = base()
@@ -253,6 +349,90 @@ class AgentControlRunTests(unittest.IsolatedAsyncioTestCase):
             outcome_ref="outcome:fertilized", player_interrupted=False)
         self.assertEqual(receipt["handoff"]["codification_coverage"]["counts"]["review_ready"], 1)
         self.assertEqual(host_listener.status("bi-control-01")["state"], "ACTIVE")
+
+    async def test_passive_observation_does_not_complete_waiting_screen_effect(self):
+        self.prepare()
+        first = await self.runner.pulse()
+        self.assertEqual(first["state"], "WAITING_FOR_USER")
+        observations = []
+
+        async def validate_read_only():
+            return True
+
+        async def safe_semantic_read():
+            observations.append("semantic:queue-observed")
+
+        queued = self.runner.observe_while_paused(
+            work_id="listen:queue", validate=validate_read_only,
+            observe=safe_semantic_read,
+        )
+        self.assertEqual(queued["pending_effect_work_id"], "work:plant2")
+        observed = await self.runner.pulse()
+        self.assertEqual(observed["state"], "LISTENER_OBSERVATION_COMPLETED")
+        self.assertEqual(observed["work_id"], "listen:queue")
+        self.assertEqual(observations, ["semantic:queue-observed"])
+        self.assertEqual(self.executed, [])
+        self.assertEqual(self.runner.last_queue_state, "WAITING_FOR_USER")
+        self.assertEqual(len(self.queue.pending), 1)
+        with self.assertRaisesRegex(AgentControlRunnerError, "NO_OBSERVED_EFFECT_ATTEMPT"):
+            self.runner.record_observed_outcome(
+                outcome="HELPFUL", after_capture_ref="capture:after",
+                outcome_ref="outcome:not-performed", player_interrupted=False,
+            )
+        # A human can keep using another application while the read-only
+        # listener has completed; only the existing trusted idle gate resumes.
+        self.age = 16000
+        resumed = await self.runner.wait_and_pulse(max_checks=3)
+        self.assertEqual(resumed["state"], "COMPLETED")
+        self.assertEqual(self.executed, ["real-effect"])
+        self.assertEqual(host_listener.status("bi-control-01")["state"], "ACTIVE")
+
+    async def test_collect_semantic_discovery_while_user_operates(self):
+        self.prepare()
+        paused = await self.runner.pulse()
+        self.assertEqual(paused["state"], "WAITING_FOR_USER")
+        receipt = self.runner.record_semantic_discovery(
+            work_id="work:plant2", discovery_kind="OBJECT_AFFORDANCE",
+            fact_ref="fact:fertilizer", source_ref="sensor:reviewed",
+            evidence_ref="capture:menu",
+        )
+        item = receipt["handoff"]["codification_work"]["items"][0]
+        self.assertEqual(item["discoveries"][0]["fact_ref"], "fact:fertilizer")
+        self.assertEqual(self.executed, [])
+        self.assertEqual(self.runner.last_queue_state, "WAITING_FOR_USER")
+
+    async def test_passive_failure_cannot_be_misattributed_to_gameplay_effect(self):
+        self.prepare()
+        await self.runner.pulse()
+
+        async def validate_read_only():
+            return True
+
+        async def failing_read():
+            raise RuntimeError("semantic probe not calibrated")
+
+        self.runner.observe_while_paused(
+            work_id="listen:broken", validate=validate_read_only,
+            observe=failing_read,
+        )
+        failed = await self.runner.pulse()
+        self.assertEqual(failed["state"], "LISTENER_OBSERVATION_NEEDS_RECONCILIATION")
+        self.assertEqual(self.runner.last_queue_state, "WAITING_FOR_USER")
+        self.assertIn("listen:broken", self.queue.suspended)
+        self.assertEqual(self.executed, [])
+        self.age = 16000
+        resumed = await self.runner.wait_and_pulse(max_checks=3)
+        self.assertEqual(resumed["state"], "COMPLETED")
+        self.assertEqual(self.executed, ["real-effect"])
+
+    async def test_cannot_start_passive_observation_without_player_pause(self):
+        self.prepare()
+
+        async def valid(): return True
+        async def read(): return None
+
+        with self.assertRaisesRegex(AgentControlRunnerError, "PLAYER_PAUSE_REQUIRED"):
+            self.runner.observe_while_paused(work_id="listen:early", validate=valid, observe=read)
 
     async def test_partial_exception_requires_reconciliation_not_replay(self):
         async def incomplete():
