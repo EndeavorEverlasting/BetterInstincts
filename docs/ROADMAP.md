@@ -1,3 +1,7 @@
+## 2026-11-14 — Community training across contributors
+
+Admit private on-device learning and separate explicit contribution consent. Retain reviewed semantic judgments and VAE research candidates as distinct versioned formats. Add strict manually exported semantic-case bundles, repository data-only intake audit, replay/digest validation, negative tests and developer candidacy issue routing. Submitted bundles are not installed or trained into shipped models without independent host/context holdouts, privacy/license/poisoning review, player-first checks, compatibility, rollback and maintainer approval. BI-002 hunger and native gameplay gates remain unchanged.
+
 ## 2026-11-14 — Control fallback evidence becomes permanent repository logic
 
 The agent computer-use fallback remains **permitted as a last resort**, under existing player-first, idle, save/scene and queue authority. Pausing screen effects during human operation keeps the listener and its intended work active. Reviewed passive observations have distinct event identity so they cannot forge a completed gameplay action. Each effect and semantic discovery now projects into a bounded, cursor-paged codification work item with success/failure/interrupt evidence and required regression gates. Submitted code references await independent mainline verification; **not yet native Sims autonomy proof**. Native/game P08 remains tracked under issue #171, BI-002 hunger first. See `docs/CONTROL_DISCOVERY.md`.

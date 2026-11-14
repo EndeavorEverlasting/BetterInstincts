@@ -1,0 +1,63 @@
+name: Developer candidacy / community learning contribution
+description: Apply to contribute generalized, reviewed BetterInstincts learning improvements
+title: "[Community learning] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Contributors can propose tests and models without repository write access.
+        This form does NOT approve a developer, merge a model, or authorize gameplay.
+        Never attach personal Sims saves, raw screenshots, household identifiers,
+        private profiles, unconsented weights, proprietary EA data or credentials.
+        Please read docs/COMMUNITY_LEARNING.md and CONTRIBUTING.md first.
+  - type: dropdown
+    id: category
+    attributes:
+      label: Proposed contribution type
+      options:
+        - Local training methodology and generalization
+        - Offline evaluation / regression / anti-poisoning tests
+        - Source code / native gameplay research
+        - Privacy, security or model provenance
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Intended developer scope and outcome
+      description: Name the transferable capability, not a user-specific save or household
+    validations:
+      required: true
+  - type: textarea
+    id: reproducibility
+    attributes:
+      label: Reproducibility and rights
+      description: Explain code/test links, evidence provenance, licenses and permission to share
+    validations:
+      required: true
+  - type: textarea
+    id: generalization
+    attributes:
+      label: Independent cross-host evaluation proposal
+      description: How will maintainer-controlled holdouts prove performance beyond your machine?
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Threat model, negative tests and rollback
+      description: Include poisoning/backdoors, privacy leakage, bias, unsafe game effects and compatibility
+    validations:
+      required: true
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Contribution and approval boundaries
+      options:
+        - label: I understand local training is private and does not authorize uploading my model or data
+          required: true
+        - label: I understand candidates are untrusted until reviewed and cannot run in gameplay automatically
+          required: true
+        - label: I understand developer status and repository access require a separate maintainer decision
+          required: true
