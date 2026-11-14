@@ -38,6 +38,116 @@ def _number(value: object) -> bool:
     return type(value) is float and math.isfinite(value) and 0 <= value <= 1_000_000_000_000
 
 
+BACKYARD_SCAN_SCHEMA = "betterinstincts.backyard-fertilizer-scan/v1"
+BACKYARD_IDENTITY_SOURCES = {"EA_READ_ONLY", "CALIBRATED_MULTIVIEW"}
+MAX_BACKYARD_BAGS = 32
+MAX_ROUTE_STEPS = 64
+
+
+def _backyard_transfer_candidate(
+    scan: Mapping, actions: list[dict], *, sim_ref: str,
+    capture_ref: str, now: float,
+) -> dict:
+    """Read a bounded, same-lot bag survey; never move an actual game object.
+
+    A bag-shaped screen blob is insufficient. Require a source-attested item
+    identity, on-lot route, personal-inventory destination and an *enabled*
+    exact-target transfer affordance in the same current capture.
+    """
+    base = {
+        "gate": "FERTILIZER_BACKYARD_SCAN_REQUIRED",
+        "action": "OBSERVE_ALREADY_OWNED_BACKYARD_FERTILIZER_BAGS",
+        "next_actions": [],
+        "dispatch_authorized": False,
+        "proof_ceiling": "OFFLINE_BACKYARD_BAG_ADVICE_NOT_GAME_TRANSFER",
+    }
+    if not isinstance(scan, Mapping) or scan.get("schema") != BACKYARD_SCAN_SCHEMA:
+        raise FertilizerWorkflowError("BACKYARD_SCAN_SCHEMA_INVALID")
+    if scan.get("sim_ref") != sim_ref:
+        raise FertilizerWorkflowError("BACKYARD_SCAN_ACTOR_MISMATCH")
+    if not _ref(scan.get("lot_ref")) or not _ref(scan.get("game_build")):
+        raise FertilizerWorkflowError("BACKYARD_SCAN_LOT_OR_BUILD_INVALID")
+    bags = scan.get("bags")
+    if not isinstance(bags, list) or len(bags) > MAX_BACKYARD_BAGS:
+        raise FertilizerWorkflowError("BACKYARD_SCAN_BAGS_INVALID")
+    # Validate all current survey identities before choosing any bag.
+    ready = []
+    seen = set()
+    for bag in bags:
+        if not isinstance(bag, Mapping) or not _ref(bag.get("item_ref")):
+            raise FertilizerWorkflowError("BACKYARD_BAG_REF_INVALID")
+        ref = bag["item_ref"]
+        if ref in seen:
+            raise FertilizerWorkflowError("BACKYARD_BAG_DUPLICATE")
+        seen.add(ref)
+        steps = bag.get("route_steps")
+        refs = bag.get("identity_evidence_refs")
+        if (type(steps) is not int or not 0 <= steps <= MAX_ROUTE_STEPS
+                or bag.get("identity_source") not in BACKYARD_IDENTITY_SOURCES
+                or not isinstance(refs, list) or not 1 <= len(refs) <= 4
+                or any(not _ref(x) for x in refs) or len(set(refs)) != len(refs)
+                or (bag.get("identity_source") == "CALIBRATED_MULTIVIEW" and len(refs) < 2)):
+            raise FertilizerWorkflowError("BACKYARD_BAG_PROVENANCE_INVALID")
+        quantity = bag.get("quantity")
+        if type(quantity) is not int or not 0 <= quantity <= 999:
+            raise FertilizerWorkflowError("BACKYARD_BAG_STOCK_INVALID")
+        if (bag.get("item_kind") != "FERTILIZER_BAG"
+                or bag.get("fertilizer_eligible") is not True
+                or not _ref(bag.get("eligibility_evidence_ref"))
+                or bag.get("location") != "GROUND"
+                or bag.get("zone") != "BACKYARD"
+                or bag.get("lot_ref") != scan["lot_ref"]
+                or bag.get("lot_status") != "VERIFIED_ON_LOT"
+                or bag.get("household_owned") is not True
+                or bag.get("player_reserved") is not False
+                or bag.get("protected") is not False
+                or bag.get("route_reachable") is not True
+                or not _ref(bag.get("route_evidence_ref"))
+                or bag.get("transferable") is not True
+                or quantity == 0):
+            continue
+        ready.append((steps, ref))
+    stamp = scan.get("observed_at_unix")
+    if (not _number(stamp) or not _number(now)
+            or not 0 <= now - stamp <= MAX_AGE_SECONDS
+            or scan.get("capture_ref") != capture_ref
+            or scan.get("scene_verified") is not True
+            or scan.get("active_sim_verified") is not True
+            or scan.get("inventory_destination_verified") is not True):
+        return {**base, "gate": "FERTILIZER_BACKYARD_REOBSERVE",
+                "action": "REOBSERVE_CURRENT_SIM_LOT_BAGS_AND_INVENTORY"}
+    transfer = scan.get("pending_transfer")
+    if transfer is not None:
+        if (not isinstance(transfer, Mapping)
+                or transfer.get("status") not in {"QUEUED", "AWAITING_INVENTORY_READBACK"}
+                or not _ref(transfer.get("bag_ref"))
+                or transfer.get("sim_ref") != sim_ref
+                or transfer.get("lot_ref") != scan["lot_ref"]
+                or not _ref(transfer.get("action_ref"))):
+            raise FertilizerWorkflowError("BACKYARD_PENDING_TRANSFER_INVALID")
+        return {**base, "gate": "FERTILIZER_BACKYARD_TRANSFER_PENDING",
+                "action": "WAIT_FOR_EXACT_ITEM_INVENTORY_READBACK_NO_REPEAT"}
+    if not ready:
+        return {**base, "gate": "FERTILIZER_BACKYARD_BAGS_NOT_FOUND",
+                "action": "REINSPECT_ACCESSIBLE_EXISTING_BACKYARD_BAGS"}
+    # Existing action envelope comes from gardening_service's fresh affordance
+    # filter; do not derive an executable drag route from an item description.
+    for _, ref in sorted(ready):
+        selected = next((row for row in actions if
+                         row.get("action_id") == "TRANSFER_FERTILIZER_TO_SIM_INVENTORY"
+                         and row.get("target_ref") == ref
+                         and row.get("capture_ref") == capture_ref), None)
+        if selected is not None:
+            return {**base,
+                    "gate": "FERTILIZER_BACKYARD_TRANSFER_READY",
+                    "action": "TRANSFER_ONE_EXISTING_BAG_TO_SELECTED_SIM_THEN_REOBSERVE",
+                    "next_actions": [{**selected, "item_ref": ref, "quantity": 1,
+                                      "source_location": "BACKYARD_GROUND",
+                                      "destination_sim_ref": sim_ref}]}
+    return {**base, "gate": "FERTILIZER_BACKYARD_TRANSFER_AFFORDANCE_REQUIRED",
+            "action": "INSPECT_ENABLED_EXACT_BAG_TO_PERSONAL_INVENTORY_TRANSFER"}
+
+
 def evaluate_fertilizer_workflow(
     observation: Mapping,
     actions: list[dict],
@@ -160,6 +270,21 @@ def evaluate_fertilizer_workflow(
                      row.get("action_id") == action_id
                      and row.get("target_ref") == target_ref
                      and row.get("capture_ref") == capture_ref), None)
+
+    # If the local host supplies a fresh backyard survey, the bought ground
+    # bags outrank any new sourcing/purchases. This is an opt-in read-only port;
+    # missing/failed proof does not fall through to an unsafe generic drag.
+    if "backyard_scan" in observation:
+        candidate = _backyard_transfer_candidate(
+            observation["backyard_scan"], actions, sim_ref=sim_ref,
+            capture_ref=capture_ref, now=at,
+        )
+        result["backyard_scan"] = candidate
+        if candidate["gate"] == "FERTILIZER_BACKYARD_TRANSFER_PENDING":
+            return finish(candidate["gate"], candidate["action"])
+        if stock < len(ready):
+            return finish(candidate["gate"], candidate["action"],
+                          candidate["next_actions"][0] if candidate["next_actions"] else None)
 
     # Prefer to prepare enough supply for the currently observed eligible set,
     # rather than repeatedly failing a menu picker while items lie on the floor.
