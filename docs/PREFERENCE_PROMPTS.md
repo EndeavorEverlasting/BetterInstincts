@@ -62,3 +62,7 @@ P95: explicit dialog judgment call stack; P124: reuse aspiration/host/listener/s
 ## 2026-11-14 - Benefit-based choice
 
 For a verified catalogued offer, recommend Yes when the offered preference benefits the Sim and No otherwise. Video Gaming likes are beneficial under the fun policy. A goal-dependent preference requires a matching observed goal to recommend Yes. Unrecognized topics or ambiguous evidence remain on hold. The lab observed this offer addressed to another household member while the selected Sim slept. The executor still requires verified recipient selection and a fresh input permit.
+
+### Bellman continuation and Lagrange time price
+
+Any caller of the shared evaluator can attach a continuation_model with a same-capture activity-chain snapshot, YES and NO candidate steps, optional routes, and KKT activities. Each branch passes the existing finite-horizon planner. The evaluator compares expected continuation value after time is priced at the allocator's Lagrange multiplier. A catalogued beneficial offer needs a strict advantage to win against declining. Invalid identity or incomplete planning holds. After the response, the caller needs a fresh observation before resuming the plan. Callers without a model retain catalog behavior. Native capture, response and resumed activity remain unverified.

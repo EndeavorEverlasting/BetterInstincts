@@ -2088,3 +2088,7 @@ After the operator restarted, the running executable reported Windows `1.121.361
 ## 2026-11-14 - Preference offer stopped vanilla hunger setup
 
 A Video Gaming like offer paused the disposable Windows 1.121.361.1020 session before the first hunger trial. The operator classified the offer as beneficial. The canonical preference policy now recommends Yes for that like and No for catalogued offers without a qualifying benefit. Unknown dialogs and player overrides remain protected. No live response or hunger trial was recorded.
+
+## 2026-11-14 - Bellman and KKT preference continuation
+
+The preference evaluator can compare same-actor, same-capture YES and NO activity plans using the existing Bellman planner and a Lagrange time price. Need floors and player-queue admission stay with the activity planner. Native offer intake, response and observed resumption remain the pre-merge gate. The vanilla hunger setup sample stopped at the live offer and produced no completed trial.

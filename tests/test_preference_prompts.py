@@ -48,6 +48,28 @@ class PreferencePromptTests(unittest.TestCase):
                 self.assertEqual(result["steps"][0], step)
                 self.assertIsNone(result["control_permit"])
 
+    def test_bellman_continuation_and_kkt_time_price(self):
+        from tests.test_decision_horizon import CAPTURE, snapshot, step
+
+        row = offer(topic="video_gaming", sim_ref="actor-1", capture_ref=CAPTURE)
+        model = {
+            "snapshot": snapshot(),
+            "activities": {"existing-goal": {"weight": 61, "max_minutes": 100}},
+            "YES": [step("accepted-continuation", value=6, duration=3)],
+            "NO": [step("declined-continuation", value=4, duration=1)],
+        }
+        row["continuation_model"] = model
+        result = evaluate_offer(row, automation_opt_in=True)
+        self.assertEqual(result["continuation"]["time_shadow_price"], 1)
+        self.assertEqual(result["steps"], ["NO"])
+        model["YES"][0]["value"] = 10
+        self.assertEqual(evaluate_offer(row, automation_opt_in=True)["steps"][0], "YES")
+        model["snapshot"]["needs_safe"] = False
+        self.assertEqual(evaluate_offer(row, automation_opt_in=True)["decision"], "HOLD")
+        model["snapshot"]["sim_ref"] = "other-actor"
+        self.assertEqual(evaluate_offer(row, automation_opt_in=True)["reason"],
+                         "CONTINUATION_ACTOR_OR_CAPTURE_MISMATCH")
+
     def test_all_unsafe_or_untrusted_conditions_hold(self):
         base = offer()
         variants = [
