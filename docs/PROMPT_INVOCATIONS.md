@@ -545,4 +545,3 @@ Moonwake /sixth-gear scoped to the observed household play, in canonical order P
 
 ## 2026-11-14 — MoonWake /sixth-gear: deterministic household portrait attention
 Resolved canonical current six-stage sequence **P141 → P95 → P82 → P08 → P07 → P124** via MoonWake `AGENTS.md`, prompt groups contract and skill. P141 selected direct extension of existing PR #229 household allocator over alternative host clicker/ML-first/controller rewrite; P95 implements source-bound next-portrait attention independent of chores; P82 tests critical needs, roster order and proof denial; P08 real Windows patch/EA integration unobserved; P07/P124 source/tests/contracts/registry and parent continuity integration. GitHub-side work is not a claim of local MoonWake walker execution or parallel agents. See `docs/HOUSEHOLD_ECONOMY.md` and native successor issue #171.
-
