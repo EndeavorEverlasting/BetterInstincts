@@ -110,13 +110,19 @@ class CareerChanceCardTests(unittest.TestCase):
             choice(8, {"performance": 100}, lose=True),
             choice(2, {"performance": 1}),
         ]))
-        self.assertEqual(val["state"], "HOLD")
-        self.assertEqual(val["reason"], "CAREER_IRREVERSIBLE_RISK_HOLD")
+        self.assertEqual(val["state"], "RECOMMENDED_NATIVE_CHOICE")
+        self.assertEqual(val["recommended_response_id"], 2)
+        self.assertEqual(val["excluded_risky_response_ids"], [8])
         other = plan(event(options=[
             choice(8, {"performance": 100}, irreversible=True),
             choice(2, {"performance": 1}),
         ]))
-        self.assertEqual(other["state"], "HOLD")
+        self.assertEqual(other["recommended_response_id"], 2)
+        none_safe = plan(event(options=[
+            choice(8, {"performance": 100}, irreversible=True),
+            choice(2, {"performance": 1}, lose=True),
+        ]))
+        self.assertEqual(none_safe["reason"], "NO_SAFE_CAREER_CHOICE_KNOWN")
 
     def test_player_autonomy_and_queue_override(self):
         for item, opts in [
@@ -137,7 +143,7 @@ class CareerChanceCardTests(unittest.TestCase):
             ({"options_complete": False}, "COMPLETE_NATIVE_CAREER_CHOICE_REQUIRED"),
             ({"stage": "OUTCOME"}, "COMPLETE_NATIVE_CAREER_CHOICE_REQUIRED"),
             ({"career_mode": "UNKNOWN"}, "CAREER_MODE_NOT_SOURCE_VERIFIED"),
-            ({"career_mode": "ACTIVE_CAREER"}, None),
+            ({"career_mode": "ACTIVE_CAREER"}, "BEST_EVIDENCED_CAREER_OUTCOME"),
             ({"dialog_tuning_id": True}, "CAREER_EVENT_IDENTITY_OR_SOURCE_INVALID"),
             ({"recipient_sim_id": "1002000.0"}, "CAREER_EVENT_IDENTITY_OR_SOURCE_INVALID"),
             ({"selected_sim_id": "bad"}, "CAREER_SELECTED_PORTRAIT_INVALID"),
@@ -197,17 +203,27 @@ class CareerChanceCardTests(unittest.TestCase):
             "response_id": 8, "accepted": True,
             "capture_ref": "capture:after-response",
         }
+        response["captured_at_epoch_ms"] = 100200
+        effect = {
+            "source": "EA_NATIVE", "event_ref": decision["event_ref"],
+            "recipient_sim_id": "1002001", "response_id": 8,
+            "effect_basis_ref": decision["selected_effect_basis_ref"],
+            "capture_ref": "capture:after-effect", "captured_at_epoch_ms": 100300,
+            "applied": True, "observed_deltas": {"performance": 4, "simoleons": 100},
+        }
         activity = {
             "source": "EA_NATIVE", "event_ref": decision["event_ref"],
             "recipient_sim_id": "1002001", "resumed": True,
-            "capture_ref": "capture:after-activity",
+            "capture_ref": "capture:after-activity", "captured_at_epoch_ms": 100400,
             "activity_ref": "sim-queue:ongoing",
         }
         self.assertEqual(reconcile_career_event_turn(
-            decision, response, activity=activity)["state"],
-            "RESPONSE_AND_RESUMPTION_SHAPE_MATCH")
+            decision, response, effect=effect, activity=activity)["state"],
+            "RESPONSE_EFFECT_AND_RESUMPTION_SHAPE_MATCH")
         self.assertEqual(reconcile_career_event(
-            decision, response, activity=None)["state"], "UNVERIFIED")
+            decision, response, effect=None, activity=activity)["state"], "UNVERIFIED")
+        self.assertEqual(reconcile_career_event(
+            decision, response, effect=effect, activity=None)["state"], "UNVERIFIED")
         for change in [
             {"capture_ref": decision["capture_ref"]},
             {"response_id": 2},
@@ -216,7 +232,8 @@ class CareerChanceCardTests(unittest.TestCase):
         ]:
             with self.subTest(change=change):
                 self.assertEqual(reconcile_career_event(
-                    decision, {**response, **change}, activity=activity)["state"],
+                    decision, {**response, **change}, effect=effect,
+                    activity=activity)["state"],
                     "UNVERIFIED")
         for change in [
             {"capture_ref": response["capture_ref"]},
@@ -226,8 +243,53 @@ class CareerChanceCardTests(unittest.TestCase):
         ]:
             with self.subTest(change=change):
                 self.assertEqual(reconcile_career_event(
-                    decision, response, activity={**activity, **change})["state"],
+                    decision, response, effect=effect,
+                    activity={**activity, **change})["state"],
                     "UNVERIFIED")
+
+    def test_effect_proof_rejects_replayed_capture_wrong_actor_and_unverified_result(self):
+        d = plan()
+        r = {
+            "source": "EA_NATIVE", "event_ref": d["event_ref"],
+            "event_revision": d["event_revision"], "recipient_sim_id": "1002001",
+            "response_id": 8, "accepted": True,
+            "capture_ref": "capture:response-1", "captured_at_epoch_ms": 100200,
+        }
+        e = {
+            "source": "EA_NATIVE", "event_ref": d["event_ref"],
+            "recipient_sim_id": "1002001",
+            "response_id": 8, "effect_basis_ref": d["selected_effect_basis_ref"],
+            "capture_ref": "capture:effect-1",
+            "captured_at_epoch_ms": 100300, "applied": True,
+            "observed_deltas": {"performance": 4},
+        }
+        a = {
+            "source": "EA_NATIVE", "event_ref": d["event_ref"],
+            "recipient_sim_id": "1002001",
+            "capture_ref": "capture:resume-1",
+            "captured_at_epoch_ms": 100400, "resumed": True,
+            "activity_ref": "queue:work", }
+        for patch in [
+            {"capture_ref": d["capture_ref"]},
+            {"capture_ref": r["capture_ref"]},
+            {"recipient_sim_id": "1002002"},
+            {"response_id": 2},
+            {"effect_basis_ref": "unknown:basis"},
+            {"applied": False},
+            {"observed_deltas": {"performance": float("nan")}},
+            {"observed_deltas": {}},
+            {"captured_at_epoch_ms": r["captured_at_epoch_ms"]},
+        ]:
+            with self.subTest(patch=patch):
+                got = reconcile_career_event(
+                    d, r, effect={**e, **patch}, activity=a)
+                self.assertEqual(got["state"], "UNVERIFIED")
+        for capture in [d["capture_ref"], r["capture_ref"], e["capture_ref"]]:
+            with self.subTest(resume_capture=capture):
+                got = reconcile_career_event(
+                    d, r, effect=e, activity={**a, "capture_ref": capture})
+                self.assertEqual(got["state"], "UNVERIFIED")
+
 
     def test_does_not_change_work_hard_or_teen_homework_owner(self):
         shift = {
