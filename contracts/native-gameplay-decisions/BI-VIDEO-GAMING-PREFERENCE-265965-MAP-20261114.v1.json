@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-VIDEO-GAMING-PREFERENCE-265965-MAP-20261114",
+  "purpose": "Preserve locally source-inspected exact tuning/response identities and read-only cross-check of native offer, response and effect/resumption observations; no inferred EA hook implementation or click action.",
+  "files": [
+    {
+      "path": "betterinstincts/preference_native_map.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure data-driven normalized native event and effect readback validator; no game import, native runtime or OS input control.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "REPORTED_LOCAL_TUNING_SOURCE_IDS_AND_OFFLINE_CI_ONLY",
+  "next_gate": "Use the local authored one-shot Python-3.7 observer in a fresh authorized disposable Sims 4 build 1.121.361.1020 session. Record exact recipient Actor, matched dialog response, Actor loot/trait-or-marker, ActiveHousehold buff and activity resumed after independent captures, then rollback; this source helper alone is not trusted provenance."
+}
