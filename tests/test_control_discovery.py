@@ -1,0 +1,277 @@
+"""The actual computer-use lane must pause, journal and feed codification."""
+import asyncio
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from betterinstincts import host_listener
+from betterinstincts.agent_control_runner import AgentControlRunner, AgentControlRunnerError
+from betterinstincts.control_discovery import (
+    SCHEMA, EVENT_SCHEMA, ControlDiscoveryError, compact_handoff,
+    coverage, ingest, new_session,
+)
+from betterinstincts.player_presence import PresenceProbe
+from betterinstincts.workflow_interop import CooperativeScreenQueue
+
+
+def base():
+    return new_session(
+        session_id="bi-control-01", household_ref="household:opaque",
+        goal_id="goal:fertilizer", game_patch="1.121.361.1020",
+        fallback_reason="EXISTING_RULE_FAILED",
+        listener_active=True, explicit_opt_in=True,
+    )
+
+
+def event(ledger, kind, work="work:plant2", **kwargs):
+    return ingest(ledger, {
+        "schema": EVENT_SCHEMA, "seq": ledger["next_seq"],
+        "kind": kind, "work_id": work, **kwargs,
+    })
+
+
+def prepared(ledger, work="work:plant2"):
+    return event(
+        ledger, "PREPARE", work,
+        action_ref="fertilize:select",
+        object_class_ref="object_class:planter",
+        before_capture_ref="capture:before",
+        authority_ref="admission:checked",
+    )
+
+
+class SemanticDiscoveryTests(unittest.TestCase):
+    def test_no_implicit_listener_or_opt_in(self):
+        for overrides in (
+            {"listener_active": False},
+            {"explicit_opt_in": False},
+            {"fallback_reason": "NATIVE_ALREADY_WORKING"},
+            {"game_patch": "UNKNOWN"},
+        ):
+            kwargs = dict(
+                session_id="bi-control-01", household_ref="household:opaque",
+                goal_id="goal:fertilizer", game_patch="1.121.361.1020",
+                fallback_reason="EXISTING_RULE_FAILED",
+                listener_active=True, explicit_opt_in=True,
+            )
+            kwargs.update(overrides)
+            with self.subTest(overrides=overrides):
+                with self.assertRaises(ControlDiscoveryError):
+                    new_session(**kwargs)
+
+    def test_every_prepared_action_requires_evidence_and_codification(self):
+        state = prepared(base())
+        self.assertEqual(coverage(state)["counts"]["prepared"], 1)
+        state = event(state, "QUEUE_STATUS", queue_state="COMPLETED")
+        self.assertEqual(coverage(state)["counts"]["awaiting_outcome"], 1)
+        state = event(state, "OUTCOME", outcome="HELPFUL",
+                      after_capture_ref="capture:after",
+                      outcome_ref="outcome:plant2-fertilized",
+                      player_interrupted=False)
+        self.assertEqual(coverage(state)["counts"]["review_ready"], 1)
+        self.assertEqual(coverage(state)["unresolved_total"], 1)
+        state = event(
+            state, "CODIFICATION_RECEIPT",
+            module_ref="betterinstincts/gardening_service.py",
+            test_ref="tests/test_gardening.py",
+            commit_ref="commit:proposed",
+            review_ref="review:proposed",
+        )
+        self.assertEqual(coverage(state)["counts"]["receipt_submitted"], 1)
+        self.assertEqual(coverage(state)["unresolved_total"], 0)
+        self.assertEqual(
+            state["steps"]["work:plant2"]["codification"]["status"],
+            "RECEIPT_SUBMITTED_NOT_MERGE_VERIFIED",
+        )
+        self.assertFalse(coverage(state)["execute_allowed"])
+
+    def test_invalid_unprepared_result_and_raw_payload_rejected(self):
+        with self.assertRaisesRegex(ControlDiscoveryError, "UNPREPARED_EFFECT"):
+            event(base(), "QUEUE_STATUS", queue_state="COMPLETED")
+        with self.assertRaisesRegex(ControlDiscoveryError, "PREPARE_FIELDS_INVALID"):
+            event(base(), "PREPARE", action_ref="some", raw_screenshot="secret")
+        state = prepared(base())
+        with self.assertRaisesRegex(ControlDiscoveryError, "POST_ACTION_CAPTURE"):
+            event(event(state, "QUEUE_STATUS", queue_state="COMPLETED"),
+                  "OUTCOME", outcome="HELPFUL",
+                  after_capture_ref="capture:before", outcome_ref="outcome:one",
+                  player_interrupted=False)
+
+    def test_stale_or_duplicate_sequence_and_false_outcome_block(self):
+        state = prepared(base())
+        with self.assertRaisesRegex(ControlDiscoveryError, "EVENT_SEQUENCE_INVALID"):
+            ingest(state, {
+                "schema": EVENT_SCHEMA, "seq": 1,
+                "kind": "QUEUE_STATUS", "work_id": "work:plant2",
+                "queue_state": "COMPLETED",
+            })
+        with self.assertRaisesRegex(ControlDiscoveryError, "ACTION_NOT_OBSERVED_AS_ATTEMPTED"):
+            event(state, "OUTCOME", outcome="HELPFUL",
+                  after_capture_ref="capture:after", outcome_ref="outcome:one",
+                  player_interrupted=False)
+
+    def test_interrupted_effect_is_not_silently_codified(self):
+        state = prepared(base())
+        state = event(state, "QUEUE_STATUS", queue_state="NEEDS_RECONCILIATION")
+        state = event(state, "OUTCOME", outcome="UNKNOWN",
+                      after_capture_ref="capture:after",
+                      outcome_ref="observation:uncertain",
+                      player_interrupted=True)
+        self.assertEqual(coverage(state)["counts"]["interrupted"], 1)
+        self.assertEqual(
+            coverage(state)["unresolved"][0]["next_gate"],
+            "RECONCILE_HUMAN_INTERRUPTION",
+        )
+        with self.assertRaisesRegex(ControlDiscoveryError, "REVIEW_OUTCOME_BEFORE_CODIFICATION"):
+            event(state, "CODIFICATION_RECEIPT",
+                  module_ref="betterinstincts/gardening_service.py",
+                  test_ref="tests/test_gardening.py",
+                  commit_ref="commit:one", review_ref="review:one")
+
+    def test_bounded_digest_no_raw_events(self):
+        state = base()
+        for i in range(12):
+            state = prepared(state, f"work:step{i}")
+        digest = compact_handoff(state)
+        self.assertEqual(digest["events_count"], 12)
+        self.assertEqual(digest["codification_coverage"]["unresolved_total"], 12)
+        self.assertEqual(len(digest["codification_coverage"]["unresolved"]), 8)
+        self.assertEqual(digest["codification_coverage"]["unresolved_truncated"], 4)
+        self.assertNotIn("events", digest)
+        self.assertTrue(digest["requires_fresh_control_admission"])
+
+
+class PersistentListenerTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.override = patch.object(host_listener, "OUTPUT", Path(self.tmp.name))
+        self.override.start()
+        self.addCleanup(self.override.stop)
+        host_listener.activate("bi-control-01")
+        host_listener.open_control_discovery(
+            "bi-control-01", household_ref="household:opaque",
+            goal_id="goal:fertilizer", game_patch="1.121.361.1020",
+            fallback_reason="EXISTING_RULE_FAILED", explicit_opt_in=True,
+        )
+
+    def test_journal_requires_opt_in_and_active_session(self):
+        with self.assertRaisesRegex(host_listener.HostListenerError, "EXPLICIT"):
+            host_listener.record_control_discovery("bi-control-01", {})
+        with self.assertRaisesRegex(host_listener.HostListenerError, "ALREADY_EXISTS"):
+            host_listener.open_control_discovery(
+                "bi-control-01", household_ref="household:opaque",
+                goal_id="goal:fertilizer", game_patch="1.121.361.1020",
+                fallback_reason="EXISTING_RULE_FAILED", explicit_opt_in=True,
+            )
+        host_listener.deactivate("bi-control-01")
+        with self.assertRaisesRegex(host_listener.HostListenerError, "NOT_ACTIVE"):
+            host_listener.record_control_discovery(
+                "bi-control-01", {}, explicit_opt_in=True)
+
+    def test_persistent_atomic_event_and_compact_recovery(self):
+        state = base()
+        item = {
+            "schema": EVENT_SCHEMA, "seq": 1, "kind": "PREPARE",
+            "work_id": "work:plant2", "action_ref": "fertilize:select",
+            "object_class_ref": "object_class:planter",
+            "before_capture_ref": "capture:before",
+            "authority_ref": "admission:checked",
+        }
+        receipt = host_listener.record_control_discovery(
+            "bi-control-01", item, explicit_opt_in=True)
+        self.assertEqual(receipt["event_count"], 1)
+        self.assertEqual(receipt["handoff"]["codification_coverage"]["total_attempts"], 1)
+        self.assertEqual(host_listener.read_control_discovery("bi-control-01")["events_count"], 1)
+        with self.assertRaises(host_listener.HostListenerError):
+            host_listener.record_control_discovery(
+                "bi-control-01", item, explicit_opt_in=True)
+
+
+class AgentControlRunTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.listener_patch = patch.object(host_listener, "OUTPUT", Path(self.tmp.name) / "events")
+        self.listener_patch.start()
+        self.addCleanup(self.listener_patch.stop)
+        host_listener.activate("bi-control-01")
+        host_listener.open_control_discovery(
+            "bi-control-01", household_ref="household:opaque",
+            goal_id="goal:fertilizer", game_patch="1.121.361.1020",
+            fallback_reason="EXISTING_RULE_FAILED", explicit_opt_in=True,
+        )
+        self.age = 0
+        self.executed = []
+
+        async def instant(_):  # avoid real 0.2-second sleeps in tests
+            await asyncio.sleep(0)
+
+        self.queue = CooperativeScreenQueue(
+            lambda: PresenceProbe(False, False, last_input_age_ms=self.age),
+            lambda: True, lock_root=Path(self.tmp.name) / "locks",
+            sleep=instant,
+        )
+        self.runner = AgentControlRunner("bi-control-01", self.queue)
+
+    def prepare(self, effect=None):
+        async def validate():
+            return True
+
+        async def default_effect():
+            self.executed.append("real-effect")
+
+        return self.runner.prepare_effect(
+            work_id="work:plant2", action_ref="fertilize:select",
+            object_class_ref="object_class:planter",
+            before_capture_ref="capture:before",
+            authority_ref="admission:checked", validate=validate,
+            effect=effect or default_effect,
+        )
+
+    async def test_pause_preserves_control_session_then_idle_resumes(self):
+        self.prepare()
+        paused = await self.runner.pulse()
+        self.assertEqual(paused["state"], "WAITING_FOR_USER")
+        self.assertTrue(paused["listener_remains_active"])
+        self.assertTrue(paused["behavior_paused_for_player"])
+        self.assertEqual(self.executed, [])
+        self.assertEqual(len(self.queue.pending), 1)
+        self.age = 16000
+        resumed = await self.runner.wait_and_pulse(max_checks=3)
+        self.assertEqual(resumed["state"], "COMPLETED")
+        self.assertEqual(self.executed, ["real-effect"])
+        receipt = self.runner.record_observed_outcome(
+            outcome="HELPFUL", after_capture_ref="capture:after",
+            outcome_ref="outcome:fertilized", player_interrupted=False)
+        self.assertEqual(receipt["handoff"]["codification_coverage"]["counts"]["review_ready"], 1)
+        self.assertEqual(host_listener.status("bi-control-01")["state"], "ACTIVE")
+
+    async def test_partial_exception_requires_reconciliation_not_replay(self):
+        async def incomplete():
+            self.executed.append("attempted")
+            raise RuntimeError("uncertain game outcome")
+        self.age = 16000
+        self.prepare(effect=incomplete)
+        status = await self.runner.pulse()
+        self.assertEqual(status["state"], "NEEDS_RECONCILIATION")
+        self.assertEqual(self.executed, ["attempted"])
+        self.assertEqual(len(self.queue.pending), 0)
+        self.assertIn("work:plant2", self.queue.suspended)
+        receipt = self.runner.record_observed_outcome(
+            outcome="UNKNOWN", after_capture_ref="capture:after",
+            outcome_ref="observation:uncertain", player_interrupted=True)
+        self.assertEqual(receipt["handoff"]["codification_coverage"]["counts"]["interrupted"], 1)
+        with self.assertRaisesRegex(AgentControlRunnerError, "ONE_EFFECT_IN_FLIGHT"):
+            self.prepare()
+
+    async def test_cannot_consume_control_without_prejournal(self):
+        host_listener.deactivate("bi-control-01")
+        with self.assertRaises(host_listener.HostListenerError):
+            self.prepare()
+        self.assertEqual(self.executed, [])
+
+
+if __name__ == "__main__":
+    unittest.main()
