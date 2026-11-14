@@ -1,0 +1,17 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-PS0245-DECISION-HORIZON-20261114",
+  "purpose": "Classify PS-0245 Bellman and KKT pure forecast policy; no claimed Sims game native effect",
+  "files": [
+    {
+      "path": "betterinstincts/decision_horizon.py",
+      "route": "POLICY_ONLY",
+      "reason": "Finite-horizon stochastic planning and continuous relaxation only produce read-only, evidence-bound advisories and do not dispatch game actions",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_SOURCE_AND_CI_ONLY_NOT_A_PACKAGED_EA_SCRIPT",
+  "next_gate": "Native EA patch-specific consumer, actual install and explicit disposable game before/after + human interrupt, not supplied by the pure policy"
+}

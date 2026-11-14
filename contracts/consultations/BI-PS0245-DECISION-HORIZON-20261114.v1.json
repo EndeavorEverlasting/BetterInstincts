@@ -1,0 +1,82 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PS0245-DECISION-HORIZON-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "PS-0245 bounded duration-aware Bellman-style stochastic activity planning on top of PS-0241 observed activity DAG and route evidence. Preserves existing native and human-first owners; no desktop or in-game actions.",
+  "affected_concepts": [
+    "SIM",
+    "HOUSEHOLD",
+    "NEED_STATE",
+    "MOODLET",
+    "ACTION_QUEUE",
+    "ACTIVITY",
+    "GOAL_THREAD",
+    "RESOURCE_CLAIM",
+    "TIME_WINDOW",
+    "LOCATION",
+    "AFFORDANCE",
+    "OBSERVATION",
+    "CONTROL_PERMIT",
+    "INTERRUPTION",
+    "RESUME_CONDITION",
+    "PLAYER_INTENT",
+    "GAME_BUILD"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/activity_chain.py",
+    "betterinstincts/ecology_forecast.py",
+    "betterinstincts/semantic_advisory.py",
+    "betterinstincts/task_continuity.py",
+    "betterinstincts/household_economy.py",
+    "contracts/activity-chain.v1.json",
+    "contracts/native-gameplay-authority.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-043",
+    "BI-ONT-044"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "BOUNDED_OFFLINE_STOCHASTIC_POLICY_NOT_NATIVE_GAME_EFFECT",
+  "player_save_control_impact": "Read-only deterministic policy calculations; no Sims save, host settings, desktop input, game queue, mutation, cheating, ambient telemetry or unattended agent activation.",
+  "expected_outcome": "Typed per-actor evidence-backed state, exact preconditions, conservative need rates/floors, inventory acquisition, time-sensitive route alternatives, finite bounded stochastic expected utility and explicit deferred/interrupt resume checkpoints; one proposal only.",
+  "negative_tests": [
+    "Human input / unknown scene / stale observation abstains",
+    "Insufficient funds, missing unlock, missing inventory, infeasible deadlines and below-floor needs deny",
+    "Action and route reuse cannot loop",
+    "Unreconciled in-flight or stale completion never replays",
+    "Bounded expansions, horizon, depth and queue capacity",
+    "Teleport requires exact-capture unlock proof",
+    "Stochastic loss penalizes uncertain paths",
+    "Forecast has deterministic defaults and no GP dependency"
+  ],
+  "rollback_path": "Revert feature branch; no game, save, installation, OS or account changes.",
+  "unresolved_unknowns": [
+    "Exact EA-native patch APIs and packaged activation",
+    "Actual player takeover/gameplay correctness in disposable save",
+    "Empirical utility coefficients and probability calibration for live Sims actions"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-PS0245-DECISION-HORIZON-20261114.v1.json",
+    "betterinstincts/decision_horizon.py",
+    "contracts/decision-horizon.v1.json",
+    "contracts/native-gameplay-decisions/BI-PS0245-DECISION-HORIZON-20261114.v1.json",
+    "tests/test_decision_horizon.py",
+    "docs/DECISION_HORIZON.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "P141 compared: replace domain cascade with monolithic optimizer (REJECT: duplicate owner), blanket GP for every step (DEFER: not calibrated), add desktop click agent (REJECT: breaks native/player boundary), and add a bounded optimizer consuming PS-0241 observed DAG (SELECT: reversible, testable, preserves existing owners). P95/P82 evaluate real finite-horizon tradeoffs, P08 live blocked without game host, P07/P124 provide tested integration and receipt.",
+  "source_refs": [
+    "https://github.com/EndeavorEverlasting/BetterInstincts/blob/main/betterinstincts/activity_chain.py",
+    "https://github.com/EndeavorEverlasting/BetterInstincts/issues/171"
+  ],
+  "recorded_date": "2026-11-14"
+}
