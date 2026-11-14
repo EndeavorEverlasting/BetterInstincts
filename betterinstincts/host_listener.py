@@ -259,7 +259,8 @@ def open_control_discovery(
 
 
 def _write_control_discovery(session_id: str, ledger: dict, *,
-                             create_only: bool = False) -> dict:
+                             create_only: bool = False,
+                             expected_seq: int | None = None) -> dict:
     """Atomic, bounded, per-session journal update; never store raw UI data."""
     import os
     import tempfile
@@ -283,6 +284,15 @@ def _write_control_discovery(session_id: str, ledger: dict, *,
         os.close(fd)
         if create_only and target.exists():
             raise HostListenerError("CONTROL_DISCOVERY_ALREADY_EXISTS")
+        if expected_seq is not None:
+            if target.is_symlink() or not target.is_file():
+                raise HostListenerError("CONTROL_DISCOVERY_JOURNAL_UNAVAILABLE")
+            try:
+                current = json.loads(target.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as exc:
+                raise HostListenerError("CONTROL_DISCOVERY_JOURNAL_INVALID") from exc
+            if current.get("next_seq") != expected_seq:
+                raise HostListenerError("CONTROL_DISCOVERY_STALE_WRITER")
         raw = json.dumps(ledger, indent=2, sort_keys=True) + "\n"
         if len(raw.encode("utf-8")) > 64_000:
             raise HostListenerError("CONTROL_DISCOVERY_BUDGET_EXCEEDED")
@@ -300,7 +310,7 @@ def _write_control_discovery(session_id: str, ledger: dict, *,
     return {
         "schema": "betterinstincts.control-discovery-storage/v1",
         "session_id": session_id, "event_count": len(ledger["events"]),
-        "relative_path": str(target.relative_to(ROOT)),
+        "relative_path": "dist/host-listener/" + session_id + "/control-discovery.json",
         "execute_allowed": False,
     }
 
@@ -327,7 +337,8 @@ def record_control_discovery(
         updated = ingest(ledger, event)
     except (ControlDiscoveryError, ValueError) as exc:
         raise HostListenerError("CONTROL_DISCOVERY_INVALID:" + str(exc)) from exc
-    receipt = _write_control_discovery(session_id, updated)
+    receipt = _write_control_discovery(session_id, updated,
+                                       expected_seq=ledger["next_seq"])
     receipt["handoff"] = compact_handoff(updated)
     return receipt
 
