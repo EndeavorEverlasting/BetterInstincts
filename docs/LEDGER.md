@@ -1,3 +1,11 @@
+## 2026-11-14 — Live Super Fertilizer pickup and single-plant use
+
+On Windows build 1.121.361.1020 in an operator-confirmed disposable session, two live tooltip captures identified a grounded Super Fertilizer bag beside the right-hand planter row. Native **Put in Inventory** queued while paused. After bounded normal-speed play, the exact bag was absent from its ground position and the selected Servo's personal inventory showed a new item with the matching Super Fertilizer tooltip. No drag was required.
+
+The in-season Sixam Mosquito Trap initially read **Fertilizer: Depleted**. Its enabled single-plant **Fertilize** picker offered Super Fertilizer. One selection produced one observed fertilizer queue entry. Following bounded play, that entry cleared, the Super Fertilizer entry was absent from personal inventory, and the target tooltip read **Fertilizer: Good**. The run ended paused without issuing a save command. Private capture references and hashes are in ignored dist/game-host/bi-garden-20261114/receipt.json.
+
+This proves the operator-directed native workflow on the observed installation. Installed mod provenance, matched vanilla/modified trials, rollback and maintainer review remain open under issue #171. BI-002 hunger remains independent.
+
 ## 2026-11-14 — Post-merge Super Fertilizer closer edge guards
 
 **P83 independent review of #242:** Two CodeAnt issues remained after green merge: unhashable external hover source in `fertilizer_hover_recognition` can cause uncaught `TypeError`, and pending pickup can freeze a valid single-plant action despite positive personal pocket fertilizer. Other CodeAnt/Codex findings about dropped `available` were corrected before #242 merged and proven by CI. **P03:** two-owner source repair with falsifiers for JSON-shaped input and pending-stock parallel state; **P141:** reject global input catcher or new queue controller, preserve one existing action owner; **P124:** type checks at source boundaries and explicit pending transfer semantics; **P04:** no local agents/EA game tested from GitHub provider, native issue #171 still owns test with user-authorized disposable save and rollback. BI-002 independent. No source-only checks equal game outcome. See `docs/ECO_RESOURCE_CYCLE.md`.
