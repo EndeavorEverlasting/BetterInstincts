@@ -1,0 +1,78 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PS-0241-ECOLOGY-INTENT-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "PS-0241: resilient per-Sim ecology intent, paused planning and live-play proposal reconciliation, verified pickup-before-fertilize, independent need/work budgets and bounded GP-vs-baseline forecasting, without asserting native EA queue authority.",
+  "affected_concepts": [
+    "SIM",
+    "ACTION_QUEUE",
+    "GOAL_THREAD",
+    "OBSERVATION",
+    "NEED_STATE",
+    "PLAYER_INTENT",
+    "INTERRUPTION",
+    "TIME_WINDOW",
+    "RESUME_CONDITION",
+    "PROOF_RECEIPT",
+    "GAME_BUILD",
+    "RESOURCE_CLAIM"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/gardening_service.py",
+    "betterinstincts/fertilizer_workflow.py",
+    "betterinstincts/task_continuity.py",
+    "betterinstincts/queue_supervision.py",
+    "contracts/native-gameplay-authority.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-043",
+    "BI-ONT-044"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "BOUNDED_OFFLINE_POLICY_NO_NATIVE_AUTOACTIVATION",
+  "player_save_control_impact": "No desktop input, no game queue mutation, no Sim saves or Mods changes, no telemetry daemon. Proposed steps remain gated by native installed verifier and player first.",
+  "expected_outcome": "Per-Sim serializable goal retained across pause, portrait switches and autonomous distractions; one fresh exact-target proposal at a time; independently witnessed inventory gain before fertilization; deterministic admission and bounded model comparison.",
+  "negative_tests": [
+    "Paused never dispatches",
+    "Human input suppresses proposals",
+    "Unknown origin cannot be cancelled",
+    "Stale capture and cross-Sim input deny",
+    "No independent stock gain means no fertilize",
+    "No work/need time means defer",
+    "GP rejected when no statistically useful validated improvement"
+  ],
+  "rollback_path": "Revert the bounded policy module and tests; no user files or game state modified.",
+  "unresolved_unknowns": [
+    "Exact verified EA game-event/queue/inventory native APIs",
+    "Version-matched embedded Python and ts4script import activation",
+    "User-host P08 disposable vanilla/modified game proof"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-PS-0241-ECOLOGY-INTENT-20261114.v1.json",
+    "contracts/native-gameplay-decisions/BI-PS-0241-ECOLOGY-INTENT-20261114.v1.json",
+    "betterinstincts/ecology_intent.py",
+    "betterinstincts/ecology_forecast.py",
+    "scripts/native_ecology_bundle.py",
+    "tests/test_ecology_intent.py",
+    "tests/test_native_ecology_bundle.py",
+    "docs/ECOLOGY_INTENT.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "P141 in-scope theses: new desktop click daemon REJECT (does not solve native activation); blanket GP schedule REJECT (uncalibrated discontinuities); direct guessed EA hook REJECT (local provenance missing); bounded reusable intent reducer + native interface gate SELECT as the safest executable base. Native package and live tests remain separate unproven acceptance gates.",
+  "source_refs": [
+    "https://github.com/EndeavorEverlasting/BetterInstincts/issues/171",
+    "https://github.com/EndeavorEverlasting/BetterInstincts/pull/252"
+  ],
+  "recorded_date": "2026-11-14"
+}
