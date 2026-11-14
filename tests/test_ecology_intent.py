@@ -145,7 +145,7 @@ class EcologyIntentTests(unittest.TestCase):
         third["interruption"] = {
             "step": "PICKUP", "status": "NATIVE_INTERRUPTED",
             "cause": "SIM_AUTONOMY",
-            "before_capture_ref": second["capture_ref"],
+            "before_capture_ref": first["capture_ref"],
             "after_capture_ref": third["capture_ref"],
             "proof_ref": "proof:interruption:3",
             "native_queue_ref": "ea:queue:slot3",
@@ -154,6 +154,28 @@ class EcologyIntentTests(unittest.TestCase):
         self.assertEqual(restored["gate"], "ECOLOGY_PLAY_STEP_PROPOSED")
         self.assertEqual(restored["proposal"]["step"], "PICKUP")
         self.assertEqual(restored["intent"]["verified_steps"], [])
+
+    def test_intermediate_telemetry_preserves_native_outcome_origin(self):
+        initial = observed(paused=False)
+        proposed = reconcile_ecology_intent(intent(), initial, now=NOW)
+        intermediate = observed(seq=2, paused=False)
+        pending = reconcile_ecology_intent(proposed["intent"], intermediate, now=NOW)
+        self.assertEqual(pending["gate"], "ECOLOGY_AWAIT_INDEPENDENT_OUTCOME")
+        self.assertEqual(pending["intent"]["awaiting_capture_ref"], initial["capture_ref"])
+        self.assertEqual(pending["intent"]["awaiting_item_count"], 0)
+        completed = observed(seq=3, paused=False, inventory_count=1)
+        completed["outcome"] = outcome(initial, completed, "PICKUP", 0, 1)
+        next_result = reconcile_ecology_intent(pending["intent"], completed, now=NOW)
+        self.assertEqual(next_result["proposal"]["step"], "FERTILIZE")
+        self.assertEqual(next_result["intent"]["verified_steps"], ["PICKUP"])
+
+    def test_shared_proactive_need_threshold_blocks_low_nonemergency_need(self):
+        o = observed()
+        o["needs"]["social"]["value"] = 0.50
+        self.assertEqual(
+            reconcile_ecology_intent(intent(), o, now=NOW)["gate"],
+            "ECOLOGY_NEED_OR_WORK_FIRST",
+        )
 
     def test_player_and_unknown_queue_win(self):
         for paused in (True, False):
