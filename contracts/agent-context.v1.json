@@ -87,5 +87,12 @@
   "native_gameplay_route": "POLICY_ONLY",
   "native_successor_issue": 171,
   "active_parent": "BI-002 hunger certification remains active; this context service is nonblocking.",
-  "proof_ceiling": "OFFLINE_CONTEXT_PROJECTION_NOT_CROSS_CHAT_PROVIDER_PERSISTENCE_OR_GAMEPLAY"
+  "proof_ceiling": "OFFLINE_CONTEXT_PROJECTION_NOT_CROSS_CHAT_PROVIDER_PERSISTENCE_OR_GAMEPLAY",
+  "agent_control_path": {
+    "rule": "Context cannot itself issue an input permit, but an opted-in agent MAY operate Sims as the LAST RESORT through the existing CooperativeScreenQueue and explicit listener. Every atomic action must be journaled, observed and queued for reviewed repository codification.",
+    "decision_owner": "betterinstincts/agent_control_runner.py",
+    "journal_owner": "betterinstincts/control_discovery.py",
+    "listener_owner": "betterinstincts/host_listener.py",
+    "source": "contracts/control-discovery.v1.json"
+  }
 }
