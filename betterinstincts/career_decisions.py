@@ -172,8 +172,10 @@ def evaluate_career_event(
     if previously_responded is not None:
         if not isinstance(previously_responded, Mapping):
             return _hold("CAREER_RESPONSE_RECEIPT_UNRECONCILED", event=event)
-        if (previously_responded.get("event_ref") == event["event_ref"]
-                and previously_responded.get("event_revision") == event["event_revision"]):
+        # A native event_ref identifies the event across layout/observation
+        # revisions. A prior effect attempt or uncertain result must not be
+        # replayed merely because the viewport/revision changed.
+        if previously_responded.get("event_ref") == event["event_ref"]:
             return _hold("CAREER_EVENT_ALREADY_ACTED_OR_UNCERTAIN", event=event)
     offered = event.get("response_ids")
     options = event.get("options")
@@ -295,8 +297,13 @@ def reconcile_career_event(
                 "reason": "CAREER_ACTIVITY_RESUMPTION_UNOBSERVED", "proof_ceiling": PROOF}
     return {
         "schema": ACK, "state": "RESPONSE_EFFECT_AND_RESUMPTION_SHAPE_MATCH",
-        "event_ref": decision["event_ref"], "recipient_sim_id": decision["recipient_sim_id"],
+        "event_ref": decision["event_ref"],
+        "event_revision": decision["event_revision"],
+        "recipient_sim_id": decision["recipient_sim_id"],
         "response_id": decision["recommended_response_id"],
+        "response_capture_ref": response["capture_ref"],
+        "effect_capture_ref": effect["capture_ref"],
+        "activity_capture_ref": activity["capture_ref"],
         "activity_ref": activity["activity_ref"],
         "execute_allowed": False, "proof_ceiling": PROOF,
     }
