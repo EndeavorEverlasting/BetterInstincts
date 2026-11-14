@@ -185,6 +185,11 @@ class PreferenceNativeMapTests(unittest.TestCase):
         self.assertEqual(assess_native_preference_outcome(
             bound, response, effect, bad_resumed)["reason"],
             "POST_DIALOG_ACTIVITY_RESUMPTION_NOT_OBSERVED")
+        # A newer timestamp cannot make a pre-response capture into new proof.
+        replayed_offer = {**resumed, "capture_ref": bound["capture_ref"]}
+        self.assertEqual(assess_native_preference_outcome(
+            bound, response, effect, replayed_offer)["reason"],
+            "POST_DIALOG_ACTIVITY_RESUMPTION_NOT_OBSERVED")
 
 
 if __name__ == "__main__":
