@@ -126,6 +126,20 @@ class AgentContextTests(unittest.TestCase):
                          "OBSERVE_ACTIVE_GAME_GOAL")
         self.assertEqual(self.boundary(listener_active=False)["gate"],
                          "RECOVER_EXPLICIT_LISTENER")
+        paused = self.boundary(
+            listener_active=False, player_presence="ACTIVE",
+            effect_pending=True, effect_state="WAITING_FOR_USER",
+        )
+        self.assertEqual(paused["gate"], "RECOVER_EXPLICIT_LISTENER")
+        self.assertFalse(paused["listener_remains_active"])
+        self.assertTrue(paused["effect_pending"])
+        offline = self.boundary(
+            listener_active=False, player_presence="UNKNOWN",
+            effect_pending=True, effect_state="WAITING_FOR_USER",
+            safe_offline_action="Reconcile pending action evidence",
+        )
+        self.assertEqual(offline["gate"], "CONTINUE_OFFLINE_NO_ACTIVE_LISTENER")
+
         self.assertEqual(self.boundary(game_state="NOT_VISIBLE")["gate"],
                          "INVESTIGATE_NEXT_GATE")
 
@@ -136,6 +150,10 @@ class AgentContextTests(unittest.TestCase):
             {"listener_active": "yes"},
             {"effect_pending": 0},
             {"effect_state": "UNVERIFIED_COMPLETED"},
+            {"effect_state": ["COMPLETED"]},
+            {"player_presence": ["ACTIVE"]},
+            {"game_state": {"state": "PAUSED"}},
+            {"host_access": {"state": "UNAVAILABLE"}},
             {"safe_offline_action": ""},
             {"host_unavailable_ref": "user typed a long claim"},
             {"claimed_acceptance_refs": ["receipt:one", "receipt:one"]},
