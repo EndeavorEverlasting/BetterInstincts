@@ -25,6 +25,10 @@ MAX_AGE_SECONDS = 60
 MAX_CROSS_SOURCE_SKEW = 12
 MAX_SAMPLES_PER_CALL = 2
 MAX_RATE = 1.0
+# Offline policy thresholds, not verified native Servo tuning or chevron multipliers.
+POLICY_PREEMPTIVE_LEVEL = 0.55
+POLICY_FORECAST_HORIZON_SIM_MINUTES = 30.0
+PATCH = re.compile(r"^[0-9]+(?:\.[0-9]+){3}$")
 
 
 class NeedSignalError(ValueError):
@@ -40,10 +44,12 @@ def _finite(value: Any) -> bool:
 
 
 def _health(source: str, *, state: str, reason: str, sample: str | None = None,
-            epoch: str | None = None, good: int = 0, stamp: float | None = None) -> dict:
+            epoch: str | None = None, good: int = 0, stamp: float | None = None,
+            context: Mapping[str, str] | None = None) -> dict:
     return {"source": source, "state": state, "reason": reason,
             "last_sample_ref": sample, "reset_ref": epoch,
             "consecutive_good": good, "observed_at_unix": stamp,
+            "context": dict(context) if context is not None else None,
             "next_gate": ("NONE" if state == "HEALTHY" else
                           "OBSERVE_DISTINCT_POST_RESET_PROBE" if state == "RECOVERING"
                           else "ISOLATE_SOURCE_RESET_ASSUMPTIONS_AND_HEALTH_CHECK")}
@@ -78,6 +84,15 @@ def _read_feed(
     elif (feed.get("calibration_verified") is not True
           or not _ref(feed.get("calibration_ref"))):
         return _health(source, state="QUARANTINED", reason="HUD_CALIBRATION_UNPROVEN"), {}
+
+    # A carried health receipt is not portable between portraits, patches,
+    # producer identities, or native hooks / HUD calibrations.
+    context = {
+        "sim_ref": sim_ref, "game_build": game_build, "profile": profile,
+        "source_ref": feed["source_ref"],
+        "adapter_ref": (feed["native_hook_ref"] if source == "EA_NATIVE"
+                        else feed["calibration_ref"]),
+    }
 
     rows = feed.get("needs")
     if (not isinstance(rows, Mapping) or not 1 <= len(rows) <= len(motives)
@@ -122,6 +137,16 @@ def _read_feed(
 
     previous = prior if isinstance(prior, Mapping) else {}
     older_state = previous.get("state")
+    if older_state in {"HEALTHY", "RECOVERING"}:
+        if previous.get("context") != context:
+            return _health(source, state="QUARANTINED",
+                           reason="SOURCE_CONTEXT_CHANGED_RESET_REQUIRED",
+                           context=context), {}
+        if (not _finite(previous.get("observed_at_unix"))
+                or float(stamp) <= float(previous["observed_at_unix"])):
+            return _health(source, state="QUARANTINED",
+                           reason="SOURCE_SAMPLE_NOT_MONOTONIC",
+                           context=context), {}
     reset = feed.get("reset_ref")
     if older_state in {"DOWN", "QUARANTINED", "RECOVERING"}:
         if not _ref(reset) or feed.get("reset_probe_passed") is not True:
@@ -133,17 +158,19 @@ def _read_feed(
                     or float(stamp) <= float(previous["observed_at_unix"])):
                 return _health(source, state="QUARANTINED", reason="REPLAYED_OR_NEW_RESET_EPOCH"), {}
             return _health(source, state="HEALTHY", reason="TWO_POST_RESET_PROBES",
-                           sample=feed["sample_ref"], epoch=reset, good=2, stamp=float(stamp)), parsed
+                           sample=feed["sample_ref"], epoch=reset, good=2,
+                           stamp=float(stamp), context=context), parsed
         if reset == previous.get("reset_ref") or feed["sample_ref"] == previous.get("last_sample_ref"):
             return _health(source, state="QUARANTINED", reason="NEW_RESET_EPOCH_REQUIRED"), {}
         return _health(source, state="RECOVERING", reason="FIRST_POST_RESET_PROBE",
-                       sample=feed["sample_ref"], epoch=reset, good=1, stamp=float(stamp)), {}
+                       sample=feed["sample_ref"], epoch=reset, good=1,
+                       stamp=float(stamp), context=context), {}
     if (previous.get("last_sample_ref") == feed["sample_ref"]
             and older_state == "HEALTHY"):
         return _health(source, state="QUARANTINED", reason="SAMPLE_REPLAY"), {}
     return _health(source, state="HEALTHY", reason="FRESH_VERIFIED_PROBE",
                    sample=feed["sample_ref"], epoch=reset if _ref(reset) else None,
-                   good=1, stamp=float(stamp)), parsed
+                   good=1, stamp=float(stamp), context=context), parsed
 
 
 def evaluate_need_signals(observation: Mapping[str, Any], *,
@@ -163,7 +190,7 @@ def evaluate_need_signals(observation: Mapping[str, Any], *,
                                ("sim_ref", "game_build", "capture_ref"))
     profile = observation.get("profile")
     if (not all(_ref(v) for v in (sim_ref, build, capture, profile))
-            or build.lower() in {"unknown", "latest", "any"}
+            or not PATCH.fullmatch(build)
             or type(observation.get("game_paused")) is not bool
             or type(observation.get("player_active")) is not bool):
         raise NeedSignalError("NEED_SIGNAL_CONTEXT_INVALID")
@@ -224,9 +251,21 @@ def evaluate_need_signals(observation: Mapping[str, Any], *,
                  else hud["level"] if hud is not None else None)
         if not aligned and chosen is not None:
             tier = "ASYNCHRONOUS_NOT_CORROBORATED"
+        # Conditional linear forecast: *only* independently source-measured
+        # native level and game-time slope, never CV fill/chevron arithmetic.
+        # This 0.55 threshold and 30 Sim-minute horizon are policy heuristics,
+        # not claimed EA need-tuning constants.
+        eta = None
+        native_level = native["level"] if native is not None else None
+        if rate is not None and rate < 0 and native_level is not None:
+            estimate = max(0.0, (native_level - POLICY_PREEMPTIVE_LEVEL) / -rate)
+            if math.isfinite(estimate):
+                eta = estimate
         critical_decline = (direction == "DOWN" and
                             (tier == "THREE_DOWN_CHEVRONS" or
-                             (level is not None and level < 0.35)))
+                             (level is not None and level < 0.35) or
+                             (eta is not None and
+                              eta <= POLICY_FORECAST_HORIZON_SIM_MINUTES)))
         if critical_decline:
             rapid.append(motive)
         motive_rows[motive] = {
@@ -234,6 +273,8 @@ def evaluate_need_signals(observation: Mapping[str, Any], *,
             "ordinal_rate_tier": tier, "native_rate_per_sim_minute": rate,
             "rate_multiplier_claim": None,
             "active_decay_measured": bool(rate is not None),
+            "conditional_sim_minutes_to_policy_preemptive": eta,
+            "forecast_policy_preemptive_level": POLICY_PREEMPTIVE_LEVEL if eta is not None else None,
             "sources": [r["source"] for r in available],
             "trend_conflict": discord,
             "needs_reobservation": not aligned or discord or chosen is None,
@@ -258,8 +299,14 @@ def evaluate_need_signals(observation: Mapping[str, Any], *,
     moods = observation.get("moodlet_observation")
     moodlet_eval = None
     if moods is not None:
+        mood_stamp = moods.get("observed_at_unix") if isinstance(moods, Mapping) else None
         if (not isinstance(moods, Mapping) or not _ref(moods.get("source_ref"))
                 or moods.get("capture_ref") != capture
+                or moods.get("sim_ref") != sim_ref
+                or moods.get("game_build") != build
+                or moods.get("verified") is not True
+                or not _finite(mood_stamp)
+                or not 0 <= float(instant) - float(mood_stamp) <= MAX_AGE_SECONDS
                 or not isinstance(moods.get("moodlets", []), list)):
             raise NeedSignalError("MOODLET_EVIDENCE_INVALID")
         moodlet_eval = evaluate_moodlets(
