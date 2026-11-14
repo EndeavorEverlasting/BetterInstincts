@@ -68,7 +68,8 @@
       "fallbacks": "Stale survey, mismatched Sim/lot, unavailable route/menu, protected/not-eligible bag or unknown native transfer -> no action, preserve target and inspect existing bags; no auto-buy.",
       "proof_ceiling": "OFFLINE_BACKYARD_BAG_ADVICE_NOT_GAME_TRANSFER",
       "native_successor_issue": 171,
-      "parent_guard": "The parent fertilizer_workflow must independently attest the same selected lot_ref and game_build as backyard_scan. The current selected Sim ref and capture must agree. When personally held stock is already sufficient, a stale backyard survey is bypassed and the existing fresh plant picker wins."
+      "parent_guard": "The parent fertilizer_workflow must independently attest the same selected lot_ref and game_build as backyard_scan. The current selected Sim ref and capture must agree. When personally held stock is already sufficient, a stale backyard survey is bypassed and the existing fresh plant picker wins.",
+      "spatial_map": "Optional current betterinstincts.semantic-spatial-map-doc/v1 with same game_build and lot_id, non-executing map and keyed objects; candidate item_ref must map to OUTSIDE FERTILIZER_BAG with source-proven 3D pose. Mismatched map scope fails closed; unknown object or pose cannot be chosen."
     }
   }
 }
