@@ -1,0 +1,59 @@
+{
+  "schema": "betterinstincts.decision-horizon-contract/v1",
+  "id": "BI-PS0245",
+  "version": 1,
+  "owner": "betterinstincts/decision_horizon.py",
+  "inputs": "Observed PS-0241 activity-chain snapshot, validated DAG and fresh observed routes",
+  "optimization": {
+    "decision_model": "FINITE_HORIZON_SEMI_MARKOV_STOCHASTIC_EXPECTED_UTILITY",
+    "recurrence": "V(s)=max(0,max_a[E[reward(s,a,outcome)+V(s')]])",
+    "failure_branch": "ABSORB_AND_REOBSERVE_NO_RETRY",
+    "forecast_duration": "upper_minutes + observed admitted travel upper minutes",
+    "hard_constraints": [
+      "player priority",
+      "fresh scene and selected actor",
+      "queue owner/capacity",
+      "prerequisite proofs",
+      "inventory and funds",
+      "work/need deadlines",
+      "need floors",
+      "no cheating, irreversible actions or ambiguous permissions",
+      "same-capture unlock teleport",
+      "bounded search"
+    ],
+    "soft_tradeoffs": [
+      "activity value",
+      "simulation time",
+      "need level trajectory",
+      "skill yield",
+      "mood utility",
+      "money cost and payout",
+      "failure risk"
+    ],
+    "budgets": {
+      "max_actions": 24,
+      "max_routes": 96,
+      "max_expansions": 2000,
+      "max_depth": 8
+    },
+    "lagrange": "User-provided nonnegative shadow prices weight soft tradeoffs but never relax hard invariants",
+    "kkt": "Continuous concave log utility time allocation only; discrete actions use feasibility filtering and bounded search",
+    "Gaussian_process": "Not required; PS-0241 optional provenance-isolated duration GP remains a separate advisory comparator"
+  },
+  "authority": {
+    "proposal_only": true,
+    "execute_allowed": false,
+    "player_sovereignty_required": true,
+    "native_install_automatic_activation_claimed": false
+  },
+  "integration": {
+    "upstream": [
+      "betterinstincts/activity_chain.py",
+      "betterinstincts/semantic_advisory.py",
+      "betterinstincts/task_continuity.py"
+    ],
+    "downstream": "future same-version EA-native consumer only after exact patch and game certification",
+    "successor_issue": 171
+  },
+  "evidence": "Source-only simulation fixtures are not observed Sims gameplay, runtime fitness, or statistical calibration"
+}
