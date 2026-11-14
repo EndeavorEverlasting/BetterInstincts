@@ -1,3 +1,7 @@
+## Career and work routing
+
+**Load only what the question requires.** When an agent encounters the bottom-right Work panel, a work tone, a chance-card overlay, or a school/daily task, first resolve one of `CAREER_PANEL_J`, `CAREER_WORK_TONE`, `CAREER_EVENT_CHOICE`, `CAREER_NATIVE_GATE` through `betterinstincts.glossary.define` (canonical `contracts/glossary.v1.json`). Each definition points to its exact owner, rather than loading every catalog/agent instruction. J opens the Live Career panel; `Work Hard` belongs to a rabbit-hole work-tone menu, whereas a career chance card has its own modal and native response IDs. The existing `career_service` facade delegates to `career_decisions` for grounded event choices. For only the necessary details, see [CAREER_DECISIONS.md](CAREER_DECISIONS.md). No guessed popup button positions, response IDs, or default choices.
+
 # BetterInstincts glossary
 
 Canonical vocabulary for host listeners, evaluators, and autonomy.

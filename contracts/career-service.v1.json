@@ -153,5 +153,31 @@
     "native_successor_issue": 171,
     "execute_allowed": false,
     "proof_ceiling": "OFFLINE_ECO_MATERIAL_ADVISORY_NOT_GAMEPLAY"
+  },
+  "career_event_decisions": {
+    "schema": "betterinstincts.career-event.observation/v1",
+    "authority": "contracts/career-decisions.v1.json",
+    "entrypoint": "betterinstincts/career_service.py#evaluate_career_event_turn",
+    "policy": "betterinstincts/career_decisions.py#evaluate_career_event",
+    "one_event_handler": "native EA event choice bridge only after exact patch and disposable P08",
+    "scope": "Any observed household recipient (exact Sim ID), full choice set and independent EA tuning/effect basis. No hard-coded career branch, portrait slot, popup pixel or response ID.",
+    "priority": [
+      "player_owned_HOLD",
+      "known_career_eligibility",
+      "complete_native_options",
+      "known_risk_and_effects",
+      "unique_margin",
+      "native_response_after_authority",
+      "activity_reobserve"
+    ],
+    "tandem": "Career chance-card routing is a peer of Work Hard, teen homework, Career daily tasks, Green Technician fabrication, and household next-awake handoff; this is not a replacement for any lane.",
+    "progressive_disclosure": [
+      "docs/GLOSSARY.md#career-and-work-routing",
+      "docs/CAREER_DECISIONS.md",
+      "contracts/career-decisions.v1.json"
+    ],
+    "native_successor_issue": 171,
+    "execute_allowed": false,
+    "proof_ceiling": "OFFLINE_POLICY_NOT_NATIVE_CAREER_EFFECT"
   }
 }

@@ -517,3 +517,34 @@ def evaluate_green_technician_daily_task(
     this function never consumes Bits/Pieces or mutates Sims gameplay.
     """
     return plan_eco_fabrication(observation, capture_ref=capture_ref, now=now)
+
+
+def evaluate_career_event_turn(
+    event: Mapping[str, object] | None,
+    *,
+    now_epoch_ms: int,
+    autonomy_enabled: bool,
+    player_active: bool,
+    previously_responded: Mapping[str, object] | None = None,
+) -> dict:
+    """Existing career owner delegates observed chance-card choice to one policy.
+
+    Not the native event consumer. Work shift tone, teen homework and Green
+    Technician fabrication retain their existing independent behavior.
+    """
+    from betterinstincts.career_decisions import evaluate_career_event
+    return evaluate_career_event(
+        event, now_epoch_ms=now_epoch_ms, autonomy_enabled=autonomy_enabled,
+        player_active=player_active, previously_responded=previously_responded,
+    )
+
+
+def reconcile_career_event_turn(
+    decision: Mapping[str, object] | None,
+    response: Mapping[str, object] | None,
+    *, effect: Mapping[str, object] | None,
+    activity: Mapping[str, object] | None,
+) -> dict:
+    """Career-native response, effect and resumed activity need independent receipts."""
+    from betterinstincts.career_decisions import reconcile_career_event
+    return reconcile_career_event(decision, response, effect=effect, activity=activity)
