@@ -23,6 +23,7 @@ from betterinstincts.fun_service import (
     should_attach_fun_service,
 )
 from betterinstincts.gardening_service import GardeningServiceError, evaluate_gardening_turn
+from betterinstincts.eco_resource_cycle import EcoResourceCycleError
 from betterinstincts.household_economy import (
     HouseholdEconomyError, evaluate_household_economy,
 )
@@ -79,6 +80,7 @@ from betterinstincts.career_service import (
     CareerServiceError,
     compact_career_service,
     evaluate_career_service,
+    evaluate_green_technician_daily_task,
     should_attach_career_service,
 )
 from betterinstincts.preference_prompts import evaluate_offer as evaluate_preference_offer
@@ -217,6 +219,7 @@ def evaluate_turn(
     navigating_needs_incomplete: Sequence[str] = (),
     navigating_needs_profile: str = "navigating_needs",
     gardening: Optional[Mapping[str, object]] = None,
+    eco_fabrication: Optional[Mapping[str, object]] = None,
     household_upkeep: Optional[Mapping[str, object]] = None,
     household_economy: Optional[Mapping[str, object]] = None,
     discovery_hud: Optional[Mapping[str, object]] = None,
@@ -357,6 +360,7 @@ def evaluate_turn(
     fun_service = None
     need_services = None
     gardening_report = None
+    eco_fabrication_report = None
     household_upkeep_report = None
     household_economy_report = None
     discovery_report = None
@@ -775,6 +779,23 @@ def evaluate_turn(
                 school_day_active=school_day_active,
                 homework_pending=homework_pending,
             )
+        if eco_fabrication is not None:
+            # The live host's own player/needs/attendance state is authoritative.
+            # A source sidecar cannot turn an unsafe turn into a crafting permit.
+            eco_source = dict(eco_fabrication)
+            _, eco_floor = threshold_pair()
+            eco_source["needs_safe"] = (
+                eco_source.get("needs_safe") is True
+                and all(value >= eco_floor for value in needs.values())
+            )
+            eco_source["player_directed"] = (
+                eco_source.get("player_directed") is not False
+                or player_directed or already_busy or sim_absent
+                or sim_at_school is True or build_or_buy_mode
+            )
+            eco_fabrication_report = evaluate_green_technician_daily_task(
+                eco_source, capture_ref=capture_ref
+            )
         if household_economy is not None:
             # Independent verified household roster/tasks, no new game authority.
             # Existing needs, upkeep and career planners retain their owners.
@@ -804,6 +825,7 @@ def evaluate_turn(
         TeenHomeworkError,
         QueueCapacityError,
         CareerServiceError,
+        EcoResourceCycleError,
         AspirationServiceError,
         BalanceServiceError,
         SchoolDayError,
@@ -2113,6 +2135,13 @@ def evaluate_turn(
             "forbidden": ["CANCEL_PLAYER_QUEUE", "EXHAUST_SINGLE_SIM",
                           "UNOBSERVED_INCOME_EFFECT", "AUTO_ASSIGN_UNKNOWN_SIM"],
         }
+    elif eco_fabrication_report is not None and eco_fabrication_report["gate"] in {
+        "ECO_FABRICATE_READY", "ECO_RECYCLE_CANDIDATE",
+    }:
+        # Observed career task outranks elective gardening; no execution lease.
+        next_gate = eco_fabrication_report["gate"]
+        fallback = {"owner": "betterinstincts/career_service.py",
+                    **eco_fabrication_report}
     elif gardening_report is not None:
         next_gate = gardening_report["gate"]
         fallback = {"owner": "betterinstincts/gardening_service.py", **gardening_report}
@@ -2199,6 +2228,7 @@ def evaluate_turn(
         ),
         "build_optimize": build_optimize,
         "gardening": gardening_report,
+        "eco_fabrication": eco_fabrication_report,
         "household_upkeep": household_upkeep_report,
         "household_economy": household_economy_report,
         "discovery_hud": discovery_report,
