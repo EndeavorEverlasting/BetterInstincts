@@ -1,0 +1,70 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-ECO-MATERIALS-FABRICATION-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "76decc442501b8708a66577dc192e11b57625a8a",
+  "proposed_capability": "MoonWake /sixth-gear: close missing fertilizer sourcing, recycler input choice, Bits/Pieces economics and Green Technician Eco-Upgrade Part career-task chain with deterministic player-first, current-observation-only, one-step planning; measure recycling outcomes and source value without inventing yields or installed-game certification.",
+  "affected_concepts": [
+    "GAME_OBJECT",
+    "AFFORDANCE",
+    "ACTION_QUEUE",
+    "PLAYER_INTENT",
+    "OBSERVATION",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "RESOURCE",
+    "CAREER_OBLIGATION",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/fertilizer_workflow.py",
+    "betterinstincts/gardening_service.py",
+    "betterinstincts/career_service.py",
+    "betterinstincts/household_economy.py",
+    "contracts/mechanics-registry.v1.json",
+    "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-008",
+    "BI-ONT-010"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "DETERMINISTIC_SOURCE_POLICY_ONLY_NOT_INSTALLED_EA_TUNING_NOT_GAMEPLAY_CERTIFIED",
+  "player_save_control_impact": "No clicking, queue cancellation, purchase, game-file edits, save reads, telemetry, autonomous loops, or account setting changes. Current capture, exact actor, player-owned queue, needs and resource reservations outrank optimization.",
+  "expected_outcome": "One-step source plan for fertilizer shortages, evidence-based recycling item ranking, resource shortfall handling, exact career objective fabrication selection, and a mechanics inventory that never hides missing live-game proof.",
+  "negative_tests": [
+    "No recycle of reserved, unknown, unique or player-owned items",
+    "No fabricate without exact observed recipe and affordable Bits/Pieces",
+    "No guessed yield from item label, price or category",
+    "No purchase without Build/Library checkpoint and budget evidence",
+    "No action on stale capture, player activity or critical needs",
+    "No fabricated game completion from advisory plans",
+    "No replacement of existing gardening/teen homework owners"
+  ],
+  "rollback_path": "Revert feature PR; additive optional observations preserve prior behavior; no save, settings, game or profile mutation.",
+  "unresolved_unknowns": [
+    "Installed EA patch, Civil Designer tuning IDs, fabrication interaction IDs and native event callbacks require actual local read-only game evidence",
+    "User gameplay P08 and rollback proof remain blocked by provider-only GitHub session",
+    "BI-002 hunger remains the independent active parent gate"
+  ],
+  "files_expected": [
+    "contracts/consultations/BI-ECO-MATERIALS-FABRICATION-20261114.v1.json",
+    "betterinstincts/eco_resource_cycle.py",
+    "tests/test_eco_resource_cycle.py",
+    "contracts/native-gameplay-decisions/BI-ECO-MATERIALS-FABRICATION-20261114.v1.json",
+    "contracts/mechanics-registry.v1.json",
+    "docs/ECO_RESOURCE_CYCLE.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "P141 compared (A) unbounded agent clicking, (B) replacing domain cascade, (C) static recipes only, (D) extending existing owner with bounded source/outcome policy. Reject A/B, C insufficient; select D for explicit supply/recipe/observed-efficiency chain that remains input-neutral and native-ready.",
+  "source_refs": [
+    "https://help.ea.com/en/articles/the-sims/the-sims-4/fabrication-skill/",
+    "https://help.ea.com/en/articles/the-sims/the-sims-4/gardening-skill/",
+    "https://help.ea.com/en/articles/the-sims/the-sims-4/the-sims-4-civil-designer-career/"
+  ],
+  "recorded_date": "2026-11-14"
+}
