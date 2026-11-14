@@ -1,0 +1,23 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-NEED-SIGNAL-FUSION-20261114",
+  "purpose": "Passively evaluate exact-profile Servo/human motive trends from qualified dual independent native and calibrated HUD observations, recover only after successful reset probes, and reuse moodlets without game effects.",
+  "files": [
+    {
+      "path": "betterinstincts/need_signal_fusion.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure provenance and tier fusion with health advice, no actual EA/runtime or CV observation and no host or Sims side effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_stack.py",
+      "route": "POLICY_ONLY",
+      "reason": "Optional six-need host diagnostic sidecar; preserve existing needs policy and player control, no UI authority.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_SYNTHETIC_FUSION_NOT_NATIVE_SENSOR_OR_CV_GAMEPLAY"
+}
