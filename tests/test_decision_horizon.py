@@ -170,7 +170,40 @@ class BellmanPlannerTests(unittest.TestCase):
                          need_floors={"energy": 20, "hunger": 30})
         result = plan(state, [step("study", duration=1, value=50)])
         self.assertEqual(result["gate"], "NO_POSITIVE_FEASIBLE_PLAN")
-        self.assertIn("NEED_FLOOR", result["binding_or_blocking_constraints"])
+        self.assertIn("NEED_FLOOR_TRANSIENT", result["binding_or_blocking_constraints"])
+
+    def test_end_effect_cannot_hide_transient_need_floor_violation(self):
+        # Start safe, cross hard floor during a two-minute action, recover
+        # after it; the in-flight violation remains strictly infeasible.
+        state = snapshot(needs={"energy": 31, "hunger": 80},
+                         need_rates={"energy": -5, "hunger": 0},
+                         need_floors={"energy": 30, "hunger": 30})
+        urgent = step("late-recover", duration=2, value=100,
+                      effects={"need_delta": {"energy": 25}})
+        result = plan(state, [urgent])
+        self.assertEqual(result["gate"], "NO_POSITIVE_FEASIBLE_PLAN")
+        self.assertIsNone(result["next_step"])
+        self.assertIn("NEED_FLOOR_TRANSIENT",
+                      result["binding_or_blocking_constraints"])
+
+    def test_start_below_floor_must_yield_even_with_end_recovery(self):
+        state = snapshot(needs={"energy": 29, "hunger": 80},
+                         need_rates={"energy": 5, "hunger": 0},
+                         need_floors={"energy": 30, "hunger": 30})
+        result = plan(state, [step("late-energy", value=100,
+                                   effects={"need_delta": {"energy": 10}})])
+        self.assertEqual(result["gate"], "NO_POSITIVE_FEASIBLE_PLAN")
+        self.assertIn("NEED_FLOOR_TRANSIENT",
+                      result["binding_or_blocking_constraints"])
+
+    def test_noop_tie_cannot_create_a_proposal(self):
+        values = dict.fromkeys(
+            ("value", "time", "money", "need", "skill", "mood", "failure"), 0)
+        result = plan(snapshot(shadow_prices=values),
+                      [step("pointless", value=100)])
+        self.assertEqual(result["gate"], "NO_POSITIVE_FEASIBLE_PLAN")
+        self.assertIsNone(result["next_step"])
+        self.assertEqual(result["forecast_steps"], [])
 
     def test_probabilistic_failure_penalty_affects_policy(self):
         actions = [
@@ -188,6 +221,8 @@ class BellmanPlannerTests(unittest.TestCase):
         numerous = [step("thing-" + str(i), value=5) for i in range(10)]
         result = plan(snapshot(), numerous, max_expansions=2)
         self.assertEqual(result["gate"], "BOUNDED_SEARCH_PARTIAL_REVIEW")
+        self.assertTrue(result["provisional_due_to_budget"])
+        self.assertIsNone(result["next_step"])  # No callable recommendation on cap.
         self.assertLessEqual(result["expansions"], 2)
         self.assertFalse(result["execute_allowed"])
         self.assertEqual(len({x["step_id"] for x in result["forecast_steps"]}),
