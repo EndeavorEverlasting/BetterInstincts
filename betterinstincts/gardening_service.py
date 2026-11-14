@@ -62,9 +62,12 @@ def _observed_actions(context: Mapping, capture_ref: str, limit: int) -> list[di
             and _text(row.get("label"), 80)
             and _text(row.get("target_ref"))
         ):
-            actions.append({key: row[key] for key in (
+            # Preserve the availability evidence already admitted above.
+            # The fertilizer consumer must not have to guess whether an
+            # exact target interaction was enabled in this same capture.
+            actions.append({**{key: row[key] for key in (
                 "action_id", "label", "target_ref", "capture_ref"
-            )})
+            )}, "available": True})
     return actions
 
 
