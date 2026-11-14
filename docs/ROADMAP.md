@@ -181,3 +181,7 @@ needs exact-build read-only EA tuning inspection and P08 disposable
 comparison. BI-002 remains ACTIVE.
 
 Awake household handoff uses the existing household economy and host turn. See [play evidence and next live canary](../plans/active/BI-SIXTH-GEAR-AWAKE-HANDOFF-20261113.md).
+
+## 2026-11-14 — Work Hard promotion opportunity and deterministic household focus
+
+The existing awake-portrait owner is expanded with a **career tone-first** rabbit-hole shift pathway. Source code verifies actual at-work classification, promotion readiness and completed daily tasks, below-target performance, available Work Hard option, player tone provenance and Sim welfare before recommending an unexecuted work-tone change. An actual newly observed Work Hard tone, or a safe decision not to modify the tone, releases attention to the next verified awake portrait without needing chores, followed by fresh needs/queue assessment. Active careers stay selected. Machine owner: `contracts/career-service.v1.json#work_shift_tone`; host arbiter: `betterinstincts/host_stack.py`; coverage row: `career-work-hard-tone`. No desktop/game clicker, native EA API speculation, save mutation or CI-as-live certificate. Exact Sims patch Work Hard and portrait-native action, A/B proof and rollback remain successor issue #171; BI-002 hunger stays active.

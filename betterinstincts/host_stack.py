@@ -1335,6 +1335,26 @@ def evaluate_turn(
         not player_directed
         and not build_or_buy_mode
         and household_economy_report is not None
+        and isinstance(household_economy_report.get("work_tone"), Mapping)
+        and household_economy_report["work_tone"]["gate"]
+            == "WORK_HARD_ADMISSION_REQUIRED"
+        and (live_hud is None or live_hud["gate"] == "HUD_CONTEXT_READY")
+        and drift_recovery is None
+    ):
+        # Work tone must be independently admitted and observed before an
+        # at-work Sim releases attention. Busy status is normal at work.
+        next_gate = "CAREER_WORK_HARD_ADMISSION_REQUIRED"
+        fallback = {
+            "owner": "betterinstincts/career_service.py",
+            "gate": next_gate,
+            "work_tone": household_economy_report["work_tone"],
+            "next": "REOBSERVE_WORK_TONE_BEFORE_AWAKE_PORTRAIT_HANDOFF",
+            "execute_allowed": False,
+        }
+    elif (
+        not player_directed
+        and not build_or_buy_mode
+        and household_economy_report is not None
         and household_economy_report["portrait_handoff"] is not None
         and (live_hud is None or live_hud["gate"] == "HUD_CONTEXT_READY")
         and drift_recovery is None

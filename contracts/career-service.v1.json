@@ -9,9 +9,18 @@
     "job": "Hold a sticky CAREER_OBLIGATION across survival suspensions; evaluate in tandem with need_services; resume only after fresh survival-green revalidation",
     "architecture": "Thin peer microsystem over teen_homework / school_day / scenario_goals. Not a daemon. Not adult promotion certification.",
     "upstreams": [
-      {"id": "impeccable", "mechanism": "purpose before chrome"},
-      {"id": "UP-A85AD9DC3", "mechanism": "call-stack storytelling"},
-      {"id": "UP-40FE662CF", "mechanism": "validate before push"}
+      {
+        "id": "impeccable",
+        "mechanism": "purpose before chrome"
+      },
+      {
+        "id": "UP-A85AD9DC3",
+        "mechanism": "call-stack storytelling"
+      },
+      {
+        "id": "UP-40FE662CF",
+        "mechanism": "validate before push"
+      }
     ]
   },
   "career_tracks": {
@@ -23,7 +32,10 @@
         "betterinstincts/teen_homework.py",
         "betterinstincts/school_day.py"
       ],
-      "not": ["scenario Get a career", "adult employment promotion"]
+      "not": [
+        "scenario Get a career",
+        "adult employment promotion"
+      ]
     }
   },
   "microsystem_states": [
@@ -95,7 +107,34 @@
       "scenario": "betterinstincts/scenario_goals.py#evaluate_scenario_turn"
     },
     "host_gate": "CAREER_SERVICES_TANDEM | CAREER_OBLIGATION_HELD | CAREER_READY_AFTER_NEEDS",
-    "tandem_peers": ["need_services", "host_tandem"],
+    "tandem_peers": [
+      "need_services",
+      "host_tandem"
+    ],
     "domain_cascade": "career"
+  },
+  "work_shift_tone": {
+    "schema": "betterinstincts.work-shift.observation/v1",
+    "policy_owner": "betterinstincts/career_service.py#evaluate_work_shift_tone",
+    "role": "Bounded promotion-aware rabbit-hole work tone proposal; independent of teen homework",
+    "requires": [
+      "selected_member_key",
+      "exact_current_capture_ref",
+      "observed_shift_ref",
+      "state_AT_WORK",
+      "rabbit_hole_career_kind",
+      "current_tone_and_owner",
+      "work_hard_available",
+      "promotion_requirements",
+      "daily_task",
+      "performance",
+      "member_welfare_reserve"
+    ],
+    "promotion_guard": "Only observed MET promotion requirements, COMPLETE/NOT_REQUIRED daily task, BELOW_TARGET performance, neutral unowned work tone, Work Hard availability and existing household yield-work welfare gate produce a candidate; no guaranteed promotion or invented performance delta",
+    "sequence": "Work Hard proposal -> separate native effect admission -> fresh observation of Work Hard -> existing household next-awake portrait -> fresh needs and queue assessment",
+    "declines": "Unknown or player-owned tone, active career, uncertain conditions, weak wellbeing or unavailable Work Hard never grants replacement; verified rabbit-hole work can still release attention without tone replacement",
+    "native_successor_issue": 171,
+    "execute_allowed": false,
+    "proof_ceiling": "OFFLINE_WORK_TONE_POLICY_NOT_EA_WORK_HARD_CERTIFICATION"
   }
 }

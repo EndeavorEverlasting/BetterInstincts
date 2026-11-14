@@ -14,8 +14,8 @@ class MechanicsRegistryTests(unittest.TestCase):
     def test_coverage_is_source_owned_and_never_claims_native_effect(self):
         data = load_registry()
         report = validate_registry(data)
-        self.assertEqual(report["mechanics_total"], 38)
-        self.assertEqual(report["source_present"], 31)
+        self.assertEqual(report["mechanics_total"], 39)
+        self.assertEqual(report["source_present"], 32)
         self.assertEqual(report["visible_gaps"], 7)
         self.assertEqual(report["live_game_certified"], 0)
         self.assertIn("household-yield-accounting", report["gaps"])
@@ -25,7 +25,14 @@ class MechanicsRegistryTests(unittest.TestCase):
         self.assertEqual(portrait["evidence_state"], "SOURCE_PRESENT")
         self.assertEqual(portrait["owner"], "betterinstincts/household_economy.py")
         self.assertFalse(portrait["game_effect_certified"])
-        self.assertEqual(run(["status"])["mechanics_total"], 38)
+        work_tone = next(row for row in data["mechanics"]
+                         if row["id"] == "career-work-hard-tone")
+        self.assertEqual(work_tone["evidence_state"], "SOURCE_PRESENT")
+        self.assertEqual(work_tone["owner"], "betterinstincts/career_service.py")
+        self.assertEqual(work_tone["dependencies"],
+                         ["career-progress", "household-portrait-attention-rotation"])
+        self.assertFalse(work_tone["game_effect_certified"])
+        self.assertEqual(run(["status"])["mechanics_total"], 39)
 
     def test_duplicate_unknown_owner_and_game_claim_fail(self):
         base = load_registry()

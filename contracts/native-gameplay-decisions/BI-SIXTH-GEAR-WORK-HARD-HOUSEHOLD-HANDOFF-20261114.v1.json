@@ -1,0 +1,30 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-SIXTH-GEAR-WORK-HARD-HOUSEHOLD-HANDOFF-20261114",
+  "purpose": "Promote one source-only, deterministic work-tone eligibility and household attention transition from repeatedly agentically discovered Sims behavior. Native gameplay effects await separately certified exact-build EA integration.",
+  "files": [
+    {
+      "path": "betterinstincts/career_service.py",
+      "route": "POLICY_ONLY",
+      "reason": "Evaluates evidence-backed promotion requirements, daily tasks, performance gap, welfare and player tone ownership to recommend but never execute Work Hard.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/household_economy.py",
+      "route": "POLICY_ONLY",
+      "reason": "Coordinates observed at-work rabbit-hole shift with the existing fixed-roster awake-portrait attention policy and preserves active careers and work-first barriers.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_stack.py",
+      "route": "POLICY_ONLY",
+      "reason": "Exposes a non-actuating work-tone-first host gate before the existing household portrait handoff; no mouse input, key injection or native career mutation.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_CAREER_AND_HOUSEHOLD_POLICY_NOT_WORK_HARD_OR_PORTRAIT_GAME_EFFECT"
+}
