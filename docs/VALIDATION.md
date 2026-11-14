@@ -1,3 +1,7 @@
+## P00/P01 oldest-first lab save safety harness (offline)
+
+Run `python -m scripts.check_save_candidate_priority` and `python -m unittest tests.test_save_candidate_priority -v`. Both are included in CI. They prove an oldest-first *advisory* for individually eligible lab saves, strict chronology-abstention and preservation of the canonical protected/unknown/continuation save bans. Neither inspects a Sims save, clicks a menu, executes the MoonWake local walker or certifies gameplay. See `docs/SAVE_CANDIDATE_PRIORITY.md`.
+
 # Validation and release gates
 
 ## Offline (safe in any host)
