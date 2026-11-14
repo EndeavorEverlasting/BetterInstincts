@@ -46,7 +46,11 @@ version-pinned native EA event observation
   proposed. Awaited steps are not blindly reissued; matching queued steps
   prevent duplicates. Unknown-origin, autonomous, or player-owned queue
   entries are never cancelled.
-- **Reconcile interruptions.** A native, provenance-bound independent
+- **Reconcile interruptions.** The originating proposal capture and
+  inventory baseline remain pinned across intervening telemetry observations,
+  so a later native completion cannot be mistaken for an adjacent-frame
+  result or lost merely because several need updates occurred.
+  A native, provenance-bound independent
   \`NATIVE_INTERRUPTED\` receipt can release an interrupted step for a later
   re-proposal. Silence or a missing queue row cannot. Player activity
   suppresses any new proposal without destroying the intent.
@@ -57,8 +61,10 @@ version-pinned native EA event observation
   \`DEPLETED -> GOOD\` with consumed stock are required to call this
   two-step trial complete.
 - **Safety budget:** \`available = min(earliest measured six-need floor,
-  work deadline - 30 simulated minutes)\`. Both estimated action upper
-  durations are required, multiplied by 1.25; unknowns or insufficient
+  work deadline - 30 simulated minutes)\`. The needs horizon uses the existing shared `contracts/needs.v1.json`
+  proactive threshold (currently 0.55) rather than a new ecology-only floor.
+  Both estimated action upper durations are required, multiplied by 1.25;
+  unknowns or insufficient
   margins defer the garden without discarding the goal. The 30-minute
   reserve and 1.25 multiplier are **conservative policy defaults**, not
   calibrated Sims facts.
