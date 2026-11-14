@@ -1,0 +1,114 @@
+{
+  "schema": "betterinstincts.community-learning/v1",
+  "purpose": "Opt-in local learning with a human-reviewed path for developer-contributed, cross-host generalizable improvements. No automatic federation or gameplay authority.",
+  "local_source": "betterinstincts/semantic_vae.py",
+  "candidate_cli": "scripts/community_candidate.py",
+  "data_only_format": "betterinstincts.community-learning.candidate/v1",
+  "holdout_format": "betterinstincts.community-learning.holdout/v1",
+  "allowed_algorithm_v1": "SEMANTIC_VAE_5X5X3_V1",
+  "input_contract": {
+    "channels": [
+      "WALKABLE",
+      "BLOCKED",
+      "TARGET"
+    ],
+    "shape": [
+      5,
+      5,
+      3
+    ],
+    "latent": 4,
+    "validated_source": "betterinstincts/spatial_convolution.py#_sample"
+  },
+  "entrypoints": {
+    "local_training": "python -m scripts.semantic_vae enable --ack-local-data",
+    "explicit_export": "python -m scripts.community_candidate export --snapshot SELECTED_VERIFIED_SNAPSHOT.json --out EXPLICIT_PRIVATE_DESTINATION.json --ack-share-weights",
+    "validate": "python -m scripts.community_candidate validate --candidate SELECTED_CANDIDATE.json",
+    "two_cohort_research": "python -m scripts.community_candidate benchmark --candidate SELECTED_CANDIDATE.json --holdout-a INDEPENDENT_REVIEWED_A.json --holdout-b INDEPENDENT_REVIEWED_B.json"
+  },
+  "contribution_boundary": {
+    "no_auto_export": true,
+    "no_auto_upload": true,
+    "no_inbound_execution": true,
+    "no_game_integration": true,
+    "no_runtime_download": true,
+    "no_auto_developer_approval": true,
+    "separate_weight_sharing_consent": true,
+    "weight_inversion_privacy_review": true,
+    "untrusted_candidate_only": true,
+    "source_fields_not_exported": [
+      "context_hash",
+      "samples",
+      "seen_bloom",
+      "profile_id",
+      "save_id",
+      "raw_screenshots",
+      "household_names"
+    ],
+    "allowed_file_type": "JSON data only; never pickle, Python, DLL, ONNX operators, bytecode or self-updating scripts",
+    "developer_review_owner": "human maintainer / repository CODEOWNERS"
+  },
+  "validation_ladder": [
+    {
+      "level": "LOCAL_PRIVATE",
+      "gate": "operator opted-in training under existing context/profile isolation",
+      "proof": "LOCAL_ONLY_NO_SHARING"
+    },
+    {
+      "level": "CANDIDATE_EXPORTED",
+      "gate": "separate explicit share-weights consent; tensor-only redacted JSON file",
+      "proof": "NOT_UPLOADED"
+    },
+    {
+      "level": "STRUCTURAL_PASS",
+      "gate": "schema exact, bounded finite tensors, digest, input dimensions and no executable content",
+      "proof": "NOT_SECURITY_CLEARED"
+    },
+    {
+      "level": "RESEARCH_BENCHMARK",
+      "gate": "two disjointly supplied holdout cohort files, min 8 vectors each, independently verified dataset provenance not established by CLI",
+      "proof": "NOT_REAL_WORLD_GENERALIZATION"
+    },
+    {
+      "level": "MAINTAINER_REVIEW",
+      "gate": "manual developer candidacy, provenance/privacy/license/malware/model poisoning review; independent host datasets and adversarial negative evals",
+      "proof": "HUMAN_APPROVAL_REQUIRED"
+    },
+    {
+      "level": "RELEASE_CANDIDATE",
+      "gate": "reproduce on multiple physically distinct approved hosts and game builds; compare original shipped model and negative cohorts; rollback/compatibility checks",
+      "proof": "ONLY_WITH_EVIDENCE"
+    },
+    {
+      "level": "ADOPTED",
+      "gate": "maintainer-controlled signed reviewed integration and regression suite; never automatic local import",
+      "proof": "REQUIRES_SEPARATE_APPROVAL"
+    }
+  ],
+  "empirical_acceptance_hypotheses": {
+    "min_independent_hosts": 2,
+    "min_test_cohorts_per_host": 2,
+    "baseline": "Existing approved model and simple uniform baseline; require no meaningful degradation on each protected cohort",
+    "functional_metrics": [
+      "reconstruction_nats",
+      "downstream_route_object_calibration",
+      "false_positive_graph_edges",
+      "player_queue_interruptions",
+      "CPU_RAM_latency"
+    ],
+    "note": "Thresholds other than schema-only 0.01 reconstruction improvement are review proposals and NOT enforced as real gameplay certification."
+  },
+  "required_negative_tests": [
+    "malformed_duplicate_key_or_extra_command_field",
+    "nonfinite_shape_or_digest_mismatch",
+    "replay_and_tampered_training_provenance",
+    "underperforming_cross_context_holdout",
+    "source_specific_overfitting",
+    "unconsented_export_or_upload",
+    "model_inversion_or_leakage_review",
+    "unknown_game_build_and_player_control_permit"
+  ],
+  "status": "CANDIDATE_FORMAT_OFFLINE_ONLY",
+  "proof_ceiling": "NO_INDEPENDENT_HOST_EFFICACY_OR_MALWARE_FREEDOM_CERTIFICATION",
+  "bi002_gate": "ACTIVE_UNCHANGED"
+}
