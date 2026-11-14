@@ -762,6 +762,9 @@ def evaluate_turn(
         if household_economy is not None:
             # Independent verified household roster/tasks, no new game authority.
             # Existing needs, upkeep and career planners retain their owners.
+            if ("selected_member_key" in household_economy
+                    and household_economy.get("capture_ref") != capture_ref):
+                raise HouseholdEconomyError("HOUSEHOLD_HANDOFF_CAPTURE_MISMATCH")
             household_economy_report = evaluate_household_economy(household_economy)
         if household_upkeep is not None:
             _, needs_floor = threshold_pair()
@@ -1326,6 +1329,23 @@ def evaluate_turn(
             "mechanism": "CAMERA_EDGE_INTERACTION",
             "owner": "betterinstincts/camera_traverse.py",
             "edge_interaction": camera_traverse,
+            "execute_allowed": False,
+        }
+    elif (
+        not player_directed
+        and not build_or_buy_mode
+        and household_economy_report is not None
+        and household_economy_report["portrait_handoff"] is not None
+        and (live_hud is None or live_hud["gate"] == "HUD_CONTEXT_READY")
+        and drift_recovery is None
+    ):
+        # The current actor's recovery can set already_busy. The portrait
+        # proposal preserves that queue and requires fresh target readback.
+        next_gate = "AWAKE_HOUSEHOLD_HANDOFF_READY"
+        fallback = {
+            "owner": "betterinstincts/household_economy.py",
+            "gate": next_gate,
+            "portrait_handoff": household_economy_report["portrait_handoff"],
             "execute_allowed": False,
         }
     elif player_directed or already_busy:

@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.mechanics-registry/v1",
-  "revision": 1,
+  "revision": 2,
   "purpose": "Source-backed, never-finished domain coverage map. Machine-readable mechanical ownership, missing capability gaps, dependencies and verified proof ceilings must evolve with independently observed outcomes; neither a static TODO nor a new central gameplay controller.",
   "canonical_owner": "contracts/mechanics-registry.v1.json",
   "policy_owner": "betterinstincts/mechanics_registry.py",
@@ -558,6 +558,23 @@
         "cooperative-role-allocation"
       ],
       "next_gate": "P95_OWNER_DISCOVERY",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "household-portrait-attention-rotation",
+      "domain": "coordination",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/household_economy.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_household_economy.py"
+      ],
+      "dependencies": [
+        "cooperative-role-allocation",
+        "need-energy"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
       "game_effect_certified": false,
       "private_instance_data": false
     }

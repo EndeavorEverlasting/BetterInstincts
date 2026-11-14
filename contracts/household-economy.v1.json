@@ -67,5 +67,32 @@
     "registry": "Append missing mechanics to canonical registry in separate consulted revision, never silently treat gap as supported"
   },
   "proof_ceiling": "SOURCE_ONLY_OFFLINE_HOUSEHOLD_ALLOCATION_NOT_EA_CERTIFIED",
-  "active_parent": "BI-002 hunger still ACTIVE"
+  "active_parent": "BI-002 hunger still ACTIVE",
+  "portrait_handoff": {
+    "trigger": "Immediately when the selected member is observed ASLEEP/RECHARGING/AWAY, even with no tasks; optionally on verified current-capture completed needs review of the selected AWAKE member.",
+    "target": "Next explicitly AWAKE, non-player-reserved, queue-verified roster member in original portrait order, wrapping once and never selecting the source; not dependent on skill, chores or discretionary yield eligibility.",
+    "effect": "Policy only. A real native portrait selection needs independently certified current-patch EA hook; subsequent observation of selected identity and per-Sim needs must use a fresh capture before needs/queue work. No gameplay effect or click authority from this plan.",
+    "rotation": "Single proposal per source capture; optional attention_review requires member_key, capture_ref, unique evidence proof_ref and state VERIFIED_COMPLETE. No timer, background loop, repeated blind click, or repeated rotation on old proof.",
+    "member_needs": {
+      "HUMAN": [
+        "hunger",
+        "bladder",
+        "energy",
+        "hygiene",
+        "fun",
+        "social"
+      ],
+      "SERVO": [
+        "charge",
+        "durability",
+        "fun",
+        "social"
+      ]
+    },
+    "legacy": "No selected_member_key and no verified attention_review leave ordinary task allocations unchanged; no handoff.",
+    "owner": "betterinstincts/household_economy.py",
+    "proof_owner": "tests/test_household_economy.py",
+    "registry_mechanic": "household-portrait-attention-rotation",
+    "native_successor_issue": 171
+  }
 }

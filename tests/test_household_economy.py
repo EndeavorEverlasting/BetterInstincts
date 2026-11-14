@@ -8,7 +8,7 @@ from betterinstincts.household_judgment import bind_household_scope
 from betterinstincts.household_economy import (
     HouseholdEconomyError, evaluate_household_economy,
 )
-from betterinstincts.host_stack import evaluate_turn
+from betterinstincts.host_stack import HostStackError, evaluate_turn
 from betterinstincts.host_listener import _load_observation, HostListenerError
 
 CAP = "capture:household-economy-test001"
@@ -55,6 +55,166 @@ def task(s, ident, mech, kind="YIELD", priority=3, resource=None,
 
 
 class HouseholdEconomyTests(unittest.TestCase):
+    def test_sleep_handoff_requires_no_chore_or_existing_task(self):
+        s = snapshot(3)
+        s["selected_member_key"] = s["members"][0]["member_key"]
+        s["members"][0]["activity"] = "ASLEEP"
+        s["members"][1]["activity"] = "AWAKE"
+        s["members"][2]["activity"] = "AWAKE"
+        self.assertEqual(s["tasks"], [])
+        result = evaluate_household_economy(s)
+        handoff = result["portrait_handoff"]
+        self.assertEqual(handoff["to_member_key"], s["members"][1]["member_key"])
+        self.assertIsNone(handoff["task_ref"])
+        self.assertEqual(handoff["reason"], "SELECTED_MEMBER_RECOVERING_OR_AWAY")
+        self.assertTrue(handoff["new_capture_required"])
+        self.assertEqual(set(handoff["need_keys"]), set(NEEDS))
+        self.assertFalse(handoff["execute_allowed"])
+        host = evaluate_turn(NEEDS, location_kind="home", available_objects=[],
+                             queue=[], capture_ref=CAP, household_economy=s,
+                             already_busy=True)
+        self.assertEqual(host["next_gate"], "AWAKE_HOUSEHOLD_HANDOFF_READY")
+
+    def test_critical_needs_target_is_selected_even_when_work_ineligible(self):
+        s = snapshot(3)
+        s["selected_member_key"] = s["members"][0]["member_key"]
+        s["members"][0]["activity"] = "ASLEEP"
+        s["members"][1]["activity"] = "AWAKE"
+        s["members"][1]["needs"]["hunger"] = 0.04
+        s["members"][2]["activity"] = "AWAKE"
+        s["tasks"].append(task(s, "garden13", "gardening"))
+        result = evaluate_household_economy(s)
+        self.assertEqual(result["portrait_handoff"]["to_member_key"],
+                         s["members"][1]["member_key"])
+        # Allocation has a distinct wellbeing floor; portrait selection does
+        # not strand a hungry actor just because they cannot garden.
+        self.assertNotIn(s["members"][1]["member_key"], result["workload_claims"])
+
+    def test_portrait_order_wraps_once_and_skips_unverified_or_reserved(self):
+        s = snapshot(4)
+        s["selected_member_key"] = s["members"][3]["member_key"]
+        s["members"][3]["activity"] = "ASLEEP"
+        s["members"][0]["activity"] = "AWAY"
+        s["members"][1]["activity"] = "UNKNOWN"
+        s["members"][2]["activity"] = "AWAKE"
+        self.assertEqual(evaluate_household_economy(s)["portrait_handoff"]["to_member_key"],
+                         s["members"][2]["member_key"])
+        s["members"][2]["player_reserved"] = True
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+        s["members"][2]["player_reserved"] = False
+        s["members"][2]["queue_verified"] = False
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+
+    def test_one_member_all_sleeping_and_missing_identity_do_not_loop(self):
+        s = snapshot(1)
+        s["selected_member_key"] = s["members"][0]["member_key"]
+        s["members"][0]["activity"] = "ASLEEP"
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+        s = snapshot(3)
+        s["selected_member_key"] = s["members"][1]["member_key"]
+        for member in s["members"]:
+            member["activity"] = "RECHARGING"
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+        s.pop("selected_member_key")
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+
+    def test_completed_verified_need_review_rotates_then_waits_for_fresh_capture(self):
+        s = snapshot(3)
+        s["selected_member_key"] = s["members"][0]["member_key"]
+        for member in s["members"]:
+            member["activity"] = "AWAKE"
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+        s["attention_review"] = {
+            "member_key": s["members"][0]["member_key"],
+            "capture_ref": CAP,
+            "proof_ref": "capture:current-needs-review-ok",
+            "state": "VERIFIED_COMPLETE",
+        }
+        result = evaluate_household_economy(s)
+        self.assertEqual(result["portrait_handoff"]["to_member_key"],
+                         s["members"][1]["member_key"])
+        self.assertEqual(result["portrait_handoff"]["reason"],
+                         "SELECTED_MEMBER_NEEDS_REVIEW_VERIFIED_COMPLETE")
+        # The next observed selected member must get a *new* capture; the old
+        # completion does not spin over remaining portraits in one frame.
+        s["selected_member_key"] = s["members"][1]["member_key"]
+        s.pop("attention_review")
+        self.assertIsNone(evaluate_household_economy(s)["portrait_handoff"])
+
+    def test_replayed_stale_or_unbound_attention_review_denied(self):
+        s = snapshot(2)
+        s["selected_member_key"] = s["members"][0]["member_key"]
+        s["members"][0]["activity"] = "AWAKE"
+        s["members"][1]["activity"] = "AWAKE"
+        s["attention_review"] = {
+            "member_key": s["members"][0]["member_key"],
+            "capture_ref": CAP,
+            "proof_ref": "capture:review-1",
+            "state": "VERIFIED_COMPLETE",
+        }
+        for field, value in (("member_key", s["members"][1]["member_key"]),
+                             ("capture_ref", "capture:old"),
+                             ("proof_ref", ""),
+                             ("state", "CLAIMED_COMPLETE")):
+            broken = copy.deepcopy(s)
+            broken["attention_review"][field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(
+                    HouseholdEconomyError, "ATTENTION_REVIEW_PROOF_INVALID"):
+                evaluate_household_economy(broken)
+        s["player_active"] = True
+        with self.assertRaisesRegex(HouseholdEconomyError, "PLAYER_PRESENCE"):
+            evaluate_household_economy(s)
+        s["player_active"] = False
+        s["members"][0]["activity"] = "ASLEEP"
+        with self.assertRaisesRegex(HouseholdEconomyError,
+                                    "ATTENTION_REVIEW_ACTOR_NOT_VERIFIED_AVAILABLE"):
+            evaluate_household_economy(s)
+        s["members"][0]["activity"] = "AWAKE"
+        s["members"][0]["player_reserved"] = True
+        with self.assertRaisesRegex(HouseholdEconomyError,
+                                    "ATTENTION_REVIEW_ACTOR_NOT_VERIFIED_AVAILABLE"):
+            evaluate_household_economy(s)
+
+    def test_handoff_uses_awake_servo_and_preserves_recovery(self):
+        s = snapshot(3)
+        selected, unavailable, servo = s["members"]
+        s["selected_member_key"] = selected["member_key"]
+        unavailable["activity"] = "RECHARGING"
+        servo.update(activity="AWAKE", sim_kind="SERVO",
+                     needs=dict.fromkeys(("charge", "durability", "fun", "social"), 0.9))
+        s["tasks"].append(task(s, "garden01", "gardening"))
+        for state in ("ASLEEP", "RECHARGING", "AWAY"):
+            with self.subTest(state=state):
+                selected["activity"] = state
+                plan = evaluate_household_economy(s)
+                self.assertEqual(plan["workload_claims"], [servo["member_key"]])
+                self.assertEqual(plan["portrait_handoff"]["to_member_key"], servo["member_key"])
+                self.assertFalse(plan["portrait_handoff"]["execute_allowed"])
+
+        servo["activity"] = "UNKNOWN"
+        plan = evaluate_household_economy(s)
+        self.assertEqual(plan["assigned_count"], 0)
+        self.assertIsNone(plan["portrait_handoff"])
+
+    def test_host_exposes_one_handoff_for_current_capture(self):
+        s = snapshot(2)
+        selected, next_member = s["members"]
+        selected["activity"] = "ASLEEP"
+        next_member["activity"] = "AWAKE"
+        s["selected_member_key"] = selected["member_key"]
+        s["tasks"].append(task(s, "garden01", "gardening"))
+        args = dict(needs=NEEDS, location_kind="home", available_objects=[], queue=[], household_economy=s)
+        plan = evaluate_turn(capture_ref=CAP, already_busy=True, **args)
+        self.assertEqual(plan["next_gate"], "AWAKE_HOUSEHOLD_HANDOFF_READY")
+        self.assertEqual(plan["fallback"]["portrait_handoff"]["to_member_key"],
+                         next_member["member_key"])
+        player = evaluate_turn(capture_ref=CAP, player_directed=True, **args)
+        self.assertNotEqual(player["next_gate"], "AWAKE_HOUSEHOLD_HANDOFF_READY")
+        build = evaluate_turn(capture_ref=CAP, build_or_buy_mode=True, **args)
+        self.assertNotEqual(build["next_gate"], "AWAKE_HOUSEHOLD_HANDOFF_READY")
+        with self.assertRaisesRegex(HostStackError, "HOUSEHOLD_HANDOFF_CAPTURE_MISMATCH"):
+            evaluate_turn(capture_ref="capture:other", **args)
+
     def test_single_person_fun_and_temperament_outrank_discretionary_income(self):
         s = snapshot()
         s["tasks"].append(task(s, "earn001", "income-earning"))

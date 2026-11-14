@@ -18,6 +18,9 @@ from betterinstincts.queue_capacity import evaluate_queue_capacity, QueueCapacit
 
 SCHEMA = "betterinstincts.household-economy.observation/v1"
 SIX = frozenset(("hunger", "bladder", "energy", "hygiene", "fun", "social"))
+SERVO_NEEDS = frozenset(("charge", "durability", "fun", "social"))
+RECOVERING_OR_ABSENT = frozenset(("ASLEEP", "RECHARGING", "AWAY"))
+ACTIVITIES = RECOVERING_OR_ABSENT | {"AWAKE", "UNKNOWN"}
 REF = re.compile(r"^[A-Za-z0-9:_./-]{3,180}$")
 MOODS = frozenset(("HAPPY", "STABLE", "STRAINED", "UNKNOWN"))
 TEMPERAMENTS = frozenset(("BALANCED", "IRRITABLE", "UNKNOWN"))
@@ -85,6 +88,19 @@ def _validate(raw: Mapping, mechanics: Mapping) -> tuple[list[dict], list[dict],
         raise HouseholdEconomyError("PLAYER_PRESENCE_NOT_CLEARED")
     members = raw["members"]
     scope_id, member_keys = _scope(raw, members)
+    if "selected_member_key" in raw and raw["selected_member_key"] not in member_keys:
+        raise HouseholdEconomyError("SELECTED_MEMBER_OUTSIDE_VERIFIED_ROSTER")
+    # A completed needs-review is an independently observed caller event, not
+    # elapsed time, a prior agent assertion, or a reason to scroll forever.
+    review = raw.get("attention_review")
+    if review is not None:
+        if (not isinstance(review, Mapping)
+                or set(review) != {"member_key", "capture_ref", "proof_ref", "state"}
+                or review["member_key"] != raw.get("selected_member_key")
+                or review["capture_ref"] != raw["capture_ref"]
+                or not _ref(review["proof_ref"])
+                or review["state"] != "VERIFIED_COMPLETE"):
+            raise HouseholdEconomyError("ATTENTION_REVIEW_PROOF_INVALID")
     catalog = {row["id"]: row for row in mechanics["mechanics"]}
     seen_tasks: set[str] = set()
     seen_resources: set[str] = set()
@@ -115,9 +131,13 @@ def _validate(raw: Mapping, mechanics: Mapping) -> tuple[list[dict], list[dict],
                 or member.get("temperament") not in TEMPERAMENTS
                 or member.get("capture_ref") != raw["capture_ref"]
                 or not isinstance(member.get("needs"), Mapping)
-                or set(member["needs"]) != SIX
+                or member.get("sim_kind", "HUMAN") not in ("HUMAN", "SERVO")
+                or set(member["needs"]) != (SERVO_NEEDS if member.get("sim_kind") == "SERVO" else SIX)
                 or not all(_num(x) for x in member["needs"].values())):
             raise HouseholdEconomyError("MEMBER_WELLBEING_OBSERVATION_INVALID")
+        activity = member.get("activity", "UNKNOWN")
+        if not isinstance(activity, str) or activity not in ACTIVITIES:
+            raise HouseholdEconomyError("MEMBER_ACTIVITY_INVALID")
         if any(type(member.get(key)) is not bool for key in (
             "player_reserved", "busy", "available", "queue_verified",
         )):
@@ -144,6 +164,12 @@ def _validate(raw: Mapping, mechanics: Mapping) -> tuple[list[dict], list[dict],
                                                  or not 0 <= skill["level"] <= 10))
                     or (not skill["verified"] and skill["level"] is not None)):
                 raise HouseholdEconomyError("UNVERIFIED_MEMBER_SKILLS_INVALID")
+    if review is not None:
+        reviewed = next(row for row in members
+                        if row["member_key"] == review["member_key"])
+        if (reviewed.get("activity") != "AWAKE" or reviewed["player_reserved"]
+                or not reviewed["queue_verified"]):
+            raise HouseholdEconomyError("ATTENTION_REVIEW_ACTOR_NOT_VERIFIED_AVAILABLE")
     tasks = raw["tasks"]
     for task in tasks:
         if (not isinstance(task, Mapping) or set(task) != {
@@ -183,11 +209,14 @@ def _validate(raw: Mapping, mechanics: Mapping) -> tuple[list[dict], list[dict],
 
 
 def _choose_member(task: Mapping, members: list[dict], allocated: set[str],
-                   *, solo: bool) -> tuple[dict | None, str]:
+                   *, solo: bool, verified_awake_required: bool) -> tuple[dict | None, str]:
     eligible = []
     for row in members:
         key = row["member_key"]
         if key not in task["eligible_member_keys"] or key in allocated:
+            continue
+        activity = row.get("activity", "UNKNOWN")
+        if activity in RECOVERING_OR_ABSENT or (verified_awake_required and activity != "AWAKE"):
             continue
         if (row["player_reserved"] or row["busy"] or not row["available"]
                 or not row["queue_verified"]):
@@ -219,6 +248,23 @@ def _choose_member(task: Mapping, members: list[dict], allocated: set[str],
     return eligible[0][2], "MATCHED_VERIFIED_PREFERENCES_SKILLS_AND_FAIRNESS"
 
 
+def _next_awake_portrait(members: list[dict], selected_key: str) -> dict | None:
+    """One verified next portrait in the fixed ordered roster; never self-select.
+
+    Observation eligibility is independent of the income/chores welfare floor:
+    an awake Sim with *critical needs* must still be selected for care.
+    """
+    start = next(i for i, row in enumerate(members)
+                 if row["member_key"] == selected_key)
+    for offset in range(1, len(members)):
+        candidate = members[(start + offset) % len(members)]
+        if (candidate.get("activity") == "AWAKE"
+                and not candidate["player_reserved"]
+                and candidate["queue_verified"]):
+            return candidate
+    return None
+
+
 def evaluate_household_economy(observation: Mapping) -> dict:
     """One bounded allocation cycle for a bound roster and fresh capture.
 
@@ -232,6 +278,18 @@ def evaluate_household_economy(observation: Mapping) -> dict:
     members, tasks, failures, scope_id = _validate(observation, mechanics)
     catalog = {row["id"]: row for row in mechanics["mechanics"]}
     solo = len(members) == 1
+    selected = next((row for row in members
+                     if row["member_key"] == observation.get("selected_member_key")), None)
+    handoff_from = None
+    handoff_cause = None
+    if selected is not None and not selected["player_reserved"]:
+        if selected.get("activity") in RECOVERING_OR_ABSENT:
+            handoff_from = selected["member_key"]
+            handoff_cause = "SELECTED_MEMBER_RECOVERING_OR_AWAY"
+        elif (observation.get("attention_review") is not None
+              and selected.get("activity") == "AWAKE"):
+            handoff_from = selected["member_key"]
+            handoff_cause = "SELECTED_MEMBER_NEEDS_REVIEW_VERIFIED_COMPLETE"
     allocated: set[str] = set()
     reserved = set(observation["reserved_resources"])
     failed = {row["task_ref"] for row in failures}
@@ -253,7 +311,10 @@ def evaluate_household_economy(observation: Mapping) -> dict:
         elif task["resource_ref"] is not None and task["resource_ref"] in reserved:
             reason = "SHARED_RESOURCE_ALREADY_CLAIMED"
         else:
-            actor, reason = _choose_member(task, members, allocated, solo=solo)
+            actor, reason = _choose_member(
+                task, members, allocated, solo=solo,
+                verified_awake_required=handoff_from is not None,
+            )
             if actor is not None:
                 allocated.add(actor["member_key"])
                 if task["resource_ref"] is not None:
@@ -276,8 +337,30 @@ def evaluate_household_economy(observation: Mapping) -> dict:
         "wellbeing_gate": _need_state(row, solo=solo, yield_work=False),
         "discretionary_yield_gate": _need_state(row, solo=solo, yield_work=True),
     } for row in members]
+    handoff = None
+    if handoff_from is not None:
+        # Unlike chores, household attention needs no task to justify a move.
+        # The portrait order itself is the stable tie-breaker, not money yield.
+        successor = _next_awake_portrait(members, handoff_from)
+        if successor is not None:
+            queued_task = next(
+                (row["task_ref"] for row in allocations
+                 if row["member_key"] == successor["member_key"]), None
+            )
+            handoff = {
+                "from_member_key": handoff_from,
+                "to_member_key": successor["member_key"],
+                "task_ref": queued_task,
+                "capture_ref": observation["capture_ref"],
+                "reason": handoff_cause,
+                "need_keys": sorted(successor["needs"]),
+                "action": "SELECT_PORTRAIT_THEN_REOBSERVE_ACTOR_AND_NEEDS",
+                "new_capture_required": True,
+                "execute_allowed": False,
+            }
     return {
         "schema": "betterinstincts.household-economy-plan/v1",
+        "portrait_handoff": handoff,
         "scope_id": scope_id,
         "capture_ref": observation["capture_ref"],
         "mode": "SOLO_WELLBEING_FIRST" if solo else "COOPERATIVE_HOUSEHOLD",

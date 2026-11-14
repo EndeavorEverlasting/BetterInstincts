@@ -14,13 +14,18 @@ class MechanicsRegistryTests(unittest.TestCase):
     def test_coverage_is_source_owned_and_never_claims_native_effect(self):
         data = load_registry()
         report = validate_registry(data)
-        self.assertEqual(report["mechanics_total"], 37)
-        self.assertEqual(report["source_present"], 30)
+        self.assertEqual(report["mechanics_total"], 38)
+        self.assertEqual(report["source_present"], 31)
         self.assertEqual(report["visible_gaps"], 7)
         self.assertEqual(report["live_game_certified"], 0)
         self.assertIn("household-yield-accounting", report["gaps"])
         self.assertIn("pet-care", report["gaps"])
-        self.assertEqual(run(["status"])["mechanics_total"], 37)
+        portrait = next(row for row in data["mechanics"]
+                        if row["id"] == "household-portrait-attention-rotation")
+        self.assertEqual(portrait["evidence_state"], "SOURCE_PRESENT")
+        self.assertEqual(portrait["owner"], "betterinstincts/household_economy.py")
+        self.assertFalse(portrait["game_effect_certified"])
+        self.assertEqual(run(["status"])["mechanics_total"], 38)
 
     def test_duplicate_unknown_owner_and_game_claim_fail(self):
         base = load_registry()
@@ -38,7 +43,7 @@ class MechanicsRegistryTests(unittest.TestCase):
                 rows["mechanics"][0]["dependencies"] = ["need-bladder"]
                 rows["mechanics"][1]["dependencies"] = ["need-hunger"]
             else:
-                rows["mechanics"][-1]["owner"] = "betterinstincts/priority.py"
+                next(row for row in rows["mechanics"] if row["id"] == "pet-care")["owner"] = "betterinstincts/priority.py"
             with self.subTest(mutation=mutation), self.assertRaises(MechanicsRegistryError):
                 validate_registry(rows)
 
