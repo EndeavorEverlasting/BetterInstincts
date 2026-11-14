@@ -249,4 +249,4 @@ Follow-on `/the-closers` of merged #255 verified current main source/CI and hard
 
 ## 2026-11-14 — BI-002 host reached, hunger measurement pending
 
-The exact-build Windows host was observed in paused Live Mode. Run `bi002-20261114` remains incomplete pending a mod-disabled vanilla scenario and calibrated measurements. BI-002 remains the active gate. See `plans/active/BI-002.md` for the host observation and next trial requirements.
+The exact-build Windows host was observed in paused Live Mode. Run `bi002-20261114` remains incomplete. Mod isolation is verified after restart, and a repeatable scenario with calibrated measurements is still pending. BI-002 remains the active gate. See `plans/active/BI-002.md` for the host observation and next trial requirements.
