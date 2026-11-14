@@ -60,9 +60,13 @@ class ActivityChainTests(unittest.TestCase):
         r=compile_activity_chain(snapshot(completed=[dict(step_id="buy",outcome_ref="e:result",outcome_capture_ref="cap:1")]),
                                  [row("buy", "home"), row("use", "home", ["buy"])], capture_ref="cap:1")
         self.assertEqual([a["step_id"] for a in r["steps"]], ["use"])
-        with self.assertRaises(ActivityChainError):
-            compile_activity_chain(snapshot(completed=[dict(step_id="buy",outcome_ref="e:result",outcome_capture_ref="cap:old")]),
-                                   [row("buy", "home")],capture_ref="cap:1")
+        stale=compile_activity_chain(snapshot(completed=[dict(step_id="buy",outcome_ref="e:result",outcome_capture_ref="cap:old")]),
+                                     [row("buy", "home")],capture_ref="cap:1")
+        self.assertEqual(stale["gate"],"REVALIDATE_PREVIOUS_COMPLETIONS")
+        resumed=compile_activity_chain(snapshot(completed=[dict(step_id="buy",outcome_ref="e:result",
+                                   outcome_capture_ref="cap:old",revalidated_capture_ref="cap:1",still_valid=True)]),
+                                     [row("buy", "home"),row("use","home",["buy"])],capture_ref="cap:1")
+        self.assertEqual([a["step_id"] for a in resumed["steps"]],["use"])
 
     def test_player_and_stale_fail_closed(self):
         self.assertEqual(compile_activity_chain(snapshot(player_directed=True),[row("a","home")],capture_ref="cap:1")["gate"],"PLAYER_FIRST")
