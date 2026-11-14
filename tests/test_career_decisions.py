@@ -217,9 +217,17 @@ class CareerChanceCardTests(unittest.TestCase):
             "capture_ref": "capture:after-activity", "captured_at_epoch_ms": 100400,
             "activity_ref": "sim-queue:ongoing",
         }
-        self.assertEqual(reconcile_career_event_turn(
-            decision, response, effect=effect, activity=activity)["state"],
-            "RESPONSE_EFFECT_AND_RESUMPTION_SHAPE_MATCH")
+        receipt = reconcile_career_event_turn(
+            decision, response, effect=effect, activity=activity)
+        self.assertEqual(receipt["state"],
+                         "RESPONSE_EFFECT_AND_RESUMPTION_SHAPE_MATCH")
+        self.assertEqual(receipt["event_revision"], decision["event_revision"])
+        self.assertEqual(receipt["event_ref"], decision["event_ref"])
+        self.assertEqual(plan(previously_responded=receipt)["reason"],
+                         "CAREER_EVENT_ALREADY_ACTED_OR_UNCERTAIN")
+        revised_event = event(event_revision="rev:two")
+        self.assertEqual(plan(revised_event, previously_responded=receipt)["reason"],
+                         "CAREER_EVENT_ALREADY_ACTED_OR_UNCERTAIN")
         self.assertEqual(reconcile_career_event(
             decision, response, effect=None, activity=activity)["state"], "UNVERIFIED")
         self.assertEqual(reconcile_career_event(
