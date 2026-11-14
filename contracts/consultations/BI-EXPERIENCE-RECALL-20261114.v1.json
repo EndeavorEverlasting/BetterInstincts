@@ -1,0 +1,76 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-EXPERIENCE-RECALL-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Add a minimal, bounded, exact-build prior-experience index that persists a new semantic outcome once, yields an unchanged index on familiar experiences, and gives advisory recall of prior game observations without restarting Sims or claiming that an already-observed outcome completed the current dialog.",
+  "operator_correction": "The vanilla and BetterInstincts-mod sessions have already been exercised; do not restart or reproduce the Video Gaming Yes/No research to reconstruct remembered prior experience. Reuse prior receipts by exact scenario. Persist only a genuinely new experience; repeated encounters should be read-only.",
+  "affected_concepts": [
+    "GAME_BUILD",
+    "SIM",
+    "OBSERVATION",
+    "CLAIM",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "PLAYER_INTENT",
+    "ACTION_PROPOSAL",
+    "LEARNING_MODEL",
+    "CONTROL_PERMIT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "docs/PREFERENCE_PROMPTS.md",
+    "betterinstincts/chance_event_research.py",
+    "betterinstincts/judgment_learning.py",
+    "contracts/preference-prompts.v1.json",
+    "contracts/native-gameplay-authority.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_SOURCE_AND_TESTED_RECEIPT_INDEX_NO_NEW_LIVE_GAME_PROOF",
+  "player_save_control_impact": "No game launch, save/Mods mutation, camera movement, automatic game input, continuous observer, identity capture or player input listening; store only sanitized exact patch/experience outcome references under an explicit repo-ignored dist path. Historical recall never grants permission to click or proves the currently open dialog was answered.",
+  "expected_outcome": "On a new prior-receipt experience, write once with bounded exact-build context and provenance; on the same repeated encounter or identical fact, return ALREADY_KNOWN without writing; on context mismatch return MISS; on contradictory result HOLD without overwriting; on recall return advisory prior result with current_event_complete=false and no execution permission.",
+  "negative_tests": [
+    "same result with different capture reference creates no second record",
+    "same known record performs no file write and preserves original bytes and mtime",
+    "changed game build or installation digest cannot reuse an outcome",
+    "conflicting result cannot overwrite earlier evidence",
+    "unverified or unknown proof level is rejected",
+    "past YES/NO observations are not interpreted as completion of the presently open dialog",
+    "no private sim identity, save path, raw screenshot or input logs in the experience payload",
+    "no automatic game boot, game control, player queue action or model training"
+  ],
+  "rollback_path": "Drop the new optional library/CLI on its isolated feature branch; existing preference, judgment learning and chance-event memo owners are unchanged and game/save state remains intact.",
+  "unresolved_unknowns": [
+    "Current Windows-local raw receipts and mod profile digests are not accessible through GitHub; the local operator/agent must populate new sanitized records from already completed trials without replay.",
+    "Native preference actor and household readback remains independently owned by stacked PR #263 and Windows observer."
+  ],
+  "files_expected": [
+    "betterinstincts/experience_recall.py",
+    "scripts/experience_recall.py",
+    "tests/test_experience_recall.py",
+    "contracts/experience-recall.v1.json",
+    "contracts/native-gameplay-decisions/BI-EXPERIENCE-RECALL-20261114.v1.json",
+    "docs/EXPERIENCE_RECALL.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decided_at": "2026-11-14"
+}
