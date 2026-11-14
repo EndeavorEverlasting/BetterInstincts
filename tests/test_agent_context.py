@@ -5,7 +5,7 @@ import unittest
 
 from betterinstincts.agent_context import (
     SCHEMA, AgentContextError, compile_agent_context, continue_handoff,
-    diagnose_context_failure, route_context,
+    diagnose_context_failure, route_context, assess_agent_turn_boundary,
 )
 
 NOW = 1794650000.0
@@ -57,6 +57,116 @@ def build(rows, **kwargs):
 
 
 class AgentContextTests(unittest.TestCase):
+    def boundary(self, **updates):
+        args = {
+            "listener_active": True,
+            "effect_pending": False,
+            "effect_state": None,
+            "player_presence": "INACTIVE",
+            "game_state": "PAUSED",
+            "host_access": "AVAILABLE",
+        }
+        args.update(updates)
+        return assess_agent_turn_boundary(handoff(), **args)
+
+    def test_paused_sims_and_old_agent_report_never_complete_parent(self):
+        result = self.boundary()
+        self.assertEqual(result["gate"], "GAME_PAUSED_PARENT_OPEN")
+        self.assertFalse(result["parent_complete"])
+        self.assertFalse(result["terminal_stop_proven"])
+        self.assertEqual(result["parent_objective"], handoff()["parent_objective"])
+        # Even a receipt-like name alone is insufficient to certify closure.
+        claim = self.boundary(claimed_acceptance_refs=["receipt:played-13min"])
+        self.assertEqual(claim["gate"], "VERIFY_CLAIMED_PARENT_ACCEPTANCE")
+        self.assertFalse(claim["terminal_stop_proven"])
+
+    def test_player_presence_pauses_effects_not_the_listener(self):
+        for presence in ("ACTIVE", "UNKNOWN"):
+            result = self.boundary(player_presence=presence,
+                                   effect_pending=True, effect_state="WAITING_FOR_USER")
+            self.assertEqual(result["gate"], "YIELD_EFFECTS_KEEP_LISTENER")
+            self.assertTrue(result["turn_quiescence_supported"])
+            self.assertTrue(result["listener_remains_active"])
+            self.assertTrue(result["effect_pending"])
+            result = self.boundary(
+                player_presence=presence, effect_pending=True,
+                effect_state="WAITING_FOR_USER",
+                safe_offline_action="Inspect source-backed career fixtures",
+            )
+            self.assertEqual(result["gate"], "CONTINUE_OFFLINE_WHILE_PLAYER_ACTIVE")
+            self.assertFalse(result["turn_quiescence_supported"])
+
+    def test_pending_and_completed_unobserved_effects_block_agent_end(self):
+        for state in ("WAITING_FOR_USER", "WAITING_FOR_AGENT", "BUSY"):
+            result = self.boundary(effect_pending=True, effect_state=state)
+            self.assertEqual(result["gate"], "PENDING_EFFECT_KEEP_LISTENER")
+            self.assertFalse(result["turn_quiescence_supported"])
+        for state in ("COMPLETED", "NEEDS_RECONCILIATION"):
+            result = self.boundary(effect_pending=True, effect_state=state)
+            self.assertEqual(result["gate"], "RECONCILE_PENDING_EFFECT_OUTCOME")
+            self.assertFalse(result["terminal_stop_proven"])
+
+    def test_evidenced_host_block_can_quiesce_without_closing_parent(self):
+        result = self.boundary(host_access="UNAVAILABLE")
+        self.assertEqual(result["gate"], "REOBSERVE_HOST_ACCESS")
+        self.assertFalse(result["turn_quiescence_supported"])
+        result = self.boundary(
+            host_access="UNAVAILABLE", host_unavailable_ref="host:actual-unavailable",
+        )
+        self.assertEqual(result["gate"], "BLOCKED_EXACT_LOCAL_GAME_ACCESS")
+        self.assertTrue(result["turn_quiescence_supported"])
+        self.assertFalse(result["parent_complete"])
+        result = self.boundary(host_access="UNAVAILABLE",
+                               host_unavailable_ref="host:actual-unavailable",
+                               safe_offline_action="Review existing queue tests")
+        self.assertEqual(result["gate"], "CONTINUE_OFFLINE")
+
+    def test_running_and_missing_listener_need_next_proof(self):
+        self.assertEqual(self.boundary(game_state="RUNNING")["gate"],
+                         "OBSERVE_ACTIVE_GAME_GOAL")
+        self.assertEqual(self.boundary(listener_active=False)["gate"],
+                         "RECOVER_EXPLICIT_LISTENER")
+        paused = self.boundary(
+            listener_active=False, player_presence="ACTIVE",
+            effect_pending=True, effect_state="WAITING_FOR_USER",
+        )
+        self.assertEqual(paused["gate"], "RECOVER_EXPLICIT_LISTENER")
+        self.assertFalse(paused["listener_remains_active"])
+        self.assertTrue(paused["effect_pending"])
+        offline = self.boundary(
+            listener_active=False, player_presence="UNKNOWN",
+            effect_pending=True, effect_state="WAITING_FOR_USER",
+            safe_offline_action="Reconcile pending action evidence",
+        )
+        self.assertEqual(offline["gate"], "CONTINUE_OFFLINE_NO_ACTIVE_LISTENER")
+
+        self.assertEqual(self.boundary(game_state="NOT_VISIBLE")["gate"],
+                         "INVESTIGATE_NEXT_GATE")
+
+    def test_turn_boundary_rejects_untrusted_or_ambiguous_snapshots(self):
+        for payload in (
+            {"player_presence": "no-one-here"},
+            {"game_state": "ASSUME_LIVE"},
+            {"listener_active": "yes"},
+            {"effect_pending": 0},
+            {"effect_state": "UNVERIFIED_COMPLETED"},
+            {"effect_state": ["COMPLETED"]},
+            {"player_presence": ["ACTIVE"]},
+            {"game_state": {"state": "PAUSED"}},
+            {"host_access": {"state": "UNAVAILABLE"}},
+            {"safe_offline_action": ""},
+            {"host_unavailable_ref": "user typed a long claim"},
+            {"claimed_acceptance_refs": ["receipt:one", "receipt:one"]},
+        ):
+            with self.subTest(payload=payload), self.assertRaises(AgentContextError):
+                self.boundary(**payload)
+        original = handoff()
+        assess_agent_turn_boundary(
+            original, listener_active=True, effect_pending=False,
+            effect_state=None, player_presence="INACTIVE", game_state="PAUSED",
+        )
+        self.assertEqual(original, handoff())
+
     def test_bounded_packet_reuses_canonical_source_not_effects(self):
         packet = build([record(), record("fact:goal", kind="GOAL", claim="Fertilize target 2.")])
         self.assertEqual(packet["status"], "EVIDENCE_SELECTED")

@@ -8,9 +8,10 @@ and resume via fresh trusted idle probes, without repeating completed work.
 """
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 
 from betterinstincts.control_discovery import EVENT_SCHEMA, QUEUE_STATES
+from betterinstincts.agent_context import assess_agent_turn_boundary
 from betterinstincts.host_listener import (
     HostListenerError, read_control_discovery, record_control_discovery, status,
 )
@@ -121,6 +122,35 @@ class AgentControlRunner:
             "DISCOVERY", work_id,
             discovery_kind=discovery_kind,
             fact_ref=fact_ref, source_ref=source_ref, evidence_ref=evidence_ref,
+        )
+
+    def assess_parent_turn_boundary(
+        self,
+        handoff: Mapping,
+        *,
+        player_presence: str,
+        game_state: str,
+        safe_offline_action: str | None = None,
+        host_access: str = "UNKNOWN",
+        host_unavailable_ref: str | None = None,
+        claimed_acceptance_refs: Sequence[str] = (),
+    ) -> dict:
+        """Advisory checkpoint before a Codex turn ends; never close a parent.
+
+        The active host listener remains the owner of the pending action and
+        passive observations; no new polling, game input or hook is installed.
+        """
+        return assess_agent_turn_boundary(
+            handoff,
+            listener_active=status(self.session_id)["state"] == "ACTIVE",
+            effect_pending=self.current_work_id is not None,
+            effect_state=self.last_queue_state,
+            player_presence=player_presence,
+            game_state=game_state,
+            safe_offline_action=safe_offline_action,
+            host_access=host_access,
+            host_unavailable_ref=host_unavailable_ref,
+            claimed_acceptance_refs=claimed_acceptance_refs,
         )
 
     async def pulse(self) -> dict:
