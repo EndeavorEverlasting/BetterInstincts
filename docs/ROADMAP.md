@@ -1,3 +1,7 @@
+## 2026-11-14 — Oldest-first disposable-save trial priority (P00/P01)
+
+Governance/correctness: only *eligible lab-created disposable* save receipts may be ranked, **oldest first**; more recent and all user/unknown/continuation saves remain protected. Implemented as source-only P00 doctrine plus P01 guarded read-only ranking/CI canary, not Sims game startup, save manipulation or runtime permission. Parent BI-002 native/game verification remains independently open. See `docs/SAVE_CANDIDATE_PRIORITY.md`.
+
 ## 2026-11-14 — Need Signal Fusion Closers: source continuity and slope early warning
 
 Merged Sixth Gear port remains the single rate/fusion owner. Strengthen producer health receipts to exact selected Sim/profile/build/source/adapter, monotonic samples, quarantined context switches and two distinct post-reset probes. Require current Sim+build+time-bound moodlets before allowing favorable or negative emotion to affect advice. A verified unpaused native rate can project minutes until **policy** 0.55 preemptive level (review when ≤30 Sim minutes) without converting HUD three arrows into a numeric multiplier. Actual native & CV producer workers, game-specific calibration and in-game action choices remain [P08 #235](https://github.com/EndeavorEverlasting/BetterInstincts/issues/235), not complete from CI. Independent hunger certification remains active.

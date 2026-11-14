@@ -139,6 +139,10 @@ jobs:
         run: python -m scripts.check_hidden_object_p04
       - name: Scene and save safety contract
         run: python -m scripts.check_scene_contract
+      - name: P00/P01 oldest-first lab save trial advisory
+        run: |
+          python -m scripts.check_save_candidate_priority
+          python -m unittest tests.test_save_candidate_priority -v
       - name: Repo asset leakage prevention
         run: python scripts/check_tracked_assets.py
       - name: Commit whitespace hygiene

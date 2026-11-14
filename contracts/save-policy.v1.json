@@ -43,5 +43,16 @@
   ],
   "promotion_rule": "NAME_ALONE_NEVER_AUTHORIZES_DISPOSABILITY",
   "live_proof": "LOCAL_OPERATOR_ATTESTATION_ONLY_NOT_SAVE_ORIGIN_FORENSICS",
-  "source": "operator-selected same-folder private manifest, not scan of game saves"
+  "source": "operator-selected same-folder private manifest, not scan of game saves",
+  "lab_disposable_trial_priority": {
+    "scope": "LAB_DISPOSABLE_ONLY_AFTER_EXISTING_SAVE_GUARD",
+    "sort": "OLDEST_ATTESTED_CREATION_UTC_FIRST",
+    "recency_protection": "NEWER_MORE_PRESERVED",
+    "age_evidence": "OPERATOR_ATTESTED_LAB_CREATION_RECEIPT",
+    "missing_or_ambiguous_age": "ABSTAIN_NO_RANKING",
+    "timestamp_never_proves_disposability": true,
+    "selection": "READ_ONLY_ADVISORY_NO_AUTO_SELECT",
+    "protected_and_continuation": "EXCLUDED_ALWAYS",
+    "effect_authority": "NONE"
+  }
 }

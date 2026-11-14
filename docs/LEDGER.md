@@ -1,3 +1,9 @@
+## 2026-11-14 — Corrected oldest-first save trial governance (MoonWake P00 → P01)
+
+**Operator correction:** The most recent Sims 4 save is **not** the most disposable; older saves are preferred for experimentation because recent saves may contain decisions users discover they need to undo much later. The revised rule applies only after the pre-existing `LAB_DISPOSABLE` origin/run/capture/game-version guard admits a record. Personal/unknown saves and lab continuations remain excluded, and age never grants rights to read, load automatically, overwrite, modify or delete any save.
+
+**P00:** updated root AGENTS.md, detailed governance and canonical `save-policy.v1.json` with oldest-attested-lab-creation-first and no-selection defaults. **P01:** added a bounded advisory CLI, completeness checker and hostile-case tests, normal CI gate, original-owner docs, and a consultation record committed *before* behavior mutation. Missing/tied creation chronology or bad origin/running evidence abstains. Source and provider CI are separate from a real game; no Windows launch or MoonWake local stage-walker dispatch is claimed. The new method does **not** require restarting completed vanilla/modded experiments. See `docs/SAVE_CANDIDATE_PRIORITY.md` and `contracts/consultations/BI-SAVE-OLDEST-FIRST-P00-P01-20261114.v1.json`.
+
 ## 2026-11-14 — Prior experiences: memoize new, retrieve familiar, no Sims restart
 
 **Operator correction:** Already-performed vanilla and modded Sims 4 trials, including Video Gaming Yes/No and rollback, are historical facts and should not trigger another game restart or generic investigation simply because the agent crosses a new conversation/session. The screenshot shows the Video Gaming offer currently open; recognizing an identical earlier mechanic is not proof the *current* instance was answered.

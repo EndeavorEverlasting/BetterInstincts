@@ -54,7 +54,7 @@ peripheral protection.
 
 ## Invariants
 - **Player first:** no interrupt of explicit player commands; no uncontrolled autonomy loops.
-- **Save-safe:** never edit/delete/migrate/overwrite user saves/game files. Unknown/user saves protected.
+- **Save-safe:** never edit/delete/migrate/overwrite user saves/game files. Unknown/user saves protected. Within operator-attested `LAB_DISPOSABLE` trial candidates only, prefer **oldest before newest**. Newest is more protected, not more disposable; no timestamp grants save access or changes classification. P01 age ranking is read-only/advisory in `scripts/save_candidate_priority.py`; it does not auto-load, Resume, write or delete.
 - **Build structure / FLOOR_2 / all purchases:** No agent Build/Buy edits/purchases until ALL floors/rooms are scanned, classified, backed up to My Library pre-edit and model readback verified. Unknowns, stale saves, incomplete FLOOR_2 = DENY. Keep stairs/Craftidink CANCEL_UI and `admit_live_structure_effect`; offline leases are NOT live input permits. `docs/BUILD_LIBRARY_CHECKPOINT.md`.
 - **Offline install:** never EA Connect; Stay Offline only; play as installed.
 - **Storage:** no arbitrary profile writes, auto-discovery, asset copy, daemons, telemetry, unbounded logs.
