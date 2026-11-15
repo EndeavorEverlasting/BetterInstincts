@@ -78,7 +78,9 @@
     "scripts/control_discovery_cli.py",
     "tests/test_control_discovery.py",
     "tests/fixtures/control-discovery/video-gaming-assisted.v1.json",
-    "contracts/native-gameplay-decisions/BI-PS0251-NATIVE-ASSISTANCE-20261115.v1.json"
+    "contracts/native-gameplay-decisions/BI-PS0251-NATIVE-ASSISTANCE-20261115.v1.json",
+    "docs/CONTROL_DISCOVERY.md",
+    "betterinstincts/host_listener.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "prompt_order": [
