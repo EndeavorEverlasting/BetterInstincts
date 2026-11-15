@@ -1,0 +1,61 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-REPEATED-VIDEO-GAMING-HANDOFF-20261115",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "a4d185d16312cbb14828f1f73de6283157b7927f",
+  "base_commit": "0e0bba9d71403893a880018667f0b237ee46bc93",
+  "proposed_capability": "Recall the same exact-build preference outcomes from original observer profiles and allow a reviewed mechanic certification to carry into a repeat offer on a different process.",
+  "affected_concepts": [
+    "HISTORICAL_EXPERIENCE",
+    "HOST_SESSION",
+    "PLAYER_INTENT",
+    "PROOF_RECEIPT",
+    "SAVE_SLOT"
+  ],
+  "relevant_canonical_owners": [
+    "docs/LIVE_CERTIFICATION_HANDOFF.md",
+    "docs/ONTOLOGY.md",
+    "scripts/continue_certification.py",
+    "scripts/launch_save_route.py",
+    "contracts/launch-certification-priority.v1.json",
+    "contracts/experience-recall.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-049",
+    "BI-ONT-050"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "REVIEW_AND_HANDOFF_POLICY_ONLY_NO_LIVE_GAME_EFFECT",
+  "player_save_control_impact": "Read-only handoff and ranking. No new game input, process attach, automatic save load, or writes to evidence. Reuse historical certification only through independent review, same exact mechanic/build/household and observed current prompt resolution; preserve the already-running game.",
+  "expected_outcome": "Different historical observer profiles are discovered without mixing conflicting facts. The already tested mechanic is not rerun solely because the instance differs. The boot path can proceed to the existing same-household successor advisory after reviewed prior proof plus observed resolution of the repeat prompt.",
+  "negative_tests": [
+    "Default miss does not hide Yes/No records with distinct historical profiles.",
+    "Wrong build or conflicting outcomes cannot masquerade as recall.",
+    "Missing current resolution or household mismatch denies promotion.",
+    "Historical reuse does not grant game input or claim new native proof."
+  ],
+  "rollback_path": "Revert the follow-up commit; keep the local recall store and original private evidence intact.",
+  "unresolved_unknowns": [
+    "Local Windows offer outcome and child-agent launch error are not directly accessible from the cloud."
+  ],
+  "files_expected": [
+    "scripts/continue_certification.py",
+    "scripts/launch_save_route.py",
+    "tests/test_continue_certification.py",
+    "tests/test_launch_save_route.py",
+    "docs/LIVE_CERTIFICATION_HANDOFF.md",
+    "docs/LAUNCH_CERTIFICATION_PRIORITY.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "contracts/launch-certification-priority.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}
