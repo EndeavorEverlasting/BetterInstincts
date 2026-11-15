@@ -1,0 +1,10 @@
+---
+name: native-responder-recovery
+description: Turn BetterInstincts native responder gaps and agent-assisted Sims actions into deterministic regression fixtures and native implementation work. Use when an agent has to perform an expected game action, a native callback lacks submission proof, or a fallback needs review.
+---
+
+1. Resolve `NATIVE_RESPONDER_GAP`, `FALLBACK_EFFECT_TRACE` and `NATIVE_RESOLUTION_PROOF` in `contracts/glossary.v1.json`. Read `docs/CONTROL_DISCOVERY.md` and `contracts/control-discovery.v1.json`. Deliberate player choices remain player-owned.
+2. Reuse an existing session and receipts. Before new authorized lab effects, use `AgentControlRunner.prepare_effect` in the active, opted-in listener. The same runner records the dispatch boundary and queues through the player-first gate. Record an independent post-effect capture and outcome with `record_observed_outcome`. Reconcile uncertain or interrupted effects before any replay. Keep the read-only listener active when human activity pauses effects.
+3. Read `python -m scripts.control_discovery_cli status --session SESSION`. Follow the work item to its existing deterministic/native owner and add a sanitized offline regression. Test the observed success or failure plus stale, duplicate and player-owned controls. Historical evidence may establish a gap even if an observation is missing. Preserve what was actually observed.
+4. Reuse the native tuning or embedded-script owner with exact-build source evidence. Keep an assisted click and a native observer callback attributed to their actual sources. Native resolution requires BetterInstincts' choice and submit, the matching native acknowledgement and observed effect. Preserve any missing continuation, rollback, or live proof as an open gate. Do not reopen a resolved offer to recover old measurements.
+5. Record source/test/review references in the existing journal and independently verify GitHub main and CI. A live proof run still requires the authorized Windows game host. Keep raw captures, private paths, household identifiers and save files local.

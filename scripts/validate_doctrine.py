@@ -11,6 +11,8 @@ if str(ROOT) not in sys.path:
 REQUIRED = (
     "AGENTS.md", "docs/DOCTRINE.md", "docs/LEDGER.md",
     "docs/CONTROL_DISCOVERY.md", "contracts/control-discovery.v1.json",
+    ".agents/skills/native-responder-recovery/SKILL.md",
+    ".cursor/skills/native-responder-recovery/SKILL.md",
     "docs/ROADMAP.md", "docs/PRIOR_ART.md", "docs/VALIDATION.md",
     "docs/STRATEGY.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
     "docs/COMPATIBILITY.md", "docs/LIVE_CERT.md", "plans/active/BI-002.execution.v1.json",

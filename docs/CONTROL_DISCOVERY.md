@@ -1,3 +1,8 @@
+## Native responder recovery (PS-0251)
+
+Start with the [repository skill](../.agents/skills/native-responder-recovery/SKILL.md). Use the existing control-discovery journal and the evidence checkout that produced it. Author source in the canonical development checkout or an isolated worktree. The game effect runs in the installed Sims build under the user-selected Mods root. A GitHub merge, a file installed under Mods, and a game-native effect are distinct.
+
+The Video Gaming callback `AdventureMoment._on_dialog_response` was seen after a historical player-side response. The repeat-offer Yes was agent-assisted, and its current native acknowledgement and trait/buff readback were unavailable. Reuse both sets of evidence with their original attribution. PR #275 owns the provisional host response port. The open game-side work is to bind and verify the real EA submit primitive and auto-activation in the installed game, then capture the first BetterInstincts-owned outcome on a future naturally occurring offer. BI-002 and the same-household LabLab successor preflight continue independently of this native proof.
 
 ## 2026-11-14 — Passive-listener identity and every-discovery source backlog
 
