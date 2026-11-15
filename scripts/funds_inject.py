@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 import uuid
@@ -28,6 +29,7 @@ if str(ROOT) not in sys.path:
 
 from betterinstincts.funds_inject import (
     FundsInjectError,
+    dispatch_reserve_bailout,
     evaluate_subsidy_gate,
     plan_inject,
     plan_funds_recovery,
@@ -248,6 +250,7 @@ def _execute_plan(
     console_open_method: str = "chord",
     console_ready: bool = False,
     before_input=None,
+    verify_console_input=None,
 ) -> dict:
     """One bounded funding dispatch under explicit human-first admission.
 
@@ -319,6 +322,8 @@ def _execute_plan(
                 time.sleep(0.55)
             for cmd in commands:
                 verify_game_focus()
+                if verify_console_input is not None and verify_console_input() is not True:
+                    raise GateError("LIVE_CONSOLE_INPUT_NOT_VERIFIED")
                 effect_started = True
                 _type_text(cmd)
                 verify_game_focus()
@@ -357,6 +362,68 @@ def _execute_plan(
         "one_effect_per_invocation": True,
         "console_input_focus_proof": ("OPERATOR_ATTESTED" if console_open_method == "operator-ready" else "NOT_INDEPENDENTLY_PROVEN"),
     }
+
+
+def run_reserve_bailout(
+    observation, *, capture_ref, process_id, session_id, observe_current,
+    verify_console_input, expected_process,
+) -> dict:
+    """Use the existing Windows funds executor with measured local ports."""
+    from scripts.smart_start import GameProcess, require_same_game_process
+
+    def claim_once(ready):
+        nonlocal receipt
+        try:
+            receipt = _reserve_receipt(
+                OUTPUT / (ready["bailout_ref"].replace(":", "-") + ".json"), execute=True,
+            )
+        except GateError as exc:
+            if str(exc) == "FUNDS_RECEIPT_ALREADY_EXISTS":
+                return False
+            raise
+        # Close and sync the exclusive reservation before any game input.
+        with receipt.open("r+b") as reserved:
+            os.fsync(reserved.fileno())
+        return True
+
+    def submit_exact(ready):
+        def recheck_under_lease():
+            require_same_game_process(expected_process)
+            current = observe_current()
+            if (not isinstance(current, dict)
+                    or any(current.get(k) != ready[k] for k in ("save_ref", "household_ref", "episode_ref"))
+                    or current.get("process_id") != process_id
+                    or current.get("session_id") != session_id
+                    or current.get("funds_observed") != ready["plan"]["funds_observed"]
+                    or current.get("active_live_scene_verified") is not True
+                    or current.get("host_effect_admitted") is not True
+                    or current.get("player_active") is not False
+                    or current.get("console_state") != "CLOSED_VERIFIED"):
+                raise GateError("BAILOUT_PRE_DISPATCH_STATE_CHANGED")
+
+        live = _execute_plan(
+            ready["plan"], process_id=process_id, session_id=session_id,
+            verify_console_input=verify_console_input, before_input=recheck_under_lease,
+        )
+        return live["dispatch_ref"]
+
+    receipt = None
+    if (sys.platform != "win32" or type(process_id) is not int or process_id <= 0
+            or not session_id or not isinstance(expected_process, GameProcess)
+            or expected_process.pid != process_id or expected_process.game_version is None
+            or not callable(observe_current) or not callable(verify_console_input)):
+        return {"state": "BAILOUT_LOCAL_SENSORS_REQUIRED", "dispatch_authorized": False}
+    result = dispatch_reserve_bailout(
+        observation, capture_ref=capture_ref, claim_once=claim_once,
+        observe_current=observe_current, submit_exact=submit_exact,
+    )
+    if receipt is not None:
+        try:
+            _write_receipt(receipt, {**result, "process_id": process_id, "session_id": session_id})
+        except (GateError, OSError):
+            result["state"] = "BAILOUT_RECEIPT_UNCERTAIN_NO_REPLAY"
+        result["receipt"] = str(receipt)
+    return result
 
 
 def _show_overlay(prompt: dict) -> str:

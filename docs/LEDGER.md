@@ -2201,3 +2201,12 @@ resolves the latest-played target from current in-game evidence when supplied.
 The default production workflow still needs an installed-build save observer and
 loader. Launch receipts retain required assistance and any partial dispatch.
 Actual Windows save-load/readback and gameplay remain separate proof gates.
+
+## 2026-11-15 — Reserve bailout threshold
+
+At or below §500,000, an enabled active session can propose a single exact
+restore to §1,000,000. The existing host funds sender accepts independently
+verified local ports and an exclusive episode claim. A verified restoration
+records a negative reward equal to the amount restored and zero earned
+income. Action attribution requires reviewed causal evidence. Windows sensor
+wiring and the real gameplay canary remain open in [#279](https://github.com/EndeavorEverlasting/BetterInstincts/issues/279).

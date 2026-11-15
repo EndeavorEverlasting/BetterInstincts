@@ -11,6 +11,7 @@
   },
   "floors": {
     "minimum_household_balance": 1000000,
+    "automatic_recovery_at_or_below": 500000,
     "emergency_reserve": 400,
     "soft_budget_floor": 2000,
     "note": "Autonomous discretionary purchases preserve the minimum household balance. Emergency reserve and soft floor classify immediate financial urgency."

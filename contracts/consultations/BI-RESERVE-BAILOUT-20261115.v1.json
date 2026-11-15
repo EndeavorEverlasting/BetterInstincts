@@ -1,0 +1,62 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-RESERVE-BAILOUT-20261115",
+  "ontology": "contracts/ontology.v1.json",
+  "base_commit": "e2f37f3348c79c9264793238060c895bb933018d",
+  "ontology_blob_sha": "48cd3deaaebd0d021a2600502625c0010873e59d",
+  "proposed_capability": "At or below the verified household recovery threshold, route one automatic exact-funds bailout in an active authorized host session. Score the observed depletion without counting the cheat as earned or crediting the bailout in training.",
+  "affected_concepts": [
+    "HOUSEHOLD",
+    "OBSERVATION",
+    "CONTROL_PERMIT",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "PLAYER_INTENT"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/budget_eval.py",
+    "betterinstincts/funds_inject.py",
+    "betterinstincts/household_upkeep.py",
+    "betterinstincts/behavior_valence.py",
+    "docs/AGENT_OPERATING_RULES.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_TRIGGER_AND_VERIFIED_OUTCOME_ROUTING_NOT_LOCAL_SIMS_ACTIVATION",
+  "player_save_control_impact": "No change to live settings, saves or player-control authority. An unattended UI sender requires its reviewed local sensor and runner.",
+  "expected_outcome": "Inclusive live threshold; canonical exact target; durable single attempt per episode; distinct HUD proof; signed deprivation and optional attributed reviewed valence.",
+  "negative_tests": [
+    "No trigger at 500001; no double submission or training after replay.",
+    "Never use unknown or stale balances and never attribute player or unverified losses to automation.",
+    "Subsidy restoration is zero earned income."
+  ],
+  "rollback_path": "Revert the feature; no save files edited or game activated here.",
+  "unresolved_unknowns": [
+    "Exact-build verified console field and HUD capture adapter on the Windows game host."
+  ],
+  "files_expected": [
+    "betterinstincts/budget_eval.py",
+    "betterinstincts/funds_inject.py",
+    "betterinstincts/household_upkeep.py",
+    "betterinstincts/host_stack.py",
+    "contracts/host-budget.v1.json",
+    "contracts/host-funds.v1.json",
+    "contracts/native-gameplay-decisions/BI-RESERVE-BAILOUT-20261115.v1.json",
+    "docs/HOUSEHOLD_FUNDS_RECOVERY.md",
+    "docs/LEDGER.md",
+    "tests/test_funds_inject.py",
+    "tests/test_household_upkeep.py",
+    "scripts/funds_inject.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}

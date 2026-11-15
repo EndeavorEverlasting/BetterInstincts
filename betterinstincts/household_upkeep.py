@@ -16,7 +16,9 @@ from betterinstincts.budget_eval import household_reserve
 from betterinstincts.build_library_checkpoint import (
     BuildLibraryCheckpointError, admit_live_structure_effect,
 )
-from betterinstincts.funds_inject import MAX_HOUSEHOLD_FUNDS, plan_inject, verify_funds_outcome
+from betterinstincts.funds_inject import (
+    MAX_HOUSEHOLD_FUNDS, plan_inject, plan_reserve_bailout, verify_funds_outcome,
+)
 from betterinstincts.queue_capacity import QueueCapacityError, evaluate_queue_capacity
 
 SCHEMA = "betterinstincts.household-upkeep/v1"
@@ -653,6 +655,14 @@ def evaluate_household_upkeep(
     if (fresh and observation.get("funds_capture_ref") == capture_ref
             and type(funds) is int and 0 <= funds <= MAX_HOUSEHOLD_FUNDS):
         result["household_reserve"] = household_reserve(funds)
+        if "bailout_enabled" in observation:
+            result["reserve_bailout"] = plan_reserve_bailout(
+                observation, capture_ref=capture_ref,
+                held=player_directed or already_busy or build_or_buy_mode
+                or human_survival_hold or any(
+                    item["origin"] in {"PLAYER", "UNKNOWN"} for actor in actors for item in actor["queue"]
+                ),
+            )
     # Health is always surveyed, even while another domain owns screen input.
     candidates: list[dict] = []
     for servo in servos:
@@ -791,10 +801,18 @@ def evaluate_household_upkeep(
         )
         result["laundry_policy"]["availability"] = availability
         if "procurement" in laundry:
-            result["laundry_policy"]["procurement"] = _laundry_procurement(
-                laundry["procurement"], availability, lot_model, capture_ref=capture_ref,
-                household_ref=observation.get("household_ref"),
+            pending_bailout = result.get("reserve_bailout", {}).get("state") in (
+                "BAILOUT_READY", "BAILOUT_RECONCILE_FIRST",
             )
+            if pending_bailout:
+                result["laundry_policy"]["procurement"] = {
+                    "state": "LAUNDRY_WAIT_FOR_RESERVE_BAILOUT", "dispatch_authorized": False,
+                }
+            else:
+                result["laundry_policy"]["procurement"] = _laundry_procurement(
+                    laundry["procurement"], availability, lot_model, capture_ref=capture_ref,
+                    household_ref=observation.get("household_ref"),
+                )
 
     def finish(gate: str, action: str) -> dict:
         result.update(gate=gate, action=action)

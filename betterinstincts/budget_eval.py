@@ -38,6 +38,9 @@ def load_contract(path: Path = CONTRACT) -> dict:
     minimum = floors.get("minimum_household_balance")
     if type(minimum) is not int or minimum <= floors["soft_budget_floor"]:
         raise BudgetEvalError("MINIMUM_HOUSEHOLD_BALANCE_REQUIRED")
+    threshold = floors.get("automatic_recovery_at_or_below")
+    if type(threshold) is not int or not 0 < threshold < minimum:
+        raise BudgetEvalError("HOUSEHOLD_RECOVERY_THRESHOLD_INVALID")
     if not isinstance(cfg.get("catalog"), list) or not cfg["catalog"]:
         raise BudgetEvalError("BUDGET_CATALOG_REQUIRED")
     return cfg
@@ -51,12 +54,16 @@ def household_reserve(funds: float, cfg: Optional[dict] = None) -> dict:
     """Shared reserve, surplus and growth decision for autonomous spending."""
     if type(funds) not in (int, float) or funds < 0 or not math.isfinite(funds):
         raise BudgetEvalError("INVALID_FUNDS")
-    minimum = (cfg or load_contract())["floors"]["minimum_household_balance"]
+    floors = (cfg or load_contract())["floors"]
+    minimum = floors["minimum_household_balance"]
+    threshold = floors["automatic_recovery_at_or_below"]
     return {
         "minimum_household_balance": minimum,
         "reserve_shortfall": max(0, minimum - funds),
         "spend_max": max(0, funds - minimum),
         "income_goal": "EARN_TO_RESTORE_RESERVE" if funds < minimum else "EARN_TO_GROW_SURPLUS",
+        "automatic_recovery_at_or_below": threshold,
+        "automatic_recovery_due": funds <= threshold,
     }
 
 
