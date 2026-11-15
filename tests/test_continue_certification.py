@@ -75,6 +75,17 @@ class ContinueCertificationTests(unittest.TestCase):
         self.assertNotIn("wrong_build", payload)
         self.assertNotIn("NEW_EXPERIENCE", payload)
 
+    def test_recorded_repeat_routes_same_agent_to_review_and_save_preflight(self):
+        memo = self.root / handoff.LOCAL_CONTEXT.relative_to(handoff.ROOT)
+        memo.parent.mkdir(parents=True)
+        memo.write_text(json.dumps({"repeat_offer": {"resolution_observed": True}}),
+                        encoding="utf-8")
+        before = memo.read_bytes()
+        with patch.object(handoff, "read_sims_processes", return_value={53: "TS4_x64.exe"}):
+            result = handoff.build_handoff(self.root)
+        self.assertIn("RECONCILE_RECORDED_RESOLUTION_AND_PREFLIGHT_SUCCESSOR_HOUSEHOLD_SAVE", result)
+        self.assertEqual(memo.read_bytes(), before)
+
     def test_existing_memo_is_used_in_the_evidence_checkout_without_writes(self):
         memo = self.root / handoff.LOCAL_CONTEXT.relative_to(handoff.ROOT)
         memo.parent.mkdir(parents=True)

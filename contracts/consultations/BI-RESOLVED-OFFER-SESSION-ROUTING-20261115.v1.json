@@ -1,0 +1,50 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-RESOLVED-OFFER-SESSION-ROUTING-20261115",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "a4d185d16312cbb14828f1f73de6283157b7927f",
+  "base_commit": "a31b066d5b2ea953b7b3b5480b3fdd8ec038dbe0",
+  "proposed_capability": "Carry one structured next action through the same local certification handoff and recover remaining evidence without reopening a resolved offer or handing back an already delegated decision.",
+  "affected_concepts": [
+    "PLAYER_INTENT",
+    "HOST_SESSION",
+    "HISTORICAL_EXPERIENCE",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "docs/ONTOLOGY.md",
+    "docs/LIVE_CERTIFICATION_HANDOFF.md",
+    "scripts/continue_certification.py",
+    "scripts/launch_save_route.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-049",
+    "BI-ONT-050"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "READ_ONLY_LAUNCHER_GUIDANCE_NO_GAME_ACTION",
+  "player_save_control_impact": "No change to load or write authority. The local handoff retains the active session and pursues missing evidence only.",
+  "expected_outcome": "Artifact-backed repeat resolution routes to review and LabLab attestation; a capability gap routes to local recovery and continues safe successor preflight independently.",
+  "negative_tests": [
+    "A resolved repeat is not issued a second response.",
+    "Unknown process and memo do not grant effects."
+  ],
+  "rollback_path": "Revert launcher and documentation changes.",
+  "unresolved_unknowns": [
+    "Cloud cannot see actual Windows receipts or LabLab identity."
+  ],
+  "files_expected": [
+    "scripts/continue_certification.py",
+    "tests/test_continue_certification.py",
+    "docs/LIVE_CERTIFICATION_HANDOFF.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}
