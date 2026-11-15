@@ -7,15 +7,11 @@ from dataclasses import asdict
 import hashlib
 import json
 import re
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-import time
-from typing import TYPE_CHECKING, Callable
-
-if TYPE_CHECKING:
-    from scripts.smart_start import GameProcess
+from typing import Callable
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN = {
@@ -45,7 +41,7 @@ LAUNCH_GUIDANCE = {
 }
 
 
-class PlayBlocked(Exception):
+class PlayBlocked(ValueError):
     def __init__(self, step: str, reason: str, next_step: str, *, detail: str = ""):
         super().__init__(reason)
         self.step = step
@@ -164,35 +160,6 @@ def play_on_windows(
 
 
 
-def observe_launched_process(game: dict) -> GameProcess:
-    """Poll only a just-dispatched executable. Never adopt a replacement PID."""
-    from scripts.smart_start import read_game_processes
-
-    if game["state"] == "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH":
-        observed = game.get("observed_game_process")
-        if not observed:
-            raise ValueError("EXISTING_GAME_PROCESS_IDENTITY_UNVERIFIED")
-        current = read_game_processes()
-        if len(current) != 1 or asdict(current[0]) != observed:
-            raise ValueError("GAME_PROCESS_CHANGED_REOBSERVE_SCENE_AND_SAVE")
-        return current[0]
-    if game.get("process_observation_state") == "PROCESS_INVENTORY_UNAVAILABLE_AFTER_DISPATCH":
-        raise ValueError("PROCESS_INVENTORY_UNAVAILABLE_AFTER_DISPATCH")
-    expected = str(PureWindowsPath(game["game_executable"])).casefold()
-    initial = game.get("observed_game_process")
-    for attempt in range(8):
-        current = read_game_processes()
-        if len(current) == 1 and current[0].executable == expected:
-            if initial is not None and asdict(current[0]) != initial:
-                raise ValueError("GAME_PROCESS_CHANGED_REOBSERVE_SCENE_AND_SAVE")
-            return current[0]
-        if initial is not None or current:
-            raise ValueError("GAME_PROCESS_CHANGED_REOBSERVE_SCENE_AND_SAVE")
-        if attempt < 7:
-            time.sleep(1)
-    raise ValueError("GAME_PROCESS_NOT_OBSERVED_AFTER_DISPATCH")
-
-
 def complete_play(
     mode: str, game: dict, toolkit: dict, context_path: Path | None,
     receipt_path: Path, receipt: dict, progress: Callable[[str], None],
@@ -200,7 +167,7 @@ def complete_play(
     from scripts.game_host import navigate_startup_save, profile
     from scripts.launch_receipt import gap, write_result
     from scripts.launch_save_route import load_context, route_mode
-    from scripts.smart_start import require_same_game_process
+    from scripts.smart_start import observe_launched_process, require_same_game_process
 
     result = {"toolkit": toolkit, "game": game, "save_state": "NOT_OBSERVED",
               "automatic_steps": []}

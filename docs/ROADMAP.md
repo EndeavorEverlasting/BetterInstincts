@@ -318,3 +318,7 @@ Certify the process-bound startup and dev save path on an explicitly
 authorized Windows game session, including a restart negative control. Finish
 the production latest-save observer and exact-slot load/readback in the
 existing startup owner. Keep required human/agent steps in the local receipt.
+
+The [Windows game-host handoff](../plans/active/BI-GAME-HOST.HANDOFF.md#launcher-acceptance-and-process-continuity)
+owns the dev runtime proof and routes production to
+[#201](https://github.com/EndeavorEverlasting/BetterInstincts/issues/201).

@@ -92,7 +92,15 @@ python -m scripts.game_baseline --run-id bi002-quiz-boot
 - **Critical needs force (MAP_TRAVEL, not walk thrash):** Off-lot critical hunger/energy → Manage Worlds pin `(1558,22)` → Bargain Bend `(1400,840)` → Play → fridge `(1100,250)`. Never click distant same-lot objects to pathfind in-frame. Contract `needs-force.v1.json` + `python -m scripts.needs_force plan|run`.
 - **Opt-in host listener / presence-gated automate (P95):** Glossary + behavior matrix define EMULATE vs OPTIMIZE. Activate `python -m scripts.host_listener activate --session-id ID`, tick with observation JSON, deactivate when done. `python -m scripts.host_automate --observation PATH --session-active` yields while `PLAYER_PLAYING` (cursor on Sims canvas / declared playing / player-directed). Host may automate only when `HOST_MAY_AUTOMATE`. See [HOST_AUTONOMY.md](HOST_AUTONOMY.md) and [GLOSSARY.md](GLOSSARY.md).
 
-Preflight does not launch anything. Launch requires explicit execute and only permits TS4_x64.exe or TS4.exe on Windows. It creates a non-overwriting repo-local dist/game-host/<run-id> manifest and JSONL receipts. GUI navigation requires execute plus disposable confirmation; each successful click leaves an event checkpoint, so a partial flow cannot be blindly repeated. If interrupted, inspect actual game UI and recover safely in a fresh session. Screenshot template matching fails closed if ambiguous or missing; no guessed coordinates or global scanning.
+Preflight leaves the game as it is. An explicit Windows launch shares the
+BetterInstincts startup lock and preserves an already-open game. The launch
+event retains the dispatch PID and the separately observed game process.
+Navigation requires that game PID, creation time and executable to match again
+before any window focus or template click. A legacy PID-only receipt remains
+readable as history. It cannot authorize a new click. Preserve the existing
+game if the process binding changes and collect fresh scene and save evidence.
+Each template click has a pre-effect checkpoint. Ambiguous or missing targets
+stop the sequence.
 
 ## Bounded one-shot object snapshot seam
 

@@ -2214,3 +2214,12 @@ wiring and the real gameplay canary remain open in [#279](https://github.com/End
 ## 2026-11-15 — Video Gaming native response source integration
 
 Reconciled the source from PRs #261, #262, #263, #275 and #278 against the current main floor. Video Gaming uses the native recipient comparison and one-response port; other topics retain their existing catalog decisions. The lab screen path verifies selected recipient identity, and uncertain native submit uses correlated readback without replay. Bernice’s assisted Yes remains recorded and closed. Installed EA submit and activation remain under #171. LabLab same-household and successor-run proof remain independent.
+
+
+## Launcher Closers
+
+The older game-host launch and navigation commands share the Windows startup
+lock and the observed process binding. A dispatch PID alone cannot admit menu
+input, and a replacement observed during admission stops the action. Legacy
+receipts remain readable. The existing game-host handoff owns the Windows
+dev proof, and issue #201 owns the production latest-save observer and loader.

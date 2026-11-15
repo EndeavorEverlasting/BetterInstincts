@@ -1,5 +1,6 @@
 import json
-from contextlib import contextmanager
+from dataclasses import replace
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 import tempfile
 import unittest
@@ -72,11 +73,19 @@ class GameHostTests(unittest.TestCase):
 
     def launch_fake(self, mode="chosen", run_id="bi002-game-host"):
         cfg, digest = self.make_profile(mode)
-        with patch.object(host.sys, "platform", "win32"), patch.object(
-            host.subprocess, "Popen", return_value=SimpleNamespace(pid=987)
-        ) as spawn:
+        self.process = host.GameProcess(
+            988, "638987600000000000",
+            str(host.PureWindowsPath(cfg["game_executable"])).casefold(), cfg["game_version"],
+        )
+        with (patch.object(host.sys, "platform", "win32"),
+              patch("scripts.play.windows_startup_lock", side_effect=nullcontext),
+              patch.object(host, "read_game_processes", return_value=()),
+              patch.object(host, "observe_launched_process", return_value=self.process),
+              patch.object(host.subprocess, "Popen", return_value=SimpleNamespace(pid=987)) as spawn):
             receipt = host.launch(run_id, cfg, digest, True)
         self.assertEqual(receipt["state"], "LAUNCH_DISPATCHED")
+        self.assertEqual(receipt["process_id"], 987)
+        self.assertEqual(receipt["observed_game_process"]["pid"], 988)
         spawn.assert_called_once()
         return cfg, digest
 
@@ -232,12 +241,13 @@ class GameHostTests(unittest.TestCase):
 
         @contextmanager
         def leased(*args, **kwargs):
-            self.assertEqual(args[0], 987)
+            self.assertEqual(args[0], 988)
             yield lambda: None
 
         unrelated = PresenceProbe(False, False, last_input_age_ms=20000,
                                   foreground_process_id=999, probe_ok=True)
         with (patch.object(host.sys, "platform", "win32"),
+              patch("scripts.smart_start.read_game_processes", return_value=(self.process,)),
               patch("betterinstincts.screen_admit.admitted_screen_lease", leased),
               patch("betterinstincts.player_presence.probe_windows", return_value=unrelated)):
             with self.assertRaisesRegex(host.GateError, "GAME_FOREGROUND_NOT_OWNED"):
@@ -256,10 +266,11 @@ class GameHostTests(unittest.TestCase):
             yield lambda: None
 
         owned = PresenceProbe(True, True, last_input_age_ms=20000,
-                              foreground_process_id=987, probe_ok=True)
+                              foreground_process_id=988, probe_ok=True)
         stolen = PresenceProbe(False, False, last_input_age_ms=20000,
                                foreground_process_id=999, probe_ok=True)
         with (patch.object(host.sys, "platform", "win32"),
+              patch("scripts.smart_start.read_game_processes", return_value=(self.process,)),
               patch("betterinstincts.screen_admit.admitted_screen_lease", leased),
               patch("betterinstincts.player_presence.probe_windows",
                     side_effect=[owned, stolen])):
@@ -281,11 +292,66 @@ class GameHostTests(unittest.TestCase):
             yield not_ready
 
         with (patch.object(host.sys, "platform", "win32"),
+              patch("scripts.smart_start.read_game_processes", return_value=(self.process,)),
               patch("betterinstincts.screen_admit.admitted_screen_lease", denied_lease)):
             with self.assertRaisesRegex(host.GateError, "RECENT_HUMAN_INPUT"):
                 host.navigate("bi002-game-host", cfg, digest, True, True,
                               gui=gui, session_id="host-test-active")
         self.assertEqual(gui.clicked, [])
+
+
+    def test_live_navigation_rejects_old_pid_only_receipt_or_replacement(self):
+        cfg, digest = self.launch_fake()
+        gui = FakeGui()
+        successor = replace(self.process, pid=989)
+        reused = replace(self.process, creation_ticks="638987600000000999")
+        for observed in (successor, reused):
+            with (self.subTest(observed=observed),
+                  patch.object(host.sys, "platform", "win32"),
+                  patch("scripts.smart_start.read_game_processes", return_value=(observed,))):
+                with self.assertRaisesRegex(ValueError, "GAME_PROCESS_CHANGED"):
+                    host.navigate("bi002-game-host", cfg, digest, True, True,
+                                  gui=gui, session_id="host-test-active")
+        root, _, rows = host.load("bi002-game-host")
+        rows[-1].pop("observed_game_process")
+        (root / "events.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows))
+        self.assertEqual(host.status("bi002-game-host")["state"], "LAUNCH_DISPATCHED")
+        with patch.object(host.sys, "platform", "win32"):
+            with self.assertRaisesRegex(host.GateError, "FRESH_PROCESS_BINDING_REQUIRED"):
+                host.navigate("bi002-game-host", cfg, digest, True, True,
+                              gui=gui, session_id="host-test-active")
+        self.assertEqual(gui.clicked, [])
+
+    def test_window_replacement_during_admission_stops_before_input(self):
+        cfg, digest = self.launch_fake()
+        gui = FakeGui()
+        successor = replace(self.process, creation_ticks="638987600000000999")
+        owned = SimpleNamespace(probe_ok=True, foreground_is_sims=True, foreground_process_id=988)
+        with (patch.object(host.sys, "platform", "win32"),
+              patch("scripts.smart_start.read_game_processes",
+                    side_effect=[(self.process,), (self.process,), (successor,)]),
+              patch("betterinstincts.screen_admit.admitted_screen_lease",
+                    return_value=self.fake_lease()),
+              patch("betterinstincts.player_presence.probe_windows", return_value=owned)):
+            with self.assertRaisesRegex(ValueError, "GAME_PROCESS_CHANGED"):
+                host.navigate("bi002-game-host", cfg, digest, True, True,
+                              gui=gui, session_id="host-test-active")
+        self.assertEqual(gui.clicked, [])
+
+    @contextmanager
+    def fake_lease(self):
+        yield lambda: None
+
+    def test_explicit_lab_launch_preserves_existing_game(self):
+        cfg, digest = self.make_profile()
+        with (patch.object(host.sys, "platform", "win32"),
+              patch("scripts.play.windows_startup_lock", side_effect=nullcontext),
+              patch.object(host, "read_game_processes", return_value=(object(),)),
+              patch.object(host.subprocess, "Popen") as spawn):
+            with self.assertRaisesRegex(host.GateError, "EXISTING_GAME_PRESERVED"):
+                host.launch("bi002-game-host", cfg, digest, True)
+        spawn.assert_not_called()
+        self.assertEqual(host.status("bi002-game-host")["state"], "LAUNCH_BLOCKED_EXISTING_GAME")
 
 
 if __name__ == "__main__":

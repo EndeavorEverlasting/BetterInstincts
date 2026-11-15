@@ -26,6 +26,7 @@ from betterinstincts.menu_blockers import (
     assert_safe_action,
     plan_dismiss,
 )
+from scripts.smart_start import GameProcess, require_same_game_process
 from scripts.win32_input import send_click
 
 OUTPUT = ROOT / "dist" / "game-host"
@@ -46,7 +47,8 @@ def _send_click(x: int, y: int) -> None:
 
 
 def dismiss(*, process_id: int | None, execute: bool, blocker_ids: list[str] | None,
-            receipt: Path | None, session_id: str | None = None, idle_ms: int = 15000) -> dict:
+            receipt: Path | None, session_id: str | None = None, idle_ms: int = 15000,
+            process: GameProcess | None = None) -> dict:
     plan = plan_dismiss(blocker_ids)
     out: dict = {
         "plan": plan,
@@ -68,13 +70,21 @@ def dismiss(*, process_id: int | None, execute: bool, blocker_ids: list[str] | N
         require_execute_session(session_id, process_id)
     except HandoffError as exc:
         raise GateError(str(exc)) from exc
+    if process is not None and process_id != process.pid:
+        raise GateError("MENU_BLOCKER_PROCESS_BINDING_MISMATCH")
+
+    def focus_current() -> None:
+        if process is not None:
+            require_same_game_process(process)
+        _focus(process_id)
+
     steps = []
     last_handoff = None
     with admitted_screen_lease(
         int(process_id),
         str(session_id),
         idle_ms=idle_ms,
-        focus_fn=lambda: _focus(process_id),
+        focus_fn=focus_current,
     ) as ensure_ready:
         for step in plan["steps"]:
             assert_safe_action(step["step"])
@@ -82,6 +92,8 @@ def dismiss(*, process_id: int | None, execute: bool, blocker_ids: list[str] | N
                 last_handoff = ensure_ready()
             except HandoffError as exc:
                 raise GateError(str(exc)) from exc
+            if process is not None:
+                require_same_game_process(process)
             x, y = step["click"]
             _send_click(int(x), int(y))
             time.sleep(0.8)

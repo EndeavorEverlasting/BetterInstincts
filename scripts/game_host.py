@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from contextlib import contextmanager
+from dataclasses import asdict
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -16,7 +17,9 @@ import sys
 import time
 
 from betterinstincts.save_policy import SavePolicyError, selected_save_guard
-from scripts.smart_start import GameProcess, require_same_game_process
+from scripts.smart_start import (
+    GameProcess, observe_launched_process, read_game_processes, require_same_game_process,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "dist" / "game-host"
@@ -129,6 +132,8 @@ def launch(run_id: str, cfg: dict, digest: str, execute: bool) -> dict:
         raise GateError("LAUNCH_REQUIRES_EXPLICIT_EXECUTE")
     if sys.platform != "win32":
         raise GateError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
+    from scripts.play import windows_startup_lock
+
     root = run_root(run_id)
     root.mkdir(parents=True, exist_ok=False)
     manifest = {"schema": SCHEMA, "run_id": run_id, "profile_sha256": digest,
@@ -138,16 +143,37 @@ def launch(run_id: str, cfg: dict, digest: str, execute: bool) -> dict:
     (root / "run.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     (root / "events.jsonl").write_text("", encoding="utf-8")
     append_event(root, "SESSION_CREATED")
-    exe = Path(cfg["game_executable"])
-    try:
-        proc = subprocess.Popen([str(exe)], cwd=str(exe.parent),
-                                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                                stderr=subprocess.DEVNULL, close_fds=True)
-    except OSError as exc:
-        append_event(root, "LAUNCH_FAILED", reason=type(exc).__name__)
-        raise GateError("GAME_LAUNCH_FAILED") from exc
-    return append_event(root, "LAUNCH_DISPATCHED",
-                        process_id=proc.pid, proof_ceiling="PROCESS_DISPATCH_ONLY")
+    with windows_startup_lock():
+        if read_game_processes():
+            append_event(root, "LAUNCH_BLOCKED_EXISTING_GAME")
+            raise GateError("EXISTING_GAME_PRESERVED")
+        exe = Path(cfg["game_executable"])
+        try:
+            proc = subprocess.Popen([str(exe)], cwd=str(exe.parent),
+                                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL, close_fds=True)
+        except OSError as exc:
+            append_event(root, "LAUNCH_FAILED", reason=type(exc).__name__)
+            raise GateError("GAME_LAUNCH_FAILED") from exc
+        append_event(root, "LAUNCH_DISPATCHED",
+                     process_id=proc.pid, proof_ceiling="PROCESS_DISPATCH_ONLY")
+        try:
+            process = observe_launched_process({
+                "state": "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF", "game_executable": str(exe),
+            })
+        except (OSError, ValueError) as exc:
+            from scripts.launch_receipt import gap
+
+            return append_event(
+                root, "LAUNCH_DISPATCHED", process_id=proc.pid,
+                automation_gaps=[gap("game_process", str(exc),
+                                     "Observe the current Sims instance before continuing.",
+                                     "scripts/smart_start.py")],
+                proof_ceiling="PROCESS_DISPATCH_ONLY",
+            )
+        return append_event(root, "LAUNCH_DISPATCHED", process_id=proc.pid,
+                            observed_game_process=asdict(process),
+                            proof_ceiling="DISPATCH_AND_PROCESS_IDENTITY_ONLY")
 
 
 @contextmanager
@@ -180,6 +206,8 @@ def _admitted_template_navigation(process_id: int | None, session_id: str | None
                 if (not observation.probe_ok or not observation.foreground_is_sims
                         or observation.foreground_process_id != int(process_id)):
                     raise GateError("GAME_FOREGROUND_NOT_OWNED")
+                if process is not None:
+                    require_same_game_process(process)
             yield check
     except HandoffError as exc:
         raise GateError("HOST_CONTROL_NOT_ADMITTED:" + str(exc)) from exc
@@ -204,26 +232,31 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
             selected_save_guard(cfg, run_id)
         except SavePolicyError as exc:
             raise GateError("SAVE_SELECTION_PROTECTED:" + str(exc)) from exc
-    # Durable menu blockers (Memory Boost, etc.) before Load/New template clicks.
-    # Prefer scripts.host_menu reboot journey for full Load→LabLab Play after reboot.
-    # Skip SendInput dismiss when a FakeGui is injected (CI) or when not on Windows —
-    # otherwise Linux FakeGui navigate raises MENU_BLOCKER_DISMISS_FAILED:LOCAL_WINDOWS.
+    process = None
+    if sys.platform == "win32":
+        if not session_id:
+            raise GateError("HOST_CONTROL_NOT_ADMITTED:HANDOFF_SESSION_REQUIRED")
+        binding = rows[-1].get("observed_game_process")
+        if not isinstance(binding, dict):
+            raise GateError("FRESH_PROCESS_BINDING_REQUIRED_FOR_NAVIGATION")
+        process = GameProcess(**binding)
+        require_same_game_process(process)
+        if cfg["save_mode"] == "chosen" and process.game_version != cfg["game_version"]:
+            raise GateError("CURRENT_GAME_BUILD_MUST_MATCH_CALIBRATION")
+
+    # Menu blockers share the same process binding as subsequent navigation.
     if (cfg.get("dismiss_menu_blockers", True) is not False
             and gui is None and sys.platform == "win32"):
         try:
             from scripts.menu_blockers import dismiss as dismiss_menu_blockers
-            pid = None
-            for row in reversed(rows):
-                if row.get("state") == "LAUNCH_DISPATCHED" and row.get("process_id"):
-                    pid = int(row["process_id"])
-                    break
             blocker_receipt = dismiss_menu_blockers(
-                process_id=pid,
+                process_id=process.pid,
                 execute=True,
                 blocker_ids=None,
                 receipt=None,
                 session_id=session_id,
                 idle_ms=idle_ms,
+                process=process,
             )
             append_event(root, "MENU_BLOCKERS_DISMISS_DISPATCHED",
                          blockers=blocker_receipt.get("steps"),
@@ -233,13 +266,16 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
             raise GateError("MENU_BLOCKER_DISMISS_FAILED:" + str(exc)) from exc
 
     def checkpoint(step: str) -> None:
-        append_event(root, "UI_CLICK_DISPATCHED", ui_step=step,
-                     proof_ceiling="CLICK_DISPATCH_ONLY")
+        if step.endswith(":pending"):
+            append_event(root, "UI_CLICK_PENDING", ui_step=step.removesuffix(":pending"),
+                         proof_ceiling="INTENT_ONLY")
+        else:
+            append_event(root, "UI_CLICK_DISPATCHED", ui_step=step,
+                         proof_ceiling="CLICK_DISPATCH_ONLY")
 
-    process_id = next(row.get("process_id") for row in reversed(rows)
-                      if row["state"] == "LAUNCH_DISPATCHED")
-    dispatch_navigation(cfg, process_id=process_id, session_id=session_id,
-                        timeout=timeout, idle_ms=idle_ms, checkpoint=checkpoint, gui=gui)
+    dispatch_navigation(cfg, process_id=process.pid if process else None, session_id=session_id,
+                        timeout=timeout, idle_ms=idle_ms, checkpoint=checkpoint, gui=gui,
+                        process=process)
     state = ("NEW_GAME_CAS_REQUESTED" if cfg["save_mode"] == "new"
              else "CHOSEN_SAVE_PLAY_REQUESTED")
     return append_event(root, state, ui_steps=steps(cfg),
@@ -284,11 +320,9 @@ def dispatch_navigation(
             deadline = time.monotonic() + timeout
             found = None
             while time.monotonic() < deadline:
+                ensure_ready()
                 try:
-                    ensure_ready()
                     matches = list(gui.locateAllOnScreen(template, grayscale=False))
-                except GateError:
-                    raise
                 except Exception as exc:
                     if type(exc).__name__ == "ImageNotFoundException":
                         matches = []

@@ -35,11 +35,11 @@ class ProcessBoundPlayTests(unittest.TestCase):
 
     def test_distinct_dispatch_pid_never_controls_observed_game(self):
         with patch.object(smart_start, "read_game_processes", return_value=(GAME,)):
-            self.assertEqual(play.observe_launched_process(DISPATCHED), GAME)
+            self.assertEqual(smart_start.observe_launched_process(DISPATCHED), GAME)
         for different in (REUSED_PID, SUCCESSOR):
             with patch.object(smart_start, "read_game_processes", return_value=(different,)):
                 with self.assertRaisesRegex(ValueError, "GAME_PROCESS_CHANGED"):
-                    play.observe_launched_process(DISPATCHED)
+                    smart_start.observe_launched_process(DISPATCHED)
                 with self.assertRaisesRegex(FirstRunError, "GAME_PROCESS_CHANGED"):
                     smart_start.require_same_game_process(GAME)
 
@@ -96,7 +96,7 @@ class ProcessBoundPlayTests(unittest.TestCase):
                 kwargs["checkpoint"]("load_game")
                 raise FirstRunError("GAME_PROCESS_CHANGED_REOBSERVE_SCENE_AND_SAVE")
 
-            with (patch.object(play, "observe_launched_process", return_value=GAME),
+            with (patch.object(smart_start, "observe_launched_process", return_value=GAME),
                   patch.object(launch_save_route, "route_mode", return_value={
                       "state": "DEV_OLDEST_DISPOSABLE_CANDIDATE", "candidate_save_id": "slot:old",
                       "successor_run_id": RUN,
@@ -118,7 +118,7 @@ class ProcessBoundPlayTests(unittest.TestCase):
     def test_production_and_assistance_record_missing_logic_with_distinct_proof(self):
         with tempfile.TemporaryDirectory() as tmp:
             receipt_path, receipt = launch_receipt.begin("production", root=Path(tmp))
-            with patch.object(play, "observe_launched_process", return_value=GAME):
+            with patch.object(smart_start, "observe_launched_process", return_value=GAME):
                 result = play.complete_play("production", DISPATCHED, {}, None, receipt_path, receipt, Mock())
             self.assertEqual(result["save_state"], "NOT_OBSERVED")
             self.assertEqual(result["automation_gaps"][0]["reason"], "LATEST_SAVE_OBSERVER_AND_LOADER_REQUIRED")
