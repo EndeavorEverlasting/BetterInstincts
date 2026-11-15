@@ -183,7 +183,8 @@
     "on_bad_or_incomplete_observation": "FALLBACK_EXISTING",
     "on_player_active": "PLAYER_YIELD",
     "candidate_model_names": "OPEN_VERSIONED_IDS_NO_FIXED_MODEL_FAMILY",
-    "no_exec_permissions": true
+    "no_exec_permissions": true,
+    "on_registry_unavailable": "EMERGENCY_NO_REGISTRY_FALLBACK_DO_NOT_BREAK_ORIGINAL_DOMAIN"
   },
   "native_game_effects": "NOT_CLAIMED_SOURCE_ONLY",
   "progressive_disclosure": {
