@@ -10,6 +10,12 @@ import copy
 import re
 from collections.abc import Mapping
 
+from betterinstincts.mechanics_registry import (
+    ID as MECHANIC_ID,
+    MechanicsRegistryError,
+    load_registry,
+)
+
 SCHEMA = "betterinstincts.control-discovery/v1"
 EVENT_SCHEMA = "betterinstincts.control-discovery-event/v1"
 TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,95}$")
@@ -34,6 +40,10 @@ FALLBACK_REASONS = frozenset({
     "NATIVE_ROUTE_MISSING", "NATIVE_ROUTE_UNPROVEN",
     "EXISTING_RULE_FAILED", "DISPOSABLE_GAME_DIAGNOSTIC",
 })
+PREPARE_FIELDS = frozenset({
+    "schema", "seq", "kind", "work_id", "action_ref", "object_class_ref",
+    "before_capture_ref", "authority_ref",
+})
 
 
 class ControlDiscoveryError(ValueError):
@@ -47,6 +57,39 @@ def _token(value: object) -> bool:
 def _required(event: Mapping, names: tuple[str, ...]) -> None:
     if any(not _token(event.get(name)) for name in names):
         raise ControlDiscoveryError("EVENT_PROVENANCE_REQUIRED")
+
+
+def _validate_mechanic_id(mechanic_id: object) -> None:
+    if not _token(mechanic_id) or not MECHANIC_ID.fullmatch(mechanic_id):
+        raise ControlDiscoveryError("MECHANIC_ID_INVALID")
+
+
+def _mechanic_routes() -> dict[str, dict] | None:
+    try:
+        return {row["id"]: row for row in load_registry()["mechanics"]}
+    except (MechanicsRegistryError, OSError):
+        return None
+
+
+def _source_routing(mechanic_id: str | None, routes: dict[str, dict] | None) -> dict:
+    row = routes.get(mechanic_id) if routes is not None else None
+    if mechanic_id is None:
+        state = "MECHANIC_ID_REQUIRED"
+    elif routes is None:
+        state = "MECHANICS_REGISTRY_UNAVAILABLE"
+    elif row is None:
+        state = "MECHANIC_NOT_REGISTERED"
+    elif row["owner"] is None:
+        state = "MECHANIC_OWNER_GAP"
+    else:
+        state = "SOURCE_OWNER_IDENTIFIED"
+    return {
+        "state": state,
+        "mechanic_id": mechanic_id,
+        "domain": row["domain"] if row else None,
+        "module_ref": row["owner"] if row else None,
+        "existing_test_refs": list(row["tests"]) if row else [],
+    }
 
 
 def new_session(
@@ -93,13 +136,31 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
     if not _token(event.get("work_id")):
         raise ControlDiscoveryError("WORK_ID_REQUIRED")
     if event.get("kind") == "PREPARE":
-        if set(event) != {"schema", "seq", "kind", "work_id", "action_ref",
-                          "object_class_ref", "before_capture_ref", "authority_ref"}:
+        optional_fields = {"mechanic_id", "fallback_reason"}
+        if not PREPARE_FIELDS <= event.keys() <= PREPARE_FIELDS | optional_fields:
             raise ControlDiscoveryError("PREPARE_FIELDS_INVALID")
         _required(event, ("action_ref", "object_class_ref", "before_capture_ref",
                           "authority_ref"))
+        if "mechanic_id" in event:
+            _validate_mechanic_id(event["mechanic_id"])
+        if "fallback_reason" in event and (
+            not isinstance(event["fallback_reason"], str)
+            or event["fallback_reason"] not in FALLBACK_REASONS
+        ):
+            raise ControlDiscoveryError("LAST_RESORT_REASON_REQUIRED")
         if event["work_id"] in ledger["steps"] or len(ledger["steps"]) >= MAX_STEPS:
             raise ControlDiscoveryError("STEP_ID_OR_BUDGET_INVALID")
+    elif event.get("kind") == "MECHANIC_IDENTIFIED":
+        if set(event) != {"schema", "seq", "kind", "work_id",
+                          "mechanic_id", "classification_ref"}:
+            raise ControlDiscoveryError("MECHANIC_IDENTIFICATION_FIELDS_INVALID")
+        _validate_mechanic_id(event["mechanic_id"])
+        _required(event, ("classification_ref",))
+        step = ledger["steps"].get(event["work_id"])
+        if step is None:
+            raise ControlDiscoveryError("UNPREPARED_EFFECT_DENIED")
+        if "mechanic_id" in step or step.get("codification") is not None:
+            raise ControlDiscoveryError("MECHANIC_IDENTIFICATION_ALREADY_FIXED")
     elif event.get("kind") == "DISPATCH_BOUNDARY":
         if set(event) != {"schema", "seq", "kind", "work_id"}:
             raise ControlDiscoveryError("DISPATCH_BOUNDARY_FIELDS_INVALID")
@@ -172,6 +233,12 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
             raise ControlDiscoveryError("CODIFICATION_ALREADY_SUBMITTED")
         if step.get("outcome") in {None, "UNKNOWN"} or step.get("player_interrupted") is True:
             raise ControlDiscoveryError("REVIEW_OUTCOME_BEFORE_CODIFICATION")
+        if "mechanic_id" in step:
+            route = _source_routing(step["mechanic_id"], _mechanic_routes())
+            if route["module_ref"] is None:
+                raise ControlDiscoveryError("MECHANIC_SOURCE_OWNER_REQUIRED")
+            if event["module_ref"] != route["module_ref"]:
+                raise ControlDiscoveryError("CODIFICATION_MECHANIC_OWNER_MISMATCH")
     else:
         raise ControlDiscoveryError("EVENT_KIND_INVALID")
 
@@ -190,6 +257,14 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
             "codification": None,
             "discoveries": [],
         }
+        for field in ("mechanic_id", "fallback_reason"):
+            if field in event:
+                state["steps"][work_id][field] = event[field]
+    elif event["kind"] == "MECHANIC_IDENTIFIED":
+        state["steps"][work_id].update(
+            mechanic_id=event["mechanic_id"],
+            mechanic_classification_ref=event["classification_ref"],
+        )
     elif event["kind"] == "DISPATCH_BOUNDARY":
         state["steps"][work_id]["dispatch_seq"] = event["seq"]
     elif event["kind"] == "QUEUE_STATUS":
@@ -286,8 +361,18 @@ def codification_work_items(ledger: Mapping, *, offset: int = 0,
         raise ControlDiscoveryError("CODIFICATION_PAGE_INVALID")
     keys = sorted(ledger["steps"])
     items = []
-    for work_id in keys[offset:offset + limit]:
+    page = keys[offset:offset + limit]
+    routes = (
+        _mechanic_routes()
+        if any("mechanic_id" in ledger["steps"][key] for key in page)
+        else {}
+    )
+    for work_id in page:
         step = ledger["steps"][work_id]
+        mechanic_id = step.get("mechanic_id")
+        route = _source_routing(mechanic_id, routes)
+        route["classification_ref"] = step.get("mechanic_classification_ref")
+        fallback_reason = step.get("fallback_reason", ledger["fallback_reason"])
         if step.get("codification") is not None:
             gate = "VERIFY_COMMIT_TEST_AND_MAIN_READBACK"
         elif step.get("player_interrupted") is True:
@@ -295,19 +380,24 @@ def codification_work_items(ledger: Mapping, *, offset: int = 0,
         elif step.get("outcome") == "UNKNOWN":
             gate = "RECONCILE_UNKNOWN_OUTCOME"
         elif step.get("outcome") is not None:
-            gate = "IMPLEMENT_SOURCE_RULE_AND_REGRESSION_TEST"
+            gate = (
+                "RESOLVE_MECHANIC_SOURCE_OWNER"
+                if mechanic_id is not None and route["module_ref"] is None
+                else "IMPLEMENT_SOURCE_RULE_AND_REGRESSION_TEST"
+            )
         else:
             gate = "CAPTURE_AND_REVIEW_ACTUAL_OUTCOME"
         items.append({
             "work_id": work_id,
             "goal_id": ledger["goal_id"],
-            "fallback_reason": ledger["fallback_reason"],
+            "fallback_reason": fallback_reason,
+            "source_routing": route,
             "game_patch": ledger["game_patch"],
             "action_ref": step["action_ref"],
             "object_class_ref": step["object_class_ref"],
             "before_capture_ref": step["before_capture_ref"],
             "queue_state": step["queue_state"],
-            "native_responder_gap": ledger["fallback_reason"] in NATIVE_GAP_REASONS,
+            "native_responder_gap": fallback_reason in NATIVE_GAP_REASONS,
             "effect_trace": {
                 "before": {"capture_ref": step["before_capture_ref"],
                            "authority_ref": step["authority_ref"]},

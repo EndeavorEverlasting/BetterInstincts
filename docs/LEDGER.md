@@ -2177,3 +2177,7 @@ is verified. When earning is unavailable, propose a single exact subsidy to
 minimum plus verified cost. Income growth remains earned. Source-only P08 is
 blocked on the exact Windows game and independent effect/rollback readback in
 [#279](https://github.com/EndeavorEverlasting/BetterInstincts/issues/279).
+
+## 2026-11-15 — Cross-microsystem fallback recovery
+
+The existing control-discovery journal routes each attributed assisted effect through the mechanics registry and keeps its own fallback reason and before, dispatch, and outcome evidence. Source owners and existing tests are surfaced in the paged handoff. Reviewed legacy classification adds an event without replay. The offline suite exercises mixed microsystems, unknown ownership, and player protection. Windows evidence remains a separate gate under [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).

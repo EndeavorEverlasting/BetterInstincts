@@ -650,3 +650,7 @@ and save-load proof remain with the single local game owner.
 ## PS-0251 — native responder recovery
 
 P00 adds native responder terminology and mandatory doctrine, P01 routes to the project skill and existing control-discovery harness. Sixth Gear extends the existing journal, proves source/synthetic cases, and records the outstanding P08 Windows-native submit and effect separately.
+
+## Sixth Gear — cross-microsystem fallback routing
+
+P141 selected per-effect attribution in the existing journal. P95 exercised ownership lookup against the repository registry. P82 measured mixed-session, legacy and runner paths offline. P08 requires the authorized Windows Sims host. P07 and P124 carry the shared source and regression changes through existing repository validation.

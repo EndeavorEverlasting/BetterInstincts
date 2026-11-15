@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import copy
+import json
 import unittest
+from pathlib import Path
 
 from betterinstincts.mechanics_registry import (
     MechanicsRegistryError, load_registry, validate_registry, review_outcomes,
@@ -11,11 +13,19 @@ from scripts.mechanics_registry import run
 
 
 class MechanicsRegistryTests(unittest.TestCase):
+    def test_every_math_microsystem_owner_has_a_mechanics_route(self):
+        path = Path(__file__).resolve().parents[1] / "contracts/microsystem-math.v1.json"
+        microsystems = json.loads(path.read_text(encoding="utf-8"))["microsystems"]
+        owners = {row["owner"] for row in load_registry()["mechanics"]}
+        for domain, registration in microsystems.items():
+            with self.subTest(domain=domain):
+                self.assertIn(registration["owner"], owners)
+
     def test_coverage_is_source_owned_and_never_claims_native_effect(self):
         data = load_registry()
         report = validate_registry(data)
-        self.assertEqual(report["mechanics_total"], 42)
-        self.assertEqual(report["source_present"], 35)
+        self.assertEqual(report["mechanics_total"], 56)
+        self.assertEqual(report["source_present"], 49)
         self.assertEqual(report["visible_gaps"], 7)
         self.assertEqual(report["live_game_certified"], 0)
         self.assertIn("household-yield-accounting", report["gaps"])
@@ -38,7 +48,7 @@ class MechanicsRegistryTests(unittest.TestCase):
             self.assertEqual(item["evidence_state"], "SOURCE_PRESENT")
             self.assertIn("tests/test_eco_resource_cycle.py", item["tests"])
             self.assertFalse(item["game_effect_certified"])
-        self.assertEqual(run(["status"])["mechanics_total"], 42)
+        self.assertEqual(run(["status"])["mechanics_total"], 56)
 
     def test_duplicate_unknown_owner_and_game_claim_fail(self):
         base = load_registry()
@@ -58,6 +68,16 @@ class MechanicsRegistryTests(unittest.TestCase):
             else:
                 next(row for row in rows["mechanics"] if row["id"] == "pet-care")["owner"] = "betterinstincts/priority.py"
             with self.subTest(mutation=mutation), self.assertRaises(MechanicsRegistryError):
+                validate_registry(rows)
+
+    def test_registry_routes_require_direct_repository_source_and_test_paths(self):
+        for key, value in (
+            ("owner", "betterinstincts/../tests/test_control_discovery.py"),
+            ("tests", ["tests/test_../test_control_discovery.py"]),
+        ):
+            rows = load_registry()
+            rows["mechanics"][0][key] = value
+            with self.subTest(key=key), self.assertRaises(MechanicsRegistryError):
                 validate_registry(rows)
 
     def test_failed_mechanics_replanned_not_auto_promoted_or_omitted(self):

@@ -307,3 +307,7 @@ Reuse the household upkeep decisions for blocked floor piles and hampers.
 [#279](https://github.com/EndeavorEverlasting/BetterInstincts/issues/279) tracks
 the exact-build native resolver observation and submit path, disposable-save
 A/B, and rollback. Keep this independent of the active BI-002 certification.
+
+### Cross-microsystem native responder recovery
+
+Use the existing active listener to attribute the next authorized fallback in each observed microsystem and verify the journal's source route. Keep live outcome proof tied to the actual current action. See [Control discovery](CONTROL_DISCOVERY.md#route-fallback-work-across-microsystems).

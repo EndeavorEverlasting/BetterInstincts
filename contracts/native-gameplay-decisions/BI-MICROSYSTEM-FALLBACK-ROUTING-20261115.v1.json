@@ -1,0 +1,27 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-MICROSYSTEM-FALLBACK-ROUTING-20261115",
+  "files": [
+    {
+      "path": "betterinstincts/control_discovery.py",
+      "route": "POLICY_ONLY",
+      "reason": "Project sanitized journal evidence into current mechanics registry source and test ownership.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/agent_control_runner.py",
+      "route": "HOST_LAB_ONLY",
+      "reason": "Bind action attribution before enqueue through the existing opted-in queue.",
+      "game_effect_claim": "NONE",
+      "autonomy_runtime": false
+    },
+    {
+      "path": "betterinstincts/mechanics_registry.py",
+      "route": "POLICY_ONLY",
+      "reason": "Validate direct source and test paths before exposing them to recovery callers.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}
