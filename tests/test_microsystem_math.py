@@ -173,7 +173,7 @@ class MicrosystemMathTests(unittest.TestCase):
                      "upkeep", "scenarios", "activities", "traversal", "queues"):
             with self.subTest(domain=name):
                 out = evaluate_microsystem_math(
-                    receipt(name), capture_ref=CAPTURE, packet=packet(),
+                    receipt(name), capture_ref=CAPTURE, packet=packet(domain=name),
                     registry=cfg)
                 self.assertEqual(out["state"], "MATH_ADVISORY")
 
