@@ -2,6 +2,14 @@
 
 **Owner:** `betterinstincts/preference_prompts.py` / `contracts/preference-prompts.v1.json`. **Host caller:** `betterinstincts/host_stack.py` (from `host_listener.py`). **Observed single-step input:** `scripts/preference_prompts.py`. **Screen ownership:** `betterinstincts/screen_admit.py`, never this catalog.
 
+## Video Gaming native response on build 1.121.361.1020
+
+Use the existing recipient snapshot and the same continuation actions to score both choices in `betterinstincts/preference_recipient.py`. The actual offer recipient can differ from the selected Sim. Missing or indeterminate native evidence holds Video Gaming. Other catalogued topics retain their existing policy.
+
+`scripts/preference_response_port.py::PreferenceResponsePort` binds the exact EA offer and offers one response through a separately verified adapter. The adapter contract and exact IDs live in `contracts/preference-native-response-map.v1.json`. The adapter owns a game-thread recheck of the dialog, recipient, revision, save, pause and player intent. If submit was attempted and its return is lost, a matching native acknowledgement with the reserved attempt reference can reconcile the result using independent actor/household effect and originating activity evidence. An uncertain submit is never replayed.
+
+PRs #261, #262, #263, #275 and #278 supplied the source and review history. The repeat-offer Yes is recorded as agent-assisted visual resolution. Keep it closed. Issue #171 tracks the remaining Windows gate. Inspect the installed exact-build EA response path and verify the mod's game-side adapter registration. Then use the next naturally occurring eligible offer to observe one product-owned choice and submit, matching native acknowledgement and effects. The separate LabLab successor review can proceed without waiting for that new offer.
+
 ## What the user gets
 
 When a Sim earns skill levels or a preference prompt appears, an agent can evaluate the proposed **like** or **dislike** without automatically clicking the first answer. The versioned catalog starts with practical preferences (Cooking, Gardening, Handiness, Programming, Robotics, Fabrication, Fitness, Painting, Writing, Charisma), while Mischief/Music require a matching Sim goal. A positive like is ordinarily useful; a dislike of a useful skill is ordinarily rejected. A dislike can be beneficial when it supports that Sim's declared goals (e.g., avoid Mischief). The catalog is a *heuristic*, not hardwired Sim personality truth. Player direction always wins.
@@ -28,7 +36,7 @@ Fresh game capture (exact PID, Sim, build, scene, candidate dialog, two cues)
   -> observe actual in-game outcome before recording learned success
 ```
 
-The listener receives optional structured observation values `preference_offer`, `preference_automation_opt_in`, `preference_game_build_confirmed`. The evaluation result lives at `host_stack.preference_prompt`; it is intentionally **not** a SendInput permit. Observations need `dialog_class: sim_preference_offer`, `dialog_stage: offer`, `scene: live`, `sim_ref`, `capture_ref`, `topic_id`, `offer_kind` (like/dislike), and exactly `visible_buttons: ["YES", "NO"]`; `goal_tags` are optional. Live --execute additionally needs `observed_process_id`, `captured_at_epoch_ms`, `sim_selected`, `player_queue_clear`, `save_authorized`, `game_build_confirmed`, and exact pixel `target_boxes` from the current client viewport (e.g. `YES: [x1,y1,x2,y2]`); don't invent boxes. Independently confirm game scene, window identity and visual target in the producing adapter; this component does not perform image recognition.
+The listener receives optional structured observation values `preference_offer`, `preference_automation_opt_in`, `preference_game_build_confirmed`. The evaluation result lives at `host_stack.preference_prompt`; it is intentionally **not** a SendInput permit. Observations need `dialog_class: sim_preference_offer`, `dialog_stage: offer`, `scene: live`, `sim_ref`, `capture_ref`, `topic_id`, `offer_kind` (like/dislike), and exactly `visible_buttons: ["YES", "NO"]`; `goal_tags` are optional. Live --execute additionally needs `observed_process_id`, `captured_at_epoch_ms`, `sim_selected`, `selected_sim_ref` matching the offer capture’s `sim_ref`, `player_queue_clear`, `save_authorized`, `game_build_confirmed`, and exact pixel `target_boxes` from the current client viewport (e.g. `YES: [x1,y1,x2,y2]`); don't invent boxes. The Video Gaming screen fallback also requires a verified recipient identity and `selected_sim_id` matching `recipient_sim_id`. Independently confirm game scene, window identity and visual target in the producing adapter; this component does not perform image recognition.
 
 ```powershell
 # Planning only — no game control

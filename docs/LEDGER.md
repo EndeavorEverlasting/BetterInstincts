@@ -2210,3 +2210,7 @@ verified local ports and an exclusive episode claim. A verified restoration
 records a negative reward equal to the amount restored and zero earned
 income. Action attribution requires reviewed causal evidence. Windows sensor
 wiring and the real gameplay canary remain open in [#279](https://github.com/EndeavorEverlasting/BetterInstincts/issues/279).
+
+## 2026-11-15 — Video Gaming native response source integration
+
+Reconciled the source from PRs #261, #262, #263, #275 and #278 against the current main floor. Video Gaming uses the native recipient comparison and one-response port; other topics retain their existing catalog decisions. The lab screen path verifies selected recipient identity, and uncertain native submit uses correlated readback without replay. Bernice’s assisted Yes remains recorded and closed. Installed EA submit and activation remain under #171. LabLab same-household and successor-run proof remain independent.

@@ -1,0 +1,87 @@
+{
+  "schema": "betterinstincts.preference-native-response-map/v1",
+  "id": "BI-VIDEO-GAMING-PREFERENCE-MAP-20261114",
+  "game_build": "1.121.361.1020",
+  "dialog": {
+    "kind": "sim_preference_offer",
+    "localization_key": "0x0A349797",
+    "tuning_name": "adventureMoment_SimPreference_Activities_VideoGaming_Like",
+    "tuning_id": 265965,
+    "topic_id": "video_gaming",
+    "offer_kind": "like"
+  },
+  "resolver": {
+    "source": "originating_interaction",
+    "recipient_role": "Actor",
+    "moment_identity_rule": "The originating interaction resolver's Actor SimInfo.sim_id equals the adventure moment's SimInfo.sim_id; selected household portrait is independent.",
+    "sim_id_encoding": "unsigned uint64 canonical decimal string"
+  },
+  "responses": {
+    "YES": {
+      "response_id": 0,
+      "loot_id": 266649,
+      "effect": {
+        "operation": "add_trait",
+        "trait_id": 258767,
+        "subject": "Actor"
+      }
+    },
+    "NO": {
+      "response_id": 1,
+      "loot_id": 266780,
+      "effect": {
+        "operation": "add_no_opinion_marker",
+        "marker_id": 266814,
+        "subject": "Actor"
+      }
+    }
+  },
+  "common_effects": [
+    {
+      "operation": "apply_buff",
+      "buff_id": 263631,
+      "subject": "ActiveHousehold"
+    }
+  ],
+  "evidence": {
+    "origin": "OPERATOR_REPORTED_EXACT_BUILD_LOCAL_EA_TUNING_INSPECTION",
+    "local_relative_report": "dist/live-cert/bi002-20261114/ea-video-gaming-response-map.md",
+    "local_relative_observer": "dist/live-cert/bi002-20261114/bi_preference_observer.py",
+    "local_consultation_commit_reported": "91492ae",
+    "independently_reread_ea_asset_from_remote": false,
+    "source_artifacts_are_local_ignored_not_in_git": true,
+    "read_only_source_map": true,
+    "actual_dialog_response_observed": false,
+    "recipient_live_snapshot_observed": false,
+    "activity_resumption_observed": false,
+    "vanilla_modified_rollback_observed": false
+  },
+  "model_rules": {
+    "no_is_not_no_op": true,
+    "common_household_buff_separate_from_actor_effect": true,
+    "do_not_infer_numeric_preference_utility_from_tuning_ids": true,
+    "never_elevate_source_map_to_game_observation": true,
+    "do_not_autoclick_from_response_id": true,
+    "require_fresh_actor_moment_identity": true,
+    "require_offer_specific_response_mapping": true,
+    "native_observer_not_substituted_by_host_clicker": true
+  },
+  "native_owner_issue": "https://github.com/EndeavorEverlasting/BetterInstincts/issues/171",
+  "proof_ceiling": "REPORTED_STATIC_EA_TUNING_MAP_NOT_INSTRUMENTED_GAME_EFFECT",
+  "product_response_port": {
+    "owner": "scripts/preference_response_port.py",
+    "entrypoint": "PreferenceResponsePort.respond",
+    "native_adapter_required": true,
+    "adapter_owns": [
+      "trusted live read",
+      "atomic current dialog and recipient recheck",
+      "player priority",
+      "single native response",
+      "pause preservation"
+    ],
+    "response_source": "existing recipient-bound decision; no caller button argument",
+    "proof": "Match the port dispatch reference to a new native ACK, actor and household effect, and the originating activity.",
+    "game_callback_installed": false,
+    "uncertain_submit_readback": "Preserve the host-reserved attempt_ref inside the game adapter before submitting. Only stamp it onto the matching native ACK, with its dispatch_ref. Assisted replies and unrelated native callbacks carry no attempt_ref. Reconcile with independent effect and activity evidence; never resubmit an uncertain attempt."
+  }
+}

@@ -63,11 +63,18 @@ def _validate_live_evidence(observation: dict, *, process_id: int) -> None:
     if (
         observation.get("observed_process_id") != process_id
         or observation.get("sim_selected") is not True
+        or not observation.get("sim_ref")
+        or observation.get("selected_sim_ref") != observation.get("sim_ref")
         or observation.get("player_queue_clear") is not True
         or observation.get("save_authorized") is not True
         or observation.get("game_build_confirmed") is not True
     ):
         raise PreferenceStepError("GAME_SIM_SAVE_QUEUE_NOT_OBSERVED")
+    if observation.get("topic_id") == "video_gaming":
+        recipient = observation.get("recipient_sim_id")
+        if (not recipient or observation.get("recipient_identity_verified") is not True
+                or observation.get("selected_sim_id") != recipient):
+            raise PreferenceStepError("GAME_PREFERENCE_RECIPIENT_NOT_SELECTED")
 
 
 def _client_target(observation: dict, role: str, *, hwnd: int) -> tuple[int, int]:
@@ -179,6 +186,7 @@ def execute_step(
         "state": "INPUT_DISPATCHED",
         "step": stage,
         "sim_ref": plan["sim_ref"],
+        **({"recipient_sim_id": plan["recipient_sim_id"]} if "recipient_sim_id" in plan else {}),
         "topic_id": plan["topic_id"],
         "offer_kind": plan["offer_kind"],
         "capture_ref": plan["capture_ref"],

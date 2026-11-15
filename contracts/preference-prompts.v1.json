@@ -36,7 +36,12 @@
     "Explicit agent-session opt-in and independent screen, save, scene, PID and player ownership gates remain mandatory",
     "YES and OK are separate steps and OK requires distinct new observation and verified prior YES receipt",
     "A user override outranks any heuristic; do not infer permission from catalog, P95 design, UI coordinates, or a model",
-    "Preference recommendations may run while other application owns the desktop; only the input lease requires desktop control"
+    "Preference recommendations may run while other application owns the desktop; only the input lease requires desktop control",
+    "Video Gaming offers require current native recipient state and a shared continuation comparison. Other catalog policies retain their existing rules.",
+    "Offer recipient SimData.sim_id is independent from currently selected Sim and is carried in each staged Video Gaming response receipt.",
+    "Do not obtain current needs from unauthorized or stale save slots; persisted fields only establish schema, not running-game state.",
+    "Both branches use one common continuation action chain, with only independently sourced preference effect estimates varying; divergent paths or tied scores HOLD.",
+    "Native preference response and activity resumption are not certified by offline scoring or by a SimTravel event."
   ],
   "preferences": {
     "gardening": {
@@ -139,6 +144,15 @@
         "relationships"
       ]
     },
+    "video_gaming": {
+      "label": "Video Gaming",
+      "like": "POSITIVE",
+      "dislike": "NEGATIVE",
+      "goals": [
+        "fun",
+        "video_gaming"
+      ]
+    },
     "mischief": {
       "label": "Mischief",
       "like": "GOAL_ONLY",
@@ -161,5 +175,56 @@
         "quiet_focus"
       ]
     }
+  },
+  "comparison": {
+    "schema": "betterinstincts.preference-recipient-comparison/v1",
+    "rule": "YES and NO are compared for the offer recipient's canonical SimData.sim_id against the same continuation_steps; only provenance-bearing predicted preference effects differ.",
+    "recipient_id": "Canonical exact uint64 decimal text; never selected-Sim portrait ID or lossy float coercion.",
+    "native_snapshot": {
+      "source": "EA_NATIVE",
+      "read_origin": "RUNNING_GAME_MEMORY",
+      "required": true,
+      "exact_game_build": "1.121.361.1020",
+      "capture_skew_ms_max": 2000,
+      "motives_complete": true,
+      "live_read_verified": true,
+      "fields": [
+        "sim_id",
+        "household_id",
+        "age",
+        "primary_aspiration",
+        "extended_species",
+        "traits",
+        "skills",
+        "needs",
+        "career",
+        "current_activity",
+        "state_revision",
+        "native_hook_ref"
+      ]
+    },
+    "source_truth": "EA generated.zip persistence schemas show field locations, not live values. Disk saves are not live source and require separate authorized slot. Never synthesize values, native hooks or EA field numbers.",
+    "continuation": {
+      "actor": "recipient_sim_id",
+      "same_actions_and_routes": true,
+      "same_work_deadline_and_needs": true,
+      "branch_input_keys": [
+        "basis_ref",
+        "per_step"
+      ],
+      "allowed_effect_delta_keys": [
+        "need_delta",
+        "skill_delta",
+        "mood_delta",
+        "money_delta"
+      ],
+      "different_selected_path": "HOLD",
+      "tie": "HOLD",
+      "infeasible": "HOLD"
+    },
+    "catalog_role": "The Video Gaming catalog entry classifies the topic. Its recommendation requires live recipient evidence. Other catalog topics continue to use their existing policies.",
+    "effect_admission": "NO_GAME_EFFECT_IN_SOURCE_POLICY; native offer event/recipient tracker required; input lease and confirmed OK/No+activity reobservation remain separate.",
+    "resume_gate": "REOBSERVE_RECIPIENT_AND_ACTIVITY_AFTER_DIALOG",
+    "proof_ceiling": "OFFLINE_COMPARATOR_NOT_LIVE_NATIVE_CAPTURE_OR_AUTOMATIC_GAME_RESPONSE"
   }
 }
