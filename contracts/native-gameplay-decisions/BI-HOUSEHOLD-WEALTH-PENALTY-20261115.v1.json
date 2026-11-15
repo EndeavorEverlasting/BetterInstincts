@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/activity_chain.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure activity forecast validation or wealth scoring without a game actuator.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/decision_horizon.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure activity forecast validation or wealth scoring without a game actuator.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}
