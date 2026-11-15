@@ -645,3 +645,8 @@ Closers ran P83 → P03 → P141 → P124 → P04. P00 and P01 reused the existi
 governance, ontology, launch contracts, and test harness. Historical memory and
 fresh current-offer evidence have separate roles. The Windows live continuation
 and save-load proof remain with the single local game owner.
+
+
+## PS-0251 — native responder recovery
+
+P00 adds native responder terminology and mandatory doctrine, P01 routes to the project skill and existing control-discovery harness. Sixth Gear extends the existing journal, proves source/synthetic cases, and records the outstanding P08 Windows-native submit and effect separately.

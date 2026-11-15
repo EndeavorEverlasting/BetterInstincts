@@ -25,6 +25,8 @@ def main(argv: list[str] | None = None) -> int:
     record.add_argument("--opt-in", action="store_true", required=True)
     state = sub.add_parser("status", help="Compact unresolved codification handoff")
     state.add_argument("--session", required=True)
+    state.add_argument("--offset", type=int, default=0)
+    state.add_argument("--limit", type=int, default=4)
     args = parser.parse_args(argv)
     if args.action == "open":
         output = open_control_discovery(
@@ -44,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
             args.session, payload, explicit_opt_in=args.opt_in,
         )
     else:
-        output = read_control_discovery(args.session)
+        output = read_control_discovery(args.session, offset=args.offset, limit=args.limit)
     print(json.dumps(output, sort_keys=True, indent=2))
     return 0
 

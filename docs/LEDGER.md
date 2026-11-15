@@ -2150,3 +2150,8 @@ Windows offer, observed effects, and authorized load remain local proof.
 ## Repeat preference continuity
 
 Repeat Video Gaming offers reuse reviewed mechanic and rollback evidence across restarts while keeping current visible resolution distinct. The handoff recalls each exact-build response across the original observer profiles.
+
+
+## 2026-11-15 — PS-0251 native responder recovery
+
+Main floor for this sprint was PR #276 (dd3e709). PR #275 owns the separate native response adapter stack. The before/during/after trace now projects the admitted dispatch boundary and independent outcome to a paged source-and-regression obligation. Bernice's assisted repeat Yes is a sanitized regression case with unknown current EA acknowledgement and effect. The first genuinely mod-owned response still needs initial native import and response observation on the exact build. BI-002 hunger is active and separate.

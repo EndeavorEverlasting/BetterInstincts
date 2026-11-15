@@ -39,6 +39,7 @@
     "schema": "betterinstincts.control-discovery-event/v1",
     "kinds": [
       "PREPARE",
+      "DISPATCH_BOUNDARY",
       "QUEUE_STATUS",
       "OUTCOME",
       "DISCOVERY",
@@ -69,7 +70,8 @@
       "scope": "an already prepared controlled step",
       "provenance": "sanitized reviewed sensor/agent semantic record, never raw input or screenshot",
       "timing": "while admitted, while waiting for player, or during post-effect observation before codification receipt"
-    }
+    },
+    "dispatch_boundary": "Persisted immediately before the gated callback. An absent marker on a legacy trace remains unknown."
   },
   "pause_resume": {
     "human_activity": "WAITING_FOR_USER, do not dispatch, do not close listener or computer-use session",
@@ -97,7 +99,8 @@
     "paged_work_items": "control_discovery.codification_work_items(ledger, offset, limit<=8) returns EVERY attempted action, its observed outcome, discovered facts, pending source gate and regression requirements in small batches.",
     "native_recovery": "Successful and negative assisted actions require deterministic source and regression work. Only product-owned decision and submit with a matching current native acknowledgement and effect can prove native resolution.",
     "development_path": "Use the existing BetterInstincts evidence checkout, including its ignored listener journal. Use an authorized separate worktree when needed for source.",
-    "product_path": "Exact installed Sims build and the existing explicitly selected Mods root. Artifacts and native import are independently verified on Windows."
+    "product_path": "Exact installed Sims build and the existing explicitly selected Mods root. Artifacts and native import are independently verified on Windows.",
+    "projection": "effect_trace exposes before, during and after, preserves fallback origin, and can never establish native resolution."
   },
   "privacy": {
     "capture": "only sanitized class/action identifiers and opaque provenance refs; never raw key/mouse events, screenshots, Sim names, user save paths, or external app content",

@@ -343,14 +343,15 @@ def record_control_discovery(
     return receipt
 
 
-def read_control_discovery(session_id: str) -> dict:
+def read_control_discovery(session_id: str, *, offset: int = 0, limit: int = 4) -> dict:
     """A compact carry-forward for new agents; never return raw desktop data."""
     from betterinstincts.control_discovery import compact_handoff
     path = _session_dir(session_id) / "control-discovery.json"
     if path.is_symlink() or not path.is_file() or path.stat().st_size > 64_000:
         raise HostListenerError("CONTROL_DISCOVERY_JOURNAL_UNAVAILABLE")
     try:
-        return compact_handoff(json.loads(path.read_text(encoding="utf-8")))
+        return compact_handoff(json.loads(path.read_text(encoding="utf-8")),
+                               offset=offset, limit=limit)
     except (ValueError, KeyError, TypeError) as exc:
         raise HostListenerError("CONTROL_DISCOVERY_JOURNAL_INVALID") from exc
 

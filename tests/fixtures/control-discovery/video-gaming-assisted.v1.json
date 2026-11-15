@@ -1,0 +1,13 @@
+{
+  "schema": "betterinstincts.assisted-regression-case/v1",
+  "case": "video-gaming-repeat-offer",
+  "source": "https://github.com/EndeavorEverlasting/BetterInstincts/pull/263#issuecomment-6899683733",
+  "game_patch": "1.121.361.1020",
+  "fallback_reason": "NATIVE_ROUTE_MISSING",
+  "before": {"event": "video_gaming_like", "game_paused": true, "visible_choices": ["YES", "NO"]},
+  "during": {"choice": "YES", "origin": "AGENT_FALLBACK", "instrumented_dispatch_boundary": null},
+  "after": {"visible_dialog_dismissed": true, "live_mode": true, "game_repaused": true},
+  "current_native_ack": null,
+  "current_native_effect": null,
+  "earlier_native_trials": "HISTORICAL_ONLY"
+}

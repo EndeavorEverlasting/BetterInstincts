@@ -60,6 +60,10 @@ An unreviewed historical report stays a report.
 
 Keep original captures, save files, raw IDs/paths and local receipts private. Sync the reviewer-checked result to the existing BetterInstincts preference PR #263 using the authorized GitHub connection: source revision, build, capture aliases, response/expected-vs-observed outcome, rollback state and review disposition. Find an existing matching current-offer summary before posting, and read back the result to avoid duplicates on retry. If publication fails, retain the original sanitized summary locally for retry and report the failure. Do not publish raw receipts or local profile details. Update the existing ignored certification memo after review of the evidence for the applicable direct or repeat path. Use `docs/LAUNCH_CERTIFICATION_PRIORITY.md` for the existing memo format. Re-running this launcher should read back existing proof and continue from the first missing gate.
 
+## Native responder recovery
+
+For any expected gameplay effect that still needs assistance, use the [native responder recovery skill](../.agents/skills/native-responder-recovery/SKILL.md). Preserve the existing repeat-offer record as assisted evidence. Keep #275 source and the installed response/acknowledgement/effect gates open on a naturally occurring fresh offer. Continue the same-session LabLab review independently of that native proof.
+
 ## 3. Begin BI-002 hunger
 
 Once the direct or repeat preference path is reviewed complete and synced,
