@@ -1,0 +1,27 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-PS0251-NATIVE-RESPONSE-INTEGRATION-20261115",
+  "files": [
+    {
+      "path": "betterinstincts/preference_prompts.py",
+      "route": "POLICY_ONLY",
+      "reason": "Routes the Video Gaming offer to the existing recipient comparator while retaining other catalog decisions.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/preference_recipient.py",
+      "route": "POLICY_ONLY",
+      "reason": "Compares evidence-bound recipient continuations and emits no game input permit.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/preference_native_map.py",
+      "route": "POLICY_ONLY",
+      "reason": "Binds the exact build offer and checks native receipt shape without executing a response.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

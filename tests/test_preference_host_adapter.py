@@ -21,6 +21,7 @@ def observed(stage="YES", *, captured_at=None):
         "dialog_stage": "confirmation" if stage == "OK" else "offer",
         "scene": "live",
         "sim_ref": "sim:1",
+        "selected_sim_ref": "sim:1",
         "topic_id": "gardening",
         "offer_kind": "like",
         "capture_ref": "capture:second" if stage == "OK" else "capture:first",
@@ -55,6 +56,23 @@ class PreferenceAdapterTests(unittest.TestCase):
         fresh["player_queue_clear"] = False
         with self.assertRaisesRegex(cli.PreferenceStepError, "GAME_SIM_SAVE_QUEUE_NOT_OBSERVED"):
             cli._validate_live_evidence(fresh, process_id=42)
+
+    def test_unmatched_selected_sim_or_native_recipient_never_clicks(self):
+        wrong_sim = {**observed(), "selected_sim_ref": "sim:other"}
+        with patch.object(cli.sys, "platform", "win32"), patch(
+            "scripts.win32_input.send_click"
+        ) as click:
+            with self.assertRaisesRegex(cli.PreferenceStepError, "GAME_SIM_SAVE_QUEUE"):
+                cli.execute_step(wrong_sim, stage="YES", session_id="session:42", process_id=42,
+                                 idle_ms=30000, receipt_path=Path("out.json"))
+            click.assert_not_called()
+        video = {**observed(), "topic_id": "video_gaming",
+                 "recipient_sim_id": "1024001", "selected_sim_id": "1024002",
+                 "recipient_identity_verified": True}
+        with self.assertRaisesRegex(cli.PreferenceStepError, "PREFERENCE_RECIPIENT_NOT_SELECTED"):
+            cli._validate_live_evidence(video, process_id=42)
+        video["selected_sim_id"] = "1024001"
+        cli._validate_live_evidence(video, process_id=42)
 
     def test_reject_unsafe_receipt_destinations(self):
         with TemporaryDirectory() as tmp:

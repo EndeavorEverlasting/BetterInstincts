@@ -1,6 +1,6 @@
 """Catalogued, opt-in Sims preference prompt judgment; no side effects.
 
-Only a fresh selected-Sim dialog observation can lead to a proposed Yes/No
+Only a fresh verified dialog observation can lead to a proposed Yes/No
 action. A follow-up OK requires a separately observed confirmation dialog.
 Screen admission, visual target verification and actual input are separate.
 """
@@ -9,6 +9,10 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping
 from pathlib import Path
+
+from betterinstincts.preference_recipient import (
+    RecipientEvidenceError, compare_recipient_continuations,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "contracts" / "preference-prompts.v1.json"
@@ -78,7 +82,7 @@ def evaluate_offer(
     buttons = offer.get("visible_buttons")
     if not isinstance(buttons, (list, tuple)) or any(type(b) is not str for b in buttons):
         return {**result, "reason": "BUTTONS_UNVERIFIED"}
-    if set(buttons) != {"YES", "NO"}:
+    if len(buttons) != 2 or set(buttons) != {"YES", "NO"}:
         return {**result, "reason": "BUTTONS_UNVERIFIED"}
     if player_directed or offer.get("player_directed") is True:
         return {**result, "reason": "PLAYER_DIRECTED"}
@@ -95,25 +99,55 @@ def evaluate_offer(
     goals = offer.get("goal_tags", [])
     if not isinstance(goals, (list, tuple)) or any(not _safe_id(v) for v in goals):
         return {**result, "reason": "GOALS_UNVERIFIED"}
-    policy = topic[kind]
-    if policy == "GOAL_ONLY":
-        positive_goals = set(topic.get(kind + "_goals", ()))
-        if not positive_goals.intersection(goals):
-            return {**result, "reason": "NO_MATCHING_SIM_GOAL"}
-        positive = True
+    continuation = None
+    if offer["topic_id"] == "video_gaming":
+        # This native prompt is scored for its recipient, which may differ
+        # from the Sim currently selected in the HUD.
+        if (not _safe_id(offer.get("recipient_sim_id"))
+                or "recipient_snapshot" not in offer
+                or "continuation_model" not in offer):
+            return {**result, "reason": "LIVE_RECIPIENT_SNAPSHOT_REQUIRED"}
+        try:
+            continuation = compare_recipient_continuations(
+                offer, offer["continuation_model"]
+            )
+        except RecipientEvidenceError as exc:
+            return {**result, "reason": str(exc)}
+        except (ValueError, KeyError, TypeError):
+            return {**result, "reason": "RECIPIENT_CONTINUATION_INVALID"}
+        scores = continuation["scores"]
+        advantage = scores["YES"] - scores["NO"]
+        # Avoid an unobserved/indifferent answer and false certainty from rounding.
+        if abs(advantage) <= 0.000001:
+            return {**result, "reason": "PREFERENCE_EFFECT_INDIFFERENT"}
+        positive = advantage > 0
+        reason = "RECIPIENT_YES_ADVANTAGE" if positive else "RECIPIENT_NO_ADVANTAGE"
     else:
-        positive = policy == "POSITIVE"
+        policy = topic[kind]
+        if policy == "GOAL_ONLY":
+            positive_goals = set(topic.get(kind + "_goals", ()))
+            if not positive_goals.intersection(goals):
+                return {**result, "reason": "NO_MATCHING_SIM_GOAL"}
+            positive = True
+        else:
+            positive = policy == "POSITIVE"
+        reason = "CATALOGUED_GOAL_ALIGNED" if policy == "GOAL_ONLY" else "CATALOGUED_HEURISTIC"
     decision = "ACCEPT" if positive else "DECLINE"
     return {
         **result,
         "decision": decision,
-        "reason": "CATALOGUED_GOAL_ALIGNED" if policy == "GOAL_ONLY" else "CATALOGUED_HEURISTIC",
+        "reason": reason,
         "steps": ["YES", "OK"] if positive else ["NO"],
         "topic_id": offer["topic_id"],
         "offer_kind": kind,
         "sim_ref": offer["sim_ref"],
         "capture_ref": offer["capture_ref"],
         "requires_independent_stage_reobservation": bool(positive),
+        **({
+            "recipient_sim_id": continuation["recipient_sim_id"],
+            "recipient_state_revision": continuation["state_revision"],
+            "continuation": continuation,
+        } if continuation is not None else {}),
     }
 
 
@@ -143,7 +177,10 @@ def plan_stage(
                 or offer.get("scene") != "live"
                 or offer.get("visible_buttons") != ["OK"]):
             raise PreferencePromptError("OK_DIALOG_NOT_REOBSERVED")
-        if any(offer.get(key) != prior.get(key) for key in ("sim_ref", "topic_id", "offer_kind")):
+        if any(offer.get(key) != prior.get(key) for key in
+               ("sim_ref", "recipient_sim_id", "topic_id", "offer_kind")):
+            raise PreferencePromptError("OK_PROMPT_IDENTITY_CHANGED")
+        if offer.get("topic_id") == "video_gaming" and not _safe_id(offer.get("recipient_sim_id")):
             raise PreferencePromptError("OK_PROMPT_IDENTITY_CHANGED")
         if not _safe_id(offer.get("capture_ref")) or offer["capture_ref"] == prior.get("capture_ref"):
             raise PreferencePromptError("OK_REQUIRES_NEW_CAPTURE")
@@ -151,7 +188,9 @@ def plan_stage(
             raise PreferencePromptError("OK_CAPTURE_NOT_NEWER")
         # The prior YES was only possible after a positive assessment.
         return {"state": "STAGE_READY", "step": "OK", "target_role": "OK",
-                "sim_ref": offer["sim_ref"], "topic_id": offer["topic_id"],
+                "sim_ref": offer["sim_ref"],
+                **({"recipient_sim_id": offer["recipient_sim_id"]} if "recipient_sim_id" in offer else {}),
+                "topic_id": offer["topic_id"],
                 "offer_kind": offer["offer_kind"], "capture_ref": offer["capture_ref"],
                 "control_permit": None, "proof_ceiling": "PLAN_ONLY_NOT_INPUT"}
     result = evaluate_offer(offer, automation_opt_in=automation_opt_in,
@@ -160,6 +199,8 @@ def plan_stage(
     if stage not in result["steps"] or stage == "OK":
         raise PreferencePromptError("STAGE_NOT_AUTHORIZED_BY_POLICY")
     return {"state": "STAGE_READY", "step": stage, "target_role": stage,
-            "sim_ref": offer["sim_ref"], "topic_id": offer["topic_id"],
+            "sim_ref": offer["sim_ref"],
+            **({"recipient_sim_id": result["recipient_sim_id"]} if "recipient_sim_id" in result else {}),
+            "topic_id": offer["topic_id"],
             "offer_kind": offer["offer_kind"], "capture_ref": offer["capture_ref"],
             "control_permit": None, "proof_ceiling": "PLAN_ONLY_NOT_INPUT"}
