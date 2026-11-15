@@ -11,7 +11,7 @@ from typing import Mapping, Optional, Sequence
 
 from betterinstincts.budget_eval import BudgetEvalError, evaluate as evaluate_budget
 from betterinstincts.microsystem_math import (
-    MicrosystemMathError, evaluate_math_portfolio,
+    MicrosystemMathError, evaluate_math_portfolio, fallback_math_portfolio,
 )
 from betterinstincts.navigating_needs import (
     NavigatingNeedsError,
@@ -94,6 +94,22 @@ def _receipt(domain: str, *, gate: str, action: str, payload: Optional[dict] = N
         "findings": sorted(set(findings)),
         "payload": payload or {},
     }
+
+
+def _safe_math_portfolio(
+    receipts: Sequence[Mapping], *, capture_ref: str,
+    math_packets: Optional[Mapping[str, Mapping]] = None,
+    player_active: bool = False,
+) -> dict:
+    """Keep domain-owner receipts even if the optional math registry fails."""
+    try:
+        return evaluate_math_portfolio(
+            receipts, capture_ref=capture_ref, math_packets=math_packets,
+            player_active=player_active)
+    except MicrosystemMathError as exc:
+        return fallback_math_portfolio(
+            receipts, capture_ref=capture_ref, reason=str(exc),
+            player_active=player_active)
 
 
 def poll_cascade(
@@ -186,7 +202,7 @@ def poll_cascade(
             "prior_receipts_visible": True,
             "proof_ceiling": cfg["proof_ceiling"],
             "architecture": "DOMAIN_CASCADE_POLL_BUS",
-            "math_umbrella": evaluate_math_portfolio(
+            "math_umbrella": _safe_math_portfolio(
                 receipts, capture_ref=capture_ref, player_active=True),
         }
 
@@ -549,15 +565,8 @@ def poll_cascade(
     # Route every observed domain to the common optional mathematical layer.
     # Math has no authority to mutate the legacy cascade receipts or the
     # existing needs/education/career/economy prioritization.
-    try:
-        math_advisory = evaluate_math_portfolio(
-            receipts, capture_ref=capture_ref, math_packets=math_packets)
-    except MicrosystemMathError as exc:
-        # Bad optional math evidence must never block a healthy established
-        # career/need/aspiration service or prevent its original receipt.
-        math_advisory = evaluate_math_portfolio(
-            receipts, capture_ref=capture_ref, math_packets=None)
-        math_advisory["invalid_packet_reason"] = str(exc)
+    math_advisory = _safe_math_portfolio(
+        receipts, capture_ref=capture_ref, math_packets=math_packets)
     return {
         "schema": "betterinstincts.domain-cascade-result/v1",
         "state": "DOMAIN_CASCADE_POLLED",
