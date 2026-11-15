@@ -111,6 +111,7 @@ def assess_native_offer_binding(
         "selected_sim_id": selected,
         "native_hook_ref": observation["native_hook_ref"],
         "state_revision": observation["state_revision"],
+        "originating_interaction_ref": observation["originating_interaction_ref"],
         "response_ids": expected,
         "expected_effects": deepcopy(m["responses"]),
         "common_effects": deepcopy(m["common_effects"]),
