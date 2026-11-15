@@ -1,0 +1,12 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/preference_native_map.py",
+      "route": "POLICY_ONLY",
+      "reason": "Expose the already validated originating interaction identity to the repo-owned response coordinator.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

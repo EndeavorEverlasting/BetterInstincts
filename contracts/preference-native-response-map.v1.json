@@ -67,5 +67,20 @@
     "native_observer_not_substituted_by_host_clicker": true
   },
   "native_owner_issue": "https://github.com/EndeavorEverlasting/BetterInstincts/issues/171",
-  "proof_ceiling": "REPORTED_STATIC_EA_TUNING_MAP_NOT_INSTRUMENTED_GAME_EFFECT"
+  "proof_ceiling": "REPORTED_STATIC_EA_TUNING_MAP_NOT_INSTRUMENTED_GAME_EFFECT",
+  "product_response_port": {
+    "owner": "scripts/preference_response_port.py",
+    "entrypoint": "PreferenceResponsePort.respond",
+    "native_adapter_required": true,
+    "adapter_owns": [
+      "trusted live read",
+      "atomic current dialog and recipient recheck",
+      "player priority",
+      "single native response",
+      "pause preservation"
+    ],
+    "response_source": "existing recipient-bound decision; no caller button argument",
+    "proof": "Match the port dispatch reference to a new native ACK, actor and household effect, and the originating activity.",
+    "game_callback_installed": false
+  }
 }

@@ -97,3 +97,40 @@ For a verified catalogued offer, recommend Yes when the offered preference benef
 ### Bellman continuation and Lagrange time price
 
 Any caller of the shared evaluator can attach a continuation_model with a same-capture activity-chain snapshot, YES and NO candidate steps, optional routes, and KKT activities. Each branch passes the existing finite-horizon planner. The evaluator compares expected continuation value after time is priced at the allocator's Lagrange multiplier. A catalogued beneficial offer needs a strict advantage to win against declining. Invalid identity or incomplete planning holds. After the response, the caller needs a fresh observation before resuming the plan. Callers without a model retain catalog behavior. Native capture, response and resumed activity remain unverified.
+
+## Native Video Gaming response and recovery
+
+The observed Yes click in [PR #263](https://github.com/EndeavorEverlasting/BetterInstincts/pull/263#issuecomment-6899683733)
+resolved the offer with agent assistance. A native automation check requires
+BetterInstincts to choose and submit the response on a fresh suitable offer.
+Keep the resolved game paused and reuse its historical evidence.
+
+The in-game integration owns one response port per live session. Feed the
+existing native observer and recipient planner into
+`scripts.preference_response_port.PreferenceResponsePort`. The host attaches
+an independently verified adapter with `read_offer()` and
+`submit_if_current(request)`; the port computes the branch and calls the adapter.
+Submit on the game thread after an atomic recheck of the current dialog,
+recipient, revision, player ownership, save scope and pause state. A refused
+operation guarantees no submission. An uncertain operation stays reserved
+until readback. Carry the adapter dispatch reference into the native ACK, then
+use `reconcile` with the independent effect and originating activity receipts.
+Adapt the verified local observer under issue #171. The existing observer and
+response IDs alone provide no callable EA submit hook. The host coordinator
+does not run inside embedded Python or install a mod.
+
+Keep recovery in the active session. If the adapter is missing, continue the
+read-only inspection of the installed, exact-build dialog callback or record
+the exact unavailable host capability. If recipient evidence is missing,
+recover only that evidence and run the decision again. If dispatch is
+uncertain, inspect the outcome. A player-owned decision stays with the player.
+When a local agent has to supply the action, keep its visible resolution as
+assisted evidence and leave the BetterInstincts response check open. Reuse
+the current local agent, original receipts, and current session for this work.
+
+Separately, after a resolved repeat, the local agent can verify LabLab's
+household and successor-run authorization from the existing observations and
+registry. Carry the old entry as provenance and record the new attestation
+only after the match and authorization are established. Then use the existing
+certification-first save route on current main. A native automation canary
+uses the next suitable offer and does not require replaying the resolved one.
