@@ -1,3 +1,7 @@
+## Certification-before-oldest lab save handoff (offline)
+
+`python -m unittest tests.test_launch_save_route tests.test_save_candidate_priority -v` verifies that an already-running Video Gaming prompt or exact pinned current-certification lab save outranks chronological lab ranking, completion requires distinct reviewed current outcome/effect/rollback references, and only after that does the canonical oldest eligible lab-disposable ranking advise the next standardized trial. `python -m scripts.launch_save_route --game-running-observed` prints the bounded private-memo route without Sims input or save-file access. Source tests do not authenticate any Windows game capture, native hook, rollback, review or save selection. See `docs/LAUNCH_CERTIFICATION_PRIORITY.md`.
+
 ## P00/P01 oldest-first lab save safety harness (offline)
 
 Run `python -m scripts.check_save_candidate_priority` and `python -m unittest tests.test_save_candidate_priority -v`. Both are included in CI. They prove an oldest-first *advisory* for individually eligible lab saves, strict chronology-abstention and preservation of the canonical protected/unknown/continuation save bans. Neither inspects a Sims save, clicks a menu, executes the MoonWake local walker or certifies gameplay. See `docs/SAVE_CANDIDATE_PRIORITY.md`.

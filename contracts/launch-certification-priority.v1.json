@@ -1,0 +1,63 @@
+{
+  "schema": "betterinstincts.launch-certification-priority/v1",
+  "owner": "scripts/launch_save_route.py",
+  "parent_objective": "Finish the already-open EA Video Gaming preference prompt live certification without changing its current game/save. Only after independently reviewed completion advise the oldest authorized disposable lab save for later standardized certifications.",
+  "active_certification": {
+    "id": "BI-VIDEO-GAMING-PREFERENCE-265965",
+    "exact_game_build": "1.121.361.1020",
+    "source": "docs/PREFERENCE_PROMPTS.md and open PR #263; current local Windows state and ignored receipts are not readable through GitHub",
+    "history_separate_from_current_open_dialog": true,
+    "previous_vanilla_and_modded_trials": "HISTORICALLY_OBSERVED_NOT_AUTOMATICALLY_REPLAYED",
+    "current_dialog_status": "PENDING_FRESH_NATIVE_OUTCOME_OR_REVIEW",
+    "blocking_condition": "Do not promote previous Yes/No or rollback receipts to current open-dialog completion without reviewer-verified current offer outcome, native effect, rollback, and review refs"
+  },
+  "routing_order": [
+    "PRESERVE_RUNNING_CERTIFICATION_SESSION",
+    "ADVISE_EXACT_OPERATOR_BOUND_PINNED_LAB_SAVE_FOR_CERTIFICATION",
+    "REQUIRE_FOUR_DISTINCT_REVIEWED_COMPLETION_CAPTURE_REFS",
+    "ADVISE_OLDEST_CURRENT_RUN_LAB_DISPOSABLE_SAVE_FOR_STANDARD_TRIALS"
+  ],
+  "private_context": {
+    "path": "dist/game-host/active-certification.v1.json",
+    "schema": "betterinstincts.launch-certification-session/v1",
+    "source": "operator-provided local lab evidence only",
+    "no_auto_enumeration": true,
+    "max_bytes": 16384,
+    "writes": "NONE_BY_ROUTER",
+    "revision": "LOCAL_AGENT_MAINTAINS_FROM_OBSERVED_EVIDENCE_NOT_REPO"
+  },
+  "certification_states": [
+    "PENDING",
+    "REVIEWED_COMPLETE"
+  ],
+  "completion_review_fields": [
+    "reviewer_verified",
+    "game_version",
+    "current_offer_outcome_ref",
+    "native_effect_ref",
+    "rollback_ref",
+    "review_ref"
+  ],
+  "ranker_owner": "scripts/save_candidate_priority.py",
+  "save_guard_owner": "betterinstincts/save_policy.py",
+  "no_effect_invariants": {
+    "auto_resume": false,
+    "auto_select": false,
+    "save_file_read": false,
+    "save_file_write": false,
+    "game_input": false,
+    "control_permit": false,
+    "process_launch_effects": "OWNED_SEPARATELY_BY_EXISTING_SCRIPTS_SMART_START",
+    "older_save_is_not_default_certification_target": true,
+    "user_protected_never_disposable": true
+  },
+  "negative_controls": [
+    "No local memo => abstain with no save side effect",
+    "Game running on an operator-pending certification => no save change or restart",
+    "No running game => only bound pinned lab save advisory, never automatic load",
+    "Failed/missing certification review => no general age-based ranking",
+    "Age ranking remains canonical and advisory after reviewed completion; no independent cert claimed",
+    "Branch PR #263 and ignored local observer remain untouched"
+  ],
+  "proof_ceiling": "REPOSITORY_POLICY_TESTS_ONLY_NO_LIVE_WINDOWS_P08_OR_GAME_EFFECT"
+}

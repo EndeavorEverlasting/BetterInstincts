@@ -9,6 +9,7 @@ import sys
 from typing import Callable
 
 from scripts.smart_start import auto_start, select_unique_install
+from scripts.launch_save_route import route_local_context
 
 from betterinstincts.first_run import (
     FirstRunError, GOALS, SKILL_ROUTES, discover_game_installs,
@@ -52,6 +53,22 @@ def launch_selected_game(
     }:
         raise FirstRunError("GAME_LAUNCH_NOT_ADMITTED")
     return receipt
+
+
+def annotate_lab_save_handoff(receipt: dict) -> dict:
+    """Add read-only certification-vs-disposable route to a launch receipt.
+
+    This never changes the existing launcher action, game process, or save.
+    A missing private lab memo fails closed instead of guessing an old slot.
+    """
+    return {
+        **receipt,
+        "lab_save_route": route_local_context(
+            game_running_observed=(
+                receipt.get("state") == "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH"
+            ),
+        ),
+    }
 
 
 def gui() -> int:
@@ -126,7 +143,9 @@ def gui() -> int:
                 mode, goal.get(), income_pressure=income_pressure.get(),
                 preferred_skill=preferred_skill.get() or None,
             )
-            receipt = launch_selected_game(exe, user_clicked_launch=True)
+            receipt = annotate_lab_save_handoff(
+                launch_selected_game(exe, user_clicked_launch=True)
+            )
             if receipt["state"] == "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH":
                 status.set("The Sims 4 is already running; no duplicate was launched.")
             else:
@@ -143,7 +162,8 @@ def gui() -> int:
                     + "\n\nThese are optional gameplay priorities, not CAS skills or actions."
                     if mode == "new" else
                     "\n\nYour existing save remains your choice. No automatic Resume click."
-                ) + "\n\n" + receipt["state"], parent=root,
+                ) + "\n\n" + receipt["state"]
+                + "\nLab save route: " + receipt["lab_save_route"]["state"], parent=root,
             )
         except (FirstRunError, OSError) as exc:
             status.set("Nothing launched: " + str(exc))
@@ -183,7 +203,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command in (None, "gui"):
             return gui()
         if args.command == "auto":
-            output = auto_start()
+            output = annotate_lab_save_handoff(auto_start())
             print(json.dumps(output, sort_keys=True))
             if args.fallback_gui and output["state"] == "GAME_SELECTION_REQUIRED":
                 return gui()
@@ -207,7 +227,7 @@ def main(argv: list[str] | None = None) -> int:
                 preferred_skill=args.preferred_skill,
             )
             receipt = launch_selected_game(args.game_exe, user_clicked_launch=args.confirm_launch)
-            output = {**receipt, "handoff": advice}
+            output = {**annotate_lab_save_handoff(receipt), "handoff": advice}
         print(json.dumps(output, sort_keys=True))
         return 0
     except (FirstRunError, OSError, ValueError) as exc:
