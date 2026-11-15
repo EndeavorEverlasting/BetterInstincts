@@ -1,0 +1,196 @@
+{
+  "schema": "betterinstincts.microsystem-math/v1",
+  "version": 1,
+  "purpose": "Optional mathematical arbitration shared across registered microsystem receipts. Existing owner is always safe fallback; validated alternative architectures can compete without a mandatory rewrite.",
+  "owner": "betterinstincts/microsystem_math.py",
+  "caller": "betterinstincts/domain_cascade.py#poll_cascade",
+  "canonical_math": {
+    "bellman": "betterinstincts/decision_horizon.py#optimize_activity_plan",
+    "lagrange_kkt": "betterinstincts/decision_horizon.py#allocate_continuous_time",
+    "gaussian": "betterinstincts/ecology_forecast.py#compare_duration_models"
+  },
+  "cascade_domains": [
+    "needs",
+    "balance",
+    "budget",
+    "career",
+    "aspirations",
+    "skills_whims",
+    "relationships"
+  ],
+  "microsystems": {
+    "needs": {
+      "owner": "betterinstincts/need_services.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "balance": {
+      "owner": "betterinstincts/balance_service.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "budget": {
+      "owner": "betterinstincts/budget_eval.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "career": {
+      "owner": "betterinstincts/career_service.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "aspirations": {
+      "owner": "betterinstincts/aspiration_service.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "skills_whims": {
+      "owner": "betterinstincts/sim_profile.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "relationships": {
+      "owner": "betterinstincts/social_opportunity.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "career_event": {
+      "owner": "betterinstincts/career_decisions.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "work_shift": {
+      "owner": "betterinstincts/career_service.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "school": {
+      "owner": "betterinstincts/school_day.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "teen_homework": {
+      "owner": "betterinstincts/teen_homework.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "gardening": {
+      "owner": "betterinstincts/gardening_service.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "ecology": {
+      "owner": "betterinstincts/eco_resource_cycle.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "purchases": {
+      "owner": "betterinstincts/purchase_dialog.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "household": {
+      "owner": "betterinstincts/household_economy.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "upkeep": {
+      "owner": "betterinstincts/household_upkeep.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "scenarios": {
+      "owner": "betterinstincts/scenario_goals.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "activities": {
+      "owner": "betterinstincts/activity_chain.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "traversal": {
+      "owner": "betterinstincts/semantic_advisory.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "queues": {
+      "owner": "betterinstincts/queue_capacity.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    },
+    "social_event": {
+      "owner": "betterinstincts/social_opportunity.py",
+      "math_access": "ON_OBSERVED_EVIDENCE",
+      "fallback": "EXISTING_DOMAIN_OWNER",
+      "new_architecture": "ALLOWED_AFTER_INDEPENDENT_COMPARISON"
+    }
+  },
+  "packet_schema": "betterinstincts.microsystem-math-packet/v1",
+  "packet_required": [
+    "schema",
+    "capture_ref",
+    "sim_ref",
+    "game_build",
+    "provenance_ref",
+    "bellman",
+    "kkt",
+    "gaussian"
+  ],
+  "methods": {
+    "bellman": "Use existing PS0245 bounded action DAG plus hard feasibility/need floor and player-first checks; missing or nonpositive plan is fallback, never invent an action.",
+    "lagrange_kkt": "Use exact PS0245 continuous time water-filling for bounded concave activities, not integer actions, no relaxation of hard floors.",
+    "gaussian": "Use existing PS0241 chronology/holdout-gated Matérn-3/2 GP duration comparator; deterministic upper bound remains if samples insufficient/unqualified."
+  },
+  "validation": {
+    "max_domain_receipts": 32,
+    "max_candidate_steps": 24,
+    "max_challenger_holdout": 24,
+    "min_challenger_holdout": 8,
+    "min_relative_mae_improvement": 0.1,
+    "max_individual_error_regression": 0,
+    "challenger_source_independent_required": true,
+    "challenger_must_reprove_proposed_first_step_in_existing_bellman": true,
+    "same_capture_actor_and_game_build": true,
+    "all_outputs_proposal_only": true
+  },
+  "arbitration": {
+    "unobserved": "FALLBACK_EXISTING",
+    "math_eligible": "MATH_ADVISORY",
+    "independent_challenger_winner": "SUPERIOR_ADVISORY",
+    "on_bad_or_incomplete_observation": "FALLBACK_EXISTING",
+    "on_player_active": "PLAYER_YIELD",
+    "candidate_model_names": "OPEN_VERSIONED_IDS_NO_FIXED_MODEL_FAMILY",
+    "no_exec_permissions": true
+  },
+  "native_game_effects": "NOT_CLAIMED_SOURCE_ONLY",
+  "progressive_disclosure": {
+    "entry": "docs/DOMAIN_CASCADE.md",
+    "math_owner": "docs/MICROSYSTEM_MATH.md",
+    "bellman_kkt": "docs/DECISION_HORIZON.md",
+    "gaussian": "betterinstincts/ecology_forecast.py",
+    "native": "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md"
+  },
+  "proof_ceiling": "REPOSITORY_MATH_ADVISORY_NOT_NATIVE_SIMS_EXECUTION",
+  "successor_issue": 171
+}
