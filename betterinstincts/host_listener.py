@@ -22,6 +22,7 @@ from betterinstincts.build_floor_activity import (
     evaluate_floor_activity,
 )
 from betterinstincts.host_stack import HostStackError, evaluate_turn
+from betterinstincts.preference_corrections import evaluate_correction
 from betterinstincts.chance_event_research import (
     ChanceEventError, assess as assess_chance_event, load_memo as load_chance_memo,
 )
@@ -830,6 +831,36 @@ def _load_observation(raw: Mapping) -> dict:
     }
 
 
+def _preference_correction_advisory(observation, obs, handoff, session_id):
+    correction = observation.get("preference_correction")
+    if correction is None:
+        return None
+    if (not isinstance(correction, Mapping)
+            or len(json.dumps(dict(correction)).encode("utf-8")) > 24_576):
+        return {"state": "HOLD", "reason": "CORRECTION_REQUEST_INVALID", "control_permit": None}
+    captured = correction.get("observation")
+    foreground = handoff["foreground_process"]
+    if obs["build_or_buy_mode"]:
+        return {"state": "HOLD", "reason": "LISTENER_BUILD_BUY_MODE", "control_permit": None}
+    if (correction.get("session_id") != session_id
+            or type(correction.get("process_id")) is not int
+            or correction["process_id"] != foreground["pid"]
+            or not foreground["is_sims"]
+            or not isinstance(captured, Mapping)
+            or not observation.get("capture_ref")
+            or captured.get("capture_ref") != observation["capture_ref"]
+            or not observation.get("game_version")
+            or correction.get("game_build") != observation["game_version"]):
+        return {"state": "HOLD", "reason": "LISTENER_CONTEXT_MISMATCH", "control_permit": None}
+    return evaluate_correction(
+        {**correction, "now_ms": time.time_ns() // 1_000_000},
+        player_directed=(not handoff["screen_control_allowed"] or obs["player_directed"]
+                         or obs["already_busy"]),
+        automation_opt_in=observation.get("preference_correction_opt_in") is True,
+        known_game_build=observation.get("preference_game_build_confirmed") is True,
+    )
+
+
 def tick(
     session_id: str,
     observation: Mapping,
@@ -922,6 +953,7 @@ def tick(
     except HandoffError as exc:
         raise HostListenerError(str(exc)) from exc
     presence = as_presence(handoff)
+    preference_correction = _preference_correction_advisory(observation, obs, handoff, session_id)
     # Read-only lot assessment continues even while the human owns the mouse.
     # It reads supplied model/queue facts and the persistent token index only;
     # no screen navigation or Sim queue mutation occurs in this path.
@@ -996,6 +1028,8 @@ def tick(
         tick_path = path / f"tick-{ticks:04d}.json"
         if chance_event_advisory is not None:
             receipt["chance_event"] = chance_event_advisory
+        if preference_correction is not None:
+            receipt["preference_correction"] = preference_correction
         _write_json(tick_path, receipt)
         receipt["receipt"] = str(tick_path.relative_to(ROOT))
         return receipt
@@ -1112,6 +1146,8 @@ def tick(
         tick_path = path / f"tick-{ticks:04d}.json"
         if chance_event_advisory is not None:
             receipt["chance_event"] = chance_event_advisory
+        if preference_correction is not None:
+            receipt["preference_correction"] = preference_correction
         _write_json(tick_path, receipt)
         receipt["receipt"] = str(tick_path.relative_to(ROOT))
         return receipt
@@ -1302,6 +1338,8 @@ def tick(
     tick_path = path / f"tick-{ticks + 1:04d}.json"
     if chance_event_advisory is not None:
         receipt["chance_event"] = chance_event_advisory
+    if preference_correction is not None:
+        receipt["preference_correction"] = preference_correction
     _write_json(tick_path, receipt)
     receipt["receipt"] = str(tick_path.relative_to(ROOT))
     return receipt

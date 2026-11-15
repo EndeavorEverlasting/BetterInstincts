@@ -1,0 +1,24 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-SIMOLOGY-PREFERENCE-CORRECTIONS-20261115",
+  "purpose": "Evaluate stored preference corrections and expose the next semantic target in the existing listener.",
+  "files": [
+    {
+      "path": "betterinstincts/preference_corrections.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure correction evaluation and semantic CAS routing expose reference locations and require independent game evidence.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_listener.py",
+      "route": "POLICY_ONLY",
+      "reason": "The existing listener evaluates current evidence and records a proposal while preserving the existing native offer owner.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_POLICY_AND_SEMANTIC_NAVIGATION",
+  "next_gate": "Bind the exact game-build observation and native preference write, and certify separately scoped CAS fallback in a disposable household."
+}

@@ -1,3 +1,14 @@
+## 2026-11-15 — Simology stored preference correction
+
+The existing host listener can evaluate an evidenced mistaken setting or a
+repeated activity effect, then route the exact Sim through Simology and
+existing-household CAS. The route records Hotkey Y, the tray icon, the CAS
+Preferences controls, the separate attraction Fashion and Way of Life
+categories, staged edit reconciliation and Live readback. Supplied
+comparisons measure needs, net income, skill and career without inferring
+causation from frequency. See [the preference correction guide](PREFERENCE_PROMPTS.md#correct-an-existing-preference-through-simology).
+P08 needs the exact Windows game build and an authorized disposable household.
+
 ## 2026-11-15 — Receipt-backed robotics income
 
 The workstation fee is one input. For one recipe and sales channel, the
