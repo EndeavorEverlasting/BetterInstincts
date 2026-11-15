@@ -9,13 +9,14 @@ import hashlib
 import json
 import math
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import re
 import subprocess
 import sys
 import time
 
 from betterinstincts.save_policy import SavePolicyError, selected_save_guard
+from scripts.smart_start import GameProcess, require_same_game_process
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "dist" / "game-host"
@@ -150,7 +151,8 @@ def launch(run_id: str, cfg: dict, digest: str, execute: bool) -> dict:
 
 
 @contextmanager
-def _admitted_template_navigation(process_id: int | None, session_id: str | None, *, idle_ms: int):
+def _admitted_template_navigation(process_id: int | None, session_id: str | None, *, idle_ms: int,
+                                  process: GameProcess | None = None):
     """One leased Windows screen owner; fail closed before each pixel scan/click.
 
     Offline FakeGui tests on non-Windows may model the state machine without
@@ -168,6 +170,8 @@ def _admitted_template_navigation(process_id: int | None, session_id: str | None
         require_execute_session(session_id, process_id)
         with admitted_screen_lease(int(process_id), str(session_id), idle_ms=idle_ms) as ensure_ready:
             def check() -> None:
+                if process is not None:
+                    require_same_game_process(process)
                 try:
                     ensure_ready()  # two fresh trusted-idle probes per side-effect
                 except HandoffError as exc:
@@ -227,6 +231,40 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
                          session_id=session_id)
         except Exception as exc:
             raise GateError("MENU_BLOCKER_DISMISS_FAILED:" + str(exc)) from exc
+
+    def checkpoint(step: str) -> None:
+        append_event(root, "UI_CLICK_DISPATCHED", ui_step=step,
+                     proof_ceiling="CLICK_DISPATCH_ONLY")
+
+    process_id = next(row.get("process_id") for row in reversed(rows)
+                      if row["state"] == "LAUNCH_DISPATCHED")
+    dispatch_navigation(cfg, process_id=process_id, session_id=session_id,
+                        timeout=timeout, idle_ms=idle_ms, checkpoint=checkpoint, gui=gui)
+    state = ("NEW_GAME_CAS_REQUESTED" if cfg["save_mode"] == "new"
+             else "CHOSEN_SAVE_PLAY_REQUESTED")
+    return append_event(root, state, ui_steps=steps(cfg),
+                        proof_ceiling="UI_CLICK_DISPATCH_ONLY")
+
+
+def navigate_startup_save(
+    cfg: dict, process: GameProcess, *, run_id: str, session_id: str, checkpoint,
+) -> None:
+    """Use the existing calibrated chosen-save adapter for an admitted dev run."""
+    if sys.platform != "win32":
+        raise GateError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
+    expected_exe = str(PureWindowsPath(cfg["game_executable"])).casefold()
+    if cfg["save_mode"] != "chosen" or expected_exe != process.executable:
+        raise GateError("DEV_PROFILE_DOES_NOT_MATCH_OBSERVED_GAME")
+    if selected_save_guard(cfg, run_id)["classification"] != "LAB_DISPOSABLE":
+        raise GateError("DEV_REQUIRES_DISPOSABLE_SAVE")
+    dispatch_navigation(cfg, process_id=process.pid, session_id=session_id,
+                        timeout=15, idle_ms=15000, checkpoint=checkpoint, process=process)
+
+
+def dispatch_navigation(
+    cfg: dict, *, process_id: int | None, session_id: str | None,
+    timeout: int, idle_ms: int, checkpoint, gui=None, process: GameProcess | None = None,
+) -> None:
     if gui is None:
         if sys.platform != "win32":
             raise GateError("LOCAL_WINDOWS_GUI_REQUIRED")
@@ -236,7 +274,10 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
             raise GateError("PYAutoGUI_NOT_INSTALLED") from exc
     gui.FAILSAFE = True
     gui.PAUSE = 0.3
-    with _admitted_template_navigation(rows[-1].get("process_id"), session_id, idle_ms=idle_ms) as ensure_ready:
+    lease_options = {"idle_ms": idle_ms}
+    if process is not None:
+        lease_options["process"] = process
+    with _admitted_template_navigation(process_id, session_id, **lease_options) as ensure_ready:
         base = Path(cfg["_profile_path"]).resolve().parent
         for step in steps(cfg):
             template = str((base / cfg["templates"][step]).resolve())
@@ -247,7 +288,7 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
                     ensure_ready()
                     matches = list(gui.locateAllOnScreen(template, grayscale=False))
                 except GateError:
-                    raise  # preserve the exact operator-handoff denial
+                    raise
                 except Exception as exc:
                     if type(exc).__name__ == "ImageNotFoundException":
                         matches = []
@@ -262,14 +303,19 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
             if found is None:
                 raise GateError("UI_TARGET_TIMEOUT_" + step.upper())
             ensure_ready()
+            if process is not None:
+                # Persist intent before effects. An interruption leaves an
+                # unresolved effect and a subsequent launch must preserve the game.
+                checkpoint(step + ":pending")
+                try:
+                    fresh_matches = list(gui.locateAllOnScreen(template, grayscale=False))
+                except Exception as exc:
+                    raise GateError("UI_TARGET_CHANGED_" + step.upper()) from exc
+                if fresh_matches != [found]:
+                    raise GateError("UI_TARGET_CHANGED_" + step.upper())
+                ensure_ready()
             gui.click(gui.center(found))
-            # Durable per-click checkpoint: never replay a partly completed UI flow.
-            append_event(root, "UI_CLICK_DISPATCHED", ui_step=step,
-                         proof_ceiling="CLICK_DISPATCH_ONLY")
-    state = ("NEW_GAME_CAS_REQUESTED" if cfg["save_mode"] == "new"
-             else "CHOSEN_SAVE_PLAY_REQUESTED")
-    return append_event(root, state, ui_steps=steps(cfg),
-                        proof_ceiling="UI_CLICK_DISPATCH_ONLY")
+            checkpoint(step)
 
 
 def manual_cas_complete(run_id: str, disposable_confirmed: bool,

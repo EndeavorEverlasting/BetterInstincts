@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.ontology/v1",
-  "revision": 11,
+  "revision": 12,
   "state": "CANDIDATE_REVIEW_NOT_RUNTIME_AUTHORITY",
   "owner": "BetterInstincts",
   "source_main_sha": "dd3e709bca260a1df8d981d86e77762e7e0445f0",
@@ -11,7 +11,7 @@
     "perception": "GAME_SCENE,VIEWPORT_STATE,OBSERVATION,NEED_STATE,MOODLET,CLAIM",
     "agency": "PLAYER_INTENT,PLAYER_PRESENCE,ACTION_QUEUE,GOAL,OPPORTUNITY,AFFORDANCE,ACTION_PROPOSAL,CONTROL_PERMIT,HOST_ACTION",
     "learning": "OUTCOME,REVIEWED_JUDGMENT,LEARNING_MODEL",
-    "governance": "HOST_SESSION,SAVE_SLOT,INCIDENT,PROOF_RECEIPT",
+    "governance": "HOST_SESSION,SAVE_SLOT,INCIDENT,PROOF_RECEIPT,GAME_PROCESS_INSTANCE,STARTUP_SAVE_TARGET,MISSING_REPOSITORY_LOGIC",
     "orchestration": "SITUATION,DOMAIN_CAPABILITY,GOAL_THREAD,ACTIVITY,RESOURCE_CLAIM,TIME_WINDOW,CONTINGENCY,INTERRUPTION,RESUME_CONDITION,MECHANIC_PATH,COORDINATION_CYCLE",
     "navigation": "NAVIGATION_SCOPE,NAVIGATION_REGION,NAVIGATION_PASSAGE,NAVIGATION_FRONTIER,NAVIGATION_INTENT,NAVIGATION_PROGRESS,NAVIGATION_STALL,NAVIGATION_RECOVERY"
   },
@@ -417,6 +417,21 @@
       "kind": "evidence",
       "definition": "BetterInstincts chose and submitted the response and matching native acknowledgement and effect were observed for the same current event.",
       "canonical_owner": "contracts/control-discovery.v1.json"
+    },
+    "GAME_PROCESS_INSTANCE": {
+      "kind": "context",
+      "definition": "One Windows Sims game process identified by PID, creation time and executable image path. Launch dispatch and save/scene observation are independent evidence.",
+      "canonical_owner": "scripts/smart_start.py"
+    },
+    "STARTUP_SAVE_TARGET": {
+      "kind": "context",
+      "definition": "Mode-scoped intended save identity. Development ranks the oldest authorized disposable save in its household and run. Production ranks trusted in-game last-played evidence. A target does not prove a load.",
+      "canonical_owner": "scripts/launch_save_route.py"
+    },
+    "MISSING_REPOSITORY_LOGIC": {
+      "kind": "evidence",
+      "definition": "A required startup stage performed or to be performed by a human or agent outside repository automation, with the owning module and explicit evidence in the launch receipt.",
+      "canonical_owner": "scripts/launch_receipt.py"
     }
   },
   "relations": [
@@ -1367,6 +1382,25 @@
       "owned_by": [
         "contracts/control-discovery.v1.json",
         "docs/CONTROL_DISCOVERY.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-053",
+      "term": "CURRENT_GAME_PROCESS_IDENTITY",
+      "rule": "A startup process change invalidates pending host input and current menu/save evidence. A dispatch PID and prior session evidence cannot authorize actions on a successor process.",
+      "owned_by": [
+        "contracts/launch-journey.v1.json",
+        "scripts/smart_start.py",
+        "scripts/play.py"
+      ]
+    },
+    {
+      "id": "BI-ONT-054",
+      "term": "STARTUP_INTERVENTION_RECEIPT",
+      "rule": "Record each required human or agent startup step as MISSING_REPOSITORY_LOGIC with its repository owner. Preserve assisted evidence without promoting it to native action or loaded-save proof.",
+      "owned_by": [
+        "contracts/launch-journey.v1.json",
+        "scripts/launch_receipt.py"
       ]
     }
   ],

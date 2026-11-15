@@ -2190,3 +2190,14 @@ more heavily near that reserve. Forecasting applies expected-value weighting
 to success and sunk-cost failure and clips gains at the game cap. The normal
 microsystem math consumer inherits the policy. Native outcome calibration
 remains part of [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+
+## Process-bound Windows play
+
+The download entry verifies the clean canonical main checkout it is about to
+run. The host launcher uses current Windows process identity independently of
+the dispatch PID. Dev uses the oldest already authorized disposable save in
+the selected household and run, through its calibrated local adapter. Production
+resolves the latest-played target from current in-game evidence when supplied.
+The default production workflow still needs an installed-build save observer and
+loader. Launch receipts retain required assistance and any partial dispatch.
+Actual Windows save-load/readback and gameplay remain separate proof gates.

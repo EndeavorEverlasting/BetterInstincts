@@ -26,7 +26,9 @@
     "offline_contextual": "python -m scripts.first_run plan --mode new --goal creative --preferred-skill painting --income-pressure",
     "container_play": "py -3 -m scripts.play",
     "agent_play": "py -3 -m scripts.play --json",
-    "container_plan": "python -m scripts.play --plan --json"
+    "container_plan": "python -m scripts.play --plan --json",
+    "windows_dev": "Start-BetterInstincts.cmd --dev PRIVATE_CONTEXT.json",
+    "intervention": "python -m scripts.launch_receipt"
   },
   "invariants": {
     "canonical_checkout": "%USERPROFILE%/dev/BetterInstincts",
@@ -34,7 +36,7 @@
     "prerequisites": "Python >=3.11 and Git; no unattended system installation",
     "sims_executable": "Game/Bin/TS4_x64.exe or TS4.exe in known locations or explicitly selected path",
     "game_launch": "deliberate double-click/explicit CLI auto invocation or manual chooser click; no background auto launch; subprocess without shell",
-    "save_selection": "player-only until separately verified authorized save identity + calibrated local scene/action gating; never blind Resume or auto-select unknown saves",
+    "save_selection": "Development dispatches only an attested and calibrated LAB_DISPOSABLE save through the existing screen gate. Production targets game-reported last played and requires its own calibrated observer/loader. Never blind Resume or choose a protected save based on age.",
     "cas": "Player creates the Sim; aspiration/traits are suggestions; base-game skill priorities are ranked advisory gameplay steps, never CAS-granted levels, automatic menu actions, or identity edits",
     "protected_data": "never read/write user saves or edit Sims game files",
     "host_proof": "process dispatch is not game load or Live Mode evidence",
@@ -56,5 +58,48 @@
     "First-session skill priorities are unmeasured relative heuristics (base-game, adult-oriented examples), not a certified optimal build or a machine-learning model; re-evaluate against player age, packs, actual needs and preferences",
     "No autonomous CAS, skill-level granting, job enrollment or first-day queue manipulation is released without exact game-build local proof and player-first admission",
     "Manual GUI and CLI process observations remain name/PID-only; exact running image path, local multi-process races, game menu and CAS creation still require separate Windows P08 proof"
-  ]
+  ],
+  "startup_modes": {
+    "production": {
+      "default": true,
+      "rank": "LATEST_IN_GAME_LAST_PLAYED_UTC",
+      "automatic_load": "UNAVAILABLE_REQUIRES_CALIBRATED_PRODUCTION_OBSERVATION_AND_EFFECT",
+      "allow_blind_resume": false
+    },
+    "dev": {
+      "default": false,
+      "rank": "OLDEST_ATTESTED_CREATION_UTC_WITHIN_AUTHORIZED_HOUSEHOLD_AND_RUN",
+      "active_certification_precedes_ranking": true,
+      "automatic_load": "CALIBRATED_LAB_ADAPTER_AND_LIVE_ADMISSION"
+    }
+  },
+  "process_bound_play": {
+    "owner": "scripts/play.py",
+    "identity_source": "Windows Win32_Process observation",
+    "identity_fields": [
+      "pid",
+      "creation_ticks",
+      "executable"
+    ],
+    "dev_build_source": "Game executable FileVersion, compared with the calibration and registry",
+    "dispatch_pid_is_authority": false,
+    "restart": "ABORT_AND_REOBSERVE_CURRENT_SCENE_AND_SAVE",
+    "running_game": "PRESERVE_EXISTING_SESSION",
+    "terminal_proof": "INDEPENDENT_CURRENT_INSTANCE_SAVE_AND_HOUSEHOLD_OBSERVATION"
+  },
+  "receipts": {
+    "owner": "scripts/launch_receipt.py",
+    "location": "%LOCALAPPDATA%/BetterInstincts/runtime/play-receipts",
+    "required_step_kind": "MISSING_REPOSITORY_LOGIC",
+    "external_actors": [
+      "human",
+      "agent"
+    ],
+    "assisted_evidence": [
+      "before_ref",
+      "during_ref",
+      "after_ref"
+    ],
+    "proof": "ASSISTED_STEPS_NEVER_COUNT_AS_NATIVE_AUTOMATION"
+  }
 }

@@ -654,3 +654,12 @@ P00 adds native responder terminology and mandatory doctrine, P01 routes to the 
 ## Sixth Gear — cross-microsystem fallback routing
 
 P141 selected per-effect attribution in the existing journal. P95 exercised ownership lookup against the repository registry. P82 measured mixed-session, legacy and runner paths offline. P08 requires the authorized Windows Sims host. P07 and P124 carry the shared source and regression changes through existing repository validation.
+
+## Process-bound Windows play
+
+The MoonWake Sixth Gear walker scoped P141 → P95 → P82 → P08 → P07 → P124
+to the startup parent. It selected the existing launch, save and host
+owners. Repo fixtures cover Windows process identity, save ranking and
+receipt failure paths. P08 requires the Windows game PC. Existing
+certifications and protected saves retain their respective evidence and
+authority boundaries.

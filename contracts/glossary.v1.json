@@ -1438,6 +1438,27 @@
         "contracts/control-discovery.v1.json",
         "docs/CONTROL_DISCOVERY.md"
       ]
+    },
+    "GAME_PROCESS_INSTANCE": {
+      "definition": "One Windows Sims game process identified by PID, creation time and executable image path. Launch dispatch and save/scene observation are independent evidence.",
+      "owners": [
+        "contracts/launch-journey.v1.json",
+        "scripts/smart_start.py"
+      ]
+    },
+    "STARTUP_SAVE_TARGET": {
+      "definition": "Mode-scoped intended save identity. Development ranks the oldest authorized disposable save in its household and run. Production ranks trusted in-game last-played evidence. A target does not prove a load.",
+      "owners": [
+        "contracts/launch-journey.v1.json",
+        "scripts/launch_save_route.py"
+      ]
+    },
+    "MISSING_REPOSITORY_LOGIC": {
+      "definition": "A required startup stage performed or to be performed by a human or agent outside repository automation, with the owning module and explicit evidence in the launch receipt.",
+      "owners": [
+        "contracts/launch-journey.v1.json",
+        "scripts/launch_receipt.py"
+      ]
     }
   }
 }

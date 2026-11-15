@@ -11,6 +11,11 @@ from unittest.mock import patch
 from betterinstincts.first_run import FirstRunError
 from scripts import continue_certification as handoff
 from scripts.launch_save_route import CERTIFICATION_ID, CONTEXT_SCHEMA
+from scripts.smart_start import GameProcess
+
+
+def process(pid: int, exe: str = "TS4_x64.exe") -> GameProcess:
+    return GameProcess(pid, "638987600000000000", "c:\\sims\\game\\bin\\" + exe.lower())
 
 
 class ContinueCertificationTests(unittest.TestCase):
@@ -27,9 +32,11 @@ class ContinueCertificationTests(unittest.TestCase):
             path.touch()
 
     def test_running_session_is_handed_off_even_without_local_memo(self):
-        with patch.object(handoff, "read_sims_processes", return_value={53: "TS4_x64.exe"}):
+        with patch.object(handoff, "read_game_processes", return_value=(process(53),)):
             task = handoff.build_handoff(self.root)
-        self.assertIn('"pids": [53]', task)
+        self.assertIn('"pid": 53', task)
+        self.assertIn('"creation_ticks": "638987600000000000"', task)
+        self.assertIn("replacement process requires fresh save and scene observation", task)
         self.assertIn("HOLD_CERTIFICATION_CONTEXT", task)
         self.assertIn("Recover missing run context", task)
         self.assertIn("keep it open", task)
@@ -44,7 +51,7 @@ class ContinueCertificationTests(unittest.TestCase):
         record_new({"schema": EVENT_SCHEMA, "context": context, "result": "actor_trait_258767",
                     "evidence_level": "LOCAL_ARTIFACT_VERIFIED", "evidence_ref": "capture:prior-yes",
                     "observed_at_ms": 1000}, root=self.root)
-        with (patch.object(handoff, "read_sims_processes", return_value={53: "TS4_x64.exe"}),
+        with (patch.object(handoff, "read_game_processes", return_value=(process(53),)),
               patch.object(handoff, "view", return_value={"profile_id": "trial",
                                                           "preferred_household_id": None,
                                                           "profiles": ["trial"]})):
@@ -67,9 +74,9 @@ class ContinueCertificationTests(unittest.TestCase):
                         "observed_at_ms": 1000}, root=self.root)
         with patch.object(handoff, "view", return_value={
             "profile_id": "default", "preferred_household_id": None,
-        }), patch.object(handoff, "read_sims_processes", return_value={20704: "TS4_x64.exe"}):
+        }), patch.object(handoff, "read_game_processes", return_value=(process(20704),)):
             payload = handoff.build_handoff(self.root)
-        self.assertIn('"pids": [20704]', payload)
+        self.assertIn('"pid": 20704', payload)
         self.assertIn('"installation_profile": "old_yes"', payload)
         self.assertIn('"installation_profile": "old_no"', payload)
         self.assertNotIn("wrong_build", payload)
@@ -81,7 +88,7 @@ class ContinueCertificationTests(unittest.TestCase):
         memo.write_text(json.dumps({"repeat_offer": {"resolution_observed": True}}),
                         encoding="utf-8")
         before = memo.read_bytes()
-        with patch.object(handoff, "read_sims_processes", return_value={53: "TS4_x64.exe"}):
+        with patch.object(handoff, "read_game_processes", return_value=(process(53),)):
             result = handoff.build_handoff(self.root)
         self.assertIn("RECONCILE_RECORDED_RESOLUTION_AND_PREFLIGHT_SUCCESSOR_HOUSEHOLD_SAVE", result)
         self.assertEqual(memo.read_bytes(), before)
@@ -94,21 +101,22 @@ class ContinueCertificationTests(unittest.TestCase):
             "status": "PENDING", "run_id": "bi-preference", "game_version": "1.121.361.1020",
         }), encoding="utf-8")
         before = memo.read_bytes(), memo.stat().st_mtime_ns
-        with patch.object(handoff, "read_sims_processes", return_value={53: "TS4_x64.exe"}):
+        with patch.object(handoff, "read_game_processes", return_value=(process(53),)):
             self.assertIn("PRESERVE_RUNNING_CERTIFICATION_SESSION", handoff.build_handoff(self.root))
         self.assertEqual(before, (memo.read_bytes(), memo.stat().st_mtime_ns))
 
     def test_ambiguous_and_unavailable_processes_are_distinct_observations(self):
-        with patch.object(handoff, "read_sims_processes",
-                          return_value={17: "TS4.exe", 53: "TS4_x64.exe"}):
+        with patch.object(handoff, "read_game_processes",
+                          return_value=(process(17, "TS4.exe"), process(53))):
             task = handoff.build_handoff(self.root)
-            self.assertIn('"pids": [17, 53]', task)
+            self.assertIn('"pid": 17', task)
+            self.assertIn('"pid": 53', task)
             self.assertIn("HOLD_PROCESS_IDENTITY", task)
-        with patch.object(handoff, "read_sims_processes",
+        with patch.object(handoff, "read_game_processes",
                           side_effect=FirstRunError("PROCESS_INVENTORY_UNAVAILABLE")):
             task = handoff.build_handoff(self.root)
         self.assertIn("PROCESS_INVENTORY_UNAVAILABLE", task)
-        self.assertNotIn('"pids"', task)
+        self.assertNotIn('"instances"', task)
 
     def test_codex_receives_stdin_once_in_original_checkout_and_keeps_failure(self):
         installed = self.root.parent / "local-tools" / "codex.cmd"

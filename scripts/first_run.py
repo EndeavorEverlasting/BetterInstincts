@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 import json
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import sys
 from typing import Callable
 
-from scripts.smart_start import auto_start, select_unique_install
+from scripts.smart_start import auto_start, read_game_processes, select_unique_install
 from scripts.launch_save_route import route_local_context
 from betterinstincts.installation_profiles import InstallationProfileError, view
 
@@ -78,12 +79,23 @@ def annotate_lab_save_handoff(receipt: dict) -> dict:
     }
 
 
-def requested_start(game_exe: Path | None = None) -> dict:
+def requested_start(game_exe: Path | None = None, *, identify_process: bool = False) -> dict:
     """Start a detected or explicitly selected game through the same admission."""
-    if game_exe is None:
-        receipt = auto_start()
-    else:
-        receipt = auto_start(discoverer=lambda: [select_game([], game_exe)])
+    observations = ()
+
+    def inspect() -> dict[int, str]:
+        nonlocal observations
+        observations = read_game_processes()
+        return {row.pid: PureWindowsPath(row.executable).name for row in observations}
+
+    options = {"process_reader": inspect} if identify_process else {}
+    if game_exe is not None:
+        options["discoverer"] = lambda: [select_game([], game_exe)]
+    receipt = auto_start(**options)
+    if len(observations) == 1 and receipt.get("process_observation_state") != (
+        "PROCESS_INVENTORY_UNAVAILABLE_AFTER_DISPATCH"
+    ):
+        receipt["observed_game_process"] = asdict(observations[0])
     return annotate_lab_save_handoff(receipt)
 
 

@@ -200,3 +200,12 @@ same-household lab origin precede age ranking. Player saves stay protected.
 ## Native responder gaps (revision 11)
 
 `NATIVE_RESPONDER_GAP` requires a `FALLBACK_EFFECT_TRACE` and a deterministic regression obligation. Each trace binds the prior capture, the atomic admitted dispatch boundary, and a distinct outcome. `NATIVE_RESOLUTION_PROOF` requires product-owned choice and submit plus matching EA acknowledgement and effect. Assisted or interrupted traces can establish a gap or a failure regression without qualifying as native resolution.
+
+## Revision 12 — process-bound play
+
+The Windows startup path distinguishes `GAME_PROCESS_INSTANCE`,
+`STARTUP_SAVE_TARGET` and `MISSING_REPOSITORY_LOGIC`. A restart or PID
+reuse invalidates pending menu input even when the slot or household is the
+same. Keep prior reviewed mechanic evidence and observe the current game's
+scene and save again. Runtime ownership and receipt fields live in
+[launch-journey.v1.json](../contracts/launch-journey.v1.json).

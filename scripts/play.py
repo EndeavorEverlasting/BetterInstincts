@@ -3,13 +3,19 @@ from __future__ import annotations
 
 import argparse
 from contextlib import contextmanager
+from dataclasses import asdict
 import hashlib
 import json
-from pathlib import Path
+import re
+from pathlib import Path, PureWindowsPath
 import shutil
 import subprocess
 import sys
-from typing import Callable
+import time
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from scripts.smart_start import GameProcess
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN = {
@@ -17,7 +23,8 @@ PLAN = {
     "steps": ["install_toolkit", "start_windows_game"],
 }
 STARTUP_SOURCES = ("bootstrap.py", "scripts/play.py", "scripts/first_run.py",
-                   "scripts/smart_start.py", "betterinstincts/first_run.py")
+                   "scripts/smart_start.py", "betterinstincts/first_run.py",
+                   "scripts/game_host.py", "scripts/launch_save_route.py", "scripts/launch_receipt.py")
 WIN_COMMAND = "py -3 -m scripts.play"
 SUCCESS_MESSAGES = {
     "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF":
@@ -79,7 +86,7 @@ def docker_plan(docker: str, progress: Callable[[str], None]) -> dict:
              "--cap-drop=ALL", "--security-opt=no-new-privileges", image],
             check=True, capture_output=True, encoding="utf-8", errors="replace", timeout=30,
         )
-        if len(result.stdout) > 2048 or json.loads(result.stdout) != expected:
+        if len(result.stdout) > 4096 or json.loads(result.stdout) != expected:
             raise ValueError("Unexpected startup plan")
     except (OSError, SyntaxError, ValueError, subprocess.SubprocessError) as exc:
         raise PlayBlocked(
@@ -117,7 +124,11 @@ def windows_startup_lock():
         kernel.CloseHandle(handle)
 
 
-def play_on_windows(game_exe: Path | None, progress: Callable[[str], None]) -> dict:
+def play_on_windows(
+    game_exe: Path | None, progress: Callable[[str], None], *,
+    mode: str | None = None, save_context: Path | None = None, receipt_path: Path | None = None,
+    receipt: dict | None = None,
+) -> dict:
     from bootstrap import install, paths
     from scripts.first_run import requested_start
 
@@ -134,9 +145,12 @@ def play_on_windows(game_exe: Path | None, progress: Callable[[str], None]) -> d
 
         progress("Checking for The Sims 4.")
         try:
-            game = requested_start(game_exe)
+            game = requested_start(game_exe, identify_process=True) if mode else requested_start(game_exe)
         except (OSError, ValueError) as exc:
             game = {"state": "GAME_LAUNCH_BLOCKED", "reason": str(exc)}
+
+        if mode is not None:
+            return complete_play(mode, game, toolkit, save_context, receipt_path, receipt, progress)
 
     if game["state"] in SUCCESS_MESSAGES:
         return {"status": "ok", "stage": "complete", "toolkit": toolkit, "game": game,
@@ -149,50 +163,244 @@ def play_on_windows(game_exe: Path | None, progress: Callable[[str], None]) -> d
             )}
 
 
+
+def observe_launched_process(game: dict) -> GameProcess:
+    """Poll only a just-dispatched executable. Never adopt a replacement PID."""
+    from scripts.smart_start import read_game_processes
+
+    if game["state"] == "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH":
+        observed = game.get("observed_game_process")
+        if not observed:
+            raise ValueError("EXISTING_GAME_PROCESS_IDENTITY_UNVERIFIED")
+        current = read_game_processes()
+        if len(current) != 1 or asdict(current[0]) != observed:
+            raise ValueError("GAME_PROCESS_CHANGED_REOBSERVE_SCENE_AND_SAVE")
+        return current[0]
+    if game.get("process_observation_state") == "PROCESS_INVENTORY_UNAVAILABLE_AFTER_DISPATCH":
+        raise ValueError("PROCESS_INVENTORY_UNAVAILABLE_AFTER_DISPATCH")
+    expected = str(PureWindowsPath(game["game_executable"])).casefold()
+    initial = game.get("observed_game_process")
+    for attempt in range(8):
+        current = read_game_processes()
+        if len(current) == 1 and current[0].executable == expected:
+            if initial is not None and asdict(current[0]) != initial:
+                raise ValueError("GAME_PROCESS_CHANGED_REOBSERVE_SCENE_AND_SAVE")
+            return current[0]
+        if initial is not None or current:
+            raise ValueError("GAME_PROCESS_CHANGED_REOBSERVE_SCENE_AND_SAVE")
+        if attempt < 7:
+            time.sleep(1)
+    raise ValueError("GAME_PROCESS_NOT_OBSERVED_AFTER_DISPATCH")
+
+
+def complete_play(
+    mode: str, game: dict, toolkit: dict, context_path: Path | None,
+    receipt_path: Path, receipt: dict, progress: Callable[[str], None],
+) -> dict:
+    from scripts.game_host import navigate_startup_save, profile
+    from scripts.launch_receipt import gap, write_result
+    from scripts.launch_save_route import load_context, route_mode
+    from scripts.smart_start import require_same_game_process
+
+    result = {"toolkit": toolkit, "game": game, "save_state": "NOT_OBSERVED",
+              "automatic_steps": []}
+
+    def pending(stage, reason, step, owner, *, actor="human_or_agent"):
+        return {**result, "status": "blocked", "stage": stage, "reason": reason,
+                "next_step": step, "automation_gaps": [gap(stage, reason, step, owner, actor=actor)]}
+
+    state = game["state"]
+    if state not in SUCCESS_MESSAGES:
+        reason = game.get("reason", state)
+        guidance = LAUNCH_GUIDANCE.get(state, LAUNCH_GUIDANCE.get(reason,
+                                   "Check the game platform or startup error before trying again."))
+        return pending("game_launch", reason, guidance, "scripts/smart_start.py")
+    result["launch_state"] = state
+    write_result(receipt_path, {**receipt, **result, "stage": "game_process"})
+    try:
+        process = observe_launched_process(game)
+    except (OSError, ValueError) as exc:
+        out = pending("game_process", str(exc),
+                      "Check whether the game opened or needs platform sign-in, then observe the current instance.",
+                      "scripts/smart_start.py")
+        if state == "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF":
+            out["automation_gaps"].append(gap(
+                "platform_sign_in", "PLATFORM_AUTHENTICATION_IF_REQUESTED",
+                "Sign in through EA or Steam if prompted.", "scripts/first_run.py", actor="human",
+            ))
+        return out
+    result["game_process"] = asdict(process)
+    result["process_proof"] = "OBSERVED_WINDOWS_PROCESS_ONLY"
+    if state == "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH":
+        lab_route = game.get("lab_save_route", {})
+        if mode == "dev" and lab_route.get("state") == "PRESERVE_RUNNING_CERTIFICATION_SESSION":
+            return pending("certification", "CONTINUE_ACTIVE_CERTIFICATION",
+                           "Continue the active certification in the open game.",
+                           "scripts/continue_certification.py")
+        if mode == "production" and context_path is not None:
+            result["save_route"] = route_mode(mode, process, context_path)
+        return {**result, "status": "ok", "stage": "existing_game",
+                "next_step": "The Sims 4 is already open. BetterInstincts kept your session in place.",
+                "automation_gaps": []}
+    if mode == "dev" and game.get("lab_save_route", {}).get("state") in {
+        "PRESERVE_RUNNING_CERTIFICATION_SESSION", "CERTIFICATION_PINNED_LAB_SAVE_ADVISORY",
+        "HOLD_CERTIFICATION_PIN", "HOLD_CERTIFICATION_REVIEW",
+    }:
+        return pending("certification", "CONTINUE_ACTIVE_CERTIFICATION",
+                       "Finish the existing certification before the oldest-save trial.",
+                       "scripts/launch_save_route.py")
+    if context_path is None:
+        if mode == "production":
+            return pending("production_save", "LATEST_SAVE_OBSERVER_AND_LOADER_REQUIRED",
+                           "Use Load Game to verify and open your most recently played save.",
+                           "scripts/launch_save_route.py")
+        return pending("save_context", "STARTUP_SAVE_CONTEXT_REQUIRED",
+                       "Supply the private dev context for the oldest eligible disposable save.",
+                       "scripts/launch_save_route.py")
+
+    route = route_mode(mode, process, context_path)
+    result["save_route"] = route
+    selected = route.get("candidate_save_id")
+    if mode == "production":
+        return pending("production_save", route["reason"],
+                       "Use Load Game to verify and open the most recently played save.",
+                       "scripts/launch_save_route.py")
+    if route["state"] not in {"DEV_OLDEST_DISPOSABLE_CANDIDATE", "STANDARDIZED_OLDEST_DISPOSABLE_ADVISORY"}:
+        return pending("dev_save_candidate", route["reason"], "Resolve the disposable save or household evidence.",
+                       "scripts/launch_save_route.py")
+
+    def checkpoint(step: str) -> None:
+        result["automatic_steps"].append(step)
+        write_result(receipt_path, {**receipt, **result, "stage": "dev_save_dispatch"})
+
+    try:
+        context = load_context(context_path)
+        profile_name = context.get("navigation_profile")
+        if (not isinstance(profile_name, str) or Path(profile_name).name != profile_name
+                or not profile_name.endswith(".json")):
+            raise ValueError("CALIBRATED_DEV_PROFILE_REQUIRED")
+        p = context_path.parent / profile_name
+        if p.is_symlink() or not p.is_file() or p.stat().st_size > 16384:
+            raise ValueError("CALIBRATED_DEV_PROFILE_REQUIRED")
+        cfg, _ = profile(p)
+        cfg["_profile_path"] = str(p.absolute())
+        if (cfg.get("selected_save_id") != selected or cfg.get("save_registry") != context.get("registry")
+                or cfg.get("game_version") != context.get("game_version")):
+            raise ValueError("DEV_PROFILE_DOES_NOT_BIND_OLDEST_CANDIDATE")
+        require_same_game_process(process)
+        progress("Opening the oldest eligible disposable save.")
+        navigate_startup_save(cfg, process, run_id=route["successor_run_id"],
+                              session_id=context.get("session_id"), checkpoint=checkpoint)
+        require_same_game_process(process)
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        unchanged = not result["automatic_steps"]
+        if unchanged and str(exc) == "DEV_PROFILE_DOES_NOT_BIND_OLDEST_CANDIDATE":
+            return pending("dev_calibration", str(exc),
+                           "Calibrate the chosen-save adapter for the exact oldest disposable slot.",
+                           "scripts/game_host.py")
+        return pending("dev_save_dispatch", str(exc),
+                       "Observe the current game and verify its exact save and menu before any further action.",
+                       "scripts/game_host.py")
+
+    result["save_state"] = "DEV_SAVE_PLAY_DISPATCHED"
+    return pending("save_readback", "NATIVE_SAVE_READBACK_MISSING",
+                   "Verify the selected disposable save and household in the current game.",
+                   "scripts/game_host.py")
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--plan", action="store_true", help="Check the container on any Docker host")
     mode.add_argument("--game-exe", type=Path, help="Choose an installed Sims executable")
     mode.add_argument("--emit-plan", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--mode", choices=("dev", "production"),
+                        help="Choose the oldest disposable lab or latest-played production route")
+    parser.add_argument("--save-context", type=Path, help="Private local save and calibration context")
+    parser.add_argument("--native-start", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--checkout-head", help=argparse.SUPPRESS)
     parser.add_argument("--json", action="store_true", help="Return one JSON result without prompts")
     args = parser.parse_args(argv)
+    if args.save_context and (args.plan or args.emit_plan):
+        parser.error("--save-context is for playing on the Windows host")
+    if (args.mode or args.native_start) and args.plan:
+        parser.error("--mode is for playing on the Windows host")
+    if args.checkout_head and not re.fullmatch(r"[a-f0-9]{40}", args.checkout_head):
+        parser.error("invalid verified checkout SHA")
     if args.emit_plan:
         print(json.dumps(startup_plan()))
         return 0
+    if not args.plan:
+        args.mode = args.mode or "production"
 
     def progress(message: str) -> None:
         if not args.json:
             print(message, flush=True)
 
     progress("Welcome to BetterInstincts.")
+    receipt_path, receipt = None, None
     try:
         if not args.plan and sys.platform != "win32":
             raise PlayBlocked("host", "WINDOWS_GAME_HOST_REQUIRED",
                               f"Run {WIN_COMMAND} from the checkout on the PC with The Sims 4.")
+        if args.mode:
+            from bootstrap import paths
+            from scripts.launch_receipt import begin, write_result
+
+            try:
+                receipt_path, receipt = begin(args.mode, root=paths()["locks"].parent)
+            except (OSError, ValueError) as exc:
+                reason = str(exc) if str(exc).startswith("PLAY_RECEIPT_") else "RECEIPT_DIRECTORY_UNAVAILABLE"
+                action = ("Archive older launch receipt folders outside play-receipts, then retry."
+                          if reason == "PLAY_RECEIPT_STORE_FULL_ARCHIVE_OLDER_RUNS" else
+                          "Restore access to the local receipt directory before retrying.")
+                raise PlayBlocked("receipt", reason, action) from exc
+            if args.checkout_head:
+                receipt["checkout_head"] = args.checkout_head
+                write_result(receipt_path, receipt)
         docker = shutil.which("docker")
-        if docker is None:
+        if docker is None and not args.native_start:
             raise PlayBlocked("container_build", "DOCKER_NOT_FOUND",
                               "Install or start Docker, then rerun from the BetterInstincts checkout.")
         if not args.plan and shutil.which("git") is None:
             raise PlayBlocked("toolkit_install", "GIT_NOT_FOUND",
                               "Install Git for Windows and reopen this terminal, then rerun.")
-        plan = docker_plan(docker, progress)
+        if not args.native_start:
+            plan = docker_plan(docker, progress)
         if args.plan:
             result = {"status": "ok", "stage": "container_plan", "plan": plan,
                       "next_step": f"Startup container is ready. On your Sims PC, run {WIN_COMMAND}."}
         else:
-            result = play_on_windows(args.game_exe, progress)
-    except (PlayBlocked, OSError) as exc:
-        if isinstance(exc, OSError):
-            exc = PlayBlocked("toolkit_install", "WINDOWS_STARTUP_LOCK_UNAVAILABLE",
-                              "Check whether BetterInstincts is already starting, then rerun.",
+            result = play_on_windows(args.game_exe, progress, mode=args.mode, receipt=receipt,
+                                     save_context=args.save_context, receipt_path=receipt_path)
+    except (PlayBlocked, OSError, ValueError) as exc:
+        if not isinstance(exc, PlayBlocked):
+            exc = PlayBlocked("startup", "STARTUP_PREFLIGHT_FAILED",
+                              "Check the local BetterInstincts startup details before retrying.",
                               detail=str(exc))
         result = {"status": "blocked", "stage": exc.step, "reason": exc.reason,
                   "next_step": exc.next_step}
         if exc.detail:
             result["detail"] = exc.detail
 
+    if args.mode:
+        from scripts.launch_receipt import gap, write_result
+
+        if result["status"] == "blocked" and "automation_gaps" not in result:
+            result["automation_gaps"] = [gap(result["stage"], result["reason"], result["next_step"],
+                                               "scripts/play.py")]
+        if receipt_path is not None and receipt is not None:
+            result = {**receipt, **result, "receipt": str(receipt_path)}
+            try:
+                write_result(receipt_path, result)
+            except (OSError, ValueError) as exc:
+                result["status"] = "blocked"
+                result["automation_gaps"].append(gap("receipt", "RECEIPT_WRITE_FAILED",
+                                                    "Recover the startup receipt destination.",
+                                                    "scripts/launch_receipt.py"))
+                result["stage"] = "receipt"
+                result["reason"] = "RECEIPT_WRITE_FAILED"
+                result["next_step"] = "Recover the local receipt before retrying any game action."
+                result["detail"] = str(exc)
     if args.json:
         print(json.dumps(result, sort_keys=True))
     else:
@@ -202,6 +410,8 @@ def main(argv: list[str] | None = None) -> int:
             if result.get("detail"):
                 print(result["detail"], file=sys.stderr)
         print(result["next_step"], file=sys.stdout if result["status"] == "ok" else sys.stderr)
+        if result.get("receipt"):
+            print("Launch receipt:", result["receipt"])
     return 0 if result["status"] == "ok" else 2
 
 

@@ -106,3 +106,9 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **NATIVE_RESOLUTION_PROOF** | Product-owned choice and submission matched to the same EA event, acknowledgement, and gameplay effect. |
 
 Related matrices: `contracts/behavior-matrix.v1.json`, `contracts/player-presence.v1.json`, `contracts/needs-force.v1.json`, `contracts/host-listener.v1.json`, `contracts/host-funds.v1.json`, `contracts/build-optimize.v1.json`, `contracts/household-object-force.v1.json`, `contracts/ui-chrome.v1.json`.
+
+## Startup
+
+- `GAME_PROCESS_INSTANCE` uses the current Windows PID, creation time and executable path. Launcher dispatch and save/scene observations have their own evidence.
+- `STARTUP_SAVE_TARGET` is the oldest authorized disposable save within the dev household and run, or the most recently played candidate supported by production game evidence.
+- `MISSING_REPOSITORY_LOGIC` tags required human or agent startup steps. A completed intervention attaches before, during and after references to the launch receipt.
