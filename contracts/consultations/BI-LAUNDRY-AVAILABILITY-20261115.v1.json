@@ -1,0 +1,73 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-LAUNDRY-AVAILABILITY-20261115",
+  "base_commit": "8a2b818319d3a721fdaccfff4c9d98bfee80ffa5",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "48cd3deaaebd0d021a2600502625c0010873e59d",
+  "proposed_capability": "Route a blocked Laundry Day floor pile or hamper through deterministic, capture-bound household upkeep decisions. Verify a real EA submit and outcome before claiming autonomous repair.",
+  "affected_concepts": [
+    "HOUSEHOLD",
+    "SIM",
+    "OBSERVATION",
+    "AFFORDANCE",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "NATIVE_MECHANIC_EVIDENCE",
+    "PLAYER_INTENT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md",
+    "docs/CONTROL_DISCOVERY.md",
+    "docs/HOUSEHOLD_UPKEEP.md",
+    "contracts/household-upkeep.v1.json",
+    "betterinstincts/household_upkeep.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-042",
+    "BI-ONT-043",
+    "BI-ONT-044",
+    "BI-ONT-045"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_LAUNDRY_DECISIONS_NOT_NATIVE_DISPATCH",
+  "player_save_control_impact": "Read-only household upkeep policy. Player actions and existing queue and fire gates remain authoritative. No Build/Buy, purchases, global resets, pack changes or save writes.",
+  "expected_outcome": "Rank verified washing affordances, distinguish contention and blocked access from corroborated stale registration, and propose at most one bounded recovery step. Inspect the installed game's resolver, registration and reset sources before native integration.",
+  "negative_tests": [
+    "Tooltip alone cannot prove distance or stale registration.",
+    "An eligible second washer or washtub takes priority over a reset.",
+    "Occupied, running, broken, inaccessible, missing and unverified targets are never reset.",
+    "No reset repeats for a load that already attempted it, and a pending outcome never queues another action.",
+    "Stale captures, foreign targets, player activity and existing queued laundry prevent an automated proposal."
+  ],
+  "rollback_path": "Revert policy and contract changes. No saves, appliances, EA files or Mods files are changed.",
+  "unresolved_unknowns": [
+    "Exact EA tuning IDs and source for the disabled interaction, target selection, and safe registration recovery.",
+    "Underlying cause on the user's lot and whether the installed build supports a non-destructive native refresh."
+  ],
+  "files_expected": [
+    "betterinstincts/household_upkeep.py",
+    "contracts/household-upkeep.v1.json",
+    "contracts/native-gameplay-decisions/BI-LAUNDRY-AVAILABILITY-20261115.v1.json",
+    "tests/test_household_upkeep.py",
+    "docs/HOUSEHOLD_UPKEEP.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "community_evidence": {
+    "verified_report": "https://forums.ea.com/idea/the-sims-4-bug-reports-en/ldsp-no-washing-machine-on-lot-although-there-is/4981513",
+    "reset_failed_with_mods_disabled": "https://forums.ea.com/idea/the-sims-4-bug-reports-en/ldsp-cant-do-laundry-no-available-washing-machine/13202607",
+    "manual_mod_prior_art": "https://andirz.com/mod/laundry-interactions/",
+    "adoption": "Community sources inform hypotheses only. No third-party code or assets reused."
+  }
+}
