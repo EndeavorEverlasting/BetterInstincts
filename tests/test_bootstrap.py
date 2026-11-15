@@ -41,6 +41,18 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual((dev / "sentinel.txt").read_text(), "operator work")
         self.assertFalse(self.location["use"].exists())
 
+    def test_windows_crlf_launcher_install_reuse_and_uninstall(self):
+        dev = self.location["development"]
+        dev.mkdir(parents=True)
+        with patch.object(bootstrap, "_origin_ok", return_value=True):
+            receipt = bootstrap.install(self.location, platform="win32")
+            launcher = Path(receipt["launcher"])
+            self.assertIn(b"\r\n", launcher.read_bytes())
+            self.assertEqual(bootstrap.install(self.location, platform="win32")["state"],
+                             "ALREADY_INSTALLED")
+            bootstrap.uninstall(self.location, platform="win32")
+        self.assertFalse(launcher.exists())
+
     def test_new_clean_clone_is_removed_with_managed_launcher(self):
         dev = self.location["development"]
         def fake_run(*args, **kwargs):

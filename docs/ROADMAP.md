@@ -1,3 +1,7 @@
+## 2026-11-15 — Container-backed first run
+
+Use `py -3 -m scripts.play --json` for an authorized Windows startup. The next host proof is one actual launch from a uniquely detected install and one run while that game is open, preserving the existing session. The active certification-first save route and BI-002 continue independently. See [First run](FIRST_RUN.md#play-from-the-command-line).
+
 ## 2026-11-14 — Finish current Video Gaming certification, then oldest-lab standardized saves
 
 The immediate launch priority is the **already open Video Gaming prompt** on the current Windows game/session; do not lose it by restarting or loading the oldest save. Preserve the prior vanilla/modded and Yes/No/rollback evidence. New read-only preflight `scripts.launch_save_route` and `lab_save_route` launcher receipt honor an explicitly provisioned ignored local continuity memo. If no live game, require an attested pinned lab certification save. After genuinely reviewed current native outcome/effect/rollback refs, defer to existing oldest-eligible `LAB_DISPOSABLE` ranker for new standardized trials. Never infer personal-save authority from age or auto-select a menu. See `docs/LAUNCH_CERTIFICATION_PRIORITY.md`; local P08 remains pending and PR #263 stays independent.

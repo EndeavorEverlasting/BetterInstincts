@@ -1,7 +1,3 @@
-## Local semantic autoencoder learning (opt-in research feature)
-
-BetterInstincts now includes an **offline, on-device semantic variational autoencoder** for independently verified room/route observations. The small trainable encoder and decoder learn from source-qualified 5×5×3 spatial patches, storing a bounded, private training corpus and model under the installation's user-profile runtime directory. **Cloning does not start data capture or training.** Opt in explicitly via `python -m scripts.semantic_vae enable --ack-local-data`; this only enables training from separately supplied, verified events, not a live game observer. Status, disable and exact-scope deletion are available. No screenshots or Sim/save names are stored, no central service is contacted, and decoded geometry never becomes permission to move the Sim/camera or click. This is not yet a trained or certified Sims 4 runtime integration. [Full design and commands](docs/SEMANTIC_VAE.md).
-
 # BetterInstincts
 **Smarter Sims. Better decisions. More interesting lives.**
 
@@ -9,13 +5,32 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 
 > **Status: pre-alpha, not a playable mod.** The current Python decision-policy prototype is an offline experiment; it is **not connected to the game**, and no `.package` or `.ts4script` release has been validated.
 
-## One-click first run (Windows)
+## Play from the command line
+
+On the Windows PC where you already play The Sims 4, start Docker in Linux
+container mode and run this from your BetterInstincts checkout. You'll need
+Git and Python 3.11 or newer.
+
+```powershell
+py -3 -m scripts.play
+```
+
+The launcher sets up the pre-alpha toolkit and opens The Sims 4 when it finds
+one installation. If the game is already running, keep playing in that session.
+Choose your save or start a new game in Sims. See the [first-run guide](docs/FIRST_RUN.md)
+for install selection, Docker-only checks, and the JSON command agents can use.
+
+## Download the Windows launcher
 
 **[Download the BetterInstincts launcher](Start-BetterInstincts.cmd)** or open the [download page](docs/download/index.html). Save the .cmd file and double-click it. This **pre-alpha toolkit** is not a released Sims 4 mod. The launcher requires Git and Python 3.11+ and never silently installs system tools, changes Windows services/settings, or elevates itself.
 
 The launcher clones a fresh canonical user-profile checkout, or fast-forwards only an existing clean main checkout. Dirty, unrelated or divergent checkouts are preserved. The double-click now **automatically launches a uniquely detected Sims 4 installation** when no other Sims process is running, after bounded read-only EA/Steam/Epic discovery and a Windows process check. When installation selection is ambiguous, the existing chooser opens. BetterInstincts never silently installs the game, bypasses EA/Steam authentication, reads or changes saves, or auto-clicks Resume. **Loading the most recently played save is not yet automatic**: a trustworthy identity and calibrated Windows game-menu sensor are still required; guessing would endanger other people's saves. Launch/observed PID is not Live Mode proof.
 
 **[Complete first-run guide and proof levels](docs/FIRST_RUN.md)**. Inspect an unsigned script on GitHub; do not disable Windows protections to run it. Hosting a public GitHub Pages download page and live Windows/Sims testing require separate verification.
+
+## Local semantic autoencoder learning (opt-in research feature)
+
+BetterInstincts now includes an **offline, on-device semantic variational autoencoder** for independently verified room/route observations. The small trainable encoder and decoder learn from source-qualified 5×5×3 spatial patches, storing a bounded, private training corpus and model under the installation's user-profile runtime directory. **Cloning does not start data capture or training.** Opt in explicitly via `python -m scripts.semantic_vae enable --ack-local-data`; this only enables training from separately supplied, verified events, not a live game observer. Status, disable and exact-scope deletion are available. No screenshots or Sim/save names are stored, no central service is contacted, and decoded geometry never becomes permission to move the Sim/camera or click. This is not yet a trained or certified Sims 4 runtime integration. [Full design and commands](docs/SEMANTIC_VAE.md).
 
 ## Install / uninstall the offline toolkit (Windows and Linux Mint)
 

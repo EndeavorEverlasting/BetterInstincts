@@ -23,7 +23,10 @@
     "ui": "python -m scripts.first_run gui",
     "offline": "python -m scripts.first_run plan --mode new",
     "unattended_windows": "python -m scripts.first_run auto --fallback-gui",
-    "offline_contextual": "python -m scripts.first_run plan --mode new --goal creative --preferred-skill painting --income-pressure"
+    "offline_contextual": "python -m scripts.first_run plan --mode new --goal creative --preferred-skill painting --income-pressure",
+    "container_play": "py -3 -m scripts.play",
+    "agent_play": "py -3 -m scripts.play --json",
+    "container_plan": "python -m scripts.play --plan --json"
   },
   "invariants": {
     "canonical_checkout": "%USERPROFILE%/dev/BetterInstincts",
@@ -41,7 +44,8 @@
     "process_inventory_validity": "Every Windows tasklist /FO CSV /NH row must have five columns and numeric PID; malformed/truncated inventories deny launch; independent pre-dispatch snapshots require validated identities, and untrusted post-dispatch data withholds game PID proof.",
     "first_session": "Goal/context/planned skill focus is player-supplied; six observed needs outrank optional practice, income/funds constrain paid equipment, player preferences outrank goal defaults; no claim to have observed outcomes",
     "manual_launch": "GUI and explicit CLI launch use the same bounded read-only Windows process snapshots and unique validated Game/Bin install admission as the double-click auto path; block/withhold dispatch on unknown processes and never start a duplicate Sims process",
-    "manual_installed_exe_selection": "When TS4.exe and TS4_x64.exe share one valid Game/Bin root, GUI picks x64; distinct roots stay ambiguous until player explicitly selects one"
+    "manual_installed_exe_selection": "When TS4.exe and TS4_x64.exe share one valid Game/Bin root, GUI picks x64; distinct roots stay ambiguous until player explicitly selects one",
+    "container_play": "Verify startup source identity in an offline, read-only container without host mounts before the native Windows install and game handoff. Report the first blocked stage. Existing game, save and effect authority stay with their current owners."
   },
   "limitations": [
     "Read-only bounded default install discovery may require manual path selection",
