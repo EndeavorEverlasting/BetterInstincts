@@ -6,6 +6,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from betterinstincts.experience_recall import (
     EVENT_SCHEMA, ExperienceRecallError, empty_memory, load_memory,
@@ -120,6 +121,68 @@ class ExperienceRecallTests(unittest.TestCase):
             conflict = record_new(event(result="wrong_new_result"), root=root)
             self.assertEqual(conflict["state"], "CONFLICT_REVIEW_REQUIRED")
             self.assertEqual(path.read_bytes(), raw)
+
+    def test_interleaved_distinct_writers_keep_both_new_experiences(self):
+        # Simulate a stale initial read: another agent committed NO before
+        # this writer obtained the lock. The under-lock read sees NO.
+        with tempfile.TemporaryDirectory() as base:
+            root = Path(base)
+            no = event(ctx=context(choice="no_1"), result="actor_no_opinion_marker_266814",
+                       source="earlier_no_trial")
+            record_new(no, root=root)
+            with patch("betterinstincts.experience_recall.load_memory",
+                       side_effect=[empty_memory(), load_memory(root=root)]):
+                result = record_new(event(), root=root)
+            self.assertEqual(result["state"], "NEW_EXPERIENCE_RECORDED")
+            saved = load_memory(root=root)
+            self.assertEqual(len(saved["records"]), 2)
+            self.assertEqual(recall(saved, context(choice="no_1"))["past_result"],
+                             "actor_no_opinion_marker_266814")
+            self.assertEqual(recall(saved, context())["past_result"],
+                             "actor_trait_258767_buff_263631")
+
+    def test_repeated_known_experience_does_not_take_or_erase_another_lock(self):
+        with tempfile.TemporaryDirectory() as base:
+            root = Path(base)
+            record_new(event(), root=root)
+            store = root / "dist" / "experience-recall" / "experiences.json"
+            lock = store.with_name("experiences.writer.lock")
+            lock.write_text("other writer owns this lock")
+            before = store.read_bytes(), store.stat().st_mtime_ns
+            result = record_new(event(source="new_capture"), root=root)
+            self.assertEqual(result["state"], "ALREADY_KNOWN")
+            self.assertEqual((store.read_bytes(), store.stat().st_mtime_ns), before)
+            self.assertEqual(lock.read_text(), "other writer owns this lock")
+
+    def test_busy_writer_fails_without_losing_existing_experience(self):
+        with tempfile.TemporaryDirectory() as base:
+            root = Path(base)
+            record_new(event(), root=root)
+            store = root / "dist" / "experience-recall" / "experiences.json"
+            lock = store.with_name("experiences.writer.lock")
+            lock.write_text("unrelated agent still writing")
+            before = store.read_bytes()
+            with self.assertRaisesRegex(ExperienceRecallError, "EXPERIENCE_WRITER_BUSY"):
+                record_new(event(ctx=context(choice="no_1"),
+                                 result="actor_no_opinion_marker_266814",
+                                 source="new_distinct_no"), root=root)
+            self.assertEqual(store.read_bytes(), before)
+            self.assertTrue(lock.exists())
+            self.assertEqual(len(load_memory(root=root)["records"]), 1)
+
+    def test_second_writer_recheck_deduplicates_without_rewrite(self):
+        with tempfile.TemporaryDirectory() as base:
+            root = Path(base)
+            record_new(event(), root=root)
+            store = root / "dist" / "experience-recall" / "experiences.json"
+            before = store.read_bytes(), store.stat().st_mtime_ns
+            # Initial read was stale; new record appeared before lock.
+            with patch("betterinstincts.experience_recall.load_memory",
+                       side_effect=[empty_memory(), load_memory(root=root)]):
+                result = record_new(event(source="later_same_fact"), root=root)
+            self.assertEqual(result["state"], "ALREADY_KNOWN")
+            self.assertEqual((store.read_bytes(), store.stat().st_mtime_ns), before)
+            self.assertFalse(store.with_name("experiences.writer.lock").exists())
 
     def test_symlink_and_tampered_stored_context_fail_closed(self):
         with tempfile.TemporaryDirectory() as base:
