@@ -2155,3 +2155,15 @@ Repeat Video Gaming offers reuse reviewed mechanic and rollback evidence across 
 ## 2026-11-15 — PS-0251 native responder recovery
 
 Main floor for this sprint was PR #276 (dd3e709). PR #275 owns the separate native response adapter stack. The before/during/after trace now projects the admitted dispatch boundary and independent outcome to a paged source-and-regression obligation. Bernice's assisted repeat Yes is a sanitized regression case with unknown current EA acknowledgement and effect. The first genuinely mod-owned response still needs initial native import and response observation on the exact build. BI-002 hunger is active and separate.
+
+## 2026-11-15 — Laundry Day washer availability
+
+The reported floor pile showed “No available Washing Machine” with two washers
+and two dryers present, consistent with the verified EA Forums symptom. The
+exact cause on the lot is unobserved. The existing household upkeep policy
+now ranks current, usable alternatives, distinguishes route/occupancy evidence
+from corroborated stale registration, and emits one advisory next step with
+player, queue and Servo safety checks. Regression fixtures include the four
+present appliances and a disabled tooltip with no diagnosed cause. Exact-build
+EA observation, native submit, effect verification and rollback remain open in
+[#279](https://github.com/EndeavorEverlasting/BetterInstincts/issues/279).

@@ -156,3 +156,48 @@ repair/charge, independent observed post-action meter/object deltas, no
 player queue interruption, vanilla-versus-modified comparison and rollback
 where a native mod is eventually introduced. This source-only policy is
 not an EA-native playable autonomy change and cannot complete BI-002.
+
+## Laundry Day washer availability
+
+The existing upkeep turn accepts an optional `laundry.availability` record and
+reports its decision under `laundry_policy.availability`. A snapshot with
+two washers on the lot and **No available Washing Machine** establishes
+rejected eligibility for the observed load. It leaves the underlying cause
+open. Community reports describe routing/shelving and possibly stuck appliance
+state. A nearby washer and the inventory round trip both failed in some
+reported cases. [EA Forums tracked report](https://forums.ea.com/idea/the-sims-4-bug-reports-en/ldsp-no-washing-machine-on-lot-although-there-is/4981513)
+and [mods-disabled case](https://forums.ea.com/idea/the-sims-4-bug-reports-en/ldsp-cant-do-laundry-no-available-washing-machine/13202607).
+
+- Supply the current `capture_ref`, verified `lot_ref` (`lot_verified`),
+  `actor_ref` and `load_ref` (floor pile or hamper) plus `load_state`,
+  `resolver`, `census_complete`, `refresh_attempted`, and `outcome_pending`.
+  A disabled tooltip can set `resolver=NO_AVAILABLE_WASHER`. Only verified
+  dirty/washable loads use `load_state=NEEDS_WASH`.
+- Include up to 16 appliance rows with `ref`, `kind`, `lot_ref`,
+  `capture_ref`, `state`, `access`, `wash_affordance`, `registration`,
+  and `unreserved`. Each row's reachability and affordance apply to the
+  specified actor and load. A washer with `registration=STALE_VERIFIED`
+  requires an independent exact-build native `registration_evidence_ref`.
+  Visual distance, a green light, and the disabled affordance alone are
+  insufficient.
+- Prefer an empty, idle, reachable, unreserved washer with a verified enabled
+  wash affordance, then an equivalent washtub for a human. Dryers and
+  clotheslines remain downstream of washing and subject to the existing
+  Servo/lint rules. Among equally eligible targets use stable opaque identity
+  order. Player intent, known queue ownership, capacity, urgent needs, and Servo
+  readiness still gate proposals.
+- A disabled washer can qualify for one in-place registration refresh only
+  with a complete current census, independent stale-registration evidence,
+  and no viable wash route. A running, occupied, broken, reserved, or
+  unreachable machine is ineligible. Unknown or pending state yields
+  reobservation. Recheck the exact load and washer after an attempt.
+
+The report carries `dispatch_authorized=false`. The native adapter must
+reserve the lot/load effect before submission, remember one refresh attempt
+across snapshots, and reconcile it before any further action. Native
+integration and validation on the installed exact build are open in
+[#279](https://github.com/EndeavorEverlasting/BetterInstincts/issues/279). Verify
+appliance placement, upgrades and contents, the native acknowledgement,
+actual load transfer, player priority, and rollback in an authorized disposable
+save. No Build/Buy, sell/replace, pack removal, or desktop automation is needed
+for the intended native workflow.

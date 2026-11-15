@@ -300,3 +300,10 @@ Finish the open repeat offer in the current game. Carry forward reviewed mechani
 ## PS-0251 native responder
 
 Agent-assisted gameplay effects create before, during and after traces with regression work in the existing listener. Prefer an in-game deterministic responder. The exact-build Video Gaming submit and auto-activation remain under #171 and PR #275. Reuse the historical visible Yes without another response. LabLab successor proof remains governed by the same-household and new-run checks.
+
+### Laundry Day washer availability
+
+Reuse the household upkeep decisions for blocked floor piles and hampers.
+[#279](https://github.com/EndeavorEverlasting/BetterInstincts/issues/279) tracks
+the exact-build native resolver observation and submit path, disposable-save
+A/B, and rollback. Keep this independent of the active BI-002 certification.

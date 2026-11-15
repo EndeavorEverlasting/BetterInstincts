@@ -91,6 +91,17 @@
     ],
     "proof_ceiling": "OFFLINE_SERVO_FIRE_POLICY_NOT_LIVE_FIRE_PREVENTION_PROOF"
   },
+  "laundry_availability": {
+    "input": "laundry.availability",
+    "max_appliances": 16,
+    "candidate_order": ["WASHER", "WASHTUB", "REFRESH_WASHER_REGISTRATION"],
+    "observation": "One current lot, actor and load. Each appliance row must use that exact capture and lot, and describe access, ownership/reservation, and the wash affordance for this actor and load.",
+    "stale_registration": "Requires independent exact-build native evidence of an inconsistent/stale registration. A disabled tooltip, appliance light, or visual proximity is not evidence of stale registration.",
+    "retry": "The consumer must reserve one in-flight effect before dispatch, retain one refresh attempt per lot and load across captures, and reconcile independent readback before proposing any further effect. Unknown outcomes remain pending.",
+    "acceptance": "For a real refresh, observe the same appliance, placement, upgrades and contents, then re-read eligibility and observe a native load-transfer result. Restrict effect execution to a reversible exact-build native integration.",
+    "successor_issue": 279,
+    "proof_ceiling": "OFFLINE_LAUNDRY_DECISION_NOT_NATIVE_DISPATCH"
+  },
   "safety": {
     "never_override_player_queue": true,
     "never_add_while_human_survival_critical": true,
