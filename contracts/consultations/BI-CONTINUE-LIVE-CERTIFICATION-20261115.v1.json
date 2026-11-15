@@ -65,7 +65,8 @@
     "docs/FIRST_RUN.md",
     "docs/LEDGER.md",
     "docs/ROADMAP.md",
-    "contracts/consultations/BI-CONTINUE-LIVE-CERTIFICATION-20261115.v1.json"
+    "contracts/consultations/BI-CONTINUE-LIVE-CERTIFICATION-20261115.v1.json",
+    "docs/LIVE_CERTIFICATION_HANDOFF.md"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "strategic_handoff": {
