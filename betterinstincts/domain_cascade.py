@@ -553,7 +553,11 @@ def poll_cascade(
         math_advisory = evaluate_math_portfolio(
             receipts, capture_ref=capture_ref, math_packets=math_packets)
     except MicrosystemMathError as exc:
-        raise DomainCascadeError(str(exc)) from exc
+        # Bad optional math evidence must never block a healthy established
+        # career/need/aspiration service or prevent its original receipt.
+        math_advisory = evaluate_math_portfolio(
+            receipts, capture_ref=capture_ref, math_packets=None)
+        math_advisory["invalid_packet_reason"] = str(exc)
     return {
         "schema": "betterinstincts.domain-cascade-result/v1",
         "state": "DOMAIN_CASCADE_POLLED",
