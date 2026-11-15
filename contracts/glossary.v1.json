@@ -1409,6 +1409,27 @@
         "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md",
         "docs/CAREER_DECISIONS.md"
       ]
+    },
+    "NATIVE_RESPONDER_GAP": {
+      "definition": "An expected game behavior required an agent fallback because the native route was missing, unproven or failed.",
+      "owners": [
+        "contracts/control-discovery.v1.json",
+        "docs/CONTROL_DISCOVERY.md"
+      ]
+    },
+    "FALLBACK_EFFECT_TRACE": {
+      "definition": "Before capture, admitted atomic dispatch boundary, and independent after observation for one fallback effect.",
+      "owners": [
+        "contracts/control-discovery.v1.json",
+        "docs/CONTROL_DISCOVERY.md"
+      ]
+    },
+    "NATIVE_RESOLUTION_PROOF": {
+      "definition": "BetterInstincts chose and submitted the response and matching native acknowledgement and effect were observed for the same current event.",
+      "owners": [
+        "contracts/control-discovery.v1.json",
+        "docs/CONTROL_DISCOVERY.md"
+      ]
     }
   }
 }

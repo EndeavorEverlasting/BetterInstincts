@@ -1,12 +1,12 @@
 # BetterInstincts: canonical agent entrypoint
 
-Before edits, samples or experiments, read mandatory `docs/AGENT_OPERATING_RULES.md`, `docs/ONTOLOGY.md`, `docs/DOCTRINE.md`, `docs/LEDGER.md` and `docs/PROMPT_INVOCATIONS.md`. Commit `contracts/consultations/` before behavior changes; run `scripts/semantic_preflight.py`. Detailed rules are preserved, not waived.
+Before edits, samples or experiments, read mandatory `docs/AGENT_OPERATING_RULES.md`, `docs/ONTOLOGY.md`, `docs/DOCTRINE.md`, `docs/LEDGER.md` and `docs/PROMPT_INVOCATIONS.md`. Commit `contracts/consultations/` before behavior changes; run `scripts/semantic_preflight.py`. Apply detailed rules.
 
 ## P00/P01 interaction sovereignty
 
-Ontology revision 6: human input anywhere (game, mod, keyboard, mouse, voice or other app) outranks agents. `contracts/effect-authority.v1.json` separates reviewed read-only background work from screen/game effects (15s idle, fresh dual probes before/after focus, scene/save/target recheck) and OS/unknown effects (deny). Retain interrupted intent, reconcile outcomes, never blindly replay. Never change Bluetooth, Print Screen, Escape/U, drivers, accessibility or Windows settings. Run `scripts/check_human_sovereignty.py`. Unadopted tools and mid-call actions remain unproven.
+Ontology revision 6: human input anywhere (game, mod, keyboard, mouse, voice or other app) outranks agents. `contracts/effect-authority.v1.json` separates reviewed read-only background work from screen/game effects (15s idle, fresh dual probes before/after focus, scene/save/target recheck) and OS/unknown effects (deny). Retain interrupted intent, reconcile outcomes, never blindly replay. Never change Bluetooth, Print Screen, Escape/U, drivers, accessibility or Windows settings. Run `scripts/check_human_sovereignty.py`. Unadopted tools and mid-call actions are unproven.
 
-Native gameplay: EA tuning/scripts; GUI lab-only. See detailed rules.
+Native gameplay: EA tuning/scripts; GUI lab-only. Assisted effects require discovery receipts.
 
 ## Windows peripheral authority boundary
 

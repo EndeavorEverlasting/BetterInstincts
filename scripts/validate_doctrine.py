@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 REQUIRED = (
     "AGENTS.md", "docs/DOCTRINE.md", "docs/LEDGER.md",
+    "docs/CONTROL_DISCOVERY.md", "contracts/control-discovery.v1.json",
     "docs/ROADMAP.md", "docs/PRIOR_ART.md", "docs/VALIDATION.md",
     "docs/STRATEGY.md", "plans/active/BI-001.md", "plans/active/BI-002.md",
     "docs/COMPATIBILITY.md", "docs/LIVE_CERT.md", "plans/active/BI-002.execution.v1.json",
@@ -160,7 +161,7 @@ MARKERS = (
     "docs/COMPATIBILITY.md", "docs/LIVE_CERT.md", "BLOCKED_LOCAL_GAME_ACCESS",
     "docs/HORIZON.md", "plans/horizon.v1.json", "six needs",
     "docs/SCENE_INTELLIGENCE.md", "Unknown/user saves",
-    "docs/ONTOLOGY.md", "scripts/semantic_preflight.py",
+    "docs/ONTOLOGY.md", "scripts/semantic_preflight.py", "Assisted effects require discovery receipts.",
 )
 class DoctrineViolation(Exception):
     pass
@@ -182,6 +183,22 @@ def validate(root=ROOT):
     for word in ("explicit, user-selected Mods root", "disposable", "distribution"):
         if word not in doctrine:
             raise DoctrineViolation("SAFETY_DOCTRINE_LOST:" + word)
+    native_terms = (
+        "NATIVE_RESPONDER_GAP", "FALLBACK_EFFECT_TRACE", "NATIVE_RESOLUTION_PROOF",
+    )
+    glossary = json.loads((root / "contracts/glossary.v1.json").read_text(encoding="utf-8"))
+    ontology = json.loads((root / "contracts/ontology.v1.json").read_text(encoding="utf-8"))
+    routing = (root / "docs/AGENT_OPERATING_RULES.md").read_text(encoding="utf-8")
+    glossary_doc = (root / "docs/GLOSSARY.md").read_text(encoding="utf-8")
+    for term in native_terms:
+        if (term not in doctrine or term not in glossary_doc
+                or term not in glossary["terms"] or term not in ontology["concepts"]
+                or glossary["terms"][term]["definition"] != ontology["concepts"][term]["definition"]
+                or ontology["concepts"][term]["canonical_owner"] != "contracts/control-discovery.v1.json"
+                or "contracts/control-discovery.v1.json" not in glossary["terms"][term]["owners"]):
+            raise DoctrineViolation("NATIVE_RESPONDER_TERM_DRIFT:" + term)
+    if ".agents/skills/native-responder-recovery/SKILL.md" not in routing:
+        raise DoctrineViolation("NATIVE_RESPONDER_SKILL_ROUTE_MISSING")
     # Fail closed if the deliberately pure, offline policy starts depending on game,
     # network, filesystem, or process APIs without an explicit integration gate.
     source = (root / "betterinstincts/priority.py").read_text(encoding="utf-8")

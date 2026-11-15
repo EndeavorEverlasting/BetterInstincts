@@ -101,4 +101,8 @@ Do not invent synonyms in contracts or agent chat. Add terms to the JSON contrac
 | **CATALOG_TO_HOUSEHOLD_INVENTORY** | Search→select→Backspace deposit recipe; forbids lot placement. |
 | **AOK_BLOOMER_SEARCH** | Preferred catalog keyword `AOK` for A-OK-Bloomer Vertical Garden. |
 
+| **NATIVE_RESPONDER_GAP** | An expected game behavior required an agent fallback because the native route was missing, unproved, or failed. |
+| **FALLBACK_EFFECT_TRACE** | The before capture, admitted dispatch boundary, and independently observed after state for one atomic fallback effect. |
+| **NATIVE_RESOLUTION_PROOF** | Product-owned choice and submission matched to the same EA event, acknowledgement, and gameplay effect. |
+
 Related matrices: `contracts/behavior-matrix.v1.json`, `contracts/player-presence.v1.json`, `contracts/needs-force.v1.json`, `contracts/host-listener.v1.json`, `contracts/host-funds.v1.json`, `contracts/build-optimize.v1.json`, `contracts/household-object-force.v1.json`, `contracts/ui-chrome.v1.json`.

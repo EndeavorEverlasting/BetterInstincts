@@ -52,6 +52,10 @@ continue safe offline work without launching a substitute desktop actuator.
 No waiver of any player authority, retained goal, social/fun, save or
 peripheral protection.
 
+## Native responder gaps (PS-0251)
+
+When an agent must perform an atomic gameplay effect because the expected native responder is missing, unproven or fails, classify it as `NATIVE_RESPONDER_GAP`. Load `.agents/skills/native-responder-recovery/SKILL.md` and the existing control-discovery owner. Record the intended action and live authority before dispatch, the admitted attempt during dispatch, and an independent outcome after it. Use the resulting regression work to repair the existing deterministic/native owner. Carry missing or interrupted evidence forward. Keep source, merge and native proof distinct. A player-directed choice is not a responder defect.
+
 ## Invariants
 - **Player first:** no interrupt of explicit player commands; no uncontrolled autonomy loops.
 - **Save-safe:** never edit/delete/migrate/overwrite user saves/game files. Unknown/user saves protected. Within operator-attested `LAB_DISPOSABLE` trial candidates only, prefer **oldest before newest**. Newest is more protected, not more disposable; no timestamp grants save access or changes classification. P01 age ranking is read-only/advisory in `scripts/save_candidate_priority.py`; it does not auto-load, Resume, write or delete.
