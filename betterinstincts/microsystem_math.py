@@ -176,6 +176,7 @@ def evaluate_microsystem_math(
     if (not isinstance(packet, Mapping)
             or packet.get("schema") != PACKET
             or packet.get("capture_ref") != capture_ref
+            or packet.get("microsystem_id") != domain
             or not _ref(packet.get("sim_ref"))
             or not _ref(packet.get("game_build"))
             or not _ref(packet.get("provenance_ref"))
