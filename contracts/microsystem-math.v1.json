@@ -148,6 +148,7 @@
   },
   "packet_schema": "betterinstincts.microsystem-math-packet/v1",
   "packet_required": [
+    "microsystem_id",
     "schema",
     "capture_ref",
     "sim_ref",
@@ -172,7 +173,8 @@
     "challenger_source_independent_required": true,
     "challenger_must_reprove_proposed_first_step_in_existing_bellman": true,
     "same_capture_actor_and_game_build": true,
-    "all_outputs_proposal_only": true
+    "all_outputs_proposal_only": true,
+    "same_microsystem_route": true
   },
   "arbitration": {
     "unobserved": "FALLBACK_EXISTING",
