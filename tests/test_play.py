@@ -15,7 +15,10 @@ from scripts import first_run, play
 class PlayTests(unittest.TestCase):
     def invoke(self, args, platform="win32"):
         stdout, stderr = StringIO(), StringIO()
-        with patch.object(play.sys, "platform", platform), redirect_stdout(stdout), redirect_stderr(stderr):
+        with (tempfile.TemporaryDirectory() as tmp,
+              patch.object(bootstrap, "paths", return_value={"locks": Path(tmp) / "locks"}),
+              patch.object(play.sys, "platform", platform),
+              redirect_stdout(stdout), redirect_stderr(stderr)):
             code = play.main(args)
         return code, stdout.getvalue(), stderr.getvalue()
 
@@ -111,7 +114,9 @@ class PlayTests(unittest.TestCase):
                           return_value={"status": "ok", "next_step": "Launch requested."}) as host:
             code, text, stderr = self.invoke([])
         self.assertEqual((code, stderr), (0, ""))
-        self.assertEqual(text.splitlines(), ["Welcome to BetterInstincts.", "Launch requested."])
+        self.assertEqual(text.splitlines()[:2], ["Welcome to BetterInstincts.", "Launch requested."])
+        self.assertTrue(text.splitlines()[2].startswith("Launch receipt:"))
+        self.assertEqual(host.call_args.kwargs["mode"], "production")
         container.assert_called_once()
         self.assertIsNone(host.call_args.args[0])
 

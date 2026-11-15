@@ -8,66 +8,71 @@ The launcher receipt now includes `lab_save_route` from the single ignored `dist
 
 Status: pre-alpha offline toolkit, not a certified playable Sims 4 mod. The one-click Windows entrypoint is Start-BetterInstincts.cmd. Windows and actual game proof must be independently observed; source and CI are not that proof.
 
-## Play from the command line
+## Play The Sims 4
 
-From your BetterInstincts checkout on the Windows PC with The Sims 4 installed,
-start Docker in Linux container mode. With Git and Python 3.11+ available, run:
+Double-click [Start-BetterInstincts.cmd](../Start-BetterInstincts.cmd) on your
+Windows Sims PC. It uses Git and Python 3.11+, gets the current `main` into
+`%USERPROFILE%/dev/BetterInstincts`, and opens a uniquely identified install.
+It preserves existing games and local changes. If a prerequisite, checkout
+or game selection needs attention, the launcher prints the next step.
 
-```powershell
-py -3 -m scripts.play
-```
-
-The command builds a small startup image, checks that its source fingerprints
-match the checkout, installs or reuses the user-scoped toolkit, and requests
-game launch when it finds one valid installation. Docker runs the startup check
-offline with a read-only filesystem and no host mounts. The Windows side handles
-the existing install manifest and game process check. Entering the command is
-the launch request. The game platform handles any sign-in, and you choose what
-to play at the Sims menu.
-
-If BetterInstincts needs an exact installation, pass the executable it asks for:
+From an existing checkout on the Sims PC, use the container-backed CLI
+with Docker in Linux-container mode. The container verifies source and
+the Windows host owns the game lifecycle.
 
 ```powershell
-py -3 -m scripts.play --game-exe "C:\path\to\The Sims 4\Game\Bin\TS4_x64.exe"
+py -3 -m scripts.play --json
+py -3 -m scripts.play --game-exe "C:\path\to\The Sims 4\Game\Bin\TS4_x64.exe" --json
 ```
 
-Agents with an authorized launch request start with
-`py -3 -m scripts.play --json`. Exit 0 means launch dispatched or Sims already
-running. Exit 2 includes the failed `stage`, `reason`, and `next_step`. Address
-that stage. Once dispatch is reported, observe the existing session before
-attempting any retry. The game receipt includes the existing certification-first
-save handoff when a local memo is available. A launch receipt has process-level
-evidence. Menu arrival and Live Mode require separate observation.
+For development with a calibrated private context, use either entry point.
 
-On a Docker host without Sims, `python -m scripts.play --plan --json` builds and
-runs just the container check. The [downloadable Windows launcher](../Start-BetterInstincts.cmd)
-is available for players using Git and Python directly.
+```powershell
+.\Start-BetterInstincts.cmd --dev "C:\path\to\private-dev-context.json"
+py -3 -m scripts.play --mode dev --save-context "C:\path\to\private-dev-context.json" --json
+```
 
-## Player workflow
+| Mode | Save target | What the current launcher can do |
+| --- | --- | --- |
+| Production | Most recently played save | Open Sims and identify the current process. Rank a complete supplied same-instance list with game-reported last-played times. Use the in-game Load Game list for the actual load while the production observer and loader are pending. |
+| Dev | Oldest authorized disposable save for the selected household and run | Reuse the existing calibrated lab navigator when the observed executable build, registry, exact candidate and active player-first listener agree. A pending certification takes precedence. Independent save and household readback remains required. |
 
-1. Save the plain-text launcher from the download page and double-click it. It checks for Git and Python 3.11+. It does not elevate, modify the registry, services, drivers, keyboard, OS or game files, or install system prerequisites silently.
-2. Reuse the canonical user checkout at %USERPROFILE%/dev/BetterInstincts. Missing: clone the official repository. Existing: require exact official origin, main branch, clean worktree, then fetch and fast-forward only. Never delete, reset or clobber unrelated/dirty work.
-3. Reuse the existing bootstrap.py install lifecycle and ownership manifest. The toolkit remains separate from game files, personal saves and mods.
-4. The first-run scanner checks bounded known EA/Steam/Epic paths and Steam libraryfolders metadata, with no drive crawl, save enumeration, Documents reads, telemetry, or input watchers. A deliberate double-click now attempts to launch the **single** detected game automatically, without a second Continue button. It first checks Windows tasklist read-only and avoids launching a second Sims process. If zero or multiple distinct Game/Bin installation roots appear, the original local chooser opens; `TS4.exe` and `TS4_x64.exe` inside the **same** verified Game/Bin root count as one installation (64-bit preferred). A malformed or ambiguous process inventory blocks new launch rather than assuming no game is running. Observed PIDs are process-name evidence only, not authenticated full-path identities. A failed post-launch inventory never causes an automatic second launch. A concurrent double-click launch race is not yet independently proven safe on Windows.
-5. The explicit double-click (or `python -m scripts.first_run auto`) requests only a game launch. The manual chooser buttons also remain supported. A subprocess dispatch PID may be the launcher rather than TS4; a separate read-only tasklist snapshot may observe a game PID, but neither is evidence that the game reached its menu or loaded a save.
-**2026-11-14 save-preference correction:** when choosing among already attested LAB_DISPOSABLE trial records, rank the **oldest** before more recent saves; never treat the newest as the most disposable. This is a read-only recommendation, not an automatic Load/Resume or a classification of older user saves. See [oldest-first save candidate priority](SAVE_CANDIDATE_PRIORITY.md) and `python -m scripts.save_candidate_priority`.
+The dev context uses schema `betterinstincts.startup-save-context/v1` and
+`startup_mode: dev`. Supply `run_id`, `game_version`,
+`available_households`, `registry`, `navigation_profile` and
+`session_id`. The registry and calibrated chosen-save profile are JSON
+files next to the context. The profile must use the selected slot and
+same registry. Use the existing household preference when more than one
+household is in scope. Keep these files and template images private.
+A production context uses the same schema with `startup_mode: production`
+and provides the observed `process` from the launch receipt, source
+`IN_GAME_LAST_PLAYED`, `inventory_complete: true`, `capture_ref`,
+and `candidates` containing `save_id` and UTC `last_played_utc`.
 
-6. Existing: choose Load Game, verify the save and select Play. **No latest-save auto-load is shipped yet**: current policy protects all unknown/user saves, and newest file timestamps are not reliable proof of last played game or the correct on-screen tile. Unknown Resume targets are never automatically clicked. New: choose New Game, design your Sim and place them; optional traits/aspirations by playstyle are guidance, not automatic CAS mutations.
+The launcher treats a dispatch PID and a game PID independently. A
+replacement or reused PID invalidates the in-flight action. The receipt
+records the current process identity separately from any save result.
+Exit 0 for play means it preserved an existing game. Exit 2 names the
+remaining gate, including any manual save or readback step on a new
+launch. Check `launch_state` to see whether dispatch already happened.
+Use `python -m scripts.play --plan --json` for the Docker check without
+launching Sims.
 
-EA/Steam authentication, if requested, remains the game platform's own player process. BetterInstincts never installs The Sims 4 for the player, bypasses authentication, or requires changing Windows security protections.
+## Record any intervention
 
-## Existing owners and CLI
+The launch output includes the receipt path under
+`%LOCALAPPDATA%/BetterInstincts/runtime/play-receipts`. When a person or
+agent has to complete a startup step, record it against the launch before
+continuing. Use one row per completed step with distinct local evidence
+references. Required but pending steps appear in `automation_gaps`.
 
-From the repository checkout:
+```powershell
+py -3 -m scripts.launch_receipt --receipt "C:\path\to\launch.json" --actor agent --stage production_save --step "Opened the observed latest save" --owner scripts/launch_save_route.py --before capture:before-picker --during capture:slot-selection --after capture:loaded-household
+```
 
-    python -m scripts.first_run auto
-    python -m scripts.first_run auto --fallback-gui
-    python -m scripts.first_run discover
-    python -m scripts.first_run plan --mode new --goal career
-    python -m scripts.first_run gui
-    python -m scripts.first_run launch --game-exe "C:\Program Files\EA Games\The Sims 4\Game\Bin\TS4_x64.exe" --mode existing --confirm-launch
-
-Existing bootstrap.py owns install, doctor, uninstall and the added Play The Sims 4 GUI handoff. betterinstincts/first_run.py owns read-only discovery and explicit launch policy. scripts/first_run.py owns both the chooser and the explicit auto CLI; scripts/smart_start.py owns read-only Windows process inventory, single-install/single-process admission and process dispatch evidence. contracts/launch-journey.v1.json records the state contract. scripts/game_host.py remains the calibrated local game-host owner requiring actual scene captures, screen permission and save safety, not silently invoked by this launcher.
+Each assistance entry is stored beside `launch.json` for the same run and
+keeps the missing repository owner visible. Keep gameplay evidence and
+operator-directed play separate from repository startup automation.
 
 ## Skill-aware first-session plan (new Sims)
 

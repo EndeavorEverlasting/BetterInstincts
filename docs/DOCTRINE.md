@@ -207,3 +207,12 @@ The label `Mouse` and BLE appearance `962` are *classification*, not device iden
 ## Native responder coverage
 
 A gameplay effect an agent had to perform in place of the intended responder is a `NATIVE_RESPONDER_GAP`. Each admitted fallback has a `FALLBACK_EFFECT_TRACE` with before, during and after evidence. This trace must lead to reviewed regression work and a change in the canonical deterministic/native owner where evidence admits it. A deliberate player choice stays player-owned. A visible resolution or an observer callback alone cannot grant `NATIVE_RESOLUTION_PROOF`. For that proof, bind BetterInstincts' decision and submission to the same fresh EA event, then observe its matching native acknowledgement and effect. Applicable continuation and rollback remain independent evidence. See [Control discovery](CONTROL_DISCOVERY.md).
+
+## Process-bound startup and intervention receipts
+
+On the play path, use the observed `GAME_PROCESS_INSTANCE` for guarded
+navigation. Pause on a new or ambiguous instance. Keep `STARTUP_SAVE_TARGET`,
+dispatch and loaded-save proof separate. Preserve active certification and
+existing player sessions. Record every required human or agent startup
+intervention as `MISSING_REPOSITORY_LOGIC` with an owning module and
+before/during/after evidence for actual assistance. See [First run](FIRST_RUN.md).

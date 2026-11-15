@@ -8,8 +8,11 @@ that a particular save, menu, household, or Live Mode has been reached.
 from __future__ import annotations
 
 import csv
+from dataclasses import dataclass
 import io
-from pathlib import Path
+import json
+from pathlib import Path, PureWindowsPath
+import re
 import subprocess
 import sys
 from typing import Callable
@@ -166,3 +169,66 @@ def auto_start(
         "next_step": "The Sims 4 owns loading; choose and verify the save in the game.",
         "proof_ceiling": "PROCESS_DISPATCH_AND_OPTIONAL_NAME_ONLY_NOT_SAVE_OR_LIVE_MODE",
     }
+
+
+@dataclass(frozen=True)
+class GameProcess:
+    """Identity of one observed Windows process for a single local host."""
+
+    pid: int
+    creation_ticks: str
+    executable: str
+    game_version: str | None = None
+
+
+def read_game_processes(runner: Callable[..., object] = subprocess.run) -> tuple[GameProcess, ...]:
+    """Observe exact Sims images and creation times without touching game files."""
+    if sys.platform != "win32":
+        raise FirstRunError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
+    command = (
+        "[Console]::OutputEncoding = [Text.UTF8Encoding]::new(); "
+        "$ErrorActionPreference = 'Stop'; "
+        "$rows = @(Get-CimInstance Win32_Process "
+        "-Filter \"Name='TS4_x64.exe' OR Name='TS4.exe'\" | ForEach-Object { "
+        "[pscustomobject]@{pid=$_.ProcessId; "
+        "creation_ticks=$_.CreationDate.ToUniversalTime().Ticks.ToString(); "
+        "executable=$_.ExecutablePath; "
+        "game_version=$(if ($_.ExecutablePath) { "
+        "try { [Diagnostics.FileVersionInfo]::GetVersionInfo($_.ExecutablePath).FileVersion } "
+        "catch { $null } })} }); "
+        "ConvertTo-Json -InputObject $rows -Compress"
+    )
+    try:
+        result = runner(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command],
+            capture_output=True, encoding="utf-8", check=True, timeout=8,
+        )
+        if len(result.stdout) > 32_768:
+            raise ValueError("oversized output")
+        rows = json.loads(result.stdout)
+        if not isinstance(rows, list) or len(rows) > 32:
+            raise ValueError("invalid rows")
+        observations = []
+        for row in rows:
+            pid, ticks, executable = row["pid"], row["creation_ticks"], row["executable"]
+            image = PureWindowsPath(executable)
+            if (type(pid) is not int or pid <= 0 or not isinstance(ticks, str)
+                    or not re.fullmatch(r"[1-9][0-9]{14,18}", ticks)
+                    or not image.is_absolute() or image.name.casefold() not in SIMGAME_NAMES
+                    or image.parent.name.casefold() != "bin"
+                    or image.parent.parent.name.casefold() != "game"):
+                raise ValueError("invalid process identity")
+            version = row.get("game_version")
+            if not isinstance(version, str) or not re.fullmatch(r"[0-9]+(?:\.[0-9]+){3}", version):
+                version = None
+            observations.append(GameProcess(pid, ticks, str(image).casefold(), version))
+        if len({row.pid for row in observations}) != len(observations):
+            raise ValueError("duplicate process identity")
+        return tuple(observations)
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as exc:
+        raise FirstRunError("GAME_PROCESS_IDENTITY_UNAVAILABLE") from exc
+
+
+def require_same_game_process(expected: GameProcess) -> None:
+    if read_game_processes() != (expected,):
+        raise FirstRunError("GAME_PROCESS_CHANGED_REOBSERVE_SCENE_AND_SAVE")

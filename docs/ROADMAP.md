@@ -311,3 +311,10 @@ A/B, and rollback. Keep this independent of the active BI-002 certification.
 ### Cross-microsystem native responder recovery
 
 Use the existing active listener to attribute the next authorized fallback in each observed microsystem and verify the journal's source route. Keep live outcome proof tied to the actual current action. See [Control discovery](CONTROL_DISCOVERY.md#route-fallback-work-across-microsystems).
+
+### Windows play continuation
+
+Certify the process-bound startup and dev save path on an explicitly
+authorized Windows game session, including a restart negative control. Finish
+the production latest-save observer and exact-slot load/readback in the
+existing startup owner. Keep required human/agent steps in the local receipt.

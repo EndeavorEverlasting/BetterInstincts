@@ -1,11 +1,13 @@
 """Read-only certification-first save routing for the Sims 4 launcher.
 
-The local memo is explicit, bounded, ignored by Git, and NOT an EA save.
-This module never interacts with Sims, chooses a save, or grants game input.
+The local memo is explicit, bounded, and private. This module ranks candidates
+and preserves the active certification. It never dispatches game input.
 """
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
+from datetime import datetime
 import json
 from pathlib import Path
 import re
@@ -13,9 +15,10 @@ import sys
 
 from betterinstincts.installation_profiles import HOUSEHOLD_ID, InstallationProfileError, view
 from betterinstincts.save_policy import (
-    PATCH_RE, RUN_ID_RE, SavePolicyError, decide, load_registry,
+    PATCH_RE, RUN_ID_RE, SAVE_ID_RE, SavePolicyError, decide, load_registry,
 )
-from scripts.save_candidate_priority import rank_lab_candidates
+from scripts.save_candidate_priority import UTC_SECONDS, rank_lab_candidates
+from scripts.smart_start import GameProcess
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL_CONTEXT = ROOT / "dist" / "game-host" / "active-certification.v1.json"
@@ -266,6 +269,87 @@ def route_local_context(
             next_gate="RECOVER_EXISTING_LOCAL_CERTIFICATION_EVIDENCE_NOT_RESTART_SIMS",
         )
 
+
+
+def route_mode(
+    mode: str, process: GameProcess, context_path: Path, *,
+    launch_context: Path = LOCAL_CONTEXT,
+) -> dict:
+    """Resolve data and scope for a launch on the independently observed instance."""
+    try:
+        if mode == "dev" and launch_context.exists():
+            memo = load_context(launch_context)
+            if (memo.get("schema") != CONTEXT_SCHEMA or memo.get("certification_id") != CERTIFICATION_ID
+                    or memo.get("status") != "REVIEWED_COMPLETE" or not _completion_reviewed(memo)):
+                return _held("HOLD_ACTIVE_CERTIFICATION", "CONTINUE_CURRENT_CERTIFICATION")
+        context = load_context(context_path)
+        if (context.get("schema") != "betterinstincts.startup-save-context/v1"
+                or context.get("startup_mode") != mode):
+            raise SavePolicyError("STARTUP_SAVE_CONTEXT_MODE_UNVERIFIED")
+        if mode == "production":
+            return production_candidate(process, context)
+        if mode != "dev":
+            raise SavePolicyError("UNKNOWN_STARTUP_MODE")
+        household = household_handoff(
+            tuple(context.get("available_households", [])), view()["preferred_household_id"],
+        )
+        if household["state"] != "HOUSEHOLD_RESOLVED":
+            return household
+        name = context.get("registry")
+        if not isinstance(name, str) or Path(name).name != name or not name.endswith(".json"):
+            raise SavePolicyError("STARTUP_REQUIRES_SAME_FOLDER_LAB_REGISTRY")
+        registry = load_registry(context_path.parent / name)
+        run, version = context.get("run_id"), context.get("game_version")
+        if not process.game_version or process.game_version != version:
+            return _held("HOLD_DEV_GAME_BUILD", "CURRENT_EXECUTABLE_BUILD_MUST_MATCH_CALIBRATION")
+        if launch_context.exists():
+            return route_local_context(
+                path=launch_context, registry_path=context_path.parent / name,
+                observed_game_version=version,
+                available_households=tuple(context["available_households"]),
+                successor_run_id=run,
+            )
+        ranked = rank_lab_candidates(registry, run_id=run, game_version=version,
+                                     household_id=household["household_id"])
+        if ranked["state"] != "PRIORITY_ADVISORY_ONLY":
+            return _held("HOLD_DEV_SAVE", ranked["state"])
+        return _held("DEV_OLDEST_DISPOSABLE_CANDIDATE", ranked["ranking_rule"],
+                     candidate_save_id=ranked["ranked_candidates"][0]["save_id"],
+                     household_id=household["household_id"], successor_run_id=run)
+    except (InstallationProfileError, KeyError, OSError, TypeError, ValueError) as exc:
+        return _held("HOLD_SAVE_CONTEXT", str(exc))
+
+
+def production_candidate(process: GameProcess, context: dict) -> dict:
+    """Rank one supplied complete in-game last-played inventory for this instance."""
+    if (context.get("process") != asdict(process)
+            or context.get("source") != "IN_GAME_LAST_PLAYED"
+            or context.get("inventory_complete") is not True
+            or not _valid_ref(context.get("capture_ref"))):
+        return _held("HOLD_PRODUCTION_RECENCY", "CURRENT_IN_GAME_LAST_PLAYED_INVENTORY_REQUIRED")
+    candidates = context.get("candidates")
+    if not isinstance(candidates, list) or not candidates or len(candidates) > 150:
+        return _held("HOLD_PRODUCTION_RECENCY", "LAST_PLAYED_INVENTORY_EMPTY_OR_INVALID")
+    ranked = []
+    ids = set()
+    for row in candidates:
+        if not isinstance(row, dict):
+            return _held("HOLD_PRODUCTION_RECENCY", "LAST_PLAYED_IDENTITY_UNVERIFIED")
+        save_id, played = row.get("save_id"), row.get("last_played_utc")
+        if (type(save_id) is not str or not SAVE_ID_RE.fullmatch(save_id) or save_id in ids
+                or type(played) is not str or not UTC_SECONDS.fullmatch(played)):
+            return _held("HOLD_PRODUCTION_RECENCY", "LAST_PLAYED_IDENTITY_UNVERIFIED")
+        try:
+            timestamp = datetime.strptime(played, "%Y-%m-%dT%H:%M:%SZ")
+        except ValueError:
+            return _held("HOLD_PRODUCTION_RECENCY", "LAST_PLAYED_TIME_UNVERIFIED")
+        ids.add(save_id)
+        ranked.append((timestamp, save_id))
+    ranked.sort(reverse=True)
+    if len(ranked) > 1 and ranked[0][0] == ranked[1][0]:
+        return _held("HOLD_PRODUCTION_RECENCY", "LATEST_PLAYED_SAVE_AMBIGUOUS")
+    return _held("PRODUCTION_LATEST_PLAYED_CANDIDATE", "CALIBRATED_PRODUCTION_LOAD_REQUIRED",
+                 candidate_save_id=ranked[0][1], evidence_ref=context["capture_ref"])
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
