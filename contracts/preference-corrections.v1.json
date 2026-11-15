@@ -1,0 +1,117 @@
+{
+  "schema": "betterinstincts.preference-corrections/v1",
+  "scope": "Existing Sim preferences, reached from Live Mode. CAS targets are semantic selectors; the game host supplies current client hitboxes.",
+  "families": {
+    "likes_dislikes": {
+      "label": "Likes and Dislikes",
+      "target": "cas.preferences.likes_dislikes",
+      "categories": {
+        "activity": [
+          "Activity",
+          "Hobbies & Skills"
+        ],
+        "color": [
+          "Color"
+        ],
+        "conversation_topics": [
+          "Conversation Topics"
+        ],
+        "decor": [
+          "Décor"
+        ],
+        "fashion": [
+          "Fashion"
+        ],
+        "sim_characteristics": [
+          "Sim Characteristics"
+        ],
+        "music_genre": [
+          "Music Genre"
+        ]
+      },
+      "values": [
+        "neutral",
+        "like",
+        "dislike"
+      ]
+    },
+    "attraction": {
+      "label": "Turn-Ons and Turn-Offs",
+      "target": "cas.preferences.attraction",
+      "categories": {
+        "way_of_life": [
+          "Way of Life"
+        ],
+        "characteristics": [
+          "Characteristics"
+        ],
+        "fashion": [
+          "Fashion"
+        ],
+        "hair_color": [
+          "Hair Color"
+        ],
+        "outfit_color": [
+          "Outfit Color"
+        ],
+        "romance_styles": [
+          "Romance Styles"
+        ]
+      },
+      "values": [
+        "neutral",
+        "turn_on",
+        "turn_off"
+      ],
+      "pack": "Lovestruck"
+    }
+  },
+  "activity_weights": {
+    "needs": 0.4,
+    "net_income": 0.25,
+    "skill": 0.2,
+    "career": 0.15
+  },
+  "min_independent_pairs": 3,
+  "max_pairs": 24,
+  "prior_sample_count": 3,
+  "min_conservative_gain": 0.15,
+  "proof_ceiling": "POLICY_AND_NAVIGATION_PLAN_ONLY",
+  "screenshot_reference": {
+    "viewport": [
+      1919,
+      1079
+    ],
+    "anchors": {
+      "cas.preferences": [
+        172,
+        220
+      ],
+      "cas.preferences.likes_dislikes": [
+        95,
+        310
+      ],
+      "cas.preferences.attraction": [
+        165,
+        310
+      ],
+      "cas.likes_dislikes.category.activity": [
+        77,
+        443
+      ],
+      "cas.likes_dislikes.category.fashion": [
+        195,
+        545
+      ],
+      "cas.confirm_existing_household_preferences": [
+        1883,
+        1049
+      ]
+    },
+    "attraction_category_layout": {
+      "way_of_life": "first row, first tile",
+      "fashion": "second row, third tile"
+    },
+    "usage": "Reference only. Match the family and control in a fresh capture; pack or viewport changes may move tiles. Never use the screenshots as execution calibration."
+  }
+}

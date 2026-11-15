@@ -10,6 +10,66 @@ Use the existing recipient snapshot and the same continuation actions to score b
 
 PRs #261, #262, #263, #275 and #278 supplied the source and review history. The repeat-offer Yes is recorded as agent-assisted visual resolution. Keep it closed. Issue #171 tracks the remaining Windows gate. Inspect the installed exact-build EA response path and verify the mod's game-side adapter registration. Then use the next naturally occurring eligible offer to observe one product-owned choice and submit, matching native acknowledgement and effects. The separate LabLab successor review can proceed without waiting for that new offer.
 
+## Correct an existing preference through Simology
+
+In Live Mode, select the Sim and press **Y** or click the **Simology**
+head icon in the bottom-right tray. In the panel, find **Preferences** /
+**Likes and Dislikes** and use that section's **Enter Create a Sim**.
+The Relationship Preferences section can have a button with the same
+label. In the existing household's Create-a-Sim (CAS) screen, select the
+target Sim and open **Select Preferences** via the faces beneath the
+Aspiration/Traits area. If CAS opens on that panel already, continue from
+the visible state.
+
+| Branch | Control | Categories relevant to this workflow |
+| --- | --- | --- |
+| **Likes and Dislikes** | Smiling and frowning faces | **Activity** opens **Hobbies & Skills**, including Robotics, Programming, and Video Gaming. **Fashion** has its own like/dislike controls. |
+| **Turn-Ons and Turn-Offs** | Magnet | **Way of Life** is the first tile. Attraction **Fashion** is the right tile on the second row of the observed layout. These are sibling categories. Lovestruck availability must be observed. |
+
+After selecting the exact category and row, clear the old selection if
+needed. Reobserve neutral before selecting the replacement. Confirm with
+the bottom-right checkmark only after verifying the target preference and
+the absence of other staged edits. Reobserve the same Sim's preference in
+Live Mode after confirmation. The route identifies the current semantic
+target from the latest capture. Reference coordinates are in
+`contracts/preference-corrections.v1.json`; the live host must verify a
+fresh control or hitbox before using either channel. If the row is
+off-screen, scroll its category list and recapture the row.
+
+### How BetterInstincts evaluates a correction
+
+`host_listener.tick` reads an optional `preference_correction` packet
+with `preference_correction_opt_in: true` and
+`preference_game_build_confirmed: true`. The packet carries
+`request_ref`, session/PID/build/save/Sim identities, `pref_revision`,
+`family`, `category`, `topic_id`, the current and desired values, and
+a current game observation. The listener checks the active session,
+foreground PID, captured game build, capture ID and real clock. A staged
+edit or its final readback also needs a separate preceding input receipt
+bound to the same request and control. If the previous dispatch is
+unresolved, refresh the game state before retrying.
+
+- **Mistake.** Supply an explicit operator correction or an attributable
+  automation mistake receipt with the previous and intended values.
+- **Repeated behavior.** Supply at least three independent matched
+  comparisons for the same Sim and catalogued activity. Every pair needs
+  distinct outcome receipts, stable availability, and evidence that the
+  stored preference caused the difference. The starting weights are 40%
+  needs, 25% net income, 20% skill, and 15% career on normalized outcomes.
+  A decline in needs vetoes the change. The mean weighted gain is reduced
+  by one standard error and shrunk toward zero for small samples. The
+  resulting score must reach 0.15. These starting thresholds need live
+  calibration. Player-owned choices and attraction preferences have no
+  automated productivity correction.
+
+This clone-ready path emits one semantic plan or a reason to hold. The
+Windows game observation producer, actual preference write, and
+disposable-household gameplay certification are tracked with the native
+integration work in [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+The existing earned preference offer path remains separate.
+
+Focused check: `python -m unittest tests.test_preference_corrections -v`.
+
 ## What the user gets
 
 When a Sim earns skill levels or a preference prompt appears, an agent can evaluate the proposed **like** or **dislike** without automatically clicking the first answer. The versioned catalog starts with practical preferences (Cooking, Gardening, Handiness, Programming, Robotics, Fabrication, Fitness, Painting, Writing, Charisma), while Mischief/Music require a matching Sim goal. A positive like is ordinarily useful; a dislike of a useful skill is ordinarily rejected. A dislike can be beneficial when it supports that Sim's declared goals (e.g., avoid Mischief). The catalog is a *heuristic*, not hardwired Sim personality truth. Player direction always wins.

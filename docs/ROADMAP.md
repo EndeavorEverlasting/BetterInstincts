@@ -330,3 +330,11 @@ craft-and-sale candidates from recipe-specific observed net economics.
 See [Horizon](HORIZON.md#robotics-craft-and-sale-economics) for receipt
 attribution, the reserve constraint, and pending exact-build native proof
 under #171.
+
+## Stored preference corrections
+
+The host listener evaluates corrections and identifies the next Simology
+or CAS target. Next live gate: bind the exact-build observation and mutation
+ports, then verify an edit, independent Live readback, and the established
+earned-offer flow as a protected control. See
+[correcting an existing preference](PREFERENCE_PROMPTS.md#correct-an-existing-preference-through-simology).
