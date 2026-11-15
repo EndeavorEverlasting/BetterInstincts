@@ -81,11 +81,6 @@ def annotate_lab_save_handoff(receipt: dict) -> dict:
 
 def requested_start(game_exe: Path | None = None, *, identify_process: bool = False) -> dict:
     """Start a detected or explicitly selected game through the same admission."""
-    if not identify_process:
-        if game_exe is None:
-            return annotate_lab_save_handoff(auto_start())
-        return annotate_lab_save_handoff(auto_start(discoverer=lambda: [select_game([], game_exe)]))
-
     observations = ()
 
     def inspect() -> dict[int, str]:
@@ -93,7 +88,7 @@ def requested_start(game_exe: Path | None = None, *, identify_process: bool = Fa
         observations = read_game_processes()
         return {row.pid: PureWindowsPath(row.executable).name for row in observations}
 
-    options = {"process_reader": inspect}
+    options = {"process_reader": inspect} if identify_process else {}
     if game_exe is not None:
         options["discoverer"] = lambda: [select_game([], game_exe)]
     receipt = auto_start(**options)

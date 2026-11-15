@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from contextlib import contextmanager
+from dataclasses import asdict
 import json
 from pathlib import Path
 import shutil
@@ -14,7 +15,7 @@ from betterinstincts.experience_recall import ExperienceRecallError, load_memory
 from betterinstincts.first_run import FirstRunError
 from betterinstincts.installation_profiles import InstallationProfileError, view
 from scripts.launch_save_route import LOCAL_CONTEXT, PATCH_RE, load_context, route_local_context
-from scripts.smart_start import read_sims_processes
+from scripts.smart_start import read_game_processes
 
 ROOT = Path(__file__).resolve().parents[1]
 HANDOFF = ROOT / "docs" / "LIVE_CERTIFICATION_HANDOFF.md"
@@ -74,34 +75,37 @@ def historical_preference(root: Path, memo_path: Path) -> dict:
 
 def build_handoff(root: Path = ROOT) -> str:
     try:
-        processes = read_sims_processes()
+        processes = read_game_processes()
     except FirstRunError as error:
         process = {"state": "PROCESS_INVENTORY_UNAVAILABLE", "reason": str(error)}
     else:
-        process = {"state": "LOCAL_PROCESS_NAMES_OBSERVED", "pids": sorted(processes)}
+        process = {
+            "state": "LOCAL_GAME_PROCESS_IDENTITIES_OBSERVED",
+            "instances": [asdict(instance) for instance in processes],
+        }
 
     memo = root / LOCAL_CONTEXT.relative_to(ROOT)
-    pids = process.get("pids")
-    if pids is None or len(pids) > 1:
+    instances = process.get("instances")
+    if instances is None or len(instances) > 1:
         memo_route = "HOLD_PROCESS_IDENTITY"
     else:
-        memo_route = route_local_context(path=memo, game_running_observed=len(pids) == 1)["state"]
+        memo_route = route_local_context(path=memo, game_running_observed=len(instances) == 1)["state"]
     next_step = "OBSERVE_CURRENT_SESSION_AND_RECOVER_EXISTING_RECEIPTS"
     try:
         repeat = load_context(memo).get("repeat_offer")
     except (OSError, ValueError):
         repeat = None
-    if (pids is not None and len(pids) == 1 and isinstance(repeat, dict)
+    if (instances is not None and len(instances) == 1 and isinstance(repeat, dict)
             and repeat.get("resolution_observed") is True):
         next_step = "RECONCILE_RECORDED_RESOLUTION_AND_PREFLIGHT_SUCCESSOR_HOUSEHOLD_SAVE"
-    # This is an observation of process names and a memo, not a fresh dialog,
-    # exact build, checked save, permission to focus, or current native result.
+    # The process observation and memo grant no screen effect or current dialog proof.
     summary = {"process_sample": process, "memo_route": memo_route,
                "historical_preference": historical_preference(root, memo),
                "next_step": next_step}
     return ("The operator launched the BetterInstincts live-certification handoff. "
             "Execute the scoped task below in this evidence checkout. "
-            "Local startup observation (recheck before any live action): "
+            "Compare the current PID, creation time and executable with this startup observation before any live action. "
+            "A replacement process requires fresh save and scene observation. Startup observation: "
             + json.dumps(summary, sort_keys=True) + "\n\n"
             + HANDOFF.read_text(encoding="utf-8"))
 

@@ -12,7 +12,10 @@ import shutil
 import subprocess
 import sys
 import time
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from scripts.smart_start import GameProcess
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN = {
@@ -161,7 +164,7 @@ def play_on_windows(
 
 
 
-def observe_launched_process(game: dict):
+def observe_launched_process(game: dict) -> GameProcess:
     """Poll only a just-dispatched executable. Never adopt a replacement PID."""
     from scripts.smart_start import read_game_processes
 
