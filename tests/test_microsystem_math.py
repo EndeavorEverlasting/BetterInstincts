@@ -228,6 +228,17 @@ class MicrosystemMathTests(unittest.TestCase):
         self.assertEqual(yielded["math_umbrella"]["invalid_packet_reason"],
                          "REGISTRY_MISSING")
 
+        # Invalid *loaded* contract shape raises KeyError in the optional
+        # model, but the baseline cascade still works and keeps player yield.
+        with patch("betterinstincts.microsystem_math.load_contract",
+                   return_value={"schema": "corrupt", "microsystems": {},
+                                 "cascade_domains": []}):
+            structurally_bad = poll_cascade(
+                SIX, capture_ref=CAPTURE, funds=800)
+        self.assertEqual(structurally_bad["receipts"], baseline["receipts"])
+        self.assertTrue(structurally_bad["math_umbrella"]["invalid_packet_reason"])
+        self.assertFalse(structurally_bad["math_umbrella"]["execute_allowed"])
+
     def test_player_directed_cascade_retains_yield(self):
         result = poll_cascade(SIX, player_directed=True, funds=1000)
         self.assertEqual(result["state"], "DOMAIN_CASCADE_YIELDED")
