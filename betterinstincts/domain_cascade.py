@@ -10,6 +10,9 @@ from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
 from betterinstincts.budget_eval import BudgetEvalError, evaluate as evaluate_budget
+from betterinstincts.microsystem_math import (
+    MicrosystemMathError, evaluate_math_portfolio, fallback_math_portfolio,
+)
 from betterinstincts.navigating_needs import (
     NavigatingNeedsError,
     evaluate_navigating_needs_turn,
@@ -93,6 +96,24 @@ def _receipt(domain: str, *, gate: str, action: str, payload: Optional[dict] = N
     }
 
 
+def _safe_math_portfolio(
+    receipts: Sequence[Mapping], *, capture_ref: str,
+    math_packets: Optional[Mapping[str, Mapping]] = None,
+    player_active: bool = False,
+) -> dict:
+    """Keep domain-owner receipts even if the optional math registry fails."""
+    try:
+        return evaluate_math_portfolio(
+            receipts, capture_ref=capture_ref, math_packets=math_packets,
+            player_active=player_active)
+    except (MicrosystemMathError, KeyError, TypeError, ValueError, OSError) as exc:
+        # A corrupt optional registry or model must never take down the
+        # already-computed needs/career/aspiration receipts.
+        return fallback_math_portfolio(
+            receipts, capture_ref=capture_ref, reason=str(exc),
+            player_active=player_active)
+
+
 def poll_cascade(
     needs: Mapping[str, float],
     *,
@@ -156,6 +177,7 @@ def poll_cascade(
     houseplants_available: bool = False,
     prior_balance_state: Optional[Mapping[str, object]] = None,
     capture_ref: str = "capture:domain-cascade",
+    math_packets: Optional[Mapping[str, Mapping]] = None,
 ) -> dict:
     """Poll domains in cascade order; each receipt may cite prior receipts."""
     cfg = load_contract()
@@ -182,6 +204,8 @@ def poll_cascade(
             "prior_receipts_visible": True,
             "proof_ceiling": cfg["proof_ceiling"],
             "architecture": "DOMAIN_CASCADE_POLL_BUS",
+            "math_umbrella": _safe_math_portfolio(
+                receipts, capture_ref=capture_ref, player_active=True),
         }
 
     # --- needs (+ navigating advisory + LB) ---
@@ -540,6 +564,11 @@ def poll_cascade(
         )
 
     primary = next((r for r in receipts if r["domain"] == "needs"), receipts[0])
+    # Route every observed domain to the common optional mathematical layer.
+    # Math has no authority to mutate the legacy cascade receipts or the
+    # existing needs/education/career/economy prioritization.
+    math_advisory = _safe_math_portfolio(
+        receipts, capture_ref=capture_ref, math_packets=math_packets)
     return {
         "schema": "betterinstincts.domain-cascade-result/v1",
         "state": "DOMAIN_CASCADE_POLLED",
@@ -553,4 +582,5 @@ def poll_cascade(
         "proof_ceiling": cfg["proof_ceiling"],
         "architecture": "DOMAIN_CASCADE_POLL_BUS",
         "anti_patterns": list(cfg.get("anti_patterns") or []),
+        "math_umbrella": math_advisory,
     }

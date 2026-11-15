@@ -1,3 +1,7 @@
+## 2026-11-14 — Bellman/KKT/Gaussian umbrella across microsystems, incumbent as fallback
+
+**Implemented repository architecture (source pending independent check):** reusable adapter `betterinstincts/microsystem_math.py` composes existing PS0245 semi-Markov Bellman + continuous Lagrange/KKT allocation and PS0241 holdout-qualified Gaussian process for source-supported per-domain packets. `domain_cascade` routes all seven existing domains and preserves original receipts in fallback; 14 additional catalogued owners have the same direct extension seam. Open candidate architectures are permitted to outperform through independently reviewed holdout and hard Bellman feasibility, with explicit source-only proof and no always-on agent. Full owner/usage/limitations: [docs/MICROSYSTEM_MATH.md](MICROSYSTEM_MATH.md). Next live gate: exact-patch native effect adaptation and measured per-domain real-game utility, player interruption, resource cost and rollback; no new generic startup/research sprint required to preserve the source-level improvement.
+
 ## 2026-11-14 — Oldest-first disposable-save trial priority (P00/P01)
 
 Governance/correctness: only *eligible lab-created disposable* save receipts may be ranked, **oldest first**; more recent and all user/unknown/continuation saves remain protected. Implemented as source-only P00 doctrine plus P01 guarded read-only ranking/CI canary, not Sims game startup, save manipulation or runtime permission. Parent BI-002 native/game verification remains independently open. See `docs/SAVE_CANDIDATE_PRIORITY.md`.

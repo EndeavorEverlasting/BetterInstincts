@@ -212,11 +212,12 @@
       ]
     },
     "DOMAIN_CASCADE": {
-      "definition": "Ordered poll bus that emits cascading receipts across needs (with LB), budget, career, skills/whims, and relationships on each observation — not a background daemon.",
+      "definition": "Ordered domain receipts preserved while shared Bellman/KKT/Gaussian math is optionally evaluated; missing evidence keeps existing microsystem fallback.",
       "owners": [
         "contracts/domain-cascade.v1.json",
         "docs/DOMAIN_CASCADE.md",
-        "betterinstincts/domain_cascade.py"
+        "betterinstincts/domain_cascade.py",
+        "docs/MICROSYSTEM_MATH.md"
       ]
     },
     "CAREER_SERVICES_TANDEM": {

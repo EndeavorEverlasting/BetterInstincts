@@ -1,3 +1,7 @@
+## 2026-11-14 — Mathematically composable microsystems, no second poll bus
+
+`poll_cascade(..., math_packets=None)` now invokes `microsystem_math.evaluate_math_portfolio` on each observed domain receipt. It adds only a separate `math_umbrella` receipt; the ordered `receipts`, original gates and priorities remain owned by the domain services. The seven cascade microsystems are always routed, even with no packet, in which case `FALLBACK_EXISTING` is explicit and cheap. Full fresh packets can invoke the existing Bellman finite-horizon planner, KKT time allocator and chronology-qualified Gaussian duration comparator; missing/unsafe evidence never delays the existing player-first behavior. Refer to [MICROSYSTEM_MATH.md](MICROSYSTEM_MATH.md) for the complete bounded schema, 21-service registry, extension/superiority comparison and native proof ceiling. This is a mathematical advisory, not an automatically installed in-game actuation loop.
+
 # Domain cascade — poll & cascading receipts (P124 + trifecta)
 
 Machine owner: [`contracts/domain-cascade.v1.json`](../contracts/domain-cascade.v1.json).

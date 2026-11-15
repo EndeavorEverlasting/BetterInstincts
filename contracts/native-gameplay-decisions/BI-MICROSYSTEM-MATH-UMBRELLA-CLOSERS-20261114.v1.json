@@ -1,0 +1,24 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-MICROSYSTEM-MATH-UMBRELLA-CLOSERS-20261114",
+  "purpose": "Optional shared mathematical advisory for existing microsystems; legacy fallback preserved and no native Sims effect or external screen control.",
+  "files": [
+    {
+      "path": "betterinstincts/microsystem_math.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure shared portfolio uses existing Bellman, Lagrange/KKT and Gaussian GP methods, with evidence checks and no runtime effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/domain_cascade.py",
+      "route": "POLICY_ONLY",
+      "reason": "Existing domain poller adds non-mutating mathematical advisory beside legacy receipts; player-first and queue policies unchanged.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "GITHUB_OFFLINE_MATHEMATICAL_ADVISORY_NOT_NATIVE_GAMEPLAY",
+  "next_gate": "Separate actual Sims embedded mod activation and real observed per-microsystem reward, duration calibration, no player interruptions and reversible A/B/rollback under exact-version P08."
+}
