@@ -1,3 +1,7 @@
+## Certification-first existing-game handoff (2026-11-14)
+
+The launcher receipt now includes `lab_save_route` from the single ignored `dist/game-host/active-certification.v1.json` memo (when provisioned). **Finish the already-open Video Gaming "IT BEGINS..." certification first**: an already-running game must be inspected and preserved, not restarted or displaced by the oldest disposable save. Historical vanilla/modded and Yes/No trials are not erased or silently replayed. Without a running game, only the exact previously authorized pinned lab save may be advised; never pick an old personal/unknown save by date. After the *current* certification has genuinely reviewed outcome/effect/rollback receipts, ordinary standardized trials may use `scripts.save_candidate_priority`'s oldest eligible lab-disposable advisory. Nothing auto-selects or resumes. Exact CLI, private memo schema and proof boundaries: [LAUNCH_CERTIFICATION_PRIORITY.md](LAUNCH_CERTIFICATION_PRIORITY.md).
+
 # BetterInstincts: download, bootstrap and play
 
 Status: pre-alpha offline toolkit, not a certified playable Sims 4 mod. The one-click Windows entrypoint is Start-BetterInstincts.cmd. Windows and actual game proof must be independently observed; source and CI are not that proof.
