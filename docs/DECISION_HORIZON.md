@@ -1,3 +1,7 @@
+## 2026-11-14 — Reusable Bellman/KKT/GP umbrella (Closers)
+
+This is the canonical **Bellman + Lagrange/KKT** numerical owner, not a one-off ecological solver. The shared registry-backed adapter `betterinstincts/microsystem_math.py` and [MICROSYSTEM_MATH.md](MICROSYSTEM_MATH.md) now call these exact methods across registered microsystems, together with the existing `ecology_forecast.compare_duration_models` Gaussian process. No duplicate math engine is introduced. Every active `domain_cascade` receipt receives a source-only mathematical advisory *or explicit original-owner fallback*, and 14 additional microsystems are registered for optional scoped calls. This mathematical forecast does not override actor, player, inventory, deadline, hard need-floor or queued-effect gates. Independent alternative planners are welcome through the same holdout/feasibility comparison and may supersede the PS0245 candidate while keeping this method as fallback. Native-game execution remains unproven.
+
 # PS-0245 — Bellman and KKT planning slice
 
 **Source owner:** \`betterinstincts/decision_horizon.py\`. **Status:** offline policy prototype; **not a native Sims mod**, queue actuator, installed script, or observed gameplay change.
