@@ -68,6 +68,31 @@ class PreferenceResponseTests(unittest.TestCase):
         self.assertEqual(self.port.respond(enabled=True)["state"], "RECONCILE_EXISTING_ATTEMPT")
         self.adapter.submit_if_current.assert_called_once()
 
+    def test_lost_submit_result_reconciles_only_with_the_reserved_attempt(self):
+        self.adapter.submit_if_current.side_effect = OSError("reply lost")
+        self.assertEqual(self.port.respond(enabled=True)["state"], "DISPATCH_OUTCOME_UNKNOWN")
+        request = self.adapter.submit_if_current.call_args.args[0]
+        binding = assess_native_offer_binding(self.native)
+        response, effect, resumed = receipts("YES", binding)
+        dialog = binding["dialog_ref"]
+        resumed["activity_ref"] = self.native["originating_interaction_ref"]
+        response["dispatch_ref"] = "native:readback"
+        for wrong in (None, "bi-attempt:another-offer"):
+            response["attempt_ref"] = wrong
+            self.assertEqual(self.port.reconcile(dialog, response, effect, resumed)["state"],
+                             "BETTERINSTINCTS_RESPONSE_UNATTRIBUTED")
+        response["attempt_ref"] = request["attempt_ref"]
+        stale = dict(response, captured_at_epoch_ms=binding["captured_at_epoch_ms"])
+        self.assertEqual(self.port.reconcile(dialog, stale, effect, resumed)["reason"],
+                         "MATCHED_NATIVE_RESPONSE_ACK_REQUIRED")
+        self.assertEqual(self.port.reconcile(dialog, response, effect, resumed)["state"],
+                         "OUTCOME_RECEIPTS_SCHEMA_MATCH")
+        response["dispatch_ref"] = "native:unrelated"
+        self.assertEqual(self.port.reconcile(dialog, response, effect, resumed)["state"],
+                         "BETTERINSTINCTS_RESPONSE_UNATTRIBUTED")
+        self.assertEqual(self.port.respond(enabled=True)["state"], "RECONCILE_EXISTING_ATTEMPT")
+        self.adapter.submit_if_current.assert_called_once()
+
     def test_missing_or_refusing_native_adapter_has_an_explicit_recovery(self):
         self.assertEqual(PreferenceResponsePort().respond(enabled=True)["state"], "NATIVE_ADAPTER_REQUIRED")
         self.adapter.submit_if_current.return_value = {"state": "REFUSED"}
