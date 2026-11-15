@@ -1,0 +1,23 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/robotics_income.py",
+      "route": "POLICY_ONLY",
+      "reason": "Calculates attributable recipe economics and household reserve eligibility with no game or file effects.",
+      "game_effect_claim": "NONE",
+      "game_build": null,
+      "ea_source_ref": null,
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/autonomy_moderation.py",
+      "route": "POLICY_ONLY",
+      "reason": "Consumes the optional receipt report for native candidate ranking and exposes read-only advice.",
+      "game_effect_claim": "NONE",
+      "game_build": null,
+      "ea_source_ref": null,
+      "successor_issue": 171
+    }
+  ]
+}

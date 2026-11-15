@@ -218,6 +218,23 @@ def _native_yield(row: Mapping) -> float | None:
     return round(sum(values.values()), 6)
 
 
+def _alternative_yield(candidate: Mapping, robotics_offers: Mapping,
+                       robotics_ids: set[str]) -> float | None:
+    action_id = candidate.get("action_id")
+    measured = robotics_offers.get(action_id) if _ref(action_id) else None
+    known_robotics = _ref(action_id) and action_id in robotics_ids
+    if measured is None and not known_robotics and candidate.get("income_kind") != "ROBOTICS_CRAFT_SALE":
+        return _native_yield(candidate)
+    if measured is None or measured["state"] != "POSITIVE_NET_CANDIDATE":
+        return None
+    # Keep existing domain proof checks, replacing only claimed income utility.
+    if _native_yield(candidate) is None:
+        return None
+    return _native_yield({**candidate, "yield_by_domain": {
+        **candidate["yield_by_domain"], "income": measured["income_yield"],
+    }})
+
+
 def evaluate_native_household_autonomy(
     observation: Mapping, *, now: float | None = None,
 ) -> dict:
@@ -254,6 +271,21 @@ def evaluate_native_household_autonomy(
         "desktop_input_allowed": False,
         "proof_ceiling": "OFFLINE_NATIVE_POLICY_NOT_EA_HOOK_OR_GAME_EFFECT",
     }
+    robotics_offers = {}
+    if "robotics_income" in observation and fresh and observation.get("player_active") is False:
+        from betterinstincts.robotics_income import RoboticsIncomeError, evaluate_robotics_income
+
+        try:
+            report = evaluate_robotics_income(
+                observation["robotics_income"], household_ref=observation["household_ref"],
+                game_build=observation["game_build"], save_ref=observation.get("save_ref"),
+                capture_ref=observation["capture_ref"],
+            )
+        except RoboticsIncomeError as exc:
+            raise AutonomyModerationError(str(exc)) from exc
+        result["robotics_income"] = report
+        robotics_offers = report["offers"]
+    robotics_ids = {action for offers in robotics_offers.values() for action in offers}
     seen = set()
     for sim in sims:
         if not isinstance(sim, Mapping) or not _ref(sim.get("sim_ref")):
@@ -293,9 +325,10 @@ def evaluate_native_household_autonomy(
             decision["state"] = "PLAYER_QUEUE_PROTECTED"
             continue
         active_goal = sim.get("active_goal")
+        sim_offers = robotics_offers.get(sim_id, {})
         goal_score = None
         if isinstance(active_goal, Mapping) and active_goal.get("active") is True:
-            goal_score = _native_yield(active_goal)
+            goal_score = _alternative_yield(active_goal, sim_offers, robotics_ids)
             if not _ref(active_goal.get("action_id")) or goal_score is None:
                 decision["state"] = "GOAL_EVIDENCE_UNKNOWN"
                 continue
@@ -303,7 +336,7 @@ def evaluate_native_household_autonomy(
         for candidate in alternatives:
             if not isinstance(candidate, Mapping):
                 raise AutonomyModerationError("NATIVE_ALTERNATIVE_INVALID")
-            score = _native_yield(candidate)
+            score = _alternative_yield(candidate, sim_offers, robotics_ids)
             if (score is not None and score > 0
                     and candidate.get("available") is True
                     and candidate.get("native_affordance_verified") is True

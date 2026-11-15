@@ -96,3 +96,54 @@ or copied EA asset can substitute for that local-game proof. The local
 agent should use the existing `plans/active/BI-HORIZON-EXECUTION-WIDE-20261110.v1.json`
 and `plans/active/BI-002.execution.v1.json` owners; the two live
 certification gates are independently open.
+
+## Robotics craft and sale economics
+
+Robotics income is scoped to a recipe and sale channel within the current
+household, save and game build. The RC quadcopter menu observation showed
+a §50 fee, five Robot Salvage Parts, one Mechanism, and one Computer Chip.
+It leaves sale proceeds and sourcing costs unknown. There is no canned
+profit table for toys or Utili-Bots.
+
+The intake is the optional `robotics_income` field of
+`evaluate_native_household_autonomy`. The sidecar schema is
+`betterinstincts.robotics-income/v1`, with the matching
+`household_ref`, `save_ref`, `game_build`, current `capture_ref`,
+`available_funds` and `funds_proof_ref`:
+
+- `offers` holds current, actor-bound quotes. Each has a native
+  `action_id`, `sim_ref`, `recipe_ref`, `sale_channel`, `capture_ref`
+  and `quote_ref`; fee and additional costs; and the ingredient
+  quantities and per-material costs. Purchased quantities cite price
+  evidence. Owned quantities cite current pocket stock and a defensible
+  unit cost basis (including component inputs if crafted). A known zero
+  cost needs evidence too.
+- `receipts` carries up to 32 recent supplied native attempts, with the
+  same household/save/build and exact recipe and channel. A sold or failed
+  attempt requires unique action, attempt, debit/consumption and terminal
+  proof references, causal attribution, actual fee and additional costs,
+  consumed quantity and cost basis per ingredient, and active Sim
+  minutes. A sale additionally links the exact crafted item to payment.
+  An open attempt is reconciled by its matching terminal receipt. A
+  terminal failure records any incurred costs and zero proceeds. The
+  producer must attach independently observed refs, including evidence
+  for zero debits or quantities. Duplicate, conflicting and foreign events
+  cannot create extra earnings. Unrelated ledger events and cheat proceeds
+  stay outside the sample.
+
+Realized profit is the sum of attributed proceeds minus recorded fees,
+consumed materials, and other costs. Projected profit per attempt is the
+smaller of observed average net and average proceeds minus the full
+current unit cost. Projected net per active Sim-hour is that conservative
+total divided by the sum of active Sim-hours for the sample. The candidate
+must have positive net and fit the current household reserve using only
+upfront outlay. Missing costs or sales evidence, unresolved effects,
+break-even, or loss hold the robotics income candidate. This is advisory
+and does not cancel an in-progress craft, count household recovery as
+earnings or post money.
+
+P08 under [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171)
+owns installation and wiring to independently verified exact-build native
+EA transaction events and persistence. Prove one attributable source →
+craft → sale and a nonpositive or failed case without replaying an open
+effect. The offline tests use supplied synthetic observations.

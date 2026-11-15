@@ -322,3 +322,11 @@ existing startup owner. Keep required human/agent steps in the local receipt.
 The [Windows game-host handoff](../plans/active/BI-GAME-HOST.HANDOFF.md#launcher-acceptance-and-process-continuity)
 owns the dev runtime proof and routes production to
 [#201](https://github.com/EndeavorEverlasting/BetterInstincts/issues/201).
+
+## 2026-11-15 — BI-004 robotics net income
+
+The existing native household evaluator can rank toys and utility-bot
+craft-and-sale candidates from recipe-specific observed net economics.
+See [Horizon](HORIZON.md#robotics-craft-and-sale-economics) for receipt
+attribution, the reserve constraint, and pending exact-build native proof
+under #171.

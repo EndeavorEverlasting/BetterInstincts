@@ -671,3 +671,16 @@ MoonWake's Closers followed P83 → P03 → P141 → P124 → P04 for the startu
 thread. PR #284 and its workflow were independently verified. The older
 calibrated lab entry now uses the observed game process, and the canonical
 game-host handoff retains Windows proof and production latest-save work.
+
+## 2026-11-15 — MoonWake Sixth Gear: robotics net income
+
+Canonical MoonWake `38af133979f52599d34c2ba5515aa674a193228e` resolves
+`P141 → P95 → P82 → P08 → P07 → P124`. The walkthrough ran on the scoped
+robotics income objective. P141 selected causally joined native receipts
+over a static price table, HUD balance deltas, and desktop actuation.
+P95/P82 built and refined executable cases for paid and owned inputs,
+failure losses, revenue attribution, recipe isolation and the reserve.
+P08 remains blocked on an exact-build native game receipt producer.
+P07/P124 integrate one optional read-only policy with the existing native
+household evaluator and budget owner. The BI-004 proof ceiling and
+runtime follow-up are in [Horizon](HORIZON.md#robotics-craft-and-sale-economics).
