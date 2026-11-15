@@ -56,10 +56,10 @@ def step(ident="garden", value=15):
     }
 
 
-def packet(**changes):
+def packet(*, domain="career", **changes):
     data = {
         "schema": "betterinstincts.microsystem-math-packet/v1",
-        "capture_ref": CAPTURE, "sim_ref": "sim:one",
+        "microsystem_id": domain, "capture_ref": CAPTURE, "sim_ref": "sim:one",
         "game_build": BUILD, "provenance_ref": "native:observed",
         "bellman": {"snapshot": snapshot(), "steps": [step()], "routes": []},
         "kkt": {
