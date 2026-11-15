@@ -1,3 +1,15 @@
+## 2026-11-15 — Receipt-backed robotics income
+
+The workstation fee is one input. For one recipe and sales channel, the
+native household policy compares attributable proceeds against the observed
+craft fee, cost of ingredients actually consumed, and recorded additional
+costs. Failed attempts count at zero proceeds. The conservative forecast
+uses the smaller of realized margin and repriced margin, then ranks
+eligible income by net simoleons per active Sim-hour. The existing
+§1,000,000 reserve applies to upfront cash. This is BI-004 policy work.
+See [the robotics receipt contract](HORIZON.md#robotics-craft-and-sale-economics)
+and [native integration #171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+
 ## 2026-11-15 — Container-backed BetterInstincts Play
 
 `scripts.play` adds one foreground command for players and a JSON receipt for agents. The container checks startup source identity before the existing Windows installer and game-process admission run. Exact-byte launcher verification resolves the reproduced Windows install-retry failure. The first-run path preserves the active game and the certification-first save handoff. The Docker smoke and offline suite cover the shipped source. Actual Windows process, game-menu and Live Mode evidence remain separate. See [First run](FIRST_RUN.md#play-from-the-command-line).
