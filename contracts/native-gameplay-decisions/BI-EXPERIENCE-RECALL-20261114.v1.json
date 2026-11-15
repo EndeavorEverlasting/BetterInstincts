@@ -1,17 +1,23 @@
 {
   "schema": "betterinstincts.native-gameplay-decision/v1",
   "id": "BI-EXPERIENCE-RECALL-20261114",
-  "purpose": "Classify reusable past-experience memory as offline policy only, never an EA game mutation or desktop actuation.",
+  "purpose": "Classify the existing historical experience store and its concurrent-writer preservation repair as POLICY_ONLY: no EA game effect or desktop agent input, and no new native listener.",
   "files": [
     {
       "path": "betterinstincts/experience_recall.py",
       "route": "POLICY_ONLY",
-      "reason": "Pure bounded prior-experience receipt ledger and replay-safe recall that only returns advisory historical evidence without executing Sims gameplay.",
+      "reason": "Pure bounded historical experience ledger; concurrent new-only inserts use local exclusive storage lock with fresh readback, while prior known results stay read-only; no game or input control.",
       "game_effect_claim": "NONE",
       "successor_issue": 171
     }
   ],
   "autonomy_runtime": false,
   "proof_ceiling": "OFFLINE_HISTORICAL_EVIDENCE_INDEX_ONLY",
-  "next_gate": "Use existing local game receipts to write distinct previously observed cases once, re-read them without game restart, and leave BI-002 live gameplay certification independent."
+  "next_gate": "Use existing local game receipts to write distinct previously observed cases once, re-read them without game restart, and leave BI-002 live gameplay certification independent.",
+  "concurrent_writer_review": {
+    "consultation": "contracts/consultations/BI-EXPERIENCE-RECALL-WRITER-20261114.v1.json",
+    "scope": "same explicitly selected repository dist experience index",
+    "behavior": "exclusive new-write lock plus read-under-lock; busy writer holds without overwrite",
+    "proof": "OFFLINE_TEST_AND_CI_NOT_GAME_OR_HOST_ADOPTION"
+  }
 }

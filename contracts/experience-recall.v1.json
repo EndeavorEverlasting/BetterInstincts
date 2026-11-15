@@ -54,5 +54,15 @@
     "game_native": "No native EA script hook, game startup, mod activation, game I/O, screenshot polling or desktop actuator in this index."
   },
   "independent_parent": "BI-002 hunger 5 vanilla + 5 modified/rollback remains separately live-certified.",
-  "proof_ceiling": "OFFLINE_SEMANTIC_RECALL_NOT_NATIVE_GAMEPLAY_CERTIFICATION"
+  "proof_ceiling": "OFFLINE_SEMANTIC_RECALL_NOT_NATIVE_GAMEPLAY_CERTIFICATION",
+  "concurrency": {
+    "scope": "EXPLICIT_REPO_LOCAL_EXPERIENCE_INDEX_ONLY",
+    "fast_path": "ALREADY_KNOWN_AND_CONFLICT_USE_READ_ONLY_NO_WRITER_LOCK",
+    "new_write": "OS_EXCLUSIVE_CREATE_OF_EXPERIENCES.WRITER.LOCK_THEN_LATEST_STATE_RECHECK",
+    "atomic_commit": "OS_REPLACE_OF_FSYNCED_TEMP_UNDER_LOCK",
+    "busy_lock": "EXPERIENCE_WRITER_BUSY_FAIL_CLOSED_RETRY_ONLY_AFTER_OWNER_RELEASE",
+    "stale_lock": "DO_NOT_STEAL_OR_DELETE_FOREIGN_LOCK_AUTOMATICALLY",
+    "loss_prevention": "NEVER_OVERWRITE_NEW_FACT_COMMITTED_BY_ANOTHER_AGENT",
+    "proof": "OFFLINE_TESTED_NO_WINDOWS_GAME_INTERACTION"
+  }
 }

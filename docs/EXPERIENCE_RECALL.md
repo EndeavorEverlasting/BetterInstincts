@@ -41,6 +41,16 @@ Use \`LOCAL_ARTIFACT_VERIFIED\` only after actually reading local receipts and \
 
 This seam **complements** existing \`chance_event_research.remember\`, \`judgment_learning\` and \`object_action_catalog\`; it does not replace their trained policies, reviewed decisions or native-game receipt gates. The independent **BI-002 hunger five vanilla/five modified/rollback** certification is not closed by remembered preference facts.
 
+## Multi-agent write safety (MoonWake Closers, 2026-11-14)
+
+The previous first-version store used an atomic file replacement but did not serialize the read-modify-write transaction. Two agents could both read the same index, independently append distinct new facts, and the later replace could discard the earlier experience. P83/P03 found this before treating cross-agent continuity as closed.
+
+The same canonical memory owner now performs a **read-only first lookup**: familiar facts and conflicts do not create storage, a writer lock, or a new training example. A genuinely new experience obtains an exclusive, bounded local writer lock, **re-reads** the latest index, and only then writes its combined contents by atomic replacement. A second agent that races with an active writer receives `EXPERIENCE_WRITER_BUSY` without altering either record; it may retry the explicit command after the writer finishes. An existing crash/foreign lock is never automatically stolen or destroyed.
+
+This is **not** background automation or a native mod hook. Existing operator-provided and artifact-proved preference outcomes are eligible historical records; a screenshot of the presently open dialog is not evidence that the current instance has been answered. The caller must still load the memory from the intended canonical checkout. Separate worktrees have distinct ignored `dist/` directories and are **not** silently synchronized by this feature. An agent switching worktrees must deliberately use the same canonical checkout/store or explicitly reconcile records; do not pretend memory was seeded just because the source module exists on `main`.
+
+The follow-on agent should first consult `recall` and existing `dist/live-cert/bi002-20261114` trial/rollback receipts on the Windows host. Only absent, newly observed distinct experiences deserve `remember`. Do not launch a new game or repeat a completed vanilla/mod trial to make an already-known experience readable.
+
 ## Proof and verification
 
 \`\`\`sh
