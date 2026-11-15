@@ -291,3 +291,7 @@ the available household IDs and resolve the saved choice or ask once if there
 are several. Rank and host-verify the oldest eligible disposable slot for that
 household. Reliability on normal recent saves needs its own local certification
 before becoming a startup default.
+
+## Repeat preference continuity
+
+Finish the open repeat offer in the current game. Carry forward reviewed mechanic evidence and use the household-scoped route once the repeat resolves.

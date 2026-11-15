@@ -53,6 +53,28 @@ class ContinueCertificationTests(unittest.TestCase):
         self.assertIn("NEW_EXPERIENCE", payload)
         self.assertIn('"current_outcome_proven": false', payload)
 
+    def test_different_observer_profiles_survive_default_profile_and_new_pid(self):
+        from betterinstincts.experience_recall import EVENT_SCHEMA, record_new
+
+        for choice, profile, result in (("yes_0", "old_yes", "trait"),
+                                        ("no_1", "old_no", "marker"),
+                                        ("yes_0", "wrong_build", "unrelated")):
+            context = dict(domain="preference_offer", mechanic_id="ea_265965", choice_id=choice,
+                           installation_profile=profile,
+                           game_build="1.121.361.1021" if profile == "wrong_build" else "1.121.361.1020")
+            record_new({"schema": EVENT_SCHEMA, "context": context, "result": result,
+                        "evidence_level": "NATIVE_RECEIPT", "evidence_ref": "capture:" + profile,
+                        "observed_at_ms": 1000}, root=self.root)
+        with patch.object(handoff, "view", return_value={
+            "profile_id": "default", "preferred_household_id": None,
+        }), patch.object(handoff, "read_sims_processes", return_value={20704: "TS4_x64.exe"}):
+            payload = handoff.build_handoff(self.root)
+        self.assertIn('"pids": [20704]', payload)
+        self.assertIn('"installation_profile": "old_yes"', payload)
+        self.assertIn('"installation_profile": "old_no"', payload)
+        self.assertNotIn("wrong_build", payload)
+        self.assertNotIn("NEW_EXPERIENCE", payload)
+
     def test_existing_memo_is_used_in_the_evidence_checkout_without_writes(self):
         memo = self.root / handoff.LOCAL_CONTEXT.relative_to(handoff.ROOT)
         memo.parent.mkdir(parents=True)

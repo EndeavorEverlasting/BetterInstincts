@@ -94,6 +94,34 @@ class CertificationFirstRouteTests(unittest.TestCase):
         self.assertEqual(route_launch(item, lab_registry=saves, **args)["state"],
                          "HOLD_STANDARDIZED_LAB_RANKING")
 
+    def test_repeat_uses_reviewed_prior_proof_and_fresh_resolution_without_pid_match(self):
+        item = completed()
+        household = "household:a"
+        item["household_id"] = item["completion_review"]["household_id"] = household
+        item["repeat_offer"] = {
+            "household_id": household, "game_version": PATCH,
+            "same_mechanic_reviewed": True, "resolution_observed": True,
+            "offer_capture_ref": "capture:repeat-offer",
+            "resolution_capture_ref": "capture:repeat-resolution",
+            "review_ref": "capture:repeat-review",
+        }
+        saves = register({**lab(1, 1), "authorized_run_id": "next-run",
+                          "household_id": household, "household_binding_confirmed": True})
+        args = dict(game_running_observed=True, available_households=(household,),
+                    observed_game_version=PATCH, successor_run_id="next-run", lab_registry=saves)
+        result = route_launch(item, **args)
+        self.assertEqual(result["candidate_save_id"], "slot:lab-001")
+        self.assertEqual(result["certification_basis"],
+                         "HISTORICAL_CERTIFICATION_REUSED_REPEAT_OFFER_RESOLVED")
+        self.assertIsNone(result["control_permit"])
+        self.assertEqual(route_launch(item, lab_registry=saves)["state"], "HOLD_CERTIFICATION_HOUSEHOLD")
+        for field, value in (("resolution_observed", False), ("household_id", "household:b"),
+                             ("resolution_capture_ref", item["completion_review"]["native_effect_ref"])):
+            with self.subTest(field=field):
+                changed = copy.deepcopy(item)
+                changed["repeat_offer"][field] = value
+                self.assertEqual(route_launch(changed, **args)["state"], "HOLD_REPEAT_OFFER_RESOLUTION")
+
     def test_existing_game_keeps_current_dialog_even_when_oldest_lab_exists(self):
         result = route_launch(
             context(), game_running_observed=True,

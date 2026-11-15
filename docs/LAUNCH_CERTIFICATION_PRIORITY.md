@@ -22,7 +22,7 @@ The first question at **every agent/game launch** is whether the *same current S
 
 If Sims is not running, recover the **exact previously authorized lab save pinned for this certification**, using its independent run/capture/game-build binding; this may be a newer lab continuation. The oldest-first preference **must not override the pinned active certification**. If no pinned lab identity is supported, HOLD and recover local session evidence rather than selecting a convenient old or personal save. The launcher still does not automatically navigate menus or select a save.
 
-Only after **current offer outcome + native effect + rollback + independent review** have distinct capture references and a real reviewer has marked the certification `REVIEWED_COMPLETE` should the next standardized trial use the existing `scripts.save_candidate_priority` ranker. It considers only current-run operator-attested `LAB_DISPOSABLE` saves, oldest creation timestamp first; missing/tied chronology abstains. No age/date is authorization; all `USER_PROTECTED`, `UNKNOWN_PROTECTED` and `LAB_CONTINUATION` entries remain excluded from standardized disposable ranking.
+For a new mechanic, independent review of **offer outcome + native effect + rollback** precedes the existing `scripts.save_candidate_priority` ranker. For a repeat of a reviewed mechanic, see the [repeat-offer path](#reuse-reviewed-evidence-on-a-repeat-offer). It considers only current-run operator-attested `LAB_DISPOSABLE` saves, oldest creation timestamp first; missing/tied chronology abstains. No age/date is authorization; all `USER_PROTECTED`, `UNKNOWN_PROTECTED` and `LAB_CONTINUATION` entries remain excluded from standardized disposable ranking.
 
 ## Cross-chat local continuity record
 
@@ -108,3 +108,29 @@ player's choice through `scripts.instance_settings choose-household`.
 The oldest eligible slot is returned as `candidate_save_id`. The live adapter
 still owns exact menu observation and effect admission. Legacy unscoped ranking
 is advisory and cannot be used to automate this transition.
+
+
+## Reuse reviewed evidence on a repeat offer
+
+Keep the original, reviewed `completion_review` references and the verified
+certification household in the private memo. A repeat needs its own offer and
+resolution captures and review, but historical native evidence does not need
+to come from the current game process. Use the existing same-household and
+distinct successor-run arguments after recording:
+
+```json
+"repeat_offer": {
+  "household_id": "household:OBSERVED_ID",
+  "game_version": "1.121.361.1020",
+  "same_mechanic_reviewed": true,
+  "resolution_observed": true,
+  "offer_capture_ref": "capture:actual-repeat-offer",
+  "resolution_capture_ref": "capture:actual-repeat-resolution",
+  "review_ref": "capture:actual-repeat-review"
+}
+```
+
+The review must establish that the prior proof applies. Use new references
+for the repeat. The route reports
+`HISTORICAL_CERTIFICATION_REUSED_REPEAT_OFFER_RESOLVED` and treats the oldest
+eligible save as a candidate for the existing host loader.

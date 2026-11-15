@@ -36,19 +36,37 @@ def historical_preference(root: Path, memo_path: Path) -> dict:
         # This is the documented historical build, not an observation of the live process.
         if not isinstance(build, str) or not PATCH_RE.fullmatch(build):
             build = "1.121.361.1020"
-        historical_profile = memo.get("historical_installation_profile", profile["profile_id"])
-        if historical_profile not in profile["profiles"]:
-            return {"state": "RECOVER_EXISTING_HISTORICAL_RECEIPTS",
-                    "reason": "HISTORICAL_PROFILE_UNVERIFIED"}
         memory = load_memory(root=root)
-        results = {
-            choice: recall(memory, {
-                "domain": "preference_offer", "game_build": build,
-                "installation_profile": historical_profile,
-                "mechanic_id": "ea_265965", "choice_id": choice,
-            }) for choice in ("yes_0", "no_1")
-        }
-        return {"historical_game_build": build, "installation_profile": historical_profile,
+        choices = ("yes_0", "no_1")
+        scope = {"domain": "preference_offer", "game_build": build, "mechanic_id": "ea_265965"}
+        contexts = [row["context"] for row in memory["records"].values()
+                    if all(row["context"][key] == value for key, value in scope.items())
+                    and row["context"]["choice_id"] in choices]
+        results = {}
+        for choice in choices:
+            matching = sorted(
+                (context for context in contexts if context["choice_id"] == choice),
+                key=lambda context: context["installation_profile"],
+            )
+            if not matching:
+                matching = [{**scope, "choice_id": choice,
+                             "installation_profile": profile["profile_id"]}]
+            recalled = [{
+                **recall(memory, context),
+                "installation_profile": context["installation_profile"],
+            } for context in matching]
+            if len(recalled) == 1:
+                results[choice] = recalled[0]
+            else:
+                conflicting = len({record["past_result"] for record in recalled}) > 1
+                results[choice] = {
+                    "state": "HISTORICAL_PROFILE_CONFLICT" if conflicting else "PAST_EXPERIENCE_RECALLED",
+                    "historical_research_needed": False,
+                    "current_outcome_proven": False,
+                    "control_permit": None,
+                    "profile_receipts": recalled,
+                }
+        return {"historical_game_build": build, "installation_profile": profile["profile_id"],
                 "preferred_household_id": profile["preferred_household_id"], "results": results}
     except (ExperienceRecallError, InstallationProfileError, OSError, ValueError) as error:
         return {"state": "RECOVER_EXISTING_HISTORICAL_RECEIPTS", "reason": str(error)}
@@ -145,7 +163,8 @@ def main() -> int:
             return 0
         result = dispatch(args.checkout)
         if result:
-            print(f"Local Codex exited with code {result}. Check the output above.",
+            print(f"Local Codex exited with code {result}. Keep the game open. "
+                  "Continue in the active local agent using the same --checkout with --print-handoff.",
                   file=sys.stderr)
         return result
     except (HandoffError, OSError) as error:
