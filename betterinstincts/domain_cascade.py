@@ -106,7 +106,9 @@ def _safe_math_portfolio(
         return evaluate_math_portfolio(
             receipts, capture_ref=capture_ref, math_packets=math_packets,
             player_active=player_active)
-    except MicrosystemMathError as exc:
+    except (MicrosystemMathError, KeyError, TypeError, ValueError, OSError) as exc:
+        # A corrupt optional registry or model must never take down the
+        # already-computed needs/career/aspiration receipts.
         return fallback_math_portfolio(
             receipts, capture_ref=capture_ref, reason=str(exc),
             player_active=player_active)
