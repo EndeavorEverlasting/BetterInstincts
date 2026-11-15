@@ -8,6 +8,7 @@ from __future__ import annotations
 import copy
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from betterinstincts.decision_horizon import optimize_activity_plan
 from betterinstincts.domain_cascade import poll_cascade
@@ -206,6 +207,26 @@ class MicrosystemMathTests(unittest.TestCase):
                 self.assertEqual(result["math_umbrella"]["domain_results"][0]["state"],
                                  "FALLBACK_EXISTING")
                 self.assertIn("invalid_packet_reason", result["math_umbrella"])
+
+    def test_unavailable_math_registry_cannot_suppress_legacy_service_or_player_yield(self):
+        baseline = poll_cascade(SIX, capture_ref=CAPTURE, funds=800)
+        with patch("betterinstincts.microsystem_math.load_contract",
+                   side_effect=MicrosystemMathError("REGISTRY_MISSING")):
+            observed = poll_cascade(SIX, capture_ref=CAPTURE, funds=800)
+            yielded = poll_cascade(SIX, capture_ref=CAPTURE,
+                                   funds=800, player_directed=True)
+        self.assertEqual(observed["receipts"], baseline["receipts"])
+        self.assertEqual(observed["gate"], baseline["gate"])
+        self.assertEqual(observed["math_umbrella"]["invalid_packet_reason"],
+                         "REGISTRY_MISSING")
+        self.assertTrue(all(
+            x["state"] == "FALLBACK_EXISTING"
+            for x in observed["math_umbrella"]["domain_results"]))
+        self.assertFalse(observed["math_umbrella"]["execute_allowed"])
+        self.assertEqual(yielded["gate"], "PLAYER_FIRST_OR_BUSY")
+        self.assertEqual(yielded["math_umbrella"]["state"], "PLAYER_YIELD")
+        self.assertEqual(yielded["math_umbrella"]["invalid_packet_reason"],
+                         "REGISTRY_MISSING")
 
     def test_player_directed_cascade_retains_yield(self):
         result = poll_cascade(SIX, player_directed=True, funds=1000)
