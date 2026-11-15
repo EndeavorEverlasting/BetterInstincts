@@ -1,0 +1,12 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/household_upkeep.py",
+      "route": "POLICY_ONLY",
+      "reason": "Read-only decisions for an observed load and current same-lot appliance candidates, including bounded refresh eligibility.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 279
+    }
+  ]
+}

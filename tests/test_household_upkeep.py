@@ -573,6 +573,136 @@ class ServoFireLaundryPolicyTests(unittest.TestCase):
         self.assertIn("Lint-Less", fire["dryer_policy"]["lint_less_upgrade"])
 
 
+def laundry_appliance(ref="washer:1", **changes):
+    row = {
+        "ref": ref, "kind": "WASHER", "lot_ref": "lot:1", "capture_ref": CAP,
+        "state": "EMPTY_IDLE", "access": "REACHABLE", "wash_affordance": "DISABLED",
+        "registration": "UNKNOWN", "unreserved": True,
+    }
+    return {**row, **changes}
+
+
+def laundry_observation(*appliances, **changes):
+    return {"availability": {
+        "actor_ref": "sim:helper", "load_ref": "pile:1", "lot_ref": "lot:1",
+        "capture_ref": CAP, "lot_verified": True, "load_state": "NEEDS_WASH",
+        "resolver": "NO_AVAILABLE_WASHER", "census_complete": True,
+        "outcome_pending": False, "refresh_attempted": False,
+        "appliances": list(appliances),
+        **changes,
+    }}
+
+
+class LaundryAvailabilityTests(unittest.TestCase):
+    def recovery(self, *appliances, options=None, visit=None, **gates):
+        snapshot = obs(servos=[], laundry=laundry_observation(*appliances, **(options or {})))
+        snapshot.update(visit or {})
+        result = evaluate(snapshot, **gates)["laundry_policy"]["availability"]
+        self.assertFalse(result["dispatch_authorized"])
+        return result
+
+    def test_two_washers_two_dryers_and_tooltip_alone_are_inconclusive(self):
+        result = self.recovery(
+            laundry_appliance(), laundry_appliance("washer:2"),
+            laundry_appliance("dryer:1", kind="DRYER"),
+            laundry_appliance("dryer:2", kind="DRYER"),
+        )
+        self.assertEqual(result["state"], "WASHER_UNAVAILABILITY_UNEXPLAINED")
+        self.assertNotIn("action", result)
+
+    def test_uses_working_second_washer_before_washtub_or_refresh(self):
+        stale = laundry_appliance(registration="STALE_VERIFIED", registration_evidence_ref="ea:trace")
+        washer = laundry_appliance("washer:2", wash_affordance="ENABLED")
+        tub = laundry_appliance("tub:1", kind="WASHTUB", wash_affordance="ENABLED")
+        for rows in ((stale, washer, tub), (tub, stale, washer)):
+            with self.subTest(rows=rows):
+                result = self.recovery(*rows)
+                self.assertEqual((result["action"], result["target_ref"]),
+                                 ("ADD_TO_WASHER", "washer:2"))
+        self.assertEqual(self.recovery(stale, tub)["action"], "WASH_IN_WASHTUB")
+
+    def test_only_corroborated_reachable_empty_idle_washer_can_be_refreshed(self):
+        stale = laundry_appliance(registration="STALE_VERIFIED", registration_evidence_ref="ea:trace")
+        result = self.recovery(stale)
+        self.assertEqual(result["action"], "REFRESH_WASHER_REGISTRATION")
+        self.assertEqual(result["target_ref"], stale["ref"])
+        for changes, state in [
+            ({"access": "BLOCKED"}, "WASHER_ACCESS_BLOCKED"),
+            ({"state": "RUNNING"}, "WAIT_FOR_WASHER"),
+            ({"state": "OCCUPIED"}, "WAIT_FOR_WASHER"),
+            ({"unreserved": False}, "WAIT_FOR_WASHER"),
+            ({"state": "BROKEN"}, "WASHERS_NEED_REPAIR"),
+            ({"access": "UNKNOWN"}, "WASHER_UNAVAILABILITY_UNEXPLAINED"),
+            ({"state": "UNKNOWN"}, "WASHER_UNAVAILABILITY_UNEXPLAINED"),
+            ({"lot_ref": "lot:other"}, "REOBSERVE_APPLIANCE_SCOPE"),
+            ({"capture_ref": "capture:old"}, "REOBSERVE_APPLIANCE_SCOPE"),
+        ]:
+            with self.subTest(changes=changes):
+                result = self.recovery({**stale, **changes})
+                self.assertEqual(result["state"], state)
+                self.assertNotIn("action", result)
+        with self.assertRaisesRegex(HouseholdUpkeepError, "REGISTRATION_EVIDENCE_REQUIRED"):
+            self.recovery({**stale, "registration_evidence_ref": CAP})
+
+    def test_hold_and_reconcile_preserve_the_current_load(self):
+        stale = laundry_appliance(registration="STALE_VERIFIED", registration_evidence_ref="ea:trace")
+        for options, state in [
+            ({"outcome_pending": True}, "RECONCILE_PENDING_OUTCOME"),
+            ({"refresh_attempted": True}, "NATIVE_REFRESH_ALREADY_ATTEMPTED"),
+            ({"census_complete": False}, "REOBSERVE_INCOMPLETE_CENSUS"),
+            ({"resolver": "UNKNOWN"}, "WASHER_UNAVAILABILITY_UNEXPLAINED"),
+            ({"load_state": "OTHER"}, "WASH_NOT_ESTABLISHED"),
+            ({"capture_ref": "capture:old"}, "REOBSERVE_STALE"),
+            ({"lot_verified": False}, "REOBSERVE_STALE"),
+        ]:
+            with self.subTest(options=options):
+                result = self.recovery(stale, options=options)
+                self.assertEqual(result["state"], state)
+                self.assertNotIn("action", result)
+        eligible = laundry_appliance(wash_affordance="ENABLED")
+        self.assertEqual(self.recovery(eligible, options={"refresh_attempted": True})["action"],
+                         "ADD_TO_WASHER")
+
+    def test_player_ownership_and_in_flight_laundry_win(self):
+        washer = laundry_appliance(wash_affordance="ENABLED")
+        for gate in ("player_directed", "already_busy", "build_or_buy_mode", "human_survival_hold"):
+            with self.subTest(gate=gate):
+                self.assertEqual(self.recovery(washer, **{gate: True})["state"],
+                                 "YIELD_TO_PLAYER_OR_HOUSEHOLD_WORK")
+        queued = {"action_id": "ADD_TO_WASHER", "origin": "SIM_AUTONOMY", "target_ref": "washer:2"}
+        result = self.recovery(washer, visit={"actors": [actor(queue=[queued])]})
+        self.assertEqual(result["state"], "WASH_ALREADY_QUEUED")
+        queued["origin"] = "PLAYER"
+        result = self.recovery(washer, visit={"actors": [actor(queue=[queued])]})
+        self.assertEqual(result["state"], "YIELD_TO_PLAYER_OR_HOUSEHOLD_WORK")
+
+    def test_servo_fire_and_water_guards_still_apply(self):
+        washer = laundry_appliance(wash_affordance="ENABLED")
+        tub = laundry_appliance("tub:1", kind="WASHTUB", wash_affordance="ENABLED")
+        helper = actor(kind="SERVO")
+        for robot, state in [
+            (servo("sim:helper", durability=.1), "BLOCKED_REPAIR_FIRST"),
+            (servo("sim:helper", charge=.08), "HOLD_SERVO_READINESS"),
+            (servo("sim:helper", water_exposure="WET"), "HOLD_SERVO_READINESS"),
+        ]:
+            with self.subTest(state=state):
+                result = self.recovery(washer, visit={"actors": [helper], "servos": [robot]})
+                self.assertEqual(result["state"], state)
+        result = self.recovery(tub, visit={"actors": [helper], "servos": [servo("sim:helper")]})
+        self.assertEqual(result["state"], "NO_WASHER_PRESENT")
+
+    def test_host_turn_exposes_policy_without_a_game_effect(self):
+        laundry = laundry_observation(laundry_appliance(wash_affordance="ENABLED"))
+        turn = evaluate_turn(
+            NEEDS, household_upkeep=obs(servos=[], laundry=laundry), capture_ref=CAP,
+            location_kind="home", queue=[], viewport={"state": "VIEWPORT_OK"},
+        )
+        report = turn["household_upkeep"]
+        self.assertEqual(report["laundry_policy"]["availability"]["action"], "ADD_TO_WASHER")
+        self.assertFalse(report["next_actions"])
+        self.assertFalse(report["laundry_policy"]["availability"]["dispatch_authorized"])
+
+
 class HostUpkeepIntegrationTests(unittest.TestCase):
     def test_host_stack_attaches_upkeep_without_displacing_legacy(self):
         o=obs()

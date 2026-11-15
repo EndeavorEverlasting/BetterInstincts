@@ -1,4 +1,4 @@
-"""Bounded, observation-only Servo health and household bill queue policy.
+"""Bounded household upkeep policy for robots, bills, and laundry.
 
 P95 program seam; P124 composes with host_stack/host_listener, existing
 queue_capacity and budget guards. Does NOT poll Windows, click Sims, run a
@@ -63,6 +63,11 @@ def load_contract() -> dict:
             or dryer.get("clean_lint_trap_before_each_dryer_run") is not True
             or dryer.get("unsupervised_dryer") != "FORBIDDEN_UNLESS_LINT_LESS_INSTALLED"):
         raise HouseholdUpkeepError("UPKEEP_FIRE_RISK_DRYER_POLICY_REQUIRED")
+    recovery = cfg.get("laundry_availability")
+    if (not isinstance(recovery, Mapping)
+            or recovery.get("max_appliances") != MAX_LAUNDRY_APPLIANCES
+            or recovery.get("proof_ceiling") != "OFFLINE_LAUNDRY_DECISION_NOT_NATIVE_DISPATCH"):
+        raise HouseholdUpkeepError("UPKEEP_LAUNDRY_AVAILABILITY_POLICY_REQUIRED")
     bot = cfg.get("utilibot_policy")
     if (not isinstance(bot, Mapping)
             or set(bot.get("kinds", ())) != UTILIBOT_KINDS
@@ -302,6 +307,9 @@ def _validate(visit: Mapping) -> tuple[list[dict], list[dict], list[dict], list[
 
 LINT_STATES = {"CLEAN", "DIRTY", "UNKNOWN"}
 LINT_LESS_STATES = {"INSTALLED", "NOT_INSTALLED", "UNKNOWN"}
+MAX_LAUNDRY_APPLIANCES = 16
+LAUNDRY_WASH_ACTIONS = frozenset({"ADD_TO_WASHER", "WASH_IN_WASHTUB",
+                                  "REFRESH_WASHER_REGISTRATION"})
 
 
 def _validate_laundry(laundry: object) -> dict | None:
@@ -317,7 +325,125 @@ def _validate_laundry(laundry: object) -> dict | None:
         raise HouseholdUpkeepError("UPKEEP_LAUNDRY_LINT_STATE_INVALID")
     if laundry.get("lint_less", "UNKNOWN") not in LINT_LESS_STATES:
         raise HouseholdUpkeepError("UPKEEP_LAUNDRY_LINT_LESS_INVALID")
+    if "availability" in laundry:
+        _validate_laundry_availability(laundry["availability"])
     return dict(laundry)
+
+
+def _validate_laundry_availability(recovery: object) -> None:
+    """Validate one current, actor-specific load and its appliance candidates."""
+    if not isinstance(recovery, Mapping) or any(not _ref(recovery.get(key)) for key in (
+        "capture_ref", "lot_ref", "actor_ref", "load_ref",
+    )):
+        raise HouseholdUpkeepError("UPKEEP_LAUNDRY_AVAILABILITY_IDENTITY_INVALID")
+    if recovery.get("load_state") not in ("NEEDS_WASH", "OTHER", "UNKNOWN"):
+        raise HouseholdUpkeepError("UPKEEP_LAUNDRY_LOAD_STATE_INVALID")
+    if recovery.get("resolver") not in ("AVAILABLE", "NO_AVAILABLE_WASHER", "UNKNOWN"):
+        raise HouseholdUpkeepError("UPKEEP_LAUNDRY_RESOLVER_STATE_INVALID")
+    if (not _bool(recovery.get("lot_verified"))
+            or not _bool(recovery.get("census_complete"))
+            or not _bool(recovery.get("refresh_attempted"))
+            or not _bool(recovery.get("outcome_pending"))):
+        raise HouseholdUpkeepError("UPKEEP_LAUNDRY_CONTINUITY_INVALID")
+    appliances = recovery.get("appliances")
+    if not isinstance(appliances, list) or len(appliances) > MAX_LAUNDRY_APPLIANCES:
+        raise HouseholdUpkeepError("UPKEEP_LAUNDRY_APPLIANCES_INVALID")
+    seen = {recovery["load_ref"]}
+    for appliance in appliances:
+        if (not isinstance(appliance, Mapping) or not _ref(appliance.get("ref"))
+                or appliance["ref"] in seen or not _ref(appliance.get("lot_ref"))
+                or not _ref(appliance.get("capture_ref"))):
+            raise HouseholdUpkeepError("UPKEEP_LAUNDRY_APPLIANCE_IDENTITY_INVALID")
+        seen.add(appliance["ref"])
+        if (appliance.get("kind") not in ("WASHER", "WASHTUB", "DRYER", "CLOTHESLINE")
+                or appliance.get("state") not in ("EMPTY_IDLE", "OCCUPIED", "RUNNING", "BROKEN", "UNKNOWN")
+                or appliance.get("access") not in ("REACHABLE", "BLOCKED", "UNKNOWN")
+                or appliance.get("wash_affordance") not in ("ENABLED", "DISABLED", "UNKNOWN")
+                or appliance.get("registration") not in ("CURRENT", "STALE_VERIFIED", "UNKNOWN")
+                or not _bool(appliance.get("unreserved"))):
+            raise HouseholdUpkeepError("UPKEEP_LAUNDRY_APPLIANCE_STATE_INVALID")
+        if appliance["registration"] == "STALE_VERIFIED" and (
+            not _ref(appliance.get("registration_evidence_ref"))
+            or appliance["registration_evidence_ref"] == appliance["capture_ref"]
+        ):
+            raise HouseholdUpkeepError("UPKEEP_LAUNDRY_REGISTRATION_EVIDENCE_REQUIRED")
+
+
+def _laundry_availability(
+    recovery: Mapping, *, capture_ref: str, fresh: bool, held: bool, fire_state: str,
+    servo_health: list[dict], actors: list[dict], cfg: Mapping,
+) -> dict:
+    """Choose one semantic next step. The native adapter owns submit and readback."""
+    result = {
+        "actor_ref": recovery["actor_ref"],
+        "load_ref": recovery["load_ref"],
+        "dispatch_authorized": False,
+        "proof_ceiling": cfg["laundry_availability"]["proof_ceiling"],
+    }
+    if not fresh or recovery["capture_ref"] != capture_ref or not recovery["lot_verified"]:
+        return {**result, "state": "REOBSERVE_STALE"}
+    result.update(capture_ref=capture_ref, lot_ref=recovery["lot_ref"])
+    if recovery["outcome_pending"]:
+        return {**result, "state": "RECONCILE_PENDING_OUTCOME"}
+    if recovery["load_state"] != "NEEDS_WASH":
+        return {**result, "state": "WASH_NOT_ESTABLISHED"}
+    if fire_state in {"BLOCKED_REPAIR_FIRST", "HOLD_DURABILITY_UNVERIFIED"}:
+        return {**result, "state": fire_state}
+    actor = next((row for row in actors if row["sim_ref"] == recovery["actor_ref"]), None)
+    if (held or actor is None or not actor["available"] or actor["player_reserved"]
+            or actor["urgent_needs"] or any(
+                item["origin"] in {"PLAYER", "UNKNOWN"} for row in actors for item in row["queue"]
+            )):
+        return {**result, "state": "YIELD_TO_PLAYER_OR_HOUSEHOLD_WORK"}
+    if actor["kind"] == "SERVO":
+        health = next((row for row in servo_health
+                       if row["servo_ref"] == actor["sim_ref"]), None)
+        if (health is None or health["health"] == "CRITICAL"
+                or health["water_exposure"] != "NONE"):
+            return {**result, "state": "HOLD_SERVO_READINESS"}
+    if any(item["action_id"] in LAUNDRY_WASH_ACTIONS
+           for row in actors for item in row["queue"]):
+        return {**result, "state": "WASH_ALREADY_QUEUED"}
+    if not evaluate_queue_capacity(
+        [item["action_id"] for item in actor["queue"]],
+        multitasking=actor.get("multitasking"), player_directed=False,
+    )["enqueue_allowed"]:
+        return {**result, "state": "WAIT_FOR_QUEUE_CAPACITY"}
+
+    appliances = recovery["appliances"]
+    if any(row["capture_ref"] != capture_ref or row["lot_ref"] != recovery["lot_ref"]
+           for row in appliances):
+        return {**result, "state": "REOBSERVE_APPLIANCE_SCOPE"}
+    washtubs_safe = actor["kind"] != "SERVO"  # Leave water interaction to a verified native route.
+    washers = [row for row in appliances if row["kind"] == "WASHER"]
+    candidates = washers + [row for row in appliances if row["kind"] == "WASHTUB" and washtubs_safe]
+    idle = [row for row in candidates if row["state"] == "EMPTY_IDLE" and row["unreserved"]
+            and row["access"] == "REACHABLE"]
+    for row in sorted(idle, key=lambda row: (row["kind"] != "WASHER", row["ref"])):
+        if row["wash_affordance"] == "ENABLED" and row["registration"] != "STALE_VERIFIED":
+            action = "ADD_TO_WASHER" if row["kind"] == "WASHER" else "WASH_IN_WASHTUB"
+            return {**result, "state": "VERIFIED_WASH_ROUTE", "action": action, "target_ref": row["ref"]}
+
+    if not recovery["census_complete"]:
+        return {**result, "state": "REOBSERVE_INCOMPLETE_CENSUS"}
+    if not washers:
+        return {**result, "state": "NO_WASHER_PRESENT"}
+    if all(row["access"] == "BLOCKED" for row in washers):
+        return {**result, "state": "WASHER_ACCESS_BLOCKED"}
+    if all(row["state"] in {"OCCUPIED", "RUNNING"} or not row["unreserved"] for row in washers):
+        return {**result, "state": "WAIT_FOR_WASHER"}
+    if all(row["state"] == "BROKEN" for row in washers):
+        return {**result, "state": "WASHERS_NEED_REPAIR"}
+
+    stale = sorted(row["ref"] for row in idle if row["kind"] == "WASHER"
+                   and row["registration"] == "STALE_VERIFIED"
+                   and row["wash_affordance"] == "DISABLED")
+    if recovery["resolver"] == "NO_AVAILABLE_WASHER" and stale:
+        if recovery["refresh_attempted"]:
+            return {**result, "state": "NATIVE_REFRESH_ALREADY_ATTEMPTED"}
+        return {**result, "state": "NATIVE_REFRESH_CANDIDATE",
+                "action": "REFRESH_WASHER_REGISTRATION", "target_ref": stale[0]}
+    return {**result, "state": "WASHER_UNAVAILABILITY_UNEXPLAINED"}
 
 
 def _laundry_policy(
@@ -551,11 +677,19 @@ def evaluate_household_upkeep(
     result["candidate_count"] = len(candidates)
     maint = sorted((c for c in candidates if c["action_id"] in SERVO_MAINTENANCE),
                    key=lambda c: (c["rank"], c["target_ref"], c["action_id"]))
+    laundry = _validate_laundry(observation.get("laundry"))
     result["laundry_policy"] = _laundry_policy(
-        result["servo_health"], _validate_laundry(observation.get("laundry")),
+        result["servo_health"], laundry,
         fresh=fresh, cfg=cfg, levels=levels,
         prerequisite=maint[0]["action_id"] if maint else None,
     )
+    if laundry is not None and "availability" in laundry:
+        result["laundry_policy"]["availability"] = _laundry_availability(
+            laundry["availability"], capture_ref=capture_ref, fresh=fresh,
+            held=player_directed or already_busy or build_or_buy_mode or human_survival_hold,
+            fire_state=result["laundry_policy"]["state"],
+            servo_health=result["servo_health"], actors=actors, cfg=cfg,
+        )
 
     def finish(gate: str, action: str) -> dict:
         result.update(gate=gate, action=action)
