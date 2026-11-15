@@ -12,7 +12,26 @@ from scripts.launch_save_route import (
     CERTIFICATION_ID, CONTEXT_SCHEMA, load_context, route_launch,
     route_local_context,
 )
-from tests.test_save_candidate_priority import PATCH, RUN, lab
+RUN = "lab-review"
+PATCH = "1.121.361.1020"
+
+
+def lab(number: int, day: int, *, classification: str = "LAB_DISPOSABLE") -> dict:
+    return {
+        "save_id": f"slot:lab-{number:03d}",
+        "alias": (f"BI_TMP_TRIAL_{number:03d}" if classification == "LAB_DISPOSABLE"
+                  else f"BI_CONT_TRIAL_{number:03d}"),
+        "classification": classification,
+        "origin": "LAB_CREATED",
+        "lab_origin_confirmed": True,
+        "creation_run_id": "lab-creation",
+        "authorized_run_id": RUN,
+        "capture_ref": f"capture:lab-{number:03d}",
+        "game_version": PATCH,
+        "operator_confirmed": True,
+        "lab_created_at_utc": f"2026-11-{day:02d}T10:00:00Z",
+        "lab_creation_time_confirmed": True,
+    }
 
 
 def context(status: str = "PENDING") -> dict:
