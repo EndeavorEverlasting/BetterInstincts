@@ -188,7 +188,11 @@ def validate(root=ROOT):
     native_terms = (
         "NATIVE_RESPONDER_GAP", "FALLBACK_EFFECT_TRACE", "NATIVE_RESOLUTION_PROOF",
     )
-    glossary = json.loads((root / "contracts/glossary.v1.json").read_text(encoding="utf-8"))
+    from betterinstincts.glossary import GlossaryError, load_glossary
+    try:
+        glossary = load_glossary(root / "contracts/glossary.v1.json")
+    except GlossaryError as exc:
+        raise DoctrineViolation("NATIVE_RESPONDER_GLOSSARY_UNREADABLE:" + str(exc)) from exc
     ontology = json.loads((root / "contracts/ontology.v1.json").read_text(encoding="utf-8"))
     routing = (root / "docs/AGENT_OPERATING_RULES.md").read_text(encoding="utf-8")
     glossary_doc = (root / "docs/GLOSSARY.md").read_text(encoding="utf-8")

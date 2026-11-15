@@ -22,6 +22,12 @@
       "reason": "Classifies sanitized fallback evidence and projects source obligations without performing a game effect.",
       "game_effect_claim": "NONE",
       "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/glossary.py",
+      "route": "NON_GAMEPLAY",
+      "reason": "Reads the bounded repository-owned semantic glossary and requires canonical terms.",
+      "game_effect_claim": "NONE"
     }
   ]
 }
