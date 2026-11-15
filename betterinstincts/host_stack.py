@@ -813,6 +813,7 @@ def evaluate_turn(
                 already_busy=already_busy or sim_absent or sim_at_school is True,
                 build_or_buy_mode=build_or_buy_mode,
                 human_survival_hold=any(v < needs_floor for v in needs.values()),
+                lot_model=lot_model,
             )
     except (
         InstinctsHostError,

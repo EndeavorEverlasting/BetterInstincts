@@ -405,6 +405,14 @@
         "docs/HOST_BUDGET.md"
       ]
     },
+    "HOUSEHOLD_BUDGET_FLOOR": {
+      "definition": "The canonical one-million-simoleon minimum for discretionary autonomous spending. Purchases use verified surplus; earned activity restores and grows the balance.",
+      "owners": ["contracts/host-budget.v1.json", "betterinstincts/budget_eval.py"]
+    },
+    "CHEAT_SUBSIDY": {
+      "definition": "A console-funded balance increase, distinct from gameplay earnings. Laundry may propose one exact top-up after owned and earning routes are exhausted, with independently observed funds before purchase.",
+      "owners": ["contracts/household-upkeep.v1.json", "betterinstincts/funds_inject.py"]
+    },
     "FEDERAL_SUBSIDY_PROMPT": {
       "definition": "When funds are below 100, host shows a Sims-styled HOUSEHOLD NOTICE offering a Simolean federal bank boost; Yes runs durable funds inject.",
       "owners": [
@@ -413,7 +421,7 @@
       ]
     },
     "FUNDS_INJECT": {
-      "definition": "Mode-agnostic cheat sequence: Ctrl+Shift+C → testingcheats enabled true → Money N (best-effort) → motherlode chunks. Never force F1; never claimed as BI-004 earned income.",
+      "definition": "Mode-agnostic plan using testingcheats true and one exact money target. Separate additive recovery requires an independently confirmed no-op and explicit invocation. This is subsidy, not BI-004 earned income.",
       "owners": [
         "contracts/host-funds.v1.json",
         "betterinstincts/funds_inject.py"

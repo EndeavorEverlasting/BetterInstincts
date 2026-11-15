@@ -703,6 +703,83 @@ class LaundryAvailabilityTests(unittest.TestCase):
         self.assertFalse(report["laundry_policy"]["availability"]["dispatch_authorized"])
 
 
+class LaundryProcurementTests(unittest.TestCase):
+    def report(self, funds, *, appliance=None, lot_model=None, **updates):
+        request = {
+            "capture_ref": CAP, "lot_ref": "lot:1", "load_ref": "pile:1",
+            "household_ref": "household:test", "exhaustion_evidence_ref": "owned:proof",
+            "owned_routes_exhausted": True, "outcome_pending": False,
+            "purchase_attempted": False, "funding_state": "NOT_STARTED",
+            "earn_available": False, "funds_observed": funds, "funds_capture_ref": CAP,
+            "funds_evidence_ref": "funds:proof",
+            "washer": {"capture_ref": CAP, "catalog_ref": "sku:washer", "price": 500,
+                       "placement_ref": "position:washer", "placement_verified": True,
+                       "compatible": True},
+            **updates,
+        }
+        laundry = laundry_observation(*([appliance] if appliance else []))
+        observation = obs(servos=[], laundry={**laundry, "procurement": request},
+                          household_ref="household:test")
+        report = evaluate(observation, lot_model=lot_model)["laundry_policy"]["procurement"]
+        self.assertFalse(report["dispatch_authorized"])
+        return report
+
+    @patch("betterinstincts.household_upkeep.admit_live_structure_effect",
+           return_value={"state": "LIBRARY_ADMIT"})
+    def test_funding_and_purchase_reserve_boundaries(self, checkpoint):
+        lot = {"lot_id": "lot:1"}
+        get = lambda funds, **kwargs: self.report(funds, lot_model=lot, **kwargs)
+        funded = get(999_900)
+        self.assertEqual((funded["state"], funded["target_funds"], funded["subsidy_amount"]),
+                         ("LAUNDRY_FUND_LAST_RESORT", 1_000_500, 600))
+        self.assertEqual(funded["funding_source"], "CHEAT_SUBSIDY")
+        self.assertEqual(get(1_000_499)["target_funds"], 1_000_500)
+        self.assertEqual(get(1_000_500)["expected_funds_after"], 1_000_000)
+        self.assertEqual(get(1_012_000)["expected_funds_after"], 1_011_500)
+        self.assertEqual(get(999_900, earn_available=True)["state"],
+                         "LAUNDRY_EARN_REQUIRED_BEFORE_PURCHASE")
+        self.assertEqual(get(999_900, funding_state="NO_EFFECT")["state"],
+                         "LAUNDRY_EARN_REQUIRED_BEFORE_PURCHASE")
+        checkpoint.assert_called_with(lot, "PURCHASE_BUILD_OBJECT")
+
+    @patch("betterinstincts.household_upkeep.admit_live_structure_effect",
+           return_value={"state": "LIBRARY_ADMIT"})
+    def test_fresh_readback_and_scope_after_console(self, _):
+        lot = {"lot_id": "lot:1"}
+        receipt = {
+            "household_ref": "household:test", "lot_ref": "lot:1", "load_ref": "pile:1",
+            "dispatch_ref": "dispatch:funds", "before_capture_ref": "capture:before",
+            "after_capture_ref": "capture:after", "after_evidence_ref": "hud:independent",
+            "funds_before": 999_000, "funds_after": 1_000_500, "target_funds": 1_000_500,
+        }
+        state = {"funding_state": "APPLIED", "lot_model": lot}
+        self.assertEqual(self.report(1_000_499, funding_receipt=receipt, **state)["state"],
+                         "LAUNDRY_EARN_REQUIRED_BEFORE_PURCHASE")
+        self.assertEqual(self.report(1_000_500, funding_receipt=receipt, **state)["state"],
+                         "LAUNDRY_PURCHASE_CANDIDATE")
+        for key, value in (("lot_ref", "lot:foreign"), ("target_funds", 1_000_600),
+                           ("after_capture_ref", "capture:before")):
+            with self.subTest(key=key):
+                result = self.report(1_010_000, funding_receipt={**receipt, key: value}, **state)
+                self.assertEqual(result["state"], "LAUNDRY_RECONCILE_PROCUREMENT")
+
+    def test_no_purchase_over_existing_routes_uncertain_effect_or_missing_checkpoint(self):
+        washer = laundry_appliance(wash_affordance="ENABLED")
+        self.assertEqual(self.report(1_005_000, appliance=washer)["state"],
+                         "LAUNDRY_PROCUREMENT_NOT_ADMITTED")
+        for updates, expected in [
+            ({"outcome_pending": True}, "LAUNDRY_RECONCILE_PROCUREMENT"),
+            ({"purchase_attempted": True}, "LAUNDRY_PURCHASE_ALREADY_ATTEMPTED"),
+            ({"owned_routes_exhausted": False}, "LAUNDRY_USE_OR_RECOVER_OWNED_FIRST"),
+            ({"funds_capture_ref": "capture:stale"}, "LAUNDRY_OBSERVE_CURRENT_FUNDS"),
+            ({"household_ref": "household:foreign"}, "LAUNDRY_REOBSERVE_PROCUREMENT_SCOPE"),
+            ({"washer": {"price": 500}}, "LAUNDRY_VERIFY_CATALOG_AND_PLACEMENT"),
+            ({"lot_model": {"lot_id": "lot:1"}}, "LAUNDRY_VERIFY_WHOLE_LOT_CHECKPOINT"),
+        ]:
+            with self.subTest(updates=updates):
+                self.assertEqual(self.report(1_005_000, **updates)["state"], expected)
+
+
 class HostUpkeepIntegrationTests(unittest.TestCase):
     def test_host_stack_attaches_upkeep_without_displacing_legacy(self):
         o=obs()

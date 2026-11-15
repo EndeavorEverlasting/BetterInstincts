@@ -326,7 +326,7 @@ def poll_cascade(
     if funds is not None:
         try:
             budget = evaluate_budget(
-                float(funds),
+                funds,
                 snap,
                 tuple(owned_objects if owned_objects is not None else available_objects),
                 moodlets=moodlets,
@@ -338,6 +338,10 @@ def poll_cascade(
                     action=str((budget.get("actions") or ["BUDGET_PLAN"])[0] if isinstance(budget.get("actions"), list) and budget.get("actions") else budget.get("next_gate") or "BUDGET_PLAN"),
                     payload={
                         "money_urgency": budget.get("money_urgency"),
+                        "minimum_household_balance": budget["minimum_household_balance"],
+                        "reserve_shortfall": budget["reserve_shortfall"],
+                        "spend_max": budget["spend_max"],
+                        "income_goal": budget["income_goal"],
                         "gaps": budget.get("gaps"),
                         "prior_needs_gate": receipts[-1]["gate"] if receipts else None,
                     },

@@ -71,6 +71,19 @@ class DomainCascadeTests(unittest.TestCase):
         self.assertTrue(service.get("condition_held"))
         self.assertEqual(service.get("ailment"), "burning_passion")
 
+    def test_budget_reserve_and_earned_growth(self):
+        for balance, shortfall, surplus, goal in (
+            (999_999, 1, 0, "EARN_TO_RESTORE_RESERVE"),
+            (1_000_000, 0, 0, "EARN_TO_GROW_SURPLUS"),
+            (1_002_500, 0, 2_500, "EARN_TO_GROW_SURPLUS"),
+        ):
+            with self.subTest(balance=balance):
+                turn = poll_cascade(SIX, funds=balance)
+                budget = next(row["payload"] for row in turn["receipts"] if row["domain"] == "budget")
+                self.assertEqual(budget["minimum_household_balance"], 1_000_000)
+                self.assertEqual((budget["reserve_shortfall"], budget["spend_max"], budget["income_goal"]),
+                                 (shortfall, surplus, goal))
+
     def test_player_first_halts(self):
         out = poll_cascade(SIX, player_directed=True, funds=1000)
         self.assertEqual(out["gate"], "PLAYER_FIRST_OR_BUSY")

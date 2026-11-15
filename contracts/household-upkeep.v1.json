@@ -102,6 +102,17 @@
     "successor_issue": 279,
     "proof_ceiling": "OFFLINE_LAUNDRY_DECISION_NOT_NATIVE_DISPATCH"
   },
+  "laundry_procurement": {
+    "input": "laundry.procurement",
+    "budget_owner": "contracts/host-budget.v1.json#floors",
+    "funding_owner": "betterinstincts/funds_inject.py",
+    "purchase_admission_owner": "betterinstincts/build_library_checkpoint.py",
+    "priority": ["OWNED_ROUTES", "VERIFIED_EARNED_FUNDS", "ONE_EXACT_CONSOLE_SUBSIDY", "ONE_VERIFIED_PURCHASE"],
+    "cheat_subsidy_counts_as_earned_income": false,
+    "purchase_target": "minimum_household_balance + verified_current_price",
+    "effect_order": "Reconcile any pending effect. Revalidate current household, load, lot, catalog, funds, selected placement, and whole-lot checkpoint immediately before a live operation. After a subsidy verify the independent HUD result, then evaluate new observations; after a purchase verify one matching placed washer and the exact funds delta before resuming the original load.",
+    "proof_ceiling": "OFFLINE_DECISION_ONLY"
+  },
   "safety": {
     "never_override_player_queue": true,
     "never_add_while_human_survival_critical": true,
