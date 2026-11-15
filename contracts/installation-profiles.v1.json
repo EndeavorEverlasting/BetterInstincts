@@ -29,5 +29,11 @@
     "One writer via exclusive lock, bounded validated JSON, atomic replacement; bad files fail closed",
     "Semantic VAE training is opt-in, on-device, bounded to attested semantic patches; installing/cloning never activates sampling or remote upload"
   ],
-  "proof_ceiling": "CONFIGURATION_FUNCTIONALITY_OFFLINE_ONLY"
+  "proof_ceiling": "CONFIGURATION_FUNCTIONALITY_OFFLINE_ONLY",
+  "preferred_households": {
+    "field": "preferred_households",
+    "shape": "Optional map of existing profile IDs to opaque household IDs",
+    "write": "Explicit player choice through scripts.instance_settings choose-household",
+    "effect_authority": "NONE"
+  }
 }

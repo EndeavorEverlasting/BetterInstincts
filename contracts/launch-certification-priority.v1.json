@@ -59,5 +59,18 @@
     "Age ranking remains canonical and advisory after reviewed completion; no independent cert claimed",
     "Branch PR #263 and ignored local observer remain untouched"
   ],
-  "proof_ceiling": "REPOSITORY_POLICY_TESTS_ONLY_NO_LIVE_WINDOWS_P08_OR_GAME_EFFECT"
+  "proof_ceiling": "REPOSITORY_POLICY_TESTS_ONLY_NO_LIVE_WINDOWS_P08_OR_GAME_EFFECT",
+  "household_successor_route": {
+    "choice_owner": "betterinstincts.installation_profiles",
+    "guard": "Same freshly observed household in the reviewed certification and its successor; exact current build and distinct successor run",
+    "candidate": "Oldest attested current-run LAB_DISPOSABLE save with confirmed household binding",
+    "scope_fields": [
+      "household_id",
+      "household_binding_confirmed",
+      "authorized_run_id",
+      "game_version"
+    ],
+    "host_execution": "Requires existing live adapter, exact menu/slot revalidation and separate player-first effect admission",
+    "ordinary_play": "Existing household and recent saves stay player-owned until a separately certified route is adopted"
+  }
 }

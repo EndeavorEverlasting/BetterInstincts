@@ -10,6 +10,7 @@ from typing import Callable
 
 from scripts.smart_start import auto_start, select_unique_install
 from scripts.launch_save_route import route_local_context
+from betterinstincts.installation_profiles import InstallationProfileError, view
 
 from betterinstincts.first_run import (
     FirstRunError, GOALS, SKILL_ROUTES, discover_game_installs,
@@ -61,8 +62,14 @@ def annotate_lab_save_handoff(receipt: dict) -> dict:
     This never changes the existing launcher action, game process, or save.
     A missing private lab memo fails closed instead of guessing an old slot.
     """
+    try:
+        preference = {"preferred_household_id": view()["preferred_household_id"],
+                      "requires_current_household_observation": True}
+    except (InstallationProfileError, OSError, ValueError) as exc:
+        preference = {"state": "HOLD_PROFILE_PREFERENCE", "reason": str(exc)}
     return {
         **receipt,
+        "household_preference": preference,
         "lab_save_route": route_local_context(
             game_running_observed=(
                 receipt.get("state") == "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH"

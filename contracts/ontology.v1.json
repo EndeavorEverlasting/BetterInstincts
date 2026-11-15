@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.ontology/v1",
-  "revision": 9,
+  "revision": 10,
   "state": "CANDIDATE_REVIEW_NOT_RUNTIME_AUTHORITY",
   "owner": "BetterInstincts",
   "source_main_sha": "502f66efc0eedd4136d6a8cd0879f566c3f3612f",
@@ -387,6 +387,21 @@
       "kind": "authority",
       "definition": "All executable repository launchers, agent hooks, workflows, scripts and future adapters inherit operator-owned device and input boundaries; static scanning is distinct from runtime sandbox or effective host hook.",
       "canonical_owner": "scripts/check_peripheral_boundary.py"
+    },
+    "HISTORICAL_EXPERIENCE": {
+      "kind": "context",
+      "definition": "Reusable, sourced outcome for a past mechanic/choice/build/profile. Provides evidence for a current decision without satisfying current-offer proof.",
+      "canonical_owner": "contracts/experience-recall.v1.json"
+    },
+    "HOUSEHOLD_PREFERENCE": {
+      "kind": "context",
+      "definition": "Installation-local explicit player choice of household identity. Resolved against fresh available households before routing and conveys no control permit.",
+      "canonical_owner": "contracts/installation-profiles.v1.json"
+    },
+    "HOUSEHOLD_BOUND_LAB_SAVE": {
+      "kind": "context",
+      "definition": "Attested disposable lab slot tied to a household, exact build and authorized trial run. Age ranks only eligible slots within that scope.",
+      "canonical_owner": "contracts/launch-certification-priority.v1.json"
     }
   },
   "relations": [
@@ -854,6 +869,21 @@
       "from": "AGENT_EFFECT_PERIMETER",
       "predicate": "DENIES_GAME_SIDE_OS_MUTATIONS",
       "to": "OS_PERIPHERAL_AUTHORITY"
+    },
+    {
+      "from": "HISTORICAL_EXPERIENCE",
+      "predicate": "INFORMS_CURRENT_DECISION",
+      "to": "ACTION_PROPOSAL"
+    },
+    {
+      "from": "HOUSEHOLD_PREFERENCE",
+      "predicate": "DOES_NOT_GRANT_AUTHORITY",
+      "to": "CONTROL_PERMIT"
+    },
+    {
+      "from": "HOUSEHOLD_BOUND_LAB_SAVE",
+      "predicate": "BINDS_AUTHORIZED_SLOT",
+      "to": "SAVE_SLOT"
     }
   ],
   "invariants": [
@@ -1278,6 +1308,22 @@
       "owned_by": [
         "contracts/peripheral-authority.v1.json",
         "docs/PERIPHERAL_INCIDENT.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-049",
+      "term": "RECALL_BEFORE_REPLAY",
+      "rule": "Recover and reuse completed historical evidence before starting a new trial. Current offer completion requires its own verified outcome and review.",
+      "owned_by": [
+        "contracts/experience-recall.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-050",
+      "term": "HOUSEHOLD_CHOICE_AND_SAVE_AUTHORITY",
+      "rule": "Resolve one fresh household or the player's saved choice. Multiple unresolved or stale choices require the player. Reviewed certification precedes routing a distinct successor run to its oldest eligible same-household disposable slot. Ordinary recent-save gameplay stays player-owned.",
+      "owned_by": [
+        "contracts/launch-certification-priority.v1.json"
       ]
     }
   ],

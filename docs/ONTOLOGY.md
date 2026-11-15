@@ -186,3 +186,13 @@ Canonical machine owner: `contracts/ontology.v1.json` revision 9. `PERIPHERAL_ID
 - `BI-ONT-048`: working physical input, causal fault isolation, AI responsibility, GitHub CI, installed Cursor hooks and live Sims certification are independent evidence states.
 
 Cross-reference `contracts/peripheral-authority.v1.json`, `scripts/check_peripheral_boundary.py`, `tests/test_peripheral_boundary.py` and `docs/PERIPHERAL_INCIDENT.md`. This revision adds semantics without creating a new Windows actuator, background watcher or privileged game adapter.
+
+## Revision 10 — recall, household preference and lab save provenance
+
+BI-ONT-049 makes historical experience an input to the current decision.
+Reuse recorded Yes/No outcomes and verify the current offer independently.
+BI-ONT-050 binds a remembered household choice to fresh available household IDs
+and a separately attested lab slot. One observed household can be resolved
+without a choice. A missing preference among several households or a stale
+preference returns to the player. Exact build, distinct successor run, and
+same-household lab origin precede age ranking. Player saves stay protected.

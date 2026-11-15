@@ -10,7 +10,7 @@ import json
 
 from betterinstincts.installation_profiles import (
     DEFAULTS, InstallationProfileError, choose_profile, create_profile,
-    reset_toggle, set_toggle, view,
+    reset_toggle, set_preferred_household, set_toggle, view,
 )
 
 
@@ -116,6 +116,9 @@ def main(argv: list[str] | None = None) -> int:
     reset = sub.add_parser("reset", help="Restore a toggle to its catalog default")
     reset.add_argument("key", choices=sorted(DEFAULTS))
     reset.add_argument("--profile", default=None)
+    household = sub.add_parser("choose-household", help="Remember a household you selected")
+    household.add_argument("household_id")
+    household.add_argument("--profile")
     sub.add_parser("gui", help="Open the local Tk settings panel (explicit action only)")
     args = p.parse_args(argv)
     try:
@@ -131,6 +134,8 @@ def main(argv: list[str] | None = None) -> int:
             result = create_profile(args.profile_id)
         elif args.command == "choose":
             result = choose_profile(args.profile_id)
+        elif args.command == "choose-household":
+            result = set_preferred_household(args.household_id, profile_id=args.profile)
         elif args.command == "set":
             result = set_toggle(args.key, args.value == "true", profile_id=args.profile)
         else:
