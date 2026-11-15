@@ -81,6 +81,7 @@
     ],
     "response_source": "existing recipient-bound decision; no caller button argument",
     "proof": "Match the port dispatch reference to a new native ACK, actor and household effect, and the originating activity.",
-    "game_callback_installed": false
+    "game_callback_installed": false,
+    "uncertain_submit_readback": "Preserve the host-reserved attempt_ref inside the game adapter before submitting. Only stamp it onto the matching native ACK, with its dispatch_ref. Assisted replies and unrelated native callbacks carry no attempt_ref. Reconcile with independent effect and activity evidence; never resubmit an uncertain attempt."
   }
 }

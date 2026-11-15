@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from threading import Lock
+from uuid import uuid4
 
 from betterinstincts.preference_native_map import (
     assess_native_offer_binding,
@@ -19,6 +20,11 @@ BINDING_FIELDS = (
     "native_hook_ref", "state_revision", "originating_interaction_ref",
 )
 MAX_ATTEMPTS = 256
+
+
+def _valid_dispatch_ref(value: object) -> bool:
+    return (isinstance(value, str) and 1 <= len(value) <= 128
+            and all(c.isascii() and (c.isalnum() or c in "._:-") for c in value))
 
 
 class PreferenceResponsePort:
@@ -79,11 +85,13 @@ class PreferenceResponsePort:
 
             choice = decision["steps"][0]
             request = {field: binding[field] for field in BINDING_FIELDS}
+            attempt_ref = "bi-attempt:" + uuid4().hex
             request.update(response_id=binding["response_ids"][choice],
-                           expected_paused=frame["paused"])
+                           expected_paused=frame["paused"], attempt_ref=attempt_ref)
             # Reserve before the call. The EA adapter must atomically recheck
             # dialog, actor, revision, save, pause and player intent before submit.
-            entry = {"binding": binding, "choice": choice, "dispatch_ref": None}
+            entry = {"binding": binding, "choice": choice, "dispatch_ref": None,
+                     "attempt_ref": attempt_ref}
             self._attempts[dialog] = entry
             try:
                 acknowledgement = adapter.submit_if_current(dict(request))
@@ -94,8 +102,7 @@ class PreferenceResponsePort:
                 del self._attempts[dialog]
                 return {"state": "REOBSERVE", "reason": "ATOMIC_NATIVE_CHECK_REFUSED"}
             ref = acknowledgement.get("dispatch_ref") if isinstance(acknowledgement, Mapping) else None
-            if (not isinstance(ref, str) or not 1 <= len(ref) <= 128
-                    or not all(c.isascii() and (c.isalnum() or c in "._:-") for c in ref)
+            if (not _valid_dispatch_ref(ref)
                     or acknowledgement.get("state") != "SUBMITTED"):
                 return {"state": "DISPATCH_OUTCOME_UNKNOWN", "dialog_ref": dialog}
             entry["dispatch_ref"] = ref
@@ -106,11 +113,24 @@ class PreferenceResponsePort:
     def reconcile(self, dialog_ref: str, response: Mapping, effect: Mapping, resumed: Mapping) -> dict:
         with self._lock:
             entry = self._attempts.get(dialog_ref)
-            if (not entry or entry["dispatch_ref"] is None or not isinstance(response, Mapping)
-                    or response.get("dispatch_ref") != entry["dispatch_ref"]
+            if (not entry or not isinstance(response, Mapping)
                     or response.get("response_id") != entry["binding"]["response_ids"][entry["choice"]]):
+                return {"state": "BETTERINSTINCTS_RESPONSE_UNATTRIBUTED"}
+            dispatch_ref = response.get("dispatch_ref")
+            if not _valid_dispatch_ref(dispatch_ref):
+                return {"state": "BETTERINSTINCTS_RESPONSE_UNATTRIBUTED"}
+            # An adapter stamps attempt_ref only on a native ACK it correlated
+            # with this submission, never on a screen/player reply or a mere
+            # sighting of the same response ID. No retry after a lost return.
+            if entry["dispatch_ref"] is None:
+                if response.get("attempt_ref") != entry["attempt_ref"]:
+                    return {"state": "BETTERINSTINCTS_RESPONSE_UNATTRIBUTED"}
+            elif dispatch_ref != entry["dispatch_ref"]:
                 return {"state": "BETTERINSTINCTS_RESPONSE_UNATTRIBUTED"}
             if (not isinstance(resumed, Mapping) or resumed.get("activity_ref")
                     != entry["binding"]["originating_interaction_ref"]):
                 return {"state": "ORIGINAL_ACTIVITY_READBACK_REQUIRED"}
-            return assess_native_preference_outcome(entry["binding"], response, effect, resumed)
+            outcome = assess_native_preference_outcome(entry["binding"], response, effect, resumed)
+            if outcome["state"] == "OUTCOME_RECEIPTS_SCHEMA_MATCH":
+                entry["dispatch_ref"] = dispatch_ref
+            return outcome
