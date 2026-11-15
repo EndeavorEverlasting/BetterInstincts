@@ -49,7 +49,8 @@
     "Pre-effect journal failure must prevent the effect.",
     "No positive lesson from interruption or unknown outcome.",
     "Private identifiers stay local; legacy journal remains readable without fabricated proof.",
-    "Preserve current same-household/new-run save guard and unmerged native adapter writers."
+    "Preserve current same-household/new-run save guard and unmerged native adapter writers.",
+    "Canonical glossary remains within the bounded reader and must pass through the runtime loader as part of doctrine checks."
   ],
   "rollback_path": "Revert new governance and projection source while retaining existing listeners and private journals; current captures and saves remain untouched.",
   "unresolved_unknowns": [
@@ -80,7 +81,8 @@
     "tests/fixtures/control-discovery/video-gaming-assisted.v1.json",
     "contracts/native-gameplay-decisions/BI-PS0251-NATIVE-ASSISTANCE-20261115.v1.json",
     "docs/CONTROL_DISCOVERY.md",
-    "betterinstincts/host_listener.py"
+    "betterinstincts/host_listener.py",
+    "betterinstincts/glossary.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "prompt_order": [
