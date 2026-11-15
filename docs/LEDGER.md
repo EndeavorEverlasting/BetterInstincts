@@ -2167,3 +2167,13 @@ player, queue and Servo safety checks. Regression fixtures include the four
 present appliances and a disabled tooltip with no diagnosed cause. Exact-build
 EA observation, native submit, effect verification and rollback remain open in
 [#279](https://github.com/EndeavorEverlasting/BetterInstincts/issues/279).
+
+## 2026-11-15 — Laundry fallback and household reserve
+
+MoonWake Sixth Gear scoped the existing upkeep and budget owners to an
+operator-selected §1,000,000 household floor. Verified surplus can fund one
+last-resort washer after owned routes are exhausted and the whole-lot backup
+is verified. When earning is unavailable, propose a single exact subsidy to
+minimum plus verified cost. Income growth remains earned. Source-only P08 is
+blocked on the exact Windows game and independent effect/rollback readback in
+[#279](https://github.com/EndeavorEverlasting/BetterInstincts/issues/279).

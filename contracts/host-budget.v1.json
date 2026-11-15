@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.host-budget/v1",
-  "version": 1,
+  "version": 2,
   "glossary": "contracts/glossary.v1.json",
   "proof_ceiling": "OFFLINE_BUDGET_POLICY_NOT_LIVE_CATALOG_CERT",
   "observed": {
@@ -10,9 +10,10 @@
     "note": "Operator purchased sleep surface; funds fell from ~§12k through ~§2k to LOCAL_OBSERVED §638. Budget lockdown is material."
   },
   "floors": {
+    "minimum_household_balance": 1000000,
     "emergency_reserve": 400,
     "soft_budget_floor": 2000,
-    "note": "Never spend below emergency_reserve. Below soft_budget_floor prefer EARN_BEFORE_SPEND and USE_EXISTING."
+    "note": "Autonomous discretionary purchases preserve the minimum household balance. Emergency reserve and soft floor classify immediate financial urgency."
   },
   "priority": [
     "player_direction",
@@ -87,7 +88,8 @@
     "duplicate_need_object_class"
   ],
   "rules": {
-    "spend_max": "funds - emergency_reserve",
+    "spend_max": "max(0, funds - minimum_household_balance)",
+    "growth": "Earn above the minimum from gameplay. Console funding is a separate subsidy reserved for a verified last-resort purchase.",
     "secure_only_if": [
       "need_urgency_in_critical_or_low",
       "object_class_missing",

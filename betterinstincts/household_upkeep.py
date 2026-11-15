@@ -12,6 +12,11 @@ import time
 from pathlib import Path
 from collections.abc import Mapping
 
+from betterinstincts.budget_eval import household_reserve
+from betterinstincts.build_library_checkpoint import (
+    BuildLibraryCheckpointError, admit_live_structure_effect,
+)
+from betterinstincts.funds_inject import MAX_HOUSEHOLD_FUNDS, plan_inject, verify_funds_outcome
 from betterinstincts.queue_capacity import QueueCapacityError, evaluate_queue_capacity
 
 SCHEMA = "betterinstincts.household-upkeep/v1"
@@ -310,6 +315,10 @@ LINT_LESS_STATES = {"INSTALLED", "NOT_INSTALLED", "UNKNOWN"}
 MAX_LAUNDRY_APPLIANCES = 16
 LAUNDRY_WASH_ACTIONS = frozenset({"ADD_TO_WASHER", "WASH_IN_WASHTUB",
                                   "REFRESH_WASHER_REGISTRATION"})
+PROCUREMENT_ELIGIBLE_STATES = frozenset({
+    "NO_WASHER_PRESENT", "WASHER_ACCESS_BLOCKED", "WASHERS_NEED_REPAIR",
+    "NATIVE_REFRESH_ALREADY_ATTEMPTED", "WASHER_UNAVAILABILITY_UNEXPLAINED",
+})
 
 
 def _validate_laundry(laundry: object) -> dict | None:
@@ -446,6 +455,91 @@ def _laundry_availability(
     return {**result, "state": "WASHER_UNAVAILABILITY_UNEXPLAINED"}
 
 
+def _laundry_procurement(
+    request: object, availability: Mapping, lot_model: Mapping | None, *, capture_ref: str,
+    household_ref: object,
+) -> dict:
+    """One last-resort decision backed by a current load, funds, and actual catalog."""
+    result = {"state": "LAUNDRY_PROCUREMENT_NOT_ADMITTED", "dispatch_authorized": False}
+    if availability["state"] not in PROCUREMENT_ELIGIBLE_STATES:
+        return result
+    if (not isinstance(request, Mapping)
+            or not _ref(household_ref)
+            or request.get("household_ref") != household_ref
+            or any(request.get(key) != availability[key] for key in ("capture_ref", "lot_ref", "load_ref"))):
+        return {**result, "state": "LAUNDRY_REOBSERVE_PROCUREMENT_SCOPE"}
+    if request.get("outcome_pending") is not False:
+        return {**result, "state": "LAUNDRY_RECONCILE_PROCUREMENT"}
+    if request.get("purchase_attempted") is not False:
+        return {**result, "state": "LAUNDRY_PURCHASE_ALREADY_ATTEMPTED"}
+    if (request.get("owned_routes_exhausted") is not True
+            or not _ref(request.get("exhaustion_evidence_ref"))):
+        return {**result, "state": "LAUNDRY_USE_OR_RECOVER_OWNED_FIRST"}
+    funds = request.get("funds_observed")
+    if (request.get("funds_capture_ref") != capture_ref or type(funds) is not int
+            or not 0 <= funds <= MAX_HOUSEHOLD_FUNDS
+            or not _ref(request.get("funds_evidence_ref"))):
+        return {**result, "state": "LAUNDRY_OBSERVE_CURRENT_FUNDS"}
+    funding_state = request.get("funding_state")
+    if funding_state not in ("NOT_STARTED", "APPLIED", "NO_EFFECT"):
+        return {**result, "state": "LAUNDRY_RECONCILE_PROCUREMENT"}
+    if funding_state == "APPLIED":
+        receipt = request.get("funding_receipt")
+        if (not isinstance(receipt, Mapping)
+                or any(receipt.get(k) != request[k] for k in ("lot_ref", "load_ref", "household_ref"))
+                or not _ref(receipt.get("dispatch_ref"))
+                or not _ref(receipt.get("before_capture_ref"))
+                or not _ref(receipt.get("after_capture_ref"))
+                or receipt["before_capture_ref"] == receipt["after_capture_ref"]
+                or not _ref(receipt.get("after_evidence_ref"))
+                or receipt["after_evidence_ref"] == receipt["dispatch_ref"]
+                or type(receipt.get("funds_before")) is not int
+                or type(receipt.get("funds_after")) is not int
+                or not 0 <= receipt["funds_before"] < receipt["funds_after"] <= MAX_HOUSEHOLD_FUNDS):
+            return {**result, "state": "LAUNDRY_RECONCILE_PROCUREMENT"}
+        plan = plan_inject(amount=receipt["funds_after"], funds_observed=receipt["funds_before"],
+                           game_mode="live")
+        if (receipt.get("target_funds") != plan["target_funds"]
+                or verify_funds_outcome(plan, funds_after=receipt["funds_after"],
+                                        evidence_ref=receipt["after_evidence_ref"])["state"]
+                != "TARGET_ATTESTED_BY_EXTERNAL_OBSERVATION"):
+            return {**result, "state": "LAUNDRY_RECONCILE_PROCUREMENT"}
+
+    item = request.get("washer")
+    if (not isinstance(item, Mapping) or item.get("capture_ref") != capture_ref
+            or any(not _ref(item.get(key)) for key in ("catalog_ref", "placement_ref"))
+            or type(item.get("price")) is not int or not 0 < item["price"] <= MAX_HOUSEHOLD_FUNDS
+            or item.get("compatible") is not True or item.get("placement_verified") is not True):
+        return {**result, "state": "LAUNDRY_VERIFY_CATALOG_AND_PLACEMENT"}
+    if not isinstance(lot_model, Mapping) or lot_model.get("lot_id") != request["lot_ref"]:
+        return {**result, "state": "LAUNDRY_VERIFY_WHOLE_LOT_CHECKPOINT"}
+    try:
+        checkpoint = admit_live_structure_effect(lot_model, "PURCHASE_BUILD_OBJECT")
+    except (BuildLibraryCheckpointError, TypeError, ValueError):
+        return {**result, "state": "LAUNDRY_VERIFY_WHOLE_LOT_CHECKPOINT"}
+    if checkpoint["state"] != "LIBRARY_ADMIT":
+        return {**result, "state": "LAUNDRY_VERIFY_WHOLE_LOT_CHECKPOINT"}
+
+    reserve = household_reserve(funds)
+    price = item["price"]
+    purchase_balance = reserve["minimum_household_balance"] + price
+    result.update(capture_ref=capture_ref, lot_ref=request["lot_ref"],
+                  load_ref=request["load_ref"], household_ref=request["household_ref"],
+                  funds_observed=funds, price=price, **reserve)
+    if purchase_balance > MAX_HOUSEHOLD_FUNDS:
+        return {**result, "state": "LAUNDRY_PRICE_EXCEEDS_FUNDS_CAP"}
+    if funds < purchase_balance:
+        if request.get("earn_available") is not False or funding_state != "NOT_STARTED":
+            return {**result, "state": "LAUNDRY_EARN_REQUIRED_BEFORE_PURCHASE"}
+        plan = plan_inject(amount=purchase_balance, funds_observed=funds, game_mode="live")
+        return {**result, "state": "LAUNDRY_FUND_LAST_RESORT",
+                "action": "PLAN_EXACT_CONSOLE_SUBSIDY", "funding_source": "CHEAT_SUBSIDY",
+                "target_funds": plan["target_funds"], "subsidy_amount": plan["remaining"]}
+    return {**result, "state": "LAUNDRY_PURCHASE_CANDIDATE", "action": "PURCHASE_BUILD_OBJECT",
+            "catalog_ref": item["catalog_ref"], "placement_ref": item["placement_ref"],
+            "expected_funds_after": funds - price}
+
+
 def _laundry_policy(
     servo_health: list[dict],
     laundry: Mapping | None,
@@ -516,6 +610,7 @@ def evaluate_household_upkeep(
     already_busy: bool = False,
     build_or_buy_mode: bool = False,
     human_survival_hold: bool = False,
+    lot_model: Mapping | None = None,
 ) -> dict:
     """Evaluate health on each tick; recommend at most one new queue action.
 
@@ -554,6 +649,10 @@ def evaluate_household_upkeep(
         "cancel_allowed": False,
         "proof_ceiling": "OFFLINE_SERVO_BILLS_PLAN_NOT_GAME_QUEUE_OR_PAYMENT",
     }
+    funds = observation.get("funds_observed")
+    if (fresh and observation.get("funds_capture_ref") == capture_ref
+            and type(funds) is int and 0 <= funds <= MAX_HOUSEHOLD_FUNDS):
+        result["household_reserve"] = household_reserve(funds)
     # Health is always surveyed, even while another domain owns screen input.
     candidates: list[dict] = []
     for servo in servos:
@@ -684,12 +783,18 @@ def evaluate_household_upkeep(
         prerequisite=maint[0]["action_id"] if maint else None,
     )
     if laundry is not None and "availability" in laundry:
-        result["laundry_policy"]["availability"] = _laundry_availability(
+        availability = _laundry_availability(
             laundry["availability"], capture_ref=capture_ref, fresh=fresh,
             held=player_directed or already_busy or build_or_buy_mode or human_survival_hold,
             fire_state=result["laundry_policy"]["state"],
             servo_health=result["servo_health"], actors=actors, cfg=cfg,
         )
+        result["laundry_policy"]["availability"] = availability
+        if "procurement" in laundry:
+            result["laundry_policy"]["procurement"] = _laundry_procurement(
+                laundry["procurement"], availability, lot_model, capture_ref=capture_ref,
+                household_ref=observation.get("household_ref"),
+            )
 
     def finish(gate: str, action: str) -> dict:
         result.update(gate=gate, action=action)

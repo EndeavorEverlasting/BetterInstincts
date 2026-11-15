@@ -1,0 +1,68 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-LAUNDRY-BUDGET-FLOOR-20261115",
+  "base_commit": "e73de9ca9a40287a30e32bbce09195a40e6bc3b8",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "48cd3deaaebd0d021a2600502625c0010873e59d",
+  "proposed_capability": "One canonical million-simoleon household reserve and bounded last-resort funding and purchase decisions for the existing laundry owner.",
+  "affected_concepts": [
+    "HOUSEHOLD",
+    "OBSERVATION",
+    "AFFORDANCE",
+    "PLAYER_INTENT",
+    "ACTION_PROPOSAL",
+    "NATIVE_MECHANIC_EVIDENCE",
+    "OUTCOME",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/budget_eval.py",
+    "betterinstincts/funds_inject.py",
+    "betterinstincts/household_upkeep.py",
+    "betterinstincts/build_library_checkpoint.py",
+    "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-042",
+    "BI-ONT-043",
+    "BI-ONT-044",
+    "BI-ONT-045"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_RESERVE_AND_PROCUREMENT_DECISIONS_NOT_CONSOLE_OR_BUILD_BUY_DISPATCH",
+  "player_save_control_impact": "Source policy only. No screen takeover, save changes, cheat command, or purchase in this environment.",
+  "expected_outcome": "Earn to recover and grow the reserve. Procure a verified suitable washer only after exhaustion of use/repair/refresh, using a single exact positive funding plan if needed, reconciled independent funds and a fresh whole-lot checkpoint.",
+  "negative_tests": [
+    "No debit leaving less than reserve; cap overflow holds.",
+    "No console or buy under ambiguous evidence, active player, usable owned path, pending attempt or unverifiable placement.",
+    "Separate cheat proceeds from earned income and do not repeat uncertain funding/purchase."
+  ],
+  "rollback_path": "Revert proposal changes; no deployed gameplay or save changes.",
+  "unresolved_unknowns": [
+    "Live exact-build console visibility, funds readback, purchase/placement and washer usability require the authorized Windows host."
+  ],
+  "files_expected": [
+    "betterinstincts/budget_eval.py",
+    "betterinstincts/domain_cascade.py",
+    "betterinstincts/household_upkeep.py",
+    "contracts/host-budget.v1.json",
+    "contracts/household-upkeep.v1.json",
+    "contracts/native-gameplay-decisions/BI-LAUNDRY-BUDGET-FLOOR-20261115.v1.json",
+    "docs/HOST_BUDGET.md",
+    "docs/HOUSEHOLD_UPKEEP.md",
+    "docs/LEDGER.md",
+    "tests/test_domain_cascade.py",
+    "tests/test_household_upkeep.py",
+    "betterinstincts/host_stack.py",
+    "contracts/glossary.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}

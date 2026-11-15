@@ -6,6 +6,7 @@ never suppressed by purchase lockdown. Read-only planner; no SendInput.
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
@@ -34,6 +35,9 @@ def load_contract(path: Path = CONTRACT) -> dict:
         raise BudgetEvalError("EMERGENCY_RESERVE_REQUIRED")
     if not isinstance(floors.get("soft_budget_floor"), (int, float)):
         raise BudgetEvalError("SOFT_BUDGET_FLOOR_REQUIRED")
+    minimum = floors.get("minimum_household_balance")
+    if type(minimum) is not int or minimum <= floors["soft_budget_floor"]:
+        raise BudgetEvalError("MINIMUM_HOUSEHOLD_BALANCE_REQUIRED")
     if not isinstance(cfg.get("catalog"), list) or not cfg["catalog"]:
         raise BudgetEvalError("BUDGET_CATALOG_REQUIRED")
     return cfg
@@ -41,6 +45,19 @@ def load_contract(path: Path = CONTRACT) -> dict:
 
 def _need_cfg() -> dict:
     return json.loads(NEEDS.read_text(encoding="utf-8"))
+
+
+def household_reserve(funds: float, cfg: Optional[dict] = None) -> dict:
+    """Shared reserve, surplus and growth decision for autonomous spending."""
+    if type(funds) not in (int, float) or funds < 0 or not math.isfinite(funds):
+        raise BudgetEvalError("INVALID_FUNDS")
+    minimum = (cfg or load_contract())["floors"]["minimum_household_balance"]
+    return {
+        "minimum_household_balance": minimum,
+        "reserve_shortfall": max(0, minimum - funds),
+        "spend_max": max(0, funds - minimum),
+        "income_goal": "EARN_TO_RESTORE_RESERVE" if funds < minimum else "EARN_TO_GROW_SURPLUS",
+    }
 
 
 def money_urgency(funds: float, cfg: Optional[dict] = None) -> str:
@@ -93,18 +110,17 @@ def evaluate(
             "actions": [],
             "proof_ceiling": "PLAYER_FIRST",
         }
-    if isinstance(funds, bool) or not isinstance(funds, (int, float)) or funds < 0:
-        raise BudgetEvalError("INVALID_FUNDS")
     if set(needs) != SIX:
         raise BudgetEvalError("SIX_NEEDS_REQUIRED")
 
     cfg = load_contract()
+    reserve = household_reserve(funds, cfg)
     need_cfg = _need_cfg()
     urgent_t = float(need_cfg["urgency_threshold"])
     preempt_t = float(need_cfg["preemptive_threshold"])
     emergency = float(cfg["floors"]["emergency_reserve"])
     soft = float(cfg["floors"]["soft_budget_floor"])
-    spend_max = max(0.0, float(funds) - emergency)
+    spend_max = reserve["spend_max"]
     owned = _owned_classes(owned_objects)
     m_urg = money_urgency(float(funds), cfg)
 
@@ -147,6 +163,13 @@ def evaluate(
         })
         if next_gate == "CONTINUE_HOST_LANE":
             next_gate = "EARN_BEFORE_SPEND"
+    elif reserve["reserve_shortfall"]:
+        next_gate = "EARN_BEFORE_SPEND"
+        actions.append({
+            "id": "earn_to_restore_reserve",
+            "kind": "EARN_BEFORE_SPEND",
+            "reason": "BELOW_MINIMUM_HOUSEHOLD_BALANCE",
+        })
 
     # Secure cheapest adequate only when affordable after reserve.
     for gap in gaps:
@@ -200,7 +223,7 @@ def evaluate(
         "money_urgency": m_urg,
         "emergency_reserve": emergency,
         "soft_budget_floor": soft,
-        "spend_max": spend_max,
+        **reserve,
         "gaps": gaps,
         "actions": actions,
         "next_gate": next_gate,
@@ -211,5 +234,6 @@ def evaluate(
             "earn_never_blocked_by_lockdown": True,
             "player_first": True,
             "no_spend_below_emergency_reserve": True,
+            "autonomous_discretionary_purchase_preserves_household_minimum": True,
         },
     }

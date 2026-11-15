@@ -201,3 +201,23 @@ appliance placement, upgrades and contents, the native acknowledgement,
 actual load transfer, player priority, and rollback in an authorized disposable
 save. No Build/Buy, sell/replace, pack removal, or desktop automation is needed
 for the intended native workflow.
+
+### Last-resort washer procurement
+
+The upkeep observation may also provide `laundry.procurement` scoped to the
+same household, lot, load and capture. Supply independently observed proof
+that existing laundry routes are exhausted, a current compatible catalog
+washer and placement, current funds, and the verified whole-lot model. Wait
+while a washer is busy or an outcome is pending. Prefer verified available
+earning. When earning is unavailable, propose one exact console subsidy to
+the household minimum plus the verified washer price. Preserve higher balances.
+A prospective purchase uses fresh funds and the same current catalog price
+even after funding. Games with no safe available placement defer.
+
+Track `funding_state` as `NOT_STARTED`, `APPLIED` (matching dispatch and
+distinct before/after observations), or `NO_EFFECT`. Track pending and
+attempted purchase independently. A live adapter must retain these states at
+the dispatch boundary. Reconcile uncertainty before any continuation. Verify
+exact debit, placed washer, same load and reserve after a purchase. The fields
+are proposals for the local adapter. The Windows integration and proof are
+tracked in [#279](https://github.com/EndeavorEverlasting/BetterInstincts/issues/279).
