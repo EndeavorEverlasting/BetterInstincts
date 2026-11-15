@@ -1,0 +1,73 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PS0251-NATIVE-RESPONSE-INTEGRATION-20261115",
+  "base_commit": "ecc7c4b718322a7551bb65491633273b42eeff73",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Integrate recipient-scored preference decision, native response port and native effect/readback correlation from PRs 261–278 while keeping existing other preference paths and explicit player-first admission.",
+  "affected_concepts": [
+    "ACTION_PROPOSAL",
+    "OBSERVATION",
+    "PROOF_RECEIPT",
+    "NATIVE_MECHANIC_EVIDENCE",
+    "PLAYER_INTENT",
+    "NATIVE_RESOLUTION_PROOF"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "betterinstincts/preference_prompts.py",
+    "docs/PREFERENCE_PROMPTS.md",
+    "contracts/native-gameplay-authority.v1.json",
+    "contracts/control-discovery.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-042",
+    "BI-ONT-043",
+    "BI-ONT-044",
+    "BI-ONT-045",
+    "BI-ONT-049",
+    "BI-ONT-050",
+    "BI-ONT-052"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "INJECTED_ADAPTER_SOURCE_VALIDATION_NO_INSTALLED_EA_SUBMIT_OR_ACTIVATION",
+  "player_save_control_impact": "No in-game actions, save changes, inferred LabLab identity, or permission grant. The native port requires a separately verified adapter and game-side admissions. Existing unrelated preference behavior retained.",
+  "expected_outcome": "One reviewed current-mainline change adopts the source-tested Video Gaming responder and exact readback, rejects host recipient mismatch, and retains established other preference defaults.",
+  "negative_tests": [
+    "Legacy other topic caller evaluates correctly without new native fields.",
+    "Video Gaming stays held without native recipient input.",
+    "Native response and lost ACK correlate with the current dialog and do not replay.",
+    "Selected-recipient mismatch blocks GUI execution before any click."
+  ],
+  "rollback_path": "Revert only this isolated PR; original stack branches, historical receipts and LabLab safeguards are preserved.",
+  "unresolved_unknowns": [
+    "Game-side submit and native import/activation must be proven on Windows.",
+    "Private save and authorized successor scope require host evidence."
+  ],
+  "files_expected": [
+    "betterinstincts/preference_prompts.py",
+    "betterinstincts/preference_recipient.py",
+    "betterinstincts/preference_native_map.py",
+    "contracts/preference-prompts.v1.json",
+    "contracts/preference-native-response-map.v1.json",
+    "scripts/preference_prompts.py",
+    "scripts/preference_response_port.py",
+    "tests/test_preference_prompts.py",
+    "tests/test_preference_host_adapter.py",
+    "tests/test_preference_native_map.py",
+    "tests/test_preference_native_response.py",
+    "docs/PREFERENCE_PROMPTS.md",
+    "docs/LEDGER.md",
+    "contracts/native-gameplay-decisions/BI-PS0251-NATIVE-RESPONSE-INTEGRATION-20261115.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}
