@@ -16,6 +16,8 @@ SCHEMA = "betterinstincts.mechanics-registry/v1"
 LIFE = {"SOURCE_PRESENT", "GAP"}
 ID = re.compile(r"^[a-z][a-z0-9]+(?:-[a-z0-9]+)*$")
 REF = re.compile(r"^[A-Za-z0-9:_./-]{3,160}$")
+OWNER_PATH = re.compile(r"betterinstincts/[a-z_][a-z0-9_]*\.py")
+TEST_PATH = re.compile(r"tests/test_[a-z0-9_]+\.py")
 
 
 class MechanicsRegistryError(ValueError):
@@ -70,14 +72,13 @@ def validate_registry(data: Mapping, *, root: Path = ROOT) -> dict:
                 or len(tests) != len(set(map(str, tests)))):
             raise MechanicsRegistryError("MECHANIC_TEST_LIST_INVALID")
         if row["evidence_state"] == "SOURCE_PRESENT":
-            if (not isinstance(owner, str) or not owner.startswith("betterinstincts/")
-                    or not owner.endswith(".py") or
+            if (not isinstance(owner, str) or not OWNER_PATH.fullmatch(owner) or
                     not (root / owner).is_file() or not tests or
                     row["next_gate"] != "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF"):
                 raise MechanicsRegistryError("MECHANIC_SOURCE_OWNER_OR_TEST_MISSING")
             for test in tests:
-                if not isinstance(test, str) or not test.startswith("tests/test_") or (
-                        not test.endswith(".py") or not (root / test).is_file()):
+                if (not isinstance(test, str) or not TEST_PATH.fullmatch(test)
+                        or not (root / test).is_file()):
                     raise MechanicsRegistryError("MECHANIC_TEST_OWNER_INVALID")
         elif owner is not None or tests or row["next_gate"] != "P95_OWNER_DISCOVERY":
             raise MechanicsRegistryError("MECHANIC_GAP_MUST_NOT_INVENT_OWNER")

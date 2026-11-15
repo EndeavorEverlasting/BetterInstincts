@@ -45,6 +45,7 @@ open_control_discovery(
 runner = AgentControlRunner(session_id, cooperative_queue)
 runner.prepare_effect(
     work_id="work:plant2", action_ref="fertilize:select",
+    mechanic_id="gardening", fallback_reason="EXISTING_RULE_FAILED",
     object_class_ref="object_class:planter",
     before_capture_ref="capture:before",
     authority_ref="admission:fresh", validate=fresh_game_state,
@@ -72,3 +73,11 @@ Developer checks: \`python -m unittest tests.test_control_discovery -v\` and \`p
 ## 2026-11-14 — Do not end the agent mission at a child checkpoint
 
 Following the control-use correction, `AgentControlRunner.assess_parent_turn_boundary` now reads the active listener and outstanding effect identity before recommending a turn boundary. Player takeover keeps the listener and prepared effect; a passive observation or action QUEUE_STATUS `COMPLETED` does not produce a verified game outcome, a source-backed deterministic rule, or parent completion. Pending real game effects receive a distinct reconciliation gate. An approved source-only task may advance while gameplay input waits. See `docs/AGENT_CONTEXT.md`, `contracts/agent-context.v1.json#parent_turn_boundary` and `tests/test_control_discovery.py`. This is **advisory**, not a deployed Codex stop hook, an EA native gameplay mod or an installed background runner.
+
+## Route fallback work across microsystems
+
+One listener can journal actions from different mechanics. Record each known `mechanic_id` and the reason for that action at `AgentControlRunner.prepare_effect`. The journal retains the source identity with the before, during, and after evidence. The existing session reason is the default for older callers.
+
+Inspect the paged work items with `python -m scripts.control_discovery_cli status --session SESSION`. Each `source_routing` entry uses [the mechanics registry](../contracts/mechanics-registry.v1.json) to supply the current owner and existing tests. Laundry availability and fertilizer sourcing route to their own owners even in the same household session. Unregistered mechanics, known owner gaps, and an unavailable registry remain visible for review. The owner field in a codification receipt names the mechanic's current source owner. Independent review still verifies the actual code and tests, including any supporting files in the change.
+
+To classify an unattributed historical step, submit a `MECHANIC_IDENTIFIED` event via the existing CLI `record` command. Include the event schema, next sequence number, original work ID, mechanic ID, and a sanitized `classification_ref` from the reviewed evidence. This adds a routing fact without rewriting earlier evidence or repeating an action.

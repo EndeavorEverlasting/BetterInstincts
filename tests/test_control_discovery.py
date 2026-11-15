@@ -43,6 +43,94 @@ def prepared(ledger, work="work:plant2"):
 
 
 class SemanticDiscoveryTests(unittest.TestCase):
+    def test_mixed_microsystem_routes_preserve_per_effect_reason_and_trace(self):
+        state = base()
+        cases = [
+            ("gardening", "NATIVE_ROUTE_MISSING", "betterinstincts/gardening_service.py"),
+            ("laundry-availability", "EXISTING_RULE_FAILED", "betterinstincts/household_upkeep.py"),
+            ("career-progress", "DISPOSABLE_GAME_DIAGNOSTIC", "betterinstincts/career_service.py"),
+            ("preference-offer", "NATIVE_ROUTE_UNPROVEN", "betterinstincts/preference_prompts.py"),
+        ]
+        for index, (mechanic_id, reason, owner) in enumerate(cases):
+            work = f"work:{index}"
+            state = event(state, "PREPARE", work, action_ref="action:check",
+                          object_class_ref="class:target", before_capture_ref=f"capture:before{index}",
+                          authority_ref="authority:admitted", mechanic_id=mechanic_id,
+                          fallback_reason=reason)
+            state = event(state, "DISPATCH_BOUNDARY", work)
+            state = event(state, "QUEUE_STATUS", work, queue_state="COMPLETED")
+            state = event(state, "OUTCOME", work, outcome="HARMFUL" if index == 1 else "HELPFUL",
+                          after_capture_ref=f"capture:after{index}", outcome_ref=f"outcome:{index}",
+                          player_interrupted=False)
+            item, = codification_work_items(state, offset=index, limit=1)["items"]
+            self.assertEqual(item["source_routing"]["module_ref"], owner)
+            self.assertTrue(item["source_routing"]["existing_test_refs"])
+            self.assertEqual(item["source_routing"]["mechanic_id"], mechanic_id)
+            self.assertEqual(item["fallback_reason"], reason)
+            self.assertEqual(item["native_responder_gap"], index != 2)
+            trace = item["effect_trace"]
+            self.assertEqual(trace["before"]["capture_ref"], f"capture:before{index}")
+            self.assertEqual(trace["after"]["capture_ref"], f"capture:after{index}")
+            self.assertEqual(trace["during"]["dispatch_boundary_seq"], 4 * index + 2)
+            self.assertFalse(trace["native_resolution_proved"])
+            self.assertFalse(item["source_verified"])
+
+    def test_legacy_identification_is_evidenced_and_cannot_relabel_work(self):
+        state = prepared(base())
+        self.assertEqual(codification_work_items(state)["items"][0]["source_routing"]["state"],
+                         "MECHANIC_ID_REQUIRED")
+        state = event(state, "MECHANIC_IDENTIFIED", mechanic_id="fertilizer-sourcing",
+                      classification_ref="review:original-garden-capture")
+        route = codification_work_items(state)["items"][0]["source_routing"]
+        self.assertEqual(route["classification_ref"], "review:original-garden-capture")
+        self.assertEqual(route["module_ref"], "betterinstincts/fertilizer_workflow.py")
+        self.assertNotIn("mechanic_id", state["events"][0])
+        with self.assertRaisesRegex(ControlDiscoveryError, "IDENTIFICATION_ALREADY_FIXED"):
+            event(state, "MECHANIC_IDENTIFIED", mechanic_id="career-progress",
+                  classification_ref="review:different")
+
+    def test_gap_unregistered_and_unavailable_registry_keep_work_open(self):
+        for mechanic_id, expected in (("pet-care", "MECHANIC_OWNER_GAP"),
+                                      ("new-mechanic", "MECHANIC_NOT_REGISTERED")):
+            with self.subTest(mechanic_id=mechanic_id):
+                state = event(prepared(base()), "MECHANIC_IDENTIFIED", mechanic_id=mechanic_id,
+                              classification_ref="review:target")
+                state = event(state, "QUEUE_STATUS", queue_state="NEEDS_RECONCILIATION")
+                state = event(state, "OUTCOME", outcome="HARMFUL", after_capture_ref="capture:after",
+                              outcome_ref="outcome:failed", player_interrupted=False)
+                item = codification_work_items(state)["items"][0]
+                self.assertEqual(item["source_routing"]["state"], expected)
+                self.assertEqual(item["next_gate"], "RESOLVE_MECHANIC_SOURCE_OWNER")
+                with self.assertRaisesRegex(ControlDiscoveryError, "MECHANIC_SOURCE_OWNER_REQUIRED"):
+                    event(state, "CODIFICATION_RECEIPT", module_ref="betterinstincts/priority.py",
+                          test_ref="test:case", commit_ref="commit:pending", review_ref="review:case")
+        with patch("betterinstincts.control_discovery.load_registry", side_effect=OSError):
+            item = codification_work_items(state)["items"][0]
+            self.assertEqual(item["source_routing"]["state"], "MECHANICS_REGISTRY_UNAVAILABLE")
+            self.assertEqual(item["observed_outcome"], "HARMFUL")
+
+    def test_codification_claim_must_match_routed_source_owner(self):
+        state = event(prepared(base()), "MECHANIC_IDENTIFIED", mechanic_id="gardening",
+                      classification_ref="review:garden")
+        state = event(state, "QUEUE_STATUS", queue_state="COMPLETED")
+        state = event(state, "OUTCOME", outcome="HELPFUL", after_capture_ref="capture:after",
+                      outcome_ref="outcome:readback", player_interrupted=False)
+        claim = dict(test_ref="test:new-regression", commit_ref="commit:pending", review_ref="review:case")
+        with self.assertRaisesRegex(ControlDiscoveryError, "CODIFICATION_MECHANIC_OWNER_MISMATCH"):
+            event(state, "CODIFICATION_RECEIPT", module_ref="betterinstincts/career_service.py", **claim)
+        state = event(state, "CODIFICATION_RECEIPT", module_ref="betterinstincts/gardening_service.py", **claim)
+        item = codification_work_items(state)["items"][0]
+        self.assertEqual(item["next_gate"], "VERIFY_COMMIT_TEST_AND_MAIN_READBACK")
+        self.assertFalse(item["source_verified"])
+
+    def test_prepare_rejects_paths_and_bad_effect_reasons(self):
+        fields = dict(action_ref="action:test", object_class_ref="class:target",
+                      before_capture_ref="capture:before", authority_ref="authority:admitted")
+        for invalid in ({"mechanic_id": "other/path"}, {"fallback_reason": "UNVERIFIED"},
+                        {"fallback_reason": []}):
+            with self.subTest(invalid=invalid), self.assertRaises(ControlDiscoveryError):
+                event(base(), "PREPARE", **fields, **invalid)
+
     def test_no_implicit_listener_or_opt_in(self):
         for overrides in (
             {"listener_active": False},
@@ -439,7 +527,7 @@ class AgentControlRunTests(unittest.IsolatedAsyncioTestCase):
         )
         self.runner = AgentControlRunner("bi-control-01", self.queue)
 
-    def prepare(self, effect=None):
+    def prepare(self, effect=None, **attribution):
         async def validate():
             return True
 
@@ -451,8 +539,36 @@ class AgentControlRunTests(unittest.IsolatedAsyncioTestCase):
             object_class_ref="object_class:planter",
             before_capture_ref="capture:before",
             authority_ref="admission:checked", validate=validate,
-            effect=effect or default_effect,
+            effect=effect or default_effect, **attribution,
         )
+
+    async def test_runner_persists_mechanic_before_dispatch_and_reports_its_owner(self):
+        self.age = 16000
+
+        async def effect():
+            item, = host_listener.read_control_discovery("bi-control-01")["codification_work"]["items"]
+            self.assertEqual(item["source_routing"]["mechanic_id"], "gardening")
+            self.assertIsNotNone(item["effect_trace"]["during"]["dispatch_boundary_seq"])
+            self.executed.append("real-effect")
+
+        self.prepare(effect=effect, mechanic_id="gardening",
+                     fallback_reason="NATIVE_ROUTE_UNPROVEN")
+        self.assertEqual((await self.runner.pulse())["state"], "COMPLETED")
+        receipt = self.runner.record_observed_outcome(
+            outcome="HELPFUL", after_capture_ref="capture:after",
+            outcome_ref="outcome:verified", player_interrupted=False,
+        )
+        item, = receipt["handoff"]["codification_work"]["items"]
+        self.assertEqual(item["source_routing"]["module_ref"], "betterinstincts/gardening_service.py")
+        self.assertEqual(item["fallback_reason"], "NATIVE_ROUTE_UNPROVEN")
+        self.assertFalse(item["effect_trace"]["native_resolution_proved"])
+
+    async def test_invalid_mechanic_does_not_prepare_or_enqueue(self):
+        with self.assertRaisesRegex(host_listener.HostListenerError, "MECHANIC_ID_INVALID"):
+            self.prepare(mechanic_id="private/path")
+        self.assertFalse(self.queue.pending)
+        self.assertIsNone(self.runner.current_work_id)
+        self.assertEqual(host_listener.read_control_discovery("bi-control-01")["events_count"], 0)
 
     async def test_pause_preserves_control_session_then_idle_resumes(self):
         self.prepare()

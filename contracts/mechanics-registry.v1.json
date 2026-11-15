@@ -1,6 +1,6 @@
 {
   "schema": "betterinstincts.mechanics-registry/v1",
-  "revision": 4,
+  "revision": 5,
   "purpose": "Source-backed, never-finished domain coverage map. Machine-readable mechanical ownership, missing capability gaps, dependencies and verified proof ceilings must evolve with independently observed outcomes; neither a static TODO nor a new central gameplay controller.",
   "canonical_owner": "contracts/mechanics-registry.v1.json",
   "policy_owner": "betterinstincts/mechanics_registry.py",
@@ -640,6 +640,214 @@
       "dependencies": [
         "career-progress",
         "eco-recycling-materials"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "preference-offer",
+      "domain": "wellbeing",
+      "scope": "SIM",
+      "owner": "betterinstincts/preference_prompts.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_preference_prompts.py"
+      ],
+      "dependencies": [
+        "personality-preferences"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "laundry-availability",
+      "domain": "upkeep",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/household_upkeep.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_household_upkeep.py"
+      ],
+      "dependencies": [
+        "household-repairs"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "household-purchase",
+      "domain": "economy",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/purchase_dialog.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_purchase_dialog.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "household-funds",
+      "domain": "economy",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/funds_inject.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_funds_inject.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "computer-upgrade-parts",
+      "domain": "economy",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/computer_upgrade_parts.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_computer_upgrade_parts.py"
+      ],
+      "dependencies": [
+        "household-purchase"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "queue-supervision",
+      "domain": "safety",
+      "scope": "SIM",
+      "owner": "betterinstincts/queue_supervision.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_queue_supervision.py"
+      ],
+      "dependencies": [
+        "action-queue-capacity"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "world-traversal",
+      "domain": "mobility",
+      "scope": "WORLD",
+      "owner": "betterinstincts/world_traversal_learning.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_world_traversal_learning.py"
+      ],
+      "dependencies": [
+        "player-queue-sovereignty"
+      ],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "gameplay-panel-action",
+      "domain": "coordination",
+      "scope": "SIM",
+      "owner": "betterinstincts/ui_microsystems.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_ui_microsystems.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "activity-chain",
+      "domain": "coordination",
+      "scope": "SIM",
+      "owner": "betterinstincts/activity_chain.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_activity_chain.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "scenario-goals",
+      "domain": "progression",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/scenario_goals.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_scenario_goals.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "event-goals",
+      "domain": "life-events",
+      "scope": "HOUSEHOLD",
+      "owner": "betterinstincts/event_goals.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_event_goals.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "build-library-checkpoint",
+      "domain": "safety",
+      "scope": "WORLD",
+      "owner": "betterinstincts/build_library_checkpoint.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_build_library_checkpoint.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "semantic-traversal-advice",
+      "domain": "mobility",
+      "scope": "WORLD",
+      "owner": "betterinstincts/semantic_advisory.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_semantic_advisory.py"
+      ],
+      "dependencies": [],
+      "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
+      "game_effect_certified": false,
+      "private_instance_data": false
+    },
+    {
+      "id": "career-event-decisions",
+      "domain": "life-events",
+      "scope": "SIM",
+      "owner": "betterinstincts/career_decisions.py",
+      "evidence_state": "SOURCE_PRESENT",
+      "tests": [
+        "tests/test_career_decisions.py"
+      ],
+      "dependencies": [
+        "career-progress"
       ],
       "next_gate": "LOCAL_EXACT_BUILD_AND_OUTCOME_PROOF",
       "game_effect_certified": false,

@@ -25,7 +25,7 @@
   "workflow": [
     "Evaluate available deterministic native/repository policies first",
     "When insufficient, opt in to an ACTIVE game listener and explicit bounded agent-control session",
-    "Before EACH atomic game action persist PREPARE with capture, target class, action and authority receipt",
+    "Before each atomic action persist PREPARE with capture, target class, action, authority receipt, and the reviewed mechanic ID and fallback reason when known.",
     "Only then enqueue via CooperativeScreenQueue.enqueue_effect, requiring exclusive screen ownership, fresh presence/idle probes, scene/target/queue validation and effect checkpoint",
     "If user becomes active in any app, yield action behavior while retaining the session, pending step, and read-only listener",
     "While waiting, passive reviewed observations can continue without focus or game effect; no automatic background daemon",
@@ -39,6 +39,7 @@
     "schema": "betterinstincts.control-discovery-event/v1",
     "kinds": [
       "PREPARE",
+      "MECHANIC_IDENTIFIED",
       "DISPATCH_BOUNDARY",
       "QUEUE_STATUS",
       "OUTCOME",
@@ -71,7 +72,22 @@
       "provenance": "sanitized reviewed sensor/agent semantic record, never raw input or screenshot",
       "timing": "while admitted, while waiting for player, or during post-effect observation before codification receipt"
     },
-    "dispatch_boundary": "Persisted immediately before the gated callback. An absent marker on a legacy trace remains unknown."
+    "dispatch_boundary": "Persisted immediately before the gated callback. An absent marker on a legacy trace remains unknown.",
+    "prepare_attribution": {
+      "optional_fields": [
+        "mechanic_id",
+        "fallback_reason"
+      ],
+      "reason_default": "The session fallback reason is inherited when PREPARE supplies none.",
+      "identity": "Explicit repository mechanic ID. Never infer identity from an action label, target class or goal."
+    },
+    "mechanic_identification": {
+      "fields": [
+        "mechanic_id",
+        "classification_ref"
+      ],
+      "scope": "Append one reviewed classification to an unattributed prepared step before codification. Preserve the historical PREPARE and effect evidence."
+    }
   },
   "pause_resume": {
     "human_activity": "WAITING_FOR_USER, do not dispatch, do not close listener or computer-use session",
@@ -100,7 +116,19 @@
     "native_recovery": "Successful and negative assisted actions require deterministic source and regression work. Only product-owned decision and submit with a matching current native acknowledgement and effect can prove native resolution.",
     "development_path": "Use the existing BetterInstincts evidence checkout, including its ignored listener journal. Use an authorized separate worktree when needed for source.",
     "product_path": "Exact installed Sims build and the existing explicitly selected Mods root. Artifacts and native import are independently verified on Windows.",
-    "projection": "effect_trace exposes before, during and after, preserves fallback origin, and can never establish native resolution."
+    "projection": "effect_trace exposes before, during and after, preserves fallback origin, and can never establish native resolution.",
+    "source_routing": {
+      "canonical_registry": "contracts/mechanics-registry.v1.json",
+      "states": [
+        "SOURCE_OWNER_IDENTIFIED",
+        "MECHANIC_ID_REQUIRED",
+        "MECHANIC_NOT_REGISTERED",
+        "MECHANIC_OWNER_GAP",
+        "MECHANICS_REGISTRY_UNAVAILABLE"
+      ],
+      "known_owner": "Returns domain, existing module and test references. A coded claim for attributed work references the current registry owner and remains independently unverified.",
+      "unknown": "Keep the trace visible and review the identity or source owner. Registry failure cannot erase evidence, grant control or close proof."
+    }
   },
   "privacy": {
     "capture": "only sanitized class/action identifiers and opaque provenance refs; never raw key/mouse events, screenshots, Sim names, user save paths, or external app content",

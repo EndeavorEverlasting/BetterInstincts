@@ -56,6 +56,8 @@ class AgentControlRunner:
         before_capture_ref: str, authority_ref: str,
         validate: Callable[[], Awaitable[bool]],
         effect: Callable[[], Awaitable[object]],
+        mechanic_id: str | None = None,
+        fallback_reason: str | None = None,
     ) -> dict:
         """Journal before any computer-use effect is queued.
 
@@ -69,10 +71,16 @@ class AgentControlRunner:
             raise AgentControlRunnerError("ONE_EFFECT_IN_FLIGHT_REQUIRED")
         if not callable(validate) or not callable(effect):
             raise AgentControlRunnerError("CALLBACKS_REQUIRED")
+        attribution = {}
+        if mechanic_id is not None:
+            attribution["mechanic_id"] = mechanic_id
+        if fallback_reason is not None:
+            attribution["fallback_reason"] = fallback_reason
         receipt = self._write(
             "PREPARE", work_id,
             action_ref=action_ref, object_class_ref=object_class_ref,
             before_capture_ref=before_capture_ref, authority_ref=authority_ref,
+            **attribution,
         )
         # A failed enqueue leaves a PREPARED journal candidate for investigation,
         # rather than silently erasing the action from a future agent's context.
