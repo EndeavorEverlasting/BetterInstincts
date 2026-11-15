@@ -1,0 +1,10 @@
+**
+!Dockerfile
+!.dockerignore
+!bootstrap.py
+!scripts/
+!scripts/play.py
+!scripts/first_run.py
+!scripts/smart_start.py
+!betterinstincts/
+!betterinstincts/first_run.py

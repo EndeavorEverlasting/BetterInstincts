@@ -71,6 +71,15 @@ def annotate_lab_save_handoff(receipt: dict) -> dict:
     }
 
 
+def requested_start(game_exe: Path | None = None) -> dict:
+    """Start a detected or explicitly selected game through the same admission."""
+    if game_exe is None:
+        receipt = auto_start()
+    else:
+        receipt = auto_start(discoverer=lambda: [select_game([], game_exe)])
+    return annotate_lab_save_handoff(receipt)
+
+
 def gui() -> int:
     if sys.platform != "win32":
         raise FirstRunError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
@@ -203,7 +212,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command in (None, "gui"):
             return gui()
         if args.command == "auto":
-            output = annotate_lab_save_handoff(auto_start())
+            output = requested_start()
             print(json.dumps(output, sort_keys=True))
             if args.fallback_gui and output["state"] == "GAME_SELECTION_REQUIRED":
                 return gui()

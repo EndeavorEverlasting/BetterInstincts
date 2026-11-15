@@ -8,6 +8,41 @@ The launcher receipt now includes `lab_save_route` from the single ignored `dist
 
 Status: pre-alpha offline toolkit, not a certified playable Sims 4 mod. The one-click Windows entrypoint is Start-BetterInstincts.cmd. Windows and actual game proof must be independently observed; source and CI are not that proof.
 
+## Play from the command line
+
+From your BetterInstincts checkout on the Windows PC with The Sims 4 installed,
+start Docker in Linux container mode. With Git and Python 3.11+ available, run:
+
+```powershell
+py -3 -m scripts.play
+```
+
+The command builds a small startup image, checks that its source fingerprints
+match the checkout, installs or reuses the user-scoped toolkit, and requests
+game launch when it finds one valid installation. Docker runs the startup check
+offline with a read-only filesystem and no host mounts. The Windows side handles
+the existing install manifest and game process check. Entering the command is
+the launch request. The game platform handles any sign-in, and you choose what
+to play at the Sims menu.
+
+If BetterInstincts needs an exact installation, pass the executable it asks for:
+
+```powershell
+py -3 -m scripts.play --game-exe "C:\path\to\The Sims 4\Game\Bin\TS4_x64.exe"
+```
+
+Agents with an authorized launch request start with
+`py -3 -m scripts.play --json`. Exit 0 means launch dispatched or Sims already
+running. Exit 2 includes the failed `stage`, `reason`, and `next_step`. Address
+that stage. Once dispatch is reported, observe the existing session before
+attempting any retry. The game receipt includes the existing certification-first
+save handoff when a local memo is available. A launch receipt has process-level
+evidence. Menu arrival and Live Mode require separate observation.
+
+On a Docker host without Sims, `python -m scripts.play --plan --json` builds and
+runs just the container check. The [downloadable Windows launcher](../Start-BetterInstincts.cmd)
+is available for players using Git and Python directly.
+
 ## Player workflow
 
 1. Save the plain-text launcher from the download page and double-click it. It checks for Git and Python 3.11+. It does not elevate, modify the registry, services, drivers, keyboard, OS or game files, or install system prerequisites silently.

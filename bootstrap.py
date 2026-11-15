@@ -267,7 +267,7 @@ def install(location: dict[str, Path], *, platform: str | None = None) -> dict:
     if existing is not None:
         _, data = existing
         name = use / data["launcher"]
-        if name.is_symlink() or not name.is_file() or _sha(name.read_text(encoding="utf-8")) != data["launcher_sha256"]:
+        if name.is_symlink() or not name.is_file() or hashlib.sha256(name.read_bytes()).hexdigest() != data["launcher_sha256"]:
             raise BootstrapError("INSTALLED_LAUNCHER_DRIFT")
         return {"state": "ALREADY_INSTALLED", "checkout": str(dev), "use": str(use)}
     if use.exists() and any(use.iterdir()):
@@ -314,7 +314,7 @@ def uninstall(location: dict[str, Path], *, platform: str | None = None) -> dict
         return {"state": "NOT_INSTALLED", "checkout": str(dev), "runtime_cleanup": cleanup}
     manifest_file, data = existing
     target = use / data["launcher"]
-    if target.is_symlink() or not target.is_file() or _sha(target.read_text(encoding="utf-8")) != data["launcher_sha256"]:
+    if target.is_symlink() or not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest() != data["launcher_sha256"]:
         raise BootstrapError("LAUNCHER_CHANGED_PRESERVE")
     if {p.name for p in use.iterdir()} != {MANIFEST, data["launcher"]}:
         raise BootstrapError("UNOWNED_INSTALL_FILES_PRESERVE")

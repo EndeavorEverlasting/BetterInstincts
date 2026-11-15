@@ -89,6 +89,15 @@ All agents use `docs/ACQUISITION_ROUTING.md` and `contracts/upgrade-parts-force.
 ## Horizon continuity
 Read `docs/HORIZON.md`, `plans/horizon.v1.json`, `plans/active/BI-003.execution.v1.json`. Order: all six needs, balance, income, skills, careers; preserve prior patches. BI-002 stays open. `python -m scripts.check_horizon`.
 
+## Start BetterInstincts and The Sims 4
+
+For an authorized startup on the Windows game host, run
+`py -3 -m scripts.play --json` from the checkout. Use the receipt's first failed
+stage and next step before using a lower-level installer or launcher. If it
+reports a launch request or an existing process, observe that session before
+considering another launch. For a Docker-only check use
+`python -m scripts.play --plan --json`. See [First run](FIRST_RUN.md#play-from-the-command-line).
+
 ## Completion contract
 Report CHANGED | PROVED | NEXT with checks, SHA, push/PR/merge, patch, live status. A plan is not implementation; a green CI check is not playable-mod proof.
 
