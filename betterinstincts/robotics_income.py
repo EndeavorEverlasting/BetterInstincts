@@ -124,7 +124,7 @@ def _terminal(row: Mapping) -> tuple[tuple[str, ...], int, int, int] | None:
 def _cohorts(raw: object, scope: tuple[str, str, str]) -> dict:
     runs: dict[tuple[str, str], list[tuple[int, int, int, str, Mapping]]] = {}
     blocked: set[tuple[str, str]] = set()
-    used: dict[str, Mapping] = {}
+    by_proof: dict[str, list[Mapping]] = {}
     pending: list[Mapping] = []
     for row in _rows(raw, MAX_RECEIPTS):
         if tuple(row.get(k) for k in SCOPE_KEYS) != scope:
@@ -140,25 +140,28 @@ def _cohorts(raw: object, scope: tuple[str, str, str]) -> dict:
             blocked.add(key)  # Open/partial attempt must be reconciled before a retry.
             continue
         refs, cash_in, cost, minutes = proof
-        if used.get(refs[0]) == row:
+        if row in by_proof.get(refs[0], ()):
             continue
-        overlap = [used[ref] for ref in refs if ref in used]
-        if overlap:
-            blocked.add(key)
-            blocked.update(_key(old) for old in overlap)
-            continue
-        used.update(dict.fromkeys(refs, row))
+        for ref in refs:
+            owners = by_proof.setdefault(ref, [])
+            if owners:
+                blocked.add(key)
+                blocked.update(_key(old) for old in owners)
+            owners.append(row)
         runs.setdefault(key, []).append((cash_in, cost, minutes, refs[0], row["ingredients"]))
     for row in pending:
         attempt = row.get("attempt_ref")
-        terminal = used.get(attempt) if _ref(attempt) else None
-        if (terminal is None or _key(row) != _key(terminal)
-                or attempt != terminal.get("attempt_ref")
-                or not _ref(row.get("native_action_ref"))
-                or row["native_action_ref"] != terminal.get("native_action_ref")
+        candidates = by_proof.get(attempt, ()) if _ref(attempt) else ()
+        key = _key(row)
+        if len(candidates) != 1:
+            blocked.add(key)
+            continue
+        terminal = candidates[0]
+        if (key != _key(terminal) or attempt != terminal.get("attempt_ref")
+                or row.get("native_action_ref") != terminal.get("native_action_ref")
                 or (row.get("outcome") == "UNSOLD" and (
                     not _ref(row.get("item_ref")) or row["item_ref"] != terminal.get("item_ref")))):
-            blocked.add(_key(row))
+            blocked.add(key)
     return runs, blocked
 
 

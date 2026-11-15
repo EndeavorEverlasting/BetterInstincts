@@ -1,4 +1,5 @@
 import copy
+import itertools
 import unittest
 
 from betterinstincts.autonomy_moderation import (
@@ -147,6 +148,16 @@ class RoboticsIncomeTests(unittest.TestCase):
         self.assertEqual(offers["quadcopter"]["state"], "RECONCILE_NATIVE_RECEIPTS")
         self.assertIsNone(offers["quadcopter"]["realized_net"])
         self.assertIsNone(decision["replacement_candidate"])
+
+    def test_chained_proof_collisions_are_blocked_in_every_receipt_order(self):
+        quotes = [recipe(name) for name in ("quadcopter", "gardener_bot", "party_bot")]
+        first, second, third = [receipt(i, offer=offer) for i, offer in enumerate(quotes)]
+        second["debit_ref"] = first["debit_ref"]
+        third["sale_ref"] = second["sale_ref"]
+        for history in itertools.permutations([first, second, third]):
+            offers, decision = evaluate(offers=quotes, receipts=list(history))
+            self.assertTrue(all(o["state"] == "RECONCILE_NATIVE_RECEIPTS" for o in offers.values()))
+            self.assertIsNone(decision["replacement_candidate"])
 
     def test_pending_or_ambiguous_outcome_never_becomes_profit(self):
         for change in ({"outcome": "UNSOLD"}, {"attributed": False}, {"sale_ref": None}):
