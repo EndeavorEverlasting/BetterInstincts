@@ -2,6 +2,18 @@
 
 **Status:** repository policy and read-only launch-receipt integration. This has not loaded a save or operated the local Windows game. The observed Video Gaming preference offer and its ignored Windows evidence remain local.
 
+## Windows certification entry point
+
+Double-click `Continue-BetterInstincts-Certification.cmd` from the BetterInstincts checkout on the Windows game host. This launches the installed Codex CLI with the [current-session task](LIVE_CERTIFICATION_HANDOFF.md), retaining the current game and using existing host permissions. It requires Python 3.11+ and an installed, signed-in Codex CLI on PATH with access to the existing local game tooling. The existing Install and Play launcher still handles ordinary startup.
+
+When the local evidence is in a different worktree, the updated source can stay in a separate checkout. Run this from its root in PowerShell, using the path to the existing local evidence worktree:
+
+```powershell
+.\Continue-BetterInstincts-Certification.cmd --checkout "C:\path\to\existing\trial-worktree"
+```
+
+The startup sample gives the agent the running Sims PID when it can find one. A missing memo routes the agent to recover existing evidence. The game action, GitHub evidence sync, and hunger-session transition are performed by the local agent using existing host adapters and review evidence. `python -m scripts.continue_certification --print-handoff` previews the task without a dispatch.
+
 ## Do not lose the active Video Gaming certification
 
 The parent task is **finish the current Video Gaming ("IT BEGINS...") preference prompt certification first**, then return to standardized oldest-eligible-lab-save tests. The already completed vanilla/modded and prior Yes/No/rollback trials are **historical evidence**, not a reason to restart. The already-open/current prompt needs its own current outcome/readback if still required. Open PR #263 owns the native outcome binding, not this routing feature.

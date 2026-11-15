@@ -1,4 +1,6 @@
-## Certification-first existing-game handoff (2026-11-14)
+## Certification-first existing-game handoff
+
+If Sims is already open for certification, use `Continue-BetterInstincts-Certification.cmd` to start the scoped local agent in the existing evidence checkout. See [the current-session task](LIVE_CERTIFICATION_HANDOFF.md).
 
 The launcher receipt now includes `lab_save_route` from the single ignored `dist/game-host/active-certification.v1.json` memo (when provisioned). **Finish the already-open Video Gaming "IT BEGINS..." certification first**: an already-running game must be inspected and preserved, not restarted or displaced by the oldest disposable save. Historical vanilla/modded and Yes/No trials are not erased or silently replayed. Without a running game, only the exact previously authorized pinned lab save may be advised; never pick an old personal/unknown save by date. After the *current* certification has genuinely reviewed outcome/effect/rollback receipts, ordinary standardized trials may use `scripts.save_candidate_priority`'s oldest eligible lab-disposable advisory. Nothing auto-selects or resumes. Exact CLI, private memo schema and proof boundaries: [LAUNCH_CERTIFICATION_PRIORITY.md](LAUNCH_CERTIFICATION_PRIORITY.md).
 
