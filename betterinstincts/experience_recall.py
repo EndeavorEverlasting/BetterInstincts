@@ -12,6 +12,7 @@ import json
 import os
 import re
 import tempfile
+from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 from typing import Mapping
@@ -180,29 +181,59 @@ def load_memory(*, root: Path = ROOT) -> dict:
         raise ExperienceRecallError("EXPERIENCE_JSON_INVALID") from exc
 
 
+@contextmanager
+def _exclusive_writer(path: Path):
+    """One bounded local writer. Never steal a crash/foreign writer's lock.
+
+    The initial duplicate check is lock-free. Only a candidate NEW experience
+    attempts this O_EXCL lock. Under it we *re-read* the latest index to avoid
+    replacing another agent's just-committed independent experience.
+    """
+    lock = path.with_name("experiences.writer.lock")
+    if lock.is_symlink() or path.parent.is_symlink():
+        raise ExperienceRecallError("EXPERIENCE_PATH_SYMLINK")
+    try:
+        fd = os.open(lock, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError as exc:
+        raise ExperienceRecallError("EXPERIENCE_WRITER_BUSY") from exc
+    try:
+        yield
+    finally:
+        os.close(fd)
+        lock.unlink()
+
+
 def record_new(event: Mapping, *, root: Path = ROOT) -> dict:
-    """Explicit local write, only if a new semantic experience is admitted."""
+    """Write a genuinely new semantic fact; never lose a competing new fact."""
     path = _path(root)
-    current = load_memory(root=root)
-    updated, result = remember(current, event)
-    if not result["recorded"]:
-        return result  # Important: no mkdir, temp file, rewrite or mtime change.
-    raw = (json.dumps(updated, sort_keys=True, indent=2) + "\n").encode("utf-8")
-    if len(raw) > MAX_BYTES:
-        raise ExperienceRecallError("EXPERIENCE_MEMORY_TOO_LARGE")
+    # Fast path: known and contradictory cases do not even create a lock.
+    initial = load_memory(root=root)
+    _, first_check = remember(initial, event)
+    if not first_check["recorded"]:
+        return first_check  # No mkdir, lock, temp file, rewrite or mtime change.
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.is_symlink() or path.parent.is_symlink():
         raise ExperienceRecallError("EXPERIENCE_PATH_SYMLINK")
-    temp = None
-    try:
-        with tempfile.NamedTemporaryFile("wb", dir=path.parent,
-                                         prefix=".experience-", delete=False) as handle:
-            handle.write(raw)
-            handle.flush()
-            os.fsync(handle.fileno())
-            temp = Path(handle.name)
-        os.replace(temp, path)
-    finally:
-        if temp is not None:
-            temp.unlink(missing_ok=True)
-    return result
+    with _exclusive_writer(path):
+        # Another agent may have committed a different fact after our first read.
+        # Recompute against the actual last-known-good index under the lock.
+        latest = load_memory(root=root)
+        updated, result = remember(latest, event)
+        if not result["recorded"]:
+            return result  # Another writer won, or a conflicting fact appeared.
+        raw = (json.dumps(updated, sort_keys=True, indent=2) + "\n").encode("utf-8")
+        if len(raw) > MAX_BYTES:
+            raise ExperienceRecallError("EXPERIENCE_MEMORY_TOO_LARGE")
+        temp = None
+        try:
+            with tempfile.NamedTemporaryFile("wb", dir=path.parent,
+                                             prefix=".experience-", delete=False) as handle:
+                handle.write(raw)
+                handle.flush()
+                os.fsync(handle.fileno())
+                temp = Path(handle.name)
+            os.replace(temp, path)
+        finally:
+            if temp is not None:
+                temp.unlink(missing_ok=True)
+        return result
