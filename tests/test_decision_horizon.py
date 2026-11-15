@@ -10,6 +10,7 @@ from betterinstincts.decision_horizon import (
 )
 
 CAPTURE = "cap-245"
+RESERVE = 1_000_000
 
 
 def snapshot(**changes):
@@ -26,7 +27,7 @@ def snapshot(**changes):
         "need_floors": {"energy": 20, "hunger": 30},
         "skills": {"gardening": 1}, "inventory": {},
         "minutes_until_work": 60, "minutes_until_need_floor": 60,
-        "reserve_minutes": 0, "available_funds": 100,
+        "reserve_minutes": 0, "available_funds": RESERVE + 100,
         "blocked_resources": [], "completed": [],
         "teleport_unlocked": True, "teleport_evidence_ref": "proof-teleport",
         "teleport_evidence_capture_ref": CAPTURE,
@@ -84,7 +85,7 @@ class BellmanPlannerTests(unittest.TestCase):
                          ["purchase", "fertilize"])
         self.assertEqual(result["forecast_steps"][1]["travel"]["method"],
                          "TELEPORT")
-        self.assertEqual(result["projected_funds"], 80)
+        self.assertEqual(result["projected_funds"], RESERVE + 80)
         self.assertLessEqual(result["projected_minutes"], 5)
         self.assertFalse(result["execute_allowed"])
         self.assertIsNone(result["control_permit"])
@@ -118,6 +119,50 @@ class BellmanPlannerTests(unittest.TestCase):
         self.assertIsNone(result["next_step"])
         self.assertIn("TIME_DEADLINE_OR_FUNDS",
                       result["binding_or_blocking_constraints"])
+
+    def test_forecast_earnings_cannot_finance_upfront_spend(self):
+        purchase = step("investment", value=10_000, cost=101, effects={"money_delta": 800})
+        result = plan(snapshot(), [purchase])
+        self.assertIsNone(result["next_step"])
+        self.assertIn("HOUSEHOLD_RESERVE_UPFRONT_DEBIT", result["binding_or_blocking_constraints"])
+        earnings = step("earn", value=1, effects={"money_delta": 400})
+        plan_with_earnings = plan(snapshot(available_funds=RESERVE - 200), [purchase, earnings])
+        self.assertEqual([row["step_id"] for row in plan_with_earnings["forecast_steps"]],
+                         ["earn", "investment"])
+        self.assertEqual(plan_with_earnings["projected_funds"], RESERVE + 899)
+
+    def test_net_loss_on_completion_cannot_cross_the_floor(self):
+        loss = step("loss-at-finish", value=1000, effects={"money_delta": -101})
+        result = plan(snapshot(), [loss])
+        self.assertIsNone(result["next_step"])
+        self.assertIn("HOUSEHOLD_RESERVE_OUTCOME", result["binding_or_blocking_constraints"])
+
+    def test_loss_penalty_grows_near_reserve_and_changes_ranking(self):
+        costly = step("costly", value=14, cost=50)
+        neutral = step("neutral", value=8.5)
+        near = snapshot()
+        far = snapshot(available_funds=RESERVE + 200_000)
+        self.assertEqual(plan(near, [costly, neutral], horizon_minutes=1)["next_step"]["step_id"], "neutral")
+        self.assertEqual(plan(far, [costly, neutral], horizon_minutes=1)["next_step"]["step_id"], "costly")
+        self.assertGreater(
+            plan(near, [costly])["next_step"]["expected_wealth_loss_penalty"],
+            plan(far, [costly])["next_step"]["expected_wealth_loss_penalty"],
+        )
+
+    def test_earnings_and_sunk_cost_are_priced_in_expected_value(self):
+        costly = step("risky", value=20, cost=50, probability=.5, effects={"money_delta": 100})
+        earning = step("earned", value=5, effects={"money_delta": 100})
+        result = plan(snapshot(), [costly], horizon_minutes=1)
+        self.assertGreater(result["next_step"]["expected_wealth_loss_penalty"], 0)
+        mixed = plan(snapshot(), [costly, earning], horizon_minutes=1)
+        self.assertEqual(mixed["next_step"]["step_id"], "earned")
+        self.assertEqual(mixed["projected_funds"], 1_000_200)
+
+    def test_earnings_at_game_cap_have_no_phantom_utility(self):
+        earning = step("earn", value=0, effects={"money_delta": 100})
+        result = plan(snapshot(available_funds=9_999_999), [earning])
+        self.assertIsNone(result["next_step"])
+        self.assertEqual(result["projected_funds"], 9_999_999)
 
     def test_no_action_without_stock_even_if_prior_step_marked_complete(self):
         completed = [{"step_id": "purchase", "outcome_ref": "proof-purchase",

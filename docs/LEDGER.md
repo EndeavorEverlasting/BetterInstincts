@@ -2181,3 +2181,12 @@ blocked on the exact Windows game and independent effect/rollback readback in
 ## 2026-11-15 — Cross-microsystem fallback recovery
 
 The existing control-discovery journal routes each attributed assisted effect through the mechanics registry and keeps its own fallback reason and before, dispatch, and outcome evidence. Source owners and existing tests are surfaced in the paged handoff. Reviewed legacy classification adds an event without replay. The offline suite exercises mixed microsystems, unknown ownership, and player protection. Windows evidence remains a separate gate under [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+
+## 2026-11-15 — Household wealth-aware activity forecasts
+
+The existing PS-0245 planner accepts balances above §1 million, enforces the
+canonical reserve before debit and after modeled effects, and penalizes losses
+more heavily near that reserve. Forecasting applies expected-value weighting
+to success and sunk-cost failure and clips gains at the game cap. The normal
+microsystem math consumer inherits the policy. Native outcome calibration
+remains part of [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).

@@ -1,7 +1,7 @@
 {
   "schema": "betterinstincts.decision-horizon-contract/v1",
   "id": "BI-PS0245",
-  "version": 1,
+  "version": 2,
   "owner": "betterinstincts/decision_horizon.py",
   "inputs": "Observed PS-0241 activity-chain snapshot, validated DAG and fresh observed routes",
   "optimization": {
@@ -15,6 +15,7 @@
       "queue owner/capacity",
       "prerequisite proofs",
       "inventory and funds",
+      "upfront debit and modeled completion preserve the canonical household reserve, or do not deepen a shortfall",
       "work/need deadlines",
       "need floors",
       "no cheating, irreversible actions or ambiguous permissions",
@@ -38,7 +39,13 @@
     },
     "lagrange": "User-provided nonnegative shadow prices weight soft tradeoffs but never relax hard invariants",
     "kkt": "Continuous concave log utility time allocation only; discrete actions use feasibility filtering and bounded search",
-    "Gaussian_process": "Not required; PS-0241 optional provenance-isolated duration GP remains a separate advisory comparator"
+    "Gaussian_process": "Not required; PS-0241 optional provenance-isolated duration GP remains a separate advisory comparator",
+    "wealth_policy": {
+      "floor_owner": "contracts/host-budget.v1.json#floors.minimum_household_balance",
+      "transition": "Debit verified cost first. Apply outcome delta on success, bounded by the existing game cap. Cost is sunk on failure; reobserve after failure.",
+      "extra_loss_penalty": "0.05 * max(0, balance_before - balance_after) * (1 + max(0, 1 - surplus_after / (0.1 * reserve)))",
+      "calibration": "Initial policy values, not empirical weights. Regular monetary utility rewards positive realized headroom. Shadow prices cannot disable the reserve or loss premium."
+    }
   },
   "authority": {
     "proposal_only": true,

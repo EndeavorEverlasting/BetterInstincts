@@ -1,0 +1,56 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-HOUSEHOLD-WEALTH-PENALTY-20261115",
+  "ontology": "contracts/ontology.v1.json",
+  "base_commit": "99ade8bb9562edd9ab2b9261bbb7a71dde92abb0",
+  "ontology_blob_sha": "48cd3deaaebd0d021a2600502625c0010873e59d",
+  "proposed_capability": "Reserve-aware Bellman feasibility and bounded loss aversion over verified household finances.",
+  "affected_concepts": [
+    "HOUSEHOLD",
+    "OBSERVATION",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "PLAYER_INTENT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/activity_chain.py",
+    "betterinstincts/decision_horizon.py",
+    "betterinstincts/budget_eval.py",
+    "contracts/host-budget.v1.json",
+    "betterinstincts/microsystem_math.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_EXPECTED_UTILITY_NOT_EARNED_INCOME_OR_GAMEPLAY",
+  "player_save_control_impact": "Read-only. Preserve player priority, need floors, work deadlines, protected saves, and separate laundry procurement and bill obligations.",
+  "expected_outcome": "Accept actual above-floor balances; block debits below reserve; penalize net loss more near the reserve; include sunk costs on failure and favor earned upside.",
+  "negative_tests": [
+    "High payoff cannot finance its own upfront debit below reserve.",
+    "Low-balance households can still recommend no-cost earnings.",
+    "Forecasts respect simulated-game maximum and never report native proof."
+  ],
+  "rollback_path": "Revert policy-only feature; no game mutation or save effect.",
+  "unresolved_unknowns": [
+    "Live capture and exact-build outcome calibration under #171."
+  ],
+  "files_expected": [
+    "betterinstincts/activity_chain.py",
+    "betterinstincts/decision_horizon.py",
+    "contracts/decision-horizon.v1.json",
+    "contracts/native-gameplay-decisions/BI-HOUSEHOLD-WEALTH-PENALTY-20261115.v1.json",
+    "docs/DECISION_HORIZON.md",
+    "docs/LEDGER.md",
+    "tests/test_decision_horizon.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}

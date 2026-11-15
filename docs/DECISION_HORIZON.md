@@ -48,3 +48,22 @@ Run \`python -m unittest tests.test_decision_horizon -v\` plus existing \`tests.
 Verified PR #255 on `main` at `2e79e0ac1d1e3e8b2e032bb7d4540a91a499ac56`; final source CI run `43627569877` passed the offline suite. The independent closer pass identified three concrete read-only policy hazards: a benefit credited at the **end** of an action could conceal a need-floor violation **during** that action, a user-provided zero utility weight vector could turn a no-value action into a tiebreak selection, and exhausted search expansions could still expose an actionable-looking `next_step`. Regression repairs now check the initial and pre-benefit linear-trajectory endpoints, prohibit zero-positive-utility tiebreak actions and clear `next_step` when the search is truncated, leaving a visibly provisional forecast.
 
 These constraints do not authorize native execution and cannot establish that any game feature, skill, actual moodlet, patch hook or probabilistic estimate works in The Sims 4. Respect `docs/handoff/BI-PS0245-CLOSERS-LOCAL-NATIVE-GATE-20261114.md` for the first host gate and issue #171 for native EA integration. `BI-002` remains an independent live hunger certification parent.
+
+## Household wealth guard
+
+The canonical budget supplies the reserve. `available_funds` is the current
+household balance, through the existing Sims funds cap. A forecast may spend
+only verified surplus. If already below the reserve, a step can increase
+funds or leave them unchanged. Check the initial debit and the modeled
+completion separately. Expected proceeds cannot cover the initial debit.
+
+For either modeled outcome, let `loss = max(0, before - after)` and
+`surplus = max(0, after - reserve)`. The additional utility penalty is
+`0.05 * loss * (1 + max(0, 1 - surplus / (0.1 * reserve)))`. The extra
+penalty tapers to its baseline over the first 10% of reserve in surplus.
+These coefficients are initial policy values. Each step reports its
+probability-weighted loss penalty and projected funds after debit and
+success. Success earns the regular monetary weight on the realizable funds
+change. Failure absorbs the upfront cost and stops the forecast pending
+reobservation. The soft score cannot override feasibility, player intent,
+needs, or queue constraints. Subsidies remain outside this forecast.

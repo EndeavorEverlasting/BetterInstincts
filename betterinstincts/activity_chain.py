@@ -8,6 +8,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Mapping, Sequence
+from betterinstincts.funds_inject import MAX_HOUSEHOLD_FUNDS
 
 SCHEMA = "betterinstincts.activity-chain/v1"
 PROOF = "OFFLINE_ACTIVITY_CHAIN_ADVISORY_NOT_GAME_EFFECT"
@@ -24,11 +25,11 @@ def _ref(value: object) -> bool:
     return isinstance(value, str) and TOKEN.fullmatch(value) is not None
 
 
-def _num(value: object, *, positive: bool = False) -> bool:
+def _num(value: object, *, positive: bool = False, maximum: int = 1_000_000) -> bool:
     if type(value) is int:
-        return 0 < value <= 1_000_000 if positive else 0 <= value <= 1_000_000
+        return 0 < value <= maximum if positive else 0 <= value <= maximum
     return type(value) is float and math.isfinite(value) and (
-        0 < value <= 1_000_000 if positive else 0 <= value <= 1_000_000
+        0 < value <= maximum if positive else 0 <= value <= maximum
     )
 
 
@@ -130,7 +131,7 @@ def compile_activity_chain(snapshot: Mapping, steps: Sequence[Mapping],
     if (not _num(snapshot.get("minutes_until_work"))
             or not _num(snapshot.get("minutes_until_need_floor"))
             or not _num(snapshot.get("reserve_minutes", 0))
-            or not _num(snapshot.get("available_funds"))):
+            or not _num(snapshot.get("available_funds"), maximum=MAX_HOUSEHOLD_FUNDS)):
         raise ActivityChainError("ACTIVITY_BUDGET_INVALID")
     completed = snapshot.get("completed", [])
     if not isinstance(completed, list) or len(completed) > MAX_STEPS:

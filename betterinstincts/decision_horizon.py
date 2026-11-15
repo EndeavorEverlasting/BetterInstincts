@@ -13,6 +13,8 @@ import math
 from betterinstincts.activity_chain import (
     ActivityChainError, _validate_steps, compile_activity_chain,
 )
+from betterinstincts.budget_eval import household_reserve
+from betterinstincts.funds_inject import MAX_HOUSEHOLD_FUNDS
 
 SCHEMA = "betterinstincts.decision-horizon/v1"
 PROOF = "OFFLINE_BELLMAN_POLICY_ONLY_NOT_NATIVE_EFFECT"
@@ -22,6 +24,8 @@ MAX_EXPANSIONS = 2000
 MAX_DEPTH = 8
 WEIGHTS = {"value": 1.0, "time": 0.25, "money": 0.05,
            "need": 0.4, "skill": 2.0, "mood": 0.3, "failure": 6.0}
+LOSS_PREMIUM_PER_SIMOLEON = 0.05
+RESERVE_PRESSURE_BAND_FRACTION = 0.10
 
 
 class DecisionHorizonError(ValueError):
@@ -178,6 +182,15 @@ def _receipt(capture: str, gate: str, **fields: object) -> dict:
     }
 
 
+def _wealth_loss_penalty(before: float, after: float, reserve: int) -> float:
+    """Extra utility cost of a loss, increasing as the remaining buffer shrinks."""
+    loss = max(0.0, before - after)
+    surplus = max(0.0, after - reserve)
+    pressure_band = reserve * RESERVE_PRESSURE_BAND_FRACTION
+    pressure = max(0.0, 1.0 - surplus / pressure_band)
+    return LOSS_PREMIUM_PER_SIMOLEON * loss * (1.0 + pressure)
+
+
 def optimize_activity_plan(
     snapshot: Mapping, steps: Sequence[Mapping], routes: Sequence[Mapping] = (),
     *, capture_ref: str, horizon_minutes: float = 120,
@@ -232,7 +245,7 @@ def optimize_activity_plan(
         raise DecisionHorizonError("NEED_SIGNAL_KEYS_MISMATCH")
     skills = _numeric_map(snapshot.get("skills"), lo=0, hi=10)
     inventory = _integer_map(snapshot.get("inventory", {}))
-    if (not _number(snapshot.get("available_funds"), 0, 1_000_000)
+    if (not _number(snapshot.get("available_funds"), 0, MAX_HOUSEHOLD_FUNDS)
             or any(not _ref(x) for x in snapshot.get("blocked_resources", []))
             or not isinstance(snapshot.get("blocked_resources", []), list)):
         raise DecisionHorizonError("RESOURCE_EVIDENCE_INVALID")
@@ -241,6 +254,7 @@ def optimize_activity_plan(
             or any(not _number(v, 0, 1000) for v in supplied.values())):
         raise DecisionHorizonError("SHADOW_PRICE_INVALID")
     weights = {**WEIGHTS, **supplied}
+    reserve = household_reserve(snapshot["available_funds"])["minimum_household_balance"]
     teleport = (snapshot.get("teleport_unlocked") is True
                 and _ref(snapshot.get("teleport_evidence_ref"))
                 and snapshot.get("teleport_evidence_capture_ref") == capture_ref)
@@ -287,6 +301,17 @@ def optimize_activity_plan(
                         or action.cost > current.funds):
                     first_blockers.add("TIME_DEADLINE_OR_FUNDS")
                     continue
+                debited_funds = current.funds - action.cost
+                # A forecast payout cannot finance its own upfront expense.
+                # Below the reserve, allow earnings and other nondepleting work.
+                protected_funds = min(current.funds, reserve)
+                if debited_funds < protected_funds:
+                    first_blockers.add("HOUSEHOLD_RESERVE_UPFRONT_DEBIT")
+                    continue
+                money = min(MAX_HOUSEHOLD_FUNDS, debited_funds + action.money_delta)
+                if money < protected_funds:
+                    first_blockers.add("HOUSEHOLD_RESERVE_OUTCOME")
+                    continue
                 stock = dict(current.inventory)
                 if any(stock.get(k, 0) < count for k, count in action.requires):
                     first_blockers.add("INVENTORY_PRECONDITION")
@@ -323,14 +348,13 @@ def optimize_activity_plan(
                             break
                         future_skills[skill] = min(10.0, future_skills[skill] + gain)
                     else:
-                        money = current.funds - action.cost + action.money_delta
-                        if money < 0:
-                            first_blockers.add("NEGATIVE_FUNDS")
-                            continue
+                        success_loss = _wealth_loss_penalty(current.funds, money, reserve)
+                        failure_loss = _wealth_loss_penalty(current.funds, debited_funds, reserve)
                         utility = (
                             weights["value"] * action.value
                             - weights["time"] * minutes
-                            - weights["money"] * (action.cost - action.money_delta)
+                            + weights["money"] * (money - current.funds)
+                            - success_loss
                             + weights["need"] * sum(
                                 future_needs[k] - dict(current.needs)[k] for k in future_needs
                             )
@@ -340,8 +364,9 @@ def optimize_activity_plan(
                             + weights["mood"] * action.mood_delta
                         )
                         p = action.probability
+                        failure_cost = weights["failure"] + weights["money"] * action.cost + failure_loss
                         next_score = score + survival * (
-                            p * utility - (1.0 - p) * weights["failure"]
+                            p * utility - (1.0 - p) * failure_cost
                         )
                         successor = PlanningState(
                             finish, action.location, money,
@@ -355,6 +380,9 @@ def optimize_activity_plan(
                             "domain": action.domain, "evidence_ref": action.evidence_ref,
                             "travel": route, "upper_minutes": minutes,
                             "success_probability": p,
+                            "projected_funds_after_debit": debited_funds,
+                            "projected_funds_on_success": money,
+                            "expected_wealth_loss_penalty": round(p * success_loss + (1.0 - p) * failure_loss, 6),
                             "failure_requires_reconciliation": True,
                         }
                         expansions += 1
@@ -376,6 +404,7 @@ def optimize_activity_plan(
         forecast_steps=list(path), expected_net_utility=round(score, 6),
         projected_minutes=round(projected.elapsed, 6),
         projected_funds=round(projected.funds, 6),
+        minimum_household_balance=reserve,
         projected_needs=dict(projected.needs),
         available_minutes=round(available, 6),
         expansions=expansions, max_expansions=max_expansions,
