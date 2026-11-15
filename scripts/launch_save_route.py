@@ -71,6 +71,26 @@ def _completion_reviewed(context: dict) -> bool:
     return all(_valid_ref(value) for value in values) and len(set(values)) == len(values)
 
 
+def _reviewed_repeat_resolved(context: dict) -> bool:
+    """Check reviewed carry-forward and fresh visible resolution as separate claims."""
+    review = context["completion_review"]
+    repeated = context.get("repeat_offer")
+    household = context.get("household_id")
+    if (not isinstance(repeated, dict) or not isinstance(household, str)
+            or not HOUSEHOLD_ID.fullmatch(household)
+            or review.get("household_id") != household
+            or repeated.get("household_id") != household
+            or repeated.get("game_version") != context["game_version"]
+            or repeated.get("same_mechanic_reviewed") is not True
+            or repeated.get("resolution_observed") is not True):
+        return False
+    current = [repeated.get(key) for key in ("offer_capture_ref", "resolution_capture_ref", "review_ref")]
+    prior = {review[key] for key in ("current_offer_outcome_ref", "native_effect_ref",
+                                     "rollback_ref", "review_ref")}
+    return (all(_valid_ref(ref) for ref in current) and len(set(current)) == len(current)
+            and not prior.intersection(current))
+
+
 def household_handoff(available: tuple[str, ...], preference: str | None) -> dict:
     """Resolve a freshly observed set supplied by the host, without input."""
     if len(available) > 150 or any(
@@ -162,6 +182,12 @@ def route_launch(
                 "HISTORICAL_YES_NO_RECEIPTS_OR_SELF_ASSERTED_PASS_NOT_ENOUGH",
                 next_gate="VERIFY_CURRENT_OFFER_NATIVE_EFFECT_ROLLBACK_AND_REVIEW_RECEIPTS",
             )
+        is_repeat = "repeat_offer" in context
+        if is_repeat and not _reviewed_repeat_resolved(context):
+            return _held("HOLD_REPEAT_OFFER_RESOLUTION",
+                         "REVIEW_REUSED_MECHANIC_AND_OBSERVE_REPEAT_OFFER_RESOLUTION")
+        if is_repeat and available_households is None:
+            return _held("HOLD_CERTIFICATION_HOUSEHOLD", "REPEAT_REQUIRES_HOUSEHOLD_SCOPED_SUCCESSOR")
         household_id = None
         if available_households is not None:
             household = household_handoff(available_households, preferred_household)
@@ -200,6 +226,8 @@ def route_launch(
             "STANDARDIZED_OLDEST_DISPOSABLE_ADVISORY",
             "REVIEWED_VIDEO_GAMING_CERTIFICATION_EXIT_PRECEDES_OLDEST_LAB_TRIAL",
             lab_advisory=ranked,
+            **({"certification_basis": "HISTORICAL_CERTIFICATION_REUSED_REPEAT_OFFER_RESOLVED"}
+               if is_repeat else {}),
             **({"household_id": household_id, "successor_run_id": successor_run_id,
                 "candidate_save_id": ranked["ranked_candidates"][0]["save_id"]}
                if household_id else {}),

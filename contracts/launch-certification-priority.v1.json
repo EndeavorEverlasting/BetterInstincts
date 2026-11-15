@@ -14,7 +14,7 @@
   "routing_order": [
     "PRESERVE_RUNNING_CERTIFICATION_SESSION",
     "ADVISE_EXACT_OPERATOR_BOUND_PINNED_LAB_SAVE_FOR_CERTIFICATION",
-    "REQUIRE_FOUR_DISTINCT_REVIEWED_COMPLETION_CAPTURE_REFS",
+    "REVIEW_DIRECT_COMPLETION_OR_REUSE_REVIEWED_MECHANIC_AND_VERIFY_REPEAT_RESOLUTION",
     "ADVISE_OLDEST_CURRENT_RUN_LAB_DISPOSABLE_SAVE_FOR_STANDARD_TRIALS"
   ],
   "private_context": {
@@ -72,5 +72,20 @@
     ],
     "host_execution": "Requires existing live adapter, exact menu/slot revalidation and separate player-first effect admission",
     "ordinary_play": "Existing household and recent saves stay player-owned until a separately certified route is adopted"
+  },
+  "repeat_offer_reuse": {
+    "required_basis": "Previously reviewed same mechanic, build and household; original completion references remain intact",
+    "repeat_fields": [
+      "household_id",
+      "game_version",
+      "same_mechanic_reviewed",
+      "resolution_observed",
+      "offer_capture_ref",
+      "resolution_capture_ref",
+      "review_ref"
+    ],
+    "capture_rule": "Distinct repeat instance capture and review references; no historical PID matching",
+    "proof": "Historical native certification plus visible current resolution; never relabel as new native telemetry",
+    "successor": "Use the same-household successor route only"
   }
 }

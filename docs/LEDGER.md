@@ -2146,3 +2146,7 @@ checkout. It preserves the open session and carries the remaining current-offer
 gate. The installer profile stores household choice and the successor route
 ranks current-run disposable slots within the reviewed household. Current
 Windows offer, observed effects, and authorized load remain local proof.
+
+## Repeat preference continuity
+
+Repeat Video Gaming offers reuse reviewed mechanic and rollback evidence across restarts while keeping current visible resolution distinct. The handoff recalls each exact-build response across the original observer profiles.
