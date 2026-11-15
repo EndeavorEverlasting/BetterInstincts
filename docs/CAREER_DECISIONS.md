@@ -1,3 +1,7 @@
+## 2026-11-14 — Career decisions can use the shared math umbrella
+
+The career/event microservice now has access to `contracts/microsystem-math.v1.json` via `domain_cascade` as well as a direct per-service `evaluate_microsystem_math` adapter. The existing source-backed career-event risk selection and Work Hard welfare checks are still the default/fallback. A complete per-event activity DAG, continuous work/preparation time budget and source-matched Gaussian timing evidence may improve recommendations without changing the original response handler or overriding player-chosen tones. A new independently validated planner can earn selection through the same shared feasibility/holdout gate; no single method is imposed forever. See [MICROSYSTEM_MATH.md](MICROSYSTEM_MATH.md). The installed native EA career-event responder, real effect and rollback still require independent P08; GitHub source math is not an in-game answer.
+
 # Career decision autonomy — Work panel and chance cards
 
 **Parent objective:** BetterInstincts should independently handle routine careers and work-event decisions **inside The Sims 4**, without a human repeatedly choosing options or a desktop agent controlling the screen. Preserve player control. This is a **repository-owned policy implementation**, not yet an installed native-game responder or completed P08.
