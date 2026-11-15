@@ -86,10 +86,19 @@ def build_handoff(root: Path = ROOT) -> str:
         memo_route = "HOLD_PROCESS_IDENTITY"
     else:
         memo_route = route_local_context(path=memo, game_running_observed=len(pids) == 1)["state"]
+    next_step = "OBSERVE_CURRENT_SESSION_AND_RECOVER_EXISTING_RECEIPTS"
+    try:
+        repeat = load_context(memo).get("repeat_offer")
+    except (OSError, ValueError):
+        repeat = None
+    if (pids is not None and len(pids) == 1 and isinstance(repeat, dict)
+            and repeat.get("resolution_observed") is True):
+        next_step = "RECONCILE_RECORDED_RESOLUTION_AND_PREFLIGHT_SUCCESSOR_HOUSEHOLD_SAVE"
     # This is an observation of process names and a memo, not a fresh dialog,
     # exact build, checked save, permission to focus, or current native result.
     summary = {"process_sample": process, "memo_route": memo_route,
-               "historical_preference": historical_preference(root, memo)}
+               "historical_preference": historical_preference(root, memo),
+               "next_step": next_step}
     return ("The operator launched the BetterInstincts live-certification handoff. "
             "Execute the scoped task below in this evidence checkout. "
             "Local startup observation (recheck before any live action): "

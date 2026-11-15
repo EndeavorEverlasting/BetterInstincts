@@ -6,6 +6,28 @@ If the launcher cannot start its Codex child, preserve the game and use the
 agent already running locally. The same launcher command with `--print-handoff`
 prints the task and local recall without spawning a second agent.
 
+## Continue here when a step is missing
+
+Keep the current local agent and original evidence checkout. A launcher error,
+missing adapter, or missing decision input is a recovery step in this task.
+Find the specific missing input using the current process and existing
+receipts. An already delegated decision stays with BetterInstincts while the
+agent retrieves those inputs or binds the exact native responder. Ask for
+player input when the choice actually belongs to the player or the local host
+cannot perform an authorized action. An assisted click is useful evidence of
+visible resolution. Product response proof requires a BetterInstincts-owned
+dispatch linked to the observed outcome.
+
+If the offer has already closed, begin with its existing resolution receipt.
+Advance the repeat-household review and the next-run registry preflight in
+the same session, even while the native responder work is pending. For a lab
+slot authorized for an earlier run, verify the current household matches and
+recover successor authorization from the local run context. Retain the prior
+entry as provenance and record a successor binding only when supported.
+Load the ranked slot through the normal guarded path once review and
+attestation are complete. After admission, verify the resulting slot and
+household before resuming the hunger trial.
+
 ## 1. Adopt the running session and recover the work already done
 
 Start in this checkout. Read AGENTS.md and the owners it names. Identify the existing checkout, game process, listener/session and reviewer state. Read the original ignored `dist/live-cert` and `dist/game-host` evidence from the worktree that actually ran the trial if this is a different checkout. Keep active/dirtied branches and ignored artifacts intact. Use the existing local agent or tool session when it owns registered game control. Use a fresh observation to bind any input to the current game. A replacement PID leaves historical mechanic evidence valid. Recover missing run context from existing receipts and host state. If the game is already open, keep it open and preserve its current save and prompt. If it is absent, only an independently validated pin for this certification may be considered, per `scripts.launch_save_route`.
