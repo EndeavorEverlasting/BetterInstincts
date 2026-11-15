@@ -103,3 +103,8 @@ Horizon P00 closeout PR #172 were merged, but a packaged/game-verified EA
 queue implementation has **not** been observed. The first runtime action is
 an authorized read-only local exact-patch EA tuning/script inspection for
 issue #171; the independent BI-002 hunger live-cert stage remains active.
+
+
+## Native responder regression intake
+
+Use [Control discovery](CONTROL_DISCOVERY.md) to turn an agent-assisted or failed gameplay step into reviewed regression work in its canonical owner. Product-owned decision, submit, and current EA acknowledgement and effect are separate evidence from a fallback or observer-only callback.

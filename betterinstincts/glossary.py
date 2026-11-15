@@ -6,9 +6,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "glossary.v1.json"
-MAX_BYTES = 64_000
+MAX_BYTES = 96_000
 REQUIRED_TERMS = frozenset({
     "PLAYER_FIRST",
+    "NATIVE_RESPONDER_GAP",
+    "FALLBACK_EFFECT_TRACE",
+    "NATIVE_RESOLUTION_PROOF",
     "GOOD_BEHAVIOR",
     "BAD_BEHAVIOR",
     "EMULATE",

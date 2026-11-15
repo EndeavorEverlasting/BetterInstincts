@@ -1,5 +1,6 @@
 """The actual computer-use lane must pause, journal and feed codification."""
 import asyncio
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -224,6 +225,77 @@ class SemanticDiscoveryTests(unittest.TestCase):
         self.assertEqual(item["next_gate"], "RECONCILE_INTERRUPTED_OUTCOME")
         self.assertEqual(item["observed_outcome"], "UNKNOWN")
         self.assertEqual(coverage(state)["total_attempts"], 1)
+
+    def test_historical_assisted_yes_never_acquires_native_proof(self):
+        fixture = Path(__file__).parent / "fixtures/control-discovery/video-gaming-assisted.v1.json"
+        historical = json.loads(fixture.read_text(encoding="utf-8"))
+        self.assertEqual(historical["during"]["origin"], "AGENT_FALLBACK")
+        self.assertTrue(historical["after"]["visible_dialog_dismissed"])
+        self.assertIsNone(historical["during"]["instrumented_dispatch_boundary"])
+        self.assertIsNone(historical["current_native_ack"])
+        self.assertIsNone(historical["current_native_effect"])
+        # Reproduce the observed evidence ceiling in an offline journal fixture.
+        state = new_session(
+            session_id="fixture:repeat-offer", household_ref="fixture:household",
+            goal_id="fixture:preference", game_patch=historical["game_patch"],
+            fallback_reason=historical["fallback_reason"],
+            listener_active=True, explicit_opt_in=True,
+        )
+        self.assertEqual(historical["before"]["visible_choices"], ["YES", "NO"])
+        state = event(
+            state, "PREPARE", action_ref="video-gaming:yes",
+            object_class_ref="dialog:adventure-moment",
+            before_capture_ref="fixture:open-dialog", authority_ref="fixture:historical-assistance",
+        )
+        state = event(state, "QUEUE_STATUS", queue_state="COMPLETED")
+        state = event(
+            state, "OUTCOME", outcome="HELPFUL", after_capture_ref="fixture:live-mode",
+            outcome_ref="fixture:dialog-dismissal", player_interrupted=False,
+        )
+        item = codification_work_items(state)["items"][0]
+        self.assertEqual("video-gaming:yes", item["action_ref"])
+        self.assertTrue(item["native_responder_gap"])
+        self.assertEqual("REPLAY_OBSERVED_BEHAVIOR_OR_FAILURE", item["required_regression"][0])
+        self.assertFalse(item["effect_trace"]["native_resolution_proved"])
+        self.assertIsNone(item["effect_trace"]["during"]["dispatch_boundary_seq"])
+        self.assertEqual(item["next_gate"], "IMPLEMENT_SOURCE_RULE_AND_REGRESSION_TEST")
+
+    def test_unknown_effect_stays_open_until_fresh_readback(self):
+        state = event(prepared(base()), "DISPATCH_BOUNDARY")
+        state = event(state, "QUEUE_STATUS", queue_state="NEEDS_RECONCILIATION")
+        state = event(state, "OUTCOME", outcome="UNKNOWN",
+                      after_capture_ref="capture:uncertain", outcome_ref="outcome:unavailable",
+                      player_interrupted=False)
+        self.assertEqual(codification_work_items(state)["items"][0]["next_gate"],
+                         "RECONCILE_UNKNOWN_OUTCOME")
+        with self.assertRaisesRegex(ControlDiscoveryError, "REVIEW_OUTCOME"):
+            event(state, "CODIFICATION_RECEIPT", module_ref="betterinstincts/example.py",
+                  test_ref="tests/test_example.py", commit_ref="commit:one", review_ref="review:one")
+        with self.assertRaisesRegex(ControlDiscoveryError, "OUTCOME_ALREADY_RECORDED"):
+            event(state, "OUTCOME", outcome="NEUTRAL", after_capture_ref="capture:uncertain",
+                  outcome_ref="outcome:observed", player_interrupted=False)
+        reconciled = event(state, "OUTCOME", outcome="NEUTRAL",
+                           after_capture_ref="capture:verified", outcome_ref="outcome:observed",
+                           player_interrupted=False)
+        self.assertEqual(codification_work_items(reconciled)["items"][0]["next_gate"],
+                         "IMPLEMENT_SOURCE_RULE_AND_REGRESSION_TEST")
+        self.assertEqual(len(state["events"]) + 1, len(reconciled["events"]))
+
+    def test_dispatch_boundary_needs_preparation_and_is_one_shot(self):
+        with self.assertRaisesRegex(ControlDiscoveryError, "UNPREPARED"):
+            event(base(), "DISPATCH_BOUNDARY")
+        begun = event(prepared(base()), "DISPATCH_BOUNDARY")
+        with self.assertRaisesRegex(ControlDiscoveryError, "DISPATCH_ALREADY"):
+            event(begun, "DISPATCH_BOUNDARY")
+        terminal = event(prepared(base()), "QUEUE_STATUS", queue_state="COMPLETED")
+        with self.assertRaisesRegex(ControlDiscoveryError, "DISPATCH_ALREADY"):
+            event(terminal, "DISPATCH_BOUNDARY")
+
+    def test_fixture_paging_reuses_canonical_handoff(self):
+        state = prepared(prepared(base(), "work:1"), "work:2")
+        page = compact_handoff(state, offset=1, limit=1)["codification_work"]
+        self.assertEqual(page["items"][0]["work_id"], "work:2")
+        self.assertIsNone(page["next_offset"])
 
     def test_bounded_digest_no_raw_events(self):
         state = base()
@@ -501,6 +573,38 @@ class AgentControlRunTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(receipt["handoff"]["codification_coverage"]["counts"]["interrupted"], 1)
         with self.assertRaisesRegex(AgentControlRunnerError, "ONE_EFFECT_IN_FLIGHT"):
             self.prepare()
+
+    async def test_dispatch_boundary_is_persisted_before_callback(self):
+        async def observe_boundary():
+            work = host_listener.read_control_discovery("bi-control-01")["codification_work"]
+            trace = work["items"][0]["effect_trace"]
+            self.assertEqual(trace["during"]["dispatch_boundary_seq"], 3)
+            self.assertIsNone(trace["after"]["capture_ref"])
+            self.executed.append("admitted")
+
+        self.prepare(observe_boundary)
+        waiting = await self.runner.pulse()
+        self.assertEqual(waiting["state"], "WAITING_FOR_USER")
+        item = host_listener.read_control_discovery("bi-control-01")["codification_work"]["items"][0]
+        self.assertIsNone(item["effect_trace"]["during"]["dispatch_boundary_seq"])
+        self.age = 16000
+        self.assertEqual((await self.runner.pulse())["state"], "COMPLETED")
+        self.assertEqual(self.executed, ["admitted"])
+
+    async def test_missing_dispatch_journal_write_prevents_effect(self):
+        self.age = 16000
+        self.prepare()
+        original = self.runner._write
+
+        def reject_dispatch(kind, work_id, **fields):
+            if kind == "DISPATCH_BOUNDARY":
+                raise host_listener.HostListenerError("fixture:writer-busy")
+            return original(kind, work_id, **fields)
+
+        with patch.object(self.runner, "_write", side_effect=reject_dispatch):
+            result = await self.runner.pulse()
+        self.assertEqual(result["state"], "NEEDS_RECONCILIATION")
+        self.assertFalse(self.executed)
 
     async def test_cannot_consume_control_without_prejournal(self):
         host_listener.deactivate("bi-control-01")

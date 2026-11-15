@@ -76,7 +76,12 @@ class AgentControlRunner:
         )
         # A failed enqueue leaves a PREPARED journal candidate for investigation,
         # rather than silently erasing the action from a future agent's context.
-        self.queue.enqueue_effect(work_id, validate, effect)
+
+        async def dispatch():
+            self._write("DISPATCH_BOUNDARY", work_id)
+            return await effect()
+
+        self.queue.enqueue_effect(work_id, validate, dispatch)
         self.current_work_id = work_id
         self.last_queue_state = None
         return receipt

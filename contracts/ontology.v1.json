@@ -1,9 +1,9 @@
 {
   "schema": "betterinstincts.ontology/v1",
-  "revision": 10,
+  "revision": 11,
   "state": "CANDIDATE_REVIEW_NOT_RUNTIME_AUTHORITY",
   "owner": "BetterInstincts",
-  "source_main_sha": "502f66efc0eedd4136d6a8cd0879f566c3f3612f",
+  "source_main_sha": "dd3e709bca260a1df8d981d86e77762e7e0445f0",
   "goal": "Shared, extensible semantics for better game-native autonomy: six needs and sustainable finances first, concurrent goal coordination and continuity across situations, with player authority and game-safe evidence gates.",
   "authority": "docs/DOCTRINE.md and AGENTS.md govern; this ontology references rather than replaces existing contract owners.",
   "namespaces": {
@@ -402,6 +402,21 @@
       "kind": "context",
       "definition": "Attested disposable lab slot tied to a household, exact build and authorized trial run. Age ranks only eligible slots within that scope.",
       "canonical_owner": "contracts/launch-certification-priority.v1.json"
+    },
+    "NATIVE_RESPONDER_GAP": {
+      "kind": "context",
+      "definition": "An expected game behavior required an agent fallback because the native route was missing, unproven or failed.",
+      "canonical_owner": "contracts/control-discovery.v1.json"
+    },
+    "FALLBACK_EFFECT_TRACE": {
+      "kind": "evidence",
+      "definition": "Before capture, admitted atomic dispatch boundary, and independent after observation for one fallback effect.",
+      "canonical_owner": "contracts/control-discovery.v1.json"
+    },
+    "NATIVE_RESOLUTION_PROOF": {
+      "kind": "evidence",
+      "definition": "BetterInstincts chose and submitted the response and matching native acknowledgement and effect were observed for the same current event.",
+      "canonical_owner": "contracts/control-discovery.v1.json"
     }
   },
   "relations": [
@@ -884,6 +899,16 @@
       "from": "HOUSEHOLD_BOUND_LAB_SAVE",
       "predicate": "BINDS_AUTHORIZED_SLOT",
       "to": "SAVE_SLOT"
+    },
+    {
+      "from": "NATIVE_RESPONDER_GAP",
+      "predicate": "REQUIRES",
+      "to": "FALLBACK_EFFECT_TRACE"
+    },
+    {
+      "from": "FALLBACK_EFFECT_TRACE",
+      "predicate": "CANNOT_IMPERSONATE",
+      "to": "NATIVE_RESOLUTION_PROOF"
     }
   ],
   "invariants": [
@@ -1324,6 +1349,24 @@
       "rule": "Resolve one fresh household or the player's saved choice. Multiple unresolved or stale choices require the player. Reviewed certification precedes routing a distinct successor run to its oldest eligible same-household disposable slot. Ordinary recent-save gameplay stays player-owned.",
       "owned_by": [
         "contracts/launch-certification-priority.v1.json"
+      ]
+    },
+    {
+      "id": "BI-ONT-051",
+      "term": "FALLBACK_EFFECT_TRACE",
+      "rule": "An admitted atomic agent fallback creates a before, dispatch-boundary and independently observed after record, followed by a regression and source obligation. Missing or interrupted evidence remains open. Player choices are excluded.",
+      "owned_by": [
+        "contracts/control-discovery.v1.json",
+        "docs/CONTROL_DISCOVERY.md"
+      ]
+    },
+    {
+      "id": "BI-ONT-052",
+      "term": "NATIVE_RESOLUTION_PROOF",
+      "rule": "A BetterInstincts-owned choice and submit need matching fresh EA acknowledgement and effect. Visible resolution, historical receipt and callback observation alone do not prove current native execution.",
+      "owned_by": [
+        "contracts/control-discovery.v1.json",
+        "docs/CONTROL_DISCOVERY.md"
       ]
     }
   ],

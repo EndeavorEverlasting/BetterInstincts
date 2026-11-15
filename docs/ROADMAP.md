@@ -295,3 +295,8 @@ before becoming a startup default.
 ## Repeat preference continuity
 
 Finish the open repeat offer in the current game. Carry forward reviewed mechanic evidence and use the household-scoped route once the repeat resolves.
+
+
+## PS-0251 native responder
+
+Agent-assisted gameplay effects create before, during and after traces with regression work in the existing listener. Prefer an in-game deterministic responder. The exact-build Video Gaming submit and auto-activation remain under #171 and PR #275. Reuse the historical visible Yes without another response. LabLab successor proof remains governed by the same-household and new-run checks.

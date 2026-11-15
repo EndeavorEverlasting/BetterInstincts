@@ -27,6 +27,9 @@ DISCOVERY_KINDS = frozenset({
     "SENSOR_RECOVERY", "INTERRUPTION", "NEGATIVE_RESULT",
 })
 MAX_DISCOVERIES_PER_STEP = 6
+NATIVE_GAP_REASONS = frozenset({
+    "NATIVE_ROUTE_MISSING", "NATIVE_ROUTE_UNPROVEN", "EXISTING_RULE_FAILED",
+})
 FALLBACK_REASONS = frozenset({
     "NATIVE_ROUTE_MISSING", "NATIVE_ROUTE_UNPROVEN",
     "EXISTING_RULE_FAILED", "DISPOSABLE_GAME_DIAGNOSTIC",
@@ -97,6 +100,16 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
                           "authority_ref"))
         if event["work_id"] in ledger["steps"] or len(ledger["steps"]) >= MAX_STEPS:
             raise ControlDiscoveryError("STEP_ID_OR_BUDGET_INVALID")
+    elif event.get("kind") == "DISPATCH_BOUNDARY":
+        if set(event) != {"schema", "seq", "kind", "work_id"}:
+            raise ControlDiscoveryError("DISPATCH_BOUNDARY_FIELDS_INVALID")
+        step = ledger["steps"].get(event["work_id"])
+        if step is None:
+            raise ControlDiscoveryError("UNPREPARED_EFFECT_DENIED")
+        if (step.get("dispatch_seq") is not None
+                or step["queue_state"] in {"COMPLETED", "NEEDS_RECONCILIATION"}
+                or step.get("outcome") is not None):
+            raise ControlDiscoveryError("DISPATCH_ALREADY_BEGUN_OR_TERMINAL")
     elif event.get("kind") == "QUEUE_STATUS":
         if set(event) != {"schema", "seq", "kind", "work_id", "queue_state"}:
             raise ControlDiscoveryError("QUEUE_STATUS_FIELDS_INVALID")
@@ -115,7 +128,11 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
         if event["work_id"] not in ledger["steps"]:
             raise ControlDiscoveryError("UNPREPARED_EFFECT_DENIED")
         step = ledger["steps"][event["work_id"]]
-        if step.get("outcome") is not None:
+        if (step.get("outcome") is not None
+                and (step.get("outcome") != "UNKNOWN" or event["outcome"] == "UNKNOWN"
+                     or step.get("player_interrupted") is True
+                     or step.get("codification") is not None
+                     or step.get("after_capture_ref") == event["after_capture_ref"])):
             raise ControlDiscoveryError("OUTCOME_ALREADY_RECORDED")
         if step["before_capture_ref"] == event["after_capture_ref"]:
             raise ControlDiscoveryError("POST_ACTION_CAPTURE_MUST_DIFFER")
@@ -153,7 +170,7 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
         step = ledger["steps"][event["work_id"]]
         if step.get("codification") is not None:
             raise ControlDiscoveryError("CODIFICATION_ALREADY_SUBMITTED")
-        if step.get("outcome") is None or step.get("player_interrupted") is True:
+        if step.get("outcome") in {None, "UNKNOWN"} or step.get("player_interrupted") is True:
             raise ControlDiscoveryError("REVIEW_OUTCOME_BEFORE_CODIFICATION")
     else:
         raise ControlDiscoveryError("EVENT_KIND_INVALID")
@@ -173,6 +190,8 @@ def ingest(ledger: Mapping, raw: Mapping) -> dict:
             "codification": None,
             "discoveries": [],
         }
+    elif event["kind"] == "DISPATCH_BOUNDARY":
+        state["steps"][work_id]["dispatch_seq"] = event["seq"]
     elif event["kind"] == "QUEUE_STATUS":
         state["steps"][work_id]["queue_state"] = event["queue_state"]
     elif event["kind"] == "OUTCOME":
@@ -214,6 +233,8 @@ def coverage(ledger: Mapping) -> dict:
             status = "receipt_submitted"
         elif step.get("player_interrupted") is True:
             status = "interrupted"
+        elif step.get("outcome") == "UNKNOWN":
+            status = "awaiting_outcome"
         elif step.get("outcome") is not None:
             status = "review_ready"
         elif step.get("queue_state") == "PREPARED":
@@ -271,6 +292,8 @@ def codification_work_items(ledger: Mapping, *, offset: int = 0,
             gate = "VERIFY_COMMIT_TEST_AND_MAIN_READBACK"
         elif step.get("player_interrupted") is True:
             gate = "RECONCILE_INTERRUPTED_OUTCOME"
+        elif step.get("outcome") == "UNKNOWN":
+            gate = "RECONCILE_UNKNOWN_OUTCOME"
         elif step.get("outcome") is not None:
             gate = "IMPLEMENT_SOURCE_RULE_AND_REGRESSION_TEST"
         else:
@@ -284,6 +307,19 @@ def codification_work_items(ledger: Mapping, *, offset: int = 0,
             "object_class_ref": step["object_class_ref"],
             "before_capture_ref": step["before_capture_ref"],
             "queue_state": step["queue_state"],
+            "native_responder_gap": ledger["fallback_reason"] in NATIVE_GAP_REASONS,
+            "effect_trace": {
+                "before": {"capture_ref": step["before_capture_ref"],
+                           "authority_ref": step["authority_ref"]},
+                "during": {"dispatch_boundary_seq": step.get("dispatch_seq"),
+                           "queue_state": step["queue_state"]},
+                "after": {"capture_ref": step.get("after_capture_ref"),
+                          "outcome_ref": step.get("outcome_ref"),
+                          "classification": step.get("outcome"),
+                          "player_interrupted": step.get("player_interrupted")},
+                "origin": "AGENT_FALLBACK",
+                "native_resolution_proved": False,
+            },
             "observed_outcome": step.get("outcome"),
             "after_capture_ref": step.get("after_capture_ref"),
             "outcome_ref": step.get("outcome_ref"),
@@ -296,6 +332,7 @@ def codification_work_items(ledger: Mapping, *, offset: int = 0,
                 "DENY_PLAYER_QUEUE_OVERRIDE",
                 "RECHECK_STALE_SCENE_AND_TARGET",
                 "VERIFY_IDEMPOTENCE_AND_NO_BLIND_REPLAY",
+                "KEEP_ASSISTED_EFFECT_DISTINCT_FROM_NATIVE_RESOLUTION",
             ],
             "source_verified": False,
         })
@@ -311,7 +348,7 @@ def codification_work_items(ledger: Mapping, *, offset: int = 0,
     }
 
 
-def compact_handoff(ledger: Mapping) -> dict:
+def compact_handoff(ledger: Mapping, *, offset: int = 0, limit: int = 4) -> dict:
     """Low-context portable digest; raw interactions remain local/offline."""
     result = coverage(ledger)
     return {
@@ -321,7 +358,7 @@ def compact_handoff(ledger: Mapping) -> dict:
         "fallback_reason": ledger["fallback_reason"],
         "events_count": len(ledger["events"]),
         "codification_coverage": result,
-        "codification_work": codification_work_items(ledger, limit=4),
+        "codification_work": codification_work_items(ledger, offset=offset, limit=limit),
         "requires_fresh_control_admission": True,
         "proof_ceiling": "COMPACT_SEMANTIC_MEMORY_NOT_GAME_EFFECT",
     }

@@ -196,3 +196,7 @@ and a separately attested lab slot. One observed household can be resolved
 without a choice. A missing preference among several households or a stale
 preference returns to the player. Exact build, distinct successor run, and
 same-household lab origin precede age ranking. Player saves stay protected.
+
+## Native responder gaps (revision 11)
+
+`NATIVE_RESPONDER_GAP` requires a `FALLBACK_EFFECT_TRACE` and a deterministic regression obligation. Each trace binds the prior capture, the atomic admitted dispatch boundary, and a distinct outcome. `NATIVE_RESOLUTION_PROOF` requires product-owned choice and submit plus matching EA acknowledgement and effect. Assisted or interrupted traces can establish a gap or a failure regression without qualifying as native resolution.
