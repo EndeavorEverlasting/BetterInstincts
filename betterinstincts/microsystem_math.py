@@ -70,6 +70,36 @@ def _fallback(domain: str, gate: str, *, reason: str) -> dict:
     }
 
 
+def fallback_math_portfolio(
+    receipts: Sequence[Mapping], *, capture_ref: str,
+    reason: str, player_active: bool = False,
+) -> dict:
+    """Emergency no-registry math fallback; never suppress legacy polling.
+
+    Even an unreadable/absent optional math contract must not turn a healthy
+    needs, career, aspiration or player yield into an exception.
+    """
+    rows = []
+    for receipt in receipts:
+        row = _fallback(
+            str(receipt.get("domain", "unresolved")),
+            str(receipt.get("gate", "UNKNOWN")),
+            reason="OPTIONAL_MATH_UNAVAILABLE",
+        )
+        if player_active:
+            row.update(state="PLAYER_YIELD", reason="PLAYER_OWNS_DECISION")
+        rows.append(row)
+    return {
+        "schema": "betterinstincts.microsystem-math-portfolio/v1",
+        "capture_ref": capture_ref,
+        "state": "PLAYER_YIELD" if player_active else "POLLED",
+        "domain_results": rows, "fallback_receipts_unchanged": True,
+        "invalid_packet_reason": reason,
+        "execute_allowed": False, "control_permit": None,
+        "proof_ceiling": PROOF,
+    }
+
+
 def _challenger(
     challenger: object, *,
     packet: Mapping, baseline: Mapping, settings: Mapping,
