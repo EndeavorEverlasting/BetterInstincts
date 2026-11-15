@@ -195,6 +195,18 @@ class MicrosystemMathTests(unittest.TestCase):
                 self.assertEqual(out["state"], "FALLBACK_EXISTING")
                 self.assertFalse(out["execute_allowed"])
 
+    def test_bad_optional_packet_cannot_break_career_or_needs_cascade(self):
+        baseline = poll_cascade(SIX, funds=900, capture_ref=CAPTURE)
+        for malformed in ({"unlisted": packet()}, "not-a-packet", {1: packet()}):
+            with self.subTest(malformed=malformed):
+                result = poll_cascade(
+                    SIX, funds=900, capture_ref=CAPTURE, math_packets=malformed)
+                self.assertEqual(result["receipts"], baseline["receipts"])
+                self.assertEqual(result["gate"], baseline["gate"])
+                self.assertEqual(result["math_umbrella"]["domain_results"][0]["state"],
+                                 "FALLBACK_EXISTING")
+                self.assertIn("invalid_packet_reason", result["math_umbrella"])
+
     def test_player_directed_cascade_retains_yield(self):
         result = poll_cascade(SIX, player_directed=True, funds=1000)
         self.assertEqual(result["state"], "DOMAIN_CASCADE_YIELDED")
