@@ -1,0 +1,76 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-MICROSYSTEM-FALLBACK-ROUTING-20261115",
+  "base_commit": "e73de9ca9a40287a30e32bbce09195a40e6bc3b8",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "48cd3deaaebd0d021a2600502625c0010873e59d",
+  "proposed_capability": "Route each assisted gameplay effect to its canonical mechanic owner and existing tests in the shared journal, with an independent per-effect fallback reason and reviewable unresolved ownership.",
+  "affected_concepts": [
+    "NATIVE_RESPONDER_GAP",
+    "FALLBACK_EFFECT_TRACE",
+    "NATIVE_RESOLUTION_PROOF",
+    "OBSERVATION",
+    "PROOF_RECEIPT",
+    "PLAYER_INTENT",
+    "CONTROL_PERMIT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "contracts/control-discovery.v1.json",
+    "contracts/mechanics-registry.v1.json",
+    "betterinstincts/mechanics_registry.py",
+    "betterinstincts/control_discovery.py",
+    "betterinstincts/agent_control_runner.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-049",
+    "BI-ONT-051",
+    "BI-ONT-052"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SOURCE_ROUTING_AND_OFFLINE_JOURNAL_PROOF",
+  "player_save_control_impact": "Uses the existing opt-in journal and admission queue. No additional effects, player permissions or save access.",
+  "expected_outcome": "Effects from distinct microsystems in one listener retain independently attributed before/dispatch/after evidence. Use canonical source owners where registered and preserve unassigned and historical evidence for review.",
+  "negative_tests": [
+    "Legacy events remain readable without inferred identity",
+    "Unknown mechanics must never be assigned a guessed owner",
+    "Interrupted or unknown actions remain open",
+    "Receipt paths cannot close repository or native proof"
+  ],
+  "rollback_path": "Revert feature source. Existing v1 journal contents and player saves remain intact.",
+  "unresolved_unknowns": [
+    "Windows Sims runtime is not reachable from the cloud workspace. Exact-build native action proof is separate from this shared evidence harness."
+  ],
+  "files_expected": [
+    "betterinstincts/control_discovery.py",
+    "betterinstincts/agent_control_runner.py",
+    "betterinstincts/mechanics_registry.py",
+    "contracts/control-discovery.v1.json",
+    "contracts/mechanics-registry.v1.json",
+    "contracts/native-gameplay-decisions/BI-MICROSYSTEM-FALLBACK-ROUTING-20261115.v1.json",
+    "tests/test_control_discovery.py",
+    "tests/test_mechanics_registry.py",
+    "docs/CONTROL_DISCOVERY.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    ".agents/skills/native-responder-recovery/SKILL.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "prompt_order": [
+    "P141",
+    "P95",
+    "P82",
+    "P08",
+    "P07",
+    "P124"
+  ]
+}
