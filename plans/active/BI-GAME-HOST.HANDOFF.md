@@ -8,6 +8,30 @@ Source baseline: BetterInstincts main commit c5fd5f16f78568050b3ba5aced9a525f851
 
 Do not create competing plans. The existing BI-MODLAB.HANDOFF.md remains the tooling/DBPF handoff; horizon BI-004 remains recurring income. The parent first playable proof gate is BI-002 hunger and is ACTIVE / BLOCKED_LOCAL_GAME_ACCESS.
 
+## Launcher acceptance and process continuity
+
+Use [First run](../../docs/FIRST_RUN.md) for the current production and dev
+entries. Start with a read-only inventory on the Windows Sims PC. If there is a
+running certification or player session, keep it open. Compare PID, creation
+time and executable path before any guarded action. A dispatch PID in a legacy
+lab receipt cannot authorize the menu route. If the game restarts, preserve
+the old receipt, recover the new scene and save, and avoid replaying input.
+
+The first new dev proof is one clean launch with the calibrated authorized
+disposable context. Observe the selected oldest eligible slot, actual loaded
+household, and player takeover. Exercise a separate safe restart control
+against the now-stale process binding. Link the private observations to the
+launch receipt. For each human or agent step, preserve the before, during and
+after evidence and its missing repository owner.
+
+The installed-build production latest-save observer, one-step exact-slot
+loader and independent readback remain under
+[issue #201](https://github.com/EndeavorEverlasting/BetterInstincts/issues/201).
+Use an authorized disposable continuation as the runtime control. Keep this
+work serial with other agents that use the same game screen. This handoff is
+prepared for the Windows local agent and awaits that runtime. It does not
+replace the BI-002 gameplay evidence gates.
+
 ## LAUNCH ORDER
 
 0. ALREADY DONE — Current Chat / GitHub provider: code integration of scripts/game_host.py, tests/test_game_host.py and docs/GAME_HOST.md on main; synthetic CI passed; no local Sims access. Preserve these receipts. Do not redo them as an imaginary local sprint.
@@ -23,11 +47,11 @@ Work in the existing BetterInstincts checkout on the Windows machine that actual
 1. python -m unittest discover -s tests -v
 2. python -m scripts.game_host plan --profile dist/game-host/local-profile.json
 3. python -m scripts.game_host launch --profile dist/game-host/local-profile.json --run-id bi002-first-boot --execute
-4. Once the real game main menu is visible: python -m scripts.game_host navigate --profile dist/game-host/local-profile.json --run-id bi002-first-boot --execute --disposable-confirmed
+4. Once the real game main menu is visible: python -m scripts.game_host navigate --profile dist/game-host/local-profile.json --run-id bi002-first-boot --execute --disposable-confirmed --session-id ACTIVE_LISTENER_ID
 5. python -m scripts.game_host status --run-id bi002-first-boot
 6. Only when the intended disposable household is actually in Live Mode, confirm with actual full patch: python -m scripts.game_host confirm --run-id bi002-first-boot --disposable-confirmed --game-version ACTUAL.FULL.PATCH.VERSION --capture-ref capture:live-mode-001
 
-Do not treat New Game click as Live Mode: it first enters Create-a-Sim/placement. Avoid Resume since it could select an unintended personal slot. If a UI step fails midway, per-click receipts prohibit blind replay: inspect the actual screen, safely restart a new session and preserve the original receipt. Never edit, overwrite, delete, migrate or enumerate personal saves; do not auto-discover user-profile folders, copy EA assets or touch other mods. Mods install requires an explicitly chosen BetterInstincts subfolder, preview and rollback. No background daemons, scheduled polling or private account telemetry without distinct authorization.
+Do not treat New Game click as Live Mode: it first enters Create-a-Sim/placement. Avoid Resume since it could select an unintended personal slot. If a UI step fails midway, per-click receipts prohibit blind replay: inspect the actual screen, preserve the current game and original receipt, and establish fresh admitted context before continuing. Never edit, overwrite, delete, migrate or enumerate personal saves; do not auto-discover user-profile folders, copy EA assets or touch other mods. Mods install requires an explicitly chosen BetterInstincts subfolder, preview and rollback. No background daemons, scheduled polling or private account telemetry without distinct authorization.
 
 ## Runtime partition and ownership
 

@@ -663,3 +663,11 @@ owners. Repo fixtures cover Windows process identity, save ranking and
 receipt failure paths. P08 requires the Windows game PC. Existing
 certifications and protected saves retain their respective evidence and
 authority boundaries.
+
+
+## Process-bound launcher Closers
+
+MoonWake's Closers followed P83 → P03 → P141 → P124 → P04 for the startup
+thread. PR #284 and its workflow were independently verified. The older
+calibrated lab entry now uses the observed game process, and the canonical
+game-host handoff retains Windows proof and production latest-save work.

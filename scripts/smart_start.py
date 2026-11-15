@@ -8,13 +8,14 @@ that a particular save, menu, household, or Live Mode has been reached.
 from __future__ import annotations
 
 import csv
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import io
 import json
 from pathlib import Path, PureWindowsPath
 import re
 import subprocess
 import sys
+import time
 from typing import Callable
 
 from betterinstincts.first_run import (
@@ -232,3 +233,30 @@ def read_game_processes(runner: Callable[..., object] = subprocess.run) -> tuple
 def require_same_game_process(expected: GameProcess) -> None:
     if read_game_processes() != (expected,):
         raise FirstRunError("GAME_PROCESS_CHANGED_REOBSERVE_SCENE_AND_SAVE")
+
+
+def observe_launched_process(game: dict) -> GameProcess:
+    """Poll only a just-dispatched executable. Never adopt a replacement PID."""
+    if game["state"] == "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH":
+        observed = game.get("observed_game_process")
+        if not observed:
+            raise ValueError("EXISTING_GAME_PROCESS_IDENTITY_UNVERIFIED")
+        current = read_game_processes()
+        if len(current) != 1 or asdict(current[0]) != observed:
+            raise ValueError("GAME_PROCESS_CHANGED_REOBSERVE_SCENE_AND_SAVE")
+        return current[0]
+    if game.get("process_observation_state") == "PROCESS_INVENTORY_UNAVAILABLE_AFTER_DISPATCH":
+        raise ValueError("PROCESS_INVENTORY_UNAVAILABLE_AFTER_DISPATCH")
+    expected = str(PureWindowsPath(game["game_executable"])).casefold()
+    initial = game.get("observed_game_process")
+    for attempt in range(8):
+        current = read_game_processes()
+        if len(current) == 1 and current[0].executable == expected:
+            if initial is not None and asdict(current[0]) != initial:
+                raise ValueError("GAME_PROCESS_CHANGED_REOBSERVE_SCENE_AND_SAVE")
+            return current[0]
+        if initial is not None or current:
+            raise ValueError("GAME_PROCESS_CHANGED_REOBSERVE_SCENE_AND_SAVE")
+        if attempt < 7:
+            time.sleep(1)
+    raise ValueError("GAME_PROCESS_NOT_OBSERVED_AFTER_DISPATCH")
