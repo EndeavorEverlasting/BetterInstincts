@@ -10,6 +10,10 @@ import json
 from collections.abc import Mapping
 from pathlib import Path
 
+from betterinstincts.decision_horizon import (
+    DecisionHorizonError, allocate_continuous_time, optimize_activity_plan,
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "contracts" / "preference-prompts.v1.json"
 MAX_BYTES = 32_768
@@ -41,6 +45,32 @@ def load_catalog(path: Path = CATALOG) -> dict:
 def _safe_id(value: object) -> bool:
     return (type(value) is str and 0 < len(value) <= 128
             and all(ch.isalnum() or ch in "._:-" for ch in value))
+
+
+def _compare_continuations(offer: Mapping, model: Mapping) -> dict:
+    """Compare matched, evidence-bound activity forecasts for a modal choice."""
+    snapshot = model["snapshot"]
+    if (snapshot["sim_ref"] != offer["sim_ref"]
+            or snapshot["capture_ref"] != offer["capture_ref"]):
+        raise PreferencePromptError("CONTINUATION_ACTOR_OR_CAPTURE_MISMATCH")
+    capture = offer["capture_ref"]
+    routes = model.get("routes", [])
+    plans = {
+        choice: optimize_activity_plan(snapshot, model[choice], routes, capture_ref=capture)
+        for choice in ("YES", "NO")
+    }
+    valid_gates = {"FORECAST_STAGED_NOT_DISPATCHABLE", "NO_POSITIVE_FEASIBLE_PLAN"}
+    if any(plan["gate"] not in valid_gates for plan in plans.values()):
+        raise PreferencePromptError("CONTINUATION_NEEDS_REVALIDATION")
+    allocation = allocate_continuous_time(plans["NO"]["available_minutes"], model["activities"])
+    time_price = allocation["shadow_price_lambda"]
+    scores = {
+        choice: round(plan["expected_net_utility"] - time_price * plan["projected_minutes"], 6)
+        for choice, plan in plans.items()
+    }
+    return {"capture_ref": capture, "sim_ref": offer["sim_ref"], "scores": scores,
+            "time_shadow_price": time_price, "resume_gate": "REOBSERVE_AFTER_DIALOG"}
+
 
 
 def evaluate_offer(
@@ -78,7 +108,7 @@ def evaluate_offer(
     buttons = offer.get("visible_buttons")
     if not isinstance(buttons, (list, tuple)) or any(type(b) is not str for b in buttons):
         return {**result, "reason": "BUTTONS_UNVERIFIED"}
-    if set(buttons) != {"YES", "NO"}:
+    if len(buttons) != 2 or set(buttons) != {"YES", "NO"}:
         return {**result, "reason": "BUTTONS_UNVERIFIED"}
     if player_directed or offer.get("player_directed") is True:
         return {**result, "reason": "PLAYER_DIRECTED"}
@@ -98,22 +128,34 @@ def evaluate_offer(
     policy = topic[kind]
     if policy == "GOAL_ONLY":
         positive_goals = set(topic.get(kind + "_goals", ()))
-        if not positive_goals.intersection(goals):
-            return {**result, "reason": "NO_MATCHING_SIM_GOAL"}
-        positive = True
+        positive = bool(positive_goals.intersection(goals))
+        reason = "CATALOGUED_GOAL_ALIGNED" if positive else "NO_MATCHING_SIM_GOAL"
     else:
         positive = policy == "POSITIVE"
+        reason = "CATALOGUED_HEURISTIC"
+    continuation = None
+    if "continuation_model" in offer:
+        try:
+            continuation = _compare_continuations(offer, offer["continuation_model"])
+        except PreferencePromptError as exc:
+            return {**result, "reason": str(exc)}
+        except (DecisionHorizonError, KeyError, TypeError):
+            return {**result, "reason": "CONTINUATION_MODEL_INVALID"}
+        scores = continuation["scores"]
+        positive = positive and scores["YES"] > scores["NO"]
+        reason = "PREFERENCE_CONTINUATION_ADVANTAGE" if positive else "NO_PREFERENCE_CONTINUATION_ADVANTAGE"
     decision = "ACCEPT" if positive else "DECLINE"
     return {
         **result,
         "decision": decision,
-        "reason": "CATALOGUED_GOAL_ALIGNED" if policy == "GOAL_ONLY" else "CATALOGUED_HEURISTIC",
+        "reason": reason,
         "steps": ["YES", "OK"] if positive else ["NO"],
         "topic_id": offer["topic_id"],
         "offer_kind": kind,
         "sim_ref": offer["sim_ref"],
         "capture_ref": offer["capture_ref"],
         "requires_independent_stage_reobservation": bool(positive),
+        **({"continuation": continuation} if continuation is not None else {}),
     }
 
 

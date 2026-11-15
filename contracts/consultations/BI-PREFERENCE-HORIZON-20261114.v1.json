@@ -1,0 +1,61 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PREFERENCE-HORIZON-20261114",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "proposed_capability": "Use the existing Bellman continuation planner and KKT time allocation for bounded preference choice before any effect.",
+  "affected_concepts": [
+    "OBSERVATION",
+    "GOAL",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT"
+  ],
+  "relevant_canonical_owners": [
+    "contracts/preference-prompts.v1.json",
+    "betterinstincts/preference_prompts.py",
+    "scripts/preference_prompts.py",
+    "contracts/effect-authority.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-004",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-007",
+    "BI-ONT-008",
+    "BI-ONT-009",
+    "BI-ONT-010",
+    "BI-ONT-011",
+    "BI-ONT-012",
+    "BI-ONT-013",
+    "BI-ONT-014",
+    "BI-ONT-015",
+    "BI-ONT-016",
+    "BI-ONT-017",
+    "BI-ONT-018"
+  ],
+  "game_build_scope": "EXACT_GAME_BUILD:1.121.361.1020",
+  "evidence_ceiling": "POLICY_ONLY_WITH_LIVE_OFFER_OBSERVATION",
+  "player_save_control_impact": "Policy emits a proposed choice. Preserve all existing input admission and overrides.",
+  "expected_outcome": "Compare same-actor, same-capture continuation values without violating hard need floors. Reobserve before resuming activity.",
+  "negative_tests": [
+    "Unknown topic holds",
+    "Unverified or duplicate buttons hold",
+    "Player override holds"
+  ],
+  "rollback_path": "Revert the catalog and policy commits.",
+  "unresolved_unknowns": [
+    "Native EA prompt interception and response API",
+    "Live response for an offer addressed to a different household member"
+  ],
+  "files_expected": [
+    "betterinstincts/preference_prompts.py",
+    "tests/test_preference_prompts.py",
+    "docs/PREFERENCE_PROMPTS.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Operator requires shared Bellman and Lagrange planning, with runtime verification before merge."
+}

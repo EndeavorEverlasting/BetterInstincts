@@ -139,6 +139,12 @@
         "relationships"
       ]
     },
+    "video_gaming": {
+      "label": "Video Gaming",
+      "like": "POSITIVE",
+      "dislike": "NEGATIVE",
+      "goals": ["fun", "video_gaming"]
+    },
     "mischief": {
       "label": "Mischief",
       "like": "GOAL_ONLY",
