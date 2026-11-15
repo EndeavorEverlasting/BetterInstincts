@@ -6,7 +6,8 @@
       "path": "betterinstincts/control_discovery.py",
       "route": "POLICY_ONLY",
       "reason": "Project sanitized journal evidence into current mechanics registry source and test ownership.",
-      "game_effect_claim": "NONE"
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
     },
     {
       "path": "betterinstincts/agent_control_runner.py",
@@ -19,7 +20,8 @@
       "path": "betterinstincts/mechanics_registry.py",
       "route": "POLICY_ONLY",
       "reason": "Validate direct source and test paths before exposing them to recovery callers.",
-      "game_effect_claim": "NONE"
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
     }
   ]
 }
