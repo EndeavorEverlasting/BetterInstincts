@@ -1,0 +1,58 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-NATIVE-PREFERENCE-RESPONSE-BRIDGE-20261115",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "3d5ed97bb24bfc8eb75a72a2fbeb23330dbb7d31",
+  "base_commit": "3c78a264e81273fc6022b0d63283d5b6319a331a",
+  "proposed_capability": "Bridge a BetterInstincts recipient-scored preference choice into a guarded one-shot interface for an independently verified EA dialog responder. Attribute assisted resolution separately from an app-owned submission.",
+  "affected_concepts": [
+    "PLAYER_INTENT",
+    "HOST_SESSION",
+    "OBSERVATION",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md",
+    "betterinstincts/preference_prompts.py",
+    "betterinstincts/preference_native_map.py",
+    "contracts/preference-native-response-map.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-042",
+    "BI-ONT-043"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_INJECTED_PORT_NOT_NATIVE_GAME_ACTIVATION",
+  "player_save_control_impact": "Only an existing trusted opted-in native host can supply current dialog state and sender. No screen input or changed save authorization. No relaunch or replay of Bernice's resolved offer.",
+  "expected_outcome": "A mismatched capture or missing sender cannot be called; the product chooses the response, trusted native host binds it and passes it once, and outcome review correlates the app dispatch with the new native ACK and effect.",
+  "negative_tests": [
+    "Wrong actor, mismatched revision or unauthorized sender circumstances deny.",
+    "A dispatch with uncertain return is never retried on the same dialog.",
+    "Agent-assisted or prior observations do not certify app-owned execution."
+  ],
+  "rollback_path": "Close the stacked PR or revert its source and tests. No private file or live game touched.",
+  "unresolved_unknowns": [
+    "The exact EA live responder, its observed runtime callback, and original game-host save identity require the Windows game host."
+  ],
+  "files_expected": [
+    "betterinstincts/preference_native_map.py",
+    "scripts/preference_response_port.py",
+    "tests/test_preference_native_response.py",
+    "contracts/preference-native-response-map.v1.json",
+    "contracts/native-gameplay-decisions/BI-NATIVE-PREFERENCE-RESPONSE-BRIDGE-20261115.v1.json",
+    "docs/PREFERENCE_PROMPTS.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}
