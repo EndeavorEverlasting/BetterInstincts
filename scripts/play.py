@@ -346,7 +346,14 @@ def main(argv: list[str] | None = None) -> int:
             from bootstrap import paths
             from scripts.launch_receipt import begin, write_result
 
-            receipt_path, receipt = begin(args.mode, root=paths()["locks"].parent)
+            try:
+                receipt_path, receipt = begin(args.mode, root=paths()["locks"].parent)
+            except (OSError, ValueError) as exc:
+                reason = str(exc) if str(exc).startswith("PLAY_RECEIPT_") else "RECEIPT_DIRECTORY_UNAVAILABLE"
+                action = ("Archive older launch receipt folders outside play-receipts, then retry."
+                          if reason == "PLAY_RECEIPT_STORE_FULL_ARCHIVE_OLDER_RUNS" else
+                          "Restore access to the local receipt directory before retrying.")
+                raise PlayBlocked("receipt", reason, action) from exc
             if args.checkout_head:
                 receipt["checkout_head"] = args.checkout_head
                 write_result(receipt_path, receipt)

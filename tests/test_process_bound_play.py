@@ -130,3 +130,20 @@ class ProcessBoundPlayTests(unittest.TestCase):
             self.assertEqual(json.loads(assisted.read_text())["after_ref"], "capture:after")
             with self.assertRaisesRegex(ValueError, "DISTINCT_BEFORE_DURING_AFTER"):
                 launch_receipt.record_assistance(receipt_path, **{**fields, "after": "capture:before"})
+
+    def test_receipts_stop_at_capacity_without_deleting_evidence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fields = {"actor": "human", "stage": "production_save", "step": "Opened the save",
+                      "owner": "scripts/launch_save_route.py", "before": "capture:before",
+                      "during": "capture:during", "after": "capture:after"}
+            with (patch.object(launch_receipt, "MAX_LAUNCHES", 1),
+                  patch.object(launch_receipt, "MAX_ASSISTS_PER_LAUNCH", 1)):
+                path, _ = launch_receipt.begin("production", root=root)
+                row = launch_receipt.record_assistance(path, **fields)
+                with self.assertRaisesRegex(ValueError, "PLAY_RECEIPT_STORE_FULL"):
+                    launch_receipt.begin("production", root=root)
+                with self.assertRaisesRegex(ValueError, "PLAY_ASSISTANCE_STORE_FULL"):
+                    launch_receipt.record_assistance(path, **fields)
+                self.assertTrue(path.is_file())
+                self.assertTrue(row.is_file())

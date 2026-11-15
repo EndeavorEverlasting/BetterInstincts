@@ -71,7 +71,9 @@ py -3 -m scripts.launch_receipt --receipt "C:\path\to\launch.json" --actor agent
 ```
 
 Each assistance entry is stored beside `launch.json` for the same run and
-keeps the missing repository owner visible. Keep gameplay evidence and
+keeps the missing repository owner visible. The store holds up to 128
+launches and 32 assistance entries per launch. At capacity, archive older
+evidence outside the store to make space. Keep gameplay evidence and
 operator-directed play separate from repository startup automation.
 
 ## Skill-aware first-session plan (new Sims)

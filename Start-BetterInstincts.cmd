@@ -114,11 +114,11 @@ echo See the required step and launch receipt above.
 if defined LOCALAPPDATA if not "%BI_BOOTSTRAP_GAP%"=="" (
   if not exist "%LOCALAPPDATA%\BetterInstincts\runtime\play-receipts\" mkdir "%LOCALAPPDATA%\BetterInstincts\runtime\play-receipts"
   setlocal EnableDelayedExpansion
-  set "BOOTSTRAP_RECEIPT=%LOCALAPPDATA%\BetterInstincts\runtime\play-receipts\bootstrap-!RANDOM!-!RANDOM!.json"
+  set "BOOTSTRAP_RECEIPT=%LOCALAPPDATA%\BetterInstincts\runtime\play-receipts\bootstrap-%BI_BOOTSTRAP_GAP%.json"
   if not exist "!BOOTSTRAP_RECEIPT!" (
     >"!BOOTSTRAP_RECEIPT!" echo {"schema":"betterinstincts.play-bootstrap-receipt/v1","status":"blocked","startup_mode":"%PLAYMODE%","automation_gaps":[{"kind":"MISSING_REPOSITORY_LOGIC","stage":"bootstrap","reason":"%BI_BOOTSTRAP_GAP%","required_actor":"human_or_agent","required_step":"%BI_BOOTSTRAP_GAP%","repository_owner":"Start-BetterInstincts.cmd"}]}
-    if not errorlevel 1 echo Launch receipt: !BOOTSTRAP_RECEIPT!
   )
+  if exist "!BOOTSTRAP_RECEIPT!" echo Launch receipt: !BOOTSTRAP_RECEIPT!
   endlocal
 )
 echo.

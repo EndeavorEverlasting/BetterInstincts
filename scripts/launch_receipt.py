@@ -14,20 +14,41 @@ from betterinstincts.save_policy import REF_RE
 
 SCHEMA = "betterinstincts.play-launch-receipt/v1"
 LIMIT = 32_768
+MAX_LAUNCHES = 128
+MAX_ASSISTS_PER_LAUNCH = 32
 
 
 def begin(mode: str, *, root: Path) -> tuple[Path, dict]:
     """Create a run's receipt before effects, under the owned runtime directory."""
+    from betterinstincts.control_handoff import HandoffError, _named_screen_lock
+
     run_id = uuid4().hex
-    path = root / "play-receipts" / run_id / "launch.json"
-    path.parent.mkdir(parents=True, exist_ok=False)
+    folder = root / "play-receipts"
+    path = folder / run_id / "launch.json"
+    try:
+        with _named_screen_lock("play-receipt-store.lock", lock_root=root / "locks"):
+            if folder.is_symlink():
+                raise ValueError("PLAY_RECEIPT_STORE_UNSAFE")
+            if folder.exists() and has_reached_capacity((p for p in folder.iterdir() if p.is_dir()), MAX_LAUNCHES):
+                raise ValueError("PLAY_RECEIPT_STORE_FULL_ARCHIVE_OLDER_RUNS")
+            path.parent.mkdir(parents=True, exist_ok=False)
+    except HandoffError as exc:
+        raise ValueError("PLAY_RECEIPT_STORE_BUSY_RETRY") from exc
     receipt = {
         "schema": SCHEMA, "run_id": run_id, "startup_mode": mode,
         "started_at": datetime.now(timezone.utc).isoformat(),
         "status": "in_progress", "stage": "startup", "automation_gaps": [],
     }
-    write_result(path, receipt)
+    try:
+        write_result(path, receipt)
+    except (OSError, ValueError):
+        path.parent.rmdir()
+        raise
     return path, receipt
+
+
+def has_reached_capacity(paths, limit: int) -> bool:
+    return any(index >= limit for index, _ in enumerate(paths, start=1))
 
 
 def write_result(path: Path, receipt: dict) -> None:
@@ -71,8 +92,16 @@ def record_assistance(path: Path, *, actor: str, stage: str, step: str, owner: s
         "before_ref": before, "during_ref": during, "after_ref": after,
         "proof_ceiling": "REPORTED_ASSISTANCE_NOT_HOST_AUTOMATION_OR_SAVE_PROOF",
     }
+    from betterinstincts.control_handoff import HandoffError, _named_screen_lock
+
     target = path.parent / ("assistance-" + uuid4().hex + ".json")
-    write_result(target, row)
+    try:
+        with _named_screen_lock("play-receipt-store.lock", lock_root=path.parent.parent.parent / "locks"):
+            if has_reached_capacity(path.parent.glob("assistance-*.json"), MAX_ASSISTS_PER_LAUNCH):
+                raise ValueError("PLAY_ASSISTANCE_STORE_FULL_ARCHIVE_OLDER_ENTRIES")
+            write_result(target, row)
+    except HandoffError as exc:
+        raise ValueError("PLAY_RECEIPT_STORE_BUSY_RETRY") from exc
     return target
 
 
