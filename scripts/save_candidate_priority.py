@@ -12,6 +12,7 @@ from pathlib import Path
 import re
 import sys
 
+from betterinstincts.installation_profiles import HOUSEHOLD_ID
 from betterinstincts.save_policy import (
     MANIFEST_SCHEMA,
     PATCH_RE,
@@ -37,7 +38,9 @@ def _lab_creation_time(record: dict) -> datetime | None:
     return result if result.strftime("%Y-%m-%dT%H:%M:%SZ") == value else None
 
 
-def rank_lab_candidates(registry: dict, *, run_id: str, game_version: str) -> dict:
+def rank_lab_candidates(
+    registry: dict, *, run_id: str, game_version: str, household_id: str | None = None,
+) -> dict:
     """Rank, never select. Missing age or failed guard for ANY lab candidate abstains.
 
     The canonical decide() guard is evaluated for every proposed lab-disposable
@@ -52,15 +55,33 @@ def rank_lab_candidates(registry: dict, *, run_id: str, game_version: str) -> di
             or not isinstance(game_version, str) or not PATCH_RE.fullmatch(game_version)):
         raise SavePolicyError("INVALID_CURRENT_RUN_OR_GAME_VERSION")
 
+    if household_id is not None and (not isinstance(household_id, str)
+                                     or not HOUSEHOLD_ID.fullmatch(household_id)):
+        raise SavePolicyError("INVALID_HOUSEHOLD_ID")
+
     candidates: list[tuple[datetime, dict]] = []
     excluded = 0
     unrankable = 0
+    outside_scope = 0
     for record in registry["entries"]:
         if not isinstance(record, dict):
             raise SavePolicyError("INVALID_SAVE_REGISTRY_ENTRY")
         if record.get("classification") != "LAB_DISPOSABLE":
             excluded += 1
             continue
+
+        if household_id is not None:
+            if record.get("authorized_run_id") != run_id:
+                outside_scope += 1
+                continue
+            bound_household = record.get("household_id")
+            if (not isinstance(bound_household, str) or not HOUSEHOLD_ID.fullmatch(bound_household)
+                    or record.get("household_binding_confirmed") is not True):
+                unrankable += 1
+                continue
+            if bound_household != household_id:
+                outside_scope += 1
+                continue
 
         try:
             decision = decide(
@@ -84,6 +105,7 @@ def rank_lab_candidates(registry: dict, *, run_id: str, game_version: str) -> di
     base = {
         "ranking_rule": ADVISORY,
         "protected_or_continuation_excluded": excluded,
+        **({"outside_household_or_run_excluded": outside_scope} if household_id is not None else {}),
         "unrankable_lab_candidates": unrankable,
         "ranked_candidates": [],
         "selected_save_id": None,

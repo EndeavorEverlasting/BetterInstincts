@@ -9,7 +9,7 @@ import unittest
 
 from betterinstincts.save_policy import MANIFEST_SCHEMA
 from scripts.launch_save_route import (
-    CERTIFICATION_ID, CONTEXT_SCHEMA, load_context, route_launch,
+    CERTIFICATION_ID, CONTEXT_SCHEMA, household_handoff, load_context, route_launch,
     route_local_context,
 )
 RUN = "lab-review"
@@ -62,6 +62,38 @@ def completed() -> dict:
 
 
 class CertificationFirstRouteTests(unittest.TestCase):
+    def test_single_household_resolves_and_ambiguous_or_stale_choice_waits(self):
+        a, b = "household:a", "household:b"
+        self.assertEqual(household_handoff((a,), None)["household_id"], a)
+        self.assertEqual(household_handoff((a, b), None)["state"], "HOUSEHOLD_CHOICE_REQUIRED")
+        self.assertEqual(household_handoff((a, b), b)["household_id"], b)
+        self.assertEqual(household_handoff((a,), b)["state"], "HOUSEHOLD_CHOICE_REQUIRED")
+
+    def test_reviewed_successor_ranks_only_current_household_disposable_saves(self):
+        a, b = "household:a", "household:b"
+        item = completed()
+        item["household_id"] = item["completion_review"]["household_id"] = a
+        successor = "bi002-hunger"
+        def row(number, day, household, **extra):
+            return {**lab(number, day), "authorized_run_id": successor, "household_id": household,
+                    "household_binding_confirmed": True, **extra}
+
+        saves = register(row(1, 1, b), row(2, 2, a, classification="USER_PROTECTED"),
+                         row(3, 3, a), row(4, 4, a))
+        args = dict(available_households=(a, b), preferred_household=a,
+                    observed_game_version=PATCH, successor_run_id=successor)
+        routed = route_launch(item, lab_registry=saves, **args)
+        self.assertEqual(routed["candidate_save_id"], "slot:lab-003")
+        self.assertIsNone(routed["selected_save_id"])
+        self.assertIsNone(routed["control_permit"])
+        self.assertEqual(route_launch(item, lab_registry=saves, **{**args, "preferred_household": b})
+                         ["state"], "HOLD_CERTIFICATION_HOUSEHOLD")
+        self.assertEqual(route_launch(item, lab_registry=saves, **{**args, "successor_run_id": RUN})
+                         ["state"], "HOLD_SUCCESSOR_RUN")
+        saves["entries"].append(row(5, 1, a, household_binding_confirmed=False))
+        self.assertEqual(route_launch(item, lab_registry=saves, **args)["state"],
+                         "HOLD_STANDARDIZED_LAB_RANKING")
+
     def test_existing_game_keeps_current_dialog_even_when_oldest_lab_exists(self):
         result = route_launch(
             context(), game_running_observed=True,

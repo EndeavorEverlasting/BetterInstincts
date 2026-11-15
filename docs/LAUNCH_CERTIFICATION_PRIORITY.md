@@ -96,3 +96,15 @@ python -m unittest tests.test_launch_save_route tests.test_save_candidate_priori
 - **P07/P124:** New route lives in `scripts/launch_save_route.py` and reuses `betterinstincts.save_policy` plus `scripts.save_candidate_priority`; the existing launcher only reports the route, never clicks a save. Keep #263's separate stacked preference/observer work intact.
 
 BI-002's independent hunger 5+5 and rollback requirement remains a separate live-certification gate. Source tests or a GitHub merge do not close it.
+
+## Household-scoped successor route
+
+The current certification memo and its completion review must each carry the
+same observed `household_id`. The next run's registry records carry that
+`household_id` and `household_binding_confirmed: true` for each attested slot.
+Use the explicit `--successor-run-id` and repeat `--household-id` for all freshly
+observed available households. With multiple households, first persist the
+player's choice through `scripts.instance_settings choose-household`.
+The oldest eligible slot is returned as `candidate_save_id`. The live adapter
+still owns exact menu observation and effect admission. Legacy unscoped ranking
+is advisory and cannot be used to automate this transition.

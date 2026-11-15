@@ -1,0 +1,16 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-CERTIFICATION-HOUSEHOLD-CLOSERS-20261115",
+  "purpose": "Store the user's household preference without creating a game or host control adapter.",
+  "files": [
+    {
+      "path": "betterinstincts/installation_profiles.py",
+      "route": "NON_GAMEPLAY",
+      "reason": "Explicit local preferences via the existing validated atomic settings writer.",
+      "game_effect_claim": "NONE"
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "OFFLINE_LOCAL_PREFERENCE_AND_ADVISORY_ONLY",
+  "next_gate": "Use the existing Windows game host and player-first permission path for independently observed save transition."
+}

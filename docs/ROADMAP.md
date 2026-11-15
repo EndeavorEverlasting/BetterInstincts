@@ -283,3 +283,11 @@ The exact-build Windows host was observed in paused Live Mode. Run `bi002-202611
 ## Reuse past experience before repeating a live experiment (2026-11-14)
 
 Prior vanilla/modded game observations are not forgotten on an agent/session restart. `docs/EXPERIENCE_RECALL.md` and `betterinstincts/experience_recall.py` implement a narrow semantic reuse index: store only a new distinct outcome, skip writes and research on an exact remembered hit, preserve provenance, hold contradictions, and independently evaluate the **current** dialog. Import existing locally verified Video Gaming Yes/No evidence without launching another Sims experiment. Do not close BI-002 hunger or claim native automatic gameplay from this offline memory feature.
+
+## Household-aware lab startup
+
+Use the paused certification session first. After current-offer review, observe
+the available household IDs and resolve the saved choice or ask once if there
+are several. Rank and host-verify the oldest eligible disposable slot for that
+household. Reliability on normal recent saves needs its own local certification
+before becoming a startup default.

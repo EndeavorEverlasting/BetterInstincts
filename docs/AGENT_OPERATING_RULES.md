@@ -180,3 +180,13 @@ For active-household mapping, room traversal, goal routing and camera surveys re
 **Harness proof:** local Cursor project hooks must actually be activated; timeout or absent hook is not a security fence. Other IDEs/agents have independent tool approval/sandbox requirements. No source check can guarantee an untrusted external process never touches Windows. The safe default for game tooling is no access to Windows repair capabilities. P08 live peripheral/capture certification requires explicit operator-owned host observation, no forced input, and cannot be simulated by GitHub CI.
 
 **Fifth Gear:** P95 retains the existing contract/checker/hook call stack; P82 supplies hostile cross-path fixtures; P08 separates physical host proof; P07 integrates reviewed CI; P124 reduces duplicate policy by strengthening canonical owners. The BI-002 hunger gate stays active and independent.
+
+## Continue a known live certification
+
+Use the existing certification handoff and original evidence checkout.
+Read historical recall before running experiments. A known outcome removes the
+need to reproduce that trial. Reconcile the exact current offer from live
+evidence before advancing. After reviewed completion, follow the household
+choice and attested lab ranking described in [Live certification](LIVE_CERTIFICATION_HANDOFF.md).
+Before changing which household is preferred, ask the player only if the
+current choice is unresolved. A saved choice never grants a save or input permit.

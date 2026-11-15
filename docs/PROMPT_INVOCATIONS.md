@@ -638,3 +638,10 @@ Resolved current canonical MoonWake group to **P141 → P95 → P82 → P08 → 
 ## 2026-11-14 — /the-closers on PS-0245
 
 Current MoonWake manifest and full catalog resolve **P83 → P03 → P141 → P124 → P04**. The prompt sequence is not a novel P-number. P83 verified merged #255 plus offline CI; P03 repaired mid-action need-floor and zero-utility/search-cap safety semantics in `decision_horizon.py`; P141 selected existing-owner safety correction over a second planner, blanket GP or source-unverified EA integration; P124 kept source ownership cohesive; P04 placed the next actual native game/effect proof with the local agent under issue #171, recording its runtime partition and serial collision boundary. Local MoonWake `prompt_group_walk.py` has **not been executed** through the remote provider; no physical agent launch or game observed. Read `docs/handoff/BI-PS0245-CLOSERS-LOCAL-NATIVE-GATE-20261114.md` and current GitHub PR/CI state for next exact action.
+
+## MoonWake Closers, P00 and P01 for certification continuity
+
+Closers ran P83 → P03 → P141 → P124 → P04. P00 and P01 reused the existing
+governance, ontology, launch contracts, and test harness. Historical memory and
+fresh current-offer evidence have separate roles. The Windows live continuation
+and save-load proof remain with the single local game owner.

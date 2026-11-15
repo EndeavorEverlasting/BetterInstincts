@@ -203,5 +203,27 @@ class InstallationProfilesTests(unittest.TestCase):
                     "--use-active-profile"]), 0)
             self.assertIs(received[-1], expected)
 
+
+
+
+class HouseholdPreferenceTests(unittest.TestCase):
+    def test_explicit_choice_is_profile_local_and_legacy_settings_still_load(self):
+        import betterinstincts.installation_profiles as profiles
+
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "settings.v1.json"
+            profiles.create_profile("trial", path)
+            self.assertIsNone(profiles.view(path, profile_id="trial")["preferred_household_id"])
+            profiles.set_preferred_household("household:alpha", path, profile_id="trial")
+            self.assertEqual(profiles.view(path, profile_id="trial")["preferred_household_id"],
+                             "household:alpha")
+            self.assertIsNone(profiles.view(path)["preferred_household_id"])
+            current = profiles.view(path)["revision"]
+            profiles.set_preferred_household("household:alpha", path, profile_id="trial")
+            self.assertEqual(profiles.view(path)["revision"], current)
+            profiles.set_preferred_household(None, path, profile_id="trial")
+            self.assertIsNone(profiles.view(path, profile_id="trial")["preferred_household_id"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -19,6 +19,8 @@ SCHEMA = "betterinstincts.installation-profiles/v1"
 MAX_BYTES = 32_768
 MAX_PROFILES = 16
 PROFILE_ID = re.compile(r"^[a-z][a-z0-9_-]{0,31}$")
+HOUSEHOLD_ID = re.compile(r"^household:[a-zA-Z0-9_-]{1,64}$")
+
 class InstallationProfileError(ValueError):
     pass
 
@@ -80,9 +82,9 @@ def _safe_path(path: Path) -> None:
 
 
 def _validate(document: dict) -> dict:
-    if not isinstance(document, dict) or set(document) != {
-        "schema", "revision", "active_profile", "profiles"
-    } or document["schema"] != SCHEMA:
+    required = {"schema", "revision", "active_profile", "profiles"}
+    if (not isinstance(document, dict) or not required.issubset(document)
+            or set(document) - required - {"preferred_households"} or document["schema"] != SCHEMA):
         raise InstallationProfileError("SETTINGS_SCHEMA_INVALID")
     revision = document["revision"]
     if type(revision) is not int or not 0 <= revision <= 2**31 - 1:
@@ -100,6 +102,12 @@ def _validate(document: dict) -> dict:
         for key, value in overrides.items():
             if key not in DEFAULTS or type(value) is not bool:
                 raise InstallationProfileError("SETTING_UNKNOWN_OR_TYPE_INVALID")
+    household_choices = document.get("preferred_households", {})
+    if not isinstance(household_choices, dict) or any(
+        key not in profiles or not isinstance(value, str) or not HOUSEHOLD_ID.fullmatch(value)
+        for key, value in household_choices.items()
+    ):
+        raise InstallationProfileError("HOUSEHOLD_PREFERENCES_INVALID")
     return document
 
 
@@ -130,6 +138,7 @@ def view(path: Path | None = None, *, profile_id: str | None = None) -> dict:
         "profiles": sorted(document["profiles"]),
         "settings": {**DEFAULTS, **overrides},
         "overrides": dict(overrides),
+        "preferred_household_id": document.get("preferred_households", {}).get(selected),
         "game_control_permit": None,
         "proof_ceiling": "LOCAL_PROFILE_PREFERENCE_ONLY",
     }
@@ -199,6 +208,27 @@ def choose_profile(profile_id: str, path: Path | None = None) -> dict:
         if profile_id not in doc["profiles"]:
             raise InstallationProfileError("PROFILE_NOT_FOUND")
         doc["active_profile"] = profile_id
+    return _mutation(path, change)
+
+
+def set_preferred_household(household_id: str | None, path: Path | None = None,
+                            *, profile_id: str | None = None) -> dict:
+    """Persist an explicit player choice for one installation profile."""
+    if household_id is not None and (not isinstance(household_id, str)
+                                     or not HOUSEHOLD_ID.fullmatch(household_id)):
+        raise InstallationProfileError("HOUSEHOLD_ID_INVALID")
+
+    def change(document: dict) -> None:
+        selected = profile_id if profile_id is not None else document["active_profile"]
+        if selected not in document["profiles"]:
+            raise InstallationProfileError("PROFILE_NOT_FOUND")
+        if household_id is not None:
+            document.setdefault("preferred_households", {})[selected] = household_id
+        elif "preferred_households" in document:
+            document["preferred_households"].pop(selected, None)
+            if not document["preferred_households"]:
+                del document["preferred_households"]
+
     return _mutation(path, change)
 
 

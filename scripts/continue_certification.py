@@ -10,8 +10,10 @@ import shutil
 import subprocess
 import sys
 
+from betterinstincts.experience_recall import ExperienceRecallError, load_memory, recall
 from betterinstincts.first_run import FirstRunError
-from scripts.launch_save_route import LOCAL_CONTEXT, route_local_context
+from betterinstincts.installation_profiles import InstallationProfileError, view
+from scripts.launch_save_route import LOCAL_CONTEXT, PATCH_RE, load_context, route_local_context
 from scripts.smart_start import read_sims_processes
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +22,36 @@ HANDOFF = ROOT / "docs" / "LIVE_CERTIFICATION_HANDOFF.md"
 
 class HandoffError(RuntimeError):
     pass
+
+
+def historical_preference(root: Path, memo_path: Path) -> dict:
+    """Read known outcomes from the evidence checkout, without writing history."""
+    try:
+        profile = view()
+        try:
+            memo = load_context(memo_path)
+        except (OSError, ValueError):
+            memo = {}
+        build = memo.get("game_version")
+        # This is the documented historical build, not an observation of the live process.
+        if not isinstance(build, str) or not PATCH_RE.fullmatch(build):
+            build = "1.121.361.1020"
+        historical_profile = memo.get("historical_installation_profile", profile["profile_id"])
+        if historical_profile not in profile["profiles"]:
+            return {"state": "RECOVER_EXISTING_HISTORICAL_RECEIPTS",
+                    "reason": "HISTORICAL_PROFILE_UNVERIFIED"}
+        memory = load_memory(root=root)
+        results = {
+            choice: recall(memory, {
+                "domain": "preference_offer", "game_build": build,
+                "installation_profile": historical_profile,
+                "mechanic_id": "ea_265965", "choice_id": choice,
+            }) for choice in ("yes_0", "no_1")
+        }
+        return {"historical_game_build": build, "installation_profile": historical_profile,
+                "preferred_household_id": profile["preferred_household_id"], "results": results}
+    except (ExperienceRecallError, InstallationProfileError, OSError, ValueError) as error:
+        return {"state": "RECOVER_EXISTING_HISTORICAL_RECEIPTS", "reason": str(error)}
 
 
 def build_handoff(root: Path = ROOT) -> str:
@@ -31,12 +63,15 @@ def build_handoff(root: Path = ROOT) -> str:
         process = {"state": "LOCAL_PROCESS_NAMES_OBSERVED", "pids": sorted(processes)}
 
     memo = root / LOCAL_CONTEXT.relative_to(ROOT)
-    route = route_local_context(
-        path=memo, game_running_observed=len(process.get("pids", [])) == 1,
-    )
+    pids = process.get("pids")
+    if pids is None or len(pids) > 1:
+        memo_route = "HOLD_PROCESS_IDENTITY"
+    else:
+        memo_route = route_local_context(path=memo, game_running_observed=len(pids) == 1)["state"]
     # This is an observation of process names and a memo, not a fresh dialog,
     # exact build, checked save, permission to focus, or current native result.
-    summary = {"process_sample": process, "memo_route": route["state"]}
+    summary = {"process_sample": process, "memo_route": memo_route,
+               "historical_preference": historical_preference(root, memo)}
     return ("The operator launched the BetterInstincts live-certification handoff. "
             "Execute the scoped task below in this evidence checkout. "
             "Local startup observation (recheck before any live action): "

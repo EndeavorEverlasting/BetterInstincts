@@ -2138,3 +2138,11 @@ After the operator restarted, the running executable reported Windows `1.121.361
 ## 2026-11-15 — Continue the active Windows certification
 
 Added `Continue-BetterInstincts-Certification.cmd` and `scripts.continue_certification` to dispatch the current-session task through the installed Codex CLI. The task starts with the running Video Gaming offer, reuses historical Yes/No receipts, uses the existing Bellman and receipt sources from #262/#263, and routes a reviewed, synced result to the next BI-002 trial on the oldest authorized disposable save. `--checkout` retains the original evidence worktree when source was updated elsewhere. P08 Windows gameplay and actual provider sync remain to be observed on the host.
+
+## Certification handoff and household continuity
+
+PR #271's handoff preloads Video Gaming Yes/No memory from the original evidence
+checkout. It preserves the open session and carries the remaining current-offer
+gate. The installer profile stores household choice and the successor route
+ranks current-run disposable slots within the reviewed household. Current
+Windows offer, observed effects, and authorized load remain local proof.

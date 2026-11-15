@@ -36,6 +36,23 @@ class ContinueCertificationTests(unittest.TestCase):
         self.assertLess(task.index("## 2. Close the current offer"), task.index("## 3. Begin BI-002"))
         self.assertFalse((self.root / "dist").exists())
 
+    def test_handoff_loads_known_results_from_the_original_checkout(self):
+        from betterinstincts.experience_recall import EVENT_SCHEMA, record_new
+
+        context = dict(domain="preference_offer", game_build="1.121.361.1020",
+                       installation_profile="trial", mechanic_id="ea_265965", choice_id="yes_0")
+        record_new({"schema": EVENT_SCHEMA, "context": context, "result": "actor_trait_258767",
+                    "evidence_level": "LOCAL_ARTIFACT_VERIFIED", "evidence_ref": "capture:prior-yes",
+                    "observed_at_ms": 1000}, root=self.root)
+        with (patch.object(handoff, "read_sims_processes", return_value={53: "TS4_x64.exe"}),
+              patch.object(handoff, "view", return_value={"profile_id": "trial",
+                                                          "preferred_household_id": None,
+                                                          "profiles": ["trial"]})):
+            payload = handoff.build_handoff(self.root)
+        self.assertIn("PAST_EXPERIENCE_RECALLED", payload)
+        self.assertIn("NEW_EXPERIENCE", payload)
+        self.assertIn('"current_outcome_proven": false', payload)
+
     def test_existing_memo_is_used_in_the_evidence_checkout_without_writes(self):
         memo = self.root / handoff.LOCAL_CONTEXT.relative_to(handoff.ROOT)
         memo.parent.mkdir(parents=True)
@@ -51,7 +68,9 @@ class ContinueCertificationTests(unittest.TestCase):
     def test_ambiguous_and_unavailable_processes_are_distinct_observations(self):
         with patch.object(handoff, "read_sims_processes",
                           return_value={17: "TS4.exe", 53: "TS4_x64.exe"}):
-            self.assertIn('"pids": [17, 53]', handoff.build_handoff(self.root))
+            task = handoff.build_handoff(self.root)
+            self.assertIn('"pids": [17, 53]', task)
+            self.assertIn("HOLD_PROCESS_IDENTITY", task)
         with patch.object(handoff, "read_sims_processes",
                           side_effect=FirstRunError("PROCESS_INVENTORY_UNAVAILABLE")):
             task = handoff.build_handoff(self.root)
