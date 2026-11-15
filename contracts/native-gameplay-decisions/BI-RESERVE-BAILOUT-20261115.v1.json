@@ -1,0 +1,33 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/budget_eval.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure reserve recovery planning, validation or outcome routing. Local host remains under existing separate effect admission.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 279
+    },
+    {
+      "path": "betterinstincts/funds_inject.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure reserve recovery planning, validation or outcome routing. Local host remains under existing separate effect admission.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 279
+    },
+    {
+      "path": "betterinstincts/household_upkeep.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure reserve recovery planning, validation or outcome routing. Local host remains under existing separate effect admission.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 279
+    },
+    {
+      "path": "betterinstincts/host_stack.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure reserve recovery planning, validation or outcome routing. Local host remains under existing separate effect admission.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 279
+    }
+  ]
+}

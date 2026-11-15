@@ -165,3 +165,33 @@ replace in-game P08 observation. The original BI-002 hunger certification
 remains separate and open. Source contract:
 `contracts/host-funds.v1.json`; implementation:
 `betterinstincts/funds_inject.py` and `scripts/funds_inject.py`.
+
+## Automatic reserve bailout
+
+In an enabled active household session, the reserve recovery trigger is
+inclusive at §500,000. The exact target is the canonical §1,000,000 baseline.
+The host stack routes the existing funds plan before optional household work,
+after the existing player, scene and priority gates. Above the threshold,
+earned recovery and growth remain the budget planner's route.
+
+The local adapter is `scripts.funds_inject.run_reserve_bailout`. It accepts
+trusted current-observation and console-focus callables from the host. The
+producer must provide fresh scoped household, save and episode IDs and
+an independently observed balance, exact process and session, a verified
+closed console, and authority from the existing host-effect gates. The
+adapter reserves an exclusive receipt before input and requires the same
+scope and balance under the input lease. Console focus must be verified
+before each command. The host owns a stable episode across process restarts.
+Do not allocate a new episode while the previous dispatch is uncertain.
+
+`verify_reserve_bailout` requires a separate matching HUD observation after
+dispatch. The recovered amount produces zero earned income and a negative
+episode reward equal to the deficit restored (−§500,000 at the boundary).
+`reserve_bailout_behavior_review` maps that signal to the existing valence
+learner only when a reviewed autonomously chosen action caused the loss.
+The episode's stable review identity prevents double-counting in that model.
+Player spending and unattributed losses never produce a negative action label.
+
+The automatic Windows observation producer and full exact-build
+before/after proof are open in [#279](https://github.com/EndeavorEverlasting/BetterInstincts/issues/279).
+The mocked host adapter test proves receipt and dispatch ordering only.

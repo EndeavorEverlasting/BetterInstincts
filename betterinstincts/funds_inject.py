@@ -7,11 +7,15 @@ because the starting balance was guessed.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
+from collections.abc import Callable
 from pathlib import Path
 from typing import Mapping, Optional
+
+from betterinstincts.budget_eval import household_reserve
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "host-funds.v1.json"
@@ -266,6 +270,151 @@ def steps_to_commands(plan: Mapping[str, object]) -> list[str]:
     if commands != expected:
         raise FundsInjectError("FUNDS_COMMAND_STACK_UNSAFE")
     return commands
+
+
+def plan_reserve_bailout(observation: Mapping, *, capture_ref: str, held: bool = False) -> dict:
+    """Route a single automatic recovery for a verified household balance."""
+    result = {"state": "BAILOUT_REOBSERVE", "dispatch_authorized": False}
+    keys = ("household_ref", "save_ref", "episode_ref", "funds_evidence_ref")
+    if (not isinstance(capture_ref, str) or not EVIDENCE_REF_RE.fullmatch(capture_ref)
+            or observation.get("funds_capture_ref") != capture_ref
+            or any(not isinstance(observation.get(k), str)
+                   or not EVIDENCE_REF_RE.fullmatch(observation[k]) for k in keys)):
+        return result
+    current = observation.get("funds_observed")
+    if type(current) is not int or not 0 <= current <= MAX_HOUSEHOLD_FUNDS:
+        return result
+    reserve = household_reserve(current)
+    result.update({k: observation[k] for k in keys}, capture_ref=capture_ref, **reserve)
+    if observation.get("funds_outcome_pending") is not False:
+        return {**result, "state": "BAILOUT_RECONCILE_FIRST"}
+    if not reserve["automatic_recovery_due"]:
+        return {**result, "state": "BAILOUT_ABOVE_TRIGGER"}
+    if held:
+        return {**result, "state": "BAILOUT_YIELD_TO_PLAYER_OR_PRIORITY"}
+    if observation.get("bailout_attempted") is not False:
+        return {**result, "state": "BAILOUT_ALREADY_ATTEMPTED"}
+    if observation.get("bailout_enabled") is not True:
+        return {**result, "state": "BAILOUT_SESSION_NOT_ENABLED"}
+    return {
+        **result, "state": "BAILOUT_READY", "funding_source": "CHEAT_SUBSIDY",
+        "earned_income_delta": 0,
+        "plan": plan_inject(amount=reserve["minimum_household_balance"],
+                            funds_observed=current, game_mode="live"),
+    }
+
+
+def dispatch_reserve_bailout(
+    observation: Mapping, *, capture_ref: str,
+    claim_once: Callable[[Mapping], bool], observe_current: Callable[[], Mapping],
+    submit_exact: Callable[[Mapping], str],
+    held: bool = False,
+) -> dict:
+    """Single-step host adapter seam. The caller supplies admitted local ports."""
+    result = plan_reserve_bailout(observation, capture_ref=capture_ref, held=held)
+    if result["state"] != "BAILOUT_READY":
+        return result
+    scope = ("save_ref", "household_ref", "episode_ref")
+    current = observe_current()
+    if not isinstance(current, Mapping):
+        return {**result, "state": "BAILOUT_REOBSERVE"}
+    recheck_capture = current.get("funds_capture_ref")
+    if (not isinstance(recheck_capture, str) or not EVIDENCE_REF_RE.fullmatch(recheck_capture)
+            or recheck_capture == capture_ref
+            or current.get("funds_evidence_ref") == result["funds_evidence_ref"]
+            or any(current.get(k) != result[k] for k in scope)
+            or current.get("host_effect_admitted") is not True
+            or current.get("active_live_scene_verified") is not True
+            or current.get("player_active") is not False):
+        return {**result, "state": "BAILOUT_REOBSERVE"}
+    result = plan_reserve_bailout(current, capture_ref=recheck_capture)
+    if result["state"] != "BAILOUT_READY":
+        return result
+    claim_identity = "|".join(result[k] for k in scope)
+    result["bailout_ref"] = "bailout:" + hashlib.sha256(claim_identity.encode()).hexdigest()
+    if claim_once(result) is not True:
+        return {**result, "state": "BAILOUT_ALREADY_ATTEMPTED"}
+    try:
+        dispatch_ref = submit_exact(result)
+    except Exception:
+        # The durable claim precedes any possible input. Reconcile before replay.
+        return {**result, "state": "BAILOUT_DISPATCH_UNCERTAIN"}
+    if (not isinstance(dispatch_ref, str) or not EVIDENCE_REF_RE.fullmatch(dispatch_ref)
+            or dispatch_ref in (capture_ref, result["capture_ref"], result["funds_evidence_ref"])):
+        return {**result, "state": "BAILOUT_DISPATCH_UNCERTAIN"}
+    return {**result, "state": "BAILOUT_DISPATCHED", "dispatch_ref": dispatch_ref}
+
+
+def verify_reserve_bailout(dispatch: Mapping, after: Mapping) -> dict:
+    """Convert one independently reconciled bailout into a negative episode signal."""
+    result = {"state": "BAILOUT_OUTCOME_UNVERIFIED", "training_signal": None,
+              "earned_income_delta": 0}
+    dispatch_ref = dispatch.get("dispatch_ref")
+    if (dispatch.get("state") != "BAILOUT_DISPATCHED" or not isinstance(dispatch_ref, str)
+            or not EVIDENCE_REF_RE.fullmatch(dispatch_ref)):
+        return result
+    plan = dispatch.get("plan")
+    after_ref = after.get("funds_evidence_ref")
+    after_capture = after.get("funds_capture_ref")
+    funds = after.get("funds_observed")
+    if (not isinstance(plan, Mapping)
+            or type(funds) is not int or not 0 <= funds <= MAX_HOUSEHOLD_FUNDS
+            or any(not isinstance(dispatch.get(k), str) or not EVIDENCE_REF_RE.fullmatch(dispatch[k])
+                   or after.get(k) != dispatch[k]
+                   for k in ("household_ref", "save_ref", "episode_ref"))
+            or not isinstance(after_ref, str) or not EVIDENCE_REF_RE.fullmatch(after_ref)
+            or after_ref in (dispatch.get("funds_evidence_ref"), dispatch.get("dispatch_ref"))
+            or not isinstance(after_capture, str) or not EVIDENCE_REF_RE.fullmatch(after_capture)
+            or after_capture == dispatch.get("capture_ref")):
+        return result
+    before = plan.get("funds_observed")
+    if type(before) is not int or not 0 <= before <= MAX_HOUSEHOLD_FUNDS:
+        return result
+    reserve = household_reserve(before)
+    baseline = reserve["minimum_household_balance"]
+    if not reserve["automatic_recovery_due"] or plan.get("target_funds") != baseline:
+        return result
+    try:
+        outcome = verify_funds_outcome(plan, funds_after=funds, evidence_ref=after_ref)
+    except FundsInjectError:
+        return result
+    if outcome["state"] != "TARGET_ATTESTED_BY_EXTERNAL_OBSERVATION":
+        return result
+    deficit = baseline - before
+    episode_identity = "|".join(dispatch[key] for key in ("save_ref", "household_ref", "episode_ref"))
+    review_ref = "bailout:" + hashlib.sha256(episode_identity.encode()).hexdigest()
+    return {
+        **result, "state": "BAILOUT_RESTORED", "subsidy_amount": deficit,
+        "training_signal": {
+            "outcome": "NEGATIVE", "reward_simoleons": -deficit,
+            "review_ref": review_ref, "evidence_ref": after_ref,
+            "attribution": "HOUSEHOLD_EPISODE_ONLY",
+        },
+    }
+
+
+def reserve_bailout_behavior_review(
+    verified_result: Mapping, causal_review: Mapping, *, game_version: str, platform: str,
+) -> dict | None:
+    """Route a reviewed autonomous cause to the existing behavior-valence learner."""
+    signal = verified_result.get("training_signal")
+    if (verified_result.get("state") != "BAILOUT_RESTORED" or not isinstance(signal, Mapping)
+            or signal.get("outcome") != "NEGATIVE"
+            or causal_review.get("review_ref") != signal.get("review_ref")
+            or causal_review.get("origin") != "BETTERINSTINCTS_AUTONOMY"
+            or causal_review.get("causation_verified") is not True
+            or causal_review.get("operator_reviewed") is not True
+            or causal_review.get("opt_in") is not True):
+        return None
+    from betterinstincts.behavior_valence import REVIEW_SCHEMA
+
+    return {
+        "schema": REVIEW_SCHEMA, "game_version": game_version, "platform": platform,
+        "kind": "QUEUE", "context": causal_review.get("context"),
+        "action_id": causal_review.get("action_id"), "outcome": "NEGATIVE",
+        "review_ref": signal.get("review_ref"), "evidence_ref": signal.get("evidence_ref"),
+        "operator_reviewed": True, "opt_in": True,
+    }
 
 
 

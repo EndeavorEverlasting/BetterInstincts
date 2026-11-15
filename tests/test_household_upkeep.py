@@ -781,6 +781,20 @@ class LaundryProcurementTests(unittest.TestCase):
 
 
 class HostUpkeepIntegrationTests(unittest.TestCase):
+    def test_threshold_routes_to_existing_funds_owner(self):
+        upkeep = obs(
+            servos=[], observed_actions=[], funds_observed=500_000, funds_capture_ref=CAP,
+            funds_evidence_ref="hud:reserve", household_ref="household:test",
+            save_ref="save:test", episode_ref="episode:reserve", bailout_enabled=True,
+            bailout_attempted=False, funds_outcome_pending=False,
+        )
+        turn = evaluate_turn(NEEDS, household_upkeep=upkeep, location_kind="home",
+                             capture_ref=CAP, queue=[], viewport={"state": "VIEWPORT_OK"})
+        self.assertEqual(turn["next_gate"], "HOUSEHOLD_RESERVE_BAILOUT_READY")
+        self.assertFalse(turn["household_upkeep"]["reserve_bailout"]["dispatch_authorized"])
+        yield_turn = evaluate(upkeep, player_directed=True)
+        self.assertEqual(yield_turn["reserve_bailout"]["state"], "BAILOUT_YIELD_TO_PLAYER_OR_PRIORITY")
+
     def test_host_stack_attaches_upkeep_without_displacing_legacy(self):
         o=obs()
         kwargs=dict(capture_ref=CAP, location_kind="home",queue=[],

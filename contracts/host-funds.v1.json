@@ -8,7 +8,7 @@
     "patch": "1.121.361.1020",
     "funds_before_subsidy_hint": 38,
     "motherlode_delta": 50000,
-    "note": "Ctrl+Shift+C opens console in Live OR Build/Buy. testingcheats enabled true before funds commands. motherlode is durable (+50k); Money N may no-op. Do not force F1 — operator may be building with the new funds. Historical local behavior only: EA's canonical testingcheats true + money X command is the new preferred plan; no automatic motherlode after it; requires new P08 host certification."
+    "note": "Ctrl+Shift+C opens console in Live OR Build/Buy. testingcheats enabled true before funds commands. motherlode is durable (+50k); Money N may no-op. Do not force F1 \u2014 operator may be building with the new funds. Historical local behavior only: EA's canonical testingcheats true + money X command is the new preferred plan; no automatic motherlode after it; requires new P08 host certification."
   },
   "subsidy": {
     "prompt_id": "host.funds.federal_subsidy",
@@ -166,5 +166,13 @@
     "unknown_editions": "TRIAL_LEGACY_VERSION_OR_DIFFERENT_EXECUTABLE_UNVERIFIED; READ_ONLY_PLANNING_ONLY",
     "other_platforms": "MAC_CONSOLES_AND_UNVERIFIED_RUNTIME_INPUT_ADAPTERS_NOT_EXECUTABLE_BY_WINDOWS_HOST",
     "no_scan": "NO_DRIVE_WIDE_DISCOVERY_NO_PROFILE_WRITES_NO_GAME_BINARY_MODIFICATION"
+  },
+  "automatic_reserve_bailout": {
+    "trigger_owner": "contracts/host-budget.v1.json#floors.automatic_recovery_at_or_below",
+    "target_owner": "contracts/host-budget.v1.json#floors.minimum_household_balance",
+    "scope": "Enabled active local session with fresh exact household, save, episode, funds and verified input admission. One exact attempt per episode.",
+    "episode_lifecycle": "Own a stable drawdown episode across capture and process restarts. Reconcile an uncertain effect. A new episode requires independent observation that the earlier drawdown is closed and a later threshold crossing.",
+    "penalty": "After independent exact restoration: negative episode reward equals observed deficit, zero earned income. Specific action credit is negative only on reviewed verified BetterInstincts causation.",
+    "runtime_status": "Host adapter available for verified local capture ports; automated sensor production and live proof are open."
   }
 }

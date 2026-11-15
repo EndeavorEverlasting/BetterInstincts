@@ -2107,6 +2107,13 @@ def evaluate_turn(
                 "RESUME",
             ],
         }
+    elif (household_upkeep_report is not None
+          and household_upkeep_report.get("reserve_bailout", {}).get("state") == "BAILOUT_READY"):
+        next_gate = "HOUSEHOLD_RESERVE_BAILOUT_READY"
+        fallback = {
+            "owner": "betterinstincts/funds_inject.py",
+            **household_upkeep_report["reserve_bailout"],
+        }
     elif (
         household_upkeep_report is not None
         and household_upkeep_report["gate"] == "UPKEEP_ACTION_READY"

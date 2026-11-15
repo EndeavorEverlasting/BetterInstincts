@@ -12,16 +12,161 @@ from unittest.mock import patch
 from pathlib import Path
 
 from betterinstincts.funds_inject import (
+    dispatch_reserve_bailout,
     FundsInjectError,
     evaluate_subsidy_gate,
     load_contract,
     needs_subsidy_prompt,
     plan_inject,
+    plan_reserve_bailout,
     plan_funds_recovery,
+    reserve_bailout_behavior_review,
     steps_to_commands,
     subsidy_prompt,
     verify_funds_outcome,
+    verify_reserve_bailout,
 )
+
+
+def bailout_observation(funds=500_000, **changes):
+    return {
+        "funds_observed": funds, "funds_capture_ref": "capture:before",
+        "funds_evidence_ref": "hud:before", "household_ref": "household:one",
+        "save_ref": "save:one", "episode_ref": "episode:one", "bailout_enabled": True,
+        "bailout_attempted": False, "funds_outcome_pending": False,
+        **changes,
+    }
+
+
+class ReserveBailoutTests(unittest.TestCase):
+    def test_threshold_and_exact_target(self):
+        for balance, expected in ((500_001, "BAILOUT_ABOVE_TRIGGER"), (500_000, "BAILOUT_READY"),
+                                  (499_999, "BAILOUT_READY")):
+            with self.subTest(balance=balance):
+                result = plan_reserve_bailout(bailout_observation(balance), capture_ref="capture:before")
+                self.assertEqual(result["state"], expected)
+                self.assertFalse(result["dispatch_authorized"])
+                if expected == "BAILOUT_READY":
+                    self.assertEqual(steps_to_commands(result["plan"]),
+                                     ["testingcheats true", "money 1000000"])
+                    self.assertEqual(result["earned_income_delta"], 0)
+
+    def test_active_player_stale_disabled_and_uncertain_hold(self):
+        for changes, state in [
+            ({"funds_capture_ref": "capture:old"}, "BAILOUT_REOBSERVE"),
+            ({"bailout_enabled": False}, "BAILOUT_SESSION_NOT_ENABLED"),
+            ({"bailout_attempted": True}, "BAILOUT_ALREADY_ATTEMPTED"),
+            ({"funds_outcome_pending": True}, "BAILOUT_RECONCILE_FIRST"),
+            ({"funds_observed": True}, "BAILOUT_REOBSERVE"),
+        ]:
+            with self.subTest(changes=changes):
+                result = plan_reserve_bailout(bailout_observation(**changes), capture_ref="capture:before")
+                self.assertEqual(result["state"], state)
+        yielded = plan_reserve_bailout(bailout_observation(), capture_ref="capture:before", held=True)
+        self.assertEqual(yielded["state"], "BAILOUT_YIELD_TO_PLAYER_OR_PRIORITY")
+
+    def dispatch(self, claim, submit, **recheck):
+        ready = {
+            "funds_capture_ref": "capture:preflight", "funds_evidence_ref": "hud:preflight",
+            "host_effect_admitted": True, "active_live_scene_verified": True, "player_active": False,
+            **recheck,
+        }
+        return dispatch_reserve_bailout(
+            bailout_observation(), capture_ref="capture:before", claim_once=claim,
+            observe_current=lambda: bailout_observation(**ready), submit_exact=submit,
+        )
+
+    def test_fresh_balance_rechecked_then_claimed_before_submit(self):
+        calls = []
+        claimed = set()
+
+        def claim(result):
+            key = result["bailout_ref"]
+            if key in claimed:
+                return False
+            calls.append("claim")
+            claimed.add(key)
+            return True
+
+        def submit(result):
+            calls.append("submit")
+            self.assertEqual(steps_to_commands(result["plan"])[1], "money 1000000")
+            return "dispatch:one"
+
+        self.assertEqual(self.dispatch(claim, submit, funds_observed=500_001)["state"],
+                         "BAILOUT_ABOVE_TRIGGER")
+        self.assertEqual(self.dispatch(claim, submit, player_active=True)["state"], "BAILOUT_REOBSERVE")
+        self.assertEqual(self.dispatch(claim, submit, save_ref="save:other")["state"], "BAILOUT_REOBSERVE")
+        self.assertEqual(self.dispatch(claim, submit)["state"], "BAILOUT_DISPATCHED")
+        self.assertEqual(self.dispatch(claim, submit)["state"], "BAILOUT_ALREADY_ATTEMPTED")
+        self.assertEqual(calls, ["claim", "submit"])
+
+    def test_verified_penalty_and_reviewed_causal_training(self):
+        from betterinstincts.behavior_valence import learn_reviewed, BehaviorValenceError
+
+        dispatch = self.dispatch(lambda _: True, lambda _: "dispatch:one")
+        after = bailout_observation(1_000_000, funds_capture_ref="capture:after",
+                                    funds_evidence_ref="hud:after")
+        for invalid in ({"funds_observed": 500_000}, {"episode_ref": "episode:two"},
+                        {"funds_capture_ref": "capture:preflight"},
+                        {"funds_evidence_ref": "hud:preflight"}):
+            self.assertIsNone(verify_reserve_bailout(dispatch, {**after, **invalid})["training_signal"])
+        result = verify_reserve_bailout(dispatch, after)
+        self.assertEqual(result["state"], "BAILOUT_RESTORED")
+        self.assertEqual(result["subsidy_amount"], 500_000)
+        self.assertEqual(result["earned_income_delta"], 0)
+        signal = result["training_signal"]
+        self.assertEqual(signal["reward_simoleons"], -500_000)
+        profile = {"game_version": "1.121.361.1020", "platform": "windows"}
+        cause = {
+            "review_ref": signal["review_ref"], "origin": "BETTERINSTINCTS_AUTONOMY",
+            "causation_verified": True, "operator_reviewed": True, "opt_in": True,
+            "context": "other", "action_id": "buy-unneeded-item",
+        }
+        self.assertIsNone(reserve_bailout_behavior_review(result, {**cause, "origin": "PLAYER"}, **profile))
+        review = reserve_bailout_behavior_review(result, cause, **profile)
+        model = learn_reviewed([review], **profile)
+        self.assertEqual((model["counts"][0]["positive"], model["counts"][0]["negative"]), (0, 1))
+        with self.assertRaisesRegex(BehaviorValenceError, "REPLAYED_REVIEW_REF"):
+            learn_reviewed([review], prior=model, **profile)
+
+    def test_windows_adapter_reserves_and_persists_before_allowing_replay(self):
+        from scripts import funds_inject as host
+        from scripts.smart_start import GameProcess
+
+        before = bailout_observation()
+        current = bailout_observation(
+            funds_capture_ref="capture:preflight", funds_evidence_ref="hud:preflight",
+            host_effect_admitted=True, active_live_scene_verified=True, player_active=False,
+            console_state="CLOSED_VERIFIED", process_id=123, session_id="lab",
+        )
+        with TemporaryDirectory() as folder:
+            output = Path(folder) / "game-host"
+
+            def execute(plan, *, before_input, verify_console_input, **kwargs):
+                before_input()
+                self.assertTrue(verify_console_input())
+                claim = next(output.glob("bailout-*.json"))
+                self.assertIn("PREPARED_EFFECT_OUTCOME_UNKNOWN", claim.read_text())
+                self.assertEqual(steps_to_commands(plan)[1], "money 1000000")
+                return {"dispatch_ref": "dispatch:local"}
+
+            with patch.object(host.sys, "platform", "win32"), patch.object(host, "OUTPUT", output), \
+                 patch("scripts.smart_start.require_same_game_process") as process_check, \
+                 patch.object(host, "_execute_plan", side_effect=execute) as sender:
+                process = GameProcess(123, "12345678901234567", r"c:\game\bin\ts4_x64.exe", "1.121.361.1020")
+                args = dict(capture_ref="capture:before", process_id=123, session_id="lab",
+                            observe_current=lambda: current, verify_console_input=lambda: True,
+                            expected_process=process)
+                result = host.run_reserve_bailout(before, **args)
+                self.assertEqual(result["state"], "BAILOUT_DISPATCHED")
+                self.assertEqual(json.loads(Path(result["receipt"]).read_text())["dispatch_ref"],
+                                 "dispatch:local")
+                duplicate = host.run_reserve_bailout(before, **args)
+                self.assertEqual(duplicate["state"], "BAILOUT_ALREADY_ATTEMPTED")
+                sender.assert_called_once()
+                process_check.assert_called_once_with(process)
+                self.assertEqual(len(list(output.glob("*.json"))), 1)
 
 
 class FundsInjectTests(unittest.TestCase):
