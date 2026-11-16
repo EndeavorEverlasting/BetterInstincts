@@ -2314,3 +2314,7 @@ separate scope.
 ## 2026-11-16 — Civil Designer drafting tablet recovery
 
 Operator evidence identifies the Electronic Drafting Tablet as a §0 career reward in Build/Buy. The existing career service owns exact Eco-Invention objective and interaction selection, bounded personal inventory search, last-known-lot review, and the opt-in, checkpoint-gated catalog recovery. See [career drafting](CAREER_SERVICE.md#civil-designer-eco-invention-drafting). Source decisions and fixtures do not record an installed EA response or gameplay success. Issue #171 retains the exact-build local proof.
+
+## 2026-11-16 — Household Bits and Pieces for Civil Designer
+
+The career source policy now accepts current household resource balances, measures Recycler yields by class and deficit, and proposes one observed natural or opt-in debug source after resource checks. Direct catalog procurement serves explicit stock demand only. [Eco resources](ECO_RESOURCE_CYCLE.md#household-bits-and-pieces-sourcing) owns the evidence inputs. Issue #171 retains live EA action and outcome proof.
