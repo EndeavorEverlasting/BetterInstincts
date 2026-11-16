@@ -18,6 +18,7 @@ OFFER_SCHEMA = "betterinstincts.preference-native-offer-observation/v1"
 RESPONSE_SCHEMA = "betterinstincts.preference-native-response-observation/v1"
 EFFECT_SCHEMA = "betterinstincts.preference-native-effect-observation/v1"
 RESUME_SCHEMA = "betterinstincts.preference-native-activity-observation/v1"
+TRAIT_MAP_SCHEMA = "betterinstincts.chased-by-death-native-binding/v1"
 PROOF = "OFFLINE_OBSERVATION_SHAPE_NOT_AUTHENTICATED_NATIVE_GAME_EFFECT"
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
 
@@ -119,6 +120,45 @@ def assess_native_offer_binding(
     }
 
 
+def assess_trait_decline_binding(observation, local_map):
+    """Use explicit, exact-build installed tuning from the trusted adapter owner."""
+    if not isinstance(local_map, Mapping) or local_map.get("schema") != TRAIT_MAP_SCHEMA:
+        return _hold("LOCAL_TRAIT_RESPONSE_MAP_REQUIRED")
+    ids = local_map.get("response_ids")
+    if (local_map.get("topic_id") != "chased_by_death"
+            or not _ref(local_map.get("installed_tuning_ref"))
+            or not isinstance(local_map.get("game_build"), str)
+            or not re.fullmatch(r"[0-9]+(?:\.[0-9]+){3}", local_map["game_build"])
+            or not _ref(local_map.get("localization_key"))
+            or any(type(local_map.get(k)) is not int or local_map[k] <= 0
+                   for k in ("dialog_tuning_id", "trait_id"))
+            or not isinstance(ids, Mapping) or set(ids) != {"YES", "NO"}
+            or any(type(v) is not int or not 0 <= v <= 2**31 - 1 for v in ids.values())
+            or ids["YES"] == ids["NO"]):
+        return _hold("LOCAL_TRAIT_RESPONSE_MAP_INVALID")
+    if (not isinstance(observation, Mapping)
+            or observation.get("dialog_kind") != "sim_trait_offer"
+            or type(observation.get("offered_trait_id")) is not int
+            or observation.get("offered_trait_id") != local_map["trait_id"]
+            or observation.get("recipient_trait_present") is not False
+            or observation.get("button_labels") != {"YES": "Yes", "NO": "No thanks!"}):
+        return _hold("EXACT_NATIVE_TRAIT_OFFER_REQUIRED")
+    # Reuse the existing EA source, Actor, dialog, scope and response ID checks.
+    m = {
+        "game_build": local_map["game_build"],
+        "dialog": {"tuning_id": local_map["dialog_tuning_id"],
+                   "localization_key": local_map["localization_key"]},
+        "resolver": {"source": "originating_interaction", "recipient_role": "Actor"},
+        "responses": {role: {"response_id": rid} for role, rid in ids.items()},
+        "common_effects": [],
+    }
+    binding = assess_native_offer_binding(observation, response_map=m)
+    if binding["state"] == "OFFER_BINDING_SHAPE_MATCH":
+        binding.update(trait_id=local_map["trait_id"], decline_only=True,
+                       dialog_tuning_id=local_map["dialog_tuning_id"])
+    return binding
+
+
 def assess_native_preference_outcome(
     binding: Mapping[str, object] | None,
     response: Mapping[str, object] | None,
@@ -148,8 +188,8 @@ def assess_native_preference_outcome(
     choice = next((k for k, v in binding["response_ids"].items() if v == rid), None)
     if choice is None:
         return _hold("RESPONSE_ID_NOT_IN_OFFER")
-    expected = binding["expected_effects"][choice]
-    trait_key = "trait_id" if choice == "YES" else "marker_id"
+    if binding.get("decline_only") is True and choice != "NO":
+        return _hold("AFFIRMATIVE_TRAIT_ACK_FORBIDDEN")
     if (not isinstance(effect, Mapping)
             or effect.get("schema") != EFFECT_SCHEMA
             or effect.get("source") != "EA_NATIVE"
@@ -161,6 +201,21 @@ def assess_native_preference_outcome(
             or not _time(effect.get("captured_at_epoch_ms"))
             or effect["captured_at_epoch_ms"] < response["captured_at_epoch_ms"]):
         return _hold("POST_RESPONSE_EFFECT_OBSERVATION_REQUIRED")
+    if binding.get("decline_only") is True:
+        if (type(effect.get("offered_trait_id")) is not int
+                or effect.get("offered_trait_id") != binding["trait_id"]
+                or effect.get("recipient_trait_present") is not False
+                or effect.get("dialog_closed") is not True
+                or effect["captured_at_epoch_ms"] <= response["captured_at_epoch_ms"]):
+            return _hold("DECLINED_TRAIT_ABSENCE_AND_DIALOG_CLOSURE_REQUIRED")
+        return {
+            "state": "OUTCOME_RECEIPTS_SCHEMA_MATCH", "reason": None,
+            "dialog_ref": binding["dialog_ref"], "recipient_sim_id": binding["recipient_sim_id"],
+            "response_choice": "NO", "response_id": rid, "trait_added": False,
+            "execute_allowed": False, "control_permit": None, "proof_ceiling": PROOF,
+        }
+    expected = binding["expected_effects"][choice]
+    trait_key = "trait_id" if choice == "YES" else "marker_id"
     actor_effect = effect.get("actor_effect")
     common_effect = effect.get("common_effect")
     expected_common = binding["common_effects"][0]

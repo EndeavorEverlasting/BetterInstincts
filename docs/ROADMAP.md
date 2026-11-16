@@ -1,3 +1,10 @@
+## 2026-11-16 — Native Chased by Death decline
+
+Bind the exact-build EA trait dialog and response ID through the local
+preference adapter under #171. Verify No thanks is sent once, the dialog
+closes, and the offer recipient still lacks the trait. See
+[preference prompts](PREFERENCE_PROMPTS.md#chased-by-death).
+
 ## 2026-11-15 — Installed listener and native five-second handoff
 
 Use the existing checkout for play. The optional ecology bundle contains

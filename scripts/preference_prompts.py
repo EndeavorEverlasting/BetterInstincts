@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 
 from betterinstincts.preference_prompts import (
-    PreferencePromptError, evaluate_offer, plan_stage,
+    PreferencePromptError, evaluate_offer, is_trait_offer, plan_stage,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -139,6 +139,8 @@ def execute_step(
     previous_receipt: dict | None = None,
 ) -> dict:
     """No takeover from a foreign app, no stale target, no batch of clicks."""
+    if is_trait_offer(observation):
+        raise PreferenceStepError("TRAIT_OFFER_REQUIRES_NATIVE_RESPONSE")
     if sys.platform != "win32":
         raise PreferenceStepError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
     if type(process_id) is not int or process_id <= 0:
