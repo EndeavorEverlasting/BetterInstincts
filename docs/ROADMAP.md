@@ -1,3 +1,7 @@
+## 2026-11-16 — Fairy Dust follow-up
+
+The per-actor attempt and fresh fallback are covered by offline regressions. The [local comparison](FAIRY_DUST.md#verification) separates placement-only accumulation from Fairy use and confirms the direct request through the selected Sim's inventory.
+
 ## 2026-11-16 — Fairy Dust native binding
 
 The [Fairy Dust policy](FAIRY_DUST.md) and optional native ports are ready for exact-build EA source inspection under #171. Verify placement-only timing, home-use contribution, NPC requests, independent inventory and player takeover on the disposable save.

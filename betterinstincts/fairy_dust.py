@@ -32,7 +32,7 @@ def _proposal(interaction, allowed, target, capture):
     return None
 
 
-def plan_fairy_dust(frame, observation):
+def plan_fairy_dust(frame, observation, *, attempted_opportunities=()):
     """Return one proposal or a recheck hint for an explicit inventory goal."""
     if observation is None:
         return {"state": "NO_DUST_GOAL"}
@@ -54,27 +54,26 @@ def plan_fairy_dust(frame, observation):
     home = observation.get("home")
     check = target = None
     shake = None
+    candidates = []
     if (isinstance(home, Mapping) and _matches(OBJECT, home.get("target"))
             and home.get("on_actor_lot") is True and home.get("accessible") is True):
         target = home["target"]
         shake = home.get("shake")
-        proposal = _proposal(shake, (SHAKE,), target, frame.capture)
-        if proposal:
-            return {"state": "DUST_PROPOSAL", "proposal": proposal, "before": count}
+        candidates.append(_proposal(shake, (SHAKE,), target, frame.capture))
         use = home.get("use")
         if (observation.get("actor_is_fairy") is True and isinstance(use, Mapping)
                 and use.get("benefits_current_need") is True):
-            proposal = _proposal(use, HOME_USE, target, frame.capture)
-            if proposal:
-                return {"state": "DUST_PROPOSAL", "proposal": proposal, "before": count}
+            candidates.append(_proposal(use, HOME_USE, target, frame.capture))
         check = home.get("last_empty_check_game_minute")
 
     npc = observation.get("npc")
     if (isinstance(npc, Mapping) and npc.get("npc_fairy") is True
             and npc.get("on_actor_lot") is True and npc.get("accessible") is True
             and _matches(ACTOR, npc.get("target")) and npc["target"] != frame.actor):
-        proposal = _proposal(npc.get("ask"), (ASK,), npc["target"], frame.capture)
-        if proposal:
+        candidates.append(_proposal(npc.get("ask"), (ASK,), npc["target"], frame.capture))
+
+    for proposal in candidates:
+        if proposal is not None and proposal["opportunity"] not in attempted_opportunities:
             return {"state": "DUST_PROPOSAL", "proposal": proposal, "before": count}
 
     # The latest observed empty state determines recheck cadence only.
@@ -87,6 +86,8 @@ def plan_fairy_dust(frame, observation):
     if _count(check) and _count(minute) and check <= minute < check + DAY_MINUTES:
         return {"state": "WAIT_FOR_HOME_RECHECK", "target": target,
                 "recheck_game_minute": check + DAY_MINUTES}
+    if any(candidates):
+        return {"state": "DUPLICATE_NATIVE_PROPOSAL"}
     return {"state": "REOBSERVE_HOME_OR_FIND_FAIRY"}
 
 
@@ -95,7 +96,7 @@ def fairy_dust_outcome(frame, attempted, outcome):
     proposal = attempted["proposal"]
     if (not isinstance(outcome, Mapping) or attempted["scope"] != frame.scope()
             or frame.observed_at < attempted["observed_at"] or outcome.get("scope") != frame.scope()
-            or outcome.get("capture") != frame.capture or frame.capture == attempted["capture"]
+            or outcome.get("capture") != frame.capture or frame.capture in attempted["admission_captures"]
             or outcome.get("proposal") != proposal):
         return "NATIVE_DISPATCH_RECONCILIATION"
     count = outcome.get("dust_count")

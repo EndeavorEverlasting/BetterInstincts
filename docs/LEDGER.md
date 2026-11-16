@@ -1,3 +1,7 @@
+## 2026-11-16 — Fairy Dust Closers
+
+The follow-up scopes pending Fairy Dust reconciliation to the acting Sim and lets a fresh observed source proceed after a spent opportunity. Neither admission frame can count as post-action readback. See [Fairy Dust](FAIRY_DUST.md) for #171 live evidence.
+
 ## 2026-11-16 — Fairy Home and Fairy Dust
 
 The Fairy Dust policy uses current Shake availability for collection and an in-game-day recheck hint after an empty tooltip. It can propose observed needs-restoring home use by the selected Fairy or a direct request to a reachable NPC Fairy. The optional installed runtime port retains player takeover and correlates completed attempts with actor inventory. See [Fairy Dust](FAIRY_DUST.md). Windows/EA proof belongs to #171.

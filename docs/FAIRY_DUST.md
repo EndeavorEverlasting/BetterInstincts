@@ -51,15 +51,18 @@ receives data from only these optional exact-build adapter ports.
   interaction, target, actor, queue, generation, and current opportunity.
   Supply a stable opportunity ID across fresh observations and across repeat
   reports of the same opportunity. Return `QUEUED` or verified `NO_EFFECT`.
-  Uncertain results hold that attempt for reconciliation.
+  Uncertain results hold that actor's attempt for reconciliation. The
+  selector skips spent opportunity IDs so another currently observed source
+  can proceed once that actor's attempt clears.
 - `read_fairy_dust_outcome(proposal, frame)` supplies matching completion and
-  a distinct capture for that exact proposal, actor and game run. Only an
+  a capture distinct from both admission frames for that exact proposal,
+  actor and game run. Only an
   independently attributable dust gain matching the actor's measured pocket
   delta yields `DUST_GAIN_OBSERVED`. Zero-dust home use yields
   `FAIRY_HOME_USED_RECHECK`. A verified terminal no-effect outcome with zero
   inventory change clears the attempt without permitting the same opportunity
-  to replay. A mismatched outcome leaves the attempt pending
-  and blocks another dust submission while ordinary actions remain available.
+  to replay. A mismatched outcome leaves the attempt pending for its actor.
+  Other actors and ordinary actions can proceed under their existing gates.
 
 ## Verification
 
@@ -70,10 +73,17 @@ The package builder exposes `--installed-fairy-dust` alongside
 
 For [the remaining native gate](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171),
 inspect installed Enchanted by Nature tuning and bind the three ports on the
-Windows game host. In an authorized disposable save, observe a newly placed
-empty home over a full in-game day, a Fairy using a home and the subsequent
-menu or inventory change, and a non-Fairy directly asking a reachable Fairy.
-Record exact event/target and inventory evidence, player takeover during
-dispatch, and rollback. Include a time-matched unused home and the existing
-native responder as controls. The source tests and archive fixture establish
-the adapter contract. In-game Fairy Dust behavior still requires those trials.
+Windows game host. Use read-only tuning exports and
+`python -m scripts.tuning_audit --xml EXPORTED_XML` to pin each action.
+Record the installed build, pack, interaction ID, actor and target, simulation
+minute, and before/after observation IDs in an authorized disposable save.
+
+| Trial | Evidence to capture |
+| --- | --- |
+| Newly placed home, left unused | Empty tooltip and Shake availability at placement and after roughly one unpaused in-game day. Record any earlier enabled observation and any change in the actor's pocket after shaking. |
+| Selected Fairy uses an equivalent home | Exact Sleep or Rest menu option, starting need, completion, and an immediate menu and pocket readback. Compare with the unused home's elapsed simulation time. |
+| Non-Fairy directly asks a reachable NPC Fairy | Exact Ask interaction and recipient, queue acknowledgement, and attributable pocket change or a verified zero-dust outcome. |
+| Player takeover and rollback | Preserve a player-directed queue, then confirm the existing responder still works. Remove only the test package and verify the disposable save loads. |
+
+The source tests and archive fixture establish the adapter contract. In-game
+Fairy Dust behavior still requires those trials.

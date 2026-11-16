@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/fairy_dust.py",
+      "route": "POLICY_ONLY",
+      "game_effect_claim": "NONE",
+      "reason": "Selects a fresh observed candidate and checks admitted capture references.",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "game_effect_claim": "NONE",
+      "reason": "Scopes injected native readback to the observed actor under the existing runtime and does not bind EA.",
+      "successor_issue": 171
+    }
+  ]
+}

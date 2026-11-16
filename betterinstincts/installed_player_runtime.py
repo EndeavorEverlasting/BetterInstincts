@@ -57,7 +57,7 @@ class InstalledPlayerRuntime:
         self.clock = clock
         self.trait_response = trait_response
         self.fairy_dust = fairy_dust
-        self.dust_attempt = None
+        self.dust_attempts = {}
         self.dust_recheck = None
 
     def _fresh_live(self, frame):
@@ -139,7 +139,7 @@ class InstalledPlayerRuntime:
         if dust_attempt is None:
             self.unresolved = identity
         else:
-            self.dust_attempt = dust_attempt
+            self.dust_attempts[dust_attempt["scope"]] = dust_attempt
         self.attempts.add(identity)
         try:
             result = submit()
@@ -151,12 +151,16 @@ class InstalledPlayerRuntime:
             if dust_attempt is None:
                 self.unresolved = None
             else:
-                self.dust_attempt = None
+                del self.dust_attempts[dust_attempt["scope"]]
         return result
 
     def _cycle_fairy_dust(self, first):
+        scope = first.scope()
+        spent = {key[2] for key in self.attempts
+                 if len(key) == 3 and key[:2] == (scope, "FAIRY_DUST")}
         try:
-            result = self.fairy_dust.plan_fairy_dust(first, self.adapter.read_fairy_dust(first))
+            result = self.fairy_dust.plan_fairy_dust(first, self.adapter.read_fairy_dust(first),
+                                                     attempted_opportunities=spent)
         except Exception:
             return "REOBSERVE_DUST_SCOPE"
         if result["state"] == "WAIT_FOR_HOME_RECHECK":
@@ -168,7 +172,8 @@ class InstalledPlayerRuntime:
                 or fresh.playing is not True or fresh.modal_open is not False):
             return "YIELD_TO_PLAYER"
         try:
-            current = self.fairy_dust.plan_fairy_dust(fresh, self.adapter.read_fairy_dust(fresh))
+            current = self.fairy_dust.plan_fairy_dust(fresh, self.adapter.read_fairy_dust(fresh),
+                                                      attempted_opportunities=spent)
         except Exception:
             return "REOBSERVE_DUST_SCOPE"
         if current != result:
@@ -176,23 +181,22 @@ class InstalledPlayerRuntime:
         if not self._idle(fresh):
             return "REOBSERVE_DUST_SCOPE"
         proposal = current["proposal"]
-        attempted = dict(current, proposal=dict(proposal), scope=fresh.scope(),
-                         capture=fresh.capture, observed_at=fresh.observed_at)
-        identity = (fresh.scope(), "FAIRY_DUST", proposal["opportunity"])
+        attempted = dict(current, proposal=dict(proposal), scope=scope,
+                         admission_captures=(first.capture, fresh.capture), observed_at=fresh.observed_at)
+        identity = (scope, "FAIRY_DUST", proposal["opportunity"])
         # The adapter must atomically verify the exact target, input generation,
         # queue and current EA interaction test before one native submission.
         return self._dispatch(identity, lambda: self.adapter.submit_fairy_dust(proposal, fresh),
                               dust_attempt=attempted)
 
-    def _reconcile_fairy_dust(self, frame):
-        attempted = self.dust_attempt
+    def _reconcile_fairy_dust(self, frame, attempted):
         try:
             outcome = self.adapter.read_fairy_dust_outcome(dict(attempted["proposal"]), frame)
         except Exception:
             return "NATIVE_DISPATCH_RECONCILIATION"
         result = self.fairy_dust.fairy_dust_outcome(frame, attempted, outcome)
         if result != "NATIVE_DISPATCH_RECONCILIATION":
-            self.dust_attempt = None
+            del self.dust_attempts[attempted["scope"]]
         return result
 
     def cycle(self):
@@ -216,8 +220,9 @@ class InstalledPlayerRuntime:
         if first.modal_open is not False:
             return "NATIVE_FRAME_UNQUALIFIED"
         planned, query, needs = self.adapter.analyze(first)
-        if self.dust_attempt is not None and self.dust_attempt["scope"] == first.scope():
-            dust_result = self._reconcile_fairy_dust(first)
+        dust_attempt = self.dust_attempts.get(first.scope())
+        if dust_attempt is not None:
+            dust_result = self._reconcile_fairy_dust(first, dust_attempt)
             if dust_result != "NATIVE_DISPATCH_RECONCILIATION" or not planned:
                 return dust_result
         if self.unresolved is not None:
@@ -226,8 +231,6 @@ class InstalledPlayerRuntime:
             return "YIELD_TO_PLAYER"
         if not isinstance(planned, Mapping) or not planned:
             if self.fairy_dust is not None and isinstance(planned, Mapping):
-                if self.dust_attempt is not None:
-                    return "NATIVE_DISPATCH_RECONCILIATION"
                 result = self._cycle_fairy_dust(first)
                 if result != "NO_DUST_GOAL":
                     return result
