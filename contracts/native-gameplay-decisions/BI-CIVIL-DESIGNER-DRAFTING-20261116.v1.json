@@ -1,0 +1,33 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/career_drafting.py",
+      "route": "POLICY_ONLY",
+      "reason": "Evaluate observed drafting and recovery choices without acquiring input authority.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/career_service.py",
+      "route": "POLICY_ONLY",
+      "reason": "Attach Civil Designer drafting advice to the existing career service API.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_stack.py",
+      "route": "POLICY_ONLY",
+      "reason": "Prioritize the passive drafting candidate underneath player and need gates.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/host_listener.py",
+      "route": "POLICY_ONLY",
+      "reason": "Deliver caller-supplied drafting observations through the existing passive listener.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

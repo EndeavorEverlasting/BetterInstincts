@@ -3,6 +3,13 @@
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
   "updated_at": "2026-11-10T11:32:00-05:00",
+  "civil_designer_drafting": {
+    "state": "ADVISORY_SOURCE_LOCAL_EA_EVIDENCE_REQUIRED",
+    "owner": "betterinstincts/career_service.py#evaluate_eco_invention_drafting",
+    "runbook": "docs/CAREER_SERVICE.md#civil-designer-eco-invention-drafting",
+    "local_successor_issue": 171,
+    "game_certified": false
+  },
   "lot_boundary_footprint_20261110": {
     "state": "CONTRACT_LANDED_LIVE_AABB_CANDIDATE_WS_CLICK_MISS",
     "owner": "contracts/lot-boundary.v1.json",

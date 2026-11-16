@@ -23,6 +23,17 @@
       }
     ]
   },
+  "eco_invention_drafting": {
+    "track": "GREEN_TECHNICIAN",
+    "objective": "DRAFT_ECO_INVENTION_CONCEPT",
+    "interaction_label": "Draft Eco-Invention Concept",
+    "tablet_id": "ELECTRONIC_DRAFTING_TABLET",
+    "tablet_label": "Electronic Drafting Tablet",
+    "catalog_query": "tablet",
+    "max_inventory_pages": 24,
+    "pack": "Eco Lifestyle",
+    "expected_replacement_price": 0
+  },
   "career_tracks": {
     "high_school_student": {
       "life_stage": "teen",

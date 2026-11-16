@@ -580,6 +580,12 @@ def _load_observation(raw: Mapping) -> dict:
     life_stage = raw.get("life_stage")
     if life_stage is not None and not isinstance(life_stage, str):
         raise HostListenerError("OBSERVATION_LIFE_STAGE_INVALID")
+    drafting = raw.get("career_drafting")
+    if drafting is not None and (
+        not isinstance(drafting, Mapping)
+        or len(json.dumps(dict(drafting)).encode("utf-8")) > 16_384
+    ):
+        raise HostListenerError("OBSERVATION_CAREER_DRAFTING_INVALID")
     gardening = raw.get("gardening")
     if gardening is not None and not isinstance(gardening, Mapping):
         raise HostListenerError("OBSERVATION_GARDENING_INVALID")
@@ -698,6 +704,7 @@ def _load_observation(raw: Mapping) -> dict:
         "preference_game_build_confirmed": raw.get("preference_game_build_confirmed") is True,
         "needs": {k: float(needs[k]) for k in SIX},
         "gardening": dict(gardening) if gardening is not None else None,
+        "career_drafting": drafting,
         "household_economy": (
             dict(household_economy) if household_economy is not None else None
         ),
@@ -1092,6 +1099,17 @@ def tick(
         receipt["receipt"] = str(tick_path.relative_to(ROOT))
         return receipt
 
+    drafting = obs["career_drafting"]
+    drafting_mode = None
+    if (
+        drafting is not None and mode_context is not None
+        and drafting.get("session_ref") == session_id
+        and all(observation.get(key) is not None and observation[key] == drafting.get(field)
+                for key, field in (("game_version", "game_build"),
+                                   ("actor_ref", "sim_ref"), ("active_lot_id", "lot_ref")))
+    ):
+        drafting_mode = mode_context["mode"]
+
     # Non-Live and ambiguous scenes still provide bounded interface context,
     # never a simulated Live queue/needs plan. The Build census is advisory.
     if mode_context is not None and not mode_context["mode_autonomy_allowed"]:
@@ -1197,6 +1215,17 @@ def tick(
                 else "Observe the game mode again; do not dispatch Live actions."
             ),
         }
+        if drafting is not None:
+            from betterinstincts.career_service import evaluate_eco_invention_drafting
+            from betterinstincts.need_service_base import threshold_pair
+
+            _, floor = threshold_pair()
+            receipt["career_drafting"] = evaluate_eco_invention_drafting(
+                drafting, capture_ref=obs["capture_ref"], mode=drafting_mode,
+                lot_model=obs.get("lot_model"),
+                player_blocked=obs["player_directed"] or obs["already_busy"],
+                needs_safe=all(value >= floor for value in obs["needs"].values()),
+            )
         meta["ticks"] = ticks
         meta["last_tick_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         meta["last_disposition"] = listener_action
@@ -1292,6 +1321,8 @@ def tick(
             traits=obs["traits"],
             whims=obs["whims"] or obs["pinned_whims"],
             gardening=obs["gardening"],
+            career_drafting=drafting,
+            career_drafting_mode=drafting_mode,
             household_upkeep=obs["household_upkeep"],
             household_economy=obs["household_economy"],
             discovery_hud=obs["discovery_hud"],
