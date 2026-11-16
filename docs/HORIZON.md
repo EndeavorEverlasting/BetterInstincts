@@ -127,9 +127,10 @@ The intake is the optional `robotics_income` field of
   An open attempt is reconciled by its matching terminal receipt. A
   terminal failure records any incurred costs and zero proceeds. The
   producer must attach independently observed refs, including evidence
-  for zero debits or quantities. Duplicate, conflicting and foreign events
-  cannot create extra earnings. Unrelated ledger events and cheat proceeds
-  stay outside the sample.
+  for zero debits or quantities. A native pending or incomplete receipt
+  that reuses another attempt's proof holds every affected recipe before
+  scoring. A matching pending receipt may progress to its own terminal
+  outcome. Unrelated ledger events and cheat proceeds stay outside the sample.
 
 Realized profit is the sum of attributed proceeds minus recorded fees,
 consumed materials, and other costs. Projected profit per attempt is the
@@ -144,6 +145,12 @@ earnings or post money.
 
 P08 under [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171)
 owns installation and wiring to independently verified exact-build native
-EA transaction events and persistence. Prove one attributable source →
-craft → sale and a nonpositive or failed case without replaying an open
-effect. The offline tests use supplied synthetic observations.
+EA transaction events and persistence. Use the existing
+`betterinstincts/installed_player_runtime.py` registration and exact-build
+adapter boundary when a robotics transaction producer is available. In an
+authorized disposable save, capture an attributable source → craft → sale,
+with consumed inventory and separate payment proof, plus a nonpositive or
+failed case. Feed both to the policy, confirm they change eligibility as
+expected, and verify the receipt still reconciles after runtime reload.
+Preserve open attempts, player controls, and rollback. The offline tests
+use supplied synthetic observations.

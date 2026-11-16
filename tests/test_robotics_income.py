@@ -159,6 +159,27 @@ class RoboticsIncomeTests(unittest.TestCase):
             self.assertTrue(all(o["state"] == "RECONCILE_NATIVE_RECEIPTS" for o in offers.values()))
             self.assertIsNone(decision["replacement_candidate"])
 
+    def test_incomplete_middle_claim_blocks_every_implicated_recipe(self):
+        quotes = [recipe(name) for name in ("quadcopter", "gardener_bot", "party_bot")]
+        first, middle, last = [receipt(i, offer=offer) for i, offer in enumerate(quotes)]
+        middle.update(attributed=False, debit_ref=first["debit_ref"], sale_ref=last["sale_ref"])
+        for history in itertools.permutations([first, middle, last]):
+            with self.subTest(attempts=[x["attempt_ref"] for x in history]):
+                offers, decision = evaluate(offers=quotes, receipts=list(history))
+                self.assertTrue(all(o["state"] == "RECONCILE_NATIVE_RECEIPTS" for o in offers.values()))
+                self.assertTrue(all(o["realized_net"] is None for o in offers.values()))
+                self.assertIsNone(decision["replacement_candidate"])
+
+    def test_pending_claim_cannot_reuse_other_recipe_item_or_attempt(self):
+        bot = recipe("gardener_bot")
+        sold = receipt(1)
+        for field in ("item_ref", "attempt_ref"):
+            pending = {**receipt(2, offer=bot), "outcome": "UNSOLD", field: sold[field]}
+            for history in ([sold, pending], [pending, sold]):
+                with self.subTest(field=field, first=history[0]["recipe_ref"]):
+                    offers, _ = evaluate(offers=[recipe(), bot], receipts=history)
+                    self.assertTrue(all(o["state"] == "RECONCILE_NATIVE_RECEIPTS" for o in offers.values()))
+
     def test_pending_or_ambiguous_outcome_never_becomes_profit(self):
         for change in ({"outcome": "UNSOLD"}, {"attributed": False}, {"sale_ref": None}):
             offers, _ = evaluate(receipts=[receipt(1) | change])

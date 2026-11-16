@@ -86,6 +86,16 @@ comparisons measure needs, net income, skill and career without inferring
 causation from frequency. See [the preference correction guide](PREFERENCE_PROMPTS.md#correct-an-existing-preference-through-simology).
 P08 needs the exact Windows game build and an authorized disposable household.
 
+## 2026-11-16 — Robotics receipt closeout
+
+MoonWake Closers independently reproduced a valid sale qualifying after
+an incomplete receipt reused its proof. The existing scorer now checks
+proof ownership before accepting terminal economics. It holds all affected
+recipes and preserves matching pending-to-terminal progress. Regression
+cases cover incomplete, pending, and chained conflicts in both input
+orders. [Horizon](HORIZON.md#robotics-craft-and-sale-economics) routes the
+remaining exact-build receipt producer and runtime replay through #171.
+
 ## 2026-11-15 — Receipt-backed robotics income
 
 The workstation fee is one input. For one recipe and sales channel, the
