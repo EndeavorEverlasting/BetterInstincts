@@ -1,0 +1,52 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-ROBOTICS-RECEIPT-CLOSERS-20261116",
+  "base_commit": "1c859ff682f2df3f1d32cca2ae58d902f3c6012e",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Reconcile incomplete, pending and terminal robotics evidence across recipes before projecting income.",
+  "affected_concepts": [
+    "HOUSEHOLD",
+    "OBSERVATION",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "RESOURCE_CLAIM",
+    "NATIVE_MECHANIC_EVIDENCE"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/robotics_income.py",
+    "betterinstincts/autonomy_moderation.py",
+    "docs/HORIZON.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_POLICY_AND_INJECTED_RECEIPTS",
+  "player_save_control_impact": "Read-only policy observation, preserving all current installed and player controls.",
+  "expected_outcome": "A conflicting native claim holds every affected current recipe and cannot supply net income. Legitimate pending-to-terminal progression remains eligible.",
+  "negative_tests": [
+    "Incomplete native claim sharing evidence holds both cohorts in either order.",
+    "Contradictory pending observation cannot leave another recipe eligible.",
+    "Matching pending and terminal outcomes remain valid."
+  ],
+  "rollback_path": "Revert policy and its evidence guidance; no game files or receipts were changed.",
+  "unresolved_unknowns": [
+    "Exact-build installed EA robotics transaction producer and observed native effect."
+  ],
+  "files_expected": [
+    "betterinstincts/robotics_income.py",
+    "tests/test_robotics_income.py",
+    "contracts/native-gameplay-decisions/BI-ROBOTICS-RECEIPT-CLOSERS-20261116.v1.json",
+    "docs/HORIZON.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}
