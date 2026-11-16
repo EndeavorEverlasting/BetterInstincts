@@ -1,3 +1,12 @@
+## 2026-11-15 — Civil Designer Celebrity Endorsement
+
+The career policy uses the player-selected Get Endorsement response for the
+observed Smog Vacuum card when the native source verifies its identity,
+options and fame permission. The conditional port reserves a single
+submission and correlates the native response, card rewards and post-shift
+Live Mode. See [the career card guide](CAREER_DECISIONS.md#celebrity-endorsement-after-inventing-a-smog-vacuum).
+Exact-build EA registration and gameplay proof remain with #171.
+
 ## 2026-11-15 — Simology stored preference correction
 
 The existing host listener can evaluate an evidenced mistaken setting or a

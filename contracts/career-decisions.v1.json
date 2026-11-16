@@ -8,7 +8,8 @@
     "native_successor_issue": 171,
     "career_panel": "contracts/ui-microsystems.v1.json#panels.career",
     "work_shift": "betterinstincts/career_service.py#evaluate_work_shift_tone",
-    "glossary": "docs/GLOSSARY.md"
+    "glossary": "docs/GLOSSARY.md",
+    "response_port": "betterinstincts/career_response_port.py#CareerResponsePort"
   },
   "event_schema": "betterinstincts.career-event.observation/v1",
   "event_kind": "CAREER_CHANCE_CARD",
@@ -69,5 +70,27 @@
     "native": "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md"
   },
   "proof_ceiling": "OFFLINE_CAREER_DECISION_POLICY_NOT_NATIVE_AUTONOMY_OR_LIVE_CERTIFIED",
-  "proof_rule": "Never infer a successful effect from a response. Require separate native ACK, actual recipient career-effect delta and resumed activity with disjoint capture refs, ordered timestamps and same career event identity. Receipt-shape checks are not authenticated live P08 evidence."
+  "proof_rule": "Never infer a successful effect from a response. Require separate native ACK, actual recipient career-effect delta and resumed activity with disjoint capture refs, ordered timestamps and same career event identity. Receipt-shape checks are not authenticated live P08 evidence.",
+  "disclosed_card": {
+    "id": "civil_designer.celebrity_endorsement.smog_vacuum",
+    "identity": {
+      "title": "Celebrity Endorsement",
+      "subject": "Smog Vacuum",
+      "career": "Civil Designer",
+      "pack": "Get Famous"
+    },
+    "options": {
+      "Get Endorsement": [
+        "fame",
+        "performance",
+        "simoleons"
+      ],
+      "Self Promote": [
+        "fame"
+      ]
+    },
+    "preferred_option": "Get Endorsement",
+    "policy_basis": "Operator selection for this exact card, whose visible disclosures state positive rewards. Fame magnitudes, payout amounts and other effects remain unmeasured.",
+    "continuation": "POST_SHIFT_LIVE_MODE"
+  }
 }

@@ -38,6 +38,50 @@ This permits automatic decisions for **known, complete** career events without a
 
 **Autonomy is not an always-on desktop agent:** `autonomy_enabled` and player-control signals come from the future embedded game adapter. Once installed and certified, ordinary event policy may make in-game choices without a live ChatGPT/Windows agent, while explicit player actions, career tone choices, and the player's queue still take priority. No new background service, global key handler, or external mouse clicker is needed or supplied.
 
+## Celebrity Endorsement after inventing a Smog Vacuum
+
+The Civil Designer card shown with Get Famous has two disclosed choices.
+**Get Endorsement** promises fame, career performance, and extra pay.
+**Self Promote** describes gaining fans. Use the operator's choice of
+**Get Endorsement** for this exact card when career autonomy is enabled and
+the recipient permits fame gains. The displayed disclosure does not quantify
+either fame gain, career progress, or cash. The existing numeric policy still
+handles other career events.
+
+The native observer must match the Civil Designer / Get Famous card, title,
+Smog Vacuum subject, and both labeled disclosures using exact-build EA
+evidence. Supply the normalized `disclosed_card` identity,
+`card_source_ref`, and `fame_allowed`, plus the native response ID and
+`disclosed_positive_effects` for each observed option. Tested sample IDs
+are synthetic. Screen position and the work-shift payout notification
+cannot establish a response ID or prove the endorsement reward.
+
+`betterinstincts.career_response_port.CareerResponsePort` is the integration
+point. The adapter supplies `read_career_event()` with the event, verified
+build/scene/save scope, process instance, session, pause and player state.
+On the game thread, `submit_if_current(request)` must recheck the player,
+fame permission, scope, actual event/revision and response ID before
+dispatching. The port reserves the attempt before that call. An ambiguous
+return holds for reconciliation. An explicit no-effect refusal may be
+retried only after a newer capture. Create one port per active runtime and
+preserve the adapter's one-event response invariant across restarts.
+
+On readback, correlate the native acknowledgement with the attempt and
+dispatch references. Require separate event-attributed positive fame,
+performance and cash deltas, followed by the closed card and return to
+Live Mode after the same shift. A prior wage payment is independent of the
+endorsement. There is no required return to an already completed shift.
+
+The source path is exercised through an injected adapter. Installation and
+live proof require the exact-build native event hook under
+[#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+On an authorized disposable household, verify a real offer, the game-side
+response and rewards, the player/fame opt-out control, and ordinary career
+card behavior. Preserve a running session and independently record the
+native response and observed effects.
+
+Focused test: `python -m unittest tests.test_career_endorsement -v`.
+
 ## Binding and receipts
 
 **Input:** `betterinstincts.career-event.observation/v1`; exact `event_ref` + `event_revision`, recipient Sim ID as unsigned-64 decimal text, optionally different selected HUD Sim, household, career/shift, full native response-ID list, current capture, exact dialog tuning ID, and complete outcome sets per option (each probability in basis points summing to 10,000, source refs, bounded effects, job-loss/irreversibility flag). Native source strings alone are not authenticated by this policy—local EA source/hook inspection and observed capture provenance belong to installed-game acceptance.

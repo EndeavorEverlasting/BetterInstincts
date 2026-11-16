@@ -31,6 +31,9 @@ EFFECT_BOUNDS = {
 }
 
 
+DISCLOSED_EFFECT_BOUNDS = {**EFFECT_BOUNDS, "fame": 1_000_000.0}
+
+
 class CareerDecisionError(ValueError):
     pass
 
@@ -50,7 +53,7 @@ def _int(x: object, low: int, high: int) -> bool:
 
 
 def _number(x: object, maximum: float) -> bool:
-    return type(x) in (int, float) and math.isfinite(x) and abs(x) <= maximum
+    return type(x) in (int, float) and abs(x) <= maximum and math.isfinite(x)
 
 
 def _hold(reason: str, *, event: Mapping | None = None) -> dict:
@@ -82,6 +85,21 @@ def load_contract() -> dict:
             score.get("max_termination_probability_bps") != 0 or
             score.get("allow_irreversible_outcome") is not False):
         raise CareerDecisionError("CAREER_DECISION_RISK_CONFIG_INVALID")
+    card = data.get("disclosed_card")
+    if (not isinstance(card, Mapping) or not _ref(card.get("id"))
+            or not isinstance(card.get("identity"), Mapping)
+            or set(card["identity"]) != {"title", "subject", "career", "pack"}
+            or not all(isinstance(value, str) and value for value in card["identity"].values())
+            or not isinstance(card.get("options"), Mapping)
+            or len(card["options"]) != 2
+            or not isinstance(card.get("preferred_option"), str)
+            or card["preferred_option"] not in card["options"]
+            or not _ref(card.get("continuation"))
+            or any(not isinstance(effects, list) or not effects
+                   or any(type(key) is not str or key not in DISCLOSED_EFFECT_BOUNDS for key in effects)
+                   or len(set(effects)) != len(effects)
+                   for effects in card["options"].values())):
+        raise CareerDecisionError("DISCLOSED_CAREER_CARD_CONTRACT_INVALID")
     return data
 
 
@@ -120,6 +138,78 @@ def _outcomes(option: Mapping[str, Any], config: dict) -> tuple[float, str | Non
     if total != config["probability_scale"]:
         return 0.0, "CAREER_OUTCOME_PROBABILITIES_INCOMPLETE"
     return score - config["scoring"]["risk_aversion"] * (score - worst), None
+
+
+def _choose_disclosed_card(event, options, config):
+    """Use the reviewed exact-card choice and observed IDs, with no invented utility."""
+    card = config["disclosed_card"]
+    evidence = event["disclosed_card"]
+    if (not isinstance(evidence, Mapping)
+            or any(evidence.get(key) != value for key, value in card["identity"].items())
+            or not _ref(evidence.get("card_source_ref"))):
+        return _hold("DISCLOSED_CARD_IDENTITY_UNVERIFIED", event=event)
+    if evidence.get("fame_allowed") is not True:
+        return _hold("DISCLOSED_CARD_FAME_NOT_ALLOWED", event=event)
+    if len(options) != len(card["options"]):
+        return _hold("DISCLOSED_CARD_OPTIONS_UNVERIFIED", event=event)
+
+    by_label = {}
+    for option in options:
+        label = option.get("label")
+        effects = option.get("disclosed_positive_effects")
+        expected = card["options"].get(label) if isinstance(label, str) else None
+        if (expected is None or label in by_label
+                or not isinstance(effects, list) or any(type(key) is not str for key in effects)
+                or sorted(effects) != sorted(expected)
+                or option.get("job_lost") is not False or option.get("irreversible") is not False):
+            return _hold("DISCLOSED_CARD_OPTIONS_UNVERIFIED", event=event)
+        # If the adapter also has numerical tuning, reject conflicts with the
+        # disclosed outcome instead of silently ignoring the extra evidence.
+        if "outcomes" in option and not _matches_disclosed_outcomes(option["outcomes"], expected, config):
+            return _hold("DISCLOSED_CARD_OUTCOMES_CONFLICT", event=event)
+        by_label[label] = option
+    label = card["preferred_option"]
+    chosen = by_label[label]
+    return {
+        **_recommend(event, chosen, reason="REVIEWED_DISCLOSED_CAREER_REWARDS"),
+        "card_id": card["id"],
+        "option_label": label,
+        "required_positive_effects": list(card["options"][label]),
+        "continuation_kind": card["continuation"],
+        "card_source_ref": evidence["card_source_ref"],
+        "score_margin": None,
+        "excluded_risky_response_ids": [],
+        "all_scores": [],
+    }
+
+
+def _matches_disclosed_outcomes(branches, expected, config):
+    if not isinstance(branches, list) or len(branches) != 1 or not isinstance(branches[0], Mapping):
+        return False
+    branch = branches[0]
+    effects = branch.get("effects")
+    return (_int(branch.get("probability_bps"), config["probability_scale"], config["probability_scale"])
+            and branch.get("job_lost") is False and branch.get("irreversible") is False
+            and _ref(branch.get("effect_source_ref"))
+            and isinstance(effects, Mapping) and set(effects) == set(expected)
+            and all(_number(value, DISCLOSED_EFFECT_BOUNDS[key]) and value > 0
+                    for key, value in effects.items()))
+
+
+def _recommend(event, chosen, *, reason):
+    return {
+        "schema": RESULT, "state": "RECOMMENDED_NATIVE_CHOICE", "reason": reason,
+        "event_ref": event["event_ref"], "event_revision": event["event_revision"],
+        "capture_ref": event["capture_ref"], "captured_at_epoch_ms": event["captured_at_epoch_ms"],
+        "recipient_sim_id": event["recipient_sim_id"],
+        "selected_sim_id": event.get("selected_sim_id"),
+        "career_id": event["career_id"], "shift_ref": event["shift_ref"],
+        "dialog_tuning_id": event["dialog_tuning_id"],
+        "recommended_response_id": chosen["response_id"],
+        "selected_effect_basis_ref": chosen["effect_basis_ref"],
+        "next": "NATIVE_ONE_RESPONSE_THEN_REOBSERVE_CAREER_AND_ACTIVITY",
+        "execute_allowed": False, "control_permit": None, "proof_ceiling": PROOF,
+    }
 
 
 def evaluate_career_event(
@@ -184,26 +274,32 @@ def evaluate_career_event(
             or any(not _int(x, 0, 2**31 - 1) for x in offered)
             or len(set(offered)) != len(offered)):
         return _hold("COMPLETE_CAREER_RESPONSE_IDS_REQUIRED", event=event)
+    indexed = {}
+    for option in options:
+        if (not isinstance(option, Mapping)
+                or not _int(option.get("response_id"), 0, 2**31 - 1)
+                or not _ref(option.get("option_ref"))
+                or not _ref(option.get("effect_basis_ref"))):
+            return _hold("CAREER_OPTION_SOURCE_UNVERIFIED", event=event)
+        response_id = option["response_id"]
+        if response_id in indexed:
+            return _hold("CAREER_DUPLICATE_RESPONSE_OPTION", event=event)
+        indexed[response_id] = option
+    if set(offered) != indexed.keys():
+        return _hold("CAREER_RESPONSE_OPTION_SET_MISMATCH", event=event)
+    if "disclosed_card" in event:
+        return _choose_disclosed_card(event, options, config)
+
     scored = []
     excluded_risky_response_ids = []
-    for option in options:
-        if (not isinstance(option, Mapping) or
-                not _int(option.get("response_id"), 0, 2**31 - 1) or
-                not _ref(option.get("option_ref")) or
-                not _ref(option.get("effect_basis_ref"))):
-            return _hold("CAREER_OPTION_SOURCE_UNVERIFIED", event=event)
+    for response_id, option in indexed.items():
         score, reason = _outcomes(option, config)
         if reason == "CAREER_IRREVERSIBLE_RISK_HOLD":
-            excluded_risky_response_ids.append(option["response_id"])
+            excluded_risky_response_ids.append(response_id)
             continue
         if reason:
             return _hold(reason, event=event)
-        scored.append((option["response_id"], score))
-    offered_options = [opt["response_id"] for opt in options]
-    if set(offered) != set(offered_options):
-        return _hold("CAREER_RESPONSE_OPTION_SET_MISMATCH", event=event)
-    if len(set(offered_options)) != len(offered_options):
-        return _hold("CAREER_DUPLICATE_RESPONSE_OPTION", event=event)
+        scored.append((response_id, score))
     if not scored:
         return _hold("NO_SAFE_CAREER_CHOICE_KNOWN", event=event)
     rank = sorted(scored, key=lambda x: (-x[1], x[0]))
@@ -211,27 +307,12 @@ def evaluate_career_event(
             rank[0][1] - rank[1][1] < config["scoring"]["min_score_margin"]):
         return _hold("CAREER_CHOICE_UTILITY_TIE_OR_WEAK_MARGIN", event=event)
     return {
-        "schema": RESULT, "state": "RECOMMENDED_NATIVE_CHOICE",
-        "reason": "BEST_EVIDENCED_CAREER_OUTCOME",
-        "event_ref": event["event_ref"],
-        "event_revision": event["event_revision"],
-        "capture_ref": event["capture_ref"],
-        "recipient_sim_id": event["recipient_sim_id"],
-        "selected_sim_id": selected,
-        "career_id": event["career_id"],
-        "dialog_tuning_id": event["dialog_tuning_id"],
-        "recommended_response_id": rank[0][0],
+        **_recommend(event, indexed[rank[0][0]], reason="BEST_EVIDENCED_CAREER_OUTCOME"),
         "score_margin": (round(rank[0][1] - rank[1][1], 6)
                          if len(rank) > 1 else None),
         "excluded_risky_response_ids": excluded_risky_response_ids,
-        "selected_effect_basis_ref": next(
-            o["effect_basis_ref"] for o in options
-            if o["response_id"] == rank[0][0]),
         "all_scores": [{"response_id": k, "risk_adjusted_score": round(v, 6)}
                        for k, v in rank],
-        "next": "NATIVE_ONE_RESPONSE_THEN_REOBSERVE_CAREER_AND_ACTIVITY",
-        "execute_allowed": False, "control_permit": None,
-        "proof_ceiling": PROOF,
     }
 
 
@@ -251,6 +332,8 @@ def reconcile_career_event(
             or decision.get("state") != "RECOMMENDED_NATIVE_CHOICE"):
         return {"schema": ACK, "state": "UNVERIFIED",
                 "reason": "CAREER_DECISION_NOT_ADMITTED", "proof_ceiling": PROOF}
+    required_effects = decision.get("required_positive_effects", ())
+    effect_bounds = DISCLOSED_EFFECT_BOUNDS if required_effects else EFFECT_BOUNDS
     if (not isinstance(response, Mapping)
             or response.get("source") != "EA_NATIVE"
             or response.get("event_ref") != decision["event_ref"]
@@ -261,7 +344,8 @@ def reconcile_career_event(
             or response.get("accepted") is not True
             or not _ref(response.get("capture_ref"))
             or response["capture_ref"] == decision["capture_ref"]
-            or not _int(response.get("captured_at_epoch_ms"), 1, 2**63 - 1)):
+            or not _int(response.get("captured_at_epoch_ms"), 1, 2**63 - 1)
+            or response["captured_at_epoch_ms"] <= decision.get("captured_at_epoch_ms", 0)):
         return {"schema": ACK, "state": "UNVERIFIED",
                 "reason": "CAREER_NATIVE_RESPONSE_ACK_MISSING", "proof_ceiling": PROOF}
     if (not isinstance(effect, Mapping)
@@ -277,9 +361,11 @@ def reconcile_career_event(
             or effect["captured_at_epoch_ms"] <= response["captured_at_epoch_ms"]
             or not isinstance(effect.get("observed_deltas"), Mapping)
             or not effect["observed_deltas"]
-            or not set(effect["observed_deltas"]).issubset(EFFECT_BOUNDS)
-            or any(not _number(v, EFFECT_BOUNDS[k])
-                   for k, v in effect["observed_deltas"].items())):
+            or not set(effect["observed_deltas"]).issubset(effect_bounds)
+            or any(not _number(v, effect_bounds[k])
+                   for k, v in effect["observed_deltas"].items())
+            or any(effect["observed_deltas"].get(key, 0) <= 0 for key in required_effects)
+            or (required_effects and effect.get("event_rewards_attributed") is not True)):
         return {"schema": ACK, "state": "UNVERIFIED",
                 "reason": "CAREER_NATIVE_EFFECT_OBSERVATION_MISSING", "proof_ceiling": PROOF}
     if (not isinstance(activity, Mapping)
@@ -292,7 +378,11 @@ def reconcile_career_event(
                 decision["capture_ref"], response["capture_ref"], effect["capture_ref"])
             or not _ref(activity.get("activity_ref"))
             or not _int(activity.get("captured_at_epoch_ms"), 1, 2**63 - 1)
-            or activity["captured_at_epoch_ms"] <= effect["captured_at_epoch_ms"]):
+            or activity["captured_at_epoch_ms"] <= effect["captured_at_epoch_ms"]
+            or (required_effects and (
+                activity.get("continuation_kind") != decision["continuation_kind"]
+                or activity.get("shift_ref") != decision["shift_ref"]
+                or activity.get("event_closed") is not True))):
         return {"schema": ACK, "state": "UNVERIFIED",
                 "reason": "CAREER_ACTIVITY_RESUMPTION_UNOBSERVED", "proof_ceiling": PROOF}
     return {
