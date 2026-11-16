@@ -1,3 +1,14 @@
+## 2026-11-15 — Sixth Gear passive player learning
+
+The existing opt-in host listener consumes semantic player-owned decisions and
+matched outcomes during takeovers. Three independently helpful examples can
+yield an idle contextual advisory after the player and queue gates clear.
+Exact patch, profile, household and context scope the local reusable evidence.
+The contextual ranker retains its operator-reviewed path. The Sixth Gear
+walker recorded the exact-build Windows native signal producer as the open P08
+gate. See [Judgment learning](JUDGMENT_LEARNING.md#passive-learning-while-the-player-has-control)
+and [native issue #171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+
 ## 2026-11-15 — Civil Designer Celebrity Endorsement
 
 The career policy uses the player-selected Get Endorsement response for the

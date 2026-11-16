@@ -51,6 +51,15 @@
       "proof_ceiling": "ASYNC_CALLBACK_TESTS_NOT_LIVE_GAME"
     }
   },
+  "passive_player_learning": {
+    "opt_in": "activate --player-learning-profile LOCAL_PROFILE_TOKEN",
+    "event_field": "player_learning",
+    "owner": "betterinstincts/player_learning.py",
+    "ranking": "contracts/judgment-learning.v1.json",
+    "ingress": "Existing foreground Live listener tick or passive opportunity survey callback",
+    "screen_effects": false,
+    "game_capture_provider": "CALLER_SUPPLIED_EXACT_BUILD_ADAPTER_REQUIRED"
+  },
   "inputs": {
     "observation_schema": "betterinstincts.host-listener.observation/v1",
     "required_fields": [

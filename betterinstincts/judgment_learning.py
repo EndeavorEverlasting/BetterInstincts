@@ -45,13 +45,17 @@ def _patch(value: object) -> str:
     return value
 
 
-def _context(value: object) -> dict:
+def validate_context(value: object) -> dict:
     if not isinstance(value, dict) or set(value) != set(CONTEXT_FIELDS):
         raise JudgmentLearningError("CONTEXT_FIELDS_REQUIRED")
     for field in CONTEXT_FIELDS:
         if not isinstance(value[field], str) or value[field] not in CHOICES[field]:
             raise JudgmentLearningError("UNRECOGNIZED_CONTEXT:" + field)
     return {field: value[field] for field in CONTEXT_FIELDS}
+
+
+# The community case validator imports the original helper name.
+_context = validate_context
 
 
 def _action(value: object) -> str:
@@ -79,7 +83,7 @@ def _example(value: object) -> dict:
     if value["outcome"] not in ("helpful", "harmful"):
         raise JudgmentLearningError("REVIEWED_OUTCOME_REQUIRED")
     return {"game_version": _patch(value["game_version"]),
-            "platform": value["platform"], "context": _context(value["context"]),
+            "platform": value["platform"], "context": validate_context(value["context"]),
             "action": _action(value["action"]), "outcome": value["outcome"]}
 
 
@@ -108,7 +112,7 @@ def _validate_model(value: Mapping) -> dict:
     for row in counts:
         if not isinstance(row, dict) or set(row) != {"context", "action", "helpful", "harmful"}:
             raise JudgmentLearningError("INVALID_MODEL_ROW")
-        key = (_key(_context(row["context"])), _action(row["action"]))
+        key = (_key(validate_context(row["context"])), _action(row["action"]))
         if key in seen:
             raise JudgmentLearningError("DUPLICATE_MODEL_ROW")
         seen.add(key)
@@ -171,7 +175,7 @@ def recommend(model: Mapping, query: Mapping) -> dict:
     if (_patch(query["game_version"]), query["platform"]) != (
             approved["game_version"], approved["platform"]):
         return {**baseline, "reason": "PATCH_PROFILE_MISMATCH"}
-    context = _context(query["context"])
+    context = validate_context(query["context"])
     available = query["available_actions"]
     if (not isinstance(available, list) or not 0 <= len(available) <= 16
             or len(set(available)) != len(available)):
@@ -187,26 +191,46 @@ def recommend(model: Mapping, query: Mapping) -> dict:
         return {**baseline, "reason": "SCENE_UNVERIFIED"}
     if not available:
         return {**baseline, "reason": "NO_AVAILABLE_ACTION"}
+    cells = [(row["action"], row["helpful"], row["harmful"])
+             for row in approved["counts"] if row["context"] == context]
+    return {**baseline, **_rank(cells, available, observed=False)}
+
+
+def recommend_observed(rows: Sequence[tuple[str, str]], available: list[str]) -> dict:
+    """Rank held-out choices from an exact-context passive episode partition."""
+    by_action = defaultdict(lambda: {"helpful": 0, "neutral": 0, "harmful": 0})
+    for action, outcome in rows:
+        counts = by_action[_action(action)]
+        if outcome not in counts:
+            raise JudgmentLearningError("INVALID_OBSERVED_OUTCOME")
+        counts[outcome] += 1
+    # A concrete harmful observed result vetoes this automatic advisory. A
+    # neutral result counts toward support but never toward helpful evidence.
+    cells = [(action, counts["helpful"], counts["neutral"])
+             for action, counts in by_action.items() if counts["harmful"] == 0]
+    return _rank(cells, available, observed=True)
+
+
+def _rank(cells: list[tuple[str, int, int]], available: list[str], *, observed: bool) -> dict:
     eligible = []
-    for row in approved["counts"]:
-        if row["context"] != context or row["action"] not in available:
-            continue
-        support = row["helpful"] + row["harmful"]
-        rate = row["helpful"] / support if support else 0.0
-        if support >= MIN_SUPPORT and row["helpful"] >= MIN_HELPFUL and rate >= MIN_HELPFUL_RATE:
-            eligible.append((rate, row["helpful"], row["action"], support))
+    for action, helpful, other in cells:
+        support = helpful + other
+        rate = helpful / support if support else 0.0
+        if (action in available and support >= MIN_SUPPORT
+                and helpful >= MIN_HELPFUL and rate >= MIN_HELPFUL_RATE):
+            eligible.append((rate, helpful, action, support))
     if not eligible:
-        return {**baseline, "reason": "INSUFFICIENT_REVIEWED_EVIDENCE"}
+        return {"state": "ABSTAIN", "suggested_action": None,
+                "reason": "INSUFFICIENT_OBSERVED_EVIDENCE" if observed else "INSUFFICIENT_REVIEWED_EVIDENCE"}
     eligible.sort(reverse=True)
-    # Multiple equally supported actions represent authentic uncertainty;
-    # do not optimize away variety using lexical tie-breaking.
     if len(eligible) > 1 and eligible[0][:2] == eligible[1][:2]:
-        return {**baseline, "reason": "AMBIGUOUS_PLAYER_PREFERENCE"}
-    top = eligible[0]
-    return {**baseline, "state": "ADVISORY_ONLY", "suggested_action": top[2],
-            "reason": "REVIEWED_CONTEXTUAL_TRANSITION",
-            "helpful_rate": round(top[0], 4), "helpful_count": top[1],
-            "support": top[3], "model": "FIRST_ORDER_CONTEXTUAL_COUNTS"}
+        return {"state": "ABSTAIN", "suggested_action": None,
+                "reason": "AMBIGUOUS_PLAYER_PREFERENCE"}
+    rate, helpful, action, support = eligible[0]
+    return {"state": "ADVISORY_ONLY", "suggested_action": action,
+            "reason": "OBSERVED_CONTEXTUAL_TRANSITION" if observed else "REVIEWED_CONTEXTUAL_TRANSITION",
+            "helpful_rate": round(rate, 4), "helpful_count": helpful,
+            "support": support, "model": "FIRST_ORDER_CONTEXTUAL_COUNTS"}
 
 
 def prequential_evaluate(examples: Sequence[Mapping], *, game_version: str,

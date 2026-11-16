@@ -6,6 +6,54 @@
 
 **Implemented:** a small, explainable, first-order **contextual Markov-count learner** over *operator-reviewed, consented semantic examples*, producing strictly **advisory** action candidates. It is not a machine learning agent hooked into the Sims runtime, not live imitation from keyboard monitoring, and not a finished gameplay mod.
 
+## Passive learning while the player has control
+
+Enable it for one existing host-listener session with an opaque, local profile
+token. Reuse that token to recall the same profile in a later session.
+
+```sh
+python -m scripts.host_listener activate --session-id SESSION --player-learning-profile LOCAL_PROFILE
+python -m scripts.host_listener tick --session-id SESSION --process-id VERIFIED_GAME_PID --observation OBSERVATION_JSON
+python -m scripts.host_listener deactivate --session-id SESSION
+```
+
+A calibrated adapter supplies the optional `player_learning` object on a
+normal listener observation. For a continuous bounded session, pass the same
+observations through `host_tandem.run_opportunity_survey_session`. The callback
+keeps reading while the existing host action gate yields. Use it without
+exploration callbacks for a dedicated observation session.
+
+| Event | Required fields in `player_learning` |
+| --- | --- |
+| All | `kind`, opaque `run` and `household` tokens, `platform`, monotonic integer `sequence`. The outer frame supplies exact `game_version`, `actor_ref`, `capture_ref`, six normalized `needs`, current Live cues and viewport. |
+| Choice | `interaction` token bound to the game interaction, `owner: "PLAYER"`, `scenario`, `style`, `previous_action`, `action`, `available_actions`. The adapter observes menu availability and player attribution. |
+| Outcome | Same `interaction`, a third distinct `effect_capture`, boolean `completed`, and `goal_delta` from −1 to +1 in the chosen scenario. The adapter supplies progress attributed to that interaction. |
+| Query | `scenario`, `style`, `previous_action`, `available_actions` from a fresh idle frame with an empty queue. The current need condition comes from the frame. |
+
+Use one writer per listener session. A choice is provisional until an outcome
+arrives within eight ticks on the same game run, process, exact patch,
+household and Sim. A foreground or scope change, an intervening unattributed
+action, or an observation gap ends the provisional match. The store keeps at
+most 256 deduplicated episodes per local profile. It retains hashed provenance
+and semantic context, action and outcome labels under ignored
+`dist/judgment-learning/player-observed`. Closing the session ends passive
+learning. For a reset, close all sessions using the profile, then remove only
+its SQLite file. Transferring source leaves local data in place.
+
+Three independently captured helpful demonstrations in the same context and a
+helpful rate of at least 75% can produce a later `player_learning` advisory.
+Urgent current needs, player control, a busy queue, tied preferences, and a
+harmful precedent suppress the affected advice. This complements the
+operator-reviewed workflow below. Both use the same contextual ranker, and
+the listener emits no effect permit.
+
+The installed-game producer for player-attributed decisions and independent
+outcomes still needs exact-build Windows validation under issue #171. The
+first live check is one consented disposable-session action with an
+independently observed result, then a held-out idle query plus a protected
+player-queue control. The synthetic comparator and local SQLite exercise
+establish source behavior and replay handling.
+
 ## P97 prior art — source-level evidence, 2026-11-07
 
 | Reference and pinned main | Concrete inspected implementation | Decision |
