@@ -1,0 +1,66 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-GARDENING-CLOSERS-20261116",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Bind quality-enrolled fertilizer purchase observations to the active household, lot and build. Preserve current verified owned transfers and exact personal inventory use when independent optional scan evidence is stale.",
+  "affected_concepts": [
+    "SIM",
+    "PLAYER_INTENT",
+    "OBSERVATION",
+    "AFFORDANCE",
+    "ACTION_QUEUE",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "RESOURCE_CLAIM",
+    "PROOF_RECEIPT",
+    "GOAL_THREAD"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/gardening_service.py",
+    "betterinstincts/fertilizer_workflow.py",
+    "betterinstincts/eco_resource_cycle.py",
+    "betterinstincts/budget_eval.py",
+    "contracts/gardening-service.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_SOURCE_POLICY_NO_GAME_EXECUTION",
+  "player_save_control_impact": "Pure current-observation proposals, preserving human, needs, queue and save authority. No native input, save or Windows settings changes.",
+  "expected_outcome": "Contradictory or absent sourcing scope cannot propose a purchase. Independently verified, admitted lot stock and available pocket stock remain usable when an unrelated older optional survey cannot prove absence. Pending acquisition prevents replay.",
+  "negative_tests": [
+    "Cross-household, cross-lot, cross-build and missing source scope",
+    "Stale optional backyard evidence cannot authorize purchase or block an otherwise verified owned transfer",
+    "Outstanding pickup holds another acquisition"
+  ],
+  "rollback_path": "Revert gardening closeout PR; no save or game effect",
+  "unresolved_unknowns": [
+    "Exact-build EA affordances, purchase settlement, native activation and outcome proof belong to issue #171."
+  ],
+  "files_expected": [
+    "betterinstincts/fertilizer_workflow.py",
+    "tests/test_fertilizer_workflow.py",
+    "contracts/gardening-service.v1.json",
+    "docs/GARDENING_SERVICE.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "plans/active/BI-002.md",
+    "contracts/native-gameplay-decisions/BI-GARDENING-CLOSERS-20261116.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "P83 reproduced reachable advisory bugs against current main. Preserve native activation as a separate exact-build gate and preserve legacy observation behavior.",
+  "source_refs": [
+    "https://github.com/EndeavorEverlasting/BetterInstincts/pull/291",
+    "https://github.com/EndeavorEverlasting/BetterInstincts/issues/171"
+  ],
+  "recorded_date": "2026-11-16"
+}
