@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/fame.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure streaming-drone lifecycle, perk and learning decisions from supplied native observations.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "reason": "Uses the existing lifecycle to gate one proposed Fame effect through a separately verified exact-build EA adapter.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}
