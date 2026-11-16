@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/fame.py",
+      "route": "POLICY_ONLY",
+      "reason": "Requires current consistent drone identity, scope and explicit Fame goals before making a policy-only proposal.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "reason": "Reuses native effect admission and resolves an already acknowledged stream slot from a current same-drone stop without assuming a training outcome.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}
