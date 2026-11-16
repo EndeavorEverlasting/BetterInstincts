@@ -346,3 +346,10 @@ career response port. On a disposable household observe one Get Endorsement
 submission, independent fame, performance and extra-pay readback, and the
 same shift's return to Live Mode. Verify player/fame opt-out and the
 ordinary career path. See [career decisions](CAREER_DECISIONS.md#celebrity-endorsement-after-inventing-a-smog-vacuum).
+
+## Active-household plant quality and fertilizer replenishment
+
+Use the existing [gardening service](GARDENING_SERVICE.md) for observed quality
+coverage, exact care, on-lot sourcing and reviewed affordable purchase
+proposals. Bind and verify real EA interactions under #171 on the authorized
+Windows game host.

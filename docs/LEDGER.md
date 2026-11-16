@@ -2255,3 +2255,12 @@ lock and the observed process binding. A dispatch PID alone cannot admit menu
 input, and a replacement observed during admission stops the action. Legacy
 receipts remain readable. The existing game-host handoff owns the Windows
 dev proof, and issue #201 owns the production latest-save observer and loader.
+
+## 2026-11-15 — Active-household gardening quality and supply
+
+The existing gardening path consumes independent per-plant quality, water and
+fertilizer observations. Owned supply precedes a verified affordable lot
+shortfall purchase. Correlated personal-inventory readback gates fertilizer;
+exact-build native activation and effects remain under #171. Related drafts
+#251 (historical live observation) and #252 (Planning/Play timing) retain their
+separate scope.

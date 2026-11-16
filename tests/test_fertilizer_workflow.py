@@ -7,6 +7,7 @@ from betterinstincts.fertilizer_workflow import (
     FertilizerWorkflowError, evaluate_fertilizer_workflow,
 )
 from betterinstincts.gardening_service import evaluate_gardening_turn
+from betterinstincts.host_stack import evaluate_turn
 from betterinstincts.need_services import evaluate_need_services
 
 CAPTURE = "capture:fert"
@@ -708,6 +709,198 @@ class BackyardFertilizerBagTests(unittest.TestCase):
                       [act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")])
         self.assertEqual(cooling["gate"], "FERTILIZER_WAIT_ELIGIBILITY")
 
+
+
+class GardenQualityTests(unittest.TestCase):
+    def status(self, ref="plant:a", *, tier="NICE", fertilizer="GOOD",
+               water="GOOD", progress=None, ready=True):
+        return {**plant(ref, ready=ready), "status": {
+            "target_ref": ref, "capture_ref": CAPTURE, "household_ref": "house:home",
+            "lot_ref": "lot:home", "evidence_ref": "tooltip:" + ref,
+            "quality_tier": tier, "fertilizer": fertilizer, "water": water,
+            "progress_in_tier": progress,
+        }}
+
+    def quality_workflow(self, *rows, **changes):
+        defaults = {
+            "plants": list(rows),
+            "quality_tracking": {
+                "capture_ref": CAPTURE, "lot_ref": "lot:home",
+                "household_ref": "house:home", "census_complete": True,
+                "active_household_verified": True,
+            },
+        }
+        return workflow(**{**defaults, **changes})
+
+    def buying(self, deficit=2, *, cash=1_000_100, stock=()):
+        row = {
+            "source_ref": "source:container", "kind": "PLANTER_PURCHASE",
+            "quantity": 9, "reserve_quantity": 0, "unit_cash_cost": 10,
+            "unit_opportunity_cost": 0, "available": True, "player_reserved": False,
+            "purchase_reviewed": True, "personal_inventory_delivery_verified": True,
+            "item_ref": "item:fertilizer", "action_id": "PURCHASE_FERTILIZER",
+            "target_ref": "container:one", "capture_ref": CAPTURE,
+        }
+        return self.quality_workflow(
+            self.status(fertilizer="LOW"),
+            self.status("plant:b", fertilizer="DEPLETED"),
+            self.status("plant:c", fertilizer="NONE"),
+            self.status("plant:d", fertilizer="GOOD"),
+            self.status("plant:e", fertilizer="DEPLETED", ready=False),
+            self.status("plant:f", fertilizer="UNKNOWN"),
+            supplies=list(stock),
+            backyard_scan=backyard_scan(bags=[], lot_coverage_verified=True),
+            sourcing={
+                "schema": "betterinstincts.fertilizer-sourcing/v1",
+                "capture_ref": CAPTURE, "sim_ref": "sim:garden",
+                "observed_at_unix": time.time(), "scene_verified": True,
+                "queue_verified": True, "player_directed": False, "needs_safe": True,
+                "funds_verified": True, "deficit_units": deficit,
+                "cash": cash, "cash_reserve": 0, "sources": [row],
+            },
+        )
+
+    def purchase(self):
+        return act("PURCHASE_FERTILIZER", "container:one")
+
+    def test_tree_of_emotions_signals_are_independent(self):
+        row = self.quality_workflow(self.status())
+        garden = run_garden(garden_context(row, [act("FERTILIZE", "plant:a"),
+                                                 act("WATER", "plant:a")]))
+        self.assertFalse(garden["next_actions"])
+        self.assertEqual(garden["plant_quality"]["goal_state"], "CONTINUE_OBSERVING_AND_CARING")
+        actual = garden["plant_quality"]["plants"][0]
+        self.assertEqual((actual["quality_tier"], actual["water"], actual["fertilizer"]),
+                         ("NICE", "GOOD", "GOOD"))
+        self.assertIsNone(actual["progress_in_tier"])
+
+    def test_evolve_requires_exact_current_enabled_affordance_and_nonperfect_tier(self):
+        row = self.quality_workflow(self.status(progress=1), self.status("plant:b", tier="PERFECT"))
+        actions = [act("EVOLVE", "plant:foreign"), act("EVOLVE", "plant:b"),
+                   {**act("EVOLVE", "plant:a"), "available": False}]
+        self.assertFalse(run_garden(garden_context(row, actions))["next_actions"])
+        garden = run_garden(garden_context(row, actions + [act("EVOLVE", "plant:a")]))
+        self.assertEqual([a["target_ref"] for a in garden["next_actions"]], ["plant:a"])
+
+    def test_quality_maximum_requires_complete_census_and_does_not_skip_maintenance(self):
+        row = self.quality_workflow(self.status(tier="PERFECT", water="LOW"))
+        garden = run_garden(garden_context(row, [act("WATER", "plant:a")]))
+        self.assertEqual(garden["next_actions"][0]["action_id"], "WATER")
+        self.assertEqual(garden["plant_quality"]["goal_state"], "MAX_QUALITY_OBSERVED")
+        row["quality_tracking"]["census_complete"] = False
+        garden = run_garden(garden_context(row, []))
+        self.assertEqual(garden["plant_quality"]["goal_state"], "CONTINUE_OBSERVING_AND_CARING")
+
+    def test_owned_bag_beats_purchase_and_partial_pocket_buys_only_shortfall(self):
+        row = self.buying(stock=[supply(qty=1)])
+        actions = [self.purchase(), act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:bag")]
+        row["backyard_scan"]["bags"] = [backyard_bag()]
+        picked = evaluate(row, actions)["next_actions"][0]
+        self.assertEqual(picked["item_ref"], "item:bag")
+        self.assertEqual(picked["inventory_readback"]["expected_units"], 1)
+        row["backyard_scan"]["bags"] = []
+        report = run_garden(garden_context(row, actions))
+        self.assertEqual(report["fertilizer_workflow"]["ready_targets"],
+                         ["plant:b", "plant:c", "plant:a"])
+        bought = report["next_actions"][0]
+        self.assertEqual((bought["action_id"], bought["quantity"], bought["estimated_cash_cost"]),
+                         ("PURCHASE_FERTILIZER", 2, 20))
+        self.assertFalse(report["dispatch_authorized"])
+
+    def test_purchase_respects_reserve_and_verified_price_and_delivery(self):
+        row = self.buying(deficit=3, cash=1_000_019)
+        outcome = evaluate(row, [self.purchase()])
+        self.assertEqual(outcome["next_actions"][0]["quantity"], 1)
+        row["sourcing"]["cash"] = 439_816
+        self.assertFalse(evaluate(row, [self.purchase()])["next_actions"])
+        row["sourcing"]["cash"] = 1_000_100
+        for key, value in (
+                ("personal_inventory_delivery_verified", False), ("purchase_reviewed", False),
+                ("unit_cash_cost", 0), ("target_ref", "container:other")):
+            with self.subTest(key=key):
+                changed = copy.deepcopy(row)
+                changed["sourcing"]["sources"][0][key] = value
+                self.assertFalse(evaluate(changed, [self.purchase()])["next_actions"])
+
+    def test_purchase_prefers_covering_more_plants_before_lower_total(self):
+        row = self.buying(deficit=3)
+        option = row["sourcing"]["sources"][0]
+        row["sourcing"]["sources"].append({
+            **option, "source_ref": "source:stall", "kind": "GARDEN_STALL",
+            "target_ref": "stall:one", "quantity": 1, "unit_cash_cost": 1,
+        })
+        chosen = evaluate(row, [self.purchase(), act("PURCHASE_FERTILIZER", "stall:one")])
+        self.assertEqual(chosen["next_actions"][0]["target_ref"], "container:one")
+        self.assertEqual(chosen["next_actions"][0]["quantity"], 3)
+
+    def test_purchase_requires_complete_current_lot_absence_and_enabled_purchase(self):
+        row = self.buying(deficit=3)
+        for scan in (None, backyard_scan(bags=[]),
+                     backyard_scan(bags=[], lot_coverage_verified=True, capture_ref="capture:old"),
+                     backyard_scan(lot_coverage_verified=True,
+                                   bags=[backyard_bag(route_reachable=False)])):
+            with self.subTest(scan=scan):
+                changed = {**row, "backyard_scan": scan}
+                self.assertFalse(evaluate(changed, [self.purchase()])["next_actions"])
+        self.assertFalse(evaluate(row, [{**self.purchase(), "available": False}])["next_actions"])
+
+    def test_purchase_waits_for_exact_full_personal_inventory_in_a_new_capture(self):
+        row = self.buying(stock=[supply(qty=1)])
+        planned = evaluate(row, [self.purchase()])
+        readback = planned["next_actions"][0]["inventory_readback"]
+        self.assertEqual(planned["inventory_units"], 1)
+        row["pending_acquisition"] = {**readback, "action_ref": "queue:buy"}
+        action = act("FERTILIZE", "plant:b")
+        row["supplies"].append(supply("item:fertilizer", qty=2))
+        self.assertEqual(evaluate(row, [action])["gate"], "FERTILIZER_ACQUISITION_PENDING")
+
+        fresh = "capture:after"
+        for obj in (row, row["quality_tracking"], *(p["status"] for p in row["plants"])):
+            obj["capture_ref"] = fresh
+        action["capture_ref"] = fresh
+        for inventory in ([supply("item:wrong", qty=2)], [supply("item:fertilizer", qty=1)],
+                          [supply("item:fertilizer", "HOUSEHOLD_INVENTORY", qty=2)]):
+            test_row = {**row, "supplies": inventory}
+            out = evaluate_fertilizer_workflow(test_row, [action], capture_ref=fresh)
+            self.assertEqual(out["gate"], "FERTILIZER_ACQUISITION_PENDING")
+            self.assertFalse(out["next_actions"])
+        out = evaluate_fertilizer_workflow(row, [action], capture_ref=fresh)
+        self.assertTrue(out["inventory_gain_verified"])
+        self.assertEqual(out["next_actions"][0]["target_ref"], "plant:b")
+        self.assertEqual(out["verified_done_targets"], [])
+
+    def test_batch_needs_same_exact_target_set(self):
+        row = self.quality_workflow(self.status(fertilizer="LOW"), self.status("plant:b"),
+                                    supplies=[supply(qty=2)])
+        batch = act("FERTILIZE_ALL", "plant:a")
+        single = act("FERTILIZE", "plant:a")
+        row["fertilize_all_scope"] = {
+            "capture_ref": CAPTURE, "evidence_ref": "menu:batch",
+            "target_refs": ["plant:a", "plant:b"],
+        }
+        self.assertEqual(evaluate(row, [batch, single])["next_actions"], [single])
+        row["fertilize_all_scope"]["target_refs"] = ["plant:a"]
+        self.assertEqual(evaluate(row, [batch, single])["next_actions"], [batch])
+
+    def test_current_host_stack_routes_gardening_and_preserves_harvest(self):
+        row = self.quality_workflow(self.status())
+        harvest = act("HARVEST", "plant:a")
+        actions = [act("HARVEST", "plant:outside"), harvest]
+        out = evaluate_turn(NEEDS, viewport={"state": "VIEWPORT_OK"},
+                            available_objects=["bed"], location_kind="home",
+                            gardening=garden_context(row, actions), capture_ref=CAPTURE)
+        self.assertEqual(out["gardening"]["next_actions"], [harvest])
+        self.assertFalse(out["gardening"]["dispatch_authorized"])
+
+    def test_invalid_status_and_player_or_needs_abort_before_purchasing(self):
+        row = self.buying(deficit=3)
+        row["plants"][0]["status"]["target_ref"] = "plant:other"
+        with self.assertRaisesRegex(FertilizerWorkflowError, "GARDEN_PLANT_STATUS_PROOF_REQUIRED"):
+            evaluate(row, [self.purchase()])
+        for kwargs in ({"player_directed": True}, {"already_busy": True},
+                       {"needs": {**NEEDS, "hunger": 0}}):
+            garden = run_garden(garden_context(row, [self.purchase()]), **kwargs)
+            self.assertFalse(garden["next_actions"])
 
 
 if __name__ == "__main__":

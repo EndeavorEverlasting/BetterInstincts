@@ -21,8 +21,11 @@ SCHEMA = "betterinstincts.fertilizer-workflow/v1"
 MAX_PLANTS = 32
 MAX_SUPPLIES = 32
 MAX_AGE_SECONDS = 180
-LOCATIONS = {"SIM_INVENTORY", "GROUND", "HOUSEHOLD_INVENTORY"}
-STATES = {"PENDING", "VERIFIED_DONE"}
+LOCATIONS = ("SIM_INVENTORY", "GROUND", "HOUSEHOLD_INVENTORY")
+STATES = ("PENDING", "VERIFIED_DONE")
+QUALITY_TIERS = ("NORMAL", "NICE", "EXCELLENT", "MAGNIFICENT", "PERFECT")
+CONDITIONS = ("GOOD", "LOW", "NONE", "DEPLETED", "UNKNOWN")
+NEEDS_TREATMENT = ("DEPLETED", "NONE", "LOW")
 
 
 class FertilizerWorkflowError(ValueError):
@@ -216,6 +219,83 @@ def _backyard_transfer_candidate(
             "action": "INSPECT_ENABLED_EXACT_BAG_TO_PERSONAL_INVENTORY_TRANSFER"}
 
 
+def _plant_quality(observation: Mapping, plants: list, capture_ref: str) -> dict:
+    tracking = observation["quality_tracking"]
+    if (not isinstance(tracking, Mapping)
+            or not _ref(observation.get("lot_ref"))
+            or not _ref(tracking.get("household_ref"))
+            or tracking.get("lot_ref") != observation["lot_ref"]
+            or tracking.get("active_household_verified") is not True
+            or tracking.get("capture_ref") != capture_ref
+            or type(tracking.get("census_complete")) is not bool):
+        raise FertilizerWorkflowError("GARDEN_QUALITY_SCOPE_INVALID")
+
+    rows = []
+    for plant in plants:
+        status = plant.get("status")
+        if (not isinstance(status, Mapping)
+                or status.get("capture_ref") != capture_ref
+                or status.get("household_ref") != tracking["household_ref"]
+                or status.get("lot_ref") != tracking["lot_ref"]
+                or status.get("target_ref") != plant["target_ref"]
+                or not _ref(status.get("evidence_ref"))):
+            raise FertilizerWorkflowError("GARDEN_PLANT_STATUS_PROOF_REQUIRED")
+        tier, progress = status.get("quality_tier"), status.get("progress_in_tier")
+        water, fertilizer = status.get("water"), status.get("fertilizer")
+        if (tier not in (*QUALITY_TIERS, "UNKNOWN")
+                or (progress is not None and (not _number(progress) or progress > 1
+                                               or tier == "UNKNOWN"))
+                or water not in CONDITIONS or fertilizer not in CONDITIONS):
+            raise FertilizerWorkflowError("GARDEN_PLANT_STATUS_INVALID")
+        rows.append({
+            "target_ref": plant["target_ref"], "quality_tier": tier,
+            "progress_in_tier": progress, "water": water, "fertilizer": fertilizer,
+            "evidence_ref": status["evidence_ref"],
+        })
+    perfect = sum(row["quality_tier"] == "PERFECT" for row in rows)
+    return {
+        "household_ref": tracking["household_ref"],
+        "lot_ref": tracking["lot_ref"],
+        "plants": rows,
+        "observed_count": len(rows),
+        "perfect_count": perfect,
+        "census_complete": tracking["census_complete"],
+        "goal_state": ("MAX_QUALITY_OBSERVED"
+                       if tracking["census_complete"] and perfect == len(rows)
+                       else "CONTINUE_OBSERVING_AND_CARING"),
+    }
+
+
+def _batch_matches(observation: Mapping, ready: list[str], capture_ref: str) -> bool:
+    batch = observation.get("fertilize_all_scope")
+    if (not isinstance(batch, Mapping)
+            or batch.get("capture_ref") != capture_ref
+            or not _ref(batch.get("evidence_ref"))):
+        return False
+    targets = batch.get("target_refs")
+    return (isinstance(targets, list) and len(targets) == len(ready)
+            and all(_ref(ref) for ref in targets) and set(targets) == set(ready))
+
+
+
+def _inventory_readback(spec: Mapping, supply_units: Mapping, *, sim_ref: str,
+                        lot_ref: str, capture_ref: str) -> bool:
+    if (not isinstance(spec, Mapping)
+            or spec.get("sim_ref") != sim_ref or spec.get("lot_ref") != lot_ref
+            or not _ref(spec.get("item_ref")) or not _ref(spec.get("before_capture_ref"))
+            or not _ref(spec.get("action_ref"))
+            or type(spec.get("before_units")) is not int
+            or not 0 <= spec["before_units"] <= 999
+            or type(spec.get("expected_units")) is not int
+            or not 1 <= spec["expected_units"] <= MAX_PLANTS
+            or spec["before_units"] + spec["expected_units"] > 999):
+        raise FertilizerWorkflowError("FERTILIZER_PENDING_ACQUISITION_INVALID")
+    return (capture_ref != spec["before_capture_ref"]
+            and supply_units.get(spec["item_ref"], 0)
+            >= spec["before_units"] + spec["expected_units"])
+
+
+
 def evaluate_fertilizer_workflow(
     observation: Mapping,
     actions: list[dict],
@@ -252,6 +332,7 @@ def evaluate_fertilizer_workflow(
     if not isinstance(actions, list):
         raise FertilizerWorkflowError("FERTILIZER_ACTIONS_INVALID")
 
+    tracking = "quality_tracking" in observation
     pending, ready, done = [], [], []
     seen: set[str] = set()
     for plant in plants:
@@ -269,7 +350,7 @@ def evaluate_fertilizer_workflow(
             pending.append(ref)
             if plant.get("fertilize_ready") is True:
                 ready.append(ref)
-    if exact_target is not None and exact_target not in pending:
+    if not tracking and exact_target is not None and exact_target not in pending:
         # The separate task-continuity owner alone can promote completion.
         return {
             "schema": "betterinstincts.fertilizer-result/v1", "gate": "REOBSERVE_TASK_TARGET",
@@ -278,8 +359,9 @@ def evaluate_fertilizer_workflow(
             "dispatch_authorized": False,
         }
 
-    stock = 0
+    pocket_units = {}
     ground = []
+    owned_lot_stock_seen = False
     ids: set[str] = set()
     for supply in supplies:
         if not isinstance(supply, Mapping) or not _ref(supply.get("item_ref")):
@@ -288,12 +370,20 @@ def evaluate_fertilizer_workflow(
         if sid in ids or type(qty) is not int or not 0 <= qty <= 999 or location not in LOCATIONS:
             raise FertilizerWorkflowError("FERTILIZER_STOCK_INVALID")
         ids.add(sid)
-        if supply.get("fertilizer_eligible") is True and supply.get("protected") is not True:
+        if (tracking and location != "SIM_INVENTORY" and qty > 0
+                and supply.get("fertilizer_eligible") is True
+                and supply.get("lot_ref") == observation.get("lot_ref")
+                and supply.get("household_owned") is True):
+            owned_lot_stock_seen = True
+        if (supply.get("fertilizer_eligible") is True
+                and supply.get("protected") is not True
+                and supply.get("player_reserved") is not True):
             if location == "SIM_INVENTORY":
-                stock += qty
+                pocket_units[sid] = qty
             elif qty > 0 and supply.get("transferable") is True:
                 ground.append(supply)
 
+    stock = sum(pocket_units.values())
     result = {
         "schema": "betterinstincts.fertilizer-result/v1",
         "gate": "INSPECT_FERTILIZER",
@@ -326,24 +416,70 @@ def evaluate_fertilizer_workflow(
         or observation.get("inventory_verified") is not True
     ):
         return finish("REOBSERVE_FERTILIZER", "INSPECT_CURRENT_SIM_POCKET_AND_PLANTS")
+    if tracking:
+        quality = _plant_quality(observation, plants, capture_ref)
+        result["plant_quality"] = quality
+        condition = {row["target_ref"]: row["fertilizer"] for row in quality["plants"]}
+        # Readiness and current condition are independent. A plant that was
+        # fertilized on an earlier turn can need care again.
+        pending = sorted(ref for ref in seen if condition[ref] != "GOOD")
+        ready = sorted(
+            (p["target_ref"] for p in plants
+             if (condition[p["target_ref"]] in NEEDS_TREATMENT
+                 and p.get("fertilize_ready") is True
+                 and exact_target in (None, p["target_ref"]))),
+            key=lambda ref: (NEEDS_TREATMENT.index(condition[ref]), ref),
+        )
+        result.update(pending_targets=pending, ready_targets=ready,
+                      verified_done_targets=[ref for ref in done if condition[ref] == "GOOD"],
+                      needed_units=len(ready))
+        if "pending_acquisition" in observation:
+            verified = _inventory_readback(
+                observation["pending_acquisition"], pocket_units, sim_ref=sim_ref,
+                lot_ref=observation["lot_ref"], capture_ref=capture_ref,
+            )
+            if not verified:
+                return finish("FERTILIZER_ACQUISITION_PENDING",
+                              "RECONCILE_EXACT_ITEM_IN_PERSONAL_INVENTORY")
+            result["inventory_gain_verified"] = True
+    if tracking and exact_target is not None and exact_target not in pending:
+        return finish("REOBSERVE_TASK_TARGET", "VERIFY_TASK_AND_PLANT_LIST")
     if not pending:
+        if tracking:
+            return finish("FERTILIZER_CONDITION_MAINTAINED", "REOBSERVE_PLANT_CARE")
         return finish("FERTILIZER_VERIFIED_COMPLETE", "NO_FURTHER_FERTILIZER_QUEUE")
     if exact_target is not None:
         ready = [ref for ref in ready if ref == exact_target]
+        result.update(ready_targets=ready, needed_units=len(ready))
     if not ready:
-        return finish("FERTILIZER_WAIT_ELIGIBILITY", "RECHECK_AFTER_OBSERVED_COOLDOWN")
+        if tracking and any(condition[ref] == "UNKNOWN" for ref in pending
+                            if exact_target in (None, ref)):
+            return finish("FERTILIZER_STATUS_UNKNOWN", "REOBSERVE_EXACT_PLANT_FERTILIZER_STATUS")
+        return finish("FERTILIZER_WAIT_ELIGIBILITY", "RECHECK_CURRENT_FERTILIZE_ELIGIBILITY")
 
     def observed(action_id: str, target_ref: str) -> dict | None:
         return next((dict(row) for row in actions if
                      row.get("action_id") == action_id
                      and row.get("target_ref") == target_ref
-                     and row.get("capture_ref") == capture_ref), None)
+                     and row.get("capture_ref") == capture_ref
+                     and row.get("available") is True), None)
+
+    def acquisition(candidate: dict, item_ref: str) -> dict:
+        if not tracking:
+            return candidate
+        return {**candidate, "inventory_readback": {
+            "sim_ref": sim_ref, "lot_ref": observation["lot_ref"],
+            "item_ref": item_ref, "before_capture_ref": capture_ref,
+            "before_units": pocket_units.get(item_ref, 0),
+            "expected_units": candidate["quantity"],
+        }}
 
     # If the local host supplies a fresh backyard survey, the bought ground
     # bags outrank any new sourcing/purchases. This is an opt-in read-only port;
     # missing/failed proof does not fall through to an unsafe generic drag.
     scan = observation.get("backyard_scan")
     pickup_pending = False
+    lot_supply_exhausted = False
     if scan is not None and stock < len(ready):
         try:
             candidate = _backyard_transfer_candidate(
@@ -361,17 +497,24 @@ def evaluate_fertilizer_workflow(
         if candidate is not None:
             result["backyard_scan"] = candidate
             if candidate["gate"] == "FERTILIZER_BACKYARD_TRANSFER_READY":
+                selected = candidate["next_actions"][0]
                 return finish(candidate["gate"], candidate["action"],
-                              candidate["next_actions"][0])
+                              acquisition(selected, selected["item_ref"]))
             if candidate["gate"] == "FERTILIZER_BACKYARD_TRANSFER_PENDING":
                 if stock == 0:
                     return finish(candidate["gate"], candidate["action"])
                 # One already-held unit remains useful even while a *different*
                 # item pickup is queued. Never issue another transfer this turn.
                 pickup_pending = True
-            if stock == 0:
-                # A known backyard source awaiting identity/affordance proof
-                # should not trigger another purchase.
+            lot_supply_exhausted = (
+                tracking and candidate["gate"] == "FERTILIZER_BACKYARD_BAGS_NOT_FOUND"
+                and scan.get("lot_coverage_verified") is True
+                and scan.get("bags") == []
+                and not ground and not owned_lot_stock_seen
+            )
+            if (stock == 0 and not lot_supply_exhausted
+                    and (not tracking
+                         or candidate["gate"] != "FERTILIZER_BACKYARD_BAGS_NOT_FOUND")):
                 return finish(candidate["gate"], candidate["action"])
         # With 1+ real inventory units, a failed optional bag scan must not
         # block the existing single-plant FERTILIZE option (not FERTILIZE_ALL).
@@ -382,42 +525,58 @@ def evaluate_fertilizer_workflow(
     if (stock < len(ready) and not pickup_pending
             and observation.get("transfer_authorized") is True):
         for item in ground:
+            if tracking and (item.get("lot_ref") != observation["lot_ref"]
+                             or item.get("household_owned") is not True
+                             or item.get("lot_status") != "VERIFIED_ON_LOT"):
+                continue
             selected = observed("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", item["item_ref"])
             if selected is not None:
                 amount = min(item["quantity"], len(ready) - stock)
                 selected["quantity"] = amount
                 selected["item_ref"] = item["item_ref"]
                 return finish("FERTILIZER_TRANSFER_READY",
-                              "TRANSFER_TO_SELECTED_SIM_POCKET_THEN_REOBSERVE", selected)
+                              "TRANSFER_TO_SELECTED_SIM_POCKET_THEN_REOBSERVE",
+                              acquisition(selected, item["item_ref"]))
         if ground:
             return finish("INSPECT_TRANSFER_AFFORDANCE", "FIND_EXACT_INVENTORY_DRAG_PATH")
+    if "sourcing" in observation and (
+            (not tracking and stock == 0)
+            or (tracking and lot_supply_exhausted and stock < len(ready))):
+        try:
+            source = plan_fertilizer_sources(
+                observation["sourcing"], capture_ref=capture_ref, now=now,
+                expected_sim_ref=sim_ref,
+                expected_deficit_units=len(ready) - stock,
+                purchase_targets=(
+                    {row["target_ref"] for row in actions
+                     if row.get("action_id") == "PURCHASE_FERTILIZER"
+                     and row.get("capture_ref") == capture_ref
+                     and row.get("available") is True} if tracking else None
+                ),
+            )
+        except EcoResourceCycleError as exc:
+            raise FertilizerWorkflowError(str(exc)) from exc
+        result["source_plan"] = source
+        if source["gate"] == "FERTILIZER_SOURCE_READY":
+            selected = source["next_actions"][0]
+            return finish(
+                "FERTILIZER_SOURCE_ACTION_READY",
+                "SOURCE_ONE_SAFE_ITEM_THEN_REOBSERVE_POCKET",
+                acquisition(selected, selected["item_ref"]) if tracking else selected,
+            )
     if stock < 1:
-        if "sourcing" in observation:
-            try:
-                source = plan_fertilizer_sources(
-                    observation["sourcing"], capture_ref=capture_ref, now=now,
-                    expected_sim_ref=sim_ref,
-                    expected_deficit_units=len(ready) - stock,
-                )
-            except EcoResourceCycleError as exc:
-                raise FertilizerWorkflowError(str(exc)) from exc
-            result["source_plan"] = source
-            if source["gate"] == "FERTILIZER_SOURCE_READY":
-                return finish(
-                    "FERTILIZER_SOURCE_ACTION_READY",
-                    "SOURCE_ONE_SAFE_ITEM_THEN_REOBSERVE_POCKET",
-                    source["next_actions"][0],
-                )
         return finish("FERTILIZER_SUPPLY_REQUIRED", "INSPECT_EXISTING_FERTILIZER_SOURCES")
 
     # The native batch command is version/pack dependent. It must be ACTUALLY
     # enabled on a current plant and have sufficient personally held supply.
-    if exact_target is None and required_action in (None, "FERTILIZE_ALL") and stock >= len(ready):
-        for ref in ready:
-            selected = observed("FERTILIZE_ALL", ref)
-            if selected is not None:
-                return finish("FERTILIZER_ACTION_READY",
-                              "QUEUE_OBSERVED_FERTILIZE_ALL_THEN_REOBSERVE", selected)
+    if (exact_target is None and required_action in (None, "FERTILIZE_ALL")
+            and stock >= len(ready)):
+        if not tracking or _batch_matches(observation, ready, capture_ref):
+            for ref in ready:
+                selected = observed("FERTILIZE_ALL", ref)
+                if selected is not None:
+                    return finish("FERTILIZER_ACTION_READY",
+                                  "QUEUE_OBSERVED_FERTILIZE_ALL_THEN_REOBSERVE", selected)
     if required_action == "FERTILIZE_ALL":
         return finish("INSPECT_FERTILIZE_ALL", "RECHECK_BATCH_ELIGIBILITY_AND_SUPPLY")
     for ref in ready:
