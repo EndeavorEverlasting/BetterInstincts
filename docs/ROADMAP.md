@@ -385,3 +385,7 @@ Use the existing [gardening service](GARDENING_SERVICE.md) for observed quality
 coverage, exact care, on-lot sourcing and reviewed affordable purchase
 proposals. Bind and verify real EA interactions under #171 on the authorized
 Windows game host.
+
+## Civil Designer drafting tablet
+
+The [career service](CAREER_SERVICE.md#civil-designer-eco-invention-drafting) owns the drafting objective and tablet recovery sequence. The next game-host gate under [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171) is exact-build evidence for the object and interaction, then a disposable-save trial with prior-lot recovery, one replacement if needed, personal inventory readback, a blueprint, and observed objective progress. BI-006 certification still follows the main Horizon progression.

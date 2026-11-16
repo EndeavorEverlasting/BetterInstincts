@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
+from betterinstincts.career_drafting import evaluate_drafting
 from betterinstincts.eco_resource_cycle import plan_eco_fabrication
 from betterinstincts.scenario_goals import ScenarioGoalsError, evaluate_scenario_turn
 from betterinstincts.school_day import SchoolDayError, evaluate_school_day_turn
@@ -517,6 +518,18 @@ def evaluate_green_technician_daily_task(
     this function never consumes Bits/Pieces or mutates Sims gameplay.
     """
     return plan_eco_fabrication(observation, capture_ref=capture_ref, now=now)
+
+
+def evaluate_eco_invention_drafting(
+    observation: Mapping[str, object], *, capture_ref: str, mode: str | None,
+    lot_model: Mapping[str, object] | None = None, now: float | None = None,
+    player_blocked: bool = False, needs_safe: bool = True,
+) -> dict:
+    return evaluate_drafting(
+        observation, cfg=load_contract()["eco_invention_drafting"],
+        capture_ref=capture_ref, mode=mode, lot_model=lot_model,
+        now=now, player_blocked=player_blocked, needs_safe=needs_safe,
+    )
 
 
 def evaluate_career_event_turn(

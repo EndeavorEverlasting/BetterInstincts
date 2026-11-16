@@ -151,6 +151,10 @@
           "intent": "select_item",
           "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
         },
+        "scroll_list": {
+          "intent": "scroll_list",
+          "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"
+        },
         "filter_items": {
           "intent": "filter_items",
           "status": "REQUIRES_EXACT_BUILD_HITBOX_ATTESTATION"

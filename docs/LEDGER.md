@@ -2310,3 +2310,7 @@ shortfall purchase. Correlated personal-inventory readback gates fertilizer;
 exact-build native activation and effects remain under #171. Related drafts
 #251 (historical live observation) and #252 (Planning/Play timing) retain their
 separate scope.
+
+## 2026-11-16 — Civil Designer drafting tablet recovery
+
+Operator evidence identifies the Electronic Drafting Tablet as a §0 career reward in Build/Buy. The existing career service owns exact Eco-Invention objective and interaction selection, bounded personal inventory search, last-known-lot review, and the opt-in, checkpoint-gated catalog recovery. See [career drafting](CAREER_SERVICE.md#civil-designer-eco-invention-drafting). Source decisions and fixtures do not record an installed EA response or gameplay success. Issue #171 retains the exact-build local proof.
