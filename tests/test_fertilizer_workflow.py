@@ -753,6 +753,8 @@ class GardenQualityTests(unittest.TestCase):
             sourcing={
                 "schema": "betterinstincts.fertilizer-sourcing/v1",
                 "capture_ref": CAPTURE, "sim_ref": "sim:garden",
+                "household_ref": "house:home", "lot_ref": "lot:home",
+                "game_build": "build:verified",
                 "observed_at_unix": time.time(), "scene_verified": True,
                 "queue_verified": True, "player_directed": False, "needs_safe": True,
                 "funds_verified": True, "deficit_units": deficit,
@@ -843,6 +845,43 @@ class GardenQualityTests(unittest.TestCase):
                 changed = {**row, "backyard_scan": scan}
                 self.assertFalse(evaluate(changed, [self.purchase()])["next_actions"])
         self.assertFalse(evaluate(row, [{**self.purchase(), "available": False}])["next_actions"])
+
+    def test_purchase_requires_same_household_lot_and_build(self):
+        for field, wrong in (("household_ref", "house:other"), ("lot_ref", "lot:other"),
+                             ("game_build", "build:other")):
+            for supplied in (False, True):
+                with self.subTest(field=field, supplied=supplied):
+                    row = self.buying(deficit=3)
+                    if supplied:
+                        row["sourcing"][field] = wrong
+                    else:
+                        row["sourcing"].pop(field)
+                    out = evaluate(row, [self.purchase()])
+                    self.assertFalse(out["source_scope_verified"])
+                    self.assertFalse(out["next_actions"])
+
+    def test_stale_scan_allows_fresh_admitted_owned_transfer_but_never_purchase(self):
+        row = self.buying(deficit=3)
+        row["backyard_scan"] = backyard_scan(bags=[], capture_ref="capture:old",
+                                             lot_coverage_verified=True)
+        row["transfer_authorized"] = True
+        row["supplies"] = [supply(
+            "item:owned", "GROUND", lot_ref="lot:home", lot_status="VERIFIED_ON_LOT",
+            household_owned=True, transferable=True,
+        )]
+        action = act("TRANSFER_FERTILIZER_TO_SIM_INVENTORY", "item:owned")
+        report = evaluate(row, [action, self.purchase()])
+        self.assertEqual(report["gate"], "FERTILIZER_TRANSFER_READY")
+        self.assertEqual(report["next_actions"][0]["inventory_readback"]["item_ref"], "item:owned")
+        row["backyard_scan"]["pending_transfer"] = {
+            "status": "QUEUED", "bag_ref": "item:owned", "sim_ref": "sim:garden",
+            "lot_ref": "lot:home", "action_ref": "queue:owned",
+        }
+        self.assertFalse(evaluate(row, [action, self.purchase()])["next_actions"])
+        row["supplies"].append(supply("item:pocket"))
+        existing_fertilize = act("FERTILIZE", "plant:b")
+        report = evaluate(row, [action, self.purchase(), existing_fertilize])
+        self.assertEqual(report["next_actions"], [existing_fertilize])
 
     def test_purchase_waits_for_exact_full_personal_inventory_in_a_new_capture(self):
         row = self.buying(stock=[supply(qty=1)])

@@ -2326,3 +2326,10 @@ Operator evidence identifies the Electronic Drafting Tablet as a §0 career rewa
 ## 2026-11-16 — Household Bits and Pieces for Civil Designer
 
 The career source policy now accepts current household resource balances, measures Recycler yields by class and deficit, and proposes one observed natural or opt-in debug source after resource checks. Direct catalog procurement serves explicit stock demand only. [Eco resources](ECO_RESOURCE_CYCLE.md#household-bits-and-pieces-sourcing) owns the evidence inputs. Issue #171 retains live EA action and outcome proof.
+
+## 2026-11-16 — Gardening closeout
+
+PR #291 remains in main history. The closeout binds replenishment offers to
+the active household, lot and build, and preserves independently verified
+owned transfers during a stale optional survey. The installed gardening
+observer and native purchase, application and evolution proof remain #171.

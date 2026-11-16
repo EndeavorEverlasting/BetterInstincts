@@ -401,3 +401,7 @@ The [career service](CAREER_SERVICE.md#civil-designer-eco-invention-drafting) ow
 ## Household Bits and Pieces
 
 The [eco sourcing call stack](ECO_RESOURCE_CYCLE.md#household-bits-and-pieces-sourcing) reads both household currencies, chooses a shortage-specific source, and keeps stock separate from the pending Green Technician Fabricator task. Capture an exact-build resource readback, one matched source effect, one crafted part and the career-panel delta under [issue #171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+
+Gardening closeout verifies purchase scope and preserves fresh owned stock
+during a stale optional survey. Exact-build gardening adapter provenance and
+disposable in-game outcome evidence remain the next dependency in #171.
