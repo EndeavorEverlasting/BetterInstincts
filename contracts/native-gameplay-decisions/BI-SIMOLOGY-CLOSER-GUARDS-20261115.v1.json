@@ -1,0 +1,20 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-SIMOLOGY-CLOSER-GUARDS-20261115",
+  "files": [
+    {
+      "path": "betterinstincts/preference_corrections.py",
+      "route": "POLICY_ONLY",
+      "reason": "The existing navigation planner checks panel visibility before proposing a toggle and holds when activity policy is unavailable.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/preference_prompts.py",
+      "route": "POLICY_ONLY",
+      "reason": "The shared preference catalog loader returns its typed validation error for a wrong-root JSON document.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

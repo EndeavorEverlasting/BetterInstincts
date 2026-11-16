@@ -1,3 +1,12 @@
+## 2026-11-15 — Closers for Simology and Celebrity Endorsement
+
+The Simology planner now uses the scoped Create a Sim button when the
+panel is open, and only proposes Y or the tray toggle when it is verified
+closed. Missing or invalid activity catalogs produce a hold in the
+listener. The Celebrity Endorsement port passed the focused regressions
+for one-attempt submission and separate reward and continuation evidence.
+Both native game paths still need exact-build Windows evidence under #171.
+
 ## 2026-11-15 — Sixth Gear passive player learning
 
 The existing opt-in host listener consumes semantic player-owned decisions and

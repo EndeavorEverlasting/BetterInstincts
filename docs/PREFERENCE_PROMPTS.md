@@ -44,8 +44,10 @@ with `preference_correction_opt_in: true` and
 `request_ref`, session/PID/build/save/Sim identities, `pref_revision`,
 `family`, `category`, `topic_id`, the current and desired values, and
 a current game observation. The listener checks the active session,
-foreground PID, captured game build, capture ID and real clock. A staged
-edit or its final readback also needs a separate preceding input receipt
+foreground PID, captured game build, capture ID and real clock. In Live
+Mode, report the observed `simology_panel_open` boolean: a closed panel can
+be opened with Y or the tray icon, an open panel routes to its scoped
+CAS button, and unknown visibility holds. A staged edit or its final readback also needs a separate preceding input receipt
 bound to the same request and control. If the previous dispatch is
 unresolved, refresh the game state before retrying.
 
@@ -60,7 +62,8 @@ unresolved, refresh the game state before retrying.
   by one standard error and shrunk toward zero for small samples. The
   resulting score must reach 0.15. These starting thresholds need live
   calibration. Player-owned choices and attraction preferences have no
-  automated productivity correction.
+  automated productivity correction. A missing or invalid activity catalog
+  holds this lane while explicit mistake corrections can still be planned.
 
 This clone-ready path emits one semantic plan or a reason to hold. The
 Windows game observation producer, actual preference write, and

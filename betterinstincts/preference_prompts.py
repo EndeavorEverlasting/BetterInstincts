@@ -29,7 +29,7 @@ def load_catalog(path: Path = CATALOG) -> dict:
     if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_BYTES:
         raise PreferencePromptError("PREFERENCE_CATALOG_UNSAFE")
     data = json.loads(path.read_text(encoding="utf-8"))
-    if data.get("schema") != "betterinstincts.preference-prompts/v1":
+    if not isinstance(data, dict) or data.get("schema") != "betterinstincts.preference-prompts/v1":
         raise PreferencePromptError("PREFERENCE_CATALOG_SCHEMA_INVALID")
     topics = data.get("preferences")
     if not isinstance(topics, dict) or not topics:

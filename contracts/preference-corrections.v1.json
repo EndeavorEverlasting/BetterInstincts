@@ -1,6 +1,7 @@
 {
   "schema": "betterinstincts.preference-corrections/v1",
   "scope": "Existing Sim preferences, reached from Live Mode. CAS targets are semantic selectors; the game host supplies current client hitboxes.",
+  "live_simology_visibility": "Report simology_panel_open as a verified boolean in a Live capture. False allows the toggle, true routes to the Simology panel, and unknown holds.",
   "families": {
     "likes_dislikes": {
       "label": "Likes and Dislikes",

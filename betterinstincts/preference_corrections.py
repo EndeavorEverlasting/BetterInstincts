@@ -88,8 +88,13 @@ def _change_reason(request, config, family, current, desired):
         return "CORRECTION_REASON_REQUIRED", None
     if request.get("preference_owner") != "automation":
         return "PLAYER_INTENT_PROTECTED", None
-    if (family != "likes_dislikes" or request.get("category") != "activity"
-            or request.get("topic_id") not in load_catalog()["preferences"]):
+    if family != "likes_dislikes" or request.get("category") != "activity":
+        return "ACTIVITY_POLICY_UNAVAILABLE", None
+    try:
+        activities = load_catalog()["preferences"]
+    except (OSError, ValueError):
+        return "ACTIVITY_CATALOG_UNAVAILABLE", None
+    if request.get("topic_id") not in activities:
         return "ACTIVITY_POLICY_UNAVAILABLE", None
     score = _activity_score(request, current, desired, config)
     if score is None:
@@ -116,7 +121,7 @@ def _next_target(request, observed, spec):
     tile = f"cas.{family}.{category}.{topic}"
     current, desired = request["current_value"], request["desired_value"]
     stage = observed.get("stage")
-    if stage == "live":
+    if stage == "live" and observed.get("simology_panel_open") is False:
         hotkey = plan_open_bottom_right_panel("simology")
         mouse = resolve_target_xy({}, "live.panel_simology")
         return "live.panel_simology", {
@@ -124,12 +129,14 @@ def _next_target(request, observed, spec):
             "requires_live_hotkey_arm": hotkey["requires_live_hotkey_arm"],
             "mouse_reference": {"viewport": [1920, 1080], "client_xy": mouse["client_xy"]},
         }
-    if stage == "simology":
+    if stage == "simology" or (stage == "live" and observed.get("simology_panel_open") is True):
         # Relationship Preferences has a second button with the same label.
         return "live.simology.preferences.enter_create_a_sim", {
             "label": "Enter Create a Sim",
             "within": ["Preferences", "Likes and Dislikes"],
         }
+    if stage == "live":
+        return None, {"reason": "SIMOLOGY_PANEL_VISIBILITY_UNVERIFIED"}
     if stage == "cas_existing_household":
         return "cas.preferences", {"label": "Select Preferences"}
     if stage == "cas_preferences":
