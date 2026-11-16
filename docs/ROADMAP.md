@@ -1,3 +1,7 @@
+## 2026-11-16 — Fairy Dust native binding
+
+The [Fairy Dust policy](FAIRY_DUST.md) and optional native ports are ready for exact-build EA source inspection under #171. Verify placement-only timing, home-use contribution, NPC requests, independent inventory and player takeover on the disposable save.
+
 ## 2026-11-16 — Installed Chased by Death proof
 
 The optional ecology archive now carries the modal responder and joins its

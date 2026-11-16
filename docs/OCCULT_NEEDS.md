@@ -188,3 +188,7 @@ A Python unit test verifies the in-memory policy and explicit local-file
 behavior, **not** sustained real-game capture or user-approved app integration.
 Remote GitHub does not witness actual Windows player control, EA native tuning
 or occult action outcomes. BI-002 remains active.
+
+## Fairy Dust acquisition
+
+Use the [Fairy Dust policy](FAIRY_DUST.md) for observed Fairy Home use and inventory goals. The existing occult-needs catalog owns Emotional Force.
