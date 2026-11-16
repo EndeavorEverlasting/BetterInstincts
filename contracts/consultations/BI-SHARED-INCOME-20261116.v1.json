@@ -1,0 +1,73 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SHARED-INCOME-20261116",
+  "base_commit": "91a9de7b49e5dfb6597756d754aae54a3afa78dd",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "One household income goal allocates one next verified profitable action across the whole observed roster. Reuse welfare, career, household budget and queue controls.",
+  "affected_concepts": [
+    "HOUSEHOLD",
+    "SIM",
+    "OBSERVATION",
+    "AFFORDANCE",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "PLAYER_INTENT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/household_economy.py",
+    "betterinstincts/household_judgment.py",
+    "betterinstincts/queue_capacity.py",
+    "betterinstincts/budget_eval.py",
+    "betterinstincts/robotics_income.py",
+    "betterinstincts/host_stack.py",
+    "contracts/mechanics-registry.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_HOUSEHOLD_INCOME_QUEUE_PLANNING_NOT_EA_EFFECT",
+  "player_save_control_impact": "Read-only forecast. Existing player, needs, school, career, pause and save protections retain their gates.",
+  "expected_outcome": "Canonical income catalog and one action or portrait re-observation at a time, with verified safe time, queue capacity, shared equipment and total upfront commitments.",
+  "negative_tests": [
+    "Never cancel or displace player work or career/needs commitments.",
+    "Never reserve the same station or action twice or bank hypothetical income.",
+    "Small business is discovery-only until location, activities, roles and receipts are available."
+  ],
+  "rollback_path": "Revert the source-only commits. No game state is modified.",
+  "unresolved_unknowns": [
+    "Exact-build native sensors, portrait switching, queue submit and funds/production receipts require the authorized local game."
+  ],
+  "files_expected": [
+    "betterinstincts/household_income.py",
+    "betterinstincts/household_economy.py",
+    "betterinstincts/host_stack.py",
+    "contracts/household-economy.v1.json",
+    "contracts/mechanics-registry.v1.json",
+    "contracts/native-gameplay-decisions/BI-SHARED-INCOME-20261116.v1.json",
+    "docs/HOUSEHOLD_ECONOMY.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "tests/test_household_income.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "sixth_gear_p141": {
+    "selected_thesis": "Add the shared goal to the existing household allocator with actual economics from source owners.",
+    "alternatives": [
+      "Global queue override rejected because it bypasses needs/career/player decisions.",
+      "Independent per-Sim income goals rejected because they cannot share reserves, stations or obligations.",
+      "Small business execution deferred until venue controls and settlement evidence exist."
+    ],
+    "bounded_investigation": "Validate a budget-backed, queue-bound single next effect plus portable catalog.",
+    "next_contract": "P95"
+  }
+}
