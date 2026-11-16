@@ -142,16 +142,18 @@ class InstalledFairyDustTests(unittest.TestCase):
 
     def test_lost_ack_and_unrelated_inventory_gain_require_distinct_matched_readback(self):
         runtime = self.start()
-        self.adapter.frame.side_effect = [FIRST, SECOND, SECOND, AFTER, AFTER, FIRST, SECOND]
+        self.adapter.frame.side_effect = [FIRST, SECOND, FIRST, SECOND, AFTER, AFTER, FIRST]
         self.adapter.submit_fairy_dust.side_effect = OSError("lost acknowledgement")
         self.assertEqual(runtime.cycle(), "NATIVE_DISPATCH_RECONCILIATION")
         proposal = self.adapter.submit_fairy_dust.call_args.args[0]
         outcome = dict(scope=AFTER.scope(), proposal=proposal, completed=True, dust_count=1)
         self.adapter.read_fairy_dust_outcome.side_effect = [
+            dict(outcome, capture=FIRST.capture, attributed_dust_gain=1),
             dict(outcome, capture=SECOND.capture, attributed_dust_gain=1),
             dict(outcome, capture=AFTER.capture, attributed_dust_gain=0),
             dict(outcome, capture=AFTER.capture, attributed_dust_gain=1),
         ]
+        self.assertEqual(runtime.cycle(), "NATIVE_DISPATCH_RECONCILIATION")
         self.assertEqual(runtime.cycle(), "NATIVE_DISPATCH_RECONCILIATION")
         self.assertEqual(runtime.cycle(), "NATIVE_DISPATCH_RECONCILIATION")
         self.assertEqual(runtime.cycle(), "DUST_GAIN_OBSERVED")
@@ -175,7 +177,7 @@ class InstalledFairyDustTests(unittest.TestCase):
             scope=AFTER.scope(), capture=AFTER.capture, proposal=proposal, completed=True,
             dust_count=0, attributed_dust_gain=0)
         self.assertEqual(runtime.cycle(), "FAIRY_HOME_USED_RECHECK")
-        self.assertEqual(runtime.cycle(), "DUPLICATE_NATIVE_PROPOSAL")
+        self.assertEqual(runtime.cycle(), "WAIT_FOR_HOME_RECHECK")
         self.adapter.submit_fairy_dust.assert_called_once()
 
     def test_pending_dust_readback_preserves_existing_actions(self):
@@ -187,7 +189,41 @@ class InstalledFairyDustTests(unittest.TestCase):
         self.assertEqual(runtime.cycle(), "QUEUED")
         self.adapter.submit.assert_called_once()
         self.adapter.submit_fairy_dust.assert_called_once()
-        self.assertIsNotNone(runtime.dust_attempt)
+        self.assertIn(FIRST.scope(), runtime.dust_attempts)
+
+    def test_spent_shake_does_not_mask_an_observed_npc_request(self):
+        runtime = self.start()
+
+        def both(frame):
+            obs = observation(frame)
+            obs["npc"] = dict(target="sim:outsider", npc_fairy=True, on_actor_lot=True,
+                              accessible=True, ask=dict(interaction(frame, ASK), opportunity="ask-one"))
+            return obs
+
+        self.adapter.read_fairy_dust.side_effect = both
+        self.adapter.frame.side_effect = [FIRST, SECOND, FIRST, SECOND, FIRST]
+        self.adapter.submit_fairy_dust.return_value = "NO_EFFECT"
+        self.assertEqual(runtime.cycle(), "NO_EFFECT")
+        self.assertEqual(runtime.cycle(), "NO_EFFECT")
+        self.assertEqual(runtime.cycle(), "DUPLICATE_NATIVE_PROPOSAL")
+        self.assertEqual([call.args[0]["action"] for call in self.adapter.submit_fairy_dust.call_args_list],
+                         [SHAKE, ASK])
+
+    def test_dust_readback_and_submissions_are_scoped_to_the_actor(self):
+        runtime = self.start()
+        other = replace(FIRST, capture="capture:other-one", actor="sim:other")
+        other_fresh = replace(other, capture="capture:other-two")
+        self.adapter.frame.side_effect = [FIRST, SECOND, other, other_fresh, AFTER]
+        self.assertEqual(runtime.cycle(), "QUEUED")
+        self.assertEqual(runtime.cycle(), "QUEUED")
+        self.adapter.read_fairy_dust_outcome.assert_not_called()
+        self.assertEqual(set(runtime.dust_attempts), {FIRST.scope(), other.scope()})
+        original = self.adapter.submit_fairy_dust.call_args_list[0].args[0]
+        wrong_scope = dict(scope=other.scope(), capture=AFTER.capture, proposal=original,
+                           completed=True, dust_count=1, attributed_dust_gain=1)
+        self.adapter.read_fairy_dust_outcome.return_value = wrong_scope
+        self.assertEqual(runtime.cycle(), "NATIVE_DISPATCH_RECONCILIATION")
+        self.assertEqual(set(runtime.dust_attempts), {FIRST.scope(), other.scope()})
 
     def test_verified_terminal_no_effect_releases_other_dust_opportunities(self):
         runtime = self.start()

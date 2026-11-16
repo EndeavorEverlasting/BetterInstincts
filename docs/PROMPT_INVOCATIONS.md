@@ -1,3 +1,7 @@
+## 2026-11-16 — MoonWake Closers for Fairy Dust
+
+The ordered walk **P83 → P03 → P141 → P124 → P04** rechecked #299 and corrected spent-opportunity fallback, cross-actor blocking and pre-submit readback replay. The Windows follow-on is owned by #171. See [Fairy Dust](FAIRY_DUST.md) and consultation `BI-FAIRY-DUST-CLOSERS-20261116`.
+
 ## 2026-11-16 — MoonWake Sixth Gear for Fairy Home and Fairy Dust
 
 Resolved the current catalog and ran the canonical walker in order **P141 → P95 → P82 → P08 → P07 → P124**. The selected thesis uses observed Fairy Home/NPC affordances and the existing native dispatch lifecycle. P08 is blocked on the Windows Sims host and exact-build EA callback evidence. Repository tests cover the policy, callback and package seams. See [Fairy Dust](FAIRY_DUST.md) and consultation `BI-FAIRY-DUST-20261116`.
