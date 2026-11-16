@@ -15,11 +15,14 @@ local source inspection, binding and gameplay certification.
 2. Record a stream stop only on a new native observation of the same device.
    Keep battery, location and activity distinct. Battery Full and an airborne
    object are separate observations. A follower notification can describe an
-   earlier activity. A favorite heart helps identify the inventory icon.
+   earlier activity. A favorite heart helps identify the inventory icon. Conflicting reads within one capture cannot authorize an effect.
 3. Before an imminent home departure or on low battery, propose End Stream
    and verify it before proposing Put in Inventory. An urgent need, a queued
    player action or an absent Sim takes priority. Let the device recharge until
-   the native state says it is ready. No fixed recharge duration.
+   the native state says it is ready. The policy requires a per-Sim Fame
+   goal for automatic effects. Routine stowing yields to other native
+   proposals. Low battery, an imminent departure and an active recovery can
+   give a drone safeguard priority when the Sim's needs permit it.
 4. For a public-ground landing, wait for charge and an observed Begin Stream
    affordance. Verify that the same drone is streaming and following this Sim,
    and require a current route back to the verified home lot. After both are
@@ -90,12 +93,19 @@ final atomic queue, actor, scene, target and affordance checks. An uncertain
 submit remains reserved, and a later result must correlate with the exact
 opportunity and a new capture. A running stream releases the effect slot
 after native confirmation so departure and battery handling can proceed.
-Only its eventual outcome can train the ranking.
+Only its correlated, uninterrupted outcome can train the ranking. If that
+readback never arrives, a fresh native stop from the same drone releases the
+confirmed stream slot without adding a training sample. An uncertain initial
+submission still requires native reconciliation.
 
 Run `python -m unittest tests.test_fame tests.test_native_ecology_bundle -v`
 for offline replay and isolated archive import. On the Windows Sims host,
-inspect the exact-build Get Famous object state, interaction tests, Fame
-tracker and perk resources on an admitted disposable household. Then exercise
+use Sims 4 Studio to export the installed Get Famous drone and perk tuning
+for the exact build. Run `python -m scripts.tuning_audit --xml EXPORTED_XML`
+on each selected export to record resource identity and hash. Inspect the
+local game-embedded callback, object state, interaction tests and Fame tracker
+before binding the three ports on an admitted disposable household. Preserve
+any running personal session. Then exercise
 charge → public landing → restart → follow → home → inventory and a rank-one
 perk with independent evidence. Include work/school departure, a second
 same-model drone, a Sim staying out of the spotlight, player takeover during

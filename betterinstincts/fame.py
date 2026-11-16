@@ -11,7 +11,6 @@ NATIVE = "EA_RUNTIME"
 DRONE_MODELS = ("UP_AND_ADAM", "GOTTA_STREAM_EM_ALL")
 LOCATIONS = ("INVENTORY", "HOME_LOT", "PUBLIC_GROUND", "OTHER_LOT", "UNLOADED")
 MODES = ("STREAMING", "RECORDING", "STOPPED")
-RECOVERY_ACTIONS = ("BEGIN_RECOVERY_STREAM", "RETURN_DRONE_HOME", "END_STREAM", "STOW_DRONE")
 STOP_CAUSES = ("BATTERY_DEPLETED", "DEPARTURE", "MANUAL", "INTERRUPTED")
 OUTCOMES = ("GAIN", "NO_GAIN", "DOWNSIDE")
 
@@ -55,27 +54,42 @@ def current_observation(frame, observation):
             and observation.get("pack") == PACK)
 
 
-def observe_drone(frame, observation, previous=None):
-    """Update a bound instance's last-known state, including a confirmed stream edge."""
+def _current_drone(frame, observation):
     if not current_observation(frame, observation):
-        return previous
+        return None
     drone = observation.get("drone")
     if (not isinstance(drone, Mapping) or drone.get("source") != NATIVE
             or drone.get("capture") != frame.capture or drone.get("owner_household") != frame.household
             or drone.get("assigned_actor") != frame.actor or drone.get("model") not in DRONE_MODELS
             or not _object(drone.get("id")) or drone.get("location") not in LOCATIONS
-            or not _token(drone.get("zone"))
-            or (previous is not None and (previous["scope"] != frame.scope()
-                                          or previous["id"] != drone["id"]
-                                          or previous["model"] != drone["model"]
-                                          or previous["capture"] == frame.capture
-                                          or previous["observed_at"] > frame.observed_at))):
+            or drone["location"] == "UNLOADED" or not _token(drone.get("zone"))
+            or drone.get("mode") not in MODES
+            or (drone["location"] == "INVENTORY" and drone["mode"] != "STOPPED")):
+        return None
+    return drone
+
+
+_DRONE_STATE_FIELDS = ("id", "model", "zone", "location", "mode", "battery", "lot", "follows_actor")
+
+
+def _tracked_observation(frame, observation, track):
+    drone = _current_drone(frame, observation)
+    if (drone is not None and track is not None and track["scope"] == frame.scope()
+            and track["capture"] == frame.capture and track["observed_at"] == frame.observed_at
+            and all(drone.get(field) == track.get(field) for field in _DRONE_STATE_FIELDS)):
+        return drone
+    return None
+
+
+def observe_drone(frame, observation, previous=None):
+    """Update a bound instance's last-known state, including a confirmed stream edge."""
+    drone = _current_drone(frame, observation)
+    if drone is None or (previous is not None and (
+            previous["scope"] != frame.scope() or previous["id"] != drone["id"]
+            or previous["model"] != drone["model"] or previous["capture"] == frame.capture
+            or previous["observed_at"] > frame.observed_at)):
         return previous
-    mode = drone.get("mode")
-    if (mode not in MODES
-            or (drone["location"] in ("INVENTORY", "UNLOADED") and mode != "STOPPED")
-            or drone["location"] == "UNLOADED"):
-        return previous
+    mode = drone["mode"]
     stop = previous.get("last_stop") if previous else None
     recovering = previous.get("recovering", False) if previous else False
     # Recovering survives the public-to-home transition for this instance.
@@ -87,9 +101,9 @@ def observe_drone(frame, observation, previous=None):
         cause = drone.get("stop_cause")
         stop = {"cause": cause if cause in STOP_CAUSES else "UNKNOWN",
                 "capture": frame.capture, "location": drone["location"]}
-    return {"id": drone["id"], "model": drone["model"], "scope": frame.scope(),
-            "capture": frame.capture, "observed_at": frame.observed_at, "zone": drone["zone"],
-            "location": drone["location"], "mode": mode, "last_stop": stop, "recovering": recovering,
+    return {**{field: drone.get(field) for field in _DRONE_STATE_FIELDS},
+            "scope": frame.scope(), "capture": frame.capture, "observed_at": frame.observed_at,
+            "last_stop": stop, "recovering": recovering,
             "position": drone.get("position") if _token(drone.get("position")) else None}
 
 
@@ -114,7 +128,8 @@ def _proposal(action, subject, target, frame, offers, spent, **details):
 
 def _drone_action(frame, observation, track, spent):
     """Return a lifecycle decision or fall through to perk/training selection."""
-    if track is None or track["capture"] != frame.capture:
+    drone = _tracked_observation(frame, observation, track)
+    if drone is None:
         # A remembered instance remains outstanding even after its zone unloads.
         if track is not None:
             return "LOCATE_LAST_KNOWN_DRONE", None
@@ -123,7 +138,6 @@ def _drone_action(frame, observation, track, spent):
             return "ROUTE_DRONE_ACQUISITION", None
         return "LOCATE_OWNED_DRONE", None
 
-    drone = observation["drone"]
     target, location, mode = track["id"], track["location"], track["mode"]
     offers = drone.get("offers")
     on_site = observation.get("actor_zone") == track["zone"]
@@ -167,6 +181,24 @@ def _drone_action(frame, observation, track, spent):
     if battery not in ("READY", "FULL"):
         return "WAIT_FOR_DRONE_CHARGE", None
     return "DRONE_READY", None
+
+
+def protects_drone(frame, observation, track, proposal):
+    """Admit priority over a normal native proposal only for imminent drone loss."""
+    drone = _tracked_observation(frame, observation, track)
+    if drone is None or proposal is None:
+        return False
+    if proposal["action"] in ("BEGIN_RECOVERY_STREAM", "RETURN_DRONE_HOME"):
+        return track["recovering"]
+    if proposal["action"] in ("END_STREAM", "STOW_DRONE"):
+        return (track["recovering"] or observation.get("departure_imminent") is True
+                or (proposal["action"] == "END_STREAM" and drone.get("battery") in ("LOW", "EMPTY")))
+    return False
+
+
+def current_stream_stopped(frame, observation, track, target):
+    drone = _tracked_observation(frame, observation, track)
+    return drone is not None and drone["id"] == target and drone["mode"] == "STOPPED"
 
 
 def _perk(frame, observation, profile, spent):
@@ -252,17 +284,19 @@ def plan_fame(frame, observation, track, spent, history):
     if not current_observation(frame, observation):
         return "REOBSERVE_NATIVE_FAME_SCOPE", None
     goal = observation.get("goal")
-    if goal is not None and (not isinstance(goal, str) or goal not in PERK_PATHS):
+    if goal is None:
+        return "NO_FAME_GOAL", None
+    if not isinstance(goal, str) or goal not in PERK_PATHS:
         return "FAME_GOAL_UNVERIFIED", None
     if (frame.playing is not True or frame.modal_open is not False or observation.get("actor_present") is not True
             or observation.get("needs_safe") is not True):
         return "WAIT_FOR_FAME_ACTOR", None
-    # A spectator can still safeguard an already owned drone on the home lot.
+    # A Sim with a goal can safeguard a drone at home while Fame is disabled.
     drone_state, drone_pick = _drone_action(frame, observation, track, spent)
     if drone_pick and (drone_pick["action"] in ("STOW_DRONE", "END_STREAM")
-                       or (goal is not None and observation.get("fame_enabled") is True)):
+                       or observation.get("fame_enabled") is True):
         return drone_state, drone_pick
-    if goal is None or observation.get("fame_enabled") is not True:
+    if observation.get("fame_enabled") is not True:
         return "FAME_PARTICIPATION_REQUIRED", None
     if observation.get("departure_imminent") is not False:
         return drone_state, None

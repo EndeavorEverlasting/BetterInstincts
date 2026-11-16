@@ -240,12 +240,25 @@ class InstalledPlayerRuntime:
         if result == "NATIVE_DISPATCH_RECONCILIATION":
             return result
         if result == "FAME_STREAM_OBSERVED":
-            self.fame_streams[scope] = attempted
             if active_stream:
-                return None
+                return "NATIVE_DISPATCH_RECONCILIATION"
+            self.fame_streams[scope] = {**attempted, "stream_seen_capture": frame.capture}
         del attempts[scope]
         self._record_fame_sample(scope, sample)
         return result
+
+    def _observe_active_fame_stream(self, frame, observation, track):
+        result = self._reconcile_fame(frame, active_stream=True)
+        if result != "NATIVE_DISPATCH_RECONCILIATION":
+            return
+        scope = frame.scope()
+        active = self.fame_streams[scope]
+        if (frame.capture != active["stream_seen_capture"]
+                and self.fame.current_stream_stopped(
+                    frame, observation, track, active["proposal"]["target"])):
+            # The original submission and start were confirmed. A current stop
+            # can clear the stream slot while the training outcome stays unknown.
+            del self.fame_streams[scope]
 
     def _cycle_fame(self, first, observation, track, *, recovery_only=False):
         scope = first.scope()
@@ -254,7 +267,7 @@ class InstalledPlayerRuntime:
         state, proposal = self.fame.plan_fame(first, observation, track, spent, history)
         if proposal and proposal["action"] == "BEGIN_STREAM" and scope in self.fame_streams:
             state, proposal = "WAIT_FOR_STREAM_TRAINING_OUTCOME", None
-        if recovery_only and (proposal is None or proposal["action"] not in self.fame.RECOVERY_ACTIONS):
+        if recovery_only and not self.fame.protects_drone(first, observation, track, proposal):
             return None
         self.fame_receipt = {"scope": scope, "state": state, "track": track}
         if proposal is None:
@@ -266,6 +279,8 @@ class InstalledPlayerRuntime:
         current_observation, current_track = self._read_fame(fresh)
         _, current = self.fame.plan_fame(fresh, current_observation, current_track, spent, history)
         if current != proposal or not self._idle(fresh):
+            return "REOBSERVE_NATIVE_FAME_SCOPE"
+        if recovery_only and not self.fame.protects_drone(fresh, current_observation, current_track, current):
             return "REOBSERVE_NATIVE_FAME_SCOPE"
         identity = (scope, "FAME", proposal["opportunity"])
         attempted = {"proposal": dict(proposal), "captures": (first.capture, fresh.capture),
@@ -302,7 +317,7 @@ class InstalledPlayerRuntime:
             if fame_track:
                 self.fame_receipt = {"scope": first.scope(), "state": "DRONE_TRACKED",
                                      "track": fame_track}
-            self._reconcile_fame(first, active_stream=True)
+            self._observe_active_fame_stream(first, fame_observation, fame_track)
             fame_result = self._reconcile_fame(first)
         planned, query, needs = self.adapter.analyze(first)
         dust_attempt = self.dust_attempts.get(first.scope())

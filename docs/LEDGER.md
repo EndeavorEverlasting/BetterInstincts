@@ -1,3 +1,10 @@
+## 2026-11-16 — Fame Closers
+
+Automatic drone effects require a per-Sim goal and consistent current native
+observations. Routine stowing yields to the normal native policy. A verified
+stop releases a confirmed stream with no available training outcome.
+See [Fame](FAME.md) for the remaining Windows proof under #171.
+
 ## 2026-11-16 — Fame and streaming drone recovery
 
 The native policy tracks an assigned drone through stream end, public

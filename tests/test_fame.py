@@ -76,6 +76,24 @@ class FamePolicyTests(unittest.TestCase):
             self.assertIs(observe_drone(frame, invalid, track), track)
             self.assertIsNone(plan(frame, invalid, track)[1])
 
+    def test_no_fame_goal_preserves_existing_drone_activity(self):
+        for mode, action in (("STREAMING", "END_STREAM"), ("STOPPED", "STOW_DRONE")):
+            obs = observation(FIRST, "HOME_LOT", mode, action)
+            obs.update(goal=None, departure_imminent=True)
+            self.assertEqual(plan(FIRST, obs), ("NO_FAME_GOAL", None))
+
+    def test_conflicting_same_capture_cannot_reuse_a_current_track(self):
+        obs = observation(FIRST, "HOME_LOT", "STOPPED", "STOW_DRONE")
+        track = observe_drone(FIRST, obs)
+        self.assertEqual(plan_fame(FIRST, obs, track, set(), {})[1]["action"], "STOW_DRONE")
+        for changes in ({"id": "object:other"}, {"assigned_actor": "sim:other"},
+                        {"mode": "STREAMING"}, {"location": "PUBLIC_GROUND"},
+                        {"battery": "EMPTY"}, {"lot": "other-lot"}):
+            with self.subTest(changes=changes):
+                current = {**obs, "drone": {**obs["drone"], **changes}}
+                self.assertEqual(plan_fame(FIRST, current, track, set(), {}),
+                                 ("LOCATE_LAST_KNOWN_DRONE", None))
+
     def test_departure_preserves_work_and_makes_home_stow_eligible(self):
         obs = observation(FIRST, "HOME_LOT", "STREAMING", "END_STREAM")
         self.assertIsNone(plan(FIRST, obs)[1])
@@ -218,6 +236,50 @@ class InstalledFameTests(unittest.TestCase):
         self.adapter.read_fame_outcome.return_value["effect"]["inventory_actor"] = FIRST.actor
         self.assertEqual(runtime.cycle(), "FAME_EFFECT_OBSERVED")
         self.adapter.submit_fame.assert_called_once()
+
+    def test_routine_stow_yields_to_normal_native_action(self):
+        runtime = self.start()
+        self.adapter.analyze.return_value = ({"need": "needs-action"}, {}, {})
+        self.adapter.submit.return_value = "QUEUED"
+        self.assertEqual(self.deploy(runtime, FIRST, lambda frame, *args: observation(
+            frame, "HOME_LOT", "STOPPED", "STOW_DRONE")), "QUEUED")
+        self.adapter.submit.assert_called_once()
+        self.adapter.submit_fame.assert_not_called()
+
+    def test_missing_stream_outcome_releases_only_after_new_same_drone_stop(self):
+        runtime = self.start()
+
+        def stream_offer(frame, *args):
+            offer_id = ("old-stream" if frame.capture in (FIRST.capture, "capture:second")
+                        else "new-stream")
+            options = {"BEGIN_STREAM": {**offer(frame, "BEGIN_STREAM", active_minutes=5,
+                                               fits_current_schedule=True), "opportunity": offer_id}}
+            return dict(observation(frame, offers=options), stream_route_safe=True)
+
+        self.assertEqual(self.deploy(runtime, FIRST, stream_offer), "QUEUED")
+        proposal = self.adapter.submit_fame.call_args.args[0]
+        started = replace(FIRST, capture="capture:streaming")
+        conflict = replace(FIRST, capture="capture:conflict")
+        stopped = replace(FIRST, capture="capture:stopped")
+        fresh = replace(FIRST, capture="capture:stopped-fresh")
+        self.adapter.frame.side_effect = [started, conflict, stopped, fresh]
+        self.adapter.read_fame.side_effect = [
+            observation(started, "HOME_LOT", "STREAMING"),
+            observation(conflict, id="object:different"),
+            stream_offer(stopped), stream_offer(fresh),
+        ]
+        self.adapter.read_fame_outcome.side_effect = [
+            dict(source=NATIVE, scope=started.scope(), capture=started.capture,
+                 acknowledged=True, completed=True, proposal=proposal,
+                 effect=dict(target=DRONE, mode="STREAMING")),
+            None, None,
+        ]
+        self.assertEqual(runtime.cycle(), "FAME_STREAM_OBSERVED")
+        self.assertEqual(runtime.cycle(), "LOCATE_LAST_KNOWN_DRONE")
+        self.assertEqual(runtime.cycle(), "QUEUED")
+        self.assertEqual(self.adapter.submit_fame.call_count, 2)
+        self.assertEqual(self.adapter.submit_fame.call_args.args[0]["opportunity"], "new-stream")
+        self.assertEqual(runtime.fame_training, {})
 
     def test_active_stream_releases_action_gate_and_later_trains_once(self):
         runtime = self.start()
