@@ -1,0 +1,24 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-CELEBRITY-ENDORSEMENT-20261115",
+  "purpose": "Review the disclosed Celebrity Endorsement policy and the conditional response contract exercised through an injected adapter.",
+  "files": [
+    {
+      "path": "betterinstincts/career_decisions.py",
+      "route": "POLICY_ONLY",
+      "reason": "The exact disclosed card adds an operator-selected preference without inventing probabilities, reward magnitude or numerical EA identities.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/career_response_port.py",
+      "route": "POLICY_ONLY",
+      "reason": "The bounded orchestration port reserves and correlates responses in tests while the future exact-build game adapter owns all actual EA effects.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "autonomy_runtime": false,
+  "proof_ceiling": "SCREENSHOT_DISCLOSURE_AND_INJECTED_RESPONSE_TESTS",
+  "next_gate": "Identify the installed career event and response tuning, bind actual game-thread observation and compare-and-submit, then prove attributed rewards and post-shift Live Mode on a disposable household."
+}
