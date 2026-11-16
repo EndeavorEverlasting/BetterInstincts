@@ -100,6 +100,15 @@ class DraftingTests(unittest.TestCase):
                       client_width=1919, client_height=1079, scroll_observation=current,
                       scroll_calibration=calibration)
         row["inventory"] = inv
+        tablet = scoped(row, location="PERSONAL_INVENTORY", definition_id=TABLET,
+                        object_ref="obj:inventory-tablet")
+        row["tablet"] = tablet
+        tablet["click_calibration"] = {**calibration, "target_id": "personal_inventory.select_item"}
+        tablet["click_observation"] = {**current, "object_ref": tablet["object_ref"]}
+        self.assertEqual(evaluate(row)["click_client_xy"], [1625, 808])
+        tablet["click_observation"]["object_ref"] = "obj:wrong"
+        self.assertNotIn("click_client_xy", evaluate(row))
+        row.pop("tablet")
         plan = evaluate(row)
         self.assertEqual(plan["gate"], "SCROLL_PERSONAL_INVENTORY")
         self.assertEqual(plan["cursor_client_xy"], [1625, 808])

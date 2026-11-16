@@ -43,6 +43,25 @@ def _fresh(row, observation):
     return _same_scope(row, observation, (*SCOPE, "lot_ref", "capture_ref"))
 
 
+def _inventory_target(inventory, observation, calibration, panel_obs, target_id):
+    """Resolve geometry only while the current personal inventory matches it."""
+    calibration, panel_obs = _record(calibration), _record(panel_obs)
+    width, height = inventory.get("client_width"), inventory.get("client_height")
+    if (not _fresh(inventory, observation) or inventory.get("panel_state") != "OPEN"
+            or inventory.get("panel_id") != PANEL
+            or type(width) is not int or type(height) is not int
+            or calibration.get("panel_id") != PANEL or calibration.get("target_id") != target_id
+            or calibration.get("ui_layout_revision") != inventory.get("layout_revision")
+            or calibration.get("selected_sim_revision") != inventory.get("selected_sim_revision")
+            or panel_obs.get("capture_ref") != observation["capture_ref"]):
+        return None
+    try:
+        target = validate_hitbox_calibration(calibration, mode="LIVE", width=width, height=height)
+        return target if panel_observation_matches(panel_obs, target) else None
+    except (UIMicrosystemError, TypeError, KeyError):
+        return None
+
+
 def _inventory_step(inventory, observation, cfg):
     """Return an inventory step, or None after a continuous top-to-bottom scan."""
     if not _fresh(inventory, observation):
@@ -77,24 +96,11 @@ def _inventory_step(inventory, observation, cfg):
     if inventory.get("started_at_top") is True and len(pages) == cfg["max_inventory_pages"]:
         return "INVENTORY_SCAN_LIMIT_REACHED", {}
 
-    # The current list hitbox and visible geometry must agree. Never scroll
-    # over the world or use a screen coordinate captured before a panel change.
-    panel_obs = _record(inventory.get("scroll_observation"))
-    calibration = _record(inventory.get("scroll_calibration"))
-    width, height = inventory.get("client_width"), inventory.get("client_height")
-    if (type(width) is not int or type(height) is not int
-            or calibration.get("panel_id") != PANEL
-            or calibration.get("target_id") != "personal_inventory.scroll_list"
-            or calibration.get("ui_layout_revision") != inventory["layout_revision"]
-            or calibration.get("selected_sim_revision") != inventory.get("selected_sim_revision")
-            or panel_obs.get("capture_ref") != observation["capture_ref"]):
-        return "CALIBRATE_INVENTORY_SCROLL_TARGET", {}
-    try:
-        target = validate_hitbox_calibration(calibration, mode="LIVE", width=width, height=height)
-        matched = panel_observation_matches(panel_obs, target)
-    except (UIMicrosystemError, TypeError, KeyError):
-        matched = False
-    if not matched:
+    target = _inventory_target(
+        inventory, observation, inventory.get("scroll_calibration"),
+        inventory.get("scroll_observation"), "personal_inventory.scroll_list",
+    )
+    if target is None:
         return "CALIBRATE_INVENTORY_SCROLL_TARGET", {}
     if type(inventory.get("at_bottom")) is not bool:
         return "OBSERVE_INVENTORY_SCROLL_POSITION", {}
@@ -264,7 +270,16 @@ def evaluate_drafting(observation, *, cfg, capture_ref, mode, lot_model=None,
             return report("VERIFY_NO_DUPLICATE_DRAFT", object_ref=target)
         interaction = _record(tablet.get("draft_interaction"))
         if not interaction:
-            return report("INSPECT_TABLET_INTERACTIONS", object_ref=target)
+            item_observation = _record(tablet.get("click_observation"))
+            calibrated = None
+            if item_observation.get("object_ref") == target:
+                calibrated = _inventory_target(
+                    _record(obs.get("inventory")), obs, tablet.get("click_calibration"),
+                    item_observation, "personal_inventory.select_item",
+                )
+            click = ({"click_client_xy": calibrated["click"],
+                      "item_hitbox": calibrated["hitbox"]} if calibrated else {})
+            return report("INSPECT_TABLET_INTERACTIONS", object_ref=target, **click)
         if (not _fresh(interaction, obs) or interaction.get("object_ref") != target
                 or interaction.get("label") != cfg["interaction_label"]
                 or interaction.get("enabled") is not True or not _ref(interaction.get("interaction_ref"))):
