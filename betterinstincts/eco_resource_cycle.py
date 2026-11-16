@@ -10,6 +10,9 @@ import time
 from collections import defaultdict
 from collections.abc import Mapping
 
+from betterinstincts.budget_eval import household_reserve
+from betterinstincts.funds_inject import MAX_HOUSEHOLD_FUNDS
+
 MAX_AGE = 180
 MAX_ROWS = 48
 KINDS = {
@@ -99,6 +102,7 @@ def plan_fertilizer_sources(
     observation: Mapping, *, capture_ref: str, now: float | None = None,
     expected_sim_ref: str | None = None,
     expected_deficit_units: int | None = None,
+    purchase_targets: set[str] | None = None,
 ) -> dict:
     """Choose one *observed* safe source when the existing pocket is short.
 
@@ -115,8 +119,19 @@ def plan_fertilizer_sources(
     if expected_deficit_units is not None and deficit != expected_deficit_units:
         raise EcoResourceCycleError("FERTILIZER_SOURCE_DEFICIT_MISMATCH")
     cash, reserve = observation.get("cash"), observation.get("cash_reserve")
-    if not _money(cash) or not _money(reserve) or reserve > cash:
+    strict_purchase = purchase_targets is not None
+    if strict_purchase:
+        valid_budget = (
+            type(cash) is int and type(reserve) is int
+            and 0 <= reserve <= cash <= MAX_HOUSEHOLD_FUNDS
+        )
+    else:
+        valid_budget = _money(cash) and _money(reserve) and reserve <= cash
+    if not valid_budget:
         raise EcoResourceCycleError("FERTILIZER_BUDGET_INVALID")
+    spendable = cash - reserve
+    if strict_purchase:
+        spendable = min(spendable, household_reserve(cash)["spend_max"])
     sources = _rows(observation.get("sources"), "FERTILIZER")
     report = _receipt("betterinstincts.fertilizer-source-result/v1",
                       capture_ref, "FERTILIZER_SOURCE_INSPECT",
@@ -137,7 +152,7 @@ def plan_fertilizer_sources(
         if not isinstance(row, Mapping) or not _ref(row.get("source_ref")):
             raise EcoResourceCycleError("FERTILIZER_SOURCE_REF_INVALID")
         ident = row["source_ref"]
-        if ident in refs or row.get("kind") not in KINDS:
+        if ident in refs or not isinstance(row.get("kind"), str) or row["kind"] not in KINDS:
             raise EcoResourceCycleError("FERTILIZER_SOURCE_ID_OR_KIND_INVALID")
         refs.add(ident)
         qty, held = row.get("quantity"), row.get("reserve_quantity")
@@ -150,6 +165,15 @@ def plan_fertilizer_sources(
                 or row.get("capture_ref") != capture_ref
                 or qty <= held):
             continue
+        if strict_purchase and (
+                row.get("kind") not in ("GARDEN_STALL", "PLANTER_PURCHASE")
+                or row.get("action_id") != "PURCHASE_FERTILIZER"
+                or row["target_ref"] not in purchase_targets
+                or not _ref(row.get("item_ref"))
+                or row.get("personal_inventory_delivery_verified") is not True
+                or observation.get("funds_verified") is not True
+                or type(cost) is not int or cost <= 0):
+            continue
         take = min(deficit, qty - held)
         if cost:
             if row.get("purchase_reviewed") is not True:
@@ -157,7 +181,6 @@ def plan_fertilizer_sources(
             # Bounded binary search also handles tiny fractional unit prices
             # without constructing an unbounded float->int quotient.
             lower, upper = 0, take
-            spendable = cash - reserve
             while lower < upper:
                 mid = (lower + upper + 1) // 2
                 if cost * mid <= spendable:
@@ -167,16 +190,19 @@ def plan_fertilizer_sources(
             take = lower
         if not take:
             continue
-        # Respect consumed opportunity cost before a category tie-breaker.
+        # Quality replenishment fills as much of the current deficit as
+        # possible in one purchase. The original Eco lane is cost-first.
+        total_cost = (value + cost) * take
+        coverage_priority = -take if strict_purchase else 0
         candidates.append((
-            value * take + cost * take, SOURCE_PRIORITY[row["kind"]],
-            -take, ident, row, take,
+            (coverage_priority, total_cost, SOURCE_PRIORITY[row["kind"]], -take, ident),
+            row, take,
         ))
     if not candidates:
         report.update(gate="FERTILIZER_SOURCE_UNKNOWN_OR_UNAFFORDABLE",
                       action="INSPECT_SURPLUS_PRODUCE_MANURE_OR_PURCHASE_OPTIONS")
         return report
-    _, _, _, _, chosen, take = min(candidates, key=lambda v: v[:4])
+    _, chosen, take = min(candidates, key=lambda candidate: candidate[0])
     report.update(
         gate="FERTILIZER_SOURCE_READY",
         action="SOURCE_ONE_OBSERVED_FERTILIZER_ITEM_THEN_REOBSERVE",
@@ -188,6 +214,10 @@ def plan_fertilizer_sources(
         source_kind=chosen["kind"],
         units_planned=take,
     )
+    if strict_purchase:
+        report["next_actions"][0].update(
+            item_ref=chosen["item_ref"], estimated_cash_cost=chosen["unit_cash_cost"] * take,
+        )
     return report
 
 

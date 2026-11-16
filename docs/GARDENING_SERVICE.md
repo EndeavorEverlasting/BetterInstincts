@@ -200,3 +200,55 @@ fertilization target ledger remains PENDING. Unrelated chats/side quests are
 never substituted. An exact player-authored task-continuity resumption never
 falls back to other gardening work; it waits for the original prerequisite.
 This is still an offline observed-action proposal, not a live input permission.
+
+## Per-plant quality and fertilizer replenishment
+
+The existing listener accepts optional `gardening.fertilizer_workflow.quality_tracking`.
+Supply the same `capture_ref` and `lot_ref` as the workflow, the verified
+`household_ref`, `active_household_verified: true` and `census_complete`.
+Each plant's `status` carries those
+three references, the exact `target_ref`, an `evidence_ref`, the observed
+`quality_tier`, `water`, `fertilizer` and optional `progress_in_tier` (0–1).
+Use `UNKNOWN` for an unreadable status and omit progress if the bar has no
+calibrated reading. Report Perfect coverage only across the observed census.
+A full active-lot census is required for the household's
+`MAX_QUALITY_OBSERVED` report. For observations over the 32-target cap, use
+partial batches and keep overall coverage with the calling observer.
+
+EA documents Normal, Nice, Excellent, Magnificent and Perfect, and
+an unlocked Evolve interaction at the top of a tier. The Tree of Emotions
+example is Nice with Good water and Good fertilizer. It needs continued
+quality monitoring and gets Evolve when that exact interaction is enabled.
+A Perfect plant can still need maintenance. The quality report preserves all
+three observations independently.
+[EA gardening guide](https://help.ea.com/en/articles/the-sims/the-sims-4/gardening-guide/)
+
+For fertilizer, measure one unit per currently eligible Low, None or Depleted
+plant in the observed set, then subtract verified unreserved pocket stock.
+Existing eligible owned stock on the lot takes priority. An empty
+`backyard_scan.bags` plus `lot_coverage_verified: true` attests that the
+current scan covered accessible lot stock. An incomplete or ambiguous scan
+keeps the shortage open. If the lot is exhausted, a same-capture,
+enabled `PURCHASE_FERTILIZER` option can propose a bounded purchase in Live
+Mode. The source row supplies the exact item and target, reviewed unit
+price, and `personal_inventory_delivery_verified`. The sourcing observation
+supplies `funds_verified` and the current deficit and funds. Available
+spend is limited by both the caller's reserve and the canonical household
+floor. A limited affordable quantity can proceed as one proposal.
+
+Carry the proposal's `inventory_readback` as `pending_acquisition` with an
+`action_ref` **after** the admitted host submits it. This requires a new
+verified capture from the same Sim and lot showing the exact item's full
+expected increase in personal inventory. Retain an uncertain or partial
+receipt until the local executor reconciles it. Observe the intended plant
+again after fertilizing. A current native Fertilize All option also needs
+`fertilize_all_scope` with its capture, evidence and exact affected target
+refs. Otherwise the planner offers one eligible exact-target interaction.
+
+The source path is available through the existing listener and remains
+advisory. Issue [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171)
+owns the exact-build EA observation and native bindings. On an authorized
+disposable Windows household, prove the owned-bag path, the empty-lot purchase
+and independent pocket readback, one target's fertilizer change, and an
+enabled Evolve producing the next observed tier. Exercise player override
+and rollback in the same controlled session.

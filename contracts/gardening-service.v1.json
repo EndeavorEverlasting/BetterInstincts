@@ -53,7 +53,7 @@
     "sourcing": {
       "schema": "betterinstincts.fertilizer-sourcing/v1",
       "owner": "betterinstincts/eco_resource_cycle.py#plan_fertilizer_sources",
-      "activation": "Opt-in nested fertilizer_workflow.sourcing only when selected Sim pocket lacks stock; after sourcing reobserve actual pocket inventory",
+      "activation": "Legacy uses sourcing with an empty verified pocket. Enrolled quality tracking uses the exact verified shortfall after the lot supply check.",
       "eligibility": "Current actor/capture/queue/needs/player; only observed affordable and unreserved inputs; one source action",
       "effect": "ADVISORY_ONLY_NO_PURCHASE_NO_HARVEST_EXECUTION"
     },
@@ -65,7 +65,7 @@
       "discovery": "Exact current game build, capture, active Sim, lot and personal inventory destination; EA read-only object identity evidence (>=1) or calibrated multiview identity (>=2 distinct); known eligible fertilizer resource; lot and reachable route proof; no player-reserved or protected objects.",
       "transfer": "One fresh observed TRANSFER_FERTILIZER_TO_SIM_INVENTORY affordance with target equal to proven bag_ref; exactly one bag unit proposed, rank accessible bags by observed bounded route steps; no inferred dragging, no actual game effect.",
       "waiting": "QUEUED or AWAITING_INVENTORY_READBACK prevents duplicate pickup; only new independently observed SIM_INVENTORY quantities count as fertilizer available for the existing observed Fertilize menu and verified plant outcome.",
-      "fallbacks": "Stale survey, mismatched Sim/lot, unavailable route/menu, protected/not-eligible bag or unknown native transfer -> no action, preserve target and inspect existing bags; no auto-buy.",
+      "fallbacks": "Stale survey, target mismatch, unresolved candidates or an incomplete survey preserve sourcing/inspection. Enrolled quality tracking may plan a reviewed affordable purchase after a complete verified empty lot survey.",
       "proof_ceiling": "OFFLINE_BACKYARD_BAG_ADVICE_NOT_GAME_TRANSFER",
       "native_successor_issue": 171,
       "parent_guard": "The parent fertilizer_workflow must independently attest the same selected lot_ref and game_build as backyard_scan. The current selected Sim ref and capture must agree. When personally held stock is already sufficient, a stale backyard survey is bypassed and the existing fresh plant picker wins.",
@@ -81,11 +81,45 @@
         "identity": "Independent exact highlighted_target_ref and pointer_target_ref must both match current bag item_ref and capture; matching tooltip alone cannot prove an EA object ID.",
         "screenshots": "USER_SCREENSHOT may identify source candidate only; no current actor/lot/build/route, no enabled drag interaction, no inventory movement or fertilizer menu eligibility proved.",
         "current_host": "HOST_VERIFIED_HOVER can identify a currently highlighted exact bag but still needs all the original lot, actor, eligibility, personal inventory, player, route and enabled exact transfer affordance gates.",
-        "price": "The visible §80 is an item display value, not a purchase price or authorization to buy/sell.",
+        "price": "The visible \u00a780 is an item display value, not a purchase price or authorization to buy/sell.",
         "spatial": "Canonical semantic map may classify SUPER_FERTILIZER or legacy FERTILIZER_BAG; world pose must remain source-proven, never inferred from one still screenshot."
       },
       "pocket_precedence": "Verified personal pocket stock meeting all ready plants bypasses optional backyard scan, including pending or malformed scans; positive partial stock can still fertilize one eligible plant if no bag transfer candidate is ready; batch requires full stock.",
       "readback": "A transfer proposal never credits fertilizer. Post-transfer proof needs fresh independent personal-inventory observation with a genuinely distinct capture reference and separate plant outcome."
+    },
+    "quality_tracking": {
+      "activation": "Optional same-capture quality_tracking with verified active lot, household scope and explicit census completeness.",
+      "plant_status_fields": [
+        "target_ref",
+        "lot_ref",
+        "household_ref",
+        "capture_ref",
+        "evidence_ref",
+        "quality_tier",
+        "progress_in_tier",
+        "water",
+        "fertilizer"
+      ],
+      "quality_tiers": [
+        "NORMAL",
+        "NICE",
+        "EXCELLENT",
+        "MAGNIFICENT",
+        "PERFECT"
+      ],
+      "water_and_fertilizer_conditions": [
+        "GOOD",
+        "LOW",
+        "NONE",
+        "DEPLETED",
+        "UNKNOWN"
+      ],
+      "progress": "Optional calibrated fraction within the current tier. Text or an uncalibrated screenshot leaves it unknown. Enabled exact-target EVOLVE is required before recommending an evolution.",
+      "goal": "Report observed Perfect coverage and keep watering, weeding, pest care and fertilizer as independent maintenance.",
+      "demand": "One inventory unit per observed eligible plant with DEPLETED, NONE or LOW fertilizer in this bounded pass. GOOD and UNKNOWN and cooling targets do not generate purchases.",
+      "purchase": "Require verified complete empty on-lot survey, no available owned transfers, one observed PURCHASE_FERTILIZER offer, verified personal-inventory delivery and current funds. Cap quantity at demand minus pocket stock and at available funds above the canonical household reserve.",
+      "arrival": "Retain pending_acquisition after a dispatched transfer or purchase. Wait for exact item and full planned quantity in a new verified personal-inventory capture for the same Sim/lot.",
+      "batch": "FERTILIZE_ALL requires a current exact observed target set equal to eligible deficient plants plus sufficient stock. Otherwise select one enabled exact plant action."
     }
   }
 }

@@ -13,7 +13,8 @@ from typing import Mapping
 
 from betterinstincts.need_service_base import normalize_needs, threshold_pair
 from betterinstincts.fertilizer_workflow import (
-    FertilizerWorkflowError, evaluate_fertilizer_workflow,
+    NEEDS_TREATMENT, QUALITY_TIERS, FertilizerWorkflowError,
+    evaluate_fertilizer_workflow,
 )
 from betterinstincts.task_continuity import TaskContinuityError, evaluate_task_continuity
 from betterinstincts.selected_sim_continuity import (
@@ -69,6 +70,24 @@ def _observed_actions(context: Mapping, capture_ref: str, limit: int) -> list[di
                 "action_id", "label", "target_ref", "capture_ref"
             )}, "available": True})
     return actions
+
+
+def _observed_plant_care(actions: list[dict], quality: Mapping) -> dict | None:
+    plants = {row["target_ref"]: row for row in quality["plants"]}
+    ranked = []
+    order = ("WATER", "WEED", "SPRAY_BUGS", "EVOLVE")
+    for action in actions:
+        plant = plants.get(action["target_ref"])
+        kind = action["action_id"]
+        if plant is None or kind not in order:
+            continue
+        if kind == "WATER" and plant["water"] not in NEEDS_TREATMENT:
+            continue
+        if kind == "EVOLVE" and plant["quality_tier"] not in QUALITY_TIERS[:-1]:
+            continue
+        ranked.append(action)
+    return min(ranked, default=None,
+               key=lambda row: (order.index(row["action_id"]), row["target_ref"]))
 
 
 def evaluate_gardening_turn(
@@ -181,6 +200,7 @@ def evaluate_gardening_turn(
             "LIVE_SCENE", "NEEDS_PANEL", "PLAYER_QUEUE", "PLANT_INTERACTIONS"
         ))
     actions = _observed_actions(context, capture_ref, bounds["max_observed_actions"])
+
     def fertilizer_step(*, exact_target=None, required_action=None, expected_sim_ref=None) -> dict:
         try:
             plan = evaluate_fertilizer_workflow(
@@ -191,6 +211,15 @@ def evaluate_gardening_turn(
         except FertilizerWorkflowError as exc:
             raise GardeningServiceError(str(exc)) from exc
         result["fertilizer_workflow"] = plan
+        quality = plan.get("plant_quality")
+        if quality is not None:
+            result["plant_quality"] = quality
+            if exact_target is None:
+                care = _observed_plant_care(actions, quality)
+                if care is not None:
+                    result["next_actions"] = [care]
+                    result["goal_state"] = "READY_FOR_ONE_OBSERVED_INTERACTION"
+                    return finish("GARDEN_ACTION_READY", "GARDEN_ONE_OBSERVED_PLANT_CARE")
         if plan["next_actions"]:
             result["next_actions"] = plan["next_actions"]
             result["goal_state"] = "READY_FOR_ONE_OBSERVED_INTERACTION"
@@ -204,14 +233,24 @@ def evaluate_gardening_turn(
         if exact_target is None and plan["gate"] in {
             "FERTILIZER_WAIT_ELIGIBILITY", "FERTILIZER_SUPPLY_REQUIRED",
             "INSPECT_TRANSFER_AFFORDANCE", "INSPECT_FERTILIZE_AFFORDANCE",
+            "FERTILIZER_CONDITION_MAINTAINED",
         }:
-            for action_id in cfg["fertilizer_workflow"]["fallback_action_order"]:
-                observed = next((row for row in actions if row["action_id"] == action_id), None)
+            fallback_order = cfg["fertilizer_workflow"]["fallback_action_order"]
+            scoped_targets = None
+            if quality is not None:
+                fallback_order = ("HARVEST", "PLANT")
+                scoped_targets = {plant["target_ref"] for plant in quality["plants"]}
+            for action_id in fallback_order:
+                observed = next((row for row in actions if row["action_id"] == action_id
+                                 and (scoped_targets is None or action_id == "PLANT"
+                                      or row["target_ref"] in scoped_targets)), None)
                 if observed is not None:
                     result["next_actions"] = [observed]
                     result["goal_state"] = "PENDING"
                     return finish("GARDEN_ACTION_READY",
                                   "GARDEN_OTHER_CARE_FERTILIZER_GOAL_PRESERVED")
+        if quality is not None and plan["gate"] == "FERTILIZER_CONDITION_MAINTAINED":
+            result["goal_state"] = quality["goal_state"]
         return finish("GARDEN_" + plan["gate"], plan["action"], inspections=(
             "SIM_PERSONAL_INVENTORY", "HYDROPONIC_PLANT_AFFORDANCES",
             "CURRENT_GARDENING_QUEUE",
@@ -261,7 +300,8 @@ def evaluate_gardening_turn(
             return finish("GARDEN_AUTONOMOUS_INTERRUPTION", "WAIT_REOBSERVE_UNSOLICITED_ACTIVITY")
         if gate != "TASK_RESUME_CANDIDATE":
             return finish("GARDEN_REOBSERVE_TASK", "INSPECT_CURRENT_QUEUE_AND_ACTOR")
-        if "fertilizer_workflow" in context:
+        if ("fertilizer_workflow" in context
+                and continuity["action_id"] in ("FERTILIZE", "FERTILIZE_ALL")):
             return fertilizer_step(
                 exact_target=continuity["next_target_ref"],
                 required_action=continuity["action_id"],

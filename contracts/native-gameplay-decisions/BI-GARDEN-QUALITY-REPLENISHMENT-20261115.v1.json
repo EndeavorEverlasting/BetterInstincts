@@ -1,0 +1,26 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/gardening_service.py",
+      "route": "POLICY_ONLY",
+      "reason": "Compose observed plant quality and candidate care with existing needs, responsibilities and player-first gates.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/fertilizer_workflow.py",
+      "route": "POLICY_ONLY",
+      "reason": "Validate plant evidence, select eligible fertilizer targets and correlate one acquisition against personal-inventory readback.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/eco_resource_cycle.py",
+      "route": "POLICY_ONLY",
+      "reason": "Reuse canonical household reserve and independently reviewed shop price, availability and inventory delivery.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}
