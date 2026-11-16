@@ -1,3 +1,7 @@
+## 2026-11-16 — Fairy Home and Fairy Dust
+
+The Fairy Dust policy uses current Shake availability for collection and an in-game-day recheck hint after an empty tooltip. It can propose observed needs-restoring home use by the selected Fairy or a direct request to a reachable NPC Fairy. The optional installed runtime port retains player takeover and correlates completed attempts with actor inventory. See [Fairy Dust](FAIRY_DUST.md). Windows/EA proof belongs to #171.
+
 ## 2026-11-16 — Closers repair for the installed trait responder
 
 The owned ecology archive can include the shared response port. An injected

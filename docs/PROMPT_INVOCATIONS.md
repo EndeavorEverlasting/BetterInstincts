@@ -1,3 +1,7 @@
+## 2026-11-16 — MoonWake Sixth Gear for Fairy Home and Fairy Dust
+
+Resolved the current catalog and ran the canonical walker in order **P141 → P95 → P82 → P08 → P07 → P124**. The selected thesis uses observed Fairy Home/NPC affordances and the existing native dispatch lifecycle. P08 is blocked on the Windows Sims host and exact-build EA callback evidence. Repository tests cover the policy, callback and package seams. See [Fairy Dust](FAIRY_DUST.md) and consultation `BI-FAIRY-DUST-20261116`.
+
 ## 2026-11-15 — MoonWake Sixth Gear for the startup CLI
 
 The canonical ordered walker ran **P141 → P95 → P82 → P08 → P07 → P124**. P141 selected one startup container with the existing Windows lifecycle. P95/P82 exercised the fixed source-plan handoff and reproduced, repaired, and retested the Windows launcher checksum on repeat install. P08 could not observe the Windows Sims runtime. P07/P124 integrated the user and agent entrypoints, Docker smoke, and existing launch/save owners. See [First run](FIRST_RUN.md#play-from-the-command-line) and consultation `BI-CONTAINER-PLAY-20261115`.

@@ -44,7 +44,7 @@ class InstalledPlayerRuntime:
     """One permitted game session. No thread, timer, Git, socket or desktop input."""
 
     def __init__(self, adapter, *, build: str, owned_dir: Path, clock=monotonic,
-                 trait_response=None):
+                 trait_response=None, fairy_dust=None):
         self.adapter = adapter
         self.build = build
         self.path = owned_dir / "player-learning.sqlite3"
@@ -56,6 +56,9 @@ class InstalledPlayerRuntime:
         self.unresolved = None
         self.clock = clock
         self.trait_response = trait_response
+        self.fairy_dust = fairy_dust
+        self.dust_attempt = None
+        self.dust_recheck = None
 
     def _fresh_live(self, frame):
         return (isinstance(frame, Frame) and frame.game_build == self.build
@@ -128,8 +131,73 @@ class InstalledPlayerRuntime:
             return {"state": "NATIVE_MODAL_BINDING_REQUIRED"}
         return self.trait_response.reconcile(dialog_ref, response, effect)
 
+    def _dispatch(self, identity, submit, *, dust_attempt=None):
+        if identity in self.attempts:
+            return "DUPLICATE_NATIVE_PROPOSAL"
+        if len(self.attempts) >= MAX_ATTEMPTS_PER_RUN:
+            return "NATIVE_SESSION_ATTEMPT_LIMIT"
+        if dust_attempt is None:
+            self.unresolved = identity
+        else:
+            self.dust_attempt = dust_attempt
+        self.attempts.add(identity)
+        try:
+            result = submit()
+        except Exception:
+            return "NATIVE_DISPATCH_RECONCILIATION"
+        if result not in ("QUEUED", "NO_EFFECT"):
+            return "NATIVE_DISPATCH_RECONCILIATION"
+        if result == "NO_EFFECT":
+            if dust_attempt is None:
+                self.unresolved = None
+            else:
+                self.dust_attempt = None
+        return result
+
+    def _cycle_fairy_dust(self, first):
+        try:
+            result = self.fairy_dust.plan_fairy_dust(first, self.adapter.read_fairy_dust(first))
+        except Exception:
+            return "REOBSERVE_DUST_SCOPE"
+        if result["state"] == "WAIT_FOR_HOME_RECHECK":
+            self.dust_recheck = {**result, "scope": first.scope(), "capture": first.capture}
+        if result["state"] != "DUST_PROPOSAL":
+            return result["state"]
+        fresh = self.adapter.frame()
+        if (not self._fresh_idle_after(first, fresh)
+                or fresh.playing is not True or fresh.modal_open is not False):
+            return "YIELD_TO_PLAYER"
+        try:
+            current = self.fairy_dust.plan_fairy_dust(fresh, self.adapter.read_fairy_dust(fresh))
+        except Exception:
+            return "REOBSERVE_DUST_SCOPE"
+        if current != result:
+            return "REOBSERVE_DUST_SCOPE"
+        if not self._idle(fresh):
+            return "REOBSERVE_DUST_SCOPE"
+        proposal = current["proposal"]
+        attempted = dict(current, proposal=dict(proposal), scope=fresh.scope(),
+                         capture=fresh.capture, observed_at=fresh.observed_at)
+        identity = (fresh.scope(), "FAIRY_DUST", proposal["opportunity"])
+        # The adapter must atomically verify the exact target, input generation,
+        # queue and current EA interaction test before one native submission.
+        return self._dispatch(identity, lambda: self.adapter.submit_fairy_dust(proposal, fresh),
+                              dust_attempt=attempted)
+
+    def _reconcile_fairy_dust(self, frame):
+        attempted = self.dust_attempt
+        try:
+            outcome = self.adapter.read_fairy_dust_outcome(dict(attempted["proposal"]), frame)
+        except Exception:
+            return "NATIVE_DISPATCH_RECONCILIATION"
+        result = self.fairy_dust.fairy_dust_outcome(frame, attempted, outcome)
+        if result != "NATIVE_DISPATCH_RECONCILIATION":
+            self.dust_attempt = None
+        return result
+
     def cycle(self):
         """Analyze on any eligible turn. Submit at most one fresh, ranked proposal."""
+        self.dust_recheck = None
         if not self.registered:
             return "LISTENER_NOT_REGISTERED"
         first = self.adapter.frame()
@@ -148,11 +216,21 @@ class InstalledPlayerRuntime:
         if first.modal_open is not False:
             return "NATIVE_FRAME_UNQUALIFIED"
         planned, query, needs = self.adapter.analyze(first)
+        if self.dust_attempt is not None and self.dust_attempt["scope"] == first.scope():
+            dust_result = self._reconcile_fairy_dust(first)
+            if dust_result != "NATIVE_DISPATCH_RECONCILIATION" or not planned:
+                return dust_result
         if self.unresolved is not None:
             return "NATIVE_DISPATCH_RECONCILIATION"
         if not self._idle(first) or first.playing is not True:
             return "YIELD_TO_PLAYER"
         if not isinstance(planned, Mapping) or not planned:
+            if self.fairy_dust is not None and isinstance(planned, Mapping):
+                if self.dust_attempt is not None:
+                    return "NATIVE_DISPATCH_RECONCILIATION"
+                result = self._cycle_fairy_dust(first)
+                if result != "NO_DUST_GOAL":
+                    return result
             return "NO_NATIVE_PROPOSAL"
         hint = {}
         if isinstance(query, Mapping) and query.get("kind") == "query":
@@ -170,24 +248,9 @@ class InstalledPlayerRuntime:
                 or fresh.playing is not True or fresh.modal_open is not False):
             return "YIELD_TO_PLAYER"
         identity = (fresh.scope(), proposal)
-        if identity in self.attempts:
-            return "DUPLICATE_NATIVE_PROPOSAL"
-        if len(self.attempts) >= MAX_ATTEMPTS_PER_RUN:
-            return "NATIVE_SESSION_ATTEMPT_LIMIT"
-
         # The verified adapter's atomic submit revalidates the queue, candidate
         # availability, input generation and exact target under the current frame.
-        self.unresolved = identity
-        self.attempts.add(identity)
-        try:
-            result = self.adapter.submit(proposal, fresh)
-        except Exception:
-            return "NATIVE_DISPATCH_RECONCILIATION"
-        if result not in ("QUEUED", "NO_EFFECT"):
-            return "NATIVE_DISPATCH_RECONCILIATION"
-        if result == "NO_EFFECT":
-            self.unresolved = None
-        return result
+        return self._dispatch(identity, lambda: self.adapter.submit(proposal, fresh))
 
 
 def start_installed(adapter, *, exact_build: str, owned_dir: Path,
@@ -220,8 +283,14 @@ def start_installed(adapter, *, exact_build: str, owned_dir: Path,
         from betterinstincts.preference_response_port import PreferenceResponsePort
 
         trait_response = PreferenceResponsePort(adapter, trait_binding=trait_binding)
+    fairy_dust = None
+    if installed.get("installed_fairy_dust") is True:
+        if not all(callable(getattr(adapter, name, None)) for name in (
+                "read_fairy_dust", "submit_fairy_dust", "read_fairy_dust_outcome")):
+            raise ValueError("NATIVE_FAIRY_DUST_PORTS_REQUIRED")
+        from betterinstincts import fairy_dust
     runtime = InstalledPlayerRuntime(adapter, build=exact_build, owned_dir=root, clock=clock,
-                                     trait_response=trait_response)
+                                     trait_response=trait_response, fairy_dust=fairy_dust)
     if not all(callable(getattr(adapter, name, None))
                for name in ("register", "frame", "analyze", "submit", "reconcile")):
         raise ValueError("NATIVE_CALLBACK_PORTS_REQUIRED")

@@ -27,5 +27,19 @@
     "effect_evidence": "MATCHED_ATTEMPT_AND_GAME_RUN_ACK_PLUS_INDEPENDENT_PAUSE_AND_TRAIT_READBACK",
     "desktop_fallback": false
   },
+  "fairy_dust": {
+    "bundle_flag": "--installed-fairy-dust",
+    "requires_installed_player_runtime": true,
+    "owner": "betterinstincts/fairy_dust.py",
+    "require_binding_proof": "installed_fairy_dust_binding_ref",
+    "adapter_ports": [
+      "read_fairy_dust",
+      "submit_fairy_dust",
+      "read_fairy_dust_outcome"
+    ],
+    "recheck_sim_minutes": 1440,
+    "readiness": "CURRENT_ENABLED_SHAKE_AFFORDANCE",
+    "effect_evidence": "BOUND_ATTEMPT_COMPLETION_AND_INDEPENDENT_ATTRIBUTED_INVENTORY_DELTA"
+  },
   "native_successor": 171
 }
