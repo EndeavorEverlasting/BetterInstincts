@@ -1,0 +1,66 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-NATIVE-TRAIT-LIFECYCLE-20261116",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Make the existing decline-only port callable inside the verified installed player runtime, including when a native trait dialog pauses the game.",
+  "affected_concepts": [
+    "PLAYER_PRESENCE",
+    "PLAYER_INTENT",
+    "OBSERVATION",
+    "OUTCOME",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/PREFERENCE_PROMPTS.md",
+    "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md",
+    "contracts/native-ecology-runtime.v1.json",
+    "betterinstincts/installed_player_runtime.py",
+    "scripts/preference_response_port.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-023",
+    "BI-ONT-024"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "ISOLATED_ARCHIVE_CALLBACK_REPLAY_NOT_INSTALLED_EA_GAMEPLAY",
+  "player_save_control_impact": "Only an exact-build explicitly enabled adapter can submit. No desktop input, pause write, save write or unknown consent accepted.",
+  "expected_outcome": "The self-contained installed package imports and uses the existing decline-only response policy, with two fresh trusted probes, matching exact run and pause state, and independent readback. Legacy host interface and bundle variants still work.",
+  "negative_tests": [
+    "Paused queue remains untouched; player takeover interrupts modal dispatch.",
+    "Missing binding proof or unverified negative response never sends.",
+    "A stale or unrelated modal frame cannot dispatch or report proof.",
+    "Isolated archive launches without host checkout or desktop dependencies."
+  ],
+  "rollback_path": "Revert the feature and use the prior installed player runtime or legacy archive. Keep local learning data and active game state.",
+  "unresolved_unknowns": [
+    "Installed Windows game callback, exact local EA source and live outcome."
+  ],
+  "files_expected": [
+    "betterinstincts/preference_response_port.py",
+    "betterinstincts/preference_prompts.py",
+    "betterinstincts/installed_player_runtime.py",
+    "scripts/preference_response_port.py",
+    "scripts/native_ecology_bundle.py",
+    "tests/test_native_ecology_bundle.py",
+    "tests/test_chased_by_death.py",
+    "contracts/native-ecology-runtime.v1.json",
+    "contracts/native-gameplay-decisions/BI-NATIVE-TRAIT-LIFECYCLE-20261116.v1.json",
+    "docs/PREFERENCE_PROMPTS.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "plans/active/BI-002.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Independently reproduced omitted package dependencies and missing modal lifecycle. Bridge existing owners without inventing EA signatures."
+}

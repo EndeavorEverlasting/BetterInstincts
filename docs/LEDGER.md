@@ -1,3 +1,11 @@
+## 2026-11-16 — Closers repair for the installed trait responder
+
+The owned ecology archive can include the shared response port. An injected
+game adapter can route the paused Chased by Death modal through the same
+five-second gate, preserve its exact identity, and reconcile its decline
+without a desktop click. The installed EA adapter and live outcome stay open
+under #171. See [preference prompts](PREFERENCE_PROMPTS.md#chased-by-death).
+
 ## 2026-11-16 — Chased by Death decline
 
 The exact trait-offer policy emits No thanks and prevents either screen

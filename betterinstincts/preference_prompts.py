@@ -7,12 +7,9 @@ Screen admission, visual target verification and actual input are separate.
 from __future__ import annotations
 
 import json
+import pkgutil
 from collections.abc import Mapping
 from pathlib import Path
-
-from betterinstincts.preference_recipient import (
-    RecipientEvidenceError, compare_recipient_continuations,
-)
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "contracts" / "preference-prompts.v1.json"
@@ -26,11 +23,23 @@ class PreferencePromptError(ValueError):
     pass
 
 
-def load_catalog(path: Path = CATALOG) -> dict:
-    path = Path(path)
+def load_catalog(path: Path | None = None) -> dict:
+    if path is None:
+        try:
+            payload = pkgutil.get_data("betterinstincts", "preference-prompts.v1.json")
+        except OSError:
+            payload = None
+        if payload is not None:
+            if len(payload) > MAX_BYTES:
+                raise PreferencePromptError("PREFERENCE_CATALOG_UNSAFE")
+            return _validate_catalog(json.loads(payload))
+    path = Path(CATALOG if path is None else path)
     if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_BYTES:
         raise PreferencePromptError("PREFERENCE_CATALOG_UNSAFE")
-    data = json.loads(path.read_text(encoding="utf-8"))
+    return _validate_catalog(json.loads(path.read_text(encoding="utf-8")))
+
+
+def _validate_catalog(data: dict) -> dict:
     if not isinstance(data, dict) or data.get("schema") != "betterinstincts.preference-prompts/v1":
         raise PreferencePromptError("PREFERENCE_CATALOG_SCHEMA_INVALID")
     topics = data.get("preferences")
@@ -150,6 +159,10 @@ def evaluate_offer(
         return {**result, "reason": "GOALS_UNVERIFIED"}
     continuation = None
     if offer["topic_id"] == "video_gaming":
+        from betterinstincts.preference_recipient import (
+            RecipientEvidenceError, compare_recipient_continuations,
+        )
+
         # This native prompt is scored for its recipient, which may differ
         # from the Sim currently selected in the HUD.
         if (not _safe_id(offer.get("recipient_sim_id"))

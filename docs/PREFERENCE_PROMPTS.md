@@ -24,6 +24,16 @@ dialog, recipient, state revision, save, pause and input generation.
 No position, index, keyboard default or other offer's mapping is evidence
 for the negative response.
 
+The installed ecology bundle can carry this port. Build with
+`--installed-player-runtime --installed-trait-responder` and include
+`installed_trait_responder_binding_ref` in the local hook proof. At import,
+pass the build-matched `trait_binding` to `start_installed`. The EA adapter
+reports `modal_open` and its exact `modal_ref` on each frame and registers
+`register_modal_readback` for native ACK and effect events. It binds the
+readback to the same game run and preserves pause. The modal branch can run
+after five seconds of idle evidence even when the game is paused. A detected
+modal preempts ordinary queue actions.
+
 The port sends at most one unresolved response for that dialog. A separate
 native ACK and a later capture showing the same dialog closed and trait absent
 on the recipient establish the decline outcome. This path never requests
@@ -36,7 +46,7 @@ trait binding and live decline still require a local test under
 
 Use the existing recipient snapshot and the same continuation actions to score both choices in `betterinstincts/preference_recipient.py`. The actual offer recipient can differ from the selected Sim. Missing or indeterminate native evidence holds Video Gaming. Other catalogued topics retain their existing policy.
 
-`scripts/preference_response_port.py::PreferenceResponsePort` binds the exact EA offer and offers one response through a separately verified adapter. The adapter contract and exact IDs live in `contracts/preference-native-response-map.v1.json`. The adapter owns a game-thread recheck of the dialog, recipient, revision, save, pause and player intent. If submit was attempted and its return is lost, a matching native acknowledgement with the reserved attempt reference can reconcile the result using independent actor/household effect and originating activity evidence. An uncertain submit is never replayed.
+`betterinstincts/preference_response_port.py::PreferenceResponsePort` binds the exact EA offer and offers one response through a separately verified adapter. The adapter contract and exact IDs live in `contracts/preference-native-response-map.v1.json`. The adapter owns a game-thread recheck of the dialog, recipient, revision, save, pause and player intent. If submit was attempted and its return is lost, a matching native acknowledgement with the reserved attempt reference can reconcile the result using independent actor/household effect and originating activity evidence. An uncertain submit is never replayed.
 
 PRs #261, #262, #263, #275 and #278 supplied the source and review history. The repeat-offer Yes is recorded as agent-assisted visual resolution. Keep it closed. Issue #171 tracks the remaining Windows gate. Inspect the installed exact-build EA response path and verify the mod's game-side adapter registration. Then use the next naturally occurring eligible offer to observe one product-owned choice and submit, matching native acknowledgement and effects. The separate LabLab successor review can proceed without waiting for that new offer.
 

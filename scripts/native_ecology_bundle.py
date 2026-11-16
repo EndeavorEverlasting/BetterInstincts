@@ -23,6 +23,9 @@ MODULE_PYC = "BetterInstincts_Ecology.pyc"
 RUNTIME_MODULES = ("__init__", "installed_player_runtime", "player_learning",
                    "judgment_learning", "priority")
 RUNTIME_MEMBERS = tuple(f"betterinstincts/{name}.pyc" for name in RUNTIME_MODULES)
+TRAIT_MODULES = ("preference_prompts", "preference_native_map", "preference_response_port")
+TRAIT_CATALOG = "betterinstincts/preference-prompts.v1.json"
+TRAIT_MEMBERS = tuple(f"betterinstincts/{name}.pyc" for name in TRAIT_MODULES) + (TRAIT_CATALOG,)
 MAX_SOURCE_BYTES = 250_000
 MAX_PYC_BYTES = 1_000_000
 
@@ -88,6 +91,7 @@ def _compile_py37(interpreter: Path, source: Path) -> bytes:
 def build_package(
     *, python37: Path, source_path: Path, hook_proof_path: Path,
     output_dir: Path, game_build: str, installed_player_runtime: bool = False,
+    installed_trait_responder: bool = False,
 ) -> dict:
     """Compile an independently inspected hook, never arbitrary host policy."""
     if source_path.name != "BetterInstincts_Ecology.py":
@@ -103,11 +107,18 @@ def build_package(
     )
     if installed_player_runtime and not _ref(proof.get("installed_player_runtime_binding_ref")):
         raise NativeEcologyPackageError("INSTALLED_PLAYER_RUNTIME_BINDING_PROOF_REQUIRED")
+    if installed_trait_responder and (not installed_player_runtime
+            or not _ref(proof.get("installed_trait_responder_binding_ref"))):
+        raise NativeEcologyPackageError("INSTALLED_TRAIT_RESPONDER_BINDING_PROOF_REQUIRED")
     modules = {MODULE_PYC: _compile_py37(python37, source_path)}
     if installed_player_runtime:
         root = Path(__file__).resolve().parents[1] / "betterinstincts"
         for name, member in zip(RUNTIME_MODULES, RUNTIME_MEMBERS):
             modules[member] = _compile_py37(python37, root / (name + ".py"))
+        if installed_trait_responder:
+            for name, member in zip(TRAIT_MODULES, TRAIT_MEMBERS):
+                modules[member] = _compile_py37(python37, root / (name + ".py"))
+            modules[TRAIT_CATALOG] = (root.parent / "contracts" / "preference-prompts.v1.json").read_bytes()
     if output_dir.is_symlink():
         raise NativeEcologyPackageError("OUTPUT_SYMLINK_DENIED")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -120,7 +131,7 @@ def build_package(
         with zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             for member, bytecode in modules.items():
                 archive.writestr(member, bytecode)
-        _check_archive(tmp, installed_player_runtime)
+        _check_archive(tmp, installed_player_runtime, installed_trait_responder)
         package = tmp.read_bytes()
     receipt = {
         "schema": "betterinstincts.native-ecology-ownership/v1",
@@ -134,6 +145,8 @@ def build_package(
     }
     if installed_player_runtime:
         receipt["installed_player_runtime"] = True
+    if installed_trait_responder:
+        receipt["installed_trait_responder"] = True
     package_path.write_bytes(package)
     receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     return {"package": str(package_path), "manifest": str(receipt_path),
@@ -141,8 +154,9 @@ def build_package(
             "proof": "BUILD_ONLY_NOT_NATIVE_GAME_ACTIVATION"}
 
 
-def _check_archive(path: Path, installed_runtime: bool) -> None:
-    expected = [MODULE_PYC, *(RUNTIME_MEMBERS if installed_runtime else ())]
+def _check_archive(path: Path, installed_runtime: bool, installed_trait: bool = False) -> None:
+    expected = [MODULE_PYC, *(RUNTIME_MEMBERS if installed_runtime else ()),
+                *(TRAIT_MEMBERS if installed_trait else ())]
     with zipfile.ZipFile(path) as archive:
         if archive.namelist() != expected:
             raise NativeEcologyPackageError("PACKAGE_CONTENT_INVALID")
@@ -152,6 +166,8 @@ def _read_manifest(path: Path) -> dict:
     data = json.loads(path.read_text(encoding="utf-8"))
     if (not isinstance(data, dict)
             or data.get("schema") != "betterinstincts.native-ecology-ownership/v1"
+            or (data.get("installed_trait_responder") is True
+                and data.get("installed_player_runtime") is not True)
             or data.get("game_certified") is not False
             or data.get("live_activation_observed") is not False
             or not isinstance(data.get("package_sha256"), str)
@@ -174,7 +190,8 @@ def install_package(
     package = package_path.read_bytes()
     if _hash(package) != receipt["package_sha256"]:
         raise NativeEcologyPackageError("PACKAGE_HASH_MISMATCH")
-    _check_archive(package_path, receipt.get("installed_player_runtime") is True)
+    _check_archive(package_path, receipt.get("installed_player_runtime") is True,
+                   receipt.get("installed_trait_responder") is True)
     owned = mods_dir / "BetterInstincts"
     if owned.is_symlink() or (owned.exists() and any(
         not (item.name == "player-learning.sqlite3" and item.is_file() and not item.is_symlink()
@@ -225,6 +242,8 @@ def main(argv: list[str] | None = None) -> int:
         build.add_argument("--" + flag, required=True)
     build.add_argument("--installed-player-runtime", action="store_true",
                        help="Include the listener and gate for a source-proven native binding")
+    build.add_argument("--installed-trait-responder", action="store_true",
+                       help="Include the exact-build, adapter-bound trait decline handler")
     install = commands.add_parser("install")
     for flag in ("mods-dir", "package", "manifest"):
         install.add_argument("--" + flag, required=True)
@@ -239,6 +258,7 @@ def main(argv: list[str] | None = None) -> int:
                 python37=Path(args.python37), source_path=Path(args.source),
                 hook_proof_path=Path(args.hook_proof), output_dir=Path(args.output_dir),
                 game_build=args.game_build, installed_player_runtime=args.installed_player_runtime,
+                installed_trait_responder=args.installed_trait_responder,
             )
         elif args.command == "install":
             result = install_package(
