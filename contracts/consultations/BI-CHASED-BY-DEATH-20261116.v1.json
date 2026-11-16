@@ -1,0 +1,64 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-CHASED-BY-DEATH-20261116",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Refuse the specifically identified Chased by Death trait offer and prevent affirmative or unverified screen submissions.",
+  "affected_concepts": [
+    "PLAYER_PRESENCE",
+    "PLAYER_INTENT",
+    "OBSERVATION",
+    "OUTCOME",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/PREFERENCE_PROMPTS.md",
+    "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md",
+    "contracts/preference-prompts.v1.json",
+    "betterinstincts/preference_prompts.py",
+    "scripts/preference_response_port.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-023",
+    "BI-ONT-024"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_NAMED_DECLINE_AND_NATIVE_ADAPTER_CONTRACT",
+  "player_save_control_impact": "Existing opt-in and authority gates remain. The host screen adapter never sends input for the trait. Native requires exact-build locally sourced mapping, live recipient, temporary lease and an atomic submission check.",
+  "expected_outcome": "One open named trait offer yields only a No thanks recommendation and can send the exact calibrated negative response in the existing port; independently correlated readback confirms the trait stayed absent.",
+  "negative_tests": [
+    "A forged affirmative or confirmation stage does not execute.",
+    "Reordered IDs do not select Yes; stale capture or mislabeled/mismatched IDs hold.",
+    "Unrelated trait, absent binding, wrong recipient and player ownership fail closed.",
+    "Returned ACK cannot stand alone; no replay after uncertain effect."
+  ],
+  "rollback_path": "Revert the isolated semantic trait route without changing other dialogs or the installed save.",
+  "unresolved_unknowns": [
+    "Exact local EA tuning IDs, callback registration and in-game outcome for the pictured offer."
+  ],
+  "files_expected": [
+    "betterinstincts/preference_prompts.py",
+    "betterinstincts/preference_native_map.py",
+    "scripts/preference_response_port.py",
+    "scripts/preference_prompts.py",
+    "contracts/preference-prompts.v1.json",
+    "contracts/native-gameplay-decisions/BI-CHASED-BY-DEATH-20261116.v1.json",
+    "docs/PREFERENCE_PROMPTS.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "plans/active/BI-002.md",
+    "tests/test_chased_by_death.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "Reuse the tested single-response port. Supply a closed local native map instead of guessing from the screenshot."
+}
