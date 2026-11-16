@@ -1,7 +1,7 @@
 {
   "schema": "betterinstincts.preference-prompts/v1",
   "version": 1,
-  "purpose": "Evaluate in-game Sims 4 likes/dislikes offers caused by skill and aspiration events; never conflate with occult/life-state or skill reward-trait dialogs.",
+  "purpose": "Evaluate catalogued likes/dislikes and the specific native-only Chased by Death decline as distinct offer types.",
   "proof_ceiling": "CATALOGUED_OFFLINE_POLICY_NOT_GAME_OBSERVATION_OR_INPUT_PERMISSION",
   "default": "HOLD",
   "action_sequence": {
@@ -31,7 +31,7 @@
   ],
   "constraints": [
     "No live action unless an exact, freshly observed game prompt and selected Sim match",
-    "No automatic input for unknown preference, unfamiliar packs, ambiguous button, life-state or trait reward dialogs",
+    "No automatic input for unknown preferences, unfamiliar packs, ambiguous buttons or unbound life-state or trait offers",
     "Positive skill likes and negative skill dislikes are advisory, not universal personality truths",
     "Explicit agent-session opt-in and independent screen, save, scene, PID and player ownership gates remain mandatory",
     "YES and OK are separate steps and OK requires distinct new observation and verified prior YES receipt",
@@ -43,6 +43,12 @@
     "Both branches use one common continuation action chain, with only independently sourced preference effect estimates varying; divergent paths or tied scores HOLD.",
     "Native preference response and activity resumption are not certified by offline scoring or by a SimTravel event."
   ],
+  "trait_declines": {
+    "chased_by_death": {
+      "label": "Chased by Death",
+      "button_labels": {"YES": "Yes", "NO": "No thanks!"}
+    }
+  },
   "preferences": {
     "gardening": {
       "label": "Gardening",

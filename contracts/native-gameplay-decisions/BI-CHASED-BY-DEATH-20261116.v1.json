@@ -1,0 +1,20 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-CHASED-BY-DEATH-20261116",
+  "files": [
+    {
+      "path": "betterinstincts/preference_prompts.py",
+      "route": "POLICY_ONLY",
+      "reason": "Produces a decline-only recommendation for the exact named trait without granting any screen or game input.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/preference_native_map.py",
+      "route": "POLICY_ONLY",
+      "reason": "Validates the source-bound negative response and independent trait absence without calling a game API.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

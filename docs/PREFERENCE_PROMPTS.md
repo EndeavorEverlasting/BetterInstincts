@@ -2,6 +2,36 @@
 
 **Owner:** `betterinstincts/preference_prompts.py` / `contracts/preference-prompts.v1.json`. **Host caller:** `betterinstincts/host_stack.py` (from `host_listener.py`). **Observed single-step input:** `scripts/preference_prompts.py`. **Screen ownership:** `betterinstincts/screen_admit.py`, never this catalog.
 
+
+## Chased by Death
+
+For the Live Mode add-trait offer titled **Chased by Death**, choose **No thanks!**.
+This rule requires the exact offered trait and both visible response labels.
+It never advances to a confirmation step. The preference CLI can assess the
+offer and plan the decline. Its screen executor refuses this trait on every
+stage, including when a caller supplies a rectangle labeled as No.
+
+The existing native response port accepts an explicit local
+`trait_binding` sourced from the installed game's tuning. It uses
+`betterinstincts.chased-by-death-native-binding/v1` with `topic_id`
+`chased_by_death`, exact `game_build`, `dialog_tuning_id`,
+`localization_key`, `trait_id`, `installed_tuning_ref`, and a
+`response_ids` mapping with distinct `YES` and `NO` IDs. The adapter
+reads the current raw EA offer, including its Actor recipient, both
+response labels and the offered trait ID. `submit_if_current` must
+atomically match the requested ID, negative label and role, current
+dialog, recipient, state revision, save, pause and input generation.
+No position, index, keyboard default or other offer's mapping is evidence
+for the negative response.
+
+The port sends at most one unresolved response for that dialog. A separate
+native ACK and a later capture showing the same dialog closed and trait absent
+on the recipient establish the decline outcome. This path never requests
+unpause or continuation of the conversation. The exact installed EA callback,
+trait binding and live decline still require a local test under
+[native integration #171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+
+
 ## Video Gaming native response on build 1.121.361.1020
 
 Use the existing recipient snapshot and the same continuation actions to score both choices in `betterinstincts/preference_recipient.py`. The actual offer recipient can differ from the selected Sim. Missing or indeterminate native evidence holds Video Gaming. Other catalogued topics retain their existing policy.

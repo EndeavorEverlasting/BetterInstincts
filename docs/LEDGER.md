@@ -1,3 +1,12 @@
+## 2026-11-16 — Chased by Death decline
+
+The exact trait-offer policy emits No thanks and prevents either screen
+click or confirmation through the scripted preference route. The native
+port requires an exact-build local mapping, sends only the bound negative
+response, and reconciles using a correlated ACK plus recipient trait absence.
+Installed EA evidence remains open under #171. See
+[preference prompts](PREFERENCE_PROMPTS.md#chased-by-death).
+
 ## 2026-11-15 — Installed checkout and native listener lifecycle
 
 The play entrypoints reuse the checkout they run from. The ecology bundle can
