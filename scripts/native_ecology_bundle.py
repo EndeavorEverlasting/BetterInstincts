@@ -20,6 +20,9 @@ PROOF_SCHEMA = "betterinstincts.native-ecology-hook-proof/v1"
 MOD_FILE = "BetterInstincts_Ecology.ts4script"
 MANIFEST_FILE = "BetterInstincts_Ecology.ownership.json"
 MODULE_PYC = "BetterInstincts_Ecology.pyc"
+RUNTIME_MODULES = ("__init__", "installed_player_runtime", "player_learning",
+                   "judgment_learning", "priority")
+RUNTIME_MEMBERS = tuple(f"betterinstincts/{name}.pyc" for name in RUNTIME_MODULES)
 MAX_SOURCE_BYTES = 250_000
 MAX_PYC_BYTES = 1_000_000
 
@@ -84,7 +87,7 @@ def _compile_py37(interpreter: Path, source: Path) -> bytes:
 
 def build_package(
     *, python37: Path, source_path: Path, hook_proof_path: Path,
-    output_dir: Path, game_build: str,
+    output_dir: Path, game_build: str, installed_player_runtime: bool = False,
 ) -> dict:
     """Compile an independently inspected hook, never arbitrary host policy."""
     if source_path.name != "BetterInstincts_Ecology.py":
@@ -98,7 +101,13 @@ def build_package(
         json.loads(hook_proof_path.read_text(encoding="utf-8")),
         source=source, game_build=game_build,
     )
-    bytecode = _compile_py37(python37, source_path)
+    if installed_player_runtime and not _ref(proof.get("installed_player_runtime_binding_ref")):
+        raise NativeEcologyPackageError("INSTALLED_PLAYER_RUNTIME_BINDING_PROOF_REQUIRED")
+    modules = {MODULE_PYC: _compile_py37(python37, source_path)}
+    if installed_player_runtime:
+        root = Path(__file__).resolve().parents[1] / "betterinstincts"
+        for name, member in zip(RUNTIME_MODULES, RUNTIME_MEMBERS):
+            modules[member] = _compile_py37(python37, root / (name + ".py"))
     if output_dir.is_symlink():
         raise NativeEcologyPackageError("OUTPUT_SYMLINK_DENIED")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -109,10 +118,9 @@ def build_package(
     with tempfile.TemporaryDirectory(prefix="bi-ecology-package-") as temp:
         tmp = Path(temp) / MOD_FILE
         with zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-            archive.writestr(MODULE_PYC, bytecode)
-        with zipfile.ZipFile(tmp) as archive:
-            if archive.namelist() != [MODULE_PYC]:
-                raise NativeEcologyPackageError("PACKAGE_CONTENT_INVALID")
+            for member, bytecode in modules.items():
+                archive.writestr(member, bytecode)
+        _check_archive(tmp, installed_player_runtime)
         package = tmp.read_bytes()
     receipt = {
         "schema": "betterinstincts.native-ecology-ownership/v1",
@@ -124,11 +132,20 @@ def build_package(
         "game_certified": False,
         "live_activation_observed": False,
     }
+    if installed_player_runtime:
+        receipt["installed_player_runtime"] = True
     package_path.write_bytes(package)
     receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     return {"package": str(package_path), "manifest": str(receipt_path),
             "sha256": receipt["package_sha256"],
             "proof": "BUILD_ONLY_NOT_NATIVE_GAME_ACTIVATION"}
+
+
+def _check_archive(path: Path, installed_runtime: bool) -> None:
+    expected = [MODULE_PYC, *(RUNTIME_MEMBERS if installed_runtime else ())]
+    with zipfile.ZipFile(path) as archive:
+        if archive.namelist() != expected:
+            raise NativeEcologyPackageError("PACKAGE_CONTENT_INVALID")
 
 
 def _read_manifest(path: Path) -> dict:
@@ -157,11 +174,13 @@ def install_package(
     package = package_path.read_bytes()
     if _hash(package) != receipt["package_sha256"]:
         raise NativeEcologyPackageError("PACKAGE_HASH_MISMATCH")
-    with zipfile.ZipFile(package_path) as archive:
-        if archive.namelist() != [MODULE_PYC]:
-            raise NativeEcologyPackageError("PACKAGE_CONTENT_INVALID")
+    _check_archive(package_path, receipt.get("installed_player_runtime") is True)
     owned = mods_dir / "BetterInstincts"
-    if owned.is_symlink() or (owned.exists() and list(owned.iterdir())):
+    if owned.is_symlink() or (owned.exists() and any(
+        not (item.name == "player-learning.sqlite3" and item.is_file() and not item.is_symlink()
+             and receipt.get("installed_player_runtime") is True)
+        for item in owned.iterdir()
+    )):
         raise NativeEcologyPackageError("MODS_OWNERSHIP_COLLISION")
     owned.mkdir(exist_ok=True)
     installed = owned / MOD_FILE
@@ -204,6 +223,8 @@ def main(argv: list[str] | None = None) -> int:
     build = commands.add_parser("build")
     for flag in ("python37", "source", "hook-proof", "output-dir", "game-build"):
         build.add_argument("--" + flag, required=True)
+    build.add_argument("--installed-player-runtime", action="store_true",
+                       help="Include the listener and gate for a source-proven native binding")
     install = commands.add_parser("install")
     for flag in ("mods-dir", "package", "manifest"):
         install.add_argument("--" + flag, required=True)
@@ -217,7 +238,7 @@ def main(argv: list[str] | None = None) -> int:
             result = build_package(
                 python37=Path(args.python37), source_path=Path(args.source),
                 hook_proof_path=Path(args.hook_proof), output_dir=Path(args.output_dir),
-                game_build=args.game_build,
+                game_build=args.game_build, installed_player_runtime=args.installed_player_runtime,
             )
         elif args.command == "install":
             result = install_package(

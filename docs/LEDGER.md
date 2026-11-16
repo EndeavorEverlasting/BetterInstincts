@@ -1,3 +1,12 @@
+## 2026-11-15 — Installed checkout and native listener lifecycle
+
+The play entrypoints reuse the checkout they run from. The ecology bundle can
+include the local contextual learner and registered adapter port with a
+five-second native inactivity gate, second input-generation check, and
+dispatch reconciliation. Offline callback and archive import tests support the
+source contract. Actual Windows EA binding and takeover proof remain open
+under #171. See [installed native lifecycle](JUDGMENT_LEARNING.md#installed-native-lifecycle).
+
 ## 2026-11-15 — Closers for Simology and Celebrity Endorsement
 
 The Simology planner now uses the scoped Create a Sim button when the

@@ -123,21 +123,25 @@ def windows_startup_lock():
 def play_on_windows(
     game_exe: Path | None, progress: Callable[[str], None], *,
     mode: str | None = None, save_context: Path | None = None, receipt_path: Path | None = None,
-    receipt: dict | None = None,
+    receipt: dict | None = None, checkout: Path | None = None,
 ) -> dict:
     from bootstrap import install, paths
     from scripts.first_run import requested_start
 
     with windows_startup_lock():
-        progress("Setting up your BetterInstincts toolkit.")
-        try:
-            toolkit = install(paths())
-        except (OSError, ValueError, subprocess.SubprocessError) as exc:
-            raise PlayBlocked(
-                "toolkit_install", "TOOLKIT_INSTALL_FAILED",
-                "Run py -3 bootstrap.py doctor to inspect the toolkit location.",
-                detail=str(exc),
-            ) from exc
+        if checkout is not None:
+            progress("Using this BetterInstincts checkout.")
+            toolkit = {"state": "EXISTING_CHECKOUT", "checkout": str(checkout)}
+        else:
+            progress("Setting up your BetterInstincts toolkit.")
+            try:
+                toolkit = install(paths())
+            except (OSError, ValueError, subprocess.SubprocessError) as exc:
+                raise PlayBlocked(
+                    "toolkit_install", "TOOLKIT_INSTALL_FAILED",
+                    "Run py -3 bootstrap.py doctor to inspect the toolkit location.",
+                    detail=str(exc),
+                ) from exc
 
         progress("Checking for The Sims 4.")
         try:
@@ -328,9 +332,6 @@ def main(argv: list[str] | None = None) -> int:
         if docker is None and not args.native_start:
             raise PlayBlocked("container_build", "DOCKER_NOT_FOUND",
                               "Install or start Docker, then rerun from the BetterInstincts checkout.")
-        if not args.plan and shutil.which("git") is None:
-            raise PlayBlocked("toolkit_install", "GIT_NOT_FOUND",
-                              "Install Git for Windows and reopen this terminal, then rerun.")
         if not args.native_start:
             plan = docker_plan(docker, progress)
         if args.plan:
@@ -338,7 +339,7 @@ def main(argv: list[str] | None = None) -> int:
                       "next_step": f"Startup container is ready. On your Sims PC, run {WIN_COMMAND}."}
         else:
             result = play_on_windows(args.game_exe, progress, mode=args.mode, receipt=receipt,
-                                     save_context=args.save_context, receipt_path=receipt_path)
+                                     save_context=args.save_context, receipt_path=receipt_path, checkout=ROOT)
     except (PlayBlocked, OSError, ValueError) as exc:
         if not isinstance(exc, PlayBlocked):
             exc = PlayBlocked("startup", "STARTUP_PREFLIGHT_FAILED",

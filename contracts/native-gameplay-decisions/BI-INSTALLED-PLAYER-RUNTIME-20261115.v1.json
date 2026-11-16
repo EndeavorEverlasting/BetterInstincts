@@ -1,0 +1,34 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-INSTALLED-PLAYER-RUNTIME-20261115",
+  "files": [
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "reason": "Handoff and learning policy over a reviewed adapter protocol with no bundled EA API or independent mutation authority.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/player_learning.py",
+      "route": "POLICY_ONLY",
+      "reason": "Reuses the same semantic learning in the installed support package without importing host observation or automation modules.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/priority.py",
+      "route": "POLICY_ONLY",
+      "reason": "Owns shared need severity thresholds without invoking a host adapter or changing source scoring.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/behavior_valence.py",
+      "route": "POLICY_ONLY",
+      "reason": "Reads the existing critical threshold from the shared native-compatible policy source, preserving its previous value.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

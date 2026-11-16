@@ -107,7 +107,7 @@ cooperative checkpoint. No background reasoning may be used to bypass this.
 Trustworthy observations, read-only parsing, and bounded planning may continue
 independently **without taking the desktop lease** only through a reviewed
 passive callback. Unknown activity or stale presence fails closed for input.
-Resume requires two fresh trusted idle probes at least 15 seconds old, a new
+Desktop/host resumption requires two fresh trusted idle probes at least 15 seconds old, a new
 scene/save/target/user-queue validation and one-effect admission. Never blind
 replay partially completed actions.
 
@@ -216,3 +216,9 @@ dispatch and loaded-save proof separate. Preserve active certification and
 existing player sessions. Record every required human or agent startup
 intervention as `MISSING_REPOSITORY_LOGIC` with an owning module and
 before/during/after evidence for actual assistance. See [First run](FIRST_RUN.md).
+
+The installed native responder has its own five-second input-idle policy when
+a source-proven exact-build adapter registers. It requires fresh input
+generation and target evidence at the native dispatch boundary. Passive
+observation and analysis may continue while effects yield. See
+[installed native lifecycle](JUDGMENT_LEARNING.md#installed-native-lifecycle).

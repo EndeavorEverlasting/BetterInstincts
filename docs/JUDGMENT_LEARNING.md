@@ -54,6 +54,43 @@ independently observed result, then a held-out idle query plus a protected
 player-queue control. The synthetic comparator and local SQLite exercise
 establish source behavior and replay handling.
 
+## Installed native lifecycle
+
+The installed ecology package can embed the shared contextual learner and
+five-second responder policy. An inspected exact-build EA entry module calls
+`start_installed` once for its current game session with the owned
+`Mods/BetterInstincts` directory and the local player's learning opt-in. To
+build this package, pass `--installed-player-runtime` to
+`python -m scripts.native_ecology_bundle build` with the existing hook proof
+and the inspected `installed_player_runtime_binding_ref`.
+
+The entry adapter registers `observe` for player choices and outcomes and
+`cycle` for planned response opportunities. A `Frame` carries trusted
+real-time activity and a generation that changes on input. It also binds the
+capture to the game run, selected Sim, admitted save and household. The
+adapter supplies semantic game events only. It neither launches a separate
+process nor reads a checkout at runtime. The runtime persists bounded hashed
+demonstrations in `Mods/BetterInstincts/player-learning.sqlite3`. Uninstall
+preserves that local learning file. Learning and read-only analysis can continue
+during takeover.
+
+The adapter's `analyze` returns a mapping from semantic action to a candidate
+ID in normal native policy order, a current optional learning query, and needs.
+Learning can prioritize an available candidate. At **5.000 real seconds**
+of inactivity the controller may consider a proposal on the next native
+callback. It rechecks activity generation, player queue, target scope and
+capture. The adapter's atomic `submit` performs the last fresh target, queue
+and input check, and returns `QUEUED` or a verified `NO_EFFECT`. The adapter
+must use new IDs for new opportunities and reconcile an uncertain or queued
+submission before another effect. Desktop control retains the existing
+15-second rule.
+
+Sims listing a mod file establishes package discovery. Callback registration
+and a first qualified Live frame establish listener readiness. Measure the
+takeover, the next five-second window, an independently attributed outcome,
+and the effect of an eligible queued candidate on the installed game. This
+proof and the EA adapter remain open under [native integration #171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+
 ## P97 prior art — source-level evidence, 2026-11-07
 
 | Reference and pinned main | Concrete inspected implementation | Decision |

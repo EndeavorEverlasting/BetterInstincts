@@ -1,0 +1,22 @@
+{
+  "schema": "betterinstincts.native-ecology-runtime/v1",
+  "lifecycle_owner": "betterinstincts/installed_player_runtime.py",
+  "package_owner": "scripts/native_ecology_bundle.py",
+  "model_owner": "betterinstincts/judgment_learning.py",
+  "installation_discovery": "PACKAGE_LISTED_ONLY",
+  "listener_ready": "EXACT_BUILD_ADAPTER_REGISTERED_AND_QUALIFIED_LIVE_FRAME",
+  "activation": "LOCAL_LEARNING_OPT_IN_AND_SOURCE_PROVEN_EA_ENTRY_MODULE",
+  "registration": ["observe", "cycle"],
+  "runtime_storage": "Mods/BetterInstincts/player-learning.sqlite3",
+  "network_or_checkout_dependency": false,
+  "learning_during_player_control": true,
+  "native_idle_seconds": 5,
+  "desktop_idle_seconds": 15,
+  "maximum_probe_age_seconds": 1,
+  "max_dispatch_attempts_per_run": 256,
+  "resume": "TWO_DISTINCT_FRESH_FRAMES_SAME_SCOPE_AND_INPUT_GENERATION",
+  "preempt": "BEFORE_NEXT_ATOMIC_EFFECT",
+  "learning_application": "RANK_ONLY_AMONG_NATIVE_POLICY_CANDIDATES",
+  "proof_ceiling": "OFFLINE_ADAPTER_PORT_NOT_INSTALLED_GAME_ATTESTATION",
+  "native_successor": 171
+}

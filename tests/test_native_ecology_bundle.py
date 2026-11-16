@@ -4,6 +4,8 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
+import sys
+import py_compile
 import tempfile
 import unittest
 import zipfile
@@ -11,7 +13,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.native_ecology_bundle import (
-    MOD_FILE, MANIFEST_FILE, MODULE_PYC, NativeEcologyPackageError,
+    MOD_FILE, MANIFEST_FILE, MODULE_PYC, RUNTIME_MEMBERS, NativeEcologyPackageError,
     build_package, install_package, uninstall_package, verify_hook_proof,
 )
 
@@ -138,6 +140,46 @@ class NativeEcologyPackageTests(unittest.TestCase):
                 mods_dir=self.mod_dir, package_path=Path(built["package"]),
                 manifest_path=Path(built["manifest"]), game_closed_confirmed=True,
             )
+
+    def test_embedded_bundle_needs_binding_and_imports_without_checkout(self):
+        with patch("scripts.native_ecology_bundle._compile_py37", side_effect=self.compile_for_test):
+            args = dict(python37=self.py37, source_path=self.source, hook_proof_path=self.proof,
+                        output_dir=self.output, game_build=BUILD, installed_player_runtime=True)
+            with self.assertRaisesRegex(NativeEcologyPackageError, "RUNTIME_BINDING_PROOF_REQUIRED"):
+                build_package(**args)
+            self.proof.write_text(json.dumps({
+                **hook_proof(), "installed_player_runtime_binding_ref": "local:verified:binding",
+            }))
+            built = build_package(**args)
+        with zipfile.ZipFile(built["package"]) as archive:
+            self.assertEqual(archive.namelist(), [MODULE_PYC, *RUNTIME_MEMBERS])
+        installed = install_package(
+            mods_dir=self.mod_dir, package_path=Path(built["package"]),
+            manifest_path=Path(built["manifest"]), game_closed_confirmed=True,
+        )
+        process = subprocess.run(
+            [sys.executable, "-I", "-c",
+             "import sys; sys.path.insert(0, sys.argv[1]);"
+             "from betterinstincts.installed_player_runtime import IDLE_SECONDS;"
+             "assert IDLE_SECONDS == 5", installed["installed"]],
+            cwd=self.root, capture_output=True, text=True, timeout=10,
+        )
+        self.assertEqual(process.returncode, 0, process.stderr)
+        retained_learning = Path(installed["installed"]).with_name("player-learning.sqlite3")
+        retained_learning.write_bytes(b"retained")
+        uninstall_package(mods_dir=self.mod_dir, game_closed_confirmed=True)
+        install_package(mods_dir=self.mod_dir, package_path=Path(built["package"]),
+                        manifest_path=Path(built["manifest"]), game_closed_confirmed=True)
+        self.assertEqual(retained_learning.read_bytes(), b"retained")
+
+    def compile_for_test(self, _python37, source):
+        import ast
+
+        # Syntax admission plus real archive import under the test interpreter.
+        ast.parse(source.read_text(encoding="utf-8"), feature_version=(3, 7))
+        output = self.root / "isolated-test.pyc"
+        py_compile.compile(str(source), cfile=str(output), doraise=True)
+        return output.read_bytes()
 
     def test_existing_output_never_overwritten(self):
         self.build()
