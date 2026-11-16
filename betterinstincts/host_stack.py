@@ -80,6 +80,7 @@ from betterinstincts.career_service import (
     CareerServiceError,
     compact_career_service,
     evaluate_career_service,
+    evaluate_eco_invention_drafting,
     evaluate_green_technician_daily_task,
     should_attach_career_service,
 )
@@ -221,6 +222,8 @@ def evaluate_turn(
     navigating_needs_profile: str = "navigating_needs",
     gardening: Optional[Mapping[str, object]] = None,
     eco_fabrication: Optional[Mapping[str, object]] = None,
+    career_drafting: Optional[Mapping[str, object]] = None,
+    career_drafting_mode: Optional[str] = None,
     household_upkeep: Optional[Mapping[str, object]] = None,
     household_economy: Optional[Mapping[str, object]] = None,
     agent_context_request: Optional[Mapping[str, object]] = None,
@@ -363,6 +366,7 @@ def evaluate_turn(
     need_services = None
     gardening_report = None
     eco_fabrication_report = None
+    drafting_report = None
     household_upkeep_report = None
     household_economy_report = None
     discovery_report = None
@@ -780,6 +784,16 @@ def evaluate_turn(
                 build_or_buy_mode=build_or_buy_mode,
                 school_day_active=school_day_active,
                 homework_pending=homework_pending,
+            )
+        if career_drafting is not None:
+            _, drafting_needs_floor = threshold_pair()
+            drafting_report = evaluate_eco_invention_drafting(
+                career_drafting, capture_ref=capture_ref, mode=career_drafting_mode,
+                lot_model=lot_model,
+                player_blocked=(player_directed or already_busy or sim_absent
+                                or sim_at_school is True or school_day_active
+                                or build_or_buy_mode != (career_drafting_mode in {"BUY", "BUILD"})),
+                needs_safe=all(value >= drafting_needs_floor for value in needs.values()),
             )
         if eco_fabrication is not None:
             # The live host's own player/needs/attendance state is authoritative.
@@ -2152,6 +2166,13 @@ def evaluate_turn(
         next_gate = eco_fabrication_report["gate"]
         fallback = {"owner": "betterinstincts/career_service.py",
                     **eco_fabrication_report}
+    elif drafting_report is not None and drafting_report["gate"] in {
+        "OPEN_PERSONAL_INVENTORY", "SCROLL_PERSONAL_INVENTORY",
+        "PUT_TABLET_IN_PERSONAL_INVENTORY", "INSPECT_TABLET_INTERACTIONS",
+        "DRAFT_ECO_INVENTION_CONCEPT",
+    }:
+        next_gate = drafting_report["gate"]
+        fallback = {"owner": "betterinstincts/career_service.py", **drafting_report}
     elif gardening_report is not None:
         next_gate = gardening_report["gate"]
         fallback = {"owner": "betterinstincts/gardening_service.py", **gardening_report}
@@ -2264,6 +2285,7 @@ def evaluate_turn(
         "build_optimize": build_optimize,
         "gardening": gardening_report,
         "eco_fabrication": eco_fabrication_report,
+        "career_drafting": drafting_report,
         "household_upkeep": household_upkeep_report,
         "household_economy": household_economy_report,
         "agent_context": context_report,

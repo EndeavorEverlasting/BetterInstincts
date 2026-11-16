@@ -245,7 +245,8 @@
       "owner": "betterinstincts/career_service.py",
       "evidence_state": "SOURCE_PRESENT",
       "tests": [
-        "tests/test_career_service.py"
+        "tests/test_career_service.py",
+        "tests/test_career_drafting.py"
       ],
       "dependencies": [
         "need-hunger"

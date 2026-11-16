@@ -1,4 +1,4 @@
-"""CLI for career microsystem evaluation (teen homework tandem)."""
+"""Evaluate career microsystem observations without issuing game input."""
 import argparse
 import json
 import sys
@@ -6,6 +6,7 @@ import sys
 from betterinstincts.career_service import (
     CareerServiceError,
     evaluate_career_service,
+    evaluate_eco_invention_drafting,
     load_contract,
 )
 
@@ -21,10 +22,24 @@ def main(argv=None):
     p.add_argument("--school-day-active", action="store_true")
     p.add_argument("--prior-json", default=None)
     p.add_argument("--show-contract", action="store_true")
+    p.add_argument("--drafting-observation", type=argparse.FileType("r"))
+    p.add_argument("--drafting-lot-model", type=argparse.FileType("r"))
+    p.add_argument("--observed-mode", choices=["LIVE", "BUY", "BUILD"])
     args = p.parse_args(argv)
     try:
         if args.show_contract:
             print(json.dumps(load_contract(), indent=2))
+            return 0
+        if args.drafting_observation:
+            observation = json.load(args.drafting_observation)
+            if not isinstance(observation, dict) or args.observed_mode is None:
+                raise CareerServiceError("DRAFTING_OBSERVATION_AND_MODE_REQUIRED")
+            lot_model = json.load(args.drafting_lot_model) if args.drafting_lot_model else None
+            result = evaluate_eco_invention_drafting(
+                observation, capture_ref=observation.get("capture_ref"), mode=args.observed_mode,
+                lot_model=lot_model, needs_safe=observation.get("needs_safe") is True,
+            )
+            print(json.dumps(result, indent=2))
             return 0
         if not args.needs_json:
             raise CareerServiceError("NEEDS_JSON_REQUIRED")
