@@ -1,7 +1,13 @@
 """A negative trait response must bind to the same live dialog and recipient."""
+from dataclasses import replace
+import json
+from pathlib import Path
+import tempfile
+import time
 import unittest
 from unittest.mock import Mock, patch
 
+from betterinstincts.installed_player_runtime import Frame, MANIFEST, start_installed
 from betterinstincts.preference_native_map import EFFECT_SCHEMA, RESPONSE_SCHEMA, TRAIT_MAP_SCHEMA
 from betterinstincts.preference_prompts import PreferencePromptError, evaluate_offer, plan_stage
 from scripts.preference_prompts import PreferenceStepError, execute_step
@@ -154,3 +160,91 @@ class ChasedByDeathTests(unittest.TestCase):
         self.assertEqual(self.respond()["reason"], "ATOMIC_NATIVE_CHECK_REFUSED")
         self.adapter.submit_if_current.assert_called_once()
         self.assertEqual(self.adapter.submit_if_current.call_args.args[0]["response_id"], 0)
+
+    def start_modal_runtime(self, **first_fields):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name) / "Mods" / "BetterInstincts"
+        root.mkdir(parents=True)
+        (root / MANIFEST).write_text(json.dumps({
+            "schema": "betterinstincts.native-ecology-ownership/v1",
+            "game_build": self.local_map["game_build"], "installed_player_runtime": True,
+            "installed_trait_responder": True,
+        }))
+        self.adapter.game_build = self.local_map["game_build"]
+        self.adapter.register.return_value = True
+        self.adapter.register_modal_readback.return_value = True
+        now = int(time.time() * 1000)
+        self.native["captured_at_epoch_ms"] = self.policy["captured_at_epoch_ms"] = now
+        self.frame["game_run"] = "current-game"
+        first = Frame(self.local_map["game_build"], "current-game", "current-household",
+                      "sim:active-portrait", True, True, False, False, False,
+                      True, 3, 10, 5, "capture:first-idle", modal_open=True,
+                      modal_ref=self.native["dialog_ref"])
+        first = replace(first, **first_fields)
+        runtime = start_installed(self.adapter, exact_build=self.local_map["game_build"],
+                                  owned_dir=root, learning_opt_in=True, clock=lambda: 10,
+                                  trait_binding=self.local_map)
+        return runtime, first
+
+    def test_installed_paused_modal_uses_existing_port_and_reads_back_outcome(self):
+        runtime, first = self.start_modal_runtime()
+        fresh = replace(first, capture="capture:second-idle")
+        self.adapter.frame.side_effect = [first, fresh, first, fresh]
+        self.assertEqual(runtime.cycle(), "BETTERINSTINCTS_RESPONSE_SUBMITTED")
+        self.assertEqual(runtime.cycle(), "RECONCILE_EXISTING_ATTEMPT")
+        self.adapter.analyze.assert_not_called()
+        self.adapter.submit.assert_not_called()
+        self.adapter.submit_if_current.assert_called_once()
+        request = self.adapter.submit_if_current.call_args.args[0]
+        self.assertEqual(request["response_id"], 0)
+        self.assertEqual(request["expected_game_run"], "current-game")
+        self.assertTrue(request["expected_paused"])
+        response = {
+            "schema": RESPONSE_SCHEMA, "source": "EA_NATIVE", "dialog_ref": request["dialog_ref"],
+            "recipient_sim_id": request["recipient_sim_id"], "accepted_by_native_dialog": True,
+            "event_ref": "native:decline-ack", "captured_at_epoch_ms": self.native["captured_at_epoch_ms"] + 1,
+            "response_id": 0, "dispatch_ref": "native:declined", "game_run": "current-game",
+            "attempt_ref": request["attempt_ref"],
+        }
+        effect = {
+            "schema": EFFECT_SCHEMA, "source": "EA_NATIVE", "dialog_ref": request["dialog_ref"],
+            "recipient_sim_id": request["recipient_sim_id"], "response_event_ref": response["event_ref"],
+            "capture_ref": "capture:observed-effect", "captured_at_epoch_ms": response["captured_at_epoch_ms"] + 1,
+            "offered_trait_id": 555, "recipient_trait_present": False, "dialog_closed": True,
+            "game_run": "current-game", "paused": True,
+        }
+        readback = self.adapter.register_modal_readback.call_args.args[0]
+        self.assertEqual(readback(request["dialog_ref"], response, {**effect, "paused": False})["state"], "HOLD")
+        self.assertEqual(readback(request["dialog_ref"], {**response, "game_run": "other-game"}, effect)["state"],
+                         "HOLD")
+        self.assertEqual(readback(request["dialog_ref"], {**response, "attempt_ref": "other:attempt"}, effect)["state"],
+                         "HOLD")
+        self.assertFalse(readback(request["dialog_ref"], response, effect)["trait_added"])
+
+    def test_installed_paused_modal_rechecks_five_seconds_and_input_generation(self):
+        runtime, first = self.start_modal_runtime()
+        fresh = replace(first, capture="capture:second-idle")
+        self.adapter.frame.side_effect = [
+            replace(first, idle_seconds=4.999), first, replace(fresh, input_generation=4),
+            first, replace(fresh, modal_ref="native:replacement"), first, fresh, first, fresh,
+        ]
+        self.assertEqual(runtime.cycle(), "YIELD_TO_PLAYER")
+        self.assertEqual(runtime.cycle(), "YIELD_TO_PLAYER")
+        self.assertEqual(runtime.cycle(), "YIELD_TO_PLAYER")
+        with patch.dict(self.native, dialog_ref="native:replacement"):
+            self.assertEqual(runtime.cycle(), "REOBSERVE")
+        self.frame["game_run"] = "foreign-game"
+        self.assertEqual(runtime.cycle(), "REOBSERVE")
+        self.adapter.submit_if_current.assert_not_called()
+        self.adapter.submit.assert_not_called()
+
+    def test_modal_opened_while_planning_preempts_an_ordinary_queue_submit(self):
+        runtime, first = self.start_modal_runtime(playing=True, modal_open=False)
+        self.adapter.frame.side_effect = [
+            first, replace(first, modal_open=True, capture="capture:second-idle"),
+        ]
+        self.adapter.analyze.return_value = ({"eat": "eat-now"}, None, {})
+        self.assertEqual(runtime.cycle(), "YIELD_TO_PLAYER")
+        self.adapter.submit_if_current.assert_not_called()
+        self.adapter.submit.assert_not_called()

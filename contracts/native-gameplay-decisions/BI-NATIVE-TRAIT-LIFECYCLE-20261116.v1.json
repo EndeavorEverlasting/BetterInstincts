@@ -1,0 +1,27 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-NATIVE-TRAIT-LIFECYCLE-20261116",
+  "files": [
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "reason": "Routes a confirmed paused or playing modal through the exact-build injected native adapter interface.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/preference_prompts.py",
+      "route": "POLICY_ONLY",
+      "reason": "Loads the same tracked catalog from the checkout or the owned archive without any game actions.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/preference_response_port.py",
+      "route": "POLICY_ONLY",
+      "reason": "Reuses the bounded decline binding and response receipts with a separately validated game adapter.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

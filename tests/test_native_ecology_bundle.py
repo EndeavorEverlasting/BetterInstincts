@@ -13,7 +13,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.native_ecology_bundle import (
-    MOD_FILE, MANIFEST_FILE, MODULE_PYC, RUNTIME_MEMBERS, NativeEcologyPackageError,
+    MOD_FILE, MANIFEST_FILE, MODULE_PYC, RUNTIME_MEMBERS, TRAIT_MEMBERS, NativeEcologyPackageError,
     build_package, install_package, uninstall_package, verify_hook_proof,
 )
 
@@ -171,6 +171,40 @@ class NativeEcologyPackageTests(unittest.TestCase):
         install_package(mods_dir=self.mod_dir, package_path=Path(built["package"]),
                         manifest_path=Path(built["manifest"]), game_closed_confirmed=True)
         self.assertEqual(retained_learning.read_bytes(), b"retained")
+
+    def test_installed_trait_archive_imports_policy_without_checkout(self):
+        options = dict(python37=self.py37, source_path=self.source, hook_proof_path=self.proof,
+                       output_dir=self.output, game_build=BUILD, installed_player_runtime=True,
+                       installed_trait_responder=True)
+        proof = {**hook_proof(), "installed_player_runtime_binding_ref": "local:verified:binding"}
+        self.proof.write_text(json.dumps(proof))
+        with self.assertRaisesRegex(NativeEcologyPackageError, "TRAIT_RESPONDER_BINDING_PROOF_REQUIRED"):
+            build_package(**options)
+        self.proof.write_text(json.dumps({
+            **proof, "installed_trait_responder_binding_ref": "local:verified:trait-binding",
+        }))
+        with patch("scripts.native_ecology_bundle._compile_py37", side_effect=self.compile_for_test):
+            built = build_package(**options)
+        with zipfile.ZipFile(built["package"]) as archive:
+            self.assertEqual(archive.namelist(), [MODULE_PYC, *RUNTIME_MEMBERS, *TRAIT_MEMBERS])
+        installed = install_package(mods_dir=self.mod_dir, package_path=Path(built["package"]),
+                                    manifest_path=Path(built["manifest"]), game_closed_confirmed=True)
+        script = """
+import sys
+sys.path.insert(0, sys.argv[1])
+from betterinstincts.preference_response_port import PreferenceResponsePort
+from betterinstincts.preference_prompts import evaluate_offer
+offer = dict(dialog_class="sim_trait_offer", dialog_stage="offer", scene="live",
+             topic_id="chased_by_death", offer_kind="add_trait", title="Chased by Death",
+             trait_label="Chased by Death", button_labels={"YES": "Yes", "NO": "No thanks!"},
+             visible_buttons=["NO", "YES"], player_directed=False, sim_ref="sim:actor",
+             capture_ref="capture:exact")
+assert evaluate_offer(offer, automation_opt_in=True)["target_label"] == "No thanks!"
+assert PreferenceResponsePort().respond(enabled=True)["state"] == "NATIVE_ADAPTER_REQUIRED"
+"""
+        result = subprocess.run([sys.executable, "-I", "-c", script, installed["installed"]],
+                                cwd=self.root, capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def compile_for_test(self, _python37, source):
         import ast

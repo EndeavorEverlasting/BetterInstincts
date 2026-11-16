@@ -33,6 +33,8 @@ class Frame:
     observed_at: float
     idle_seconds: float
     capture: str
+    modal_open: bool = False
+    modal_ref: str | None = None
 
     def scope(self):
         return self.game_build, self.run, self.household, self.actor
@@ -41,7 +43,8 @@ class Frame:
 class InstalledPlayerRuntime:
     """One permitted game session. No thread, timer, Git, socket or desktop input."""
 
-    def __init__(self, adapter, *, build: str, owned_dir: Path, clock=monotonic):
+    def __init__(self, adapter, *, build: str, owned_dir: Path, clock=monotonic,
+                 trait_response=None):
         self.adapter = adapter
         self.build = build
         self.path = owned_dir / "player-learning.sqlite3"
@@ -52,6 +55,7 @@ class InstalledPlayerRuntime:
         self.attempts = set()
         self.unresolved = None
         self.clock = clock
+        self.trait_response = trait_response
 
     def _fresh_live(self, frame):
         return (isinstance(frame, Frame) and frame.game_build == self.build
@@ -64,8 +68,7 @@ class InstalledPlayerRuntime:
                 and 0 <= self.clock() - frame.observed_at <= MAX_PROBE_AGE_SECONDS)
 
     def _idle(self, frame):
-        return (self._fresh_live(frame) and frame.playing is True
-                and frame.activity_trusted is True
+        return (self._fresh_live(frame) and frame.activity_trusted is True
                 and frame.player_active is False and frame.player_queue is False
                 and type(frame.input_generation) is int and frame.input_generation >= 0
                 and type(frame.idle_seconds) in (int, float)
@@ -88,7 +91,7 @@ class InstalledPlayerRuntime:
                 self.path, event, pending=self.pending, tick=self.ticks, exact_patch=self.build,
                 actor=frame.actor, capture=frame.capture, process_id=0, needs=needs,
                 player_active=frame.player_active is True or frame.player_queue is True,
-                queue_busy=not self._idle(frame),
+                queue_busy=not self._idle(frame) or frame.playing is not True or frame.modal_open is not False,
             )
             return result
         except (TypeError, KeyError, AttributeError, player_learning.PlayerLearningError,
@@ -97,6 +100,33 @@ class InstalledPlayerRuntime:
             return player_learning.receipt("ABSTAIN", reason="NATIVE_EVIDENCE_INVALID")
         except (OSError, sqlite3.Error):
             return player_learning.receipt("ABSTAIN", reason="PLAYER_LEARNING_STORE_UNAVAILABLE")
+
+    def _fresh_idle_after(self, first, fresh):
+        return (self._idle(fresh) and fresh.scope() == first.scope()
+                and fresh.input_generation == first.input_generation
+                and fresh.capture != first.capture and fresh.observed_at >= first.observed_at)
+
+    def _respond_to_modal(self, first):
+        if self.trait_response is None:
+            return "NATIVE_MODAL_BINDING_REQUIRED"
+        if (not self._idle(first) or type(first.playing) is not bool
+                or not isinstance(first.modal_ref, str) or not first.modal_ref):
+            return "YIELD_TO_PLAYER"
+        fresh = self.adapter.frame()
+        if (not self._fresh_idle_after(first, fresh) or fresh.modal_open is not True
+                or fresh.modal_ref != first.modal_ref or fresh.playing is not first.playing):
+            return "YIELD_TO_PLAYER"
+        result = self.trait_response.respond(enabled=True, installed_scope={
+            "game_build": fresh.game_build, "game_run": fresh.run,
+            "input_generation": fresh.input_generation, "paused": not fresh.playing,
+            "dialog_ref": fresh.modal_ref,
+        })
+        return result["state"]
+
+    def reconcile_modal(self, dialog_ref, response, effect):
+        if not self.registered or self.trait_response is None:
+            return {"state": "NATIVE_MODAL_BINDING_REQUIRED"}
+        return self.trait_response.reconcile(dialog_ref, response, effect)
 
     def cycle(self):
         """Analyze on any eligible turn. Submit at most one fresh, ranked proposal."""
@@ -113,10 +143,14 @@ class InstalledPlayerRuntime:
             return "NATIVE_SESSION_REBIND_REQUIRED"
         if self.unresolved is not None and self.adapter.reconcile(self.unresolved, first) is True:
             self.unresolved = None
+        if first.modal_open is True:
+            return self._respond_to_modal(first)
+        if first.modal_open is not False:
+            return "NATIVE_FRAME_UNQUALIFIED"
         planned, query, needs = self.adapter.analyze(first)
         if self.unresolved is not None:
             return "NATIVE_DISPATCH_RECONCILIATION"
-        if not self._idle(first):
+        if not self._idle(first) or first.playing is not True:
             return "YIELD_TO_PLAYER"
         if not isinstance(planned, Mapping) or not planned:
             return "NO_NATIVE_PROPOSAL"
@@ -132,9 +166,8 @@ class InstalledPlayerRuntime:
             return "NATIVE_PROPOSAL_ID_UNVERIFIED"
 
         fresh = self.adapter.frame()
-        if (not self._idle(fresh) or fresh.scope() != first.scope()
-                or fresh.input_generation != first.input_generation
-                or fresh.capture == first.capture or fresh.observed_at < first.observed_at):
+        if (not self._fresh_idle_after(first, fresh)
+                or fresh.playing is not True or fresh.modal_open is not False):
             return "YIELD_TO_PLAYER"
         identity = (fresh.scope(), proposal)
         if identity in self.attempts:
@@ -158,7 +191,7 @@ class InstalledPlayerRuntime:
 
 
 def start_installed(adapter, *, exact_build: str, owned_dir: Path,
-                    learning_opt_in: bool, clock=monotonic):
+                    learning_opt_in: bool, clock=monotonic, trait_binding=None):
     """Called at native import by an independently inspected EA entry module."""
     if learning_opt_in is not True:
         return None
@@ -176,10 +209,24 @@ def start_installed(adapter, *, exact_build: str, owned_dir: Path,
             or installed.get("installed_player_runtime") is not True
             or getattr(adapter, "game_build", None) != exact_build):
         raise ValueError("NATIVE_EXACT_BUILD_BINDING_REQUIRED")
-    runtime = InstalledPlayerRuntime(adapter, build=exact_build, owned_dir=root, clock=clock)
+    trait_response = None
+    trait_installed = installed.get("installed_trait_responder") is True
+    if trait_installed or trait_binding is not None:
+        if (not trait_installed or not isinstance(trait_binding, Mapping)
+                or trait_binding.get("game_build") != exact_build
+                or not all(callable(getattr(adapter, name, None))
+                           for name in ("read_offer", "submit_if_current", "register_modal_readback"))):
+            raise ValueError("NATIVE_TRAIT_BINDING_OR_PORTS_REQUIRED")
+        from betterinstincts.preference_response_port import PreferenceResponsePort
+
+        trait_response = PreferenceResponsePort(adapter, trait_binding=trait_binding)
+    runtime = InstalledPlayerRuntime(adapter, build=exact_build, owned_dir=root, clock=clock,
+                                     trait_response=trait_response)
     if not all(callable(getattr(adapter, name, None))
                for name in ("register", "frame", "analyze", "submit", "reconcile")):
         raise ValueError("NATIVE_CALLBACK_PORTS_REQUIRED")
+    if trait_response is not None and adapter.register_modal_readback(runtime.reconcile_modal) is not True:
+        raise ValueError("NATIVE_MODAL_READBACK_REGISTRATION_UNVERIFIED")
     if adapter.register(observe=runtime.observe, cycle=runtime.cycle) is not True:
         raise ValueError("NATIVE_CALLBACK_REGISTRATION_UNVERIFIED")
     runtime.registered = True

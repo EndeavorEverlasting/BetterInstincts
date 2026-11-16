@@ -1,3 +1,10 @@
+## 2026-11-16 — Installed Chased by Death proof
+
+The optional ecology archive now carries the modal responder and joins its
+five-second idle, run, dialog and pause evidence. The Windows lane under #171
+must bind the exact EA callback and prove one natural decline and independent
+trait absence while pause and player control are preserved.
+
 ## 2026-11-16 — Native Chased by Death decline
 
 Bind the exact-build EA trait dialog and response ID through the local

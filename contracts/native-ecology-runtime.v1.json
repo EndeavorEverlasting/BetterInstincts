@@ -18,5 +18,14 @@
   "preempt": "BEFORE_NEXT_ATOMIC_EFFECT",
   "learning_application": "RANK_ONLY_AMONG_NATIVE_POLICY_CANDIDATES",
   "proof_ceiling": "OFFLINE_ADAPTER_PORT_NOT_INSTALLED_GAME_ATTESTATION",
+  "trait_modal": {
+    "bundle_flag": "--installed-trait-responder",
+    "requires_installed_player_runtime": true,
+    "requires_exact_build_trait_binding": true,
+    "owner": "betterinstincts/preference_response_port.py",
+    "modal_ref": "SAME_CURRENT_DIALOG_ACROSS_IDLE_PROBES_AND_ADAPTER_READ",
+    "effect_evidence": "MATCHED_ATTEMPT_AND_GAME_RUN_ACK_PLUS_INDEPENDENT_PAUSE_AND_TRAIT_READBACK",
+    "desktop_fallback": false
+  },
   "native_successor": 171
 }
