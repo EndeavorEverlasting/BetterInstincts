@@ -1,3 +1,10 @@
+## 2026-11-16 — Fame and streaming drone recovery
+
+The native policy tracks an assigned drone through stream end, public
+landing, recharge, return and inventory. Per-Sim perk and training decisions
+preserve Fame participation and use correlated outcomes. Local exact-build
+EA binding and certification belong to #171. See [Fame](FAME.md).
+
 ## 2026-11-16 — Fairy Dust Closers
 
 The follow-up scopes pending Fairy Dust reconciliation to the acting Sim and lets a fresh observed source proceed after a spent opportunity. Neither admission frame can count as post-action readback. See [Fairy Dust](FAIRY_DUST.md) for #171 live evidence.

@@ -6,7 +6,10 @@
   "installation_discovery": "PACKAGE_LISTED_ONLY",
   "listener_ready": "EXACT_BUILD_ADAPTER_REGISTERED_AND_QUALIFIED_LIVE_FRAME",
   "activation": "LOCAL_LEARNING_OPT_IN_AND_SOURCE_PROVEN_EA_ENTRY_MODULE",
-  "registration": ["observe", "cycle"],
+  "registration": [
+    "observe",
+    "cycle"
+  ],
   "runtime_storage": "Mods/BetterInstincts/player-learning.sqlite3",
   "network_or_checkout_dependency": false,
   "learning_during_player_control": true,
@@ -42,6 +45,22 @@
     "attempt_scope": "BUILD_RUN_HOUSEHOLD_ACTOR",
     "replay_policy": "SKIP_SPENT_OPPORTUNITIES_WHEN_SELECTING_FRESH_SOURCES",
     "effect_evidence": "DISTINCT_FROM_BOTH_ADMISSION_CAPTURES_AND_INDEPENDENT_ATTRIBUTED_INVENTORY_DELTA"
+  },
+  "fame": {
+    "bundle_flag": "--installed-fame",
+    "requires_installed_player_runtime": true,
+    "require_binding_proof": "installed_fame_binding_ref",
+    "owner": "betterinstincts/fame.py",
+    "adapter_ports": [
+      "read_fame",
+      "submit_fame",
+      "read_fame_outcome"
+    ],
+    "observation_authority": "CURRENT_EXACT_BUILD_EA_RUNTIME",
+    "attempt_scope": "BUILD_RUN_HOUSEHOLD_ACTOR",
+    "max_tracked_actor_scopes": 32,
+    "effect_evidence": "CORRELATED_NATIVE_ACK_AND_DISTINCT_POST_ACTION_STATE",
+    "desktop_fallback": false
   },
   "native_successor": 171
 }

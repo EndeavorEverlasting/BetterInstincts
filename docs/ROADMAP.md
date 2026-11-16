@@ -1,3 +1,10 @@
+## 2026-11-16 — Fame and streaming drones
+
+Bind the exact-build Get Famous drone observation and outcome ports. Prove
+public-ground recovery, work/school departure, one perk unlock and player
+takeover with the [Fame verification cases](FAME.md#native-callback-contract-and-verification)
+under #171.
+
 ## 2026-11-16 — Fairy Dust follow-up
 
 The per-actor attempt and fresh fallback are covered by offline regressions. The [local comparison](FAIRY_DUST.md#verification) separates placement-only accumulation from Fairy use and confirms the direct request through the selected Sim's inventory.

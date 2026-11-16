@@ -14,6 +14,7 @@ IDLE_SECONDS = 5
 MAX_PROBE_AGE_SECONDS = 1
 MANIFEST = "BetterInstincts_Ecology.ownership.json"
 MAX_ATTEMPTS_PER_RUN = 256
+MAX_FAME_ACTORS = 32
 
 
 @dataclass(frozen=True)
@@ -44,7 +45,7 @@ class InstalledPlayerRuntime:
     """One permitted game session. No thread, timer, Git, socket or desktop input."""
 
     def __init__(self, adapter, *, build: str, owned_dir: Path, clock=monotonic,
-                 trait_response=None, fairy_dust=None):
+                 trait_response=None, fairy_dust=None, fame=None):
         self.adapter = adapter
         self.build = build
         self.path = owned_dir / "player-learning.sqlite3"
@@ -59,6 +60,12 @@ class InstalledPlayerRuntime:
         self.fairy_dust = fairy_dust
         self.dust_attempts = {}
         self.dust_recheck = None
+        self.fame = fame
+        self.fame_tracks = {}
+        self.fame_attempts = {}
+        self.fame_streams = {}
+        self.fame_training = {}
+        self.fame_receipt = None
 
     def _fresh_live(self, frame):
         return (isinstance(frame, Frame) and frame.game_build == self.build
@@ -131,15 +138,15 @@ class InstalledPlayerRuntime:
             return {"state": "NATIVE_MODAL_BINDING_REQUIRED"}
         return self.trait_response.reconcile(dialog_ref, response, effect)
 
-    def _dispatch(self, identity, submit, *, dust_attempt=None):
+    def _dispatch(self, identity, submit, *, scoped_attempts=None, attempted=None):
         if identity in self.attempts:
             return "DUPLICATE_NATIVE_PROPOSAL"
         if len(self.attempts) >= MAX_ATTEMPTS_PER_RUN:
             return "NATIVE_SESSION_ATTEMPT_LIMIT"
-        if dust_attempt is None:
+        if scoped_attempts is None:
             self.unresolved = identity
         else:
-            self.dust_attempts[dust_attempt["scope"]] = dust_attempt
+            scoped_attempts[identity[0]] = attempted
         self.attempts.add(identity)
         try:
             result = submit()
@@ -148,10 +155,10 @@ class InstalledPlayerRuntime:
         if result not in ("QUEUED", "NO_EFFECT"):
             return "NATIVE_DISPATCH_RECONCILIATION"
         if result == "NO_EFFECT":
-            if dust_attempt is None:
+            if scoped_attempts is None:
                 self.unresolved = None
             else:
-                del self.dust_attempts[dust_attempt["scope"]]
+                del scoped_attempts[identity[0]]
         return result
 
     def _cycle_fairy_dust(self, first):
@@ -187,7 +194,7 @@ class InstalledPlayerRuntime:
         # The adapter must atomically verify the exact target, input generation,
         # queue and current EA interaction test before one native submission.
         return self._dispatch(identity, lambda: self.adapter.submit_fairy_dust(proposal, fresh),
-                              dust_attempt=attempted)
+                              scoped_attempts=self.dust_attempts, attempted=attempted)
 
     def _reconcile_fairy_dust(self, frame, attempted):
         try:
@@ -199,9 +206,79 @@ class InstalledPlayerRuntime:
             del self.dust_attempts[attempted["scope"]]
         return result
 
+    def _read_fame(self, frame):
+        scope = frame.scope()
+        previous = self.fame_tracks.get(scope)
+        if previous is None and len(self.fame_tracks) >= MAX_FAME_ACTORS:
+            return None, None
+        try:
+            observation = self.adapter.read_fame(frame, previous["id"] if previous else None)
+            track = self.fame.observe_drone(frame, observation, previous)
+        except Exception:
+            return None, previous
+        if track is not None:
+            self.fame_tracks[scope] = track
+        return observation, track
+
+    def _record_fame_sample(self, scope, sample):
+        if sample:
+            context, action, outcome = sample
+            counts = self.fame_training.setdefault(scope, {}).setdefault((context, action), [0, 0, 0])
+            counts[self.fame.OUTCOMES.index(outcome)] += 1
+
+    def _reconcile_fame(self, frame, *, active_stream=False):
+        scope = frame.scope()
+        attempts = self.fame_streams if active_stream else self.fame_attempts
+        attempted = attempts.get(scope)
+        if attempted is None:
+            return None
+        try:
+            outcome = self.adapter.read_fame_outcome(dict(attempted["proposal"]), frame)
+            result, sample = self.fame.read_outcome(frame, attempted, outcome)
+        except Exception:
+            return "NATIVE_DISPATCH_RECONCILIATION"
+        if result == "NATIVE_DISPATCH_RECONCILIATION":
+            return result
+        if result == "FAME_STREAM_OBSERVED":
+            self.fame_streams[scope] = attempted
+            if active_stream:
+                return None
+        del attempts[scope]
+        self._record_fame_sample(scope, sample)
+        return result
+
+    def _cycle_fame(self, first, observation, track, *, recovery_only=False):
+        scope = first.scope()
+        spent = {key[2] for key in self.attempts if len(key) == 3 and key[:2] == (scope, "FAME")}
+        history = self.fame_training.get(scope, {})
+        state, proposal = self.fame.plan_fame(first, observation, track, spent, history)
+        if proposal and proposal["action"] == "BEGIN_STREAM" and scope in self.fame_streams:
+            state, proposal = "WAIT_FOR_STREAM_TRAINING_OUTCOME", None
+        if recovery_only and (proposal is None or proposal["action"] not in self.fame.RECOVERY_ACTIONS):
+            return None
+        self.fame_receipt = {"scope": scope, "state": state, "track": track}
+        if proposal is None:
+            return state
+        fresh = self.adapter.frame()
+        if (not self._fresh_idle_after(first, fresh)
+                or fresh.playing is not True or fresh.modal_open is not False):
+            return "YIELD_TO_PLAYER"
+        current_observation, current_track = self._read_fame(fresh)
+        _, current = self.fame.plan_fame(fresh, current_observation, current_track, spent, history)
+        if current != proposal or not self._idle(fresh):
+            return "REOBSERVE_NATIVE_FAME_SCOPE"
+        identity = (scope, "FAME", proposal["opportunity"])
+        attempted = {"proposal": dict(proposal), "captures": (first.capture, fresh.capture),
+                     "observed_at": fresh.observed_at, "input_generation": fresh.input_generation}
+        # The adapter owns the atomic EA check, including ownership, player input,
+        # scene, route, perk eligibility and the exact native affordance.
+        return self._dispatch(identity, lambda: self.adapter.submit_fame(dict(proposal), fresh),
+                              scoped_attempts=self.fame_attempts, attempted=attempted)
+
     def cycle(self):
         """Analyze on any eligible turn. Submit at most one fresh, ranked proposal."""
         self.dust_recheck = None
+        self.fame_receipt = None
         if not self.registered:
             return "LISTENER_NOT_REGISTERED"
         first = self.adapter.frame()
@@ -219,6 +296,14 @@ class InstalledPlayerRuntime:
             return self._respond_to_modal(first)
         if first.modal_open is not False:
             return "NATIVE_FRAME_UNQUALIFIED"
+        fame_observation = fame_track = fame_result = None
+        if self.fame is not None:
+            fame_observation, fame_track = self._read_fame(first)
+            if fame_track:
+                self.fame_receipt = {"scope": first.scope(), "state": "DRONE_TRACKED",
+                                     "track": fame_track}
+            self._reconcile_fame(first, active_stream=True)
+            fame_result = self._reconcile_fame(first)
         planned, query, needs = self.adapter.analyze(first)
         dust_attempt = self.dust_attempts.get(first.scope())
         if dust_attempt is not None:
@@ -229,12 +314,30 @@ class InstalledPlayerRuntime:
             return "NATIVE_DISPATCH_RECONCILIATION"
         if not self._idle(first) or first.playing is not True:
             return "YIELD_TO_PLAYER"
+        if self.fame is not None and isinstance(planned, Mapping) and planned:
+            if fame_result == "NATIVE_DISPATCH_RECONCILIATION":
+                return fame_result
+            if fame_result is None:
+                protection = self._cycle_fame(first, fame_observation, fame_track, recovery_only=True)
+                if protection is not None:
+                    return protection
         if not isinstance(planned, Mapping) or not planned:
+            dust_hold = "NO_DUST_GOAL"
             if self.fairy_dust is not None and isinstance(planned, Mapping):
                 result = self._cycle_fairy_dust(first)
-                if result != "NO_DUST_GOAL":
+                dust_hold = result
+                # A wait-for-charge or empty-home observation can coexist with
+                # Fame. A possible Fairy dispatch still owns this callback.
+                if result not in ("NO_DUST_GOAL", "WAIT_FOR_HOME_RECHECK", "REOBSERVE_HOME_OR_FIND_FAIRY",
+                                  "DUST_GOAL_MET"):
                     return result
-            return "NO_NATIVE_PROPOSAL"
+            if self.fame is not None and isinstance(planned, Mapping):
+                if fame_result is not None:
+                    return fame_result
+                result = self._cycle_fame(first, fame_observation, fame_track)
+                if result != "NO_FAME_GOAL":
+                    return result
+            return dust_hold if dust_hold != "NO_DUST_GOAL" else "NO_NATIVE_PROPOSAL"
         hint = {}
         if isinstance(query, Mapping) and query.get("kind") == "query":
             hint = self.observe(first, query, needs)
@@ -292,8 +395,14 @@ def start_installed(adapter, *, exact_build: str, owned_dir: Path,
                 "read_fairy_dust", "submit_fairy_dust", "read_fairy_dust_outcome")):
             raise ValueError("NATIVE_FAIRY_DUST_PORTS_REQUIRED")
         from betterinstincts import fairy_dust
+    fame = None
+    if installed.get("installed_fame") is True:
+        if not all(callable(getattr(adapter, name, None)) for name in (
+                "read_fame", "submit_fame", "read_fame_outcome")):
+            raise ValueError("NATIVE_FAME_PORTS_REQUIRED")
+        from betterinstincts import fame
     runtime = InstalledPlayerRuntime(adapter, build=exact_build, owned_dir=root, clock=clock,
-                                     trait_response=trait_response, fairy_dust=fairy_dust)
+                                     trait_response=trait_response, fairy_dust=fairy_dust, fame=fame)
     if not all(callable(getattr(adapter, name, None))
                for name in ("register", "frame", "analyze", "submit", "reconcile")):
         raise ValueError("NATIVE_CALLBACK_PORTS_REQUIRED")
