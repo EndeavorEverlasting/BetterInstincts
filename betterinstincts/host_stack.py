@@ -810,7 +810,7 @@ def evaluate_turn(
                 or sim_at_school is True or build_or_buy_mode
             )
             eco_fabrication_report = evaluate_green_technician_daily_task(
-                eco_source, capture_ref=capture_ref
+                eco_source, capture_ref=capture_ref, lot_model=lot_model
             )
         if household_economy is not None:
             # Independent verified household roster/tasks, no new game authority.
@@ -2160,7 +2160,7 @@ def evaluate_turn(
                           "UNOBSERVED_INCOME_EFFECT", "AUTO_ASSIGN_UNKNOWN_SIM"],
         }
     elif eco_fabrication_report is not None and eco_fabrication_report["gate"] in {
-        "ECO_FABRICATE_READY", "ECO_RECYCLE_CANDIDATE",
+        "ECO_FABRICATE_READY", "ECO_RECYCLE_CANDIDATE", "ECO_NATURAL_SOURCE_CANDIDATE",
     }:
         # Observed career task outranks elective gardening; no execution lease.
         next_gate = eco_fabrication_report["gate"]

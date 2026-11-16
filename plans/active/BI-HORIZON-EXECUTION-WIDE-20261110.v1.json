@@ -3,6 +3,13 @@
   "id": "BI-HORIZON-EXECUTION-WIDE-20261110",
   "created_at": "2026-11-10T09:14:00Z",
   "updated_at": "2026-11-10T11:32:00-05:00",
+  "civil_designer_resource_sourcing": {
+    "state": "SOURCE_ADVISORY_LOCAL_EA_EVIDENCE_REQUIRED",
+    "owner": "betterinstincts/eco_resource_cycle.py#plan_eco_fabrication",
+    "runbook": "docs/ECO_RESOURCE_CYCLE.md#household-bits-and-pieces-sourcing",
+    "local_successor_issue": 171,
+    "game_certified": false
+  },
   "civil_designer_drafting": {
     "state": "ADVISORY_SOURCE_LOCAL_EA_EVIDENCE_REQUIRED",
     "owner": "betterinstincts/career_service.py#evaluate_eco_invention_drafting",

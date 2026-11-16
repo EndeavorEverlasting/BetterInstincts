@@ -10,8 +10,13 @@ import time
 from collections import defaultdict
 from collections.abc import Mapping
 
+from betterinstincts.build_library_checkpoint import (
+    BuildLibraryCheckpointError, admit_live_structure_effect,
+)
+from betterinstincts.compatibility import VERSION_RE
 from betterinstincts.budget_eval import household_reserve
 from betterinstincts.funds_inject import MAX_HOUSEHOLD_FUNDS
+from betterinstincts.house_state import LOT_ID_RE
 
 MAX_AGE = 180
 MAX_ROWS = 48
@@ -24,6 +29,23 @@ SOURCE_PRIORITY = {
     "FISH": 3, "GARDEN_STALL": 4, "PLANTER_PURCHASE": 5,
     "OTHER_OBSERVED": 6,
 }
+
+SAFE_TRIAL_CLASSES = {
+    "TRASH", "SALVAGE_ELECTRONICS", "SALVAGE_MECHANICAL", "SALVAGE_FURNITURE",
+    "SURPLUS_BOOK", "SURPLUS_COLLECTIBLE", "ORGANIC_WASTE",
+}
+ECO_DEBUG_DELTAS = {
+    "DEBUG_FABRICATOR_BOTH": {"bits": 50, "pieces": 50},
+    "DEBUG_SIM_BITS": {"bits": 500, "pieces": 0},
+    "DEBUG_SIM_PIECES": {"bits": 0, "pieces": 500},
+}
+ECO_DEBUG_MENU = {
+    "DEBUG_FABRICATOR_BOTH": ("Give Bits and Pieces",),
+    "DEBUG_SIM_BITS": ("Give Bucks", "Recycle Bits"),
+    "DEBUG_SIM_PIECES": ("Give Bucks", "Recycle Pieces"),
+}
+ECO_OPPORTUNITIES = (*ECO_DEBUG_DELTAS, "DIVE_FOR_BITS_AND_PIECES", "RUMMAGE",
+                     "DIVE_FOR_DEALS", "USE_COMMUNITY_RECYCLER")
 
 
 class EcoResourceCycleError(ValueError):
@@ -227,6 +249,7 @@ def _rank_recycling_trials(observation: Mapping, capture_ref: str) -> list[dict]
     totals = defaultdict(lambda: [0, 0, 0, 0.0])
     proofs = set()
     capture_pairs = set()
+    dispatches = set()
     for row in data:
         if not isinstance(row, Mapping) or not _ref(row.get("source_class")):
             raise EcoResourceCycleError("RECYCLE_OUTCOME_ID_INVALID")
@@ -243,6 +266,11 @@ def _rank_recycling_trials(observation: Mapping, capture_ref: str) -> list[dict]
         if (not _ref(observation.get("game_build"))
                 or row.get("game_build") != observation["game_build"]
                 or row.get("sim_ref") != observation.get("sim_ref")
+                or (observation.get("sourcing") is not None and (
+                    row.get("household_ref") != observation.get("household_ref")
+                    or row.get("method") != "RECYCLER"
+                    or row.get("outcome_verified") is not True
+                    or not _ref(row.get("dispatch_ref"))))
                 or not _ref(row.get("before_ref")) or not _ref(row.get("after_ref"))
                 or row["before_ref"] == row["after_ref"]):
             continue
@@ -250,6 +278,11 @@ def _rank_recycling_trials(observation: Mapping, capture_ref: str) -> list[dict]
         if pair in capture_pairs:
             raise EcoResourceCycleError("RECYCLE_OUTCOME_CAPTURE_REPLAY")
         capture_pairs.add(pair)
+        if observation.get("sourcing") is not None:
+            dispatch = row["dispatch_ref"]
+            if dispatch in dispatches:
+                raise EcoResourceCycleError("RECYCLE_OUTCOME_DISPATCH_REPLAY")
+            dispatches.add(dispatch)
         t = totals[row["source_class"]]
         t[0] += 1
         t[1] += bits
@@ -264,8 +297,134 @@ def _rank_recycling_trials(observation: Mapping, capture_ref: str) -> list[dict]
     } for key, value in sorted(totals.items())]
 
 
+def _sourcing_scope(row, observation, capture_ref):
+    return isinstance(row, Mapping) and all(
+        row.get(key) == expected for key, expected in (
+            ("capture_ref", capture_ref),
+            ("household_ref", observation.get("household_ref")),
+            ("game_build", observation.get("game_build")),
+        )
+    )
+
+
+def _offer(result, gate, action, **parameters):
+    result.update(gate=gate, action=action, next_actions=[{
+        "action_id": action, "capture_ref": result["capture_ref"], **parameters,
+    }])
+    return result
+
+
+def _hold(result, gate, action):
+    result.update(gate=gate, action=action)
+    return result
+
+
+def _catalog_stock(sourcing, observation, result, lot_model):
+    """Buying a part can satisfy a stock goal only after an inventory readback."""
+    capture = result["capture_ref"]
+    if sourcing.get("mode") == "LIVE":
+        return _hold(result, "ECO_PARTS_STOCK_CATALOG_REVIEW", "REVIEW_ECO_PART_BUILD_BUY_CATALOG")
+    if sourcing.get("mode") not in ("BUY", "BUILD"):
+        return _hold(result, "ECO_SOURCE_SCOPE_UNVERIFIED", "OBSERVE_BUILD_BUY_CONTEXT")
+    if sourcing.get("catalog_purchase_opt_in") is not True:
+        return _hold(result, "ECO_PARTS_STOCK_CATALOG_REVIEW", "REVIEW_ECO_PART_PURCHASE_OPT_IN")
+    result["catalog_query"] = "Eco-Upgrade Part"
+    item = sourcing.get("catalog_part")
+    if (not _sourcing_scope(item, observation, capture)
+            or item.get("lot_ref") != sourcing["lot_ref"]
+            or item.get("definition_id") != "ECO_UPGRADE_PART"
+            or item.get("label") != result["catalog_query"]
+            or not _ref(item.get("catalog_ref"))
+            or item.get("available") is not True):
+        if sourcing.get("debug_catalog_opt_in") is True:
+            result["catalog_reveal"] = ["testingcheats true", "bb.showhiddenobjects"]
+        return _hold(result, "ECO_PARTS_STOCK_CATALOG_REVIEW", "VERIFY_EXACT_DEBUG_CATALOG_LISTING")
+    price, funds = item.get("unit_price"), item.get("funds")
+    if (type(price) is not int or not 0 < price <= 50 or type(funds) is not int
+            or not 0 <= funds <= MAX_HOUSEHOLD_FUNDS
+            or price > household_reserve(funds)["spend_max"]):
+        return _hold(result, "ECO_PARTS_STOCK_CATALOG_REVIEW", "VERIFY_PRICE_AND_HOUSEHOLD_RESERVE")
+    if not isinstance(lot_model, Mapping) or lot_model.get("lot_id") != sourcing.get("lot_ref"):
+        return _hold(result, "ECO_PARTS_STOCK_CATALOG_REVIEW", "VERIFY_WHOLE_LOT_BUILD_CHECKPOINT")
+    try:
+        checkpoint = admit_live_structure_effect(lot_model, "PURCHASE_BUILD_OBJECT")
+    except (BuildLibraryCheckpointError, TypeError, ValueError):
+        checkpoint = {}
+    if checkpoint.get("state") != "LIBRARY_ADMIT":
+        return _hold(result, "ECO_PARTS_STOCK_CATALOG_REVIEW", "VERIFY_WHOLE_LOT_BUILD_CHECKPOINT")
+    return _offer(
+        result, "ECO_PARTS_STOCK_PURCHASE_CANDIDATE", "PURCHASE_ONE_ECO_UPGRADE_PART",
+        target_ref=item["catalog_ref"], quantity=1, unit_price=price,
+        verify_after="OBSERVE_MATCHING_STOCK_AND_FUNDS_DELTA",
+    )
+
+
+def _alternate_eco_source(sourcing, observation, result, short_bits, short_pieces, *, recycler_ready):
+    capture = result["capture_ref"]
+    routes = _rows(sourcing.get("opportunities", []), "ECO_SOURCE_OPPORTUNITIES")
+    options, seen = {}, set()
+    for row in routes:
+        if not isinstance(row, Mapping) or not _ref(row.get("opportunity_ref")):
+            raise EcoResourceCycleError("ECO_SOURCE_OPPORTUNITY_ID_INVALID")
+        ref = row["opportunity_ref"]
+        if ref in seen:
+            raise EcoResourceCycleError("ECO_SOURCE_OPPORTUNITY_REPLAY")
+        seen.add(ref)
+        kind = row.get("kind")
+        if (kind not in ECO_OPPORTUNITIES or not _sourcing_scope(row, observation, capture)
+                or row.get("sim_ref") != observation["sim_ref"]
+                or not _ref(row.get("target_ref")) or not _ref(row.get("interaction_ref"))
+                or row.get("available") is not True
+                or row.get("attempt_state") != "NOT_ATTEMPTED"
+                or row.get("lot_ref") != sourcing.get("lot_ref")
+                or (kind == "USE_COMMUNITY_RECYCLER" and row.get("free_use_verified") is not True)):
+            continue
+        options.setdefault(kind, []).append(row)
+
+    natural = ("DIVE_FOR_BITS_AND_PIECES", "RUMMAGE", "DIVE_FOR_DEALS")
+    if not recycler_ready:
+        natural = ("USE_COMMUNITY_RECYCLER", *natural)
+    for kind in natural:
+        if kind in options:
+            row = min(options[kind], key=lambda item: item["opportunity_ref"])
+            return _offer(
+                result, "ECO_NATURAL_SOURCE_CANDIDATE", kind,
+                target_ref=row["target_ref"], interaction_ref=row["interaction_ref"],
+                opportunity_ref=row["opportunity_ref"],
+                verify_after="OBSERVE_HOUSEHOLD_BALANCE_AND_SALVAGE_READBACK",
+            )
+    if (sourcing.get("natural_sources_exhausted") is not True
+            or sourcing.get("debug_opt_in") is not True
+            or sourcing.get("testingcheats_enabled") is not True):
+        return result
+    debug = []
+    for kind, delta in ECO_DEBUG_DELTAS.items():
+        covered = min(short_bits, delta["bits"]) + min(short_pieces, delta["pieces"])
+        if covered == 0:
+            continue
+        for row in options.get(kind, ()):
+            menu = row.get("menu_path")
+            if (not isinstance(menu, (list, tuple)) or tuple(menu) != ECO_DEBUG_MENU[kind]
+                    or (kind != "DEBUG_FABRICATOR_BOTH" and row["target_ref"] != observation["sim_ref"])
+                    or (kind == "DEBUG_FABRICATOR_BOTH" and row.get("target_kind") != "HOME_FABRICATOR")):
+                continue
+            excess = sum(delta.values()) - covered
+            debug.append((-covered, excess, row["opportunity_ref"], kind, row))
+    if debug:
+        _, _, _, kind, row = min(debug)
+        return _offer(
+            result, "ECO_DEBUG_RESOURCE_CANDIDATE", kind, target_ref=row["target_ref"],
+            interaction_ref=row["interaction_ref"], opportunity_ref=row["opportunity_ref"],
+            menu_path=list(ECO_DEBUG_MENU[kind]), testingcheats_required=True,
+            community_reported_delta=dict(ECO_DEBUG_DELTAS[kind]), training_eligible=False,
+            verify_after="REOBSERVE_BOTH_HOUSEHOLD_CURRENCIES_BEFORE_NEXT_STEP",
+        )
+    return result
+
+
 def plan_eco_fabrication(
-    observation: Mapping, *, capture_ref: str, now: float | None = None
+    observation: Mapping, *, capture_ref: str, now: float | None = None,
+    lot_model: Mapping | None = None,
 ) -> dict:
     """Resolve career objective -> recipe -> ingredients -> recyclable input.
 
@@ -274,28 +433,54 @@ def plan_eco_fabrication(
     """
     state = _admit(observation, "betterinstincts.eco-fabrication/v1",
                    capture_ref, now)
-    bits, pieces, skill = (
-        observation.get("bits"), observation.get("pieces"),
-        observation.get("fabrication_skill"),
+    sourcing = observation.get("sourcing")
+    result = _receipt(
+        "betterinstincts.eco-fabrication-result/v1", capture_ref,
+        "ECO_CAREER_INSPECT", "INSPECT_CAREER_RECIPE_AND_MATERIALS",
+        ranking=[], bits=None, pieces=None, shortfall={"bits": 0, "pieces": 0},
     )
+    if state != "READY" and sourcing is not None:
+        return _hold(result, "ECO_" + state, "REOBSERVE_OR_YIELD_WITH_GOAL_HELD")
+    build = observation.get("game_build")
+    if sourcing is not None:
+        if (not _ref(build) or not _ref(observation.get("household_ref")) or not VERSION_RE.fullmatch(build)
+                or not _sourcing_scope(sourcing, observation, capture_ref)
+                or not _ref(sourcing.get("session_ref"))
+                or not isinstance(sourcing.get("lot_ref"), str)
+                or LOT_ID_RE.fullmatch(sourcing["lot_ref"]) is None
+                or sourcing.get("lab_save_verified") is not True
+                or sourcing.get("eco_lifestyle") is not True):
+            return _hold(result, "ECO_SOURCE_SCOPE_UNVERIFIED", "OBSERVE_MATCHING_HOUSEHOLD_AND_BUILD")
+        if sourcing.get("effect_pending") is not False:
+            return _hold(result, "ECO_RECONCILE_PREVIOUS_EFFECT", "OBSERVE_PREVIOUS_ATTEMPT_BEFORE_RETRY")
+        career_task = observation.get("daily_task") == "FABRICATE_ECO_UPGRADE_PART"
+        if sourcing.get("objective") == "STOCK_ECO_UPGRADE_PART" and not career_task:
+            if sourcing.get("stock_shortfall_verified") is not True:
+                return _hold(result, "ECO_PARTS_STOCK_CATALOG_REVIEW", "VERIFY_ECO_PART_STOCK_SHORTFALL")
+            return _catalog_stock(sourcing, observation, result, lot_model)
+        if sourcing.get("mode") != "LIVE":
+            return _hold(result, "ECO_SOURCE_SCOPE_UNVERIFIED", "OBSERVE_LIVE_FABRICATION_CONTEXT")
+        balances = sourcing.get("balances")
+        if (not _sourcing_scope(balances, observation, capture_ref)
+                or balances.get("source") not in ("HOUSEHOLD_FUNDS_HOVER", "RECYCLER_HOVER", "EA_HOUSEHOLD_READBACK")
+                or balances.get("lot_ref") != sourcing["lot_ref"]
+                or not _ref(balances.get("evidence_ref"))
+                or not all(_count(balances.get(key)) for key in ("bits", "pieces"))):
+            return _hold(result, "ECO_OBSERVE_HOUSEHOLD_BALANCE", "READ_BITS_AND_PIECES_FROM_HOUSEHOLD_FUNDS_OR_RECYCLER")
+        bits, pieces = balances["bits"], balances["pieces"]
+    else:
+        bits, pieces = observation.get("bits"), observation.get("pieces")
+    skill = observation.get("fabrication_skill")
     if not _count(bits) or not _count(pieces) or type(skill) is not int or not 0 <= skill <= 10:
         raise EcoResourceCycleError("FABRICATION_RESOURCE_OR_SKILL_INVALID")
     recipes = _rows(observation.get("recipes"), "FABRICATION_RECIPES")
     candidates = _rows(observation.get("recyclable_items"), "RECYCLER_ITEMS")
     rankings = _rank_recycling_trials(observation, capture_ref)
-    result = _receipt(
-        "betterinstincts.eco-fabrication-result/v1", capture_ref,
-        "ECO_CAREER_INSPECT", "INSPECT_CAREER_RECIPE_AND_MATERIALS",
-        ranking=rankings, bits=bits, pieces=pieces,
-        shortfall={"bits": 0, "pieces": 0},
-    )
+    result.update(ranking=rankings, bits=bits, pieces=pieces)
     if state != "READY":
-        result.update(gate="ECO_" + state, action="REOBSERVE_OR_YIELD_WITH_GOAL_HELD")
-        return result
-    if not _ref(observation.get("game_build")):
-        result.update(gate="ECO_BUILD_UNVERIFIED",
-                      action="INSPECT_EXACT_INSTALLED_PATCH_BEFORE_ECO_ACTION")
-        return result
+        return _hold(result, "ECO_" + state, "REOBSERVE_OR_YIELD_WITH_GOAL_HELD")
+    if not _ref(build):
+        return _hold(result, "ECO_BUILD_UNVERIFIED", "INSPECT_EXACT_INSTALLED_PATCH_BEFORE_ECO_ACTION")
     task = observation.get("daily_task")
     if (observation.get("career_track") == "GREEN_TECHNICIAN"
             and task == "FABRICATE_ECO_UPGRADE_PART"):
@@ -331,10 +516,16 @@ def plan_eco_fabrication(
             raise EcoResourceCycleError("FABRICATION_RECIPE_COST_INVALID")
         if row["recipe_id"] == target_recipe:
             chosen = row
-    if chosen is None or chosen.get("unlocked") is not True or skill < chosen["min_skill"]:
+    if (chosen is None or chosen.get("unlocked") is not True or skill < chosen["min_skill"]
+            or (sourcing is not None and (
+                not _sourcing_scope(chosen, observation, capture_ref)
+                or chosen.get("lot_ref") != sourcing["lot_ref"]))):
         result.update(gate="ECO_RECIPE_LOCKED_OR_UNOBSERVED",
                       action="INSPECT_SKILL_CAREER_RECIPE_UNLOCK")
         return result
+    if (sourcing is not None and target_recipe == "FABRICATED_ECO_UPGRADE_PART"
+            and (chosen["bits_required"], chosen["pieces_required"]) != (15, 10)):
+        return _hold(result, "ECO_RECIPE_COST_MISMATCH", "VERIFY_EXACT_ECO_UPGRADE_PART_RECIPE_COST")
     short_bits = max(0, chosen["bits_required"] - bits)
     short_pieces = max(0, chosen["pieces_required"] - pieces)
     result["shortfall"] = {"bits": short_bits, "pieces": short_pieces}
@@ -355,10 +546,25 @@ def plan_eco_fabrication(
         else:
             result.update(gate="ECO_FABRICATOR_ACCESS_REQUIRED",
                           action="INSPECT_COMMUNITY_FABRICATOR_OR_REVIEW_BUILD_CHECKPOINT")
+        if sourcing is not None and result["next_actions"]:
+            result["next_actions"][0]["verify_after"] = "OBSERVE_CRAFTED_PART_AND_MATCHING_CAREER_PROGRESS"
         return result
-    if observation.get("recycler_available") is not True:
-        result.update(gate="ECO_RECYCLER_ACCESS_REQUIRED",
-                      action="INSPECT_COMMUNITY_RECYCLER_BEFORE_PURCHASE")
+    recycler = sourcing.get("recycler") if sourcing is not None else None
+    recycler_ready = observation.get("recycler_available") is True and (
+        sourcing is None or (_sourcing_scope(recycler, observation, capture_ref)
+            and recycler.get("lot_ref") == sourcing["lot_ref"]
+            and recycler.get("available") is True and _ref(recycler.get("target_ref")))
+    )
+    if not recycler_ready:
+        _hold(result, "ECO_RECYCLER_ACCESS_REQUIRED", "INSPECT_COMMUNITY_RECYCLER_BEFORE_PURCHASE")
+        if sourcing is not None:
+            _alternate_eco_source(
+                sourcing, observation, result, short_bits, short_pieces, recycler_ready=recycler_ready
+            )
+            if sourcing.get("natural_sources_exhausted") is True and not result["next_actions"]:
+                result.update(action="REVIEW_HOME_RECYCLER_BUILD_BUY",
+                              catalog_query="Guntdach Home Recycler", catalog_reference_price=845,
+                              requires_budget_and_whole_lot_checkpoint=True)
         return result
     known = {r["source_class"]: r for r in rankings if r["decision_grade"]}
     viable = []
@@ -385,21 +591,39 @@ def plan_eco_fabrication(
                 or row.get("unique") is not False or qty <= reserve):
             continue
         empirical = known.get(row["source_class"])
-        # Explicitly low-cost trash is the only cold-start trial; no guesses
-        # about yields of valuable or unmeasured inventory objects.
-        cold_start = row["source_class"] == "TRASH" and value == 0 and empirical is None
+        if sourcing is not None and (
+                not _sourcing_scope(row, observation, capture_ref)
+                or row.get("inventory_scope") not in ("PERSONAL", "HOUSEHOLD")
+                or (row.get("inventory_scope") == "PERSONAL"
+                    and row.get("sim_ref") != observation["sim_ref"])
+                or row.get("in_current_recycler_picker") is not True
+                or row.get("recycler_ref") != recycler["target_ref"]
+                or row.get("attempt_state") != "NOT_ATTEMPTED"):
+            continue
+        # Cash value and item category never imply a yield. Permit an explicit
+        # discardable zero-value trial on opted-in observations.
+        cold_start = value == 0 and empirical is None and (
+            row["source_class"] == "TRASH" if sourcing is None else
+            row["source_class"] in SAFE_TRIAL_CLASSES and row.get("discardable_verified") is True
+        )
         if empirical is None and not cold_start:
             continue
         if empirical is not None:
             benefit = (min(empirical["average_bits"], short_bits)
                        + min(empirical["average_pieces"], short_pieces))
+            if benefit == 0 and sourcing is not None:
+                continue
             score = benefit / (1 + value + empirical["average_input_value"])
         else:
             score = 0
         viable.append((-score, not cold_start, value, ref, row, cold_start))
     if not viable:
-        result.update(gate="ECO_SAFE_RECYCLABLE_SOURCE_REQUIRED",
-                      action="INSPECT_DISCARDABLE_TRASH_AND_VERIFIED_RECYCLE_YIELDS")
+        _hold(result, "ECO_SAFE_RECYCLABLE_SOURCE_REQUIRED",
+              "INSPECT_DISCARDABLE_TRASH_AND_VERIFIED_RECYCLE_YIELDS")
+        if sourcing is not None:
+            return _alternate_eco_source(
+                sourcing, observation, result, short_bits, short_pieces, recycler_ready=recycler_ready
+            )
         return result
     _, _, _, _, row, cold_start = min(viable)
     result.update(
@@ -412,4 +636,9 @@ def plan_eco_fabrication(
         }],
         chosen_source_class=row["source_class"],
     )
+    if sourcing is not None:
+        result["next_actions"][0].update(
+            recycler_ref=recycler["target_ref"], inventory_scope=row["inventory_scope"],
+            verify_after="OBSERVE_ITEM_CONSUMPTION_AND_HOUSEHOLD_CURRENCY_DELTA",
+        )
     return result

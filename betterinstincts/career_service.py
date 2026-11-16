@@ -509,7 +509,8 @@ def evaluate_work_shift_tone(
 
 
 def evaluate_green_technician_daily_task(
-    observation: Mapping[str, object], *, capture_ref: str, now: float | None = None
+    observation: Mapping[str, object], *, capture_ref: str, now: float | None = None,
+    lot_model: Mapping[str, object] | None = None,
 ) -> dict:
     """Native-ready advisory for the Civil Designer Green Technician daily task.
 
@@ -517,7 +518,7 @@ def evaluate_green_technician_daily_task(
     the observed career panel and exact on-lot unlocked Fabricator recipe;
     this function never consumes Bits/Pieces or mutates Sims gameplay.
     """
-    return plan_eco_fabrication(observation, capture_ref=capture_ref, now=now)
+    return plan_eco_fabrication(observation, capture_ref=capture_ref, now=now, lot_model=lot_model)
 
 
 def evaluate_eco_invention_drafting(

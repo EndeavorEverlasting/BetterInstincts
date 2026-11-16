@@ -684,3 +684,7 @@ P08 remains blocked on an exact-build native game receipt producer.
 P07/P124 integrate one optional read-only policy with the existing native
 household evaluator and budget owner. The BI-004 proof ceiling and
 runtime follow-up are in [Horizon](HORIZON.md#robotics-craft-and-sale-economics).
+
+## 2026-11-16 — MoonWake Sixth Gear for household Eco-Upgrade Part sourcing
+
+The current deterministic resolver and Sixth Gear walker resolved P141 → P95 → P82 → P08 → P07 → P124. The selected design reused the current career and eco owners and added an optional source observation to preserve legacy behavior. P82 exercised scoped balances, source ranking, one-action reconciliation and the stock-only catalog route. P08 recorded BLOCKED_LOCAL_GAME_ACCESS in the Linux source workspace. Repository validation and integration proceed independently, with exact-build EA runtime and rollback tracked in #171.

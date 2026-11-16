@@ -37,6 +37,7 @@ from betterinstincts.behavior_valence import (
 )
 from betterinstincts import player_learning
 from betterinstincts.player_presence import PresenceProbe
+from betterinstincts.eco_resource_cycle import EcoResourceCycleError
 from betterinstincts.ui_mode import UIModeError, evaluate_mode
 from betterinstincts.control_handoff import (
     DEFAULT_IDLE_MS,
@@ -580,6 +581,11 @@ def _load_observation(raw: Mapping) -> dict:
     life_stage = raw.get("life_stage")
     if life_stage is not None and not isinstance(life_stage, str):
         raise HostListenerError("OBSERVATION_LIFE_STAGE_INVALID")
+    eco = raw.get("eco_fabrication")
+    if eco is not None and (
+        not isinstance(eco, Mapping) or len(json.dumps(dict(eco)).encode("utf-8")) > 32_768
+    ):
+        raise HostListenerError("OBSERVATION_ECO_FABRICATION_INVALID")
     drafting = raw.get("career_drafting")
     if drafting is not None and (
         not isinstance(drafting, Mapping)
@@ -705,6 +711,7 @@ def _load_observation(raw: Mapping) -> dict:
         "needs": {k: float(needs[k]) for k in SIX},
         "gardening": dict(gardening) if gardening is not None else None,
         "career_drafting": drafting,
+        "eco_fabrication": eco,
         "household_economy": (
             dict(household_economy) if household_economy is not None else None
         ),
@@ -1110,6 +1117,21 @@ def tick(
     ):
         drafting_mode = mode_context["mode"]
 
+    eco = obs["eco_fabrication"]
+    if eco is not None:
+        eco = dict(eco)
+        source = eco.get("sourcing")
+        source = dict(source) if isinstance(source, Mapping) else {}
+        matching_scope = (
+            mode_context is not None and source.get("session_ref") == session_id
+            and all(observation.get(key) is not None and observation[key] == expected
+                    for key, expected in (("game_version", eco.get("game_build")),
+                                          ("actor_ref", eco.get("sim_ref")),
+                                          ("active_lot_id", source.get("lot_ref"))))
+        )
+        source["mode"] = mode_context["mode"] if matching_scope else None
+        eco["sourcing"] = source
+
     # Non-Live and ambiguous scenes still provide bounded interface context,
     # never a simulated Live queue/needs plan. The Build census is advisory.
     if mode_context is not None and not mode_context["mode_autonomy_allowed"]:
@@ -1215,6 +1237,22 @@ def tick(
                 else "Observe the game mode again; do not dispatch Live actions."
             ),
         }
+        if eco is not None:
+            from betterinstincts.career_service import evaluate_green_technician_daily_task
+            from betterinstincts.need_service_base import threshold_pair
+
+            _, floor = threshold_pair()
+            eco["needs_safe"] = eco.get("needs_safe") is True and all(
+                value >= floor for value in obs["needs"].values()
+            )
+            eco["player_directed"] = (eco.get("player_directed") is not False
+                                      or obs["player_directed"] or obs["already_busy"])
+            try:
+                receipt["eco_fabrication"] = evaluate_green_technician_daily_task(
+                    eco, capture_ref=obs["capture_ref"], lot_model=obs.get("lot_model"),
+                )
+            except EcoResourceCycleError as exc:
+                raise HostListenerError(str(exc)) from exc
         if drafting is not None:
             from betterinstincts.career_service import evaluate_eco_invention_drafting
             from betterinstincts.need_service_base import threshold_pair
@@ -1322,6 +1360,7 @@ def tick(
             whims=obs["whims"] or obs["pinned_whims"],
             gardening=obs["gardening"],
             career_drafting=drafting,
+            eco_fabrication=eco,
             career_drafting_mode=drafting_mode,
             household_upkeep=obs["household_upkeep"],
             household_economy=obs["household_economy"],
