@@ -17,6 +17,8 @@ MAX_RECEIPTS = 32
 MAX_MATERIALS = 16
 MAX_MINUTES = 10_080  # One Sim week of active sourcing, crafting and selling.
 SCOPE_KEYS = ("household_ref", "game_build", "save_ref")
+ATTEMPT_REFS = ("attempt_ref", "native_action_ref", "debit_ref", "terminal_ref")
+SALE_REFS = ("item_ref", "sale_ref")
 
 
 class RoboticsIncomeError(ValueError):
@@ -95,13 +97,11 @@ def _material_cost(row: Mapping, *, quote: bool, allow_partial: bool = False) ->
     return total, cash
 
 
-def _terminal(row: Mapping) -> tuple[tuple[str, ...], int, int, int] | None:
+def _terminal(row: Mapping) -> tuple[int, int, int] | None:
     state = row.get("outcome")
     if state not in ("SOLD", "FAILED"):
         return None
-    required_refs = ("attempt_ref", "native_action_ref", "debit_ref", "terminal_ref")
-    if state == "SOLD":
-        required_refs += ("item_ref", "sale_ref")
+    required_refs = ATTEMPT_REFS + SALE_REFS if state == "SOLD" else ATTEMPT_REFS
     refs = tuple(row.get(k) for k in required_refs)
     if not all(_ref(r) for r in refs) or len(set(refs)) != len(refs):
         return None
@@ -118,20 +118,32 @@ def _terminal(row: Mapping) -> tuple[tuple[str, ...], int, int, int] | None:
     if material is None:
         return None
     cost = row["workstation_fee"] + material[0] + row["other_costs"]
-    return refs, proceeds, cost, row["minutes"]
+    return proceeds, cost, row["minutes"]
 
 
 def _cohorts(raw: object, scope: tuple[str, str, str]) -> dict:
     runs: dict[tuple[str, str], list[tuple[int, int, int, str, Mapping]]] = {}
     blocked: set[tuple[str, str]] = set()
-    by_proof: dict[str, list[Mapping]] = {}
+    claims: dict[str, tuple[str, tuple, tuple[str, str]]] = {}
+    terminals: dict[str, Mapping] = {}
     pending: list[Mapping] = []
-    for row in _rows(raw, MAX_RECEIPTS):
+    for index, row in enumerate(_rows(raw, MAX_RECEIPTS)):
         if tuple(row.get(k) for k in SCOPE_KEYS) != scope:
             continue
-        key = _key(row)
         if row.get("origin") != "NATIVE_RESPONDER":
             continue
+        key = _key(row)
+        attempt, action = row.get("attempt_ref"), row.get("native_action_ref")
+        owner = (key, attempt, action) if _ref(attempt) and _ref(action) else (index,)
+        # Even an incomplete native claim can make another receipt ambiguous.
+        # Normal progress may repeat a proof only for the same attempt and role.
+        for field in ATTEMPT_REFS + SALE_REFS:
+            ref = row.get(field)
+            if not _ref(ref):
+                continue
+            old = claims.setdefault(ref, (field, owner, key))
+            if old[:2] != (field, owner):
+                blocked.update((key, old[2]))
         if row.get("outcome") in ("IN_FLIGHT", "UNSOLD"):
             pending.append(row)
             continue
@@ -139,29 +151,28 @@ def _cohorts(raw: object, scope: tuple[str, str, str]) -> dict:
         if proof is None:
             blocked.add(key)  # Open/partial attempt must be reconciled before a retry.
             continue
-        refs, cash_in, cost, minutes = proof
-        if row in by_proof.get(refs[0], ()):
+        cash_in, cost, minutes = proof
+        prior = terminals.get(attempt)
+        if prior is not None:
+            if prior != row:
+                blocked.update((key, _key(prior)))
             continue
-        for ref in refs:
-            owners = by_proof.setdefault(ref, [])
-            if owners:
-                blocked.add(key)
-                blocked.update(_key(old) for old in owners)
-            owners.append(row)
-        runs.setdefault(key, []).append((cash_in, cost, minutes, refs[0], row["ingredients"]))
+        terminals[attempt] = row
+        runs.setdefault(key, []).append((cash_in, cost, minutes, attempt, row["ingredients"]))
     for row in pending:
         attempt = row.get("attempt_ref")
-        candidates = by_proof.get(attempt, ()) if _ref(attempt) else ()
+        terminal = terminals.get(attempt) if _ref(attempt) else None
         key = _key(row)
-        if len(candidates) != 1:
+        if terminal is None:
             blocked.add(key)
             continue
-        terminal = candidates[0]
-        if (key != _key(terminal) or attempt != terminal.get("attempt_ref")
+        if (key != _key(terminal)
                 or row.get("native_action_ref") != terminal.get("native_action_ref")
                 or (row.get("outcome") == "UNSOLD" and (
-                    not _ref(row.get("item_ref")) or row["item_ref"] != terminal.get("item_ref")))):
-            blocked.add(key)
+                    not _ref(row.get("item_ref")) or row["item_ref"] != terminal.get("item_ref")))
+                or any(_ref(row.get(f)) and _ref(terminal.get(f)) and row[f] != terminal[f]
+                       for f in ("debit_ref", "terminal_ref", *SALE_REFS))):
+            blocked.update((key, _key(terminal)))
     return runs, blocked
 
 

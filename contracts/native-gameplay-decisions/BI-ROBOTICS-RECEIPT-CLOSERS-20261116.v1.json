@@ -1,0 +1,14 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/robotics_income.py",
+      "route": "POLICY_ONLY",
+      "reason": "Reconciles claimed receipts before computing a read-only native income recommendation.",
+      "game_effect_claim": "NONE",
+      "game_build": null,
+      "ea_source_ref": null,
+      "successor_issue": 171
+    }
+  ]
+}
