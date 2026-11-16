@@ -1,5 +1,6 @@
 import unittest
 from copy import deepcopy
+from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -7,6 +8,7 @@ from unittest.mock import patch
 from betterinstincts import host_listener
 from betterinstincts.player_presence import PresenceProbe
 from betterinstincts.preference_corrections import IDENTITY, TARGET, evaluate_correction
+from betterinstincts.preference_prompts import load_catalog
 
 
 def request(stage="live", **observation):
@@ -29,7 +31,8 @@ def request(stage="live", **observation):
         "observation": {
             "stage": stage, "capture_ref": "capture:current", "captured_at_ms": 1000,
             "authorized_lab_save": True, "paused": True, "stage_verified": True,
-            "modal_open": False, "pref_revision": "revision-1", **observation,
+            "modal_open": False, "pref_revision": "revision-1",
+            "simology_panel_open": False, **observation,
         },
     }
     data["observation"].update({key: data[key] for key in IDENTITY})
@@ -65,6 +68,16 @@ class PreferenceCorrectionTests(unittest.TestCase):
         self.assertIsNone(first["control_permit"])
         self.assertEqual(evaluate(request("simology"))["target"],
                          "live.simology.preferences.enter_create_a_sim")
+
+    def test_open_simology_is_not_toggled_and_unknown_visibility_holds(self):
+        opened = evaluate(request(simology_panel_open=True))
+        self.assertEqual(opened["target"], "live.simology.preferences.enter_create_a_sim")
+        self.assertNotIn("hotkey", opened)
+        for bad_visibility in (None, 0, "false"):
+            with self.subTest(visibility=bad_visibility):
+                result = evaluate(request(simology_panel_open=bad_visibility))
+                self.assertEqual(result["reason"], "SIMOLOGY_PANEL_VISIBILITY_UNVERIFIED")
+                self.assertNotIn("target", result)
 
     def test_category_alias_and_distinct_fashion_way_of_life(self):
         data = request("cas_preference_categories", family="likes_dislikes", existing_household_verified=True)
@@ -208,6 +221,19 @@ class ListenerPreferenceCorrectionTests(unittest.TestCase):
                                      foreground_process_id=data["process_id"], last_input_age_ms=0)
                 yielded = host_listener.tick(session, observation, presence_probe=busy)
                 self.assertEqual(yielded["preference_correction"]["reason"], "PLAYER_DIRECTED")
+                data["reason"] = "repeated_behavior"
+                catalog = root / "activity-catalog.json"
+                with patch("betterinstincts.preference_corrections.load_catalog", partial(load_catalog, catalog)):
+                    for contents in (None, "{", "[]"):
+                        with self.subTest(catalog=contents):
+                            if contents is not None:
+                                catalog.write_text(contents, encoding="utf-8")
+                            result = host_listener.tick(session, observation, presence_probe=probe)
+                            self.assertEqual(result["preference_correction"]["reason"],
+                                             "ACTIVITY_CATALOG_UNAVAILABLE")
+                    data["reason"] = "mistake"
+                    restored = host_listener.tick(session, observation, presence_probe=probe)
+                    self.assertEqual(restored["preference_correction"]["state"], "NEXT_TARGET")
                 observation["capture_ref"] = "capture:different"
                 stale = host_listener.tick(session, observation, presence_probe=probe)
                 self.assertEqual(stale["preference_correction"]["reason"], "LISTENER_CONTEXT_MISMATCH")

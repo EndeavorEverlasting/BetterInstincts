@@ -342,15 +342,18 @@ under #171.
 ## Stored preference corrections
 
 The host listener evaluates corrections and identifies the next Simology
-or CAS target. Next live gate: bind the exact-build observation and mutation
-ports, then verify an edit, independent Live readback, and the established
-earned-offer flow as a protected control. See
+or CAS target. On the Windows Sims host, bind the exact installed build and
+the current process, session, save and Sim. Observe the closed and open
+Simology routes, make one scoped edit on an authorized disposable
+household, read back the new value in Live Mode and verify the earned
+preference offer path as a protected control. See
 [correcting an existing preference](PREFERENCE_PROMPTS.md#correct-an-existing-preference-through-simology).
 
 ## Civil Designer Celebrity Endorsement
 
-Bind the exact installed EA card and option identities to the existing
-career response port. On a disposable household observe one Get Endorsement
+Recover the existing Windows process and receipts before any launch or
+game interaction. Inspect the exact installed EA tuning read-only and bind
+the card and option identities to the existing career response port. On a disposable household observe one Get Endorsement
 submission, independent fame, performance and extra-pay readback, and the
 same shift's return to Live Mode. Verify player/fame opt-out and the
 ordinary career path. See [career decisions](CAREER_DECISIONS.md#celebrity-endorsement-after-inventing-a-smog-vacuum).
