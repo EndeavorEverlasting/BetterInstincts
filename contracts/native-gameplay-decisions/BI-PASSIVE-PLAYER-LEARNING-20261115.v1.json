@@ -1,0 +1,28 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-PASSIVE-PLAYER-LEARNING-20261115",
+  "purpose": "Learn contextual advice from independently attributed player choices and outcomes while the existing listener yields game control.",
+  "files": [
+    {
+      "path": "betterinstincts/host_listener.py",
+      "route": "HOST_LAB_ONLY",
+      "reason": "Receives opt-in semantic events on the existing bounded observer path and has no new capture or dispatch adapter.",
+      "game_effect_claim": "NONE",
+      "autonomy_runtime": false
+    },
+    {
+      "path": "betterinstincts/player_learning.py",
+      "route": "POLICY_ONLY",
+      "reason": "Records bounded semantic demonstrations and computes contextual advice without mutating the Sims queue or any game file.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/judgment_learning.py",
+      "route": "POLICY_ONLY",
+      "reason": "Shares deterministic support thresholds and ambiguity handling across reviewed and automatically observed evidence.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

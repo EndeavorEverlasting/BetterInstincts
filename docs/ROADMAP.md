@@ -1,3 +1,11 @@
+## 2026-11-15 — Passive learning during player takeover
+
+The host listener can learn from opted-in semantic demonstrations and recall
+qualified advice from the same profile after the player yields. Bind the
+exact-build game signal producer and run a controlled player-takeover and
+outcome replay on Windows under native issue #171. See
+[Judgment learning](JUDGMENT_LEARNING.md#passive-learning-while-the-player-has-control).
+
 ## 2026-11-15 — Container-backed first run
 
 Use `py -3 -m scripts.play --json` for an authorized Windows startup. The next host proof is one actual launch from a uniquely detected install and one run while that game is open, preserving the existing session. The active certification-first save route and BI-002 continue independently. See [First run](FIRST_RUN.md#play-from-the-command-line).

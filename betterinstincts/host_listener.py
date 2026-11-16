@@ -5,6 +5,7 @@ Activation is explicit. Library never starts threads. Live clicks stay outside.
 from __future__ import annotations
 
 import json
+import sqlite3
 import time
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -34,6 +35,7 @@ from betterinstincts.behavior_valence import (
     BehaviorValenceError, MAX_MODEL_BYTES,
     learn_reviewed, validate_model,
 )
+from betterinstincts import player_learning
 from betterinstincts.player_presence import PresenceProbe
 from betterinstincts.ui_mode import UIModeError, evaluate_mode
 from betterinstincts.control_handoff import (
@@ -87,13 +89,18 @@ def _write_json(path: Path, payload: dict) -> None:
     path.write_text(raw, encoding="utf-8")
 
 
-def activate(session_id: str, *, note: str | None = None) -> dict:
+def activate(session_id: str, *, note: str | None = None,
+             player_learning_profile: str | None = None) -> dict:
     cfg = load_contract()
     path = _session_dir(session_id)
     meta_path = path / "session.json"
+    profile = (player_learning.profile_key(player_learning_profile)
+               if player_learning_profile is not None else None)
     if meta_path.is_file():
         existing = json.loads(meta_path.read_text(encoding="utf-8"))
         if existing.get("state") == "ACTIVE":
+            if profile is not None and profile != existing.get("player_learning_profile"):
+                raise HostListenerError("DEACTIVATE_BEFORE_CHANGING_PLAYER_LEARNING_PROFILE")
             return {"state": "ALREADY_ACTIVE", "session_id": session_id, "path": str(path.relative_to(ROOT))}
     payload = {
         "schema": "betterinstincts.host-listener.session/v1",
@@ -106,6 +113,8 @@ def activate(session_id: str, *, note: str | None = None) -> dict:
         "proof_ceiling": cfg.get("proof_ceiling"),
         "contract": "contracts/host-listener.v1.json",
     }
+    if profile is not None:
+        payload["player_learning_profile"] = profile
     _write_json(meta_path, payload)
     return {"state": "ACTIVATED", "session_id": session_id, "path": str(path.relative_to(ROOT))}
 
@@ -117,6 +126,7 @@ def deactivate(session_id: str) -> dict:
         raise HostListenerError("SESSION_NOT_FOUND")
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
     meta["state"] = "INACTIVE"
+    meta.pop("pending_player_choice", None)
     meta["deactivated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     _write_json(meta_path, meta)
     return {"state": "DEACTIVATED", "session_id": session_id}
@@ -861,6 +871,49 @@ def _preference_correction_advisory(observation, obs, handoff, session_id):
     )
 
 
+def _passive_player_learning(meta, observation, obs, mode_context, probe, presence, ticks):
+    event = observation.get("player_learning")
+    if event is None:
+        # A tick without a fresh capture from this adapter breaks continuity.
+        meta.pop("pending_player_choice", None)
+        return None
+    profile = meta.get("player_learning_profile")
+    if profile is None:
+        return player_learning.receipt("ABSTAIN", reason="PLAYER_LEARNING_NOT_OPTED_IN")
+    if not player_learning.is_profile_key(profile):
+        meta.pop("pending_player_choice", None)
+        return player_learning.receipt("ABSTAIN", reason="INVALID_PLAYER_LEARNING_PROFILE")
+    if (
+        not probe.probe_ok or probe.foreground_is_sims is not True
+        or type(probe.foreground_process_id) is not int or probe.foreground_process_id <= 0
+        or probe.operator_busy or observation.get("host_activity_owner") == "HOST"
+        or presence["state"] == "UNKNOWN_PRESENCE"
+        or mode_context is None or not mode_context["mode_autonomy_allowed"]
+        or not isinstance(obs["viewport"], Mapping) or obs["viewport"].get("state") != "VIEWPORT_OK"
+    ):
+        meta.pop("pending_player_choice", None)
+        return player_learning.receipt("ABSTAIN", reason="FRESH_FOREGROUND_LIVE_GAME_REQUIRED")
+    try:
+        pending, result = player_learning.observe(
+            ROOT / "dist" / "judgment-learning" / "player-observed" / (profile + ".sqlite3"), event,
+            pending=meta.get("pending_player_choice"), tick=ticks + 1,
+            exact_patch=observation.get("game_version"), actor=obs["actor_ref"],
+            capture=observation.get("capture_ref"), process_id=probe.foreground_process_id,
+            needs=obs["needs"], player_active=presence["state"] == "PLAYER_PLAYING",
+            queue_busy=bool(obs["queue"] or obs["already_busy"]),
+        )
+    except (player_learning.PlayerLearningError, JudgmentLearningError, TypeError):
+        meta.pop("pending_player_choice", None)
+        return player_learning.receipt("ABSTAIN", reason="PLAYER_LEARNING_EVIDENCE_INVALID")
+    except (OSError, sqlite3.Error):
+        return player_learning.receipt("ABSTAIN", reason="PLAYER_LEARNING_STORE_UNAVAILABLE")
+    if pending is None:
+        meta.pop("pending_player_choice", None)
+    else:
+        meta["pending_player_choice"] = pending
+    return result
+
+
 def tick(
     session_id: str,
     observation: Mapping,
@@ -1006,6 +1059,9 @@ def tick(
                 "player_queue_present": bool(obs["player_directed"]),
             }
             survey["object_action_hint"] = suggest_object_action(session_id, current)
+    learned_player_judgment = _passive_player_learning(
+        meta, observation, obs, mode_context, presence_probe, presence, ticks,
+    )
     if presence["host"] == "YIELD_TO_PLAYER":
         ticks = ticks + 1
         meta["ticks"] = ticks
@@ -1030,6 +1086,8 @@ def tick(
             receipt["chance_event"] = chance_event_advisory
         if preference_correction is not None:
             receipt["preference_correction"] = preference_correction
+        if learned_player_judgment is not None:
+            receipt["player_learning"] = learned_player_judgment
         _write_json(tick_path, receipt)
         receipt["receipt"] = str(tick_path.relative_to(ROOT))
         return receipt
@@ -1148,6 +1206,8 @@ def tick(
             receipt["chance_event"] = chance_event_advisory
         if preference_correction is not None:
             receipt["preference_correction"] = preference_correction
+        if learned_player_judgment is not None:
+            receipt["player_learning"] = learned_player_judgment
         _write_json(tick_path, receipt)
         receipt["receipt"] = str(tick_path.relative_to(ROOT))
         return receipt
@@ -1340,6 +1400,8 @@ def tick(
         receipt["chance_event"] = chance_event_advisory
     if preference_correction is not None:
         receipt["preference_correction"] = preference_correction
+    if learned_player_judgment is not None:
+        receipt["player_learning"] = learned_player_judgment
     _write_json(tick_path, receipt)
     receipt["receipt"] = str(tick_path.relative_to(ROOT))
     return receipt

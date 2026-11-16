@@ -34,6 +34,8 @@ def main(argv: list[str] | None = None) -> int:
     act = sub.add_parser("activate")
     act.add_argument("--session-id", required=True)
     act.add_argument("--note", default=None)
+    act.add_argument("--player-learning-profile",
+                     help="Opt in to passive semantic gameplay learning under this local profile token")
     st = sub.add_parser("status")
     st.add_argument("--session-id", required=True)
     de = sub.add_parser("deactivate")
@@ -67,7 +69,10 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
     try:
         if args.command == "activate":
-            result = activate(args.session_id, note=args.note)
+            kwargs = {"note": args.note}
+            if args.player_learning_profile is not None:
+                kwargs["player_learning_profile"] = args.player_learning_profile
+            result = activate(args.session_id, **kwargs)
         elif args.command == "status":
             result = status(args.session_id)
         elif args.command == "deactivate":

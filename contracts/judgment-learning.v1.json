@@ -66,6 +66,23 @@
     "auto_capture": false,
     "auto_train": false
   },
+  "passive_player_observations": {
+    "owner": "betterinstincts/player_learning.py",
+    "consent": "EXPLICIT_PER_ACTIVE_LISTENER_SESSION",
+    "event_kinds": ["choice", "outcome", "query"],
+    "match_scope": "EXACT_BUILD_PLATFORM_PROFILE_HOUSEHOLD_RUN_PROCESS_ACTOR_INTERACTION_CONTINUITY",
+    "advisory_scope": "EXACT_BUILD_PLATFORM_PROFILE_HOUSEHOLD_CONTEXT_AVAILABLE_ACTIONS",
+    "max_outcome_ticks": 8,
+    "max_episodes_per_profile": 256,
+    "max_store_bytes": 1048576,
+    "minimum_normalized_goal_improvement": 0.05,
+    "material_urgent_need_loss": 0.1,
+    "allow_with_urgent_need_or_existing_queue": false,
+    "harmful_precedent": "ABSTAIN_FOR_THAT_ACTION_AND_CONTEXT",
+    "private_path": "dist/judgment-learning/player-observed",
+    "operator_review_claim": false,
+    "effect_permit": null
+  },
   "proof_ceiling": "OFFLINE_REVIEWED_DEMONSTRATIONS_ONLY",
   "next": "P08 local game certification, opt-in consent/sensor review, BI-002 5+5 hunger unchanged"
 }
