@@ -1,0 +1,79 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-INSTALLED-PLAYER-RUNTIME-20261115",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Reuse an already cloned checkout and expose a self-contained, explicitly opted-in native listener lifecycle and five-second native responder gate.",
+  "affected_concepts": [
+    "PLAYER_PRESENCE",
+    "PLAYER_INTENT",
+    "OBSERVATION",
+    "OUTCOME",
+    "LEARNING_MODEL",
+    "ACTION_PROPOSAL",
+    "CONTROL_PERMIT",
+    "RESUME_CONDITION"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/DOCTRINE.md",
+    "docs/NATIVE_GAMEPLAY_ARCHITECTURE.md",
+    "contracts/judgment-learning.v1.json",
+    "contracts/effect-authority.v1.json",
+    "betterinstincts/player_learning.py",
+    "betterinstincts/control_handoff.py",
+    "scripts/native_ecology_bundle.py",
+    "scripts/play.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-023",
+    "BI-ONT-024"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "INSTALLED_ADAPTER_PORT_AND_SOURCE_TESTS_ONLY",
+  "player_save_control_impact": "No change to desktop input permits. No new global hooks or raw input collection. New responder callback depends on a source-proven, exact-build native adapter that rechecks fresh game scope, availability, player input and queue ownership each time.",
+  "expected_outcome": "Start the existing checkout without self-cloning. After an installed, opt-in native adapter registers, learn from attributed in-game choices and independent outcomes during player control; only consider a native action with independently rechecked five-second idle evidence.",
+  "negative_tests": [
+    "File listed without native callback cannot count as running.",
+    "At 4.999s native effects yield, at 5s fresh recheck is required.",
+    "User input or scope change during analysis invalidates dispatch.",
+    "Existing desktop minimum remains 15s.",
+    "Existing checkout paths do not clone themselves.",
+    "Package imports support modules without a checkout."
+  ],
+  "rollback_path": "Revert this branch or PR; existing legacy package, ordinary explicit host listener and established desktop gate remain available.",
+  "unresolved_unknowns": [
+    "Exact-build EA lifecycle, player activity, queue and effect signatures and live registration remain local Windows evidence."
+  ],
+  "files_expected": [
+    "betterinstincts/installed_player_runtime.py",
+    "betterinstincts/player_learning.py",
+    "betterinstincts/priority.py",
+    "betterinstincts/behavior_valence.py",
+    "scripts/native_ecology_bundle.py",
+    "scripts/play.py",
+    "Start-BetterInstincts.cmd",
+    "tests/test_installed_player_runtime.py",
+    "tests/test_native_ecology_bundle.py",
+    "tests/test_play.py",
+    "contracts/native-ecology-runtime.v1.json",
+    "contracts/native-gameplay-decisions/BI-INSTALLED-PLAYER-RUNTIME-20261115.v1.json",
+    "docs/JUDGMENT_LEARNING.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "docs/FIRST_RUN.md",
+    "plans/active/BI-002.md",
+    "contracts/effect-authority.v1.json",
+    "docs/DOCTRINE.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "decision_rationale": "The launcher and a packaged policy port are independently testable. Existing native package proof remains required. Reuse current learning math and fail closed on native readiness."
+}

@@ -62,6 +62,14 @@
   "unknown": "DENY",
   "foreground_screen_actor": "HUMAN",
   "resume": "TWO_FRESH_TRUSTED_IDLE_PROBES_AT_LEAST_15000_MS_AND_REVALIDATED_TARGET",
+  "installed_native_resume": {
+    "contract": "contracts/native-ecology-runtime.v1.json",
+    "minimum_idle_ms": 5000,
+    "requires": ["SOURCE_PROVEN_EXACT_BUILD_NATIVE_CALLBACK",
+                 "TWO_FRESH_TRUSTED_INPUT_PROBES",
+                 "PLAYER_QUEUE_AND_TARGET_REVALIDATION",
+                 "NO_DESKTOP_INPUT_OR_FOCUS"]
+  },
   "preemption": "AT_NEXT_COOPERATIVE_CHECKPOINT_NOT_MID_NATIVE_CALL",
   "background_runner": "CooperativeScreenQueue.enqueue_observation (explicit trusted read-only callback, bounded in-memory, no global daemons)",
   "runtime_limit": "Python callback classification is not arbitrary-code sandboxing; all adapters must adopt queues/checkpoints and independent OS permissions must deny non-game system control.",

@@ -107,6 +107,16 @@ class PlayTests(unittest.TestCase):
             self.assertEqual(result["game"]["state"], "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH")
             self.assertEqual(result["status"], "ok")
 
+    def test_existing_checkout_starts_without_toolkit_install(self):
+        with patch.object(play, "windows_startup_lock", return_value=nullcontext()), \
+             patch.object(bootstrap, "install") as install, \
+             patch.object(first_run, "requested_start",
+                          return_value={"state": "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH"}):
+            result = play.play_on_windows(None, Mock(), checkout=play.ROOT)
+        install.assert_not_called()
+        self.assertEqual(result["toolkit"], {"state": "EXISTING_CHECKOUT",
+                                              "checkout": str(play.ROOT)})
+
     def test_default_cli_runs_container_then_game_and_prints_welcome(self):
         with patch.object(play.shutil, "which", side_effect=lambda name: name), \
              patch.object(play, "docker_plan", return_value=play.startup_plan()) as container, \
@@ -117,6 +127,7 @@ class PlayTests(unittest.TestCase):
         self.assertEqual(text.splitlines()[:2], ["Welcome to BetterInstincts.", "Launch requested."])
         self.assertTrue(text.splitlines()[2].startswith("Launch receipt:"))
         self.assertEqual(host.call_args.kwargs["mode"], "production")
+        self.assertEqual(host.call_args.kwargs["checkout"], play.ROOT)
         container.assert_called_once()
         self.assertIsNone(host.call_args.args[0])
 

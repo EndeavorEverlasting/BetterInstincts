@@ -1,3 +1,10 @@
+## 2026-11-15 — Installed listener and native five-second handoff
+
+Use the existing checkout for play. The optional ecology bundle contains
+the passive learner and native handoff policy. The next host gate is the
+exact-build EA registration and a controlled takeover/resumption trial under
+#171. See [installed native lifecycle](JUDGMENT_LEARNING.md#installed-native-lifecycle).
+
 ## 2026-11-15 — Passive learning during player takeover
 
 The host listener can learn from opted-in semantic demonstrations and recall

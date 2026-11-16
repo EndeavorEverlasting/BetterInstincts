@@ -14,8 +14,7 @@ import sqlite3
 from typing import Mapping
 
 from betterinstincts import judgment_learning as judgment
-from betterinstincts.behavior_valence import LOW
-from betterinstincts.priority import NEED_ACTIONS, URGENT_BELOW
+from betterinstincts.priority import CRITICAL_BELOW, NEED_ACTIONS, URGENT_BELOW
 
 TOKEN = re.compile(r"[A-Za-z0-9_-]{3,64}")
 CAPTURE = re.compile(r"capture:[A-Za-z0-9_-]{3,64}")
@@ -58,7 +57,7 @@ def receipt(state: str, **fields: object) -> dict:
 
 def _context(payload: Mapping, needs: Mapping) -> dict:
     lowest = min(needs.values())
-    need_state = "critical" if lowest < LOW else "low" if lowest < URGENT_BELOW else "stable"
+    need_state = "critical" if lowest < CRITICAL_BELOW else "low" if lowest < URGENT_BELOW else "stable"
     return {"scenario": payload["scenario"], "style": payload["style"],
             "previous_action": payload["previous_action"],
             "need_state": need_state, "scene": "live"}

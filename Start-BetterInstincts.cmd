@@ -2,7 +2,7 @@
 setlocal EnableExtensions DisableDelayedExpansion
 title BetterInstincts - Play The Sims 4
 echo Welcome to BetterInstincts.
-echo Getting the latest toolkit and opening your game...
+echo Opening your game...
 set "PLAYMODE=production"
 set "BI_BOOTSTRAP_GAP="
 if /I "%~1"=="--dev" set "PLAYMODE=dev"
@@ -11,8 +11,6 @@ if /I "%PLAYMODE%"=="dev" set "DEV_CONTEXT=%~f2"
 rem User-scoped, no elevation, no registry/services/driver/input changes.
 rem Canonical checkout: %%USERPROFILE%%\dev\BetterInstincts.
 if not defined USERPROFILE goto blocked_home
-where git.exe >nul 2>nul
-if errorlevel 1 goto missing_git
 where py.exe >nul 2>nul
 if not errorlevel 1 (
   set "PYTHON=py -3"
@@ -23,6 +21,9 @@ if not errorlevel 1 (
 )
 %PYTHON% -c "import sys;sys.exit(0 if sys.version_info >= (3,11) else 1)" >nul 2>nul
 if errorlevel 1 goto bad_python
+if exist "%~dp0scripts\play.py" if exist "%~dp0bootstrap.py" goto local_checkout
+where git.exe >nul 2>nul
+if errorlevel 1 goto missing_git
 set "CHECKOUT=%USERPROFILE%\dev\BetterInstincts"
 if exist "%CHECKOUT%\" goto existing
 if not exist "%USERPROFILE%\dev\" mkdir "%USERPROFILE%\dev"
@@ -67,6 +68,15 @@ if /I "%PLAYMODE%"=="dev" goto play_dev
 goto play_result
 :play_dev
 %PYTHON% -m scripts.play --native-start --mode dev --checkout-head "%CHECKOUT_HEAD%" --save-context "%DEV_CONTEXT%"
+goto play_result
+:local_checkout
+cd /d "%~dp0"
+if errorlevel 1 goto blocked_existing
+if /I "%PLAYMODE%"=="dev" goto local_dev
+%PYTHON% -m scripts.play --native-start --mode production
+goto play_result
+:local_dev
+%PYTHON% -m scripts.play --native-start --mode dev --save-context "%DEV_CONTEXT%"
 :play_result
 if errorlevel 1 goto blocked_launcher
 exit /b 0

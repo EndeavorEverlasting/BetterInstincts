@@ -12,6 +12,7 @@ NEED_ACTIONS = (
     ("energy", "sleep"),
     ("hygiene", "shower"),
 )
+CRITICAL_BELOW = 0.25
 URGENT_BELOW = 0.35
 
 @dataclass(frozen=True)

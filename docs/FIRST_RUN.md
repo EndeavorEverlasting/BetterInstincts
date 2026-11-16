@@ -11,9 +11,10 @@ Status: pre-alpha offline toolkit, not a certified playable Sims 4 mod. The one-
 ## Play The Sims 4
 
 Double-click [Start-BetterInstincts.cmd](../Start-BetterInstincts.cmd) on your
-Windows Sims PC. It uses Git and Python 3.11+, gets the current `main` into
-`%USERPROFILE%/dev/BetterInstincts`, and opens a uniquely identified install.
-It preserves existing games and local changes. If a prerequisite, checkout
+Windows Sims PC. When the script is in a checkout, it uses those existing files
+with Python 3.11+ and opens a uniquely identified game installation. A standalone
+copy of the launcher still provisions or fast-forwards the canonical checkout
+with Git. It preserves existing games and local changes. If a prerequisite, checkout
 or game selection needs attention, the launcher prints the next step.
 
 From an existing checkout on the Sims PC, use the container-backed CLI

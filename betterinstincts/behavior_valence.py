@@ -15,6 +15,8 @@ from betterinstincts.autonomy_moderation import (
     AutonomyModerationError, evaluate_autonomy_moderation,
 )
 
+from betterinstincts.priority import CRITICAL_BELOW as LOW
+
 MODEL_SCHEMA = "betterinstincts.behavior-valence-model/v1"
 REVIEW_SCHEMA = "betterinstincts.behavior-valence-review/v1"
 REPORT_SCHEMA = "betterinstincts.behavior-valence-report/v1"
@@ -29,7 +31,6 @@ MAX_TOTAL = 512
 MAX_MODEL_BYTES = 48000
 MIN_SUPPORT = 3
 HIGH = 0.75
-LOW = 0.25
 
 
 class BehaviorValenceError(ValueError):
