@@ -117,7 +117,7 @@
       "progress": "Optional calibrated fraction within the current tier. Text or an uncalibrated screenshot leaves it unknown. Enabled exact-target EVOLVE is required before recommending an evolution.",
       "goal": "Report observed Perfect coverage and keep watering, weeding, pest care and fertilizer as independent maintenance.",
       "demand": "One inventory unit per observed eligible plant with DEPLETED, NONE or LOW fertilizer in this bounded pass. GOOD and UNKNOWN and cooling targets do not generate purchases.",
-      "purchase": "Require verified complete empty on-lot survey, no available owned transfers, one observed PURCHASE_FERTILIZER offer, verified personal-inventory delivery and current funds. Cap quantity at demand minus pocket stock and at available funds above the canonical household reserve.",
+      "purchase": "Require verified complete empty on-lot survey, no available owned transfers, one observed PURCHASE_FERTILIZER offer, verified personal-inventory delivery and current funds bound to the same household, lot and game build. Cap quantity at demand minus pocket stock and at available funds above the canonical household reserve.",
       "arrival": "Retain pending_acquisition after a dispatched transfer or purchase. Wait for exact item and full planned quantity in a new verified personal-inventory capture for the same Sim/lot.",
       "batch": "FERTILIZE_ALL requires a current exact observed target set equal to eligible deficient plants plus sufficient stock. Otherwise select one enabled exact plant action."
     }

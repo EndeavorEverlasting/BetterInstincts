@@ -266,6 +266,16 @@ def _plant_quality(observation: Mapping, plants: list, capture_ref: str) -> dict
     }
 
 
+def _purchase_scope_matches(source: object, workflow: Mapping, household_ref: str) -> bool:
+    return (
+        isinstance(source, Mapping)
+        and source.get("household_ref") == household_ref
+        and source.get("lot_ref") == workflow["lot_ref"]
+        and source.get("game_build") == workflow["game_build"]
+    )
+
+
+
 def _batch_matches(observation: Mapping, ready: list[str], capture_ref: str) -> bool:
     batch = observation.get("fertilize_all_scope")
     if (not isinstance(batch, Mapping)
@@ -275,7 +285,6 @@ def _batch_matches(observation: Mapping, ready: list[str], capture_ref: str) -> 
     targets = batch.get("target_refs")
     return (isinstance(targets, list) and len(targets) == len(ready)
             and all(_ref(ref) for ref in targets) and set(targets) == set(ready))
-
 
 
 def _inventory_readback(spec: Mapping, supply_units: Mapping, *, sim_ref: str,
@@ -293,7 +302,6 @@ def _inventory_readback(spec: Mapping, supply_units: Mapping, *, sim_ref: str,
     return (capture_ref != spec["before_capture_ref"]
             and supply_units.get(spec["item_ref"], 0)
             >= spec["before_units"] + spec["expected_units"])
-
 
 
 def evaluate_fertilizer_workflow(
@@ -480,6 +488,7 @@ def evaluate_fertilizer_workflow(
     scan = observation.get("backyard_scan")
     pickup_pending = False
     lot_supply_exhausted = False
+    deferred_scan = None
     if scan is not None and stock < len(ready):
         try:
             candidate = _backyard_transfer_candidate(
@@ -506,8 +515,12 @@ def evaluate_fertilizer_workflow(
                 # One already-held unit remains useful even while a *different*
                 # item pickup is queued. Never issue another transfer this turn.
                 pickup_pending = True
+            if tracking and scan.get("pending_transfer") is not None:
+                # Even a stale survey can report an unresolved attempt.
+                # Only new inventory evidence can settle that attempt.
+                pickup_pending = True
             lot_supply_exhausted = (
-                tracking and candidate["gate"] == "FERTILIZER_BACKYARD_BAGS_NOT_FOUND"
+                tracking and not pickup_pending and candidate["gate"] == "FERTILIZER_BACKYARD_BAGS_NOT_FOUND"
                 and scan.get("lot_coverage_verified") is True
                 and scan.get("bags") == []
                 and not ground and not owned_lot_stock_seen
@@ -515,7 +528,12 @@ def evaluate_fertilizer_workflow(
             if (stock == 0 and not lot_supply_exhausted
                     and (not tracking
                          or candidate["gate"] != "FERTILIZER_BACKYARD_BAGS_NOT_FOUND")):
-                return finish(candidate["gate"], candidate["action"])
+                if (not tracking or candidate["gate"] != "FERTILIZER_BACKYARD_REOBSERVE"
+                        or scan.get("pending_transfer") is not None):
+                    return finish(candidate["gate"], candidate["action"])
+                # A stale survey cannot establish absence. A separate current
+                # exact-target affordance can still transfer verified stock.
+                deferred_scan = candidate
         # With 1+ real inventory units, a failed optional bag scan must not
         # block the existing single-plant FERTILIZE option (not FERTILIZE_ALL).
 
@@ -539,12 +557,23 @@ def evaluate_fertilizer_workflow(
                               acquisition(selected, item["item_ref"]))
         if ground:
             return finish("INSPECT_TRANSFER_AFFORDANCE", "FIND_EXACT_INVENTORY_DRAG_PATH")
-    if "sourcing" in observation and (
-            (not tracking and stock == 0)
-            or (tracking and lot_supply_exhausted and stock < len(ready))):
+    if deferred_scan is not None:
+        return finish(deferred_scan["gate"], deferred_scan["action"])
+    sourcing = observation.get("sourcing")
+    source_scope_valid = (
+        tracking and lot_supply_exhausted
+        and _purchase_scope_matches(sourcing, observation, quality["household_ref"])
+    )
+    if "sourcing" in observation and tracking and lot_supply_exhausted and not source_scope_valid:
+        result["source_scope_verified"] = False
+        if stock == 0:
+            return finish("FERTILIZER_SOURCE_REOBSERVE_SCOPE",
+                          "VERIFY_PURCHASE_HOUSEHOLD_LOT_AND_BUILD")
+    if ((not tracking and stock == 0 and "sourcing" in observation)
+            or (source_scope_valid and stock < len(ready))):
         try:
             source = plan_fertilizer_sources(
-                observation["sourcing"], capture_ref=capture_ref, now=now,
+                sourcing, capture_ref=capture_ref, now=now,
                 expected_sim_ref=sim_ref,
                 expected_deficit_units=len(ready) - stock,
                 purchase_targets=(

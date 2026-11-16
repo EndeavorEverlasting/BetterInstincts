@@ -252,3 +252,13 @@ disposable Windows household, prove the owned-bag path, the empty-lot purchase
 and independent pocket readback, one target's fertilizer change, and an
 enabled Evolve producing the next observed tier. Exercise player override
 and rollback in the same controlled session.
+
+### Purchase and transfer scope
+
+In quality-tracking mode, sourcing must carry the same verified
+`household_ref`, `lot_ref` and `game_build` as the active gardening
+observation. A missing or differing scope blocks the purchase proposal.
+A stale optional backyard survey cannot prove an empty lot. A separate
+current, enabled transfer for a verified household-owned item on that lot
+can still proceed through normal admission. A reported pending pickup
+holds another acquisition until the executor reconciles the result.
