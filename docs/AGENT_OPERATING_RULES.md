@@ -106,7 +106,9 @@ considering another launch. For a Docker-only check use
 
 The [oldest lab save and upgrade-parts handoff](handoff/BI-OLDEST-LAB-RESTOCK.md)
 owns the dedicated `Start-BetterInstincts.cmd --upgrade-parts` route. Recover
-its first failing repository gate from the launch receipt. Keep the oldest
+its first failing repository gate from the launch receipt. If the original
+checkout is stale, dirty or divergent, use the handoff's isolated checkout
+command and continue in the same session. Keep the oldest
 eligible selection, exact active map identity and per-Sim native settlement
 with the repository workflow. An assisted action alone cannot close its
 native acceptance.

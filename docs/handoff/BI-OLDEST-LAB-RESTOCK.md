@@ -28,6 +28,63 @@ verified inventory and the household funds readback must settle before
 moving on. A purchase must fit the approved run cap and the existing
 household reserve. The workflow does not issue a save operation.
 
+## Recover a stale or locally modified checkout
+
+If the original checkout is dirty, ahead of upstream, divergent, or too old
+to contain this launcher, create a clean detached worktree and continue the
+same run. Preserve the development branch, local commits, staged and unstaged
+files, and ignored evidence. A branch cleanup decision is separate from live
+certification. The batch launcher targets the canonical development path even
+when started elsewhere, so call its Python entrypoint in the detached worktree.
+
+Run this in PowerShell on the Windows Sims host from the original
+BetterInstincts checkout. Use the current authorized run and its existing private
+startup context. The worktree is for executable source. The original checkout
+and runtime receipt directory still own their existing local evidence.
+
+```powershell
+$repo = git rev-parse --show-toplevel
+if ($LASTEXITCODE -ne 0) { throw 'Open the original BetterInstincts checkout.' }
+$origin = git -C $repo remote get-url origin
+if ($LASTEXITCODE -ne 0 -or $origin -notin @(
+    'https://github.com/EndeavorEverlasting/BetterInstincts.git',
+    'git@github.com:EndeavorEverlasting/BetterInstincts.git'
+)) { throw 'Verify the official BetterInstincts origin.' }
+
+git -C $repo fetch --no-tags origin 'refs/heads/main:refs/remotes/origin/main'
+if ($LASTEXITCODE -ne 0) { throw 'Fetch of BetterInstincts main failed.' }
+$head = git -C $repo rev-parse --verify 'refs/remotes/origin/main^{commit}'
+if ($LASTEXITCODE -ne 0 -or $head -cnotmatch '^[0-9a-f]{40}$') {
+    throw 'Could not resolve the fetched main commit.'
+}
+$worktreeRoot = Join-Path $env:USERPROFILE 'dev\.worktrees\BetterInstincts'
+New-Item -ItemType Directory -Path $worktreeRoot -Force -ErrorAction Stop | Out-Null
+$worktree = Join-Path $worktreeRoot ('lab-restock-' + [guid]::NewGuid().ToString('N'))
+git -C $repo worktree add --detach $worktree $head
+if ($LASTEXITCODE -ne 0) { throw 'Could not create the lab restock worktree.' }
+$actualHead = git -C $worktree rev-parse HEAD
+if ($LASTEXITCODE -ne 0 -or $actualHead -cne $head) { throw 'Worktree commit mismatch.' }
+$changes = git -C $worktree --no-optional-locks status --porcelain --untracked-files=all
+if ($LASTEXITCODE -ne 0 -or $changes) { throw 'Worktree must start clean.' }
+
+Push-Location -LiteralPath $worktree -ErrorAction Stop
+try {
+    py -3 -m scripts.play --native-start --upgrade-parts --checkout-head $head --json
+    $playExit = $LASTEXITCODE
+} finally {
+    Pop-Location
+}
+```
+
+Read the returned JSON, including `stage`, `reason`, `checkout_head`, and
+`receipt` when available. Continue at the first unmet gate on the Windows host.
+Recover accessible startup, registry, calibration, and bridge evidence before
+asking for operator input. Preserve an open game and follow the receipt for an
+active certification. If the binding is missing or fails capabilities, continue
+with the exact-build binding owner below. Keep any in-flight purchase receipt
+for reconciliation before a retry. When the run no longer needs the worktree,
+remove only that worktree using `git -C $repo worktree remove $worktree`.
+
 ## Local setup and exact-build continuation
 
 The launcher automatically reads

@@ -13,6 +13,8 @@ The [canonical restock workflow](handoff/BI-OLDEST-LAB-RESTOCK.md) selects the
 oldest eligible lab save without a prompt and verifies the active map
 household before topping up each available Sim's five computer parts to 99.
 The host controller owns selection, spend, per-Sim settlement and receipts.
+The [detached-worktree recovery](handoff/BI-OLDEST-LAB-RESTOCK.md#recover-a-stale-or-locally-modified-checkout)
+reaches the same controller from fetched `main` while preserving development work.
 Exact-build Windows native binding and gameplay proof remain in #171.
 
 ## 2026-11-16 — Shared household portrait handoff

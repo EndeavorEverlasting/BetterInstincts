@@ -3,6 +3,8 @@
 Bind the exact-build Windows native adapter and prove the
 [oldest-save restock launch](handoff/BI-OLDEST-LAB-RESTOCK.md) as one run,
 including actual purchases, a Sim away at work, player takeover and rollback.
+On a host with local development changes, use the same handoff's isolated
+checkout route to reach the native preflight.
 
 ## 2026-11-16 — Native portrait handoff
 
