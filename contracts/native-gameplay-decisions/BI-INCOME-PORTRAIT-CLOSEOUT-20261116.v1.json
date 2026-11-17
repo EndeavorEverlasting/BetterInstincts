@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/household_income.py",
+      "route": "POLICY_ONLY",
+      "reason": "Expose the observed save, build and ordered member keys of the winning income plan for offline evidence matching.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/portrait_handoff.py",
+      "route": "POLICY_ONLY",
+      "reason": "Match the arbitrated income handoff to the existing exact-roster adapter contract. The source-proven EA binding remains a separate dependency.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

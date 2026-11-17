@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from hashlib import sha256
 from typing import Mapping
 
 from betterinstincts.player_learning import ACTOR, TOKEN
@@ -22,6 +23,48 @@ def _roster(items):
     return ()
 
 
+def _income_target(frame, packet, roster):
+    """Resolve a winning host turn using the adapter's observed identity binding."""
+    turn = packet.get("income_turn")
+    if (not isinstance(turn, Mapping)
+            or turn.get("state") != "HOST_TURN_EVALUATED"
+            or turn.get("capture_ref") != frame.capture
+            or turn.get("next_gate") != "HOUSEHOLD_INCOME_PORTRAIT_READY"):
+        return None, None
+    report = turn.get("fallback")
+    members = packet.get("income_member_keys")
+    if (not isinstance(report, Mapping)
+            or report.get("owner") != "betterinstincts/household_income.py"
+            or report.get("state") != turn["next_gate"]
+            or report.get("goal_id") != "household-earned-income"
+            or report.get("capture_ref") != frame.capture
+            or report.get("game_build") != frame.game_build
+            or report.get("save_ref") != packet["save"]
+            or report.get("scope_id") is None
+            or report["scope_id"] != packet.get("income_scope_id")
+            or report.get("execute_allowed") is not False
+            or not isinstance(members, list) or len(members) != len(roster)
+            or any(not isinstance(key, str) or not key or len(key) > 160 for key in members)
+            or len(set(members)) != len(members)
+            or members != report.get("member_keys")):
+        return None, None
+    step = report.get("next")
+    if (not isinstance(step, Mapping) or step.get("capture_ref") != frame.capture
+            or step.get("action") != "SELECT_PORTRAIT_THEN_REOBSERVE_ACTOR_AND_NEEDS"
+            or step.get("from_member_key") != members[roster.index(frame.actor)]
+            or step.get("to_member_key") not in members
+            or step.get("execute_allowed") is not False
+            or step.get("new_capture_required") is not True):
+        return None, None
+    task = step.get("task_ref")
+    if not isinstance(task, str) or not 3 <= len(task) <= 160 or not task.isascii():
+        return None, None
+    target = roster[members.index(step["to_member_key"])]
+    # Deduplicate this work unit across captures while allowing a later task
+    # to select the same Sim again under the same household goal.
+    return target, sha256(task.encode("utf-8")).hexdigest()
+
+
 @dataclass(frozen=True)
 class Selection:
     save: str
@@ -38,13 +81,15 @@ def choose_selection(frame, packet):
         return "NO_PORTRAIT_GOAL", None
     if (not isinstance(packet, Mapping) or packet.get("capture") != frame.capture
             or packet.get("household") != frame.household or packet.get("selected") != frame.actor
-            or not _matches(TOKEN, packet.get("save")) or not _matches(TOKEN, packet.get("goal"))):
+            or not _matches(TOKEN, packet.get("save"))):
         return "PORTRAIT_EVIDENCE_UNQUALIFIED", None
     roster = _roster(packet.get("roster"))
     members = packet.get("members")
     purpose = packet.get("purpose")
+    goal = packet.get("goal")
     if (frame.actor not in roster or not isinstance(members, Mapping) or set(members) != set(roster)
-            or purpose not in ("NEEDS", "SKILL", "UPGRADE_PARTS", "TARGET")
+            or purpose not in ("NEEDS", "SKILL", "UPGRADE_PARTS", "TARGET", "INCOME")
+            or (purpose != "INCOME" and not _matches(TOKEN, goal))
             or not all(state in STATES for state in members.values())):
         return "PORTRAIT_EVIDENCE_UNQUALIFIED", None
     if packet.get("safe_to_leave") is not True:
@@ -52,7 +97,13 @@ def choose_selection(frame, packet):
 
     index = roster.index(frame.actor)
     rotation = roster[index:] + roster[:index]
-    if purpose == "TARGET":
+    if purpose == "INCOME":
+        target, goal = _income_target(frame, packet, roster)
+        if target is None:
+            return "PORTRAIT_EVIDENCE_UNQUALIFIED", None
+        if members[target] != "READY":
+            return "PORTRAIT_TARGET_UNAVAILABLE", None
+    elif purpose == "TARGET":
         target = packet.get("target")
         if not _matches(ACTOR, target) or members.get(target) != "READY":
             return "PORTRAIT_TARGET_UNAVAILABLE", None
@@ -78,7 +129,7 @@ def choose_selection(frame, packet):
         return "NO_ELIGIBLE_PORTRAIT", None
     if target == frame.actor:
         return "PORTRAIT_ALREADY_SELECTED", None
-    return "PORTRAIT_SWITCH_READY", Selection(packet["save"], roster, packet["goal"],
+    return "PORTRAIT_SWITCH_READY", Selection(packet["save"], roster, goal,
                                               purpose, frame.actor, target)
 
 

@@ -1,3 +1,12 @@
+## 2026-11-16 — Household income portrait closeout
+
+The shared native portrait chooser accepts the winning income handoff after
+matching its capture, build, save, ordered roster, household and selected
+Sim. The callback fixtures exercise a changed target between frames and
+verify selection acknowledgement before the recipient is reconsidered for
+income. The host planner continues to own queue suitability. Exact-build EA
+binding, queue admission, earned funds and rollback remain under #171.
+
 ## 2026-11-16 — Shared household portrait handoff
 
 The installed runtime has one optional selection transaction for upgrade

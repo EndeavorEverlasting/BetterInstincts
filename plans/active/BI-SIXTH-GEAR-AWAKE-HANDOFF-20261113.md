@@ -33,3 +33,11 @@ purchases, skills, needs and explicit microsystem targets. See the
 [adapter contract](../../docs/HOUSEHOLD_ECONOMY.md#shared-native-portrait-handoff)
 for the observed roster, player takeover, per-recipient workflow receipts and
 exact-build P08 gate. The existing host-stack advice remains available.
+
+## 2026-11-16 closeout — income recipient
+
+The shared `INCOME` purpose consumes the host's winning handoff through the
+existing chooser and recheck. Verify a same-save, same-build income rollover
+from a full portrait queue to an eligible recipient under #171. Record the
+native selection receipt, a later queue addition, protected queue rows,
+settlement, and rollback.

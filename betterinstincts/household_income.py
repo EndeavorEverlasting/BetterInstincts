@@ -168,6 +168,9 @@ def evaluate_household_income(
     handoff = key != selected["member_key"]
     return {
         **report, "state": "HOUSEHOLD_INCOME_PORTRAIT_READY" if handoff else "HOUSEHOLD_INCOME_ENQUEUE_READY",
+        "game_build": packet["game_build"],
+        "save_ref": packet["save_ref"],
+        "member_keys": [member["member_key"] for member in members],
         "next": {
             "action": "SELECT_PORTRAIT_THEN_REOBSERVE_ACTOR_AND_NEEDS" if handoff
                       else "REVALIDATE_AND_ENQUEUE_ONE_INCOME_ACTION",

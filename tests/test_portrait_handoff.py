@@ -6,8 +6,10 @@ import tempfile
 import unittest
 from unittest.mock import Mock
 
+from betterinstincts.host_stack import evaluate_turn
 from betterinstincts.installed_player_runtime import Frame, MANIFEST, start_installed
 from betterinstincts.portrait_handoff import choose_selection
+from tests.test_household_income import NEEDS, offer, setup
 
 BUILD = "1.121.361.1020"
 ANNA, BEA, CAM = "sim:anna", "sim:bea", "sim:cam"
@@ -27,6 +29,24 @@ def packet(current, purpose, states=("COVERED", "READY", "READY"), **overrides):
         "purpose": purpose, "members": dict(zip(ROSTER, states)), "safe_to_leave": True,
         **overrides,
     }
+
+
+def income_packet(current, target=BEA, *, player_directed=False):
+    observation, member_keys = setup()
+    observation["capture_ref"] = current.capture
+    observation["selected_member_key"] = member_keys[ROSTER.index(current.actor)]
+    income = observation["income"]
+    income.update(capture_ref=current.capture, game_build=current.game_build, save_ref="lab-save")
+    income["offers"] = [offer(member_keys[ROSTER.index(target)], "paid", capture_ref=current.capture)]
+    for member in observation["members"]:
+        member["capture_ref"] = current.capture
+    for window in income["windows"].values():
+        window["capture_ref"] = current.capture
+    turn = evaluate_turn(NEEDS, household_economy=observation, capture_ref=current.capture,
+                         location_kind="home", queue=[], viewport={"state": "VIEWPORT_OK"},
+                         player_directed=player_directed)
+    return packet(current, "INCOME", income_turn=turn, income_member_keys=member_keys,
+                  income_scope_id=observation["scope"]["scope_id"])
 
 
 class PortraitPolicyTests(unittest.TestCase):
@@ -81,6 +101,30 @@ class PortraitPolicyTests(unittest.TestCase):
                          ("PORTRAIT_TARGET_UNAVAILABLE", None))
 
 
+    def test_income_uses_only_the_current_arbitrated_turn_and_matching_roster(self):
+        current = frame(1)
+        data = income_packet(current)
+        self.assertEqual(choose_selection(current, data)[1].target, BEA)
+        for change in (
+            {"income_member_keys": list(reversed(data["income_member_keys"]))},
+            {"income_scope_id": "another-household"},
+            {"save": "another-save"},
+            {"income_turn": income_packet(frame(2))["income_turn"]},
+            {"income_turn": income_packet(current, player_directed=True)["income_turn"]},
+        ):
+            with self.subTest(change=change.keys()):
+                self.assertEqual(choose_selection(current, {**data, **change}),
+                                 ("PORTRAIT_EVIDENCE_UNQUALIFIED", None))
+        self.assertEqual(choose_selection(replace(current, game_build="9.9.9.9"), data),
+                         ("PORTRAIT_EVIDENCE_UNQUALIFIED", None))
+        self.assertEqual(choose_selection(current, {**data, "safe_to_leave": False}),
+                         ("PORTRAIT_CURRENT_EFFECT_PENDING", None))
+        selected = frame(2, BEA)
+        selected_data = income_packet(selected)
+        self.assertEqual(selected_data["income_turn"]["next_gate"], "HOUSEHOLD_INCOME_ENQUEUE_READY")
+        self.assertEqual(choose_selection(selected, selected_data), ("PORTRAIT_EVIDENCE_UNQUALIFIED", None))
+
+
 class InstalledPortraitTests(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
@@ -112,6 +156,19 @@ class InstalledPortraitTests(unittest.TestCase):
     def cycle(self, runtime, *frames):
         self.adapter.frame.side_effect = list(frames)
         return runtime.cycle()
+
+    def test_income_callback_rechecks_winning_target_and_confirms_selection(self):
+        runtime = self.start()
+        self.adapter.read_portrait_handoff.side_effect = [
+            income_packet(frame(1)), income_packet(frame(2), target=CAM),
+            income_packet(frame(3)), income_packet(frame(4)),
+        ]
+        self.assertEqual(self.cycle(runtime, frame(1), frame(2)), "PORTRAIT_SELECTION_REOBSERVE")
+        self.adapter.submit_portrait_if_current.assert_not_called()
+        self.assertEqual(self.cycle(runtime, frame(3), frame(4)), "PORTRAIT_SWITCH_AWAITING_READBACK")
+        self.assertEqual(self.cycle(runtime, frame(5, BEA)), "PORTRAIT_SWITCH_CONFIRMED")
+        self.adapter.submit_portrait_if_current.assert_called_once()
+        self.adapter.submit.assert_not_called()
 
     def test_each_workflow_submits_once_and_resumes_on_a_third_recipient_observation(self):
         for purpose, action in (("UPGRADE_PARTS", "purchase"), ("SKILL", "train"), ("NEEDS", "care")):
