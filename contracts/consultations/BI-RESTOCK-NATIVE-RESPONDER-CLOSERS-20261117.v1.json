@@ -1,0 +1,67 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-RESTOCK-NATIVE-RESPONDER-CLOSERS-20261117",
+  "base_commit": "9342b5c4e3261c260de36b51b1bdcafe1641febb",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Hand control from verified lab restock to the exact-build existing native responder using one scoped native transition and independently observe decision-making.",
+  "affected_concepts": [
+    "SAVE_SLOT",
+    "GAME_SCENE",
+    "HOUSEHOLD",
+    "SIM",
+    "SIM_PORTRAIT",
+    "OBSERVATION",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "PLAYER_INTENT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "scripts/play.py",
+    "scripts/launch_save_route.py",
+    "scripts/save_candidate_priority.py",
+    "scripts/game_host.py",
+    "betterinstincts/portrait_handoff.py",
+    "betterinstincts/computer_upgrade_parts.py",
+    "scripts/launch_receipt.py",
+    "betterinstincts/activity_chain.py",
+    "scripts/lab_upgrade_parts.py",
+    "betterinstincts/installed_player_runtime.py",
+    "docs/handoff/BI-OLDEST-LAB-RESTOCK.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_HOST_ORCHESTRATION_AND_FIXTURE_EVIDENCE",
+  "player_save_control_impact": "Existing exact process, game version, save, lot and input generation remain required. No game access in this executor. Native admission still requires an independently verified Windows binding.",
+  "expected_outcome": "The existing launcher claims restock control, buys to the current target, clears the picker, transfers ownership to the repository native runtime and records a distinct qualified decision.",
+  "negative_tests": [
+    "Missing qualified ownership holds native effects. Wrong scope, open picker or unsettled cart prevents handoff.",
+    "Lost handoff acknowledgement cannot replay. Handoff alone is distinct from observing a native decision."
+  ],
+  "rollback_path": "Revert the named launch feature. No offline test touches game data.",
+  "unresolved_unknowns": [
+    "Exact installed Windows EA bridge, mod activation, decision callback, native effects and player takeover."
+  ],
+  "files_expected": [
+    "scripts/play.py",
+    "scripts/lab_upgrade_parts.py",
+    "betterinstincts/installed_player_runtime.py",
+    "tests/test_lab_upgrade_parts.py",
+    "tests/test_installed_player_runtime.py",
+    "contracts/native-gameplay-decisions/BI-RESTOCK-NATIVE-RESPONDER-CLOSERS-20261117.v1.json",
+    "contracts/native-ecology-runtime.v1.json",
+    "docs/handoff/BI-OLDEST-LAB-RESTOCK.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}
