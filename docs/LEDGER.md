@@ -2394,3 +2394,12 @@ queue action or one portrait handoff at a time, using shared surplus,
 receipt-backed net yield, reservations and per-Sim need and career windows.
 The promotion is source and offline policy only. Exact-build native proof is
 tracked in [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+
+## 2026-11-17 — PS-0241 installed activity-chain callback
+
+The installed policy port can stage the existing cross-domain DAG while
+paused and recompile against two current Play frames before one native
+submission. Source fixtures reconcile purchase, inventory transfer, travel
+and a career artifact to completion. Existing domain priority and original
+actor settlement are retained. Exact-build EA binding and durable restart
+recovery remain in #171. See [Activity Chains](ACTIVITY_CHAIN.md#installed-runtime-adapter).

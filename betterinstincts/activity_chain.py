@@ -8,7 +8,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Mapping, Sequence
-from betterinstincts.funds_inject import MAX_HOUSEHOLD_FUNDS
+from betterinstincts.household_funds import MAX_HOUSEHOLD_FUNDS
 
 SCHEMA = "betterinstincts.activity-chain/v1"
 PROOF = "OFFLINE_ACTIVITY_CHAIN_ADVISORY_NOT_GAME_EFFECT"
@@ -205,8 +205,10 @@ def compile_activity_chain(snapshot: Mapping, steps: Sequence[Mapping],
         done.add(row["id"])
         scheduled.add(row["id"])
         waiting.remove(row["id"])
-    gate = "PLAN_STAGED" if queue and mode == "PLANNING" else (
-        "EFFECT_ADMISSION_REQUIRED" if queue else "INSUFFICIENT_EVIDENCE_OR_BUDGET")
+    if queue:
+        gate = "PLAN_STAGED" if mode == "PLANNING" else "EFFECT_ADMISSION_REQUIRED"
+    else:
+        gate = "CHAIN_COMPLETED" if not waiting else "INSUFFICIENT_EVIDENCE_OR_BUDGET"
     # Do not spend on prerequisites whose dependent goal cannot finish safely
     # inside the observed window; unscheduled zero-cost prep may be deferred.
     purchased = {sid for sid in scheduled if nodes[sid].get("cost", 0) > 0}
