@@ -1,3 +1,10 @@
+## 2026-11-16 — Native portrait handoff
+
+Bind the EA active-household selector and readback on the exact Windows build
+under #171. Run the [household handoff cases](HOUSEHOLD_ECONOMY.md#shared-native-portrait-handoff)
+against the same admitted disposable household, preserving the player's queue
+and recording each workflow's own outcome.
+
 ## 2026-11-16 — Fame and streaming drones
 
 Bind the exact-build Get Famous drone observation and outcome ports. Prove

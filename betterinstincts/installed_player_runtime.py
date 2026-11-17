@@ -45,7 +45,7 @@ class InstalledPlayerRuntime:
     """One permitted game session. No thread, timer, Git, socket or desktop input."""
 
     def __init__(self, adapter, *, build: str, owned_dir: Path, clock=monotonic,
-                 trait_response=None, fairy_dust=None, fame=None):
+                 trait_response=None, fairy_dust=None, fame=None, portraits=None):
         self.adapter = adapter
         self.build = build
         self.path = owned_dir / "player-learning.sqlite3"
@@ -66,6 +66,64 @@ class InstalledPlayerRuntime:
         self.fame_streams = {}
         self.fame_training = {}
         self.fame_receipt = None
+        self.portraits = portraits
+        self.portrait_pending = None
+        self.portrait_readback = None
+
+    def _select_portrait(self, first):
+        try:
+            state, selection = self.portraits.choose_selection(
+                first, self.adapter.read_portrait_handoff(first))
+        except Exception:
+            return "PORTRAIT_EVIDENCE_UNQUALIFIED"
+        if selection is None:
+            return None if state in ("NO_PORTRAIT_GOAL", "NO_ELIGIBLE_PORTRAIT",
+                                     "PORTRAIT_ALREADY_SELECTED") else state
+        fresh = self.adapter.frame()
+        if (not self._fresh_idle_after(first, fresh) or fresh.modal_open is not False
+                or fresh.playing is not first.playing):
+            return "YIELD_TO_PLAYER"
+        try:
+            planned, _, _ = self.adapter.analyze(fresh)
+            if not isinstance(planned, Mapping) or planned:
+                return "PORTRAIT_SELECTION_REOBSERVE"
+            _, current = self.portraits.choose_selection(
+                fresh, self.adapter.read_portrait_handoff(fresh))
+        except Exception:
+            return "PORTRAIT_EVIDENCE_UNQUALIFIED"
+        if current != selection or not self._idle(fresh):
+            return "PORTRAIT_SELECTION_REOBSERVE"
+
+        identity = (fresh.run, fresh.household, selection.save, "PORTRAIT",
+                    selection.purpose, selection.goal, selection.target)
+        if identity in self.attempts:
+            return "DUPLICATE_PORTRAIT_PROPOSAL"
+        if len(self.attempts) >= MAX_ATTEMPTS_PER_RUN:
+            return "NATIVE_SESSION_ATTEMPT_LIMIT"
+        attempt = self.portraits.Attempt(selection, fresh.run, fresh.household,
+                                         fresh.input_generation, first.capture, fresh.capture,
+                                         fresh.observed_at)
+        # Retain the attempt before the native call. An exception can occur
+        # after EA accepts the request, so no return value clears the latch.
+        self.portrait_pending = attempt
+        self.attempts.add(identity)
+        try:
+            self.adapter.submit_portrait_if_current(attempt, fresh)
+        except Exception:
+            return "PORTRAIT_SWITCH_RECONCILE"
+        return "PORTRAIT_SWITCH_AWAITING_READBACK"
+
+    def _reconcile_portrait(self, frame):
+        attempt = self.portrait_pending
+        try:
+            outcome = self.adapter.read_portrait_outcome(attempt, frame)
+            state = self.portraits.outcome_state(frame, attempt, outcome)
+        except Exception:
+            return "PORTRAIT_SWITCH_RECONCILE"
+        if state != "PORTRAIT_SWITCH_RECONCILE":
+            self.portrait_pending = None
+            self.portrait_readback = frame
+        return state
 
     def _fresh_live(self, frame):
         return (isinstance(frame, Frame) and frame.game_build == self.build
@@ -305,6 +363,17 @@ class InstalledPlayerRuntime:
         elif first.run != self.run:
             self.pending = None
             return "NATIVE_SESSION_REBIND_REQUIRED"
+        if self.portrait_pending is not None:
+            return self._reconcile_portrait(first)
+        readback = self.portrait_readback
+        if readback is not None:
+            if (type(first.input_generation) is not int or first.capture == readback.capture
+                    or first.observed_at <= readback.observed_at
+                    or first.input_generation < readback.input_generation
+                    or (first.scope() != readback.scope()
+                        and first.input_generation == readback.input_generation)):
+                return "PORTRAIT_SELECTION_REOBSERVE"
+            self.portrait_readback = None
         if self.unresolved is not None and self.adapter.reconcile(self.unresolved, first) is True:
             self.unresolved = None
         if first.modal_open is True:
@@ -327,7 +396,14 @@ class InstalledPlayerRuntime:
                 return dust_result
         if self.unresolved is not None:
             return "NATIVE_DISPATCH_RECONCILIATION"
-        if not self._idle(first) or first.playing is not True:
+        if not self._idle(first):
+            return "YIELD_TO_PLAYER"
+        if (self.portraits is not None and isinstance(planned, Mapping) and not planned
+                and type(first.playing) is bool and not self.dust_attempts and not self.fame_attempts):
+            result = self._select_portrait(first)
+            if result is not None:
+                return result
+        if first.playing is not True:
             return "YIELD_TO_PLAYER"
         if self.fame is not None and isinstance(planned, Mapping) and planned:
             if fame_result == "NATIVE_DISPATCH_RECONCILIATION":
@@ -416,8 +492,15 @@ def start_installed(adapter, *, exact_build: str, owned_dir: Path,
                 "read_fame", "submit_fame", "read_fame_outcome")):
             raise ValueError("NATIVE_FAME_PORTS_REQUIRED")
         from betterinstincts import fame
+    portraits = None
+    if installed.get("installed_portrait_handoff") is True:
+        from betterinstincts import portrait_handoff as portraits
+
+        if not all(callable(getattr(adapter, name, None)) for name in portraits.PORTS):
+            raise ValueError("NATIVE_PORTRAIT_HANDOFF_PORTS_REQUIRED")
     runtime = InstalledPlayerRuntime(adapter, build=exact_build, owned_dir=root, clock=clock,
-                                     trait_response=trait_response, fairy_dust=fairy_dust, fame=fame)
+                                     trait_response=trait_response, fairy_dust=fairy_dust, fame=fame,
+                                     portraits=portraits)
     if not all(callable(getattr(adapter, name, None))
                for name in ("register", "frame", "analyze", "submit", "reconcile")):
         raise ValueError("NATIVE_CALLBACK_PORTS_REQUIRED")

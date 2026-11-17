@@ -1,3 +1,12 @@
+## 2026-11-16 — Shared household portrait handoff
+
+The installed runtime has one optional selection transaction for upgrade
+parts, serial skills, outstanding needs and explicit targets from other
+microsystems. It waits for native acknowledgement and a fresh selected-Sim
+observation before resuming the domain. The
+[adapter and acceptance cases](HOUSEHOLD_ECONOMY.md#shared-native-portrait-handoff)
+route exact-build Windows evidence through #171.
+
 ## 2026-11-16 — Fame Closers
 
 Automatic drone effects require a per-Sim goal and consistent current native
