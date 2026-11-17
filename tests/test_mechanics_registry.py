@@ -24,8 +24,8 @@ class MechanicsRegistryTests(unittest.TestCase):
     def test_coverage_is_source_owned_and_never_claims_native_effect(self):
         data = load_registry()
         report = validate_registry(data)
-        self.assertEqual(report["mechanics_total"], 56)
-        self.assertEqual(report["source_present"], 49)
+        self.assertEqual(report["mechanics_total"], 57)
+        self.assertEqual(report["source_present"], 50)
         self.assertEqual(report["visible_gaps"], 7)
         self.assertEqual(report["live_game_certified"], 0)
         self.assertIn("household-yield-accounting", report["gaps"])
@@ -48,7 +48,12 @@ class MechanicsRegistryTests(unittest.TestCase):
             self.assertEqual(item["evidence_state"], "SOURCE_PRESENT")
             self.assertIn("tests/test_eco_resource_cycle.py", item["tests"])
             self.assertFalse(item["game_effect_certified"])
-        self.assertEqual(run(["status"])["mechanics_total"], 56)
+        income = next(row for row in data["mechanics"]
+                      if row["id"] == "household-income-allocation")
+        self.assertEqual(income["owner"], "betterinstincts/household_income.py")
+        self.assertIn("career-progress", income["dependencies"])
+        self.assertFalse(income["game_effect_certified"])
+        self.assertEqual(run(["status"])["mechanics_total"], 57)
 
     def test_duplicate_unknown_owner_and_game_claim_fail(self):
         base = load_registry()
