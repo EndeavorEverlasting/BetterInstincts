@@ -5,6 +5,7 @@ echo Welcome to BetterInstincts.
 echo Opening your game...
 set "PLAYMODE=production"
 set "BI_BOOTSTRAP_GAP="
+if /I "%~1"=="--upgrade-parts" set "PLAYMODE=upgrade-parts"
 if /I "%~1"=="--dev" set "PLAYMODE=dev"
 if /I "%PLAYMODE%"=="dev" if "%~2"=="" goto missing_context
 if /I "%PLAYMODE%"=="dev" set "DEV_CONTEXT=%~f2"
@@ -21,7 +22,7 @@ if not errorlevel 1 (
 )
 %PYTHON% -c "import sys;sys.exit(0 if sys.version_info >= (3,11) else 1)" >nul 2>nul
 if errorlevel 1 goto bad_python
-if exist "%~dp0scripts\play.py" if exist "%~dp0bootstrap.py" goto local_checkout
+if /I not "%PLAYMODE%"=="upgrade-parts" if exist "%~dp0scripts\play.py" if exist "%~dp0bootstrap.py" goto local_checkout
 where git.exe >nul 2>nul
 if errorlevel 1 goto missing_git
 set "CHECKOUT=%USERPROFILE%\dev\BetterInstincts"
@@ -63,11 +64,15 @@ for /f "delims=" %%G in ('git rev-parse HEAD') do set "CHECKOUT_HEAD=%%G"
 for /f "delims=" %%G in ('git rev-parse refs/remotes/origin/main') do set "UPSTREAM_HEAD=%%G"
 if not defined CHECKOUT_HEAD goto blocked_update
 if /I not "%CHECKOUT_HEAD%"=="%UPSTREAM_HEAD%" goto blocked_update
+if /I "%PLAYMODE%"=="upgrade-parts" goto play_upgrade_parts
 if /I "%PLAYMODE%"=="dev" goto play_dev
 %PYTHON% -m scripts.play --native-start --mode production --checkout-head "%CHECKOUT_HEAD%"
 goto play_result
 :play_dev
 %PYTHON% -m scripts.play --native-start --mode dev --checkout-head "%CHECKOUT_HEAD%" --save-context "%DEV_CONTEXT%"
+goto play_result
+:play_upgrade_parts
+%PYTHON% -m scripts.play --native-start --mode dev --upgrade-parts --checkout-head "%CHECKOUT_HEAD%"
 goto play_result
 :local_checkout
 cd /d "%~dp0"
@@ -132,5 +137,6 @@ if defined LOCALAPPDATA if not "%BI_BOOTSTRAP_GAP%"=="" (
   endlocal
 )
 echo.
+if /I "%PLAYMODE%"=="upgrade-parts" exit /b 2
 pause
 exit /b 2

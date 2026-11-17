@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import asdict
 import hashlib
 import json
@@ -20,7 +20,8 @@ PLAN = {
 }
 STARTUP_SOURCES = ("bootstrap.py", "scripts/play.py", "scripts/first_run.py",
                    "scripts/smart_start.py", "betterinstincts/first_run.py",
-                   "scripts/game_host.py", "scripts/launch_save_route.py", "scripts/launch_receipt.py")
+                   "scripts/game_host.py", "scripts/launch_save_route.py", "scripts/launch_receipt.py",
+                   "scripts/lab_upgrade_parts.py", "scripts/save_candidate_priority.py")
 WIN_COMMAND = "py -3 -m scripts.play"
 SUCCESS_MESSAGES = {
     "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF":
@@ -123,7 +124,7 @@ def windows_startup_lock():
 def play_on_windows(
     game_exe: Path | None, progress: Callable[[str], None], *,
     mode: str | None = None, save_context: Path | None = None, receipt_path: Path | None = None,
-    receipt: dict | None = None, checkout: Path | None = None,
+    receipt: dict | None = None, checkout: Path | None = None, upgrade_parts: bool = False,
 ) -> dict:
     from bootstrap import install, paths
     from scripts.first_run import requested_start
@@ -150,7 +151,8 @@ def play_on_windows(
             game = {"state": "GAME_LAUNCH_BLOCKED", "reason": str(exc)}
 
         if mode is not None:
-            return complete_play(mode, game, toolkit, save_context, receipt_path, receipt, progress)
+            return complete_play(mode, game, toolkit, save_context, receipt_path, receipt, progress,
+                                 upgrade_parts=upgrade_parts)
 
     if game["state"] in SUCCESS_MESSAGES:
         return {"status": "ok", "stage": "complete", "toolkit": toolkit, "game": game,
@@ -167,6 +169,7 @@ def play_on_windows(
 def complete_play(
     mode: str, game: dict, toolkit: dict, context_path: Path | None,
     receipt_path: Path, receipt: dict, progress: Callable[[str], None],
+    *, upgrade_parts: bool = False,
 ) -> dict:
     from scripts.game_host import navigate_startup_save, profile
     from scripts.launch_receipt import gap, write_result
@@ -176,9 +179,11 @@ def complete_play(
     result = {"toolkit": toolkit, "game": game, "save_state": "NOT_OBSERVED",
               "automatic_steps": []}
 
-    def pending(stage, reason, step, owner, *, actor="human_or_agent"):
+    def pending(stage, reason, step, owner, *, actor=None):
         return {**result, "status": "blocked", "stage": stage, "reason": reason,
-                "next_step": step, "automation_gaps": [gap(stage, reason, step, owner, actor=actor)]}
+                "next_step": step, "automation_gaps": [gap(
+                    stage, reason, step, owner,
+                    actor=actor or ("repository" if upgrade_parts else "human_or_agent"))]}
 
     state = game["state"]
     if state not in SUCCESS_MESSAGES:
@@ -208,6 +213,10 @@ def complete_play(
             return pending("certification", "CONTINUE_ACTIVE_CERTIFICATION",
                            "Continue the active certification in the open game.",
                            "scripts/continue_certification.py")
+        if upgrade_parts:
+            return pending("existing_game", "EXISTING_SESSION_PRESERVED",
+                           "The restock launch needs a new admitted game session.",
+                           "scripts/play.py", actor="repository")
         if mode == "production" and context_path is not None:
             result["save_route"] = route_mode(mode, process, context_path)
         return {**result, "status": "ok", "stage": "existing_game",
@@ -229,7 +238,8 @@ def complete_play(
                        "Supply the private dev context for the oldest eligible disposable save.",
                        "scripts/launch_save_route.py")
 
-    route = route_mode(mode, process, context_path)
+    route = (route_mode(mode, process, context_path, active_map_household=True)
+             if upgrade_parts else route_mode(mode, process, context_path))
     result["save_route"] = route
     selected = route.get("candidate_save_id")
     if mode == "production":
@@ -237,6 +247,10 @@ def complete_play(
                        "Use Load Game to verify and open the most recently played save.",
                        "scripts/launch_save_route.py")
     if route["state"] not in {"DEV_OLDEST_DISPOSABLE_CANDIDATE", "STANDARDIZED_OLDEST_DISPOSABLE_ADVISORY"}:
+        if upgrade_parts:
+            return pending("dev_save_candidate", route["reason"],
+                           "Recover the local lab registry binding and chronological evidence.",
+                           "scripts/launch_save_route.py", actor="repository")
         return pending("dev_save_candidate", route["reason"], "Resolve the disposable save or household evidence.",
                        "scripts/launch_save_route.py")
 
@@ -247,6 +261,10 @@ def complete_play(
     try:
         context = load_context(context_path)
         profile_name = context.get("navigation_profile")
+        if upgrade_parts:
+            profiles = context.get("navigation_profiles")
+            if isinstance(profiles, dict):
+                profile_name = profiles.get(selected)
         if (not isinstance(profile_name, str) or Path(profile_name).name != profile_name
                 or not profile_name.endswith(".json")):
             raise ValueError("CALIBRATED_DEV_PROFILE_REQUIRED")
@@ -258,10 +276,24 @@ def complete_play(
         if (cfg.get("selected_save_id") != selected or cfg.get("save_registry") != context.get("registry")
                 or cfg.get("game_version") != context.get("game_version")):
             raise ValueError("DEV_PROFILE_DOES_NOT_BIND_OLDEST_CANDIDATE")
+        bridge = None
+        listener = nullcontext(context.get("session_id"))
+        if upgrade_parts:
+            from scripts.lab_upgrade_parts import NativeBridge, save_navigation_listener
+
+            try:
+                bridge = NativeBridge(context_path, context, process, route)
+                bridge.require_capabilities()
+            except (OSError, ValueError) as exc:
+                return pending("native_restock_binding", str(exc),
+                               "Bind the Windows EA observer and commands from the repository handoff.",
+                               "scripts/lab_upgrade_parts.py", actor="repository")
+            listener = save_navigation_listener()
         require_same_game_process(process)
         progress("Opening the oldest eligible disposable save.")
-        navigate_startup_save(cfg, process, run_id=route["successor_run_id"],
-                              session_id=context.get("session_id"), checkpoint=checkpoint)
+        with listener as session_id:
+            navigate_startup_save(cfg, process, run_id=route["successor_run_id"],
+                                  session_id=session_id, checkpoint=checkpoint)
         require_same_game_process(process)
     except (OSError, ValueError, TypeError, KeyError) as exc:
         unchanged = not result["automatic_steps"]
@@ -274,6 +306,27 @@ def complete_play(
                        "scripts/game_host.py")
 
     result["save_state"] = "DEV_SAVE_PLAY_DISPATCHED"
+    if bridge is not None:
+        from scripts.lab_upgrade_parts import run_restock
+
+        def restock_checkpoint(report):
+            result["restock"] = report
+            if report.get("save_readback"):
+                result["save_state"] = "DEV_SAVE_MAP_OBSERVED"
+            write_result(receipt_path, {**receipt, **result, "stage": "lab_upgrade_parts"})
+
+        try:
+            progress("Restocking upgrade parts for each available Sim.")
+            report = run_restock(bridge, restock_checkpoint)
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            return pending("lab_upgrade_parts", str(exc),
+                           "Recover the recorded native evidence before a new restock attempt.",
+                           "scripts/lab_upgrade_parts.py", actor="repository")
+        return {**result, "status": "ok", "stage": "lab_upgrade_parts",
+                "next_step": ("Restock verified for the available portraits."
+                              if report["state"] == "RESTOCK_VERIFIED"
+                              else "No available portraits in the observed household."),
+                "automation_gaps": []}
     return pending("save_readback", "NATIVE_SAVE_READBACK_MISSING",
                    "Verify the selected disposable save and household in the current game.",
                    "scripts/game_host.py")
@@ -286,11 +339,17 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--emit-plan", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--mode", choices=("dev", "production"),
                         help="Choose the oldest disposable lab or latest-played production route")
+    parser.add_argument("--upgrade-parts", action="store_true",
+                        help="Restock 99 of each computer upgrade part in the oldest eligible lab save")
     parser.add_argument("--save-context", type=Path, help="Private local save and calibration context")
     parser.add_argument("--native-start", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--checkout-head", help=argparse.SUPPRESS)
     parser.add_argument("--json", action="store_true", help="Return one JSON result without prompts")
     args = parser.parse_args(argv)
+    if args.upgrade_parts:
+        if args.mode == "production" or args.plan or args.emit_plan:
+            parser.error("--upgrade-parts requires the Windows dev play route")
+        args.mode = "dev"
     if args.save_context and (args.plan or args.emit_plan):
         parser.error("--save-context is for playing on the Windows host")
     if (args.mode or args.native_start) and args.plan:
@@ -311,8 +370,9 @@ def main(argv: list[str] | None = None) -> int:
     receipt_path, receipt = None, None
     try:
         if not args.plan and sys.platform != "win32":
+            command = "Start-BetterInstincts.cmd --upgrade-parts" if args.upgrade_parts else WIN_COMMAND
             raise PlayBlocked("host", "WINDOWS_GAME_HOST_REQUIRED",
-                              f"Run {WIN_COMMAND} from the checkout on the PC with The Sims 4.")
+                              f"Run {command} on the PC with The Sims 4.")
         if args.mode:
             from bootstrap import paths
             from scripts.launch_receipt import begin, write_result
@@ -325,8 +385,16 @@ def main(argv: list[str] | None = None) -> int:
                           if reason == "PLAY_RECEIPT_STORE_FULL_ARCHIVE_OLDER_RUNS" else
                           "Restore access to the local receipt directory before retrying.")
                 raise PlayBlocked("receipt", reason, action) from exc
+            if args.upgrade_parts:
+                receipt["workflow"] = "OLDEST_LAB_UPGRADE_PARTS"
+                if args.save_context is None:
+                    args.save_context = paths()["locks"].parent / "lab-upgrade-parts" / "startup.json"
+                if args.save_context.is_symlink() or not args.save_context.is_file():
+                    raise PlayBlocked("save_context", "LAB_RESTOCK_CONTEXT_UNAVAILABLE",
+                                      "Restore the local restock binding documented in the repository handoff.")
             if args.checkout_head:
                 receipt["checkout_head"] = args.checkout_head
+            if args.checkout_head or args.upgrade_parts:
                 write_result(receipt_path, receipt)
         docker = shutil.which("docker")
         if docker is None and not args.native_start:
@@ -339,7 +407,8 @@ def main(argv: list[str] | None = None) -> int:
                       "next_step": f"Startup container is ready. On your Sims PC, run {WIN_COMMAND}."}
         else:
             result = play_on_windows(args.game_exe, progress, mode=args.mode, receipt=receipt,
-                                     save_context=args.save_context, receipt_path=receipt_path, checkout=ROOT)
+                                     save_context=args.save_context, receipt_path=receipt_path, checkout=ROOT,
+                                     **({"upgrade_parts": True} if args.upgrade_parts else {}))
     except (PlayBlocked, OSError, ValueError) as exc:
         if not isinstance(exc, PlayBlocked):
             exc = PlayBlocked("startup", "STARTUP_PREFLIGHT_FAILED",
@@ -355,7 +424,8 @@ def main(argv: list[str] | None = None) -> int:
 
         if result["status"] == "blocked" and "automation_gaps" not in result:
             result["automation_gaps"] = [gap(result["stage"], result["reason"], result["next_step"],
-                                               "scripts/play.py")]
+                                               "scripts/play.py",
+                                               actor="repository" if args.upgrade_parts else "human_or_agent")]
         if receipt_path is not None and receipt is not None:
             result = {**receipt, **result, "receipt": str(receipt_path)}
             try:

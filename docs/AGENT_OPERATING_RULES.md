@@ -103,6 +103,13 @@ considering another launch. For a Docker-only check use
 `python -m scripts.play --plan --json`. See [First run](FIRST_RUN.md#play-from-the-command-line).
 
 ## Completion contract
+
+The [oldest lab save and upgrade-parts handoff](handoff/BI-OLDEST-LAB-RESTOCK.md)
+owns the dedicated `Start-BetterInstincts.cmd --upgrade-parts` route. Recover
+its first failing repository gate from the launch receipt. Keep the oldest
+eligible selection, exact active map identity and per-Sim native settlement
+with the repository workflow. An assisted action alone cannot close its
+native acceptance.
 Report CHANGED | PROVED | NEXT with checks, SHA, push/PR/merge, patch, live status. A plan is not implementation; a green CI check is not playable-mod proof.
 
 P04: `docs/handoff/BI-JUDGMENT-LEARNING-P04-2026-11-07.md`; ontology: `docs/handoff/BI-SEMANTIC-ONTOLOGY-P04-2026-11-07.md`.

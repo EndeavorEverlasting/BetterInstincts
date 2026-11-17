@@ -274,6 +274,7 @@ def route_local_context(
 def route_mode(
     mode: str, process: GameProcess, context_path: Path, *,
     launch_context: Path = LOCAL_CONTEXT,
+    active_map_household: bool = False,
 ) -> dict:
     """Resolve data and scope for a launch on the independently observed instance."""
     try:
@@ -290,11 +291,6 @@ def route_mode(
             return production_candidate(process, context)
         if mode != "dev":
             raise SavePolicyError("UNKNOWN_STARTUP_MODE")
-        household = household_handoff(
-            tuple(context.get("available_households", [])), view()["preferred_household_id"],
-        )
-        if household["state"] != "HOUSEHOLD_RESOLVED":
-            return household
         name = context.get("registry")
         if not isinstance(name, str) or Path(name).name != name or not name.endswith(".json"):
             raise SavePolicyError("STARTUP_REQUIRES_SAME_FOLDER_LAB_REGISTRY")
@@ -302,6 +298,13 @@ def route_mode(
         run, version = context.get("run_id"), context.get("game_version")
         if not process.game_version or process.game_version != version:
             return _held("HOLD_DEV_GAME_BUILD", "CURRENT_EXECUTABLE_BUILD_MUST_MATCH_CALIBRATION")
+        if active_map_household:
+            return _oldest_for_active_map(registry, run=run, version=version)
+        household = household_handoff(
+            tuple(context.get("available_households", [])), view()["preferred_household_id"],
+        )
+        if household["state"] != "HOUSEHOLD_RESOLVED":
+            return household
         if launch_context.exists():
             return route_local_context(
                 path=launch_context, registry_path=context_path.parent / name,
@@ -318,6 +321,26 @@ def route_mode(
                      household_id=household["household_id"], successor_run_id=run)
     except (InstallationProfileError, KeyError, OSError, TypeError, ValueError) as exc:
         return _held("HOLD_SAVE_CONTEXT", str(exc))
+
+
+def _oldest_for_active_map(registry: dict, *, run: str, version: str) -> dict:
+    entries = registry["entries"]
+    eligible = [row for row in entries if isinstance(row, dict)
+                and row.get("classification") == "LAB_DISPOSABLE"
+                and row.get("authorized_run_id") == run]
+    if any(row.get("household_binding_confirmed") is not True
+           or not HOUSEHOLD_ID.fullmatch(str(row.get("household_id", ""))) for row in eligible):
+        return _held("HOLD_DEV_SAVE", "LAB_ACTIVE_HOUSEHOLD_BINDING_MISSING")
+    # Retain every registry identity so duplicates and other classifications
+    # still participate in the canonical save guard's conflict checks.
+    ranked = rank_lab_candidates(registry, run_id=run, game_version=version, current_run_only=True)
+    if ranked["state"] != "PRIORITY_ADVISORY_ONLY":
+        return _held("HOLD_DEV_SAVE", ranked["state"])
+    selected = ranked["ranked_candidates"][0]["save_id"]
+    bound = next(row for row in eligible if row["save_id"] == selected)
+    return _held("DEV_OLDEST_DISPOSABLE_CANDIDATE", ranked["ranking_rule"],
+                 candidate_save_id=selected, household_id=bound["household_id"],
+                 successor_run_id=run, household_selection="VERIFY_ACTIVE_HOUSEHOLD_ON_MAP")
 
 
 def production_candidate(process: GameProcess, context: dict) -> dict:

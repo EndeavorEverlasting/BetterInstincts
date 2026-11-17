@@ -34,6 +34,10 @@ purchases, skills, needs and explicit microsystem targets. See the
 for the observed roster, player takeover, per-recipient workflow receipts and
 exact-build P08 gate. The existing host-stack advice remains available.
 
+The [oldest lab save and computer parts handoff](../../docs/handoff/BI-OLDEST-LAB-RESTOCK.md)
+owns the dedicated startup-to-restock use of this portrait path, including
+the exact-build observer/adapter and per-Sim purchase acceptance.
+
 ## 2026-11-16 closeout — income recipient
 
 The shared `INCOME` purpose consumes the host's winning handoff through the

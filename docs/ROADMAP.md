@@ -1,3 +1,9 @@
+## 2026-11-16 — Launch through household parts restock
+
+Bind the exact-build Windows native adapter and prove the
+[oldest-save restock launch](handoff/BI-OLDEST-LAB-RESTOCK.md) as one run,
+including actual purchases, a Sim away at work, player takeover and rollback.
+
 ## 2026-11-16 — Native portrait handoff
 
 Bind the EA active-household selector and readback on the exact Windows build
