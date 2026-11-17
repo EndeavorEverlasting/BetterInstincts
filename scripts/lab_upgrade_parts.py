@@ -11,6 +11,7 @@ import subprocess
 from types import SimpleNamespace
 from uuid import uuid4
 
+from betterinstincts.activity_chain import ActivityChainError, SCHEMA, compile_activity_chain
 from betterinstincts.budget_eval import household_reserve
 from betterinstincts.computer_upgrade_parts import (
     menu_catalog, plan_computer_restock_batch, verify_computer_batch_purchase,
@@ -21,6 +22,7 @@ from scripts.launch_save_route import CAPTURE
 from scripts.smart_start import require_same_game_process
 
 PROTOCOL = "betterinstincts.lab-upgrade-parts-native/v1"
+PLANNING = "betterinstincts.lab-upgrade-parts-planning/v1"
 TARGET = 99
 MAX_ROSTER = 16
 MAX_REPLY = 32_768
@@ -111,6 +113,51 @@ class NativeBridge:
                 or not all(isinstance(op, str) for op in operations)
                 or not OPERATIONS.issubset(operations)):
             raise RestockBlocked("NATIVE_RESTOCK_CAPABILITIES_INCOMPLETE")
+        if response.get("restock_planning") != PLANNING:
+            raise RestockBlocked("NATIVE_RESTOCK_PLANNING_EVIDENCE_CAPABILITY_REQUIRED")
+
+
+def _plan_portrait(frame, row, *, picker_open, cost=0, budget=0):
+    """Compile the remaining restock chain using the actor's current deadlines."""
+    observed_capture = frame["capture"]
+    timing = row.get("restock_timing")
+    if not isinstance(timing, dict) or timing.get("capture") != observed_capture:
+        return {"gate": "CURRENT_RESTOCK_TIMING_REQUIRED"}
+
+    capture = hashlib.sha256(observed_capture.encode()).hexdigest()
+    household = hashlib.sha256(frame["household_id"].encode()).hexdigest()
+    actor = row["actor"]
+    actions = []
+    if actor != frame["selected"]:
+        actions.append(("select_portrait", "switch_upper_minutes"))
+    if not picker_open:
+        actions.append(("open_upgrade_parts", "picker_upper_minutes"))
+    actions.append(("buy_upgrade_parts", "buy_upper_minutes"))
+    steps = []
+    for action, duration in actions:
+        steps.append({"id": action, "domain": "restock", "kind": "NATIVE_ACTION",
+                      "location": "active-lot", "evidence_ref": capture,
+                      "after": [steps[-1]["id"]] if steps else [],
+                      "upper_minutes": timing.get(duration),
+                      "cost": cost if action == "buy_upgrade_parts" else 0})
+    snapshot = {"schema": SCHEMA, "mode": "PLANNING", "capture_ref": capture,
+                "sim_ref": actor, "household_ref": household, "location": "active-lot",
+                "scene_verified": True, "queue_verified": timing.get("queue_verified"),
+                "player_directed": timing.get("player_directed"), "needs_safe": timing.get("needs_safe"),
+                "minutes_until_work": timing.get("minutes_until_work"),
+                "minutes_until_need_floor": timing.get("minutes_until_need_floor"),
+                "reserve_minutes": timing.get("reserve_minutes"), "available_funds": budget}
+    try:
+        plan = compile_activity_chain(snapshot, steps, capture_ref=capture)
+    except ActivityChainError:
+        return {"gate": "RESTOCK_TIMING_UNQUALIFIED"}
+    if plan["gate"] != "PLAN_STAGED":
+        return {"gate": plan["gate"]}
+    if plan["deferred"]:
+        return {"gate": "RESTOCK_CHAIN_EXCEEDS_SAFE_WINDOW"}
+    return {"gate": "PLAN_STAGED", "upper_minutes": plan["total_upper_minutes"],
+            "available_minutes": plan["available_minutes"],
+            "slack_minutes": plan["available_minutes"] - plan["total_upper_minutes"]}
 
 
 def run_restock(bridge, checkpoint):
@@ -120,7 +167,8 @@ def run_restock(bridge, checkpoint):
     scope = bridge.scope
     captures = set()
     report = {"target_per_part": TARGET, "household_id": scope["household_id"],
-              "spent": 0, "purchases": [], "pending": None}
+              "spent": 0, "purchases": [], "pending": None,
+              "planning": {"schema": PLANNING, "decisions": []}}
 
     def observe(expected):
         observation_id = uuid4().hex
@@ -221,27 +269,48 @@ def run_restock(bridge, checkpoint):
             raise RestockBlocked("COMPLETED_PORTRAIT_STOCK_CHANGED")
         if not needed:
             report.update(state="RESTOCK_VERIFIED" if available else "NO_AVAILABLE_PORTRAITS",
+                          final_capture=frame["capture"],
                           verified_available=list(available),
+                          final_inventory={key: {part: row["pocket_counts"][part] for part in parts}
+                                           for key, row in available.items()},
                           skipped={key: row["status"] for key, row in roster.items()
                                    if key not in available})
             checkpoint(report)
             return report
-        actor = frame["selected"]
-        if actor not in needed:
+        selected = frame["selected"]
+        picker_open = frame.get("picker") is not None
+        candidates = {key: _plan_portrait(frame, available[key], picker_open=picker_open)
+                      for key in needed if not picker_open or key == selected}
+        ready = [key for key, plan in candidates.items() if plan["gate"] == "PLAN_STAGED"]
+        actor = min(ready, key=lambda key: (candidates[key]["available_minutes"], key != selected,
+                                           candidates[key]["slack_minutes"]), default=None)
+        planning = report["planning"]
+        if not planning["decisions"]:
+            planning["initial_candidates"] = candidates
+            planning["initial_selected"] = selected
+        decision = {"capture": frame["capture"], "target": actor}
+        planning["decisions"].append(decision)
+        if actor is None:
+            report["planning"]["hold"] = candidates
+        checkpoint(report)
+        if actor is None:
+            raise RestockBlocked("NO_PORTRAIT_RESTOCK_CHAIN_FITS_CURRENT_EVIDENCE")
+        if actor != selected:
             packet = {"capture": frame["capture"], "household": scope["household_id"],
-                      "selected": actor, "save": hashlib.sha256(scope["save_id"].encode()).hexdigest(),
-                      "goal": "upgrade-parts-restock", "purpose": "UPGRADE_PARTS",
+                      "selected": selected, "save": hashlib.sha256(scope["save_id"].encode()).hexdigest(),
+                      "goal": "upgrade-parts-restock", "purpose": "TARGET", "target": actor,
                       "roster": roster_ids, "safe_to_leave": frame.get("picker") is None,
                       "members": {key: "READY" if key in needed else
                                   "COVERED" if key in available else "UNAVAILABLE" for key in roster}}
             _, selection = choose_selection(SimpleNamespace(
-                actor=actor, capture=frame["capture"], household=scope["household_id"]), packet)
+                actor=selected, capture=frame["capture"], household=scope["household_id"]), packet)
             if selection is None:
                 raise RestockBlocked("SHARED_PORTRAIT_HANDOFF_NOT_READY")
             actor = selection.target
             frame = effect("select_portrait", frame, ["LIVE"], actor=actor)
             if frame.get("selected") != actor or tuple(live_roster(frame, lot)) != roster_ids:
                 raise RestockBlocked("PORTRAIT_CHANGE_NOT_OBSERVED")
+            decision["selected_capture"] = frame["capture"]
             clear_effect()
         frame = _restock_selected(frame, actor, lot, roster_ids, parts, targets, effect,
                                   live_roster, clear_effect, report, bridge.spend_cap)
@@ -250,6 +319,12 @@ def run_restock(bridge, checkpoint):
 
 def _restock_selected(frame, actor, lot, roster_ids, parts, targets, effect,
                       live_roster, clear_effect, report, spend_cap):
+    row = live_roster(frame, lot)[actor]
+    if row["status"] != "AVAILABLE":
+        raise RestockBlocked("PLANNED_PORTRAIT_NO_LONGER_AVAILABLE")
+    picker_open = frame.get("picker") is not None
+    if _plan_portrait(frame, row, picker_open=picker_open)["gate"] != "PLAN_STAGED":
+        raise RestockBlocked("REOBSERVE_SELECTED_PORTRAIT_RESTOCK_WINDOW")
     computer = frame.get("computer_id")
     if not _opaque(computer) or frame.get("computer_available_to_selected") is not True:
         raise RestockBlocked("OBSERVED_ON_LOT_COMPUTER_REQUIRED")
@@ -276,9 +351,17 @@ def _restock_selected(frame, actor, lot, roster_ids, parts, targets, effect,
     budget = min(spend_cap - report["spent"], household_reserve(funds)["spend_max"])
     if cost > budget:
         raise RestockBlocked("RESTOCK_EXCEEDS_HOUSEHOLD_RESERVE_OR_APPROVED_CAP")
+    quoted = _plan_portrait(frame, rows[actor], picker_open=True, cost=cost, budget=budget)
+    report["planning"]["decisions"][-1]["quote"] = {
+        "capture": frame["capture"], "cost": cost, "budget": budget, "gate": quoted["gate"],
+    }
+    clear_effect()
+    if quoted["gate"] != "PLAN_STAGED":
+        raise RestockBlocked("REOBSERVE_QUOTED_PORTRAIT_RESTOCK_WINDOW")
     after = effect("buy_upgrade_parts", frame, ["LIVE"], actor=actor, computer_id=computer,
                    revision=picker["revision"], quantities=quantities, total_cost=cost,
-                   expected_funds=funds, unit_prices=prices)
+                   expected_funds=funds, expected_pocket_counts={part: stock[part] for part in parts},
+                   unit_prices=prices)
     current = live_roster(after, lot)
     if (tuple(current) != roster_ids or after.get("selected") != actor
             or after.get("picker") is not None):

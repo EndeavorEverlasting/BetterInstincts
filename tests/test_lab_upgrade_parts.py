@@ -45,7 +45,18 @@ class FixtureBridge:
         if operation == "observe":
             self.sequence += 1
             frame = {**self.frame, "capture": f"capture:frame-{self.sequence}"}
-            return {"frame": deepcopy(frame), "observation_id": data["observation_id"]}
+            frame = deepcopy(frame)
+            for row in frame["portraits"]:
+                if row["status"] == "AVAILABLE":
+                    row["restock_timing"] = {
+                        "capture": frame["capture"], "queue_verified": True,
+                        "player_directed": False, "needs_safe": True,
+                        "minutes_until_work": 120, "minutes_until_need_floor": 90,
+                        "reserve_minutes": 5, "switch_upper_minutes": 1,
+                        "picker_upper_minutes": 3, "buy_upper_minutes": 2,
+                        **row.get("timing_override", {}),
+                    }
+            return {"frame": frame, "observation_id": data["observation_id"]}
         self.effects.append((operation, data))
         self.frame["applied_command_id"] = data["command_id"]
         if operation == "open_active_lot":
@@ -104,6 +115,119 @@ class LabUpgradePartsTests(unittest.TestCase):
                 with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, reason):
                     lab_upgrade_parts.run_restock(bridge, Mock())
                 self.assertEqual(bridge.effects, [])
+
+    def test_math_selects_a_later_portrait_with_less_safe_slack(self):
+        bridge = FixtureBridge()
+        bridge.frame["selected"] = ACTORS[1]
+        bridge.frame["portraits"][2]["timing_override"] = {"minutes_until_work": 20}
+        result = lab_upgrade_parts.run_restock(bridge, Mock())
+        self.assertEqual(result["state"], "RESTOCK_VERIFIED")
+        self.assertEqual([row["actor"] for op, row in bridge.effects if op == "select_portrait"],
+                         [ACTORS[2], ACTORS[1]])
+        first = result["planning"]["decisions"][0]
+        candidates = result["planning"]["initial_candidates"]
+        self.assertLess(candidates[ACTORS[2]]["slack_minutes"], candidates[ACTORS[1]]["slack_minutes"])
+        self.assertEqual(first["quote"]["cost"], 10)
+        self.assertEqual(result["final_inventory"], dict.fromkeys(ACTORS[1:], dict.fromkeys(PARTS, 99)))
+
+    def test_stale_window_prevents_selection_and_short_quote_window_prevents_purchase(self):
+        bridge = FixtureBridge()
+        for row in bridge.frame["portraits"][1:]:
+            row["timing_override"] = {"capture": "capture:old"}
+        checkpoints = []
+        def record(report):
+            checkpoints.append(deepcopy(report))
+
+        with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, "NO_PORTRAIT_RESTOCK_CHAIN"):
+            lab_upgrade_parts.run_restock(bridge, record)
+        self.assertTrue(all(op not in {"select_portrait", "open_upgrade_parts", "buy_upgrade_parts"}
+                            for op, _ in bridge.effects))
+        self.assertEqual(checkpoints[-1]["planning"]["hold"][ACTORS[1]]["gate"],
+                         "CURRENT_RESTOCK_TIMING_REQUIRED")
+
+        bridge = FixtureBridge()
+        exchange = bridge.exchange
+
+        def shrink_after_open(operation, **data):
+            result = exchange(operation, **data)
+            if operation == "open_upgrade_parts":
+                bridge.frame["portraits"][1]["timing_override"] = {"minutes_until_work": 6}
+            return result
+
+        bridge.exchange = shrink_after_open
+        with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, "REOBSERVE_QUOTED"):
+            lab_upgrade_parts.run_restock(bridge, record)
+        self.assertNotIn("buy_upgrade_parts", [op for op, _ in bridge.effects])
+        self.assertEqual(checkpoints[-1]["planning"]["decisions"][-1]["quote"]["gate"],
+                         "INSUFFICIENT_EVIDENCE_OR_BUDGET")
+
+    def test_equal_deadline_keeps_selected_and_infeasible_sibling_holds_completion(self):
+        bridge = FixtureBridge()
+        bridge.frame["selected"] = ACTORS[1]
+        result = lab_upgrade_parts.run_restock(bridge, Mock())
+        self.assertEqual(result["planning"]["decisions"][0]["target"], ACTORS[1])
+        self.assertEqual([data["actor"] for op, data in bridge.effects if op == "select_portrait"],
+                         [ACTORS[2]])
+
+        bridge = FixtureBridge()
+        bridge.frame["portraits"][2]["timing_override"] = {"minutes_until_work": 6}
+        with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, "NO_PORTRAIT_RESTOCK_CHAIN"):
+            lab_upgrade_parts.run_restock(bridge, Mock())
+        self.assertEqual([data["actor"] for op, data in bridge.effects if op == "buy_upgrade_parts"],
+                         [ACTORS[1]])
+
+    def test_native_capture_and_household_width_remain_valid_at_planner_boundary(self):
+        bridge = FixtureBridge()
+        exchange = bridge.exchange
+        household = "household:" + "a" * 115
+        bridge.scope["household_id"] = household
+        bridge.frame["household_id"] = household
+        bridge.frame["active_households"][0]["household_id"] = household
+
+        def wide_capture(operation, **data):
+            response = exchange(operation, **data)
+            if operation == "observe":
+                frame = response["frame"]
+                frame["capture"] += "-" + "x" * 83
+                for row in frame["portraits"]:
+                    if "restock_timing" in row:
+                        row["restock_timing"]["capture"] = frame["capture"]
+            return response
+
+        bridge.exchange = wide_capture
+        result = lab_upgrade_parts.run_restock(bridge, Mock())
+        self.assertEqual(result["state"], "RESTOCK_VERIFIED")
+        self.assertGreater(len(result["final_capture"]), 96)
+
+    def test_maximum_roster_checkpoints_fit_the_launch_receipt(self):
+        bridge = FixtureBridge()
+        members = [f"sim:{i:02d}" + "a" * 62 for i in range(lab_upgrade_parts.MAX_ROSTER)]
+        bridge.frame["selected"] = members[0]
+        bridge.frame["portraits"] = [
+            {"actor": actor, "status": "AVAILABLE", "pocket_counts": dict.fromkeys(PARTS, 0)}
+            for actor in members
+        ]
+        bridge.spend_cap = 100_000
+        bridge.frame["funds"] = 1_100_000
+        exchange = bridge.exchange
+
+        def wide_capture(operation, **data):
+            response = exchange(operation, **data)
+            if operation == "observe":
+                frame = response["frame"]
+                frame["capture"] += "-" + "x" * 83
+                for row in frame["portraits"]:
+                    row["restock_timing"]["capture"] = frame["capture"]
+            return response
+
+        bridge.exchange = wide_capture
+        with TemporaryDirectory() as tmp:
+            path, envelope = launch_receipt.begin("dev", root=Path(tmp))
+            envelope.update(toolkit={"details": "x" * 2000}, game=DISPATCHED)
+            result = lab_upgrade_parts.run_restock(bridge, lambda report:
+                     launch_receipt.write_result(path, {**envelope, "restock": report}))
+            self.assertEqual(json.loads(path.read_text())["restock"], result)
+            self.assertEqual(result["verified_available"], members)
 
     def test_budget_guard_and_failed_purchase_readback_do_not_advance(self):
         bridge = FixtureBridge()
@@ -215,6 +339,12 @@ class LabUpgradePartsTests(unittest.TestCase):
                        "operations": list(lab_upgrade_parts.OPERATIONS - {"buy_upgrade_parts"})}):
                 with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, "CAPABILITIES_INCOMPLETE"):
                     bridge.require_capabilities()
+            ready = {"state": "NATIVE_BINDING_READY", "operations": list(lab_upgrade_parts.OPERATIONS)}
+            with patch.object(bridge, "exchange", return_value=ready):
+                with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, "PLANNING_EVIDENCE"):
+                    bridge.require_capabilities()
+                ready["restock_planning"] = lab_upgrade_parts.PLANNING
+                bridge.require_capabilities()
             executable.write_bytes(b"modified")
             with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, "BRIDGE_HASH_MISMATCH"):
                 bridge._verify()

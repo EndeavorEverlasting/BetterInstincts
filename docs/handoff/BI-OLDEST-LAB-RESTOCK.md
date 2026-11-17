@@ -19,7 +19,11 @@ There is no save or household picker prompt. Ambiguous dates, uncertain
 identities, protected saves and a pending certification stop the route.
 
 From the loaded lot, the controller uses the shared portrait chooser to
-visit each available Sim. It uses an observed computer's **Order → Purchase
+visit each available Sim. PS-0241 checks that switching, opening the picker,
+and settling the purchase fit the Sim's work and needs window. The controller
+starts with the earliest feasible deadline and keeps the selected Sim when
+deadlines tie. It recalculates after a portrait change and again against
+the current picker quote before buying. It uses an observed computer's **Order → Purchase
 Upgrade Parts** affordance. It tops up the five computer part types to
 **99 per Sim's pocket inventory**, buying only the shortfall. The five types
 are common, electronic, kitchen, plumbing and robot salvage. Portraits at
@@ -99,8 +103,10 @@ supported. Profile and registry identity are checked against the actual
 ranked slot; changing the oldest slot never silently reuses an old profile.
 Set `approved_spend_cap` to the run's authorized total in simoleons.
 
-The remaining Windows engineering dependency is the exact-build native
-observer and action binding under [issue #171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+The Windows dependency is an exact-build native observer and action binding.
+[Issue #171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171)
+provides the native API discovery context. Its closed issue status carries
+no restock observation.
 `native_upgrade_parts` in the private context names a same-folder
 `bridge` executable, its `sha256`, the exact `game_version` and a local
 `binding_ref` from that source review. The launcher checks the binding
@@ -117,6 +123,8 @@ standard output. Every response echoes the protocol and the exact process,
 run, save and household scope. At `capabilities`, return
 `NATIVE_BINDING_READY` and the supported operation names only for the
 currently attached exact build.
+Include `restock_planning: "betterinstincts.lab-upgrade-parts-planning/v1"`
+in the capabilities reply when capture-bound timing evidence is implemented.
 
 | Operation | Required independent observation or effect |
 | --- | --- |
@@ -124,7 +132,20 @@ currently attached exact build.
 | `open_active_lot`, `play_active_lot`, `pause_live` | Revalidate the current save, scene, active household and named lot before one action. |
 | `select_portrait` | Use the shared native selection and readback port for the exact Sim ID. |
 | `open_upgrade_parts` | Use the currently observed on-lot computer affordance and return the actor-bound empty picker, current revision, funds and all five observed unit prices. |
-| `buy_upgrade_parts` | Revalidate that actor, computer and picker revision, exact quantities, full price and funds immediately before one native cart confirmation. Read back personal pocket stock and household funds. |
+| `buy_upgrade_parts` | Immediately before one confirmation, revalidate the actor, computer, picker revision, exact quantities, full price, funds and `expected_pocket_counts`. Revalidate the timing, queue and needs evidence attached to the supplied capture. Read back personal pocket stock and household funds. |
+
+For each available Sim who needs parts, return `restock_timing` in its
+portrait row on each qualifying Live frame. Bind `capture` to the enclosing
+frame. From the exact build, supply `queue_verified`, `player_directed`,
+`needs_safe`, `minutes_until_work`, `minutes_until_need_floor`,
+`reserve_minutes`, and the conservative positive simulation-minute bounds
+`switch_upper_minutes`, `picker_upper_minutes`, and `buy_upper_minutes`.
+Use traceable local timing calibration for the applicable operations and
+observe current work and needs state. Pause freezes the current game clock
+and is not evidence of an unlimited safe window. Leave an unproved field
+unqualified. The controller holds any chain whose full remaining path
+cannot fit. If necessary, recover calibration or the native read source
+before a live attempt. Keep local EA references and raw data private.
 
 Before each effect, the bridge checks player authority and the supplied
 input generation atomically with the requested action. Return its
@@ -135,13 +156,34 @@ step in the launch receipt for reconciliation.
 
 ## Acceptance and terminal states
 
-Run the same launcher on the exact Windows build with two available Sims
-and one away. Preserve the process, save, active household and Live Mode
-attestations. Record each selected recipient, actual pocket deltas and
-household spend, and the skipped Sim's availability in the existing private
-launch receipt. Repeat with player takeover and demonstrate owned binding
-rollback. Use `python -m unittest tests.test_lab_upgrade_parts -v` for the
-repository fixture before live certification.
+The Windows agent owns the run from bootstrap through receipt. Read the
+checkout recovery above, run the focused repository fixture, execute the
+launcher, and continue at its first unproved gate. If the binding is absent,
+inspect the installed exact-build EA source read-only and implement the
+needed native ports under the [native gameplay authority](../NATIVE_GAMEPLAY_ARCHITECTURE.md).
+Start by proving process attachment and a read-only observation of the
+current save and actor. Get that evidence before enabling any effect.
+Use the oldest eligible slot and the map's active household directly.
+Any manually assisted outcome has a separate assistance receipt.
+
+On the exact Windows build, use at least two available Sims and one away.
+Where the lab state permits, have a later portrait with a shorter feasible
+window than the selected one. The private launch receipt must show the first
+planner comparison, the target different from the selected Sim, the actual
+selected-portrait readback, each latest quote, the pocket deltas and actual
+household debits. Show final stock for every part for every available Sim,
+plus the skipped Sim and reason. Use a fresh matched disposable run to
+verify player takeover and that an unsettled purchase cannot replay.
+Preserve the evidence, demonstrate owned binding rollback, and record
+P08 only after the functional run and protected control are observed.
+`python -m unittest tests.test_lab_upgrade_parts -v` runs the repository
+fixture.
+
+If a replan holds at an empty picker, keep the game at that observed state
+and retain the quote in the receipt. The Windows native binding owner can
+inspect the current picker and determine its safe dismissal. An uncertain
+cart needs independent inventory and funds reconciliation first. The normal
+launcher preserves running sessions, so relaunching is not a resume action.
 
 `RESTOCK_VERIFIED` requires a fresh final roster and pocket observation
 showing that all available portraits reached at least 99 of every part.

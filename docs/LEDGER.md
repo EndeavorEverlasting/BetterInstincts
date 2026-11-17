@@ -2403,3 +2403,12 @@ submission. Source fixtures reconcile purchase, inventory transfer, travel
 and a career artifact to completion. Existing domain priority and original
 actor settlement are retained. Exact-build EA binding and durable restart
 recovery remain in #171. See [Activity Chains](ACTIVITY_CHAIN.md#installed-runtime-adapter).
+
+## 2026-11-17 — PS-0241 oldest-save portrait restock
+
+The existing opted-in restock launcher can rank available portraits by
+qualified PS-0241 deadlines and replan against each native quote before
+confirming. The launch receipt retains the planning evidence, verified pocket
+counts and skipped availability. The
+[oldest-lab handoff](handoff/BI-OLDEST-LAB-RESTOCK.md) owns the live Windows
+canary, player takeover and rollback. Fixture results remain offline evidence.
