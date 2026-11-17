@@ -1,13 +1,23 @@
-# Oldest lab save and household upgrade-parts restock
+# Oldest lab save, household restock and native responder handoff
 
-Start the Windows workflow with the repository launcher.
+The Windows agent runs the whole workflow using the official checkout and
+the repository launcher. On a first run, clone canonical `main` to the
+bootstrapper's normal checkout location.
 
-```bat
-Start-BetterInstincts.cmd --upgrade-parts
+```powershell
+$repo = Join-Path $env:USERPROFILE 'dev\BetterInstincts'
+if (-not (Test-Path -LiteralPath $repo)) {
+    New-Item -ItemType Directory -Path (Split-Path -Parent $repo) -Force -ErrorAction Stop | Out-Null
+    git clone --branch main -- https://github.com/EndeavorEverlasting/BetterInstincts.git $repo
+    if ($LASTEXITCODE -ne 0) { throw 'Could not clone BetterInstincts main.' }
+}
+Set-Location -LiteralPath $repo
+.\Start-BetterInstincts.cmd --upgrade-parts
 ```
 
-The launcher clones canonical `main` when absent and fast-forwards a clean
-canonical checkout before using its code. It launches the installed Sims 4
+An existing dirty or divergent development copy uses the isolated checkout
+procedure below. The launcher also clones canonical `main` when absent
+and fast-forwards a clean canonical checkout before using its code. It launches the installed Sims 4
 once and verifies the process ID, creation time, executable path and exact
 version. An open Sims session is preserved.
 
@@ -31,6 +41,15 @@ work, at school or otherwise unavailable are recorded and skipped. One Sim's
 verified inventory and the household funds readback must settle before
 moving on. A purchase must fit the approved run cap and the existing
 household reserve. The workflow does not issue a save operation.
+
+The bridge claims exclusive restock control on the verified map. The
+installed native responder waits while this control is held. When all
+available portraits are verified at the target and the picker is closed,
+the controller orders one native transfer to the registered responder
+and resumes Play in the same save and lot. The native responder owns
+subsequent decisions. The bootstrapper reads back ownership and waits for
+an independently observed decision. The same transfer can follow a
+verified no-available-portraits result, which remains a distinct outcome.
 
 ## Recover a stale or locally modified checkout
 
@@ -125,14 +144,20 @@ run, save and household scope. At `capabilities`, return
 currently attached exact build.
 Include `restock_planning: "betterinstincts.lab-upgrade-parts-planning/v1"`
 in the capabilities reply when capture-bound timing evidence is implemented.
+Also include
+`responder_handoff: "betterinstincts.lab-restock-responder-handoff/v1"`
+when the binding can enforce exclusive restock control and observe a
+decision from the installed responder.
 
 | Operation | Required independent observation or effect |
 | --- | --- |
-| `observe` | Echo the current `observation_id` and return a new frame. Read back the save and requested scene from the current game. On the map, report the active household ID and corresponding lot ID. In Live Mode, report that same household and lot, pause state, the ordered roster, availability, selected Sim, pocket stock, and any current computer and picker evidence. |
+| `observe` | Echo the current `observation_id` and return a new frame. Read back the save, scene and authoritative `behavior_owner`. On the map report the active household and lot IDs. In Live Mode report the same scope, pause state, ordered roster, availability, selected Sim, pocket stock, computer and picker evidence. Report a closed picker as `picker: null`. |
+| `claim_restock_control` | Acquire the exact process, save, run, household and lot lease on the verified map. Deny active player control or unresolved work from another owner. Read back `behavior_owner: RESTOCK`. The registered adapter sets `Frame.restock_has_control` from the same authority and rechecks ownership atomically before applying a native effect. |
 | `open_active_lot`, `play_active_lot`, `pause_live` | Revalidate the current save, scene, active household and named lot before one action. |
 | `select_portrait` | Use the shared native selection and readback port for the exact Sim ID. |
 | `open_upgrade_parts` | Use the currently observed on-lot computer affordance and return the actor-bound empty picker, current revision, funds and all five observed unit prices. |
 | `buy_upgrade_parts` | Immediately before one confirmation, revalidate the actor, computer, picker revision, exact quantities, full price, funds and `expected_pocket_counts`. Revalidate the timing, queue and needs evidence attached to the supplied capture. Read back personal pocket stock and household funds. |
+| `handoff_to_responder` | Bind to the last verified paused Live capture and lot. Atomically check the restock lease, input generation, registered exact-build callback, closed picker and settled transactions, then resume Play and give control to the existing native responder. Return correlated acknowledgement only after that transition. |
 
 For each available Sim who needs parts, return `restock_timing` in its
 portrait row on each qualifying Live frame. Bind `capture` to the enclosing
@@ -154,6 +179,17 @@ The next observation independently includes `applied_command_id` and
 fresh state. A changed generation or uncertain response leaves the pending
 step in the launch receipt for reconciliation.
 
+On the first post-transfer frame, report `paused: false`,
+`behavior_owner: NATIVE_RESPONDER` and `responder.registered: true` with
+`responder.handoff_command_id` matching the transfer. Subsequent
+observations keep these bindings. After the registered
+`InstalledPlayerRuntime.cycle` evaluates a normal decision, report
+`responder.decision_state: DECISION_OBSERVED`, an opaque `decision_ref`
+and `decision_capture` matching the fresh observation. A decision may
+leave the game alone. A listener registration or transfer acknowledgement
+alone leaves decision proof open. The launcher sends no effects after the
+transfer and waits for up to four subsequent observations.
+
 ## Acceptance and terminal states
 
 The Windows agent owns the run from bootstrap through receipt. Read the
@@ -173,7 +209,12 @@ planner comparison, the target different from the selected Sim, the actual
 selected-portrait readback, each latest quote, the pocket deltas and actual
 household debits. Show final stock for every part for every available Sim,
 plus the skipped Sim and reason. Use a fresh matched disposable run to
-verify player takeover and that an unsettled purchase cannot replay.
+verify player takeover and that an unsettled purchase or transfer cannot
+replay. In the functional run show the ordered sequence
+`RESTOCK_VERIFIED` → `RESPONDER_CONTROL_OBSERVED` →
+`NATIVE_RESPONDER_DECISION_OBSERVED`. Capture a native decision and its
+independent in-game result when the fixture presents an eligible action.
+Check that the same installed responder yields to player input.
 Preserve the evidence, demonstrate owned binding rollback, and record
 P08 only after the functional run and protected control are observed.
 `python -m unittest tests.test_lab_upgrade_parts -v` runs the repository
@@ -184,6 +225,10 @@ and retain the quote in the receipt. The Windows native binding owner can
 inspect the current picker and determine its safe dismissal. An uncertain
 cart needs independent inventory and funds reconciliation first. The normal
 launcher preserves running sessions, so relaunching is not a resume action.
+If the transfer is pending or the first decision is unobserved, continue
+with the existing receipt and native binding in the same running session.
+An observed transfer with a missing decision calls for read-only callback
+inspection using the correlated handoff command ID.
 
 `RESTOCK_VERIFIED` requires a fresh final roster and pocket observation
 showing that all available portraits reached at least 99 of every part.

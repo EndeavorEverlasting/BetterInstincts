@@ -23,12 +23,14 @@ from scripts.smart_start import require_same_game_process
 
 PROTOCOL = "betterinstincts.lab-upgrade-parts-native/v1"
 PLANNING = "betterinstincts.lab-upgrade-parts-planning/v1"
+RESPONDER_HANDOFF = "betterinstincts.lab-restock-responder-handoff/v1"
 TARGET = 99
 MAX_ROSTER = 16
 MAX_REPLY = 32_768
 NOT_AVAILABLE = ("AT_WORK", "AT_SCHOOL", "AWAY", "UNAVAILABLE")
-OPERATIONS = frozenset(("observe", "open_active_lot", "play_active_lot", "pause_live",
-                        "select_portrait", "open_upgrade_parts", "buy_upgrade_parts"))
+OPERATIONS = frozenset(("observe", "claim_restock_control", "open_active_lot", "play_active_lot",
+                        "pause_live", "select_portrait", "open_upgrade_parts",
+                        "buy_upgrade_parts", "handoff_to_responder"))
 
 
 class RestockBlocked(ValueError):
@@ -115,6 +117,8 @@ class NativeBridge:
             raise RestockBlocked("NATIVE_RESTOCK_CAPABILITIES_INCOMPLETE")
         if response.get("restock_planning") != PLANNING:
             raise RestockBlocked("NATIVE_RESTOCK_PLANNING_EVIDENCE_CAPABILITY_REQUIRED")
+        if response.get("responder_handoff") != RESPONDER_HANDOFF:
+            raise RestockBlocked("NATIVE_RESPONDER_HANDOFF_CAPABILITY_REQUIRED")
 
 
 def _plan_portrait(frame, row, *, picker_open, cost=0, budget=0):
@@ -189,6 +193,8 @@ def run_restock(bridge, checkpoint):
         if (frame.get("player_idle_verified") is not True
                 or not _natural(frame.get("input_generation"))):
             raise RestockBlocked("YIELD_TO_PLAYER_OR_UNVERIFIED_INPUT")
+        if operation != "claim_restock_control" and frame.get("behavior_owner") != "RESTOCK":
+            raise RestockBlocked("NATIVE_RESTOCK_CONTROL_NOT_HELD")
         command = uuid4().hex
         report["pending"] = {"action": operation, "command_id": command,
                              "before_capture": frame["capture"], **payload}
@@ -204,6 +210,8 @@ def run_restock(bridge, checkpoint):
                 or type(after.get("input_generation")) is not int
                 or after["input_generation"] != frame["input_generation"]):
             raise RestockBlocked("PLAYER_RECLAIMED_RECONCILE_LAST_EFFECT")
+        if operation != "handoff_to_responder" and after.get("behavior_owner") != "RESTOCK":
+            raise RestockBlocked("NATIVE_RESTOCK_CONTROL_NOT_HELD")
         return after
 
     def clear_effect():
@@ -238,6 +246,11 @@ def run_restock(bridge, checkpoint):
     frame = observe(["WORLD_MAP", "NEIGHBORHOOD_MAP", "LOT_DETAILS"])
     report["save_readback"] = frame["capture"]
     lot = map_lot(frame)
+    frame = effect("claim_restock_control", frame, [frame["scene"]], lot_id=lot)
+    if map_lot(frame) != lot:
+        raise RestockBlocked("ACTIVE_MAP_LOT_CHANGED")
+    report["restock_control_capture"] = frame["capture"]
+    clear_effect()
     if frame["scene"] != "LOT_DETAILS":
         frame = effect("open_active_lot", frame, ["LOT_DETAILS"], lot_id=lot)
         if map_lot(frame) != lot:
@@ -268,6 +281,8 @@ def run_restock(bridge, checkpoint):
         if any(purchase["actor"] in needed for purchase in report["purchases"]):
             raise RestockBlocked("COMPLETED_PORTRAIT_STOCK_CHANGED")
         if not needed:
+            if "picker" not in frame or frame["picker"] is not None:
+                raise RestockBlocked("CLOSED_PICKER_REQUIRED_FOR_NATIVE_HANDOFF")
             report.update(state="RESTOCK_VERIFIED" if available else "NO_AVAILABLE_PORTRAITS",
                           final_capture=frame["capture"],
                           verified_available=list(available),
@@ -276,6 +291,7 @@ def run_restock(bridge, checkpoint):
                           skipped={key: row["status"] for key, row in roster.items()
                                    if key not in available})
             checkpoint(report)
+            _handoff_to_responder(frame, lot, scope, report, effect, observe, clear_effect)
             return report
         selected = frame["selected"]
         picker_open = frame.get("picker") is not None
@@ -315,6 +331,39 @@ def run_restock(bridge, checkpoint):
         frame = _restock_selected(frame, actor, lot, roster_ids, parts, targets, effect,
                                   live_roster, clear_effect, report, bridge.spend_cap)
     raise RestockBlocked("RESTOCK_ROSTER_PASS_LIMIT")
+
+
+def _handoff_to_responder(frame, lot, scope, report, effect, observe, clear_effect):
+    """Transfer control once, then wait for evidence of a separate native decision."""
+    ready = effect("handoff_to_responder", frame, ["LIVE"], lot_id=lot)
+    command_id = report["pending"]["command_id"]
+
+    def responder_readback(current):
+        responder = current.get("responder")
+        if (current.get("household_id") != scope["household_id"] or current.get("lot_id") != lot
+                or current.get("paused") is not False or current.get("behavior_owner") != "NATIVE_RESPONDER"
+                or "picker" not in current or current["picker"] is not None
+                or not isinstance(responder, dict) or responder.get("registered") is not True
+                or responder.get("handoff_command_id") != command_id):
+            raise RestockBlocked("NATIVE_RESPONDER_HANDOFF_READBACK_REQUIRED")
+        return responder
+
+    responder_readback(ready)
+    report["handoff"] = {"state": "RESPONDER_CONTROL_OBSERVED", "capture": ready["capture"],
+                         "command_id": command_id}
+    clear_effect()
+    for _ in range(4):
+        current = observe(["LIVE"])
+        responder = responder_readback(current)
+        decision = responder.get("decision_ref")
+        if (current.get("player_idle_verified") is True
+                and responder.get("decision_state") == "DECISION_OBSERVED" and _opaque(decision)
+                and responder.get("decision_capture") == current["capture"]):
+            report["handoff"].update(state="NATIVE_RESPONDER_DECISION_OBSERVED",
+                                     decision_ref=decision, decision_capture=current["capture"])
+            clear_effect()
+            return
+    raise RestockBlocked("NATIVE_RESPONDER_FIRST_DECISION_NOT_OBSERVED")
 
 
 def _restock_selected(frame, actor, lot, roster_ids, parts, targets, effect,

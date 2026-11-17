@@ -319,13 +319,17 @@ def complete_play(
             progress("Restocking upgrade parts for each available Sim.")
             report = run_restock(bridge, restock_checkpoint)
         except (OSError, ValueError, KeyError, TypeError) as exc:
+            if result.get("restock", {}).get("state") in ("RESTOCK_VERIFIED", "NO_AVAILABLE_PORTRAITS"):
+                return pending("native_responder_handoff", str(exc),
+                               "Reconcile the existing run using the native handoff receipt.",
+                               "scripts/lab_upgrade_parts.py", actor="repository")
             return pending("lab_upgrade_parts", str(exc),
                            "Recover the recorded native evidence before a new restock attempt.",
                            "scripts/lab_upgrade_parts.py", actor="repository")
         return {**result, "status": "ok", "stage": "lab_upgrade_parts",
-                "next_step": ("Restock verified for the available portraits."
+                "next_step": ("Restock verified and native responder decision observed."
                               if report["state"] == "RESTOCK_VERIFIED"
-                              else "No available portraits in the observed household."),
+                              else "No portraits were available. Native responder decision observed."),
                 "automation_gaps": []}
     return pending("save_readback", "NATIVE_SAVE_READBACK_MISSING",
                    "Verify the selected disposable save and household in the current game.",

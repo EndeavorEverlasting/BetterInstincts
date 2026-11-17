@@ -37,6 +37,7 @@ class Frame:
     modal_open: bool = False
     modal_ref: str | None = None
     save_ref: str | None = None
+    restock_has_control: bool = False
 
     def scope(self):
         return self.game_build, self.run, self.household, self.actor
@@ -143,6 +144,7 @@ class InstalledPlayerRuntime:
 
     def _idle(self, frame):
         return (self._fresh_live(frame) and frame.activity_trusted is True
+                and frame.restock_has_control is False
                 and frame.player_active is False and frame.player_queue is False
                 and type(frame.input_generation) is int and frame.input_generation >= 0
                 and type(frame.idle_seconds) in (int, float)
@@ -446,6 +448,8 @@ class InstalledPlayerRuntime:
         if not self._fresh_live(first):
             self.pending = None
             return "NATIVE_FRAME_UNQUALIFIED"
+        if first.restock_has_control is not False:
+            return "RESTOCK_CONTROL_HELD_OR_UNVERIFIED"
         if self.run is None:
             self.run = first.run
         elif first.run != self.run:

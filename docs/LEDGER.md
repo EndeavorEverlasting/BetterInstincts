@@ -2412,3 +2412,13 @@ confirming. The launch receipt retains the planning evidence, verified pocket
 counts and skipped availability. The
 [oldest-lab handoff](handoff/BI-OLDEST-LAB-RESTOCK.md) owns the live Windows
 canary, player takeover and rollback. Fixture results remain offline evidence.
+
+## 2026-11-17 — Restock releases the native responder
+
+The opt-in oldest-save bootstrap establishes exclusive restock control,
+verifies the pocket targets, and issues one scoped transfer back to the
+installed native responder in Play. The receipt separates settled stock,
+observed ownership and the first actual responder decision. The
+[canonical Windows handoff](handoff/BI-OLDEST-LAB-RESTOCK.md) carries the
+bridge contract and live acceptance. Exact-build gameplay remains unobserved
+in the offline fixtures.

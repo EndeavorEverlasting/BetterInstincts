@@ -76,5 +76,13 @@
     "replay": "ONE_ATTEMPT_PER_SAVE_GOAL_AND_LOGICAL_STEP_IN_SESSION",
     "desktop_fallback": false
   },
+  "lab_restock_handoff": {
+    "protocol": "betterinstincts.lab-restock-responder-handoff/v1",
+    "bootstrap_owner": "scripts/lab_upgrade_parts.py",
+    "native_hold": "FRAME_RESTOCK_HAS_CONTROL_TRUE_OR_UNVERIFIED",
+    "transition": "NATIVE_EXACT_SCOPE_ATOMIC_PLAY_AND_RELEASE",
+    "decision_proof": "DISTINCT_CURRENT_CAPTURE_CORRELATED_TO_HANDOFF_AND_REGISTERED_CALLBACK",
+    "desktop_fallback": false
+  },
   "native_successor": 171
 }
