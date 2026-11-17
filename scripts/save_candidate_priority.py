@@ -40,6 +40,7 @@ def _lab_creation_time(record: dict) -> datetime | None:
 
 def rank_lab_candidates(
     registry: dict, *, run_id: str, game_version: str, household_id: str | None = None,
+    current_run_only: bool = False,
 ) -> dict:
     """Rank, never select. Missing age or failed guard for ANY lab candidate abstains.
 
@@ -70,10 +71,10 @@ def rank_lab_candidates(
             excluded += 1
             continue
 
+        if (current_run_only or household_id is not None) and record.get("authorized_run_id") != run_id:
+            outside_scope += 1
+            continue
         if household_id is not None:
-            if record.get("authorized_run_id") != run_id:
-                outside_scope += 1
-                continue
             bound_household = record.get("household_id")
             if (not isinstance(bound_household, str) or not HOUSEHOLD_ID.fullmatch(bound_household)
                     or record.get("household_binding_confirmed") is not True):
@@ -105,7 +106,8 @@ def rank_lab_candidates(
     base = {
         "ranking_rule": ADVISORY,
         "protected_or_continuation_excluded": excluded,
-        **({"outside_household_or_run_excluded": outside_scope} if household_id is not None else {}),
+        **({"outside_household_or_run_excluded": outside_scope}
+           if current_run_only or household_id is not None else {}),
         "unrankable_lab_candidates": unrankable,
         "ranked_candidates": [],
         "selected_save_id": None,

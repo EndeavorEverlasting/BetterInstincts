@@ -7,6 +7,14 @@ verify selection acknowledgement before the recipient is reconsidered for
 income. The host planner continues to own queue suitability. Exact-build EA
 binding, queue admission, earned funds and rollback remain under #171.
 
+## 2026-11-16 — Oldest lab session and computer upgrade parts
+
+The [canonical restock workflow](handoff/BI-OLDEST-LAB-RESTOCK.md) selects the
+oldest eligible lab save without a prompt and verifies the active map
+household before topping up each available Sim's five computer parts to 99.
+The host controller owns selection, spend, per-Sim settlement and receipts.
+Exact-build Windows native binding and gameplay proof remain in #171.
+
 ## 2026-11-16 — Shared household portrait handoff
 
 The installed runtime has one optional selection transaction for upgrade
