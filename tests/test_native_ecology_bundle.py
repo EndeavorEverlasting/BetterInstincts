@@ -13,7 +13,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.native_ecology_bundle import (
-    FAIRY_DUST_MEMBER, FAME_MEMBER, MOD_FILE, MANIFEST_FILE, MODULE_PYC, RUNTIME_MEMBERS, TRAIT_MEMBERS,
+    ACTIVITY_CHAIN_MEMBERS, FAIRY_DUST_MEMBER, FAME_MEMBER, MOD_FILE, MANIFEST_FILE,
+    MODULE_PYC, RUNTIME_MEMBERS, TRAIT_MEMBERS,
     NativeEcologyPackageError, PORTRAIT_MEMBER,
     build_package, install_package, uninstall_package, verify_hook_proof,
 )
@@ -296,6 +297,37 @@ assert PreferenceResponsePort().respond(enabled=True)["state"] == "NATIVE_ADAPTE
              installed["installed"]], cwd=self.root, capture_output=True, text=True, timeout=10,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
+        uninstall_package(mods_dir=self.mod_dir, game_closed_confirmed=True)
+        self.assertFalse(Path(installed["installed"]).exists())
+
+    def test_activity_chain_bundle_requires_binding_and_imports_without_checkout(self):
+        options = dict(python37=self.py37, source_path=self.source, hook_proof_path=self.proof,
+                       output_dir=self.output, game_build=BUILD, installed_player_runtime=True,
+                       installed_activity_chain=True)
+        proof = {**hook_proof(), "installed_player_runtime_binding_ref": "local:verified:binding"}
+        self.proof.write_text(json.dumps(proof))
+        with self.assertRaisesRegex(NativeEcologyPackageError, "ACTIVITY_CHAIN_BINDING_PROOF_REQUIRED"):
+            build_package(**options)
+        proof["installed_activity_chain_binding_ref"] = "local:native:activity-chain"
+        self.proof.write_text(json.dumps(proof))
+        with self.assertRaisesRegex(NativeEcologyPackageError, "ACTIVITY_CHAIN_BINDING_PROOF_REQUIRED"):
+            build_package(**{**options, "installed_player_runtime": False})
+        with patch("scripts.native_ecology_bundle._compile_py37", side_effect=self.compile_for_test):
+            built = build_package(**options)
+        with zipfile.ZipFile(built["package"]) as archive:
+            self.assertEqual(archive.namelist(), [MODULE_PYC, *RUNTIME_MEMBERS, *ACTIVITY_CHAIN_MEMBERS])
+        installed = install_package(mods_dir=self.mod_dir, package_path=Path(built["package"]),
+                                    manifest_path=Path(built["manifest"]), game_closed_confirmed=True)
+        result = subprocess.run(
+            [sys.executable, "-I", "-c",
+             "import sys; sys.path.insert(0, sys.argv[1]);"
+             "from betterinstincts.activity_chain import compile_activity_chain;"
+             "assert callable(compile_activity_chain)",
+             installed["installed"]], cwd=self.root, capture_output=True, text=True, timeout=10,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(json.loads((Path(installed["installed"]).parent / MANIFEST_FILE).read_text())
+                        ["installed_activity_chain"])
         uninstall_package(mods_dir=self.mod_dir, game_closed_confirmed=True)
         self.assertFalse(Path(installed["installed"]).exists())
 

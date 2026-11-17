@@ -32,9 +32,54 @@ Travel uses current admissible route observations: teleport only when the select
 A small-data GP supports RBF, Matérn-3/2 and periodic kernels, Cholesky posterior solve and at most 24 unique observations in one homogeneous cohort. It returns mean, uncertainty (sigma) and upper advisory estimate (mean + 2*sigma). Callers must independently verify the cohort's game build, mechanic, Sim context, sample identities and observational provenance. It cannot discover discontinuous game unlocks, establish permission, or relax hard conservative deadlines without validation. Test holdouts, calibration and sparse-data behavior before trusting learned timing. At scale prefer approximations or alternative model families rather than dense cubic GP solves.
 
 ## Boundaries and validation
-Source-only files: betterinstincts/activity_chain.py, contracts/activity-chain.v1.json and tests/test_activity_chain.py. These do not hook, install, unpause or play The Sims 4. Run: python -m unittest tests.test_activity_chain -v, followed by the repository's ontology, semantic preflight, native-gameplay authority and full validation checks.
+The pure planner owns the DAG, deadlines, and route selection. The installed
+player-runtime port consumes it as an optional source of proposals and uses the
+existing callback, admission, submission and reconciliation. Run
+`python -m unittest tests.test_activity_chain tests.test_installed_player_runtime tests.test_native_ecology_bundle -v`
+and the ontology, semantic preflight and native-gameplay authority checks.
 
 Native integration remains issue #171; certify exact installed patch, source-proven native actions, player interrupts, serialization across restarts, current Sim/lot/source inventory, and disposable-save A/B plus rollback. BI-002 hunger remains its own active live certification. Existing PRs #251 and #252 were not modified by this work.
+
+## Installed runtime adapter
+
+An exact-build EA adapter supplies `read_activity_chain(frame)` only when the
+package was built with `--installed-player-runtime --installed-activity-chain`
+and locally verified `installed_activity_chain_binding_ref` evidence. The
+callbacks require a source-observed `Frame.save_ref`. The read port returns
+`None` if no goal is eligible or a mapping with:
+
+| Field | Contents |
+| --- | --- |
+| `game_build`, `run`, `save_ref`, `goal_ref` | Current exact build, native run, admitted save and stable goal occurrence |
+| `snapshot` | Planner input with current mode, household, actor, capture, queue, needs and spendable funds |
+| `steps`, `routes` | Current domain-owned graph and independently admitted routes |
+| `proposals` | Exact binding keys to mappings with `evidence_ref` and stable native `proposal_ref` |
+
+Use `("ACTIVITY", step_id)` for a step and
+`("TRAVEL", following_step_id, method, from_location, to_location)` for
+its travel edge. Bind the proposal to the exact affordance, recipient,
+resource reservation and save. The existing `submit(proposal_ref, frame)`
+must atomically recheck the binding and current player/game authority.
+
+Paused callbacks can stage a read-only plan. In Play, existing domain
+decisions get their normal turn. If they leave the callback available, the
+planner selects the first action and repeats the selection against a second
+fresh frame, including the ordinary native priority check. Only one action
+can be submitted per callback. The next cycle needs an observation distinct
+from both admission frames and settlement bound to the original dispatch,
+even if the player has since selected another portrait. The adapter
+revalidates prior completions against current state and supplies unresolved
+work as in-flight. A lost acknowledgment stays pending. Reissued proposal
+tokens and changed locations cannot replay the same logical step. A verified
+no-effect outcome ends that attempt. A new attempt needs a separately
+qualified goal occurrence. `CHAIN_COMPLETED` means the current observation
+validates all steps, including the terminal effect.
+
+The runtime retains attempt identity in memory for the installed session.
+Durable save-scoped intent and restart reconciliation still require the
+native observation owner. See the
+[active runtime sprint](../plans/active/BI-PS0241-ACTIVITY-RUNTIME.md) for the
+first Windows gate and protected regression checks.
 
 ## MoonWake composition interpretation
 The current canonical Sixth Gear order is P141 → P95 → P82 → P08 → P07 → P124. P141 compared a monolithic scheduler, hardcoded domain scripts, GP-only inference and a domain-owner-preserving DAG; the last was selected. P95/P82 authored and tested the offline seam and repaired cross-capture recovery. P08 live runtime is unavailable to this GitHub provider; local MoonWake prompt_group_walk was not executed, and no independent agents were launched. P07/P124 source integration is only as proven by actual commit, checks, PR and mainline evidence.

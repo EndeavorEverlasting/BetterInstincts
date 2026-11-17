@@ -438,3 +438,11 @@ re-evaluating needs, career commitments and the next income action. Small busine
 covers home versus venue, ownership and opening, activities, employees and
 customer service, and settlement on close. Advance each only with exact-build
 observation and independent receipts under [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+
+## 2026-11-17 — PS-0241 installed activity-chain adapter
+
+Bind the existing chain's read, submit and reconcile ports to exact-build
+EA events and record installed activation, independent per-action outcomes,
+player takeover, restart recovery and rollback. Follow the
+[active runtime sprint](../plans/active/BI-PS0241-ACTIVITY-RUNTIME.md).
+This is a sibling of BI-002 and the existing restock, ecology, needs and income lanes.

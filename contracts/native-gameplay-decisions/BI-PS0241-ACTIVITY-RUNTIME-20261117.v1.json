@@ -1,0 +1,33 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/activity_chain.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure graph planning and source-qualified completion reporting for arbitrary domain activities.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "reason": "Optional policy integration through an existing adapter and callback. Exact EA effects require a separately verified game binding.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/funds_inject.py",
+      "route": "POLICY_ONLY",
+      "reason": "Reuse the existing household amount limit without changing any behavior in the separate funds policy.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/household_funds.py",
+      "route": "POLICY_ONLY",
+      "reason": "Share a pure balance limit between host policy and the portable installed planner without importing host-only code.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

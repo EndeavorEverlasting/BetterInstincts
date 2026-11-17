@@ -16,11 +16,11 @@ from pathlib import Path
 from typing import Mapping, Optional
 
 from betterinstincts.budget_eval import household_reserve
+from betterinstincts.household_funds import MAX_HOUSEHOLD_FUNDS
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "host-funds.v1.json"
 MAX_BYTES = 48_000
-MAX_HOUSEHOLD_FUNDS = 9_999_999
 EVIDENCE_REF_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_:.-]{2,119}$")
 
 

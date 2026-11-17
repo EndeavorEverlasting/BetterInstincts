@@ -62,5 +62,19 @@
     "effect_evidence": "CORRELATED_NATIVE_ACK_AND_DISTINCT_POST_ACTION_STATE",
     "desktop_fallback": false
   },
+  "activity_chain": {
+    "bundle_flag": "--installed-activity-chain",
+    "requires_installed_player_runtime": true,
+    "require_binding_proof": "installed_activity_chain_binding_ref",
+    "owner": "betterinstincts/activity_chain.py",
+    "adapter_port": "read_activity_chain",
+    "scope": "EXACT_BUILD_RUN_SAVE_HOUSEHOLD_ACTOR_GOAL",
+    "mode": "PLANNING_READ_ONLY_PLAY_REQUIRES_FRESH_ADMISSION",
+    "dispatch": "EXISTING_ATOMIC_NATIVE_SUBMIT_AND_RECONCILE",
+    "priority": "AFTER_EXISTING_DOMAIN_DECISIONS",
+    "evidence": "SCOPED_READBACK_DISTINCT_FROM_BOTH_ADMISSION_CAPTURES",
+    "replay": "ONE_ATTEMPT_PER_SAVE_GOAL_AND_LOGICAL_STEP_IN_SESSION",
+    "desktop_fallback": false
+  },
   "native_successor": 171
 }

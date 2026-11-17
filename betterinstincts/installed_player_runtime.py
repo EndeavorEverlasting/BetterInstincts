@@ -36,6 +36,7 @@ class Frame:
     capture: str
     modal_open: bool = False
     modal_ref: str | None = None
+    save_ref: str | None = None
 
     def scope(self):
         return self.game_build, self.run, self.household, self.actor
@@ -45,7 +46,8 @@ class InstalledPlayerRuntime:
     """One permitted game session. No thread, timer, Git, socket or desktop input."""
 
     def __init__(self, adapter, *, build: str, owned_dir: Path, clock=monotonic,
-                 trait_response=None, fairy_dust=None, fame=None, portraits=None):
+                 trait_response=None, fairy_dust=None, fame=None, portraits=None,
+                 activity_chain=None):
         self.adapter = adapter
         self.build = build
         self.path = owned_dir / "player-learning.sqlite3"
@@ -69,6 +71,10 @@ class InstalledPlayerRuntime:
         self.portraits = portraits
         self.portrait_pending = None
         self.portrait_readback = None
+        self.activity_chain = activity_chain
+        self.activity_plan = None
+        self.activity_admission = None
+        self.activity_attempts = set()
 
     def _select_portrait(self, first):
         try:
@@ -196,8 +202,8 @@ class InstalledPlayerRuntime:
             return {"state": "NATIVE_MODAL_BINDING_REQUIRED"}
         return self.trait_response.reconcile(dialog_ref, response, effect)
 
-    def _dispatch(self, identity, submit, *, scoped_attempts=None, attempted=None):
-        if identity in self.attempts:
+    def _dispatch(self, identity, submit, *, scoped_attempts=None, attempted=None, attempt_key=None):
+        if identity in self.attempts or attempt_key in self.activity_attempts:
             return "DUPLICATE_NATIVE_PROPOSAL"
         if len(self.attempts) >= MAX_ATTEMPTS_PER_RUN:
             return "NATIVE_SESSION_ATTEMPT_LIMIT"
@@ -206,6 +212,8 @@ class InstalledPlayerRuntime:
         else:
             scoped_attempts[identity[0]] = attempted
         self.attempts.add(identity)
+        if attempt_key is not None:
+            self.activity_attempts.add(attempt_key)
         try:
             result = submit()
         except Exception:
@@ -348,10 +356,90 @@ class InstalledPlayerRuntime:
         return self._dispatch(identity, lambda: self.adapter.submit_fame(dict(proposal), fresh),
                               scoped_attempts=self.fame_attempts, attempted=attempted)
 
+    def _read_activity_chain(self, frame):
+        mode = "PLAY" if frame.playing else "PLANNING"
+        try:
+            packet = self.adapter.read_activity_chain(frame)
+            if packet is None:
+                return "NO_ACTIVITY_GOAL", None, None
+            snapshot = packet["snapshot"]
+            save = packet["save_ref"]
+            goal = packet["goal_ref"]
+            if (packet["game_build"] != frame.game_build or packet["run"] != frame.run
+                    or snapshot["sim_ref"] != frame.actor
+                    or snapshot["household_ref"] != frame.household or snapshot["mode"] != mode
+                    or save != frame.save_ref
+                    or not all(isinstance(ref, str) and player_learning.TOKEN.fullmatch(ref)
+                               for ref in (save, goal))):
+                return "ACTIVITY_SCOPE_UNQUALIFIED", None, None
+            plan = self.activity_chain.compile_activity_chain(
+                snapshot, packet["steps"], packet.get("routes", ()), capture_ref=frame.capture,
+            )
+            if plan["gate"] != "EFFECT_ADMISSION_REQUIRED":
+                return plan["gate"], plan, None
+
+            head = plan["steps"][0]
+            if head["kind"] == "TRAVEL":
+                destination = plan["steps"][1]
+                action = ("TRAVEL", destination["step_id"], head["method"], head["from"], head["to"])
+                binding_key = action
+            else:
+                action = ("ACTIVITY", head["step_id"], head["domain"], head["activity_kind"],
+                          snapshot["location"])
+                binding_key = action[:2]
+            binding = packet["proposals"].get(binding_key)
+            if not isinstance(binding, Mapping) or binding.get("evidence_ref") != head["evidence_ref"]:
+                return "ACTIVITY_ACTION_UNBOUND", plan, None
+            proposal = binding.get("proposal_ref")
+            if not isinstance(proposal, str) or not player_learning.TOKEN.fullmatch(proposal):
+                return "ACTIVITY_ACTION_UNBOUND", plan, None
+            return plan["gate"], plan, (save, goal, action, proposal)
+        except Exception:
+            # A missing or malformed native observation is never work to execute.
+            return "ACTIVITY_EVIDENCE_UNQUALIFIED", None, None
+
+    def _cycle_activity_chain(self, first):
+        state, self.activity_plan, candidate = self._read_activity_chain(first)
+        if state == "NO_ACTIVITY_GOAL":
+            return None
+        if candidate is None:
+            return state
+        fresh = self.adapter.frame()
+        if (not self._fresh_idle_after(first, fresh)
+                or fresh.playing is not True or fresh.modal_open is not False):
+            return "YIELD_TO_PLAYER"
+        planned, _, _ = self.adapter.analyze(fresh)
+        if not isinstance(planned, Mapping) or planned:
+            return "ACTIVITY_REOBSERVE_DOMAIN_PRIORITY"
+        _, self.activity_plan, current = self._read_activity_chain(fresh)
+        if current != candidate or not self._idle(fresh):
+            return "ACTIVITY_REOBSERVE_FIRST_ACTION"
+        save, goal, action, proposal = current
+        identity = (fresh.scope(), proposal)
+        self.activity_admission = (first.capture, fresh)
+        result = self._dispatch(
+            identity, lambda: self.adapter.submit(proposal, fresh),
+            attempt_key=(fresh.scope(), save, goal, action[:2]),
+        )
+        if self.unresolved != identity:
+            self.activity_admission = None
+        return result
+
+    def _can_reconcile_native(self, frame):
+        if self.activity_admission is None:
+            return True
+        first_capture, dispatch = self.activity_admission
+        # A new selected portrait may observe the original, identity-bound
+        # outcome through the adapter's household queue reader.
+        return (frame.scope()[:3] == dispatch.scope()[:3] and frame.save_ref == dispatch.save_ref
+                and frame.observed_at >= dispatch.observed_at
+                and frame.capture not in (first_capture, dispatch.capture))
+
     def cycle(self):
         """Analyze on any eligible turn. Submit at most one fresh, ranked proposal."""
         self.dust_recheck = None
         self.fame_receipt = None
+        self.activity_plan = None
         if not self.registered:
             return "LISTENER_NOT_REGISTERED"
         first = self.adapter.frame()
@@ -374,8 +462,10 @@ class InstalledPlayerRuntime:
                         and first.input_generation == readback.input_generation)):
                 return "PORTRAIT_SELECTION_REOBSERVE"
             self.portrait_readback = None
-        if self.unresolved is not None and self.adapter.reconcile(self.unresolved, first) is True:
+        if (self.unresolved is not None and self._can_reconcile_native(first)
+                and self.adapter.reconcile(self.unresolved, first) is True):
             self.unresolved = None
+            self.activity_admission = None
         if first.modal_open is True:
             return self._respond_to_modal(first)
         if first.modal_open is not False:
@@ -404,6 +494,11 @@ class InstalledPlayerRuntime:
             if result is not None:
                 return result
         if first.playing is not True:
+            if (first.playing is False and self.activity_chain is not None
+                    and isinstance(planned, Mapping) and not planned):
+                result = self._cycle_activity_chain(first)
+                if result is not None:
+                    return result
             return "YIELD_TO_PLAYER"
         if self.fame is not None and isinstance(planned, Mapping) and planned:
             if fame_result == "NATIVE_DISPATCH_RECONCILIATION":
@@ -427,6 +522,11 @@ class InstalledPlayerRuntime:
                     return fame_result
                 result = self._cycle_fame(first, fame_observation, fame_track)
                 if result != "NO_FAME_GOAL":
+                    return result
+            if (self.activity_chain is not None and isinstance(planned, Mapping)
+                    and not self.dust_attempts and not self.fame_attempts):
+                result = self._cycle_activity_chain(first)
+                if result is not None:
                     return result
             return dust_hold if dust_hold != "NO_DUST_GOAL" else "NO_NATIVE_PROPOSAL"
         hint = {}
@@ -498,9 +598,14 @@ def start_installed(adapter, *, exact_build: str, owned_dir: Path,
 
         if not all(callable(getattr(adapter, name, None)) for name in portraits.PORTS):
             raise ValueError("NATIVE_PORTRAIT_HANDOFF_PORTS_REQUIRED")
+    activity_chain = None
+    if installed.get("installed_activity_chain") is True:
+        if not callable(getattr(adapter, "read_activity_chain", None)):
+            raise ValueError("NATIVE_ACTIVITY_CHAIN_PORT_REQUIRED")
+        from betterinstincts import activity_chain
     runtime = InstalledPlayerRuntime(adapter, build=exact_build, owned_dir=root, clock=clock,
                                      trait_response=trait_response, fairy_dust=fairy_dust, fame=fame,
-                                     portraits=portraits)
+                                     portraits=portraits, activity_chain=activity_chain)
     if not all(callable(getattr(adapter, name, None))
                for name in ("register", "frame", "analyze", "submit", "reconcile")):
         raise ValueError("NATIVE_CALLBACK_PORTS_REQUIRED")

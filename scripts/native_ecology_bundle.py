@@ -29,6 +29,8 @@ TRAIT_MEMBERS = tuple(f"betterinstincts/{name}.pyc" for name in TRAIT_MODULES) +
 FAIRY_DUST_MEMBER = "betterinstincts/fairy_dust.pyc"
 FAME_MEMBER = "betterinstincts/fame.pyc"
 PORTRAIT_MEMBER = "betterinstincts/portrait_handoff.pyc"
+ACTIVITY_CHAIN_MODULES = ("activity_chain", "household_funds")
+ACTIVITY_CHAIN_MEMBERS = tuple(f"betterinstincts/{name}.pyc" for name in ACTIVITY_CHAIN_MODULES)
 MAX_SOURCE_BYTES = 250_000
 MAX_PYC_BYTES = 1_000_000
 
@@ -96,6 +98,7 @@ def build_package(
     output_dir: Path, game_build: str, installed_player_runtime: bool = False,
     installed_trait_responder: bool = False, installed_fairy_dust: bool = False,
     installed_fame: bool = False, installed_portrait_handoff: bool = False,
+    installed_activity_chain: bool = False,
 ) -> dict:
     """Compile an independently inspected hook, never arbitrary host policy."""
     if source_path.name != "BetterInstincts_Ecology.py":
@@ -123,6 +126,9 @@ def build_package(
     if installed_portrait_handoff and (not installed_player_runtime
             or not _ref(proof.get("installed_portrait_handoff_binding_ref"))):
         raise NativeEcologyPackageError("INSTALLED_PORTRAIT_HANDOFF_BINDING_PROOF_REQUIRED")
+    if installed_activity_chain and (not installed_player_runtime
+            or not _ref(proof.get("installed_activity_chain_binding_ref"))):
+        raise NativeEcologyPackageError("INSTALLED_ACTIVITY_CHAIN_BINDING_PROOF_REQUIRED")
     modules = {MODULE_PYC: _compile_py37(python37, source_path)}
     if installed_player_runtime:
         root = Path(__file__).resolve().parents[1] / "betterinstincts"
@@ -138,6 +144,9 @@ def build_package(
             modules[FAME_MEMBER] = _compile_py37(python37, root / "fame.py")
         if installed_portrait_handoff:
             modules[PORTRAIT_MEMBER] = _compile_py37(python37, root / "portrait_handoff.py")
+        if installed_activity_chain:
+            for name, member in zip(ACTIVITY_CHAIN_MODULES, ACTIVITY_CHAIN_MEMBERS):
+                modules[member] = _compile_py37(python37, root / (name + ".py"))
     if output_dir.is_symlink():
         raise NativeEcologyPackageError("OUTPUT_SYMLINK_DENIED")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -151,7 +160,8 @@ def build_package(
             for member, bytecode in modules.items():
                 archive.writestr(member, bytecode)
         _check_archive(tmp, installed_player_runtime, installed_trait_responder,
-                       installed_fairy_dust, installed_fame, installed_portrait_handoff)
+                       installed_fairy_dust, installed_fame, installed_portrait_handoff,
+                       installed_activity_chain)
         package = tmp.read_bytes()
     receipt = {
         "schema": "betterinstincts.native-ecology-ownership/v1",
@@ -173,6 +183,8 @@ def build_package(
         receipt["installed_fame"] = True
     if installed_portrait_handoff:
         receipt["installed_portrait_handoff"] = True
+    if installed_activity_chain:
+        receipt["installed_activity_chain"] = True
     package_path.write_bytes(package)
     receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     return {"package": str(package_path), "manifest": str(receipt_path),
@@ -182,12 +194,13 @@ def build_package(
 
 def _check_archive(path: Path, installed_runtime: bool, installed_trait: bool = False,
                    installed_fairy_dust: bool = False, installed_fame: bool = False,
-                   installed_portrait_handoff: bool = False) -> None:
+                   installed_portrait_handoff: bool = False, installed_activity_chain: bool = False) -> None:
     expected = [MODULE_PYC, *(RUNTIME_MEMBERS if installed_runtime else ()),
                 *(TRAIT_MEMBERS if installed_trait else ()),
                 *([FAIRY_DUST_MEMBER] if installed_fairy_dust else []),
                 *([FAME_MEMBER] if installed_fame else []),
-                *([PORTRAIT_MEMBER] if installed_portrait_handoff else [])]
+                *([PORTRAIT_MEMBER] if installed_portrait_handoff else []),
+                *(ACTIVITY_CHAIN_MEMBERS if installed_activity_chain else ())]
     with zipfile.ZipFile(path) as archive:
         if archive.namelist() != expected:
             raise NativeEcologyPackageError("PACKAGE_CONTENT_INVALID")
@@ -199,7 +212,7 @@ def _read_manifest(path: Path) -> dict:
             or data.get("schema") != "betterinstincts.native-ecology-ownership/v1"
             or (any(data.get(key) is True for key in
                     ("installed_trait_responder", "installed_fairy_dust", "installed_fame",
-                     "installed_portrait_handoff"))
+                     "installed_portrait_handoff", "installed_activity_chain"))
                 and data.get("installed_player_runtime") is not True)
             or data.get("game_certified") is not False
             or data.get("live_activation_observed") is not False
@@ -226,7 +239,8 @@ def install_package(
     _check_archive(package_path, receipt.get("installed_player_runtime") is True,
                    receipt.get("installed_trait_responder") is True,
                    receipt.get("installed_fairy_dust") is True, receipt.get("installed_fame") is True,
-                   receipt.get("installed_portrait_handoff") is True)
+                   receipt.get("installed_portrait_handoff") is True,
+                   receipt.get("installed_activity_chain") is True)
     owned = mods_dir / "BetterInstincts"
     if owned.is_symlink() or (owned.exists() and any(
         not (item.name == "player-learning.sqlite3" and item.is_file() and not item.is_symlink()
@@ -285,6 +299,8 @@ def main(argv: list[str] | None = None) -> int:
                        help="Include the exact-build, adapter-bound Fame microsystem")
     build.add_argument("--installed-portrait-handoff", action="store_true",
                        help="Include shared portrait selection for a source-proven native binding")
+    build.add_argument("--installed-activity-chain", action="store_true",
+                       help="Include the activity planner for a source-proven native chain binding")
     install = commands.add_parser("install")
     for flag in ("mods-dir", "package", "manifest"):
         install.add_argument("--" + flag, required=True)
@@ -302,6 +318,7 @@ def main(argv: list[str] | None = None) -> int:
                 installed_trait_responder=args.installed_trait_responder,
                 installed_fairy_dust=args.installed_fairy_dust, installed_fame=args.installed_fame,
                 installed_portrait_handoff=args.installed_portrait_handoff,
+                installed_activity_chain=args.installed_activity_chain,
             )
         elif args.command == "install":
             result = install_package(
