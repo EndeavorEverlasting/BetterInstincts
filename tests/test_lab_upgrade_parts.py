@@ -28,8 +28,11 @@ class FixtureBridge:
         self.sequence = 0
         self.effects = []
         self.bad_outcome = False
+        self.decision_available = True
+        self.released_on = None
         self.frame = {
             "scene": "NEIGHBORHOOD_MAP", "save_id": self.scope["save_id"],
+            "behavior_owner": "UNCLAIMED", "picker": None,
             "active_households": [{"household_id": BOUND["household_id"], "lot_id": "lot:one"}],
             "player_idle_verified": True, "input_generation": 2,
             "household_id": BOUND["household_id"], "lot_id": "lot:one", "paused": False,
@@ -46,6 +49,9 @@ class FixtureBridge:
             self.sequence += 1
             frame = {**self.frame, "capture": f"capture:frame-{self.sequence}"}
             frame = deepcopy(frame)
+            if self.released_on is not None and self.sequence > self.released_on + 1 and self.decision_available:
+                frame["responder"].update(decision_state="DECISION_OBSERVED",
+                                          decision_ref="native:decision-1", decision_capture=frame["capture"])
             for row in frame["portraits"]:
                 if row["status"] == "AVAILABLE":
                     row["restock_timing"] = {
@@ -59,6 +65,8 @@ class FixtureBridge:
             return {"frame": frame, "observation_id": data["observation_id"]}
         self.effects.append((operation, data))
         self.frame["applied_command_id"] = data["command_id"]
+        if operation == "claim_restock_control":
+            self.frame["behavior_owner"] = "RESTOCK"
         if operation == "open_active_lot":
             self.frame.update(scene="LOT_DETAILS", selected_lot_id=data["lot_id"])
         if operation == "play_active_lot":
@@ -80,6 +88,12 @@ class FixtureBridge:
             self.frame["picker"] = None
             if self.bad_outcome:
                 self.frame["funds"] += 1
+        if operation == "handoff_to_responder":
+            self.released_on = self.sequence
+            self.frame.update(
+                paused=False, behavior_owner="NATIVE_RESPONDER",
+                responder={"registered": True, "handoff_command_id": data["command_id"]},
+            )
         return {"command_id": data["command_id"], "status": "APPLIED"}
 
 
@@ -93,14 +107,63 @@ class LabUpgradePartsTests(unittest.TestCase):
         self.assertEqual(result["skipped"], {ACTORS[0]: "AT_WORK"})
         self.assertEqual(result["spent"], 1000)
         self.assertEqual([op for op, _ in bridge.effects],
-                         ["open_active_lot", "play_active_lot", "pause_live"] +
-                         ["select_portrait", "open_upgrade_parts", "buy_upgrade_parts"] * 2)
+                         ["claim_restock_control", "open_active_lot", "play_active_lot", "pause_live"] +
+                         ["select_portrait", "open_upgrade_parts", "buy_upgrade_parts"] * 2 +
+                         ["handoff_to_responder"])
         buys = [row for op, row in bridge.effects if op == "buy_upgrade_parts"]
         self.assertEqual([row["actor"] for row in buys], list(ACTORS[1:]))
         self.assertEqual([row["quantities"] for row in buys],
                          [dict.fromkeys(PARTS, 99), dict.fromkeys(PARTS, 1)])
         self.assertEqual(sum(c["pending"] is not None for c in checkpoints), len(bridge.effects))
         self.assertIsNone(checkpoints[-1]["pending"])
+        self.assertEqual(result["handoff"]["state"], "NATIVE_RESPONDER_DECISION_OBSERVED")
+        self.assertNotEqual(result["handoff"]["decision_capture"], result["handoff"]["capture"])
+        self.assertEqual(bridge.effects[-1][1]["capture"], result["final_capture"])
+
+    def test_acknowledged_handoff_without_decision_stays_unproved_without_a_second_effect(self):
+        bridge = FixtureBridge()
+        bridge.decision_available = False
+        checkpoints = []
+        with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, "FIRST_DECISION_NOT_OBSERVED"):
+            lab_upgrade_parts.run_restock(bridge, lambda report: checkpoints.append(deepcopy(report)))
+        self.assertEqual(checkpoints[-1]["state"], "RESTOCK_VERIFIED")
+        self.assertEqual(checkpoints[-1]["handoff"]["state"], "RESPONDER_CONTROL_OBSERVED")
+        self.assertIsNone(checkpoints[-1]["pending"])
+        self.assertEqual([op for op, _ in bridge.effects].count("handoff_to_responder"), 1)
+
+    def test_lost_handoff_ack_leaves_pending_and_does_not_replay(self):
+        bridge = FixtureBridge()
+        exchange = bridge.exchange
+        checkpoints = []
+
+        def lose_ack(operation, **data):
+            reply = exchange(operation, **data)
+            return {} if operation == "handoff_to_responder" else reply
+
+        bridge.exchange = lose_ack
+        with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, "RECONCILIATION_REQUIRED"):
+            lab_upgrade_parts.run_restock(bridge, lambda report: checkpoints.append(deepcopy(report)))
+        self.assertEqual(checkpoints[-1]["state"], "RESTOCK_VERIFIED")
+        self.assertEqual(checkpoints[-1]["pending"]["action"], "handoff_to_responder")
+        self.assertNotIn("handoff", checkpoints[-1])
+        self.assertEqual([op for op, _ in bridge.effects].count("handoff_to_responder"), 1)
+
+    def test_handoff_readback_with_changed_household_leaves_pending(self):
+        bridge = FixtureBridge()
+        exchange = bridge.exchange
+        checkpoints = []
+
+        def wrong_household(operation, **data):
+            reply = exchange(operation, **data)
+            if operation == "handoff_to_responder":
+                bridge.frame["household_id"] = "household:other"
+            return reply
+
+        bridge.exchange = wrong_household
+        with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, "HANDOFF_READBACK_REQUIRED"):
+            lab_upgrade_parts.run_restock(bridge, lambda report: checkpoints.append(deepcopy(report)))
+        self.assertEqual(checkpoints[-1]["pending"]["action"], "handoff_to_responder")
+        self.assertNotIn("handoff", checkpoints[-1])
 
     def test_map_other_save_and_input_hold_before_any_effect(self):
         for changes, reason in (
@@ -189,6 +252,8 @@ class LabUpgradePartsTests(unittest.TestCase):
             if operation == "observe":
                 frame = response["frame"]
                 frame["capture"] += "-" + "x" * 83
+                if (responder := frame.get("responder")) and "decision_capture" in responder:
+                    responder["decision_capture"] = frame["capture"]
                 for row in frame["portraits"]:
                     if "restock_timing" in row:
                         row["restock_timing"]["capture"] = frame["capture"]
@@ -216,6 +281,8 @@ class LabUpgradePartsTests(unittest.TestCase):
             if operation == "observe":
                 frame = response["frame"]
                 frame["capture"] += "-" + "x" * 83
+                if (responder := frame.get("responder")) and "decision_capture" in responder:
+                    responder["decision_capture"] = frame["capture"]
                 for row in frame["portraits"]:
                     row["restock_timing"]["capture"] = frame["capture"]
             return response
@@ -344,6 +411,9 @@ class LabUpgradePartsTests(unittest.TestCase):
                 with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, "PLANNING_EVIDENCE"):
                     bridge.require_capabilities()
                 ready["restock_planning"] = lab_upgrade_parts.PLANNING
+                with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, "HANDOFF_CAPABILITY"):
+                    bridge.require_capabilities()
+                ready["responder_handoff"] = lab_upgrade_parts.RESPONDER_HANDOFF
                 bridge.require_capabilities()
             executable.write_bytes(b"modified")
             with self.assertRaisesRegex(lab_upgrade_parts.RestockBlocked, "BRIDGE_HASH_MISMATCH"):

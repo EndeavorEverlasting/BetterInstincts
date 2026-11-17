@@ -47,6 +47,23 @@ class InstalledRuntimeTests(unittest.TestCase):
         return {"kind": kind, "sequence": seq, "run": "game-run", "household": "house-one",
                 "platform": "windows", **kwargs}
 
+    def test_restock_holds_native_decisions_until_released_and_rechecks_before_submit(self):
+        self.start()
+        callback = self.adapter.register.call_args.kwargs["cycle"]
+        self.adapter.frame.side_effect = [
+            self.frame(restock_has_control=True),
+            self.frame(restock_has_control=None),
+            self.frame(), self.frame(capture="capture:second", restock_has_control=True),
+            self.frame(), self.frame(capture="capture:third"),
+        ]
+        self.assertEqual(callback(), "RESTOCK_CONTROL_HELD_OR_UNVERIFIED")
+        self.assertEqual(callback(), "RESTOCK_CONTROL_HELD_OR_UNVERIFIED")
+        self.adapter.analyze.assert_not_called()
+        self.assertEqual(callback(), "YIELD_TO_PLAYER")
+        self.adapter.submit.assert_not_called()
+        self.assertEqual(callback(), "QUEUED")
+        self.adapter.submit.assert_called_once()
+
     def enable_activity_chain(self):
         data = json.loads(self.manifest.read_text())
         self.manifest.write_text(json.dumps({**data, "installed_activity_chain": True}))
