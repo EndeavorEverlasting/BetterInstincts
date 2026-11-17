@@ -137,20 +137,28 @@ Each workflow keeps its own queue, menu, inventory, needs or skill proof.
 | `UPGRADE_PARTS` | Stay with the current Sim until the existing purchase owner has no remaining work for that Sim. Reconcile the purchase against that Sim's inventory and household funds before moving. Advance in observed portrait order to the next eligible Sim. |
 | `SKILL` | Choose the first pending Sim in roster order for the current skill. Wait on an earlier unverified Sim. Advance the skill only after its eligible members meet the owner-defined target. |
 | `NEEDS` | Keep the current Sim while their actionable needs are unaddressed. When covered by verified care, a matching queued action or sufficient need levels, move to an eligible Sim with uncovered needs. Rank by observed urgency and break ties in circular household order. |
-| `TARGET` | Any owner can request a specific eligible member by native Sim ID. Existing income handoffs can use this purpose once their actor IDs are resolved in the same roster. |
+| `TARGET` | An owner requests a specific eligible member by native Sim ID. |
+| `INCOME` | Use the recipient from the fresh winning household income handoff. Reconcile the switch, then re-evaluate the recipient's needs, career window, queue and current income offers. |
 
 The native adapter implements three methods.
 
 1. `read_portrait_handoff(frame)` returns `None` or a current observation.
    Include `capture`, `household`, `selected`, `save`, the ordered `roster`,
-   the current work unit's stable `goal`, its `purpose`, `safe_to_leave`,
+   its `purpose`, `safe_to_leave`, the current work unit's stable `goal`
+   (derived from the task for income),
    and a `members` map keyed by every observed native Sim ID. Use `READY`
    for eligible pending work, `COVERED` for verified complete or already
    addressed work, `UNAVAILABLE` for observed ineligibility this pass, and
    `WAITING` for evidence or progress still pending. Only assert
    `safe_to_leave` when prior effects and actor-specific UI are settled.
    Needs include an `urgency` map for all ready members, from 1 to 3.
-   Explicit targets include `target`.
+   Explicit targets include `target`. Income includes `income_turn` from
+   the host arbiter, `income_scope_id` and `income_member_keys`, the opaque
+   member keys independently resolved in the same observed native roster
+   order. The planner and adapter use the same save and capture references.
+   Recompute the host turn for each admission frame. Only its winning
+   income handoff qualifies, with the same build, save, scope, ordered
+   roster and source Sim. The runtime chooses the target from that handoff.
 2. `submit_portrait_if_current(attempt, frame)` rechecks the original
    actor, exact target, run, admitted save, ordered roster, player-input
    generation and current domain readiness atomically with one EA selection.
@@ -171,6 +179,9 @@ existing player-runtime option and `--installed-portrait-handoff` with
 one paused household purchase handoff with inventory and funds readback,
 one serial skill transition with level readback, and one needs handoff
 where a covered Sim is skipped and the recipient's need enters their own
-queue. Include a player takeover, no duplicate submission and package
-rollback. The adapter binding and these game observations belong to
+queue. For income, fill available slots with verified profitable work, then
+prove the chosen recipient's selection and a single native queue addition
+on a later capture. Preserve any existing needs, career and player queue
+rows, observe independent earned settlement, and record player takeover,
+duplicate suppression and package rollback. The adapter binding and these game observations belong to
 [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
