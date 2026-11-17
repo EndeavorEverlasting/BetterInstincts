@@ -81,3 +81,44 @@ The exact selected household member can report `activity: AT_WORK` and an indepe
 While `work_tone.gate == WORK_HARD_ADMISSION_REQUIRED`, **do not** rotate yet or claim that a button was pressed. The existing host `next_gate` is `CAREER_WORK_HARD_ADMISSION_REQUIRED` with `execute_allowed: false`. After the separate native/game-admitted effect produces a fresh observable Work Hard tone, `work_tone.handoff_ready` becomes true; the same fixed-roster next-awake portrait policy supplies `AWAKE_HOUSEHOLD_HANDOFF_READY`, requiring a new target capture and needs/queue assessment. If Work Hard is unwarranted, unavailable or player-protected, the policy preserves the tone and still rotates to the next verified awake member without chores. **Active careers and unknown career modes retain the selected Sim** because their activities cannot be abandoned automatically.
 
 Existing school homework, shared-resources, critical needs, player inputs, queues and protected saves retain their owners. `career-work-hard-tone` is now a distinct source-backed mechanistic coverage row, not an installed playable Sims mod. Exact-game EA-native integration and rollback require a separate P08 gate under issue #171.
+
+## Shared household income
+
+The `income` catalog in [the household economy contract](../contracts/household-economy.v1.json)
+owns recognized activities and their stages. Programming includes plugins,
+freelance work, apps and games. Art, robotics, and woodworking include selling
+and independently observing settlement. Small business is a discovery lane.
+Home or venue assignment, business activities, operating hours, staff and
+customers, and closeout receipts each need their own observation and action
+owners. [EA small-business help](https://help.ea.com/en/articles/the-sims/the-sims-4/how-to-set-up-a-small-business/)
+
+A host observation may supply `household_economy.income`. The packet includes
+the current `capture_ref`, roster `scope_id`, `save_ref`, exact `game_build`,
+`household_funds`, `funds_proof_ref`, and verified `pending_effect` state.
+The queue projection lists each member's existing rows in visible order. Each
+row binds the observed label, action ID, origin, unpaid upfront cost and any
+task or resource already claimed. The household reserve is shared across all
+members. Pending costs are debited from spendable surplus before comparing a
+new offer. Forecast receipts cannot create cash or earned-income credit.
+
+Per-member windows bind the current capture, known protected-work state,
+safe available Sim minutes, time already committed to the queue, and slots
+reserved for needs or commitments. When eligible work fits, the allocator
+prefers filling the selected portrait, then proposes switching to the best
+remaining eligible portrait. One step is returned per capture. Re-observe
+after a portrait change, and reconcile independent queue readback before
+proposing another action. Active player work, career and needs priority,
+uncertain queues, booked stations, exhausted time and missing evidence all
+hold or remove candidates. The queue uses the existing conservative capacity
+of two while multitasking and six otherwise.
+
+Each offer binds a member, action, task, activity, shared target, enabled
+affordance proof, and conservative time bound. Generic offers need separate
+settlement evidence, realized net after sourcing costs, measured duration
+and current upfront cash. Robotics offers use the existing receipt evaluator
+and its positive net result for the same Sim and native action. A catalog
+entry alone supplies neither availability nor price, net yield or permission.
+
+These are host-stack proposals. [Issue #171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171)
+owns exact-build sensor binding, native dispatch, independent outcomes
+and rollback.

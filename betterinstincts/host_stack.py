@@ -815,7 +815,7 @@ def evaluate_turn(
         if household_economy is not None:
             # Independent verified household roster/tasks, no new game authority.
             # Existing needs, upkeep and career planners retain their owners.
-            if ("selected_member_key" in household_economy
+            if (("selected_member_key" in household_economy or "income" in household_economy)
                     and household_economy.get("capture_ref") != capture_ref):
                 raise HouseholdEconomyError("HOUSEHOLD_HANDOFF_CAPTURE_MISMATCH")
             household_economy_report = evaluate_household_economy(household_economy)
@@ -2176,6 +2176,13 @@ def evaluate_turn(
     elif gardening_report is not None:
         next_gate = gardening_report["gate"]
         fallback = {"owner": "betterinstincts/gardening_service.py", **gardening_report}
+    elif (household_economy_report is not None
+          and household_economy_report.get("income", {}).get("state") in {
+              "HOUSEHOLD_INCOME_PORTRAIT_READY", "HOUSEHOLD_INCOME_ENQUEUE_READY",
+          }):
+        income = household_economy_report["income"]
+        next_gate = income["state"]
+        fallback = {"owner": "betterinstincts/household_income.py", **income}
     elif discovery_report is not None and discovery_report.get("state") in {
         "PHONE_GOAL_AFFORDANCE_CANDIDATE", "INSPECT_PHONE_AFFORDANCES",
     }:
