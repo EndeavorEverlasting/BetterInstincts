@@ -41,7 +41,8 @@
   "negative_tests": [
     "Never cancel or displace player work or career/needs commitments.",
     "Never reserve the same station or action twice or bank hypothetical income.",
-    "Small business is discovery-only until location, activities, roles and receipts are available."
+    "Small business is discovery-only until location, activities, roles and receipts are available.",
+    "Keep the exact registry coverage and test the new household income source owner and its proof boundary."
   ],
   "rollback_path": "Revert the source-only commits. No game state is modified.",
   "unresolved_unknowns": [
@@ -57,7 +58,8 @@
     "docs/HOUSEHOLD_ECONOMY.md",
     "docs/LEDGER.md",
     "docs/ROADMAP.md",
-    "tests/test_household_income.py"
+    "tests/test_household_income.py",
+    "tests/test_mechanics_registry.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "sixth_gear_p141": {
