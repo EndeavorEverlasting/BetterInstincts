@@ -1,0 +1,58 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-INCOME-PORTRAIT-CLOSEOUT-20261116",
+  "base_commit": "5bca3e7bb1627d7043dfbe8524a7415d87cb3e81",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Route a winning shared household income recommendation through the existing exact-roster portrait selector.",
+  "affected_concepts": [
+    "HOUSEHOLD",
+    "SIM",
+    "SIM_PORTRAIT",
+    "SAVE_SLOT",
+    "OBSERVATION",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "PLAYER_INTENT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "betterinstincts/household_income.py",
+    "betterinstincts/host_stack.py",
+    "betterinstincts/portrait_handoff.py",
+    "betterinstincts/installed_player_runtime.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_NATIVE_PORT_AND_FIXTURES_NOT_LIVE_GAMEPLAY",
+  "player_save_control_impact": "No game mutation during validation. The exact-build adapter must observe save admission, player activity and the active household before a single selection.",
+  "expected_outcome": "Accept only the current arbitrated income handoff for the same save, build, scope, capture and ordered household. Validate selection before the next Sim is reconsidered for queue work.",
+  "negative_tests": [
+    "Reject stale capture, wrong save or build, mismatched member order and unrelated or preempted recommendations.",
+    "Yield when target eligibility or selected Sim changes between captures. Require later recipient readback before considering queue work."
+  ],
+  "rollback_path": "Revert repository commits. Existing ownership-scoped package rollback remains the native install path.",
+  "unresolved_unknowns": [
+    "Exact-build EA selector, acknowledgment and Windows disposable-save proof require local issue #171."
+  ],
+  "files_expected": [
+    "betterinstincts/household_income.py",
+    "betterinstincts/portrait_handoff.py",
+    "tests/test_portrait_handoff.py",
+    "docs/HOUSEHOLD_ECONOMY.md",
+    "docs/ROADMAP.md",
+    "docs/LEDGER.md",
+    "plans/active/BI-SIXTH-GEAR-AWAKE-HANDOFF-20261113.md",
+    "contracts/native-gameplay-decisions/BI-INCOME-PORTRAIT-CLOSEOUT-20261116.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}
