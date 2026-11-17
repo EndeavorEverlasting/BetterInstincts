@@ -105,5 +105,93 @@
     "work_tone_first": "A recommended Work Hard tone defers portrait handoff until independently observed. Already-active Work Hard, unmet or unknown promotion readiness, unsafe welfare, protected player tone or unavailable tone cause no work-tone effect; an observed ordinary rabbit-hole worker can then release the portrait.",
     "active_career": "ACTIVE_CAREER and UNKNOWN career modes do NOT release the selected actor",
     "proof_ceiling": "OFFLINE_POLICY_ONLY_NOT_NATIVE_GAMEPLAY_EFFECT"
+  },
+  "income": {
+    "goal_id": "household-earned-income",
+    "owner": "betterinstincts/household_income.py",
+    "funds_owner": "contracts/host-budget.v1.json",
+    "effect_protocol": "One portrait handoff or enqueue proposal per current capture. Observe actor/queue again after portrait selection and reconcile an independent queue receipt after enqueue. No action or expected earnings from a catalog row alone.",
+    "catalog": [
+      {
+        "id": "programming-plugin",
+        "setting": "HOME_OR_COMPUTER",
+        "stages": [
+          "CREATE_PLUGIN",
+          "VERIFY_PAYOUT"
+        ],
+        "mode": "OBSERVED_NET"
+      },
+      {
+        "id": "programming-freelance",
+        "setting": "HOME_OR_COMPUTER",
+        "stages": [
+          "COMPLETE_CONTRACT",
+          "VERIFY_PAYOUT"
+        ],
+        "mode": "OBSERVED_NET"
+      },
+      {
+        "id": "programming-app",
+        "setting": "HOME_OR_COMPUTER",
+        "stages": [
+          "DEVELOP_APP",
+          "OBSERVE_ROYALTIES"
+        ],
+        "mode": "OBSERVED_NET"
+      },
+      {
+        "id": "programming-game",
+        "setting": "HOME_OR_COMPUTER",
+        "stages": [
+          "DEVELOP_GAME",
+          "OBSERVE_ROYALTIES"
+        ],
+        "mode": "OBSERVED_NET"
+      },
+      {
+        "id": "art-paint-and-sell",
+        "setting": "HOME_OR_STUDIO",
+        "stages": [
+          "CREATE_ART",
+          "SELL_ART",
+          "VERIFY_SETTLEMENT"
+        ],
+        "mode": "OBSERVED_NET"
+      },
+      {
+        "id": "robotics-craft-and-sell",
+        "setting": "ROBOTICS_WORKSTATION",
+        "stages": [
+          "SOURCE_MATERIALS",
+          "CRAFT",
+          "SELL",
+          "VERIFY_SETTLEMENT"
+        ],
+        "mode": "ROBOTICS_RECEIPTS"
+      },
+      {
+        "id": "woodworking-craft-and-sell",
+        "setting": "WOODWORKING_STATION",
+        "stages": [
+          "CRAFT",
+          "SELL",
+          "VERIFY_SETTLEMENT"
+        ],
+        "mode": "OBSERVED_NET"
+      },
+      {
+        "id": "small-business",
+        "setting": "HOME_OR_SMALL_BUSINESS_VENUE",
+        "stages": [
+          "REGISTER_AND_ASSIGN_LOCATION",
+          "CONFIGURE_ACTIVITIES",
+          "OPEN_AND_SERVE",
+          "STAFF_AND_OPERATE",
+          "CLOSE_AND_RECONCILE"
+        ],
+        "mode": "DISCOVERY_ONLY",
+        "source": "https://help.ea.com/en/articles/the-sims/the-sims-4/how-to-set-up-a-small-business/"
+      }
+    ]
   }
 }

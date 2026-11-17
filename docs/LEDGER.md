@@ -2357,3 +2357,12 @@ PR #291 remains in main history. The closeout binds replenishment offers to
 the active household, lot and build, and preserves independently verified
 owned transfers during a stale optional survey. The installed gardening
 observer and native purchase, application and evolution proof remain #171.
+
+## 2026-11-16 — One income goal across the household
+
+The household economy contract catalogs programming, art, robotics,
+woodworking and future small business. The host advances one observed safe
+queue action or one portrait handoff at a time, using shared surplus,
+receipt-backed net yield, reservations and per-Sim need and career windows.
+The promotion is source and offline policy only. Exact-build native proof is
+tracked in [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).

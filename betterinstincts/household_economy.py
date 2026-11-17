@@ -14,6 +14,8 @@ from typing import Any
 
 from betterinstincts.household_judgment import require_fixed_roster, HouseholdJudgmentError
 from betterinstincts.mechanics_registry import load_registry, MechanicsRegistryError
+from betterinstincts.household_income import evaluate_household_income
+from betterinstincts.robotics_income import RoboticsIncomeError
 from betterinstincts.queue_capacity import evaluate_queue_capacity, QueueCapacityError
 from betterinstincts.career_service import evaluate_work_shift_tone, CareerServiceError
 
@@ -382,8 +384,25 @@ def evaluate_household_economy(observation: Mapping) -> dict:
                 "new_capture_required": True,
                 "execute_allowed": False,
             }
+    income = None
+    if "income" in observation:
+        ready_members = {
+            row["member_key"] for row in members
+            if row.get("activity") == "AWAKE" and row["available"]
+            and not row["player_reserved"] and row["queue_verified"]
+            and _need_state(row, solo=solo, yield_work=True) == "WELFARE_RESERVE_MET"
+        } - allocated
+        try:
+            income = evaluate_household_income(
+                observation["income"], capture_ref=observation["capture_ref"], scope_id=scope_id,
+                members=members, selected=selected, ready_members=ready_members,
+                reserved_resources=reserved, failed_tasks=failed,
+            )
+        except (RoboticsIncomeError, QueueCapacityError) as exc:
+            raise HouseholdEconomyError("INCOME_EVIDENCE_INVALID:" + str(exc)) from exc
     return {
         "schema": "betterinstincts.household-economy-plan/v1",
+        **({"income": income} if income is not None else {}),
         "portrait_handoff": handoff,
         "work_tone": work_tone,
         "scope_id": scope_id,

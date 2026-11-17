@@ -412,3 +412,12 @@ The [eco sourcing call stack](ECO_RESOURCE_CYCLE.md#household-bits-and-pieces-so
 Gardening closeout verifies purchase scope and preserves fresh owned stock
 during a stale optional survey. Exact-build gardening adapter provenance and
 disposable in-game outcome evidence remain the next dependency in #171.
+
+## Household income and small business
+
+Use the shared household income catalog for at-home, computer, studio and
+station work. Verify one native portrait or queue effect per capture and
+protect needs and career commitments. Small business discovery separately
+covers home versus venue, ownership and opening, activities, employees and
+customer service, and settlement on close. Advance each only with exact-build
+observation and independent receipts under [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
