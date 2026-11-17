@@ -1,3 +1,11 @@
+## 2026-11-17 — Household microsystem queue handoff
+
+The opt-in native callback ranks Needs, Career, Contingencies and Skills
+across observed household portrait queues. Current queue coverage releases
+the next tier. One portrait can wait while another proceeds. The existing
+portrait transaction, player takeover and queue reconciliation govern
+effects. See [the adapter contract and Windows trial](../plans/active/BI-MICROSYSTEM-HANDOFF.md).
+
 ## 2026-11-16 — Household income portrait closeout
 
 The shared native portrait chooser accepts the winning income handoff after

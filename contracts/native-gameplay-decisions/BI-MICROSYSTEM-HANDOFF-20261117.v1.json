@@ -1,0 +1,26 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/microsystem_handoff.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure ranking and queue admission decisions over exact-scope adapter observations.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "reason": "Route decisions through the existing frame, portrait and bounded native callback lifecycle.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/portrait_handoff.py",
+      "route": "POLICY_ONLY",
+      "reason": "Share stable identity between the existing portrait transaction and the new priority policy.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

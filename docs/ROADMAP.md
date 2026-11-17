@@ -1,3 +1,10 @@
+## 2026-11-17 — Live microsystem handoff verification
+
+Under #171, wire the four existing domain evaluations to the
+[household queue adapter](../plans/active/BI-MICROSYSTEM-HANDOFF.md), then
+verify actual queue placement, portrait switching, takeover and rollback on
+the exact EA build in an admitted disposable save.
+
 ## 2026-11-16 — Launch through household parts restock
 
 Bind the exact-build Windows native adapter and prove the
