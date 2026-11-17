@@ -1,0 +1,67 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-OLDEST-LAB-RESTOCK-20261116",
+  "base_commit": "fb14cdbd4d78adddcd15bff5b81ccb673bdac8e6",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "An opt-in host launch routes an authorized oldest lab save to the map's active household and runs verified per-Sim computer stock replenishment.",
+  "affected_concepts": [
+    "SAVE_SLOT",
+    "GAME_SCENE",
+    "HOUSEHOLD",
+    "SIM",
+    "SIM_PORTRAIT",
+    "OBSERVATION",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "PLAYER_INTENT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "scripts/play.py",
+    "scripts/launch_save_route.py",
+    "scripts/save_candidate_priority.py",
+    "scripts/game_host.py",
+    "betterinstincts/portrait_handoff.py",
+    "betterinstincts/computer_upgrade_parts.py",
+    "scripts/launch_receipt.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_HOST_ORCHESTRATION_AND_FIXTURE_EVIDENCE",
+  "player_save_control_impact": "Existing exact-build disposable ranking and scene calibration stay in force. The host requests native effects, each guarded by fresh process, scope and input evidence. User saves stay protected.",
+  "expected_outcome": "One Windows launch command chooses the oldest currently authorized slot, resolves only its verified active map household, skips unavailable Sims, and reconciles 99-target inventory for every eligible portrait.",
+  "negative_tests": [
+    "Fail closed on protected/ambiguous saves, foreign map household or PID changes.",
+    "Skip unavailable Sims and never retry an unconfirmed transaction.",
+    "Stop at the verified reserve or approved spending cap and on manual input."
+  ],
+  "rollback_path": "Revert the named launch feature. No offline test touches game data.",
+  "unresolved_unknowns": [
+    "Windows source-proven adapter and exact-build end-to-end certification under #171."
+  ],
+  "files_expected": [
+    "Start-BetterInstincts.cmd",
+    "Dockerfile",
+    "scripts/play.py",
+    "scripts/launch_save_route.py",
+    "scripts/lab_upgrade_parts.py",
+    "tests/test_lab_upgrade_parts.py",
+    "docs/handoff/BI-OLDEST-LAB-RESTOCK.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "plans/active/BI-SIXTH-GEAR-AWAKE-HANDOFF-20261113.md",
+    "scripts/save_candidate_priority.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}
