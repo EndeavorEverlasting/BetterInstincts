@@ -122,3 +122,55 @@ entry alone supplies neither availability nor price, net yield or permission.
 These are host-stack proposals. [Issue #171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171)
 owns exact-build sensor binding, native dispatch, independent outcomes
 and rollback.
+
+## Shared native portrait handoff
+
+`betterinstincts.portrait_handoff` chooses one recipient from the observed
+active household. `InstalledPlayerRuntime` owns the in-flight switch, uses
+the existing player-idle and exact-build gates, and admits it only when
+the active domain has released the current portrait. Portrait selection can
+run while Live Mode is paused, including between computer purchase batches.
+Each workflow keeps its own queue, menu, inventory, needs or skill proof.
+
+| Purpose | When attention moves |
+| --- | --- |
+| `UPGRADE_PARTS` | Stay with the current Sim until the existing purchase owner has no remaining work for that Sim. Reconcile the purchase against that Sim's inventory and household funds before moving. Advance in observed portrait order to the next eligible Sim. |
+| `SKILL` | Choose the first pending Sim in roster order for the current skill. Wait on an earlier unverified Sim. Advance the skill only after its eligible members meet the owner-defined target. |
+| `NEEDS` | Keep the current Sim while their actionable needs are unaddressed. When covered by verified care, a matching queued action or sufficient need levels, move to an eligible Sim with uncovered needs. Rank by observed urgency and break ties in circular household order. |
+| `TARGET` | Any owner can request a specific eligible member by native Sim ID. Existing income handoffs can use this purpose once their actor IDs are resolved in the same roster. |
+
+The native adapter implements three methods.
+
+1. `read_portrait_handoff(frame)` returns `None` or a current observation.
+   Include `capture`, `household`, `selected`, `save`, the ordered `roster`,
+   the current work unit's stable `goal`, its `purpose`, `safe_to_leave`,
+   and a `members` map keyed by every observed native Sim ID. Use `READY`
+   for eligible pending work, `COVERED` for verified complete or already
+   addressed work, `UNAVAILABLE` for observed ineligibility this pass, and
+   `WAITING` for evidence or progress still pending. Only assert
+   `safe_to_leave` when prior effects and actor-specific UI are settled.
+   Needs include an `urgency` map for all ready members, from 1 to 3.
+   Explicit targets include `target`.
+2. `submit_portrait_if_current(attempt, frame)` rechecks the original
+   actor, exact target, run, admitted save, ordered roster, player-input
+   generation and current domain readiness atomically with one EA selection.
+   Use native Sim identity throughout. The runtime requires two independent
+   admission frames and records the attempt before invoking the adapter.
+3. `read_portrait_outcome(attempt, frame)` reads the native acknowledgement
+   and returns `status` (`APPLIED` or `NO_EFFECT`), `request_capture`,
+   `capture`, `save`, `roster` and `target`. The callback's independent
+   selected-Sim observation must agree. A later frame drives the next
+   domain decision. An unresolved attempt holds further dispatch and the
+   same goal and recipient cannot be submitted twice in that save and run.
+
+On an authorized Windows lab session, inspect the installed EA selector,
+its acknowledgement and the selected-Sim signal for the exact patch.
+Build via `py -3 -m scripts.native_ecology_bundle build --help` using the
+existing player-runtime option and `--installed-portrait-handoff` with
+`installed_portrait_handoff_binding_ref` in the local hook proof. Verify
+one paused household purchase handoff with inventory and funds readback,
+one serial skill transition with level readback, and one needs handoff
+where a covered Sim is skipped and the recipient's need enters their own
+queue. Include a player takeover, no duplicate submission and package
+rollback. The adapter binding and these game observations belong to
+[#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
