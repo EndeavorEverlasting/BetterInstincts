@@ -1,0 +1,62 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PS0241-PORTRAIT-RESTOCK-20261117",
+  "base_commit": "7e92a055267e5d43ea10ee7bbfd57ac915c650c9",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Use PS-0241 per-portrait feasible time windows in the existing oldest-save restock controller.",
+  "affected_concepts": [
+    "SAVE_SLOT",
+    "GAME_SCENE",
+    "HOUSEHOLD",
+    "SIM",
+    "SIM_PORTRAIT",
+    "OBSERVATION",
+    "ACTION_PROPOSAL",
+    "OUTCOME",
+    "PLAYER_INTENT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "scripts/play.py",
+    "scripts/launch_save_route.py",
+    "scripts/save_candidate_priority.py",
+    "scripts/game_host.py",
+    "betterinstincts/portrait_handoff.py",
+    "betterinstincts/computer_upgrade_parts.py",
+    "scripts/launch_receipt.py",
+    "betterinstincts/activity_chain.py",
+    "scripts/lab_upgrade_parts.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_HOST_ORCHESTRATION_AND_FIXTURE_EVIDENCE",
+  "player_save_control_impact": "Existing exact-build disposable ranking and scene calibration stay in force. The host requests native effects, each guarded by fresh process, scope and input evidence. User saves stay protected.",
+  "expected_outcome": "Rank available eligible Sims by safe deadline, replan after selection and quote observations, retain outcomes for each exact Sim's inventory, and preserve the current launch and authority.",
+  "negative_tests": [
+    "No purchase or switch for a mismatched or missing capture/window.",
+    "Fresh needs or time change blocks purchase; open or uncertain purchase cannot be bypassed.",
+    "Unavailable Sims never receive parts."
+  ],
+  "rollback_path": "Revert the named launch feature. No offline test touches game data.",
+  "unresolved_unknowns": [
+    "Windows source-proven native bridge and exact-build live restock results."
+  ],
+  "files_expected": [
+    "scripts/lab_upgrade_parts.py",
+    "tests/test_lab_upgrade_parts.py",
+    "docs/handoff/BI-OLDEST-LAB-RESTOCK.md",
+    "docs/ROADMAP.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}
