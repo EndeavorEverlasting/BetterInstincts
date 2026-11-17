@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import copy
+import io
 import json
 import math
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.community_candidate import (
     CandidateError, HOLDOUT_SCHEMA, _holdout, _read_json,
@@ -114,6 +116,17 @@ class CommunityCandidateTests(unittest.TestCase):
                 path.write_text(data, encoding="utf-8")
                 with self.assertRaises(CandidateError):
                     _read_json(path, 40_000)
+
+    def test_json_read_stays_bounded_if_file_grows_after_stat(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidate.json"
+            path.write_text("{}", encoding="utf-8")
+            with patch.object(Path, "open", return_value=io.BytesIO(b"x" * 100)) as opened:
+                with patch.object(opened.return_value, "read",
+                                  wraps=opened.return_value.read) as read:
+                    with self.assertRaisesRegex(CandidateError, "^OVERSIZED_INPUT$"):
+                        _read_json(path, 8)
+                    read.assert_called_once_with(9)
 
     def test_structural_pass_does_not_replace_two_cohort_review(self):
         candidate = build_candidate(local_model())

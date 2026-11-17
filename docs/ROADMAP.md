@@ -99,7 +99,7 @@ Extend existing `computer_upgrade_parts` / `upgrade_parts_force` purchase owners
 
 ## 2026-11-14 — Community training across contributors
 
-Admit private on-device learning and separate explicit contribution consent. Retain reviewed semantic judgments and VAE research candidates as distinct versioned formats. Add strict manually exported semantic-case bundles, repository data-only intake audit, replay/digest validation, negative tests and developer candidacy issue routing. Submitted bundles are not installed or trained into shipped models without independent host/context holdouts, privacy/license/poisoning review, player-first checks, compatibility, rollback and maintainer approval. BI-002 hunger and native gameplay gates remain unchanged.
+Admit private on-device learning and separate explicit contribution consent. Retain reviewed semantic judgments and VAE research candidates as distinct versioned formats. Add strict manually exported semantic-case bundles, repository data-only intake audit, replay/digest validation, negative tests and developer candidacy issue routing. Submitted bundles are not installed or trained into shipped models without independent host/context holdouts, privacy/license/poisoning review, player-first checks, compatibility, rollback and maintainer approval. BI-002 hunger and native gameplay gates remain unchanged. The next evidence gate is the [reviewer-controlled two-installation pilot](COMMUNITY_LEARNING.md#reviewer-controlled-pilot).
 
 ## 2026-11-14 — Control fallback evidence becomes permanent repository logic
 

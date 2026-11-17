@@ -66,7 +66,7 @@
     },
     {
       "level": "RESEARCH_BENCHMARK",
-      "gate": "two disjointly supplied holdout cohort files, min 8 vectors each, independently verified dataset provenance not established by CLI",
+      "gate": "two reviewer-supplied holdout files, 8 to 64 vectors each, no exact vector shared between the cohorts; source independence remains unattested in the CLI",
       "proof": "NOT_REAL_WORLD_GENERALIZATION"
     },
     {
@@ -106,7 +106,8 @@
     "source_specific_overfitting",
     "unconsented_export_or_upload",
     "model_inversion_or_leakage_review",
-    "unknown_game_build_and_player_control_permit"
+    "unknown_game_build_and_player_control_permit",
+    "reordered_or_partial_holdout_vector_overlap"
   ],
   "status": "CANDIDATE_FORMAT_OFFLINE_ONLY",
   "proof_ceiling": "NO_INDEPENDENT_HOST_EFFICACY_OR_MALWARE_FREEDOM_CERTIFICATION",

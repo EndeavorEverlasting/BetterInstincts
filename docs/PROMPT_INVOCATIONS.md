@@ -712,3 +712,7 @@ runtime follow-up are in [Horizon](HORIZON.md#robotics-craft-and-sale-economics)
 ## 2026-11-16 — MoonWake Sixth Gear for household Eco-Upgrade Part sourcing
 
 The current deterministic resolver and Sixth Gear walker resolved P141 → P95 → P82 → P08 → P07 → P124. The selected design reused the current career and eco owners and added an optional source observation to preserve legacy behavior. P82 exercised scoped balances, source ranking, one-action reconciliation and the stock-only catalog route. P08 recorded BLOCKED_LOCAL_GAME_ACCESS in the Linux source workspace. Repository validation and integration proceed independently, with exact-build EA runtime and rollback tracked in #171.
+
+## 2026-11-17 — Community learning intake closeout
+
+The MoonWake /the-closers walker ran P83 → P03 → P141 → P124 for #246. P04 reached runtime placement and the pilot handoff. Formal dispatch was blocked because current MoonWake main lacked the validator and schema referenced by the P04 contract. Existing owners are `scripts/community_cases.py` for case export and repository intake, and `scripts/community_candidate.py` for research screening. Validation remains offline. The [reviewer-controlled pilot](COMMUNITY_LEARNING.md#reviewer-controlled-pilot) owns the next two-installation evidence gate. The local game and independent reviewer data remain external dependencies.

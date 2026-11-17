@@ -162,7 +162,8 @@ def _strict_json(pairs: list) -> dict:
 def _read_json(path: Path, cap: int) -> dict:
     if path.is_symlink() or not path.is_file() or path.stat().st_size > cap:
         raise CandidateError("UNSAFE_OR_OVERSIZED_INPUT")
-    raw = path.read_bytes()
+    with path.open("rb") as source:
+        raw = source.read(cap + 1)
     if len(raw) > cap:
         raise CandidateError("OVERSIZED_INPUT")
     try:

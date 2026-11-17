@@ -4,4 +4,4 @@ Only opt-in, sanitized, data-only semantic-case JSON bundles proposed in pull re
 
 Create a bounded bundle with `python -m scripts.community_cases export --reviewed-examples PRIVATE.json --out NEW_PRIVATE.json --ack-share-reviewed-cases`, inspect the output yourself and submit only the sanitized bundle after a deliberate sharing decision.
 
-`python -m scripts.community_cases audit-repo` validates schema, field allowlists, integrity digests, size and replay bounds. A successful audit is **not** consent/provenance attestation, a privacy guarantee, acceptance into training, developer approval or Sims gameplay certification. Maintainers review proposed submissions and separately control adoption.
+`python -m scripts.community_cases audit-repo` validates schema, field allowlists, integrity digests and size, and rejects exact bundle replays. It reports repeated coarse cases across distinct bundles for maintainer review. A successful audit is **not** consent/provenance attestation, a privacy guarantee, acceptance into training, developer approval or Sims gameplay certification. Maintainers review proposed submissions and separately control adoption.

@@ -33,7 +33,11 @@
     "auto_upload": false,
     "auto_train": false,
     "auto_approve": false,
-    "gameplay_effect": false
+    "gameplay_effect": false,
+    "max_submission_directory_entries": 257,
+    "duplicate_local_observation_in_batch": "DENY",
+    "duplicate_bundle_across_files": "DENY",
+    "repeated_semantic_cases_across_distinct_bundles": "REPORT_COUNT"
   },
   "ci": "python -m scripts.community_cases audit-repo",
   "proof_ceiling": "STRUCTURAL_REVIEW_ONLY_NO_CONSENT_PROVENANCE_GAMEPLAY_OR_HOST_GENERALIZATION_CERT",
