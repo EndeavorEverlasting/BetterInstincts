@@ -74,6 +74,10 @@ class Selection:
     source: str
     target: str
 
+    def identity(self, frame):
+        return (frame.run, frame.household, self.save, "PORTRAIT",
+                self.purpose, self.goal, self.target)
+
 
 def choose_selection(frame, packet):
     """Resolve domain-owned readiness in the exact current household roster."""

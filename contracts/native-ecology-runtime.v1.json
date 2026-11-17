@@ -76,6 +76,24 @@
     "replay": "ONE_ATTEMPT_PER_SAVE_GOAL_AND_LOGICAL_STEP_IN_SESSION",
     "desktop_fallback": false
   },
+  "microsystem_handoff": {
+    "bundle_flag": "--installed-microsystem-handoff",
+    "requires_installed_portrait_handoff": true,
+    "require_binding_proof": "installed_microsystem_handoff_binding_ref",
+    "owner": "betterinstincts/microsystem_handoff.py",
+    "packet": "betterinstincts.microsystem-handoff/v1",
+    "priority_order": ["NEEDS", "CAREER", "CONTINGENCIES", "SKILLS"],
+    "within_tier_score": "URGENCY_TIMES_BENEFIT_PER_EXPECTED_SIM_MINUTE",
+    "adapter_ports": [
+      "read_microsystem_handoff",
+      "submit_microsystem_if_current",
+      "read_microsystem_outcome"
+    ],
+    "dispatch": "ONE_PORTRAIT_OR_QUEUE_EFFECT_PER_CALLBACK",
+    "queue_placement": "TAIL_OR_BEFORE_TRAILING_OWNED_LOWER_PRIORITY_PENDING_ACTIONS",
+    "evidence": "CURRENT_SCOPE_AND_QUEUE_REVALIDATION_THEN_CORRELATED_INDEPENDENT_READBACK",
+    "desktop_fallback": false
+  },
   "lab_restock_handoff": {
     "protocol": "betterinstincts.lab-restock-responder-handoff/v1",
     "bootstrap_owner": "scripts/lab_upgrade_parts.py",

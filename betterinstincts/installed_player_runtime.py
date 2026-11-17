@@ -48,7 +48,7 @@ class InstalledPlayerRuntime:
 
     def __init__(self, adapter, *, build: str, owned_dir: Path, clock=monotonic,
                  trait_response=None, fairy_dust=None, fame=None, portraits=None,
-                 activity_chain=None):
+                 activity_chain=None, microsystems=None):
         self.adapter = adapter
         self.build = build
         self.path = owned_dir / "player-learning.sqlite3"
@@ -76,33 +76,49 @@ class InstalledPlayerRuntime:
         self.activity_plan = None
         self.activity_admission = None
         self.activity_attempts = set()
+        self.microsystems = microsystems
+        self.microsystem_pending = None
+        self.microsystem_denied_switches = set()
+        self.microsystem_dispositions = {}
 
-    def _select_portrait(self, first):
-        try:
-            state, selection = self.portraits.choose_selection(
-                first, self.adapter.read_portrait_handoff(first))
-        except Exception:
-            return "PORTRAIT_EVIDENCE_UNQUALIFIED"
-        if selection is None:
-            return None if state in ("NO_PORTRAIT_GOAL", "NO_ELIGIBLE_PORTRAIT",
-                                     "PORTRAIT_ALREADY_SELECTED") else state
+    def _portrait_choice(self, frame):
+        return self.portraits.choose_selection(frame, self.adapter.read_portrait_handoff(frame))
+
+    def _select_portrait(self, first, *, microsystem_decision=None):
+        if microsystem_decision is None:
+            try:
+                state, selection = self._portrait_choice(first)
+            except Exception:
+                return "PORTRAIT_EVIDENCE_UNQUALIFIED"
+            if selection is None:
+                return None if state in ("NO_PORTRAIT_GOAL", "NO_ELIGIBLE_PORTRAIT",
+                                         "PORTRAIT_ALREADY_SELECTED") else state
+        else:
+            selection = microsystem_decision.selection
         fresh = self.adapter.frame()
         if (not self._fresh_idle_after(first, fresh) or fresh.modal_open is not False
                 or fresh.playing is not first.playing):
             return "YIELD_TO_PLAYER"
         try:
-            planned, _, _ = self.adapter.analyze(fresh)
-            if not isinstance(planned, Mapping) or planned:
-                return "PORTRAIT_SELECTION_REOBSERVE"
-            _, current = self.portraits.choose_selection(
-                fresh, self.adapter.read_portrait_handoff(fresh))
+            if microsystem_decision is None:
+                planned, _, _ = self.adapter.analyze(fresh)
+                if not isinstance(planned, Mapping) or planned:
+                    return "PORTRAIT_SELECTION_REOBSERVE"
+                _, current = self._portrait_choice(fresh)
+            else:
+                _, refreshed = self._microsystem_choice(fresh)
+                current = refreshed.selection if refreshed == microsystem_decision else None
         except Exception:
             return "PORTRAIT_EVIDENCE_UNQUALIFIED"
         if current != selection or not self._idle(fresh):
             return "PORTRAIT_SELECTION_REOBSERVE"
 
-        identity = (fresh.run, fresh.household, selection.save, "PORTRAIT",
-                    selection.purpose, selection.goal, selection.target)
+        identity = selection.identity(fresh)
+        if microsystem_decision is not None:
+            # Verified selection is not consumption of the target's work.
+            # Count every request toward the session limit, but allow a later
+            # turn to return to this portrait if the work still wins.
+            identity = (identity, fresh.capture)
         if identity in self.attempts:
             return "DUPLICATE_PORTRAIT_PROPOSAL"
         if len(self.attempts) >= MAX_ATTEMPTS_PER_RUN:
@@ -122,12 +138,16 @@ class InstalledPlayerRuntime:
 
     def _reconcile_portrait(self, frame):
         attempt = self.portrait_pending
+        if attempt.selection.purpose == "MICROSYSTEM" and frame.save_ref != attempt.selection.save:
+            return "PORTRAIT_SWITCH_RECONCILE"
         try:
             outcome = self.adapter.read_portrait_outcome(attempt, frame)
             state = self.portraits.outcome_state(frame, attempt, outcome)
         except Exception:
             return "PORTRAIT_SWITCH_RECONCILE"
         if state != "PORTRAIT_SWITCH_RECONCILE":
+            if state == "PORTRAIT_SWITCH_NO_EFFECT" and attempt.selection.purpose == "MICROSYSTEM":
+                self.microsystem_denied_switches.add(attempt.selection.identity(frame))
             self.portrait_pending = None
             self.portrait_readback = frame
         return state
@@ -179,6 +199,7 @@ class InstalledPlayerRuntime:
 
     def _fresh_idle_after(self, first, fresh):
         return (self._idle(fresh) and fresh.scope() == first.scope()
+                and fresh.save_ref == first.save_ref
                 and fresh.input_generation == first.input_generation
                 and fresh.capture != first.capture and fresh.observed_at >= first.observed_at)
 
@@ -427,6 +448,61 @@ class InstalledPlayerRuntime:
             self.activity_admission = None
         return result
 
+    def _microsystem_choice(self, frame):
+        try:
+            state, candidate, dispositions = self.microsystems.decide(
+                frame, self.adapter.read_microsystem_handoff(frame),
+                attempted=self.attempts | self.microsystem_denied_switches,
+            )
+        except Exception:
+            state, candidate, dispositions = "MICROSYSTEM_EVIDENCE_UNAVAILABLE", None, {}
+        self.microsystem_dispositions = dispositions
+        return state, candidate
+
+    def _cycle_microsystems(self, first):
+        if not self._idle(first) or first.playing is not True:
+            return "YIELD_TO_PLAYER"
+        state, decision = self._microsystem_choice(first)
+        if decision is None:
+            return state
+        if decision.selection is not None:
+            return self._select_portrait(first, microsystem_decision=decision)
+        fresh = self.adapter.frame()
+        if (not self._fresh_idle_after(first, fresh)
+                or fresh.playing is not True or fresh.modal_open is not False):
+            return "YIELD_TO_PLAYER"
+        _, current = self._microsystem_choice(fresh)
+        if decision != current or not self._idle(fresh):
+            return "MICROSYSTEM_REOBSERVE_WINNER"
+        identity = decision.identity(fresh)
+
+        def submit():
+            self.microsystem_pending = (decision, first.capture, fresh)
+            return self.adapter.submit_microsystem_if_current(decision, fresh)
+
+        result = self._dispatch(identity, submit)
+        if result == "NO_EFFECT":
+            self.microsystem_pending = None
+        return result
+
+    def _reconcile_microsystem(self, frame):
+        decision, first_capture, dispatch = self.microsystem_pending
+        if (frame.scope()[:3] != dispatch.scope()[:3] or frame.save_ref != dispatch.save_ref
+                or frame.observed_at < dispatch.observed_at
+                or frame.capture in (first_capture, dispatch.capture)):
+            return "MICROSYSTEM_QUEUE_RECONCILIATION"
+        try:
+            outcome = self.adapter.read_microsystem_outcome(decision, frame)
+            state = self.microsystems.outcome_state(
+                decision, capture=frame.capture, request=dispatch.capture, outcome=outcome,
+            )
+        except Exception:
+            return "MICROSYSTEM_QUEUE_RECONCILIATION"
+        if state != "MICROSYSTEM_QUEUE_RECONCILIATION":
+            self.microsystem_pending = None
+            self.unresolved = None
+        return state
+
     def _can_reconcile_native(self, frame):
         if self.activity_admission is None:
             return True
@@ -442,6 +518,7 @@ class InstalledPlayerRuntime:
         self.dust_recheck = None
         self.fame_receipt = None
         self.activity_plan = None
+        self.microsystem_dispositions = {}
         if not self.registered:
             return "LISTENER_NOT_REGISTERED"
         first = self.adapter.frame()
@@ -466,7 +543,8 @@ class InstalledPlayerRuntime:
                         and first.input_generation == readback.input_generation)):
                 return "PORTRAIT_SELECTION_REOBSERVE"
             self.portrait_readback = None
-        if (self.unresolved is not None and self._can_reconcile_native(first)
+        if (self.microsystem_pending is None and self.unresolved is not None
+                and self._can_reconcile_native(first)
                 and self.adapter.reconcile(self.unresolved, first) is True):
             self.unresolved = None
             self.activity_admission = None
@@ -474,6 +552,10 @@ class InstalledPlayerRuntime:
             return self._respond_to_modal(first)
         if first.modal_open is not False:
             return "NATIVE_FRAME_UNQUALIFIED"
+        if self.microsystem_pending is not None:
+            return self._reconcile_microsystem(first)
+        if self.microsystems is not None:
+            return self._cycle_microsystems(first)
         fame_observation = fame_track = fame_result = None
         if self.fame is not None:
             fame_observation, fame_track = self._read_fame(first)
@@ -607,9 +689,17 @@ def start_installed(adapter, *, exact_build: str, owned_dir: Path,
         if not callable(getattr(adapter, "read_activity_chain", None)):
             raise ValueError("NATIVE_ACTIVITY_CHAIN_PORT_REQUIRED")
         from betterinstincts import activity_chain
+    microsystems = None
+    if installed.get("installed_microsystem_handoff") is True:
+        from betterinstincts import microsystem_handoff as microsystems
+
+        if portraits is None or not all(callable(getattr(adapter, name, None))
+                                       for name in microsystems.PORTS):
+            raise ValueError("NATIVE_MICROSYSTEM_HANDOFF_PORTS_REQUIRED")
     runtime = InstalledPlayerRuntime(adapter, build=exact_build, owned_dir=root, clock=clock,
                                      trait_response=trait_response, fairy_dust=fairy_dust, fame=fame,
-                                     portraits=portraits, activity_chain=activity_chain)
+                                     portraits=portraits, activity_chain=activity_chain,
+                                     microsystems=microsystems)
     if not all(callable(getattr(adapter, name, None))
                for name in ("register", "frame", "analyze", "submit", "reconcile")):
         raise ValueError("NATIVE_CALLBACK_PORTS_REQUIRED")

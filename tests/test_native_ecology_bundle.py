@@ -13,7 +13,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.native_ecology_bundle import (
-    ACTIVITY_CHAIN_MEMBERS, FAIRY_DUST_MEMBER, FAME_MEMBER, MOD_FILE, MANIFEST_FILE,
+    ACTIVITY_CHAIN_MEMBERS, FAIRY_DUST_MEMBER, FAME_MEMBER, MICROSYSTEM_MEMBER, MOD_FILE, MANIFEST_FILE,
     MODULE_PYC, RUNTIME_MEMBERS, TRAIT_MEMBERS,
     NativeEcologyPackageError, PORTRAIT_MEMBER,
     build_package, install_package, uninstall_package, verify_hook_proof,
@@ -339,3 +339,34 @@ assert PreferenceResponsePort().respond(enabled=True)["state"] == "NATIVE_ADAPTE
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_microsystem_bundle_requires_proof_and_imports_with_portrait_dependency(self):
+        options = dict(python37=self.py37, source_path=self.source, hook_proof_path=self.proof,
+                       output_dir=self.output, game_build=BUILD, installed_player_runtime=True,
+                       installed_portrait_handoff=True, installed_microsystem_handoff=True)
+        proof = {**hook_proof(), "installed_player_runtime_binding_ref": "local:verified:binding",
+                 "installed_portrait_handoff_binding_ref": "local:verified:portrait"}
+        self.proof.write_text(json.dumps(proof))
+        with self.assertRaisesRegex(NativeEcologyPackageError, "MICROSYSTEM_HANDOFF_BINDING"):
+            build_package(**options)
+        self.proof.write_text(json.dumps({
+            **proof, "installed_microsystem_handoff_binding_ref": "local:verified:microsystems",
+        }))
+        with self.assertRaisesRegex(NativeEcologyPackageError, "MICROSYSTEM_HANDOFF_BINDING"):
+            build_package(**{**options, "installed_portrait_handoff": False})
+        with patch("scripts.native_ecology_bundle._compile_py37", side_effect=self.compile_for_test):
+            built = build_package(**options)
+        with zipfile.ZipFile(built["package"]) as archive:
+            self.assertEqual(archive.namelist(), [MODULE_PYC, *RUNTIME_MEMBERS, PORTRAIT_MEMBER,
+                                                  MICROSYSTEM_MEMBER])
+        installed = install_package(mods_dir=self.mod_dir, package_path=Path(built["package"]),
+                                    manifest_path=Path(built["manifest"]), game_closed_confirmed=True)
+        result = subprocess.run(
+            [sys.executable, "-I", "-c",
+             "import sys; sys.path.insert(0, sys.argv[1]);"
+             "from betterinstincts.microsystem_handoff import PRIORITY;"
+             "assert PRIORITY == ('NEEDS', 'CAREER', 'CONTINGENCIES', 'SKILLS')",
+             installed["installed"]],
+            cwd=self.root, capture_output=True, text=True, timeout=10,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)

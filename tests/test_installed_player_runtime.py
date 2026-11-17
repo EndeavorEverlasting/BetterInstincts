@@ -330,3 +330,124 @@ class InstalledRuntimeTests(unittest.TestCase):
         self.assertEqual(runtime.cycle(), "YIELD_TO_PLAYER")
         self.adapter.analyze.assert_called_once()
         self.adapter.submit.assert_not_called()
+
+    def enable_microsystem_handoff(self):
+        data = json.loads(self.manifest.read_text())
+        self.manifest.write_text(json.dumps({
+            **data, "installed_portrait_handoff": True, "installed_microsystem_handoff": True,
+        }))
+        self.adapter.submit_microsystem_if_current.return_value = "QUEUED"
+        return self.start()
+
+    def test_microsystem_callback_queues_needs_then_reconciles_and_hands_off_to_career(self):
+        from tests.test_microsystem_handoff import SIM, lane, member, option, packet, queued
+
+        runtime = self.enable_microsystem_handoff()
+        first = self.frame(actor=SIM)
+        dispatch = replace(first, capture="capture:enqueue")
+        observed = replace(first, capture="capture:readback")
+        next_turn = replace(first, capture="capture:next")
+        next_dispatch = replace(first, capture="capture:next-submit")
+        self.adapter.frame.side_effect = [first, dispatch, dispatch, observed, next_turn, next_dispatch]
+
+        def read(frame):
+            sim = member(frame, NEEDS=lane(frame, option("food")), CAREER=lane(frame, option("report")))
+            if frame in (next_turn, next_dispatch):
+                sim["queue"] = [queued("food", "NEEDS")]
+                sim["queue_ref"] = "queue-two"
+            return packet(frame, {SIM: sim})
+
+        self.adapter.read_microsystem_handoff.side_effect = read
+        self.adapter.read_microsystem_outcome.return_value = {
+            "actor": SIM, "work": "food", "proposal": "do-food",
+            "capture": observed.capture, "request_capture": dispatch.capture,
+            "status": "QUEUED", "slot": "slot-food", "readback_ref": "native-witness",
+        }
+        self.assertEqual(runtime.cycle(), "QUEUED")
+        self.assertEqual(runtime.cycle(), "MICROSYSTEM_QUEUE_RECONCILIATION")
+        self.adapter.read_microsystem_outcome.assert_not_called()
+        self.assertEqual(runtime.cycle(), "MICROSYSTEM_QUEUE_CONFIRMED")
+        self.assertEqual(runtime.cycle(), "QUEUED")
+        queued_work = [call.args[0].work for call in self.adapter.submit_microsystem_if_current.call_args_list]
+        self.assertEqual(queued_work, ["food", "report"])
+        self.adapter.analyze.assert_not_called()
+        self.adapter.submit.assert_not_called()
+
+    def test_microsystem_callback_rechecks_queue_and_player_then_holds_lost_ack(self):
+        from tests.test_microsystem_handoff import SIM, lane, member, option, packet
+
+        runtime = self.enable_microsystem_handoff()
+        first = self.frame(actor=SIM)
+        dispatch = replace(first, capture="capture:enqueue")
+        observed = replace(first, capture="capture:readback", player_active=True)
+        wrong_save = replace(observed, save_ref="other-save")
+        same_action = lambda frame: packet(frame, {SIM: member(frame, NEEDS=lane(frame, option("food")))})
+        changed = same_action(dispatch)
+        changed["members"][SIM]["queue_ref"] = "queue-changed"
+        self.adapter.read_microsystem_handoff.side_effect = [
+            same_action(first), changed, same_action(first), same_action(first), same_action(dispatch),
+        ]
+        self.adapter.frame.side_effect = [
+            first, dispatch, first, replace(dispatch, input_generation=4),
+            first, dispatch, wrong_save, observed,
+        ]
+        self.adapter.submit_microsystem_if_current.side_effect = RuntimeError("uncertain")
+        self.adapter.read_microsystem_outcome.return_value = {
+            "actor": SIM, "work": "food", "proposal": "do-food",
+            "capture": observed.capture, "request_capture": "capture:wrong-request",
+            "status": "QUEUED", "slot": "slot-food", "readback_ref": "native-witness",
+        }
+        self.assertEqual(runtime.cycle(), "MICROSYSTEM_REOBSERVE_WINNER")
+        self.assertEqual(runtime.cycle(), "YIELD_TO_PLAYER")
+        self.assertEqual(runtime.cycle(), "NATIVE_DISPATCH_RECONCILIATION")
+        self.assertEqual(runtime.cycle(), "MICROSYSTEM_QUEUE_RECONCILIATION")
+        self.adapter.read_microsystem_outcome.assert_not_called()
+        self.assertEqual(runtime.cycle(), "MICROSYSTEM_QUEUE_RECONCILIATION")
+        self.adapter.submit_microsystem_if_current.assert_called_once()
+        self.adapter.reconcile.assert_not_called()
+
+    def test_microsystem_callback_switches_and_reobserves_the_new_portrait(self):
+        from tests.test_microsystem_handoff import SIM, OTHER, lane, member, option, packet
+
+        runtime = self.enable_microsystem_handoff()
+        first = self.frame(actor=SIM)
+        dispatch = replace(first, capture="capture:switch")
+        observed = replace(first, actor=OTHER, capture="capture:readback", observed_at=10.1)
+        selected = replace(observed, capture="capture:selected", observed_at=10.2)
+        enqueue = replace(selected, capture="capture:enqueue", observed_at=10.3)
+        self.clock.return_value = 10.5
+        self.adapter.frame.side_effect = [first, dispatch, observed, observed, selected, enqueue]
+        self.adapter.read_microsystem_handoff.side_effect = lambda frame: packet(frame, {
+            SIM: member(frame, SKILLS=lane(frame, option("piano"))),
+            OTHER: member(frame, NEEDS=lane(frame, option("food"))),
+        })
+        self.adapter.read_portrait_outcome.return_value = {
+            "capture": observed.capture, "save": observed.save_ref, "roster": [SIM, OTHER],
+            "request_capture": dispatch.capture, "target": OTHER, "status": "APPLIED",
+        }
+        self.assertEqual(runtime.cycle(), "PORTRAIT_SWITCH_AWAITING_READBACK")
+        self.assertEqual(runtime.cycle(), "PORTRAIT_SWITCH_CONFIRMED")
+        self.assertEqual(runtime.cycle(), "PORTRAIT_SELECTION_REOBSERVE")
+        self.adapter.submit_microsystem_if_current.assert_not_called()
+        self.assertEqual(runtime.cycle(), "QUEUED")
+        decision, frame = self.adapter.submit_microsystem_if_current.call_args.args
+        self.assertEqual((decision.actor, decision.work, frame), (OTHER, "food", enqueue))
+        self.adapter.submit_portrait_if_current.assert_called_once()
+
+    def test_microsystem_portrait_switch_rechecks_target_queue_revision(self):
+        from tests.test_microsystem_handoff import SIM, OTHER, lane, member, option, packet
+
+        runtime = self.enable_microsystem_handoff()
+        first = self.frame(actor=SIM)
+        fresh = replace(first, capture="capture:target-changed")
+        self.adapter.frame.side_effect = [first, fresh]
+
+        def read(frame):
+            target = member(frame, NEEDS=lane(frame, option("food")))
+            target["queue_ref"] = "queue-revision-two" if frame == fresh else "queue-revision-one"
+            return packet(frame, {OTHER: target})
+
+        self.adapter.read_microsystem_handoff.side_effect = read
+        self.assertEqual(runtime.cycle(), "PORTRAIT_SELECTION_REOBSERVE")
+        self.adapter.submit_portrait_if_current.assert_not_called()
+        self.adapter.submit_microsystem_if_current.assert_not_called()
