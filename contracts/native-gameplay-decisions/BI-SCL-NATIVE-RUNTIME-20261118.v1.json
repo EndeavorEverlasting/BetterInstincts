@@ -1,0 +1,23 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-SCL-NATIVE-RUNTIME-20261118",
+  "purpose": "An optional, passive, installed exact-build callback reports sanitized known missing-capability states to the existing adapter. It never grants native game execution, adjusts player control, or claims an installed hook is active.",
+  "files": [
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "reason": "An optional wrapper around already registered cycle callback emits bounded advisory classification after the unchanged native cycle result; no game or OS action is added.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/runtime_seam.py",
+      "route": "POLICY_ONLY",
+      "reason": "Pure deterministic in-memory status classification with no game observation, disk or effect; only a properly bound native observer can connect this output to evidence.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ],
+  "proof_ceiling": "OFFLINE_SEMANTIC_NOTICE_TESTS_ONLY_EXACT_BUILD_LIVE_ADAPTER_UNVERIFIED",
+  "successor_gate": "Native exact build port registration and play receipt reconciliation under issue #171; no retroactive port activation."
+}
