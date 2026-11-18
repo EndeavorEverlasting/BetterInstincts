@@ -124,3 +124,25 @@ The static page source is docs/download/index.html and can be served from /docs 
 ## Unattended resume acceptance gate (NOT YET RELEASED)
 
 Do not infer the last played household from slot filenames, timestamps, game-running PIDs, arbitrary screenshots or a guessed Resume control. A future automatic latest-save route must first establish a separately authorized save-identity metadata source without reading or modifying protected saves, bind it to a freshly observed exact game build and actual menu tile, verify two independent scene cues and user-idle/foreground state before each one-effect navigation, and stop on ambiguous/stale evidence or player interruption. Preserve this gate on every platform; no silent system settings or install-time daemons. Current implemented behavior is zero-extra-click **game dispatch** only; game loading, menu discovery and Live Mode remain unobserved until the real Windows EA/Steam/Epic P08 trial.
+
+
+## Choose a household for a dev trial
+
+Use the player's game-visible household and save title. A private startup
+context ties those labels to the current game instance and its observed slot
+and roster. Dev uses the oldest admitted save that contains the requested
+household and members. An expected title is checked against the selected
+candidate before dispatch.
+
+```powershell
+py -3 -m scripts.play --native-start --mode dev --save-context <private-context.json> --household "Test Household" --minimum-household-members 3
+Start-BetterInstincts.cmd --prod <private-context.json>
+```
+
+Use `--household-member` once per required Sim and `--save-name` to pin the
+expected game-visible title. If names collide, pick the reported
+`--household-id`. Production ranks by the game's last-played time. It can
+launch a currently authorized and calibrated lab save. For a personal
+save it identifies the newest title for the player to load. The
+[private context fields and Windows proof steps](../plans/active/BI-SEMANTIC-SAVE-LAUNCH.md)
+describe both modes.

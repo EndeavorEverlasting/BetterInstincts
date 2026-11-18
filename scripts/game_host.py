@@ -16,7 +16,7 @@ import subprocess
 import sys
 import time
 
-from betterinstincts.save_policy import SavePolicyError, selected_save_guard
+from betterinstincts.save_policy import SavePolicyError, load_policy, selected_save_guard
 from scripts.smart_start import (
     GameProcess, observe_launched_process, read_game_processes, require_same_game_process,
 )
@@ -49,7 +49,7 @@ def run_root(run_id: str) -> Path:
     return dest
 
 
-def profile(path: Path) -> tuple[dict, str]:
+def profile(path: Path, *, mode: str = "dev") -> tuple[dict, str]:
     raw = path.read_bytes()
     if len(raw) > 16384:
         raise GateError("PROFILE_TOO_LARGE")
@@ -58,7 +58,10 @@ def profile(path: Path) -> tuple[dict, str]:
         raise GateError("INVALID_PROFILE_SCHEMA_OR_PLATFORM")
     if cfg.get("save_mode") not in {"new", "chosen"}:
         raise GateError("INVALID_SAVE_MODE")
-    if not ALIAS_RE.fullmatch(str(cfg.get("save_alias", ""))):
+    alias = str(cfg.get("save_alias", ""))
+    continuation = (mode == "production" and cfg["save_mode"] == "chosen"
+                    and re.fullmatch(load_policy()["labels"]["LAB_CONTINUATION"]["hint_pattern"], alias))
+    if not ALIAS_RE.fullmatch(alias) and not continuation:
         raise GateError("DISPOSABLE_SAVE_ALIAS_REQUIRED")
     version = cfg.get("game_version")
     if version is not None and not VERSION_RE.fullmatch(str(version)):
@@ -284,14 +287,18 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
 
 def navigate_startup_save(
     cfg: dict, process: GameProcess, *, run_id: str, session_id: str, checkpoint,
+    mode: str = "dev",
 ) -> None:
-    """Use the existing calibrated chosen-save adapter for an admitted dev run."""
+    """Use the calibrated chosen-save adapter under existing lab authorization."""
     if sys.platform != "win32":
         raise GateError("LOCAL_WINDOWS_GAME_HOST_REQUIRED")
     expected_exe = str(PureWindowsPath(cfg["game_executable"])).casefold()
     if cfg["save_mode"] != "chosen" or expected_exe != process.executable:
         raise GateError("DEV_PROFILE_DOES_NOT_MATCH_OBSERVED_GAME")
-    if selected_save_guard(cfg, run_id)["classification"] != "LAB_DISPOSABLE":
+    if mode not in ("dev", "production"):
+        raise GateError("UNKNOWN_STARTUP_MODE")
+    classification = selected_save_guard(cfg, run_id)["classification"]
+    if mode == "dev" and classification != "LAB_DISPOSABLE":
         raise GateError("DEV_REQUIRES_DISPOSABLE_SAVE")
     dispatch_navigation(cfg, process_id=process.pid, session_id=session_id,
                         timeout=15, idle_ms=15000, checkpoint=checkpoint, process=process)

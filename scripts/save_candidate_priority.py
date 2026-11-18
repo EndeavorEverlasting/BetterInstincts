@@ -40,7 +40,7 @@ def _lab_creation_time(record: dict) -> datetime | None:
 
 def rank_lab_candidates(
     registry: dict, *, run_id: str, game_version: str, household_id: str | None = None,
-    current_run_only: bool = False,
+    current_run_only: bool = False, eligible_save_ids: frozenset[str] | None = None,
 ) -> dict:
     """Rank, never select. Missing age or failed guard for ANY lab candidate abstains.
 
@@ -71,6 +71,9 @@ def rank_lab_candidates(
             excluded += 1
             continue
 
+        if eligible_save_ids is not None and record.get("save_id") not in eligible_save_ids:
+            outside_scope += 1
+            continue
         if (current_run_only or household_id is not None) and record.get("authorized_run_id") != run_id:
             outside_scope += 1
             continue
