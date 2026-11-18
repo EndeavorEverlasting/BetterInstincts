@@ -262,6 +262,8 @@ def complete_play(
                     or startup_context.get("game_version") != process.game_version):
                 raise ValueError("NATIVE_STARTUP_CONTEXT_MODE_OR_BUILD_UNVERIFIED")
             startup_bridge = StartupBridge(context_path, startup_context, process)
+            result["startup_binding"] = {"scope": startup_bridge.scope, "sha256": startup_bridge.digest}
+            write_result(receipt_path, {**receipt, **result, "stage": "startup_catalog"})
             route_options["save_catalog"] = startup_bridge.read_save_catalog()
     except (OSError, ValueError) as exc:
         return pending("startup_catalog", str(exc),
@@ -333,6 +335,8 @@ def complete_play(
             from scripts.lab_upgrade_parts import save_navigation_listener
 
             listener = save_navigation_listener("native-startup-launch", note="Opt-in native startup")
+            result["startup_binding"]["catalog_capture"] = route_options["save_catalog"]["capture_ref"]
+            write_result(receipt_path, {**receipt, **result, "stage": dispatch_stage})
         require_same_game_process(process)
         title = route.get("candidate_save_name")
         progress(f"Opening {title}." if title else "Opening the oldest eligible disposable save.")
