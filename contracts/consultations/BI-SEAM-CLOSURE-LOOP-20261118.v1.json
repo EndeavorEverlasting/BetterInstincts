@@ -1,0 +1,84 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SEAM-CLOSURE-LOOP-20261118",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Persist bounded machine-readable handoff seam receipts at every blocked Play gate, identify the canonical recovery owner and safe replay condition, and preserve recurrence across Play retry without granting any desktop/game/save effect. Existing launch receipts remain authoritative; no general autonomous shell escape or unsafe code synthesis.",
+  "operator_correction": "A local certifier stopped at a denied Desktop Shell worktree gate and missing private startup/catalog binding; operator requires future missing handoffs to become repository-owned repeatable capabilities, identified during runtime rather than new human copy/paste steps.",
+  "repository_situation": "Play already emits automation_gaps and writes private launch.json; the current field lacks stable seam identity, typed recovery state, and a bounded append-only per-run record. Windows shell guard prohibits agent worktree mutation; Slot_00000007 is protected. Semantic named-save and roster route merged at PR #319, not host-proven.",
+  "competing_theses": [
+    {
+      "thesis": "Ask operator for each shell fix",
+      "disposition": "REJECT",
+      "evidence": "Repeats solved repository gaps and loses agent continuity"
+    },
+    {
+      "thesis": "Let local agent bypass desktop hook",
+      "disposition": "REJECT",
+      "evidence": "Violates repository operator-desktop boundary and player sovereignty"
+    },
+    {
+      "thesis": "Attach deterministic typed seam receipts to existing Play and promote safe recurring gaps into explicit repository handlers",
+      "disposition": "SELECT",
+      "evidence": "Uses existing per-run private receipt and reuses canonical owners"
+    }
+  ],
+  "affected_concepts": [
+    "HOST_SESSION",
+    "OBSERVATION",
+    "INCIDENT",
+    "PROOF_RECEIPT",
+    "RESUME_CONDITION",
+    "NATIVE_RESPONDER_GAP",
+    "CONTROL_PERMIT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "scripts/play.py",
+    "scripts/launch_receipt.py",
+    "scripts/launch_save_route.py",
+    "scripts/startup_handoff.py",
+    "contracts/operator-desktop-boundary.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SOURCE_AND_OFFLINE_TESTS_ONLY_NOT_GAME",
+  "player_save_control_impact": "Read-only classification/receipt metadata under owned bounded Play runtime storage only. No modifications to game, user saves, OS settings, or protected hook. No automatic effect or invented adapter.",
+  "expected_outcome": "A blocked Play result yields a typed stable seam and bounded immutable runtime occurrence, an exact next verified source owner, and a replay-safe code/host decision. Duplicate receipt writes deduplicate; later successful source stage never overwrites history or becomes game proof.",
+  "negative_tests": [
+    "unknown reason stays unregistered",
+    "unsafe path/symlink fails closed",
+    "duplicate event remains one",
+    "event limit preserves old evidence",
+    "protected slot never becomes action",
+    "host binding absence cannot claim success",
+    "raw local paths not copied into seam key"
+  ],
+  "rollback_path": "Revert new source PR; private historical receipts remain intact; no host changes.",
+  "unresolved_unknowns": [
+    "Windows exact-build native observer and bridge installation",
+    "current private startup context and roster receipt",
+    "desktop host authority and session state"
+  ],
+  "files_expected": [
+    "scripts/seam_closure.py",
+    "scripts/launch_receipt.py",
+    "tests/test_seam_closure.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "next_gate": "Implement and run bounded offline tests, then host-attest exact-build observation without bypassing Shell guard; record three observed portrait switches and native responder handoff distinctly."
+}
