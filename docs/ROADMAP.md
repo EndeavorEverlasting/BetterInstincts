@@ -1,3 +1,15 @@
+## 2026-11-18 — Reuse the Seam Closure Loop during live certification
+
+The product-launched restock route now owns isolated official-main checkout
+recovery and emits typed, bounded private seam receipts for missing native
+catalog, calibration, registry or responder capabilities. The installed
+certification agent consumes the latest blocked run as a source-recovery
+handoff. This does not override player/desktop authority or complete a live
+save binding. The next actual game gate remains fresh title→slot→household
+→roster observation, three independent portrait switches, restock readback
+and native responder decision under the exact-build host adapter. See
+[Seam Closure Loop](SEAM_CLOSURE.md) and [named restock](handoff/BI-OLDEST-LAB-RESTOCK.md).
+
 ## 2026-11-18 — Certify standard Play through native startup
 
 Bind the current Windows game build, then verify standard Play from the
