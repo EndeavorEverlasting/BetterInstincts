@@ -3,7 +3,7 @@
   "id": "BI-SEAM-CLOSURE-LOOP-20261118",
   "ontology": "contracts/ontology.v1.json",
   "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
-  "proposed_capability": "Persist bounded machine-readable handoff seam receipts at every blocked Play gate, identify the canonical recovery owner and safe replay condition, and preserve recurrence across Play retry without granting any desktop/game/save effect. Existing launch receipts remain authoritative; no general autonomous shell escape or unsafe code synthesis.",
+  "proposed_capability": "Persist bounded machine-readable handoff seam receipts at every blocked Play gate, identify the canonical recovery owner and safe replay condition, and preserve recurrence across Play retry without granting any desktop/game/save effect. Existing launch receipts remain authoritative; no general autonomous shell escape or unsafe code synthesis. For an explicitly operator-launched restock, prepare a deterministic detached current-main worktree from the verified official origin and dispatch the existing Play entrypoint there, rather than asking the operator to manipulate the worktree by hand.",
   "operator_correction": "A local certifier stopped at a denied Desktop Shell worktree gate and missing private startup/catalog binding; operator requires future missing handoffs to become repository-owned repeatable capabilities, identified during runtime rather than new human copy/paste steps.",
   "repository_situation": "Play already emits automation_gaps and writes private launch.json; the current field lacks stable seam identity, typed recovery state, and a bounded append-only per-run record. Windows shell guard prohibits agent worktree mutation; Slot_00000007 is protected. Semantic named-save and roster route merged at PR #319, not host-proven.",
   "competing_theses": [
@@ -43,7 +43,9 @@
     "scripts/launch_receipt.py",
     "scripts/launch_save_route.py",
     "scripts/startup_handoff.py",
-    "contracts/operator-desktop-boundary.v1.json"
+    "contracts/operator-desktop-boundary.v1.json",
+    "bootstrap.py",
+    "Start-BetterInstincts.cmd"
   ],
   "invariants_checked": [
     "BI-ONT-001",
@@ -57,7 +59,7 @@
   ],
   "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
   "evidence_ceiling": "SOURCE_AND_OFFLINE_TESTS_ONLY_NOT_GAME",
-  "player_save_control_impact": "Read-only classification/receipt metadata under owned bounded Play runtime storage only. No modifications to game, user saves, OS settings, or protected hook. No automatic effect or invented adapter.",
+  "player_save_control_impact": "Read-only classification/receipt metadata under owned bounded Play runtime storage only. No modifications to game, user saves, OS settings, or protected hook. No automatic effect or invented adapter. Checkout preparation can fetch official main and write only a new verified isolated Git worktree when the operator launches the product entrypoint. Never change the original working tree or grant the denied agent a Shell tool.",
   "expected_outcome": "A blocked Play result yields a typed stable seam and bounded immutable runtime occurrence, an exact next verified source owner, and a replay-safe code/host decision. Duplicate receipt writes deduplicate; later successful source stage never overwrites history or becomes game proof. The existing installed Codex certification launcher receives the latest bounded seam summary, without raw private context or bypassing tool permissions.",
   "negative_tests": [
     "unknown reason stays unregistered",
@@ -66,7 +68,12 @@
     "event limit preserves old evidence",
     "protected slot never becomes action",
     "host binding absence cannot claim success",
-    "raw local paths not copied into seam key"
+    "raw local paths not copied into seam key",
+    "unofficial origin denied",
+    "dirty source working tree preserved",
+    "stale or dirty candidate worktree denied",
+    "no game dispatch from checkout preparation unless explicitly launched",
+    "failed fetch never reset original"
   ],
   "rollback_path": "Revert new source PR; private historical receipts remain intact; no host changes.",
   "unresolved_unknowns": [
@@ -78,7 +85,9 @@
     "scripts/seam_closure.py",
     "scripts/launch_receipt.py",
     "tests/test_seam_closure.py",
-    "scripts/continue_certification.py"
+    "scripts/continue_certification.py",
+    "scripts/certification_checkout.py",
+    "tests/test_certification_checkout.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "next_gate": "Implement and run bounded offline tests, then host-attest exact-build observation without bypassing Shell guard; record three observed portrait switches and native responder handoff distinctly."
