@@ -1,7 +1,7 @@
 # Oldest lab save, household restock and native responder handoff
 
 The Windows agent runs the whole workflow using the official checkout and
-the repository launcher. On a first run, clone canonical `main` to the
+the repository launcher when the host permits it. On a first run, clone canonical `main` to the
 bootstrapper's normal checkout location.
 
 ```powershell
@@ -192,9 +192,14 @@ transfer and waits for up to four subsequent observations.
 
 ## Acceptance and terminal states
 
-The Windows agent owns the run from bootstrap through receipt. Read the
-checkout recovery above, run the focused repository fixture, execute the
-launcher, and continue at its first unproved gate. If the binding is absent,
+The Windows agent owns continuity from bootstrap through receipt. Run the
+focused repository fixture in CI or an independently approved sandbox.
+Use the checkout recovery above and continue at the first unproved gate.
+If the agent shell is denied, use the operator-owned invocation described
+in [Windows acceptance](../../plans/active/BI-SEMANTIC-SAVE-LAUNCH.md#windows-acceptance),
+with the dedicated restock command above for a restock run. For a named-save
+portrait trial, use the semantic dev command there. Its title and roster CLI
+options belong to standard dev Play. If the binding is absent,
 inspect the installed exact-build EA source read-only and implement the
 needed native ports under the [native gameplay authority](../NATIVE_GAMEPLAY_ARCHITECTURE.md).
 Start by proving process attachment and a read-only observation of the
