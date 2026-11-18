@@ -80,6 +80,9 @@ class InstalledPlayerRuntime:
         self.microsystem_pending = None
         self.microsystem_denied_switches = set()
         self.microsystem_dispositions = {}
+        self.runtime_seam_enabled = False
+        self._seam_last_signal = None
+        self._seam_emissions = 0
 
     def _portrait_choice(self, frame):
         return self.portraits.choose_selection(frame, self.adapter.read_portrait_handoff(frame))
@@ -513,6 +516,32 @@ class InstalledPlayerRuntime:
                 and frame.observed_at >= dispatch.observed_at
                 and frame.capture not in (first_capture, dispatch.capture))
 
+    def cycle_with_seam(self):
+        """Return the unchanged native decision and emit only a new known gap.
+
+        A verified opt-in adapter owns the advisory sink. No background thread
+        or filesystem write is performed from this game callback.
+        """
+        result = self.cycle()
+        if not self.runtime_seam_enabled:
+            return result
+        from betterinstincts.runtime_seam import MAX_EMISSIONS_PER_SESSION, notice_for
+
+        notice = notice_for(result, game_build=self.build, session=self.run)
+        key = (self.run, notice["seam_id"]) if notice is not None else None
+        if key is None:
+            self._seam_last_signal = None
+        elif key != self._seam_last_signal and self._seam_emissions < MAX_EMISSIONS_PER_SESSION:
+            # Reserve the slot before the adapter call; failing sinks must not
+            # generate per-frame exception/log storms or change game effects.
+            self._seam_last_signal = key
+            self._seam_emissions += 1
+            try:
+                self.adapter.report_runtime_seam(notice)
+            except Exception:
+                pass
+        return result
+
     def cycle(self):
         """Analyze on any eligible turn. Submit at most one fresh, ranked proposal."""
         self.dust_recheck = None
@@ -705,7 +734,13 @@ def start_installed(adapter, *, exact_build: str, owned_dir: Path,
         raise ValueError("NATIVE_CALLBACK_PORTS_REQUIRED")
     if trait_response is not None and adapter.register_modal_readback(runtime.reconcile_modal) is not True:
         raise ValueError("NATIVE_MODAL_READBACK_REGISTRATION_UNVERIFIED")
-    if adapter.register(observe=runtime.observe, cycle=runtime.cycle) is not True:
+    # Existing installations preserve the identical callback. An installed
+    # exact-build binding must opt in to passive semantic notices explicitly.
+    runtime.runtime_seam_enabled = installed.get("installed_runtime_seam_port") is True
+    if runtime.runtime_seam_enabled and not callable(getattr(adapter, "report_runtime_seam", None)):
+        raise ValueError("NATIVE_RUNTIME_SEAM_PORT_REQUIRED")
+    cycle_callback = runtime.cycle_with_seam if runtime.runtime_seam_enabled else runtime.cycle
+    if adapter.register(observe=runtime.observe, cycle=cycle_callback) is not True:
         raise ValueError("NATIVE_CALLBACK_REGISTRATION_UNVERIFIED")
     runtime.registered = True
     return runtime
