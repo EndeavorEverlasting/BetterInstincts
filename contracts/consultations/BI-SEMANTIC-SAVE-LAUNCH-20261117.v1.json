@@ -1,0 +1,67 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SEMANTIC-SAVE-LAUNCH-20261117",
+  "base_commit": "7554f42718e0b12e7685ae6ee9cca02e74454d0e",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Bind observed save titles and household rosters before existing oldest-lab or latest-played startup dispatch.",
+  "affected_concepts": [
+    "SAVE_SLOT",
+    "HOUSEHOLD",
+    "SIM",
+    "GAME_PROCESS_INSTANCE",
+    "STARTUP_SAVE_TARGET",
+    "OBSERVATION",
+    "PLAYER_INTENT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "scripts/launch_save_route.py",
+    "scripts/save_candidate_priority.py",
+    "scripts/play.py",
+    "scripts/game_host.py",
+    "betterinstincts/save_policy.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-048",
+    "BI-ONT-049",
+    "BI-ONT-052",
+    "BI-ONT-053",
+    "BI-ONT-054"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_SAVE_ROUTING_AND_CALLBACK_FIXTURES_ONLY",
+  "player_save_control_impact": "Names describe identity. Existing lab provenance, current-run approval, exact-build calibration and player-first effects continue to govern dispatch.",
+  "expected_outcome": "Oldest eligible save in the chosen household with the requested roster in dev. Newest by in-game recency in production, with no downgrade to a different save.",
+  "negative_tests": [
+    "Ambiguous title or household, incomplete roster, process mismatch, stale or missing authorization, uncalibrated load and protected slot must not dispatch."
+  ],
+  "rollback_path": "Revert the feature commits. No saves or game installations are edited by this source sprint.",
+  "unresolved_unknowns": [
+    "Windows game-visible title-to-slot evidence, actual EA inventory readback and portrait-switch trial."
+  ],
+  "files_expected": [
+    "scripts/save_catalog.py",
+    "scripts/launch_save_route.py",
+    "scripts/save_candidate_priority.py",
+    "scripts/play.py",
+    "scripts/game_host.py",
+    "Start-BetterInstincts.cmd",
+    "Dockerfile",
+    "contracts/launch-journey.v1.json",
+    "tests/test_semantic_save_launch.py",
+    "docs/FIRST_RUN.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "plans/active/BI-SEMANTIC-SAVE-LAUNCH.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}
