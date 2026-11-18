@@ -117,8 +117,35 @@ the selected save, Live household, responder control and a later decision.
 
 ### Windows acceptance
 
-Start from the latest `main` on the Windows Sims host and run
-`py -3 -m scripts.play --native-start --mode dev --save-context PRIVATE_CONTEXT.json --json`.
+Check the existing certification checkout against current official `main`.
+For a stale checkout, use the [isolated checkout procedure](../../docs/handoff/BI-OLDEST-LAB-RESTOCK.md#recover-a-stale-or-locally-modified-checkout)
+through its clean worktree check. Use the semantic dev command below from
+that checkout. Carry forward the already selected title, household and
+roster from private run context or the operator's prior instruction. The
+live catalog must independently verify which slot and Sims match them.
+
+If the agent receives `OPERATOR_DESKTOP_BOUNDARY`, use its permitted
+read-only diagnostics and hand the single blocking Windows launch to the
+operator or an independently approved scoped Windows runner. The project
+hook stays active. Run offline fixtures in CI or an approved sandbox.
+The operator can run the reviewed command in their own PowerShell from
+the verified checkout, with the existing private context path:
+
+```powershell
+py -3 -m scripts.play --native-start --mode dev --save-context $privateContext --save-name $expectedTitle --minimum-household-members 3 --household-member $firstSim --household-member $secondSim --household-member $thirdSim --json
+```
+
+Set the variables from the authorized trial. Add `--household` for an
+already chosen household label or `--household-id` if labels collide.
+Use the private receipt's first `stage` and `reason` to continue. The
+startup bridge can inspect the main menu of an already-running game.
+Preserve a loaded session and use its existing receipt. If no catalog
+binding exists, a read-only Load Game card can corroborate visible labels.
+The exact-build observer still owns title-to-slot and roster binding.
+When the target is observed but unregistered, retain `observed_target`
+and resolve current-run lab authorization before dispatch. Keep real
+labels, identities, capture data and local paths out of Git.
+
 Use the oldest authorized matching save and the intended roster. Confirm the
 receipt reaches `NATIVE_RESPONDER_DECISION_OBSERVED` with distinct captures.
 Repeat production with an authorized newest lab candidate. Verify both

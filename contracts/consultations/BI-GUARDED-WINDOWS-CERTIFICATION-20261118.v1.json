@@ -1,0 +1,20 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-GUARDED-WINDOWS-CERTIFICATION-20261118",
+  "base_commit": "5cc2be1391d87c5ade17a73b9493405f733ab4f9",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Clarify the operator-owned launch of the existing semantic certification when the local agent's desktop shell is denied.",
+  "affected_concepts": ["SAVE_SLOT", "PLAYER_INTENT", "GAME_SCENE", "PROOF_RECEIPT"],
+  "relevant_canonical_owners": ["scripts/play.py", "scripts/save_catalog.py", "contracts/operator-desktop-boundary.v1.json", "plans/active/BI-SEMANTIC-SAVE-LAUNCH.md"],
+  "invariants_checked": ["BI-ONT-001", "BI-ONT-002", "BI-ONT-003", "BI-ONT-005", "BI-ONT-006", "BI-ONT-008", "BI-ONT-010", "BI-ONT-012"],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_RUNBOOK_AND_SOURCE_ROUTE_VALIDATION",
+  "player_save_control_impact": "Retain the operator desktop hook, active session, current-run save authorization and original evidence checkout. Route only a previously reviewed Windows command to the operator.",
+  "expected_outcome": "Use the current semantic launcher and prior target facts, then report the first runtime gate with observed receipt evidence.",
+  "negative_tests": ["A title card can only corroborate visible labels without the exact-process catalog.", "An ancestor of the selector does not contain it.", "The restock CLI cannot be treated as the semantic portrait validation CLI."],
+  "rollback_path": "Revert the documentation commits; the launch code and hook are untouched.",
+  "unresolved_unknowns": ["Current Windows process, catalog bridge, private calibration and live trajectory."],
+  "files_expected": ["plans/active/BI-SEMANTIC-SAVE-LAUNCH.md", "docs/handoff/BI-OLDEST-LAB-RESTOCK.md"],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}
