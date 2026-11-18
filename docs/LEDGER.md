@@ -1,3 +1,18 @@
+## 2026-11-18 — Seam Closure Loop: native cycle events, source-only
+
+The installed native runtime now supports an opt-in passive semantic notice
+port for selected known missing-capability states, preserving ordinary player
+yields and the original callback result with bounded deduplication. A host
+receiver joins selected notices to a private Play run only with exact process,
+patch and session correlation. The existing certification handoff exposes
+those runtime notices as historical evidence to reobserve, not as an active
+game effect or source-certified solution. Existing native adapters have not
+been observed installing this port on the Windows game host. No portrait
+switch, save access or native responder outcome is claimed. Owners:
+betterinstincts/runtime_seam.py, scripts/seam_closure.py,
+docs/SEAM_CLOSURE.md and consultation BI-SCL-NATIVE-RUNTIME-20261118.
+The exact-build adapter remains under #171.
+
 ## 2026-11-18 — Seam Closure Loop: blocked runtime gate → durable repository capability
 
 The Play launcher now classifies automation_gaps into stable seam IDs and writes
