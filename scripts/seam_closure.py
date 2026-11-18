@@ -106,6 +106,24 @@ def read_events(path: Path, run_id: str) -> list[dict]:
     return events
 
 
+def _save_events(path: Path, run_id: str, events: list[dict]) -> Path:
+    """Atomic, bounded event write for one selected private Play run."""
+    target = _event_file(path, run_id)
+    if target.is_symlink() or len(events) > MAX_EVENTS:
+        raise ValueError("SEAM_RECEIPT_STORE_UNSAFE")
+    raw = json.dumps({"schema": SCHEMA, "run_id": run_id, "events": events}, sort_keys=True, indent=2) + "\n"
+    if len(raw.encode("utf-8")) > MAX_BYTES:
+        raise ValueError("SEAM_RECEIPT_TOO_LARGE")
+    temp = target.with_name(uuid4().hex + ".tmp")
+    try:
+        with temp.open("x", encoding="utf-8") as stream:
+            stream.write(raw)
+        os.replace(temp, target)
+    finally:
+        temp.unlink(missing_ok=True)
+    return target
+
+
 def record(path: Path, receipt: dict) -> dict | None:
     """Persist each distinct blocked gate before it is overwritten by a later stage.
 
@@ -136,21 +154,79 @@ def record(path: Path, receipt: dict) -> dict | None:
             event["observed_at"] = datetime.now(timezone.utc).isoformat()
             events.append(event)
             known.add(event["seam_id"])
-    raw = json.dumps({"schema": SCHEMA, "run_id": run_id, "events": events}, sort_keys=True, indent=2) + "\n"
-    if len(raw.encode("utf-8")) > MAX_BYTES:
-        raise ValueError("SEAM_RECEIPT_TOO_LARGE")
-    temp = target.with_name(uuid4().hex + ".tmp")
-    try:
-        with temp.open("x", encoding="utf-8") as stream:
-            stream.write(raw)
-        os.replace(temp, target)
-    finally:
-        temp.unlink(missing_ok=True)
+    _save_events(path, run_id, events)
     return {
         "schema": SCHEMA, "state": "OPEN", "event_count": len(events),
         "event_file": str(target), "current": observed,
         "effect_admission": "NOT_GRANTED",
     }
+
+
+def record_native_notice(
+    path: Path, notice: dict, *, observed_process: dict, observed_session: str,
+) -> dict:
+    """Join a native adapter notice to an existing selected private Play run.
+
+    Only an already admitted same-process host adapter should invoke this.
+    The event file records sanitized semantics; matching provided process and
+    session is not a replacement for fresh actual game observation.
+    """
+    from betterinstincts.runtime_seam import notice_for
+
+    path = Path(path)
+    if (path.name != "launch.json" or path.is_symlink() or not path.is_file()
+            or path.stat().st_size > 32_768):
+        raise ValueError("SEAM_NATIVE_PLAY_RECEIPT_UNSAFE")
+    try:
+        launch = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeError) as error:
+        raise ValueError("SEAM_NATIVE_PLAY_RECEIPT_INVALID") from error
+    run_id = launch.get("run_id") if isinstance(launch, dict) else None
+    if (not isinstance(run_id, str) or not RUN.fullmatch(run_id)
+            or path.parent.name != run_id
+            or launch.get("schema") != "betterinstincts.play-launch-receipt/v1"):
+        raise ValueError("SEAM_NATIVE_PLAY_RECEIPT_INVALID")
+    bound = launch.get("game_process")
+    if (not isinstance(bound, dict) or not isinstance(observed_process, dict)
+            or observed_process != bound or type(bound.get("pid")) is not int
+            or bound["pid"] <= 0
+            or not isinstance(bound.get("creation_ticks"), str)
+            or not bound["creation_ticks"]
+            or not isinstance(bound.get("executable"), str)
+            or not bound["executable"]):
+        raise ValueError("SEAM_NATIVE_PROCESS_NOT_BOUND")
+    expected = notice_for(
+        notice.get("reason_code") if isinstance(notice, dict) else None,
+        game_build=bound.get("game_version"), session=observed_session,
+    )
+    if expected is None or notice != expected or notice.get("session_tag") is None:
+        raise ValueError("SEAM_NATIVE_NOTICE_UNCORRELATED")
+    target = _event_file(path, run_id)
+    if target.is_symlink():
+        raise ValueError("SEAM_RECEIPT_STORE_UNSAFE")
+    events = read_events(path, run_id)
+    if not any(x.get("seam_id") == notice["seam_id"] and x.get("type") == "NATIVE_RUNTIME_SEAM"
+               for x in events):
+        if len(events) >= MAX_EVENTS:
+            raise ValueError("SEAM_RECEIPT_STORE_FULL")
+        # A hash of game-run identity supports correlation without publishing
+        # private household names, save titles, slot numbers or raw error text.
+        event = {
+            "schema": SCHEMA, "type": "NATIVE_RUNTIME_SEAM",
+            "run_id": run_id, "seam_id": notice["seam_id"],
+            "stage": notice["stage"], "reason_code": notice["reason_code"],
+            "capability": notice["capability"],
+            "resolution_state": notice["resolution_state"],
+            "canonical_owner": notice["canonical_owner"],
+            "effect_admission": "NOT_GRANTED",
+            "proof_ceiling": "CORRELATED_ADAPTER_NOTICE_NOT_GAME_CERTIFICATION",
+            "observed_at": datetime.now(timezone.utc).isoformat(),
+        }
+        events.append(event)
+        _save_events(path, run_id, events)
+    return {"schema": SCHEMA, "state": "NATIVE_NOTICE_RECORDED",
+            "run_id": run_id, "seam_id": notice["seam_id"],
+            "effect_admission": "NOT_GRANTED"}
 
 
 def latest_run_handoff(folder: Path) -> dict:
@@ -192,9 +268,21 @@ def latest_run_handoff(folder: Path) -> dict:
     if not candidates:
         return empty
     _, run_id, latest, path = max(candidates, key=lambda x: (x[0], x[1]))
-    if latest.get("status") != "blocked":
-        return empty
     events = read_events(path, run_id)
+    if latest.get("status") != "blocked":
+        native = [row for row in events if row.get("type") == "NATIVE_RUNTIME_SEAM"]
+        if not native:
+            return empty
+        return {
+            "schema": SCHEMA, "state": "HISTORICAL_NATIVE_NOTICES_REOBSERVE",
+            "run_id": run_id,
+            "seams": [{key: entry[key] for key in (
+                "seam_id", "stage", "reason_code", "capability",
+                "canonical_owner", "resolution_state", "effect_admission",
+            )} for entry in native[-MAX_GAPS:]],
+            "proof_ceiling": "NATIVE_ADAPTER_NOTICE_NOT_CURRENT_GAME_PROOF",
+            "effect_admission": "NOT_GRANTED",
+        }
     if not events:
         return empty
     return {
