@@ -58,7 +58,7 @@
   "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
   "evidence_ceiling": "SOURCE_AND_OFFLINE_TESTS_ONLY_NOT_GAME",
   "player_save_control_impact": "Read-only classification/receipt metadata under owned bounded Play runtime storage only. No modifications to game, user saves, OS settings, or protected hook. No automatic effect or invented adapter.",
-  "expected_outcome": "A blocked Play result yields a typed stable seam and bounded immutable runtime occurrence, an exact next verified source owner, and a replay-safe code/host decision. Duplicate receipt writes deduplicate; later successful source stage never overwrites history or becomes game proof.",
+  "expected_outcome": "A blocked Play result yields a typed stable seam and bounded immutable runtime occurrence, an exact next verified source owner, and a replay-safe code/host decision. Duplicate receipt writes deduplicate; later successful source stage never overwrites history or becomes game proof. The existing installed Codex certification launcher receives the latest bounded seam summary, without raw private context or bypassing tool permissions.",
   "negative_tests": [
     "unknown reason stays unregistered",
     "unsafe path/symlink fails closed",
@@ -77,7 +77,8 @@
   "files_expected": [
     "scripts/seam_closure.py",
     "scripts/launch_receipt.py",
-    "tests/test_seam_closure.py"
+    "tests/test_seam_closure.py",
+    "scripts/continue_certification.py"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "next_gate": "Implement and run bounded offline tests, then host-attest exact-build observation without bypassing Shell guard; record three observed portrait switches and native responder handoff distinctly."
