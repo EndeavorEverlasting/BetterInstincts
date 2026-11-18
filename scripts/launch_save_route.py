@@ -18,6 +18,8 @@ from betterinstincts.save_policy import (
     PATCH_RE, RUN_ID_RE, SAVE_ID_RE, SavePolicyError, decide, load_registry,
 )
 from scripts.save_candidate_priority import UTC_SECONDS, rank_lab_candidates
+from scripts.save_catalog import (PROTECTED_SLOT, household_choices, matching_households,
+                                  matching_saves, name_key, read_catalog)
 from scripts.smart_start import GameProcess
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -118,6 +120,7 @@ def route_launch(
     available_households: tuple[str, ...] | None = None,
     preferred_household: str | None = None,
     successor_run_id: str | None = None,
+    eligible_save_ids: frozenset[str] | None = None,
 ) -> dict:
     """Prioritize the active certification until an independently reviewed exit.
 
@@ -215,7 +218,7 @@ def route_launch(
         try:
             ranked = rank_lab_candidates(
                 lab_registry, run_id=successor_run_id if household_id else run,
-                game_version=version, household_id=household_id,
+                game_version=version, household_id=household_id, eligible_save_ids=eligible_save_ids,
             )
         except (SavePolicyError, ValueError, TypeError):
             return _held("HOLD_STANDARDIZED_LAB_RANKING", "RANKING_SOURCE_INVALID")
@@ -271,10 +274,130 @@ def route_local_context(
 
 
 
+def _startup_registry(path, context):
+    name = context.get("registry")
+    if not isinstance(name, str) or Path(name).name != name or not name.endswith(".json"):
+        raise SavePolicyError("STARTUP_REQUIRES_SAME_FOLDER_LAB_REGISTRY")
+    return load_registry(path.parent / name)
+
+
+def _selection(context, overrides):
+    selection = context.get("selection", {})
+    if not isinstance(selection, dict):
+        raise SavePolicyError("INVALID_SAVE_SELECTION")
+    selection = {**selection, **(overrides or {})}
+    minimum = selection.get("minimum_members", 1)
+    members = selection.get("required_members", [])
+    if (type(minimum) is not int or not 1 <= minimum <= 16
+            or not isinstance(members, list) or len(members) > 16):
+        raise SavePolicyError("INVALID_REQUIRED_HOUSEHOLD_ROSTER")
+    keys = {name_key(name) for name in members}
+    if len(keys) != len(members):
+        raise SavePolicyError("DUPLICATE_REQUIRED_HOUSEHOLD_MEMBER")
+    home_id = selection.get("household_id")
+    if home_id is not None and (not isinstance(home_id, str) or not HOUSEHOLD_ID.fullmatch(home_id)):
+        raise SavePolicyError("INVALID_HOUSEHOLD_ID")
+    return selection.get("household_name"), home_id, selection.get("expected_save_name"), minimum, keys
+
+
+def _semantic_dev(process, path, context, saves, launch_context, overrides):
+    label, chosen_id, title, minimum, members = _selection(context, overrides)
+    named = None
+    if title is not None:
+        key = name_key(title)
+        matches = [save for save in saves.values() if name_key(save.name) == key]
+        if len(matches) != 1:
+            return _held("HOLD_SAVE_NAME", "SAVE_TITLE_MISSING_OR_AMBIGUOUS")
+        named = matches[0]
+        if named.slot.casefold() == PROTECTED_SLOT:
+            return _held("HOLD_SAVE_NAME", "SLOT_REQUIRES_SEPARATE_AUTHORIZATION")
+    preferred = view()["preferred_household_id"] if label is None and chosen_id is None else None
+    eligible_homes = matching_households(saves, label, preferred)
+    if chosen_id is not None:
+        eligible_homes &= {chosen_id}
+    # A title by itself can disambiguate the household when the observed
+    # roster of that save leaves only one choice.
+    if named is not None and label is None and preferred is None and chosen_id is None:
+        eligible_homes &= {
+            home.id for home in named.households
+            if named.id in matching_saves({named.id: named}, home.id, minimum, members)
+        }
+    if len(eligible_homes) != 1:
+        return _held("HOUSEHOLD_CHOICE_REQUIRED", "HOUSEHOLD_NAME_MISSING_OR_AMBIGUOUS",
+                     household_choices=household_choices(saves))
+    home_id = next(iter(eligible_homes))
+    options = matching_saves(saves, home_id, minimum, members)
+    if not options or (named is not None and named.id not in options):
+        return _held("HOLD_HOUSEHOLD_ROSTER", "OBSERVED_SAVE_DOES_NOT_CONTAIN_REQUIRED_HOUSEHOLD_ROSTER")
+    observed = ({"observed_target": {"save_id": named.id, "slot": named.slot,
+                                     "save_name": named.name, "household_id": home_id}}
+                if named is not None else {})
+    registry = _startup_registry(path, context)
+    run, version = context.get("run_id"), process.game_version
+    ids = frozenset(options)
+    if launch_context.exists():
+        route = route_launch(load_context(launch_context), lab_registry=registry,
+                             observed_game_version=version, available_households=(home_id,),
+                             preferred_household=home_id, successor_run_id=run,
+                             eligible_save_ids=ids)
+        if route["state"] != "STANDARDIZED_OLDEST_DISPOSABLE_ADVISORY":
+            return route
+    else:
+        ranked = rank_lab_candidates(registry, run_id=run, game_version=version,
+                                     household_id=home_id, eligible_save_ids=ids)
+        if ranked["state"] != "PRIORITY_ADVISORY_ONLY":
+            return _held("HOLD_DEV_SAVE", ranked["state"], **observed)
+        route = _held("DEV_OLDEST_DISPOSABLE_CANDIDATE", ranked["ranking_rule"],
+                      candidate_save_id=ranked["ranked_candidates"][0]["save_id"],
+                      household_id=home_id, successor_run_id=run)
+    winner = saves[route["candidate_save_id"]]
+    if named is not None and winner.id != named.id:
+        return _held("HOLD_SAVE_NAME", "REQUESTED_TITLE_IS_NOT_OLDEST_AUTHORIZED_ROSTER_MATCH",
+                     oldest_eligible_save_name=winner.name, **observed)
+    home = options[winner.id]
+    return {**route, "semantic_catalog": True, "candidate_slot": winner.slot,
+            "candidate_save_name": winner.name, "household_name": home.name,
+            "household_member_ids": [sim_id for sim_id, _ in home.members]}
+
+
+def _semantic_production(process, path, context, packet, saves):
+    route = production_candidate(process, {
+        **packet, "source": "IN_GAME_LAST_PLAYED", "candidates": [
+            {"save_id": save.id, "last_played_utc": save.last_played} for save in saves.values()
+        ],
+    })
+    if route["state"] != "PRODUCTION_LATEST_PLAYED_CANDIDATE":
+        return route
+    winner = saves[route["candidate_save_id"]]
+    route.update(semantic_catalog=True, candidate_slot=winner.slot, candidate_save_name=winner.name)
+    if winner.slot.casefold() == PROTECTED_SLOT:
+        return {**route, "reason": "LATEST_SLOT_REQUIRES_SEPARATE_AUTHORIZATION"}
+    if not context.get("registry"):
+        return {**route, "reason": "LATEST_SAVE_REQUIRES_PLAYER_LOAD"}
+    registry = _startup_registry(path, context)
+    run = context.get("run_id")
+    bindings = [row for row in registry["entries"]
+                if isinstance(row, dict) and row.get("save_id") == winner.id]
+    if len(bindings) != 1:
+        return {**route, "reason": "LATEST_SAVE_REQUIRES_PLAYER_LOAD"}
+    row = bindings[0]
+    if row.get("classification") not in ("LAB_DISPOSABLE", "LAB_CONTINUATION"):
+        return {**route, "reason": "LATEST_SAVE_REQUIRES_PLAYER_LOAD"}
+    try:
+        decision = decide(registry, save_id=winner.id, run_id=run, alias=row.get("alias"),
+                          game_version=process.game_version, capture_ref=row.get("capture_ref"))
+    except SavePolicyError:
+        return {**route, "reason": "LATEST_SAVE_REQUIRES_PLAYER_LOAD"}
+    if decision["state"] != "OPERATOR_ATTESTED_SELECTION_ONLY":
+        return {**route, "reason": "LATEST_SAVE_REQUIRES_PLAYER_LOAD"}
+    return {**route, "state": "PRODUCTION_APPROVED_LATEST_CANDIDATE",
+            "successor_run_id": run}
+
+
 def route_mode(
     mode: str, process: GameProcess, context_path: Path, *,
     launch_context: Path = LOCAL_CONTEXT,
-    active_map_household: bool = False,
+    active_map_household: bool = False, selection: dict | None = None,
 ) -> dict:
     """Resolve data and scope for a launch on the independently observed instance."""
     try:
@@ -287,15 +410,22 @@ def route_mode(
         if (context.get("schema") != "betterinstincts.startup-save-context/v1"
                 or context.get("startup_mode") != mode):
             raise SavePolicyError("STARTUP_SAVE_CONTEXT_MODE_UNVERIFIED")
+        if mode not in ("dev", "production"):
+            raise SavePolicyError("UNKNOWN_STARTUP_MODE")
+        run, version = context.get("run_id"), context.get("game_version")
+        if "save_catalog" in context:
+            if not process.game_version or process.game_version != version:
+                return _held("HOLD_GAME_BUILD", "CURRENT_EXECUTABLE_BUILD_MUST_MATCH_CALIBRATION")
+            packet = context["save_catalog"]
+            saves = read_catalog(process, packet)
+            if mode == "production":
+                return _semantic_production(process, context_path, context, packet, saves)
+            return _semantic_dev(process, context_path, context, saves, launch_context, selection)
         if mode == "production":
             return production_candidate(process, context)
-        if mode != "dev":
-            raise SavePolicyError("UNKNOWN_STARTUP_MODE")
-        name = context.get("registry")
-        if not isinstance(name, str) or Path(name).name != name or not name.endswith(".json"):
-            raise SavePolicyError("STARTUP_REQUIRES_SAME_FOLDER_LAB_REGISTRY")
-        registry = load_registry(context_path.parent / name)
-        run, version = context.get("run_id"), context.get("game_version")
+        if selection or "selection" in context:
+            return _held("HOLD_SAVE_CATALOG", "CURRENT_GAME_SAVE_CATALOG_REQUIRED")
+        registry = _startup_registry(context_path, context)
         if not process.game_version or process.game_version != version:
             return _held("HOLD_DEV_GAME_BUILD", "CURRENT_EXECUTABLE_BUILD_MUST_MATCH_CALIBRATION")
         if active_map_household:
@@ -307,7 +437,7 @@ def route_mode(
             return household
         if launch_context.exists():
             return route_local_context(
-                path=launch_context, registry_path=context_path.parent / name,
+                path=launch_context, registry_path=context_path.parent / context["registry"],
                 observed_game_version=version,
                 available_households=tuple(context["available_households"]),
                 successor_run_id=run,

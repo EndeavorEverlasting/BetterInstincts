@@ -1,3 +1,9 @@
+## 2026-11-17 — Verify semantic save selection on Windows
+
+Observe the exact-build save title, household and roster, exercise the
+dev oldest and production newest paths from the main menu, and record
+actual map and Live Mode readback. See [the save selection sprint](../plans/active/BI-SEMANTIC-SAVE-LAUNCH.md).
+
 ## 2026-11-17 — Live microsystem handoff verification
 
 Under #171, wire the four existing domain evaluations to the

@@ -28,6 +28,7 @@
     "agent_play": "py -3 -m scripts.play --json",
     "container_plan": "python -m scripts.play --plan --json",
     "windows_dev": "Start-BetterInstincts.cmd --dev PRIVATE_CONTEXT.json",
+    "windows_production_context": "Start-BetterInstincts.cmd --prod PRIVATE_CONTEXT.json",
     "intervention": "python -m scripts.launch_receipt"
   },
   "invariants": {
@@ -36,7 +37,7 @@
     "prerequisites": "Python >=3.11 and Git; no unattended system installation",
     "sims_executable": "Game/Bin/TS4_x64.exe or TS4.exe in known locations or explicitly selected path",
     "game_launch": "deliberate double-click/explicit CLI auto invocation or manual chooser click; no background auto launch; subprocess without shell",
-    "save_selection": "Development dispatches only an attested and calibrated LAB_DISPOSABLE save through the existing screen gate. Production targets game-reported last played and requires its own calibrated observer/loader. Never blind Resume or choose a protected save based on age.",
+    "save_selection": "Development dispatches only an attested and calibrated LAB_DISPOSABLE save through the existing screen gate. Production targets game-reported last played and dispatches only a currently authorized, calibrated lab candidate. Never blind Resume or choose a protected save based on age.",
     "cas": "Player creates the Sim; aspiration/traits are suggestions; base-game skill priorities are ranked advisory gameplay steps, never CAS-granted levels, automatic menu actions, or identity edits",
     "protected_data": "never read/write user saves or edit Sims game files",
     "host_proof": "process dispatch is not game load or Live Mode evidence",
@@ -63,12 +64,12 @@
     "production": {
       "default": true,
       "rank": "LATEST_IN_GAME_LAST_PLAYED_UTC",
-      "automatic_load": "UNAVAILABLE_REQUIRES_CALIBRATED_PRODUCTION_OBSERVATION_AND_EFFECT",
+      "automatic_load": "CURRENT_AUTHORIZED_LAB_CANDIDATE_WITH_CALIBRATION_OR_PLAYER_LOAD",
       "allow_blind_resume": false
     },
     "dev": {
       "default": false,
-      "rank": "OLDEST_ATTESTED_CREATION_UTC_WITHIN_AUTHORIZED_HOUSEHOLD_AND_RUN",
+      "rank": "OLDEST_ATTESTED_CREATION_UTC_WITHIN_AUTHORIZED_HOUSEHOLD_ROSTER_AND_RUN",
       "active_certification_precedes_ranking": true,
       "automatic_load": "CALIBRATED_LAB_ADAPTER_AND_LIVE_ADMISSION"
     }
@@ -84,7 +85,7 @@
     "dev_build_source": "Game executable FileVersion, compared with the calibration and registry",
     "dispatch_pid_is_authority": false,
     "restart": "ABORT_AND_REOBSERVE_CURRENT_SCENE_AND_SAVE",
-    "running_game": "PRESERVE_EXISTING_SESSION",
+    "running_game": "PRESERVE_EXISTING_SESSION_UNLESS_FRESH_SEMANTIC_MAIN_MENU_HANDOFF",
     "terminal_proof": "INDEPENDENT_CURRENT_INSTANCE_SAVE_AND_HOUSEHOLD_OBSERVATION"
   },
   "receipts": {

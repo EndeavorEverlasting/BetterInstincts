@@ -5,8 +5,10 @@ echo Welcome to BetterInstincts.
 echo Opening your game...
 set "PLAYMODE=production"
 set "BI_BOOTSTRAP_GAP="
+set "PROD_CONTEXT="
 if /I "%~1"=="--upgrade-parts" set "PLAYMODE=upgrade-parts"
 if /I "%~1"=="--dev" set "PLAYMODE=dev"
+if /I "%~1"=="--prod" if not "%~2"=="" set "PROD_CONTEXT=%~f2"
 if /I "%PLAYMODE%"=="dev" if "%~2"=="" goto missing_context
 if /I "%PLAYMODE%"=="dev" set "DEV_CONTEXT=%~f2"
 rem User-scoped, no elevation, no registry/services/driver/input changes.
@@ -66,7 +68,11 @@ if not defined CHECKOUT_HEAD goto blocked_update
 if /I not "%CHECKOUT_HEAD%"=="%UPSTREAM_HEAD%" goto blocked_update
 if /I "%PLAYMODE%"=="upgrade-parts" goto play_upgrade_parts
 if /I "%PLAYMODE%"=="dev" goto play_dev
+if defined PROD_CONTEXT goto play_prod_context
 %PYTHON% -m scripts.play --native-start --mode production --checkout-head "%CHECKOUT_HEAD%"
+goto play_result
+:play_prod_context
+%PYTHON% -m scripts.play --native-start --mode production --checkout-head "%CHECKOUT_HEAD%" --save-context "%PROD_CONTEXT%"
 goto play_result
 :play_dev
 %PYTHON% -m scripts.play --native-start --mode dev --checkout-head "%CHECKOUT_HEAD%" --save-context "%DEV_CONTEXT%"
@@ -78,7 +84,11 @@ goto play_result
 cd /d "%~dp0"
 if errorlevel 1 goto blocked_existing
 if /I "%PLAYMODE%"=="dev" goto local_dev
+if defined PROD_CONTEXT goto local_prod_context
 %PYTHON% -m scripts.play --native-start --mode production
+goto play_result
+:local_prod_context
+%PYTHON% -m scripts.play --native-start --mode production --save-context "%PROD_CONTEXT%"
 goto play_result
 :local_dev
 %PYTHON% -m scripts.play --native-start --mode dev --save-context "%DEV_CONTEXT%"

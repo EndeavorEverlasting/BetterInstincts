@@ -1,3 +1,11 @@
+## 2026-11-17 — Semantic household and save selection
+
+The launcher can join game-visible save titles and household rosters to
+authorized local slot identities. Dev filters by chosen household and
+roster, then takes oldest eligible. Production takes the most recently
+played candidate and uses the existing calibrated loader for an approved
+lab slot. See [semantic save verification](../plans/active/BI-SEMANTIC-SAVE-LAUNCH.md).
+
 ## 2026-11-17 — Household microsystem queue handoff
 
 The opt-in native callback ranks Needs, Career, Contingencies and Skills

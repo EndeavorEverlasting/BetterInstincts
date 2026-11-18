@@ -21,7 +21,8 @@ PLAN = {
 STARTUP_SOURCES = ("bootstrap.py", "scripts/play.py", "scripts/first_run.py",
                    "scripts/smart_start.py", "betterinstincts/first_run.py",
                    "scripts/game_host.py", "scripts/launch_save_route.py", "scripts/launch_receipt.py",
-                   "scripts/lab_upgrade_parts.py", "scripts/save_candidate_priority.py")
+                   "scripts/lab_upgrade_parts.py", "scripts/save_candidate_priority.py",
+                   "scripts/save_catalog.py")
 WIN_COMMAND = "py -3 -m scripts.play"
 SUCCESS_MESSAGES = {
     "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF":
@@ -125,6 +126,7 @@ def play_on_windows(
     game_exe: Path | None, progress: Callable[[str], None], *,
     mode: str | None = None, save_context: Path | None = None, receipt_path: Path | None = None,
     receipt: dict | None = None, checkout: Path | None = None, upgrade_parts: bool = False,
+    selection: dict | None = None,
 ) -> dict:
     from bootstrap import install, paths
     from scripts.first_run import requested_start
@@ -152,7 +154,7 @@ def play_on_windows(
 
         if mode is not None:
             return complete_play(mode, game, toolkit, save_context, receipt_path, receipt, progress,
-                                 upgrade_parts=upgrade_parts)
+                                 upgrade_parts=upgrade_parts, selection=selection)
 
     if game["state"] in SUCCESS_MESSAGES:
         return {"status": "ok", "stage": "complete", "toolkit": toolkit, "game": game,
@@ -169,7 +171,7 @@ def play_on_windows(
 def complete_play(
     mode: str, game: dict, toolkit: dict, context_path: Path | None,
     receipt_path: Path, receipt: dict, progress: Callable[[str], None],
-    *, upgrade_parts: bool = False,
+    *, upgrade_parts: bool = False, selection: dict | None = None,
 ) -> dict:
     from scripts.game_host import navigate_startup_save, profile
     from scripts.launch_receipt import gap, write_result
@@ -207,7 +209,8 @@ def complete_play(
         return out
     result["game_process"] = asdict(process)
     result["process_proof"] = "OBSERVED_WINDOWS_PROCESS_ONLY"
-    if state == "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH":
+    existing_game = state == "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH"
+    if existing_game:
         lab_route = game.get("lab_save_route", {})
         if mode == "dev" and lab_route.get("state") == "PRESERVE_RUNNING_CERTIFICATION_SESSION":
             return pending("certification", "CONTINUE_ACTIVE_CERTIFICATION",
@@ -217,11 +220,18 @@ def complete_play(
             return pending("existing_game", "EXISTING_SESSION_PRESERVED",
                            "The restock launch needs a new admitted game session.",
                            "scripts/play.py", actor="repository")
-        if mode == "production" and context_path is not None:
-            result["save_route"] = route_mode(mode, process, context_path)
-        return {**result, "status": "ok", "stage": "existing_game",
-                "next_step": "The Sims 4 is already open. BetterInstincts kept your session in place.",
-                "automation_gaps": []}
+        try:
+            semantic = context_path is not None and bool(
+                {"save_catalog", "selection"} & load_context(context_path).keys()
+            )
+        except (ValueError, OSError):
+            semantic = False
+        if not semantic and not selection:
+            if mode == "production" and context_path is not None:
+                result["save_route"] = route_mode(mode, process, context_path)
+            return {**result, "status": "ok", "stage": "existing_game",
+                    "next_step": "The Sims 4 is already open. BetterInstincts kept your session in place.",
+                    "automation_gaps": []}
     if mode == "dev" and game.get("lab_save_route", {}).get("state") in {
         "PRESERVE_RUNNING_CERTIFICATION_SESSION", "CERTIFICATION_PINNED_LAB_SAVE_ADVISORY",
         "HOLD_CERTIFICATION_PIN", "HOLD_CERTIFICATION_REVIEW",
@@ -238,15 +248,24 @@ def complete_play(
                        "Supply the private dev context for the oldest eligible disposable save.",
                        "scripts/launch_save_route.py")
 
-    route = (route_mode(mode, process, context_path, active_map_household=True)
-             if upgrade_parts else route_mode(mode, process, context_path))
+    route_options = {"active_map_household": True} if upgrade_parts else {}
+    if selection:
+        route_options["selection"] = selection
+    route = route_mode(mode, process, context_path, **route_options)
     result["save_route"] = route
     selected = route.get("candidate_save_id")
-    if mode == "production":
-        return pending("production_save", route["reason"],
-                       "Use Load Game to verify and open the most recently played save.",
-                       "scripts/launch_save_route.py")
-    if route["state"] not in {"DEV_OLDEST_DISPOSABLE_CANDIDATE", "STANDARDIZED_OLDEST_DISPOSABLE_ADVISORY"}:
+    production_dispatch = mode == "production"
+    if production_dispatch and route["state"] != "PRODUCTION_APPROVED_LATEST_CANDIDATE":
+        title = route.get("candidate_save_name")
+        if route["reason"] == "LATEST_SLOT_REQUIRES_SEPARATE_AUTHORIZATION":
+            prompt = f"{title} is the newest save. This slot requires separate authorization to open."
+        else:
+            prompt = (f"Use Load Game to verify and open {title}." if title
+                      else "Use Load Game to verify and open the most recently played save.")
+        return pending("production_save", route["reason"], prompt, "scripts/launch_save_route.py")
+    if not production_dispatch and route["state"] not in {
+        "DEV_OLDEST_DISPOSABLE_CANDIDATE", "STANDARDIZED_OLDEST_DISPOSABLE_ADVISORY",
+    }:
         if upgrade_parts:
             return pending("dev_save_candidate", route["reason"],
                            "Recover the local lab registry binding and chronological evidence.",
@@ -254,27 +273,30 @@ def complete_play(
         return pending("dev_save_candidate", route["reason"], "Resolve the disposable save or household evidence.",
                        "scripts/launch_save_route.py")
 
+    dispatch_stage = "production_save_dispatch" if production_dispatch else "dev_save_dispatch"
+
     def checkpoint(step: str) -> None:
         result["automatic_steps"].append(step)
-        write_result(receipt_path, {**receipt, **result, "stage": "dev_save_dispatch"})
+        write_result(receipt_path, {**receipt, **result, "stage": dispatch_stage})
 
     try:
         context = load_context(context_path)
         profile_name = context.get("navigation_profile")
-        if upgrade_parts:
-            profiles = context.get("navigation_profiles")
-            if isinstance(profiles, dict):
-                profile_name = profiles.get(selected)
+        profiles = context.get("navigation_profiles")
+        if isinstance(profiles, dict):
+            profile_name = profiles.get(selected, profile_name)
         if (not isinstance(profile_name, str) or Path(profile_name).name != profile_name
                 or not profile_name.endswith(".json")):
             raise ValueError("CALIBRATED_DEV_PROFILE_REQUIRED")
         p = context_path.parent / profile_name
         if p.is_symlink() or not p.is_file() or p.stat().st_size > 16384:
             raise ValueError("CALIBRATED_DEV_PROFILE_REQUIRED")
-        cfg, _ = profile(p)
+        cfg, _ = profile(p, **({"mode": "production"} if production_dispatch else {}))
         cfg["_profile_path"] = str(p.absolute())
         if (cfg.get("selected_save_id") != selected or cfg.get("save_registry") != context.get("registry")
-                or cfg.get("game_version") != context.get("game_version")):
+                or cfg.get("game_version") != context.get("game_version")
+                or (route.get("semantic_catalog") is True and
+                    cfg.get("selected_slot") != route["candidate_slot"])):
             raise ValueError("DEV_PROFILE_DOES_NOT_BIND_OLDEST_CANDIDATE")
         bridge = None
         listener = nullcontext(context.get("session_id"))
@@ -290,10 +312,12 @@ def complete_play(
                                "scripts/lab_upgrade_parts.py", actor="repository")
             listener = save_navigation_listener()
         require_same_game_process(process)
-        progress("Opening the oldest eligible disposable save.")
+        title = route.get("candidate_save_name")
+        progress(f"Opening {title}." if title else "Opening the oldest eligible disposable save.")
         with listener as session_id:
             navigate_startup_save(cfg, process, run_id=route["successor_run_id"],
-                                  session_id=session_id, checkpoint=checkpoint)
+                                  session_id=session_id, checkpoint=checkpoint,
+                                  **({"mode": "production"} if production_dispatch else {}))
         require_same_game_process(process)
     except (OSError, ValueError, TypeError, KeyError) as exc:
         unchanged = not result["automatic_steps"]
@@ -301,11 +325,12 @@ def complete_play(
             return pending("dev_calibration", str(exc),
                            "Calibrate the chosen-save adapter for the exact oldest disposable slot.",
                            "scripts/game_host.py")
-        return pending("dev_save_dispatch", str(exc),
+        return pending(dispatch_stage, str(exc),
                        "Observe the current game and verify its exact save and menu before any further action.",
                        "scripts/game_host.py")
 
-    result["save_state"] = "DEV_SAVE_PLAY_DISPATCHED"
+    result["save_state"] = ("PRODUCTION_SAVE_PLAY_DISPATCHED" if production_dispatch
+                            else "DEV_SAVE_PLAY_DISPATCHED")
     if bridge is not None:
         from scripts.lab_upgrade_parts import run_restock
 
@@ -332,7 +357,7 @@ def complete_play(
                               else "No portraits were available. Native responder decision observed."),
                 "automation_gaps": []}
     return pending("save_readback", "NATIVE_SAVE_READBACK_MISSING",
-                   "Verify the selected disposable save and household in the current game.",
+                   "Verify the selected save and household in the current game.",
                    "scripts/game_host.py")
 
 def main(argv: list[str] | None = None) -> int:
@@ -341,15 +366,29 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--plan", action="store_true", help="Check the container on any Docker host")
     mode.add_argument("--game-exe", type=Path, help="Choose an installed Sims executable")
     mode.add_argument("--emit-plan", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--mode", choices=("dev", "production"),
+    parser.add_argument("--mode", choices=("dev", "prod", "production"),
                         help="Choose the oldest disposable lab or latest-played production route")
     parser.add_argument("--upgrade-parts", action="store_true",
                         help="Restock 99 of each computer upgrade part in the oldest eligible lab save")
     parser.add_argument("--save-context", type=Path, help="Private local save and calibration context")
+    parser.add_argument("--household", help="Game-visible household name in dev mode")
+    parser.add_argument("--household-id", help="Observed household ID if names are ambiguous")
+    parser.add_argument("--save-name", help="Expected game-visible title of the oldest dev match")
+    parser.add_argument("--minimum-household-members", type=int, help="Minimum roster size in dev mode")
+    parser.add_argument("--household-member", action="append", help="Required Sim name, repeatable")
     parser.add_argument("--native-start", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--checkout-head", help=argparse.SUPPRESS)
     parser.add_argument("--json", action="store_true", help="Return one JSON result without prompts")
     args = parser.parse_args(argv)
+    if args.mode == "prod":
+        args.mode = "production"
+    selection = {key: value for key, value in (
+        ("household_name", args.household), ("household_id", args.household_id),
+        ("expected_save_name", args.save_name),
+        ("minimum_members", args.minimum_household_members), ("required_members", args.household_member),
+    ) if value is not None}
+    if selection and (args.mode != "dev" or not args.save_context or args.upgrade_parts):
+        parser.error("household and save-name choices require --mode dev and --save-context")
     if args.upgrade_parts:
         if args.mode == "production" or args.plan or args.emit_plan:
             parser.error("--upgrade-parts requires the Windows dev play route")
@@ -412,7 +451,8 @@ def main(argv: list[str] | None = None) -> int:
         else:
             result = play_on_windows(args.game_exe, progress, mode=args.mode, receipt=receipt,
                                      save_context=args.save_context, receipt_path=receipt_path, checkout=ROOT,
-                                     **({"upgrade_parts": True} if args.upgrade_parts else {}))
+                                     **({"upgrade_parts": True} if args.upgrade_parts else {}),
+                                     **({"selection": selection} if selection else {}))
     except (PlayBlocked, OSError, ValueError) as exc:
         if not isinstance(exc, PlayBlocked):
             exc = PlayBlocked("startup", "STARTUP_PREFLIGHT_FAILED",
@@ -452,6 +492,10 @@ def main(argv: list[str] | None = None) -> int:
             if result.get("detail"):
                 print(result["detail"], file=sys.stderr)
         print(result["next_step"], file=sys.stdout if result["status"] == "ok" else sys.stderr)
+        choices = result.get("save_route", {}).get("household_choices", {})
+        if choices:
+            labels = sorted(f"{name} ({identity})" for identity, name in choices.items())
+            print("Available households:", ", ".join(labels), file=sys.stderr)
         if result.get("receipt"):
             print("Launch receipt:", result["receipt"])
     return 0 if result["status"] == "ok" else 2
