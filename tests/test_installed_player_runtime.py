@@ -451,3 +451,54 @@ class InstalledRuntimeTests(unittest.TestCase):
         self.assertEqual(runtime.cycle(), "PORTRAIT_SELECTION_REOBSERVE")
         self.adapter.submit_portrait_if_current.assert_not_called()
         self.adapter.submit_microsystem_if_current.assert_not_called()
+
+
+    def enable_runtime_seam_port(self):
+        config = json.loads(self.manifest.read_text())
+        config["installed_runtime_seam_port"] = True
+        self.manifest.write_text(json.dumps(config))
+        return self.start()
+
+    def test_runtime_seam_port_opt_in_emits_one_notice_for_repeated_gap(self):
+        runtime = self.enable_runtime_seam_port()
+        callback = self.adapter.register.call_args.kwargs["cycle"]
+        runtime.cycle = Mock(side_effect=[
+            "NATIVE_FRAME_UNQUALIFIED", "NATIVE_FRAME_UNQUALIFIED",
+            "YIELD_TO_PLAYER", "NATIVE_FRAME_UNQUALIFIED",
+        ])
+        self.assertEqual(callback(), "NATIVE_FRAME_UNQUALIFIED")
+        self.assertEqual(callback(), "NATIVE_FRAME_UNQUALIFIED")
+        self.assertEqual(self.adapter.report_runtime_seam.call_count, 1)
+        self.assertEqual(callback(), "YIELD_TO_PLAYER")
+        self.assertEqual(callback(), "NATIVE_FRAME_UNQUALIFIED")
+        self.assertEqual(self.adapter.report_runtime_seam.call_count, 2)
+        notice = self.adapter.report_runtime_seam.call_args.args[0]
+        self.assertEqual(notice["reason_code"], "NATIVE_FRAME_UNQUALIFIED")
+        self.assertEqual(notice["effect_admission"], "NOT_GRANTED")
+        self.assertNotIn("house-one", str(notice))
+
+    def test_runtime_seam_port_missing_is_denied_without_registration(self):
+        config = json.loads(self.manifest.read_text())
+        config["installed_runtime_seam_port"] = True
+        self.manifest.write_text(json.dumps(config))
+        self.adapter.report_runtime_seam = None
+        with self.assertRaisesRegex(ValueError, "NATIVE_RUNTIME_SEAM_PORT_REQUIRED"):
+            self.start()
+        self.adapter.register.assert_not_called()
+
+    def test_runtime_seam_sink_failure_never_changes_native_result(self):
+        runtime = self.enable_runtime_seam_port()
+        self.adapter.report_runtime_seam.side_effect = RuntimeError("offline sensor")
+        runtime.cycle = Mock(return_value="NATIVE_SESSION_REBIND_REQUIRED")
+        self.assertEqual(runtime.cycle_with_seam(), "NATIVE_SESSION_REBIND_REQUIRED")
+        self.assertEqual(runtime.cycle_with_seam(), "NATIVE_SESSION_REBIND_REQUIRED")
+        self.assertEqual(self.adapter.report_runtime_seam.call_count, 1)
+
+    def test_runtime_seam_callback_emission_is_bounded(self):
+        from betterinstincts.runtime_seam import MAX_EMISSIONS_PER_SESSION
+        runtime = self.enable_runtime_seam_port()
+        runtime.cycle = Mock(side_effect=["NATIVE_FRAME_UNQUALIFIED", "YIELD_TO_PLAYER"] * (MAX_EMISSIONS_PER_SESSION + 3))
+        for _ in range(2 * (MAX_EMISSIONS_PER_SESSION + 3)):
+            runtime.cycle_with_seam()
+        self.assertEqual(self.adapter.report_runtime_seam.call_count, MAX_EMISSIONS_PER_SESSION)
+
