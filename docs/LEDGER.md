@@ -1,3 +1,9 @@
+## 2026-11-18 — Startup receipt recovery
+
+Standard Play persists the pinned bridge scope and catalog capture before save
+dispatch. A Windows agent can correlate a pending household command under the
+same startup identity without replaying it. See [startup binding recovery](../plans/active/BI-SEMANTIC-SAVE-LAUNCH.md#native-startup-binding).
+
 ## 2026-11-18 — Standard Play to native responder
 
 The calibrated Play route can request a fresh native save catalog, verify the

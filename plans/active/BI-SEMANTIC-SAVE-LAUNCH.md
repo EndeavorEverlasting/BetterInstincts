@@ -96,9 +96,15 @@ atomically recheck scope and player priority at dispatch. Acknowledge with
 `command_id` and `status: APPLIED` only after an observed native effect.
 The launcher writes pending intent before dispatch and checks the matching
 transition in a subsequent observation. Keep uncertain intent for read-only
-reconciliation. A separate attempt cannot borrow the old startup ID or
-automatically replay a command. The launcher leaves an existing loaded
-session in place.
+reconciliation. Use `startup_binding.scope` from the existing receipt for
+the read-only `observe` request. It contains the bridge's authorized run and
+startup ID, which differ from the receipt's own launch ID. Check the current
+process and binding against that scope and `startup_binding.sha256`. Compare
+the new `applied_command_id`, scene and target to `startup_handoff.pending`.
+The receipt already includes `startup_binding.catalog_capture` and the
+selected `save_route` before navigation. A separate attempt cannot borrow the
+old startup ID or automatically replay a command. The launcher leaves an
+existing loaded session in place.
 
 The native responder observation has `behavior_owner: NATIVE_RESPONDER`,
 `playing: true`, and a `responder` with `registered: true`, the `startup_id`,
@@ -112,7 +118,7 @@ the selected save, Live household, responder control and a later decision.
 ### Windows acceptance
 
 Start from the latest `main` on the Windows Sims host and run
-`py -3 -m scripts.play --mode dev --save-context PRIVATE_CONTEXT.json --json`.
+`py -3 -m scripts.play --native-start --mode dev --save-context PRIVATE_CONTEXT.json --json`.
 Use the oldest authorized matching save and the intended roster. Confirm the
 receipt reaches `NATIVE_RESPONDER_DECISION_OBSERVED` with distinct captures.
 Repeat production with an authorized newest lab candidate. Verify both

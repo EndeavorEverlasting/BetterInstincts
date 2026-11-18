@@ -8,7 +8,7 @@ from time import time
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts import game_host, lab_upgrade_parts, play, smart_start, startup_handoff
+from scripts import game_host, lab_upgrade_parts, launch_receipt, play, smart_start, startup_handoff
 from scripts.save_catalog import SCHEMA
 from tests.test_launch_save_route import PATCH, RUN, lab, register
 from tests.test_process_bound_play import DISPATCHED, GAME, REUSED_PID
@@ -17,7 +17,8 @@ from tests.test_semantic_save_launch import HOUSE, OTHER, save
 
 class StartupFixture(startup_handoff.StartupBridge):
     def __init__(self):
-        self.scope = {"startup_id": "fixture-startup"}
+        self.scope = {"process": asdict(GAME), "run_id": RUN, "startup_id": "fixture-startup"}
+        self.digest = "a" * 64
         self.scene = "WORLD_MAP"
         self.household = HOUSE
         self.save = "slot:lab-006"
@@ -69,7 +70,7 @@ class StartupFixture(startup_handoff.StartupBridge):
 
 
 class StartupHandoffTests(unittest.TestCase):
-    def run_play(self, bridge, *, mode="dev"):
+    def run_play(self, bridge, *, mode="dev", fail_receipt_at=None):
         with TemporaryDirectory() as directory:
             root = Path(directory)
             context = root / "startup.json"
@@ -86,10 +87,21 @@ class StartupHandoffTests(unittest.TestCase):
             selected = {"selected_save_id": "slot:lab-006", "selected_slot": "Slot_00000006",
                         "save_registry": "registry.json", "game_version": PATCH}
             receipt = root / "launch.json"
+            write_result = launch_receipt.write_result
+
+            def write_or_fail(path, result):
+                if result["stage"] == fail_receipt_at:
+                    raise OSError("FIXTURE_RECEIPT_UNAVAILABLE")
+                write_result(path, result)
+
+            def record_dispatch(*args, **kwargs):
+                bridge.receipt_at_dispatch = json.loads(receipt.read_text())
+
             with (patch.object(smart_start, "observe_launched_process", return_value=GAME),
                   patch.object(smart_start, "require_same_game_process"),
                   patch.object(game_host, "profile", return_value=(selected, "digest")),
-                  patch.object(game_host, "navigate_startup_save") as navigate,
+                  patch.object(game_host, "navigate_startup_save", side_effect=record_dispatch) as navigate,
+                  patch.object(launch_receipt, "write_result", side_effect=write_or_fail),
                   patch.object(lab_upgrade_parts, "save_navigation_listener", return_value=nullcontext("lease")),
                   patch.object(startup_handoff, "StartupBridge", return_value=bridge)):
                 result = play.complete_play(mode, DISPATCHED, {}, context, receipt, {}, Mock())
@@ -116,6 +128,26 @@ class StartupHandoffTests(unittest.TestCase):
         result, dispatches, _ = self.run_play(bridge)
         self.assertEqual(result["reason"], "CURRENT_GAME_SAVE_CATALOG_REQUIRED")
         self.assertEqual(dispatches, 0)
+
+    def test_lost_play_ack_keeps_same_bridge_scope_before_and_after_dispatch(self):
+        bridge = StartupFixture()
+        bridge.lose_ack = "play_active_lot"
+        result, dispatches, receipt = self.run_play(bridge)
+        self.assertEqual(result["reason"], "STARTUP_EFFECT_RECONCILIATION_REQUIRED")
+        self.assertEqual(dispatches, 1)
+        binding = {"scope": bridge.scope, "sha256": bridge.digest, "catalog_capture": "capture:menu"}
+        self.assertEqual(bridge.receipt_at_dispatch["startup_binding"], binding)
+        self.assertEqual(receipt["startup_binding"], binding)
+        self.assertEqual(receipt["startup_handoff"]["pending"]["command_id"], bridge.command)
+        self.assertEqual(bridge.operations.count("play_active_lot"), 1)
+
+    def test_failed_scope_checkpoint_prevents_save_dispatch(self):
+        bridge = StartupFixture()
+        result, dispatches, receipt = self.run_play(bridge, fail_receipt_at="dev_save_dispatch")
+        self.assertEqual(result["reason"], "FIXTURE_RECEIPT_UNAVAILABLE")
+        self.assertEqual(dispatches, 0)
+        self.assertEqual(receipt["startup_binding"]["scope"], bridge.scope)
+        self.assertEqual(bridge.operations, ["capabilities", "read_save_catalog"])
 
     def test_wrong_save_or_household_never_enters_lot(self):
         for mode, field, value in (("dev", "save", "slot:wrong"), ("dev", "household", OTHER),
