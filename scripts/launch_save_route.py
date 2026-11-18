@@ -391,13 +391,14 @@ def _semantic_production(process, path, context, packet, saves):
     if decision["state"] != "OPERATOR_ATTESTED_SELECTION_ONLY":
         return {**route, "reason": "LATEST_SAVE_REQUIRES_PLAYER_LOAD"}
     return {**route, "state": "PRODUCTION_APPROVED_LATEST_CANDIDATE",
-            "successor_run_id": run}
+            "successor_run_id": run, "candidate_household_ids": [home.id for home in winner.households]}
 
 
 def route_mode(
     mode: str, process: GameProcess, context_path: Path, *,
     launch_context: Path = LOCAL_CONTEXT,
     active_map_household: bool = False, selection: dict | None = None,
+    save_catalog: dict | None = None,
 ) -> dict:
     """Resolve data and scope for a launch on the independently observed instance."""
     try:
@@ -413,10 +414,10 @@ def route_mode(
         if mode not in ("dev", "production"):
             raise SavePolicyError("UNKNOWN_STARTUP_MODE")
         run, version = context.get("run_id"), context.get("game_version")
-        if "save_catalog" in context:
+        if save_catalog is not None or "save_catalog" in context:
             if not process.game_version or process.game_version != version:
                 return _held("HOLD_GAME_BUILD", "CURRENT_EXECUTABLE_BUILD_MUST_MATCH_CALIBRATION")
-            packet = context["save_catalog"]
+            packet = save_catalog if save_catalog is not None else context["save_catalog"]
             saves = read_catalog(process, packet)
             if mode == "production":
                 return _semantic_production(process, context_path, context, packet, saves)

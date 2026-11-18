@@ -1,3 +1,10 @@
+## 2026-11-18 — Certify standard Play through native startup
+
+Bind the current Windows game build, then verify standard Play from the
+menu through save and active household readback to the installed responder's
+first decision. Exercise player takeover and the protected newest-save stop.
+See [the binding and receipt acceptance](../plans/active/BI-SEMANTIC-SAVE-LAUNCH.md#native-startup-binding).
+
 ## 2026-11-17 — Verify semantic save selection on Windows
 
 Observe the exact-build save title, household and roster, exercise the

@@ -35,8 +35,8 @@ py -3 -m scripts.play --mode dev --save-context "C:\path\to\private-dev-context.
 
 | Mode | Save target | What the current launcher can do |
 | --- | --- | --- |
-| Production | Most recently played save | Open Sims and identify the current process. Rank a complete supplied same-instance list with game-reported last-played times. Use the in-game Load Game list for the actual load while the production observer and loader are pending. |
-| Dev | Oldest authorized disposable save for the selected household and run | Reuse the existing calibrated lab navigator when the observed executable build, registry, exact candidate and active player-first listener agree. A pending certification takes precedence. Independent save and household readback remains required. |
+| Production | Most recently played save | A configured exact-build binding observes the menu. Play loads the latest calibrated, currently authorized lab candidate and checks for the active household and native responder. For a protected or unapproved newest save, Play leaves selection to the player. |
+| Dev | Oldest authorized disposable save for the selected household and roster | Play uses the same calibrated navigator, follows the bound household into Live Mode and checks for a native responder decision when the binding is configured. A pending certification takes precedence. |
 
 The dev context uses schema `betterinstincts.startup-save-context/v1` and
 `startup_mode: dev`. Supply `run_id`, `game_version`,
@@ -50,12 +50,19 @@ and provides the observed `process` from the launch receipt, source
 `IN_GAME_LAST_PLAYED`, `inventory_complete: true`, `capture_ref`,
 and `candidates` containing `save_id` and UTC `last_played_utc`.
 
+With a locally installed exact-build `native_startup` binding, Play requests
+the current menu catalog itself and continues into the active household. To
+use it from the Windows double-click launcher, place the production context at
+`%LOCALAPPDATA%\BetterInstincts\runtime\startup\production.json` or pass it
+with `--prod`. See the [startup binding and Windows trial](../plans/active/BI-SEMANTIC-SAVE-LAUNCH.md#native-startup-binding).
+
 The launcher treats a dispatch PID and a game PID independently. A
 replacement or reused PID invalidates the in-flight action. The receipt
 records the current process identity separately from any save result.
-Exit 0 for play means it preserved an existing game. Exit 2 names the
-remaining gate, including any manual save or readback step on a new
-launch. Check `launch_state` to see whether dispatch already happened.
+For a configured native startup, `NATIVE_RESPONDER_DECISION_OBSERVED` in
+`startup_handoff.state` records completion. A legacy launch can also exit 0
+when it preserves an existing session. Exit 2 names the remaining gate.
+Check `launch_state` to see whether dispatch already happened.
 Use `python -m scripts.play --plan --json` for the Docker check without
 launching Sims.
 
