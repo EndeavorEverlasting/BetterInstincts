@@ -9,7 +9,7 @@ A *seam* is an unimplemented or unbound transition from one repository capabilit
 
 1. **Detect:** Existing Play routes emit automation_gaps.
 2. **Classify:** scripts.seam_closure.identify creates a stable seam_id, capability, canonical_owner, resolution_state and effect_admission.
-3. **Persist:** scripts.launch_receipt.write_result stores the current seam in launch.json and a deduplicated occurrence in the same run's private seam-events.json. Storage is bounded at 32 events and 16 KiB; no background scanner.
+3. **Persist:** scripts.launch_receipt.write_result stores the current seam in launch.json and a deduplicated occurrence in the same run's private seam-events.json. Storage is bounded at 32 events and 32 KiB; no background scanner.
 4. **Dispatch engineering:** scripts.continue_certification.build_handoff reads the latest private Play run, includes a sanitized summary in the *existing* Codex handoff, and makes the missing owner explicit. An agent may repair and test source, but it receives no new host permission from this receipt.
 5. **Validate:** Source tests prove deterministic classification, idempotence and safety. Actual game actions still require exact-build, current process, scene, save, roster, human-control and independent outcome proof.
 6. **Register and resume:** Repair the canonical owner, add regression tests, then replay only after all existing admission checks. Reconcile in-flight purchases/acknowledgements rather than repeating effects.
