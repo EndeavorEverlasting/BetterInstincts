@@ -46,6 +46,15 @@ leaves the newest candidate for the player. The explicitly protected
 continuation slot remains unopened. Ties, wrong process, changes of exact
 build, age ambiguity and uncertain binding hold the relevant route.
 
+For the [semantic dev restock route](../../docs/handoff/BI-OLDEST-LAB-RESTOCK.md#restock-a-named-dev-save),
+use `--upgrade-parts` with an explicit private `--save-context` and the
+same title, household and roster inputs. The startup bridge supplies a fresh
+process-bound catalog through its read-only operation. The restock bridge
+checks the loaded slot and roster, fills each available Sim's inventory to
+the target and hands the session to the native responder after settlement.
+The standard semantic dev command below ends at the responder's first
+observed decision without buying parts.
+
 ## Proof and continuation
 
 Sixth Gear selected one semantic admission layer in the existing launcher.
@@ -85,7 +94,7 @@ The startup receipt and captures stay on the Windows host.
 
 | Operation | Native response |
 | --- | --- |
-| `capabilities` | `state: NATIVE_BINDING_READY` and all four operation names below. |
+| `capabilities` | `state: NATIVE_BINDING_READY` and all four operation names below for standard Play. For semantic restock, only `read_save_catalog` is required on this binding. |
 | `read_save_catalog` | Echo `observation_id`. Wait within the request deadline for the current main-menu inventory. Return `MAIN_MENU_OBSERVED` with the `catalog` described above, or `EXISTING_SESSION_IN_PROGRESS` if the attached process is already in a loaded session. |
 | `observe` | Echo `observation_id` and return a fresh `frame` with a distinct `capture`, `save_id`, `slot`, `scene`, `player_idle_verified`, and `input_generation`. Map frames provide `active_households` with household and lot IDs. `LOT_DETAILS` adds `selected_lot_id`. Live frames provide `household_id`, `lot_id`, an ordered `roster` of stable Sim IDs and `selected` Sim. Effect readbacks correlate `applied_command_id`. |
 | `open_active_lot` | Verify the exact save, source map, household, lot, current capture and player input generation. Select the active lot once. |

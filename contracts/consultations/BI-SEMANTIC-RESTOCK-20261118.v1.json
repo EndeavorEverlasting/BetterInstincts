@@ -1,0 +1,20 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SEMANTIC-RESTOCK-20261118",
+  "base_commit": "c3b8a4828d3f76fa5e8ad3c32fef9fd40b86c99e",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Compose the existing process-bound semantic save selector, per-Sim restock controller and responder handoff in one opt-in lab launch.",
+  "affected_concepts": ["SAVE_SLOT", "STARTUP_SAVE_TARGET", "GAME_PROCESS_INSTANCE", "HOUSEHOLD", "SIM_PORTRAIT", "OBSERVATION", "PLAYER_INTENT", "PROOF_RECEIPT"],
+  "relevant_canonical_owners": ["scripts/play.py", "scripts/startup_handoff.py", "scripts/launch_save_route.py", "scripts/lab_upgrade_parts.py"],
+  "invariants_checked": ["BI-ONT-001", "BI-ONT-002", "BI-ONT-003", "BI-ONT-005", "BI-ONT-006", "BI-ONT-008", "BI-ONT-010", "BI-ONT-012"],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "PROCESS_BOUND_COMPOSITION_FIXTURES_ONLY",
+  "player_save_control_impact": "Retain lab authorization and production policy. Observe menu without effects. Bind restock to the chosen slot and catalog roster before buying, and preserve an already loaded session.",
+  "expected_outcome": "The named dev target reaches the existing restock controller followed by one independently observed native responder decision.",
+  "negative_tests": ["Stale catalog, loaded existing session, wrong slot or roster, absent binding and unrecorded dispatch cannot advance effects."],
+  "rollback_path": "Revert this isolated integration. No Windows host or Sims files changed by offline implementation.",
+  "unresolved_unknowns": ["Installed Windows exact-build catalog and restock binding and live outcome."],
+  "files_expected": ["scripts/play.py", "scripts/startup_handoff.py", "scripts/lab_upgrade_parts.py", "tests/test_startup_handoff.py", "tests/test_lab_upgrade_parts.py", "tests/test_play.py", "docs/handoff/BI-OLDEST-LAB-RESTOCK.md", "plans/active/BI-SEMANTIC-SAVE-LAUNCH.md", "docs/LEDGER.md", "contracts/launch-journey.v1.json"],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}

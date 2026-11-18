@@ -176,6 +176,7 @@ def complete_play(
     from scripts.game_host import navigate_startup_save, profile
     from scripts.launch_receipt import gap, write_result
     from scripts.launch_save_route import load_context, route_mode
+    from scripts.save_catalog import read_catalog
     from scripts.smart_start import observe_launched_process, require_same_game_process
 
     result = {"toolkit": toolkit, "game": game, "save_state": "NOT_OBSERVED",
@@ -216,16 +217,15 @@ def complete_play(
             return pending("certification", "CONTINUE_ACTIVE_CERTIFICATION",
                            "Continue the active certification in the open game.",
                            "scripts/continue_certification.py")
-        if upgrade_parts:
-            return pending("existing_game", "EXISTING_SESSION_PRESERVED",
-                           "The restock launch needs a new admitted game session.",
-                           "scripts/play.py", actor="repository")
         try:
-            semantic = context_path is not None and bool(
-                {"save_catalog", "selection", "native_startup"} & load_context(context_path).keys()
-            )
+            context_keys = load_context(context_path).keys() if context_path is not None else ()
         except (ValueError, OSError):
-            semantic = False
+            context_keys = ()
+        if upgrade_parts and "native_startup" not in context_keys:
+            return pending("existing_game", "EXISTING_SESSION_PRESERVED",
+                           "Keep this session. Use the exact-build menu observer to admit an open main menu.",
+                           "scripts/play.py", actor="repository")
+        semantic = bool({"save_catalog", "selection", "native_startup"}.intersection(context_keys))
         if not semantic and not selection:
             if mode == "production" and context_path is not None:
                 result["save_route"] = route_mode(mode, process, context_path)
@@ -254,7 +254,7 @@ def complete_play(
     startup_bridge = None
     try:
         startup_context = load_context(context_path)
-        if not upgrade_parts and "native_startup" in startup_context:
+        if "native_startup" in startup_context:
             from scripts.startup_handoff import StartupBridge
 
             if (startup_context.get("schema") != "betterinstincts.startup-save-context/v1"
@@ -264,7 +264,8 @@ def complete_play(
             startup_bridge = StartupBridge(context_path, startup_context, process)
             result["startup_binding"] = {"scope": startup_bridge.scope, "sha256": startup_bridge.digest}
             write_result(receipt_path, {**receipt, **result, "stage": "startup_catalog"})
-            route_options["save_catalog"] = startup_bridge.read_save_catalog()
+            route_options["save_catalog"] = (startup_bridge.read_save_catalog(catalog_only=True)
+                                             if upgrade_parts else startup_bridge.read_save_catalog())
     except (OSError, ValueError) as exc:
         return pending("startup_catalog", str(exc),
                        "Check the current Sims session and exact-build startup observation.",
@@ -292,6 +293,8 @@ def complete_play(
                        "scripts/launch_save_route.py")
 
     dispatch_stage = "production_save_dispatch" if production_dispatch else "dev_save_dispatch"
+    catalog = route_options.get("save_catalog", startup_context.get("save_catalog"))
+    catalog_capture = catalog["capture_ref"] if route.get("semantic_catalog") else None
 
     def checkpoint(step: str) -> None:
         result["automatic_steps"].append(step)
@@ -299,7 +302,7 @@ def complete_play(
 
     try:
         context = load_context(context_path)
-        if startup_bridge is not None and context != startup_context:
+        if (startup_bridge is not None or catalog_capture is not None) and context != startup_context:
             raise ValueError("NATIVE_STARTUP_CONTEXT_CHANGED")
         profile_name = context.get("navigation_profile")
         profiles = context.get("navigation_profiles")
@@ -330,17 +333,24 @@ def complete_play(
                 return pending("native_restock_binding", str(exc),
                                "Bind the Windows EA observer and commands from the repository handoff.",
                                "scripts/lab_upgrade_parts.py", actor="repository")
+            if catalog_capture is not None:
+                result["restock_binding"] = {"scope": bridge.scope, "sha256": bridge.digest,
+                                             "catalog_capture": catalog_capture}
             listener = save_navigation_listener()
         elif startup_bridge is not None:
             from scripts.lab_upgrade_parts import save_navigation_listener
 
             listener = save_navigation_listener("native-startup-launch", note="Opt-in native startup")
-            result["startup_binding"]["catalog_capture"] = route_options["save_catalog"]["capture_ref"]
+        if startup_bridge is not None:
+            result["startup_binding"]["catalog_capture"] = catalog_capture
+        if startup_bridge is not None or catalog_capture is not None:
             write_result(receipt_path, {**receipt, **result, "stage": dispatch_stage})
         require_same_game_process(process)
         title = route.get("candidate_save_name")
         progress(f"Opening {title}." if title else "Opening the oldest eligible disposable save.")
         with listener as session_id:
+            if catalog_capture is not None:
+                read_catalog(process, catalog)
             navigate_startup_save(cfg, process, run_id=route["successor_run_id"],
                                   session_id=session_id, checkpoint=checkpoint,
                                   **({"mode": "production"} if production_dispatch else {}))
@@ -357,7 +367,7 @@ def complete_play(
 
     result["save_state"] = ("PRODUCTION_SAVE_PLAY_DISPATCHED" if production_dispatch
                             else "DEV_SAVE_PLAY_DISPATCHED")
-    if startup_bridge is not None:
+    if not upgrade_parts and startup_bridge is not None:
         from scripts.startup_handoff import continue_startup
 
         def startup_checkpoint(report):
@@ -367,8 +377,7 @@ def complete_play(
             write_result(receipt_path, {**receipt, **result, "stage": "startup_handoff"})
 
         try:
-            continue_startup(startup_bridge, route, route_options["save_catalog"]["capture_ref"],
-                             startup_checkpoint)
+            continue_startup(startup_bridge, route, catalog_capture, startup_checkpoint)
         except (OSError, ValueError, KeyError, TypeError) as exc:
             return pending("startup_handoff", str(exc),
                            "Reconcile the current save, household or responder using this launch receipt.",
@@ -387,7 +396,9 @@ def complete_play(
 
         try:
             progress("Restocking upgrade parts for each available Sim.")
-            report = run_restock(bridge, restock_checkpoint)
+            report = run_restock(bridge, restock_checkpoint, expected_slot=route.get("candidate_slot"),
+                                 expected_roster=route.get("household_member_ids", ()),
+                                 catalog_capture=catalog_capture)
         except (OSError, ValueError, KeyError, TypeError) as exc:
             if result.get("restock", {}).get("state") in ("RESTOCK_VERIFIED", "NO_AVAILABLE_PORTRAITS"):
                 return pending("native_responder_handoff", str(exc),
@@ -432,12 +443,12 @@ def main(argv: list[str] | None = None) -> int:
         ("expected_save_name", args.save_name),
         ("minimum_members", args.minimum_household_members), ("required_members", args.household_member),
     ) if value is not None}
-    if selection and (args.mode != "dev" or not args.save_context or args.upgrade_parts):
-        parser.error("household and save-name choices require --mode dev and --save-context")
     if args.upgrade_parts:
         if args.mode == "production" or args.plan or args.emit_plan:
             parser.error("--upgrade-parts requires the Windows dev play route")
         args.mode = "dev"
+    if selection and (args.mode != "dev" or not args.save_context):
+        parser.error("household and save-name choices require dev mode and --save-context")
     if args.save_context and (args.plan or args.emit_plan):
         parser.error("--save-context is for playing on the Windows host")
     if (args.mode or args.native_start) and args.plan:
@@ -459,8 +470,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if not args.plan and sys.platform != "win32":
             command = "Start-BetterInstincts.cmd --upgrade-parts" if args.upgrade_parts else WIN_COMMAND
-            raise PlayBlocked("host", "WINDOWS_GAME_HOST_REQUIRED",
-                              f"Run {command} on the PC with The Sims 4.")
+            next_step = ("Rerun this Play command with the same options on the Windows Sims host."
+                         if selection or args.save_context else f"Run {command} on the PC with The Sims 4.")
+            raise PlayBlocked("host", "WINDOWS_GAME_HOST_REQUIRED", next_step)
         if args.mode:
             from bootstrap import paths
             from scripts.launch_receipt import begin, write_result
@@ -488,11 +500,11 @@ def main(argv: list[str] | None = None) -> int:
                 receipt["checkout_head"] = args.checkout_head
             if args.checkout_head or args.upgrade_parts:
                 write_result(receipt_path, receipt)
-        docker = shutil.which("docker")
-        if docker is None and not args.native_start:
-            raise PlayBlocked("container_build", "DOCKER_NOT_FOUND",
-                              "Install or start Docker, then rerun from the BetterInstincts checkout.")
         if not args.native_start:
+            docker = shutil.which("docker")
+            if docker is None:
+                raise PlayBlocked("container_build", "DOCKER_NOT_FOUND",
+                                  "Install or start Docker, then rerun from the BetterInstincts checkout.")
             plan = docker_plan(docker, progress)
         if args.plan:
             result = {"status": "ok", "stage": "container_plan", "plan": plan,
