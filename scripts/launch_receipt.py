@@ -52,6 +52,14 @@ def has_reached_capacity(paths, limit: int) -> bool:
 
 
 def write_result(path: Path, receipt: dict) -> None:
+    # Every blocked Play gate becomes a stable, private, machine-readable seam.
+    # This only records source recovery obligations; it never grants effects.
+    if receipt.get("schema") == SCHEMA and receipt.get("status") == "blocked" and receipt.get("automation_gaps"):
+        from scripts.seam_closure import record
+
+        closure = record(path, receipt)
+        if closure is not None:
+            receipt["seam_closure"] = closure
     raw = json.dumps(receipt, sort_keys=True, indent=2) + "\n"
     if len(raw.encode("utf-8")) > LIMIT:
         raise ValueError("PLAY_RECEIPT_TOO_LARGE")
