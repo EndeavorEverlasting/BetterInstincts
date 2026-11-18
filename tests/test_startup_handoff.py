@@ -8,8 +8,9 @@ from time import time
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts import game_host, lab_upgrade_parts, launch_receipt, play, smart_start, startup_handoff
+from scripts import game_host, lab_upgrade_parts, launch_receipt, play, save_catalog, smart_start, startup_handoff
 from scripts.save_catalog import SCHEMA
+from tests.test_lab_upgrade_parts import FixtureBridge, PARTS
 from tests.test_launch_save_route import PATCH, RUN, lab, register
 from tests.test_process_bound_play import DISPATCHED, GAME, REUSED_PID
 from tests.test_semantic_save_launch import HOUSE, OTHER, save
@@ -31,17 +32,23 @@ class StartupFixture(startup_handoff.StartupBridge):
         self.frame_changes = {}
         self.lose_ack = None
         self.decision = True
+        self.catalog_only = False
+        self.session_in_progress = False
+        self.catalog_timestamp = None
 
     def exchange(self, operation, **request):
         self.operations.append(operation)
         if operation == "capabilities":
-            return {"state": "NATIVE_BINDING_READY", "operations": list(startup_handoff.OPERATIONS)}
+            return {"state": "NATIVE_BINDING_READY", "operations": (
+                ["read_save_catalog"] if self.catalog_only else list(startup_handoff.OPERATIONS))}
         if operation == "read_save_catalog":
+            if self.session_in_progress:
+                return {"state": "EXISTING_SESSION_IN_PROGRESS", "observation_id": request["observation_id"]}
             return {"state": "MAIN_MENU_OBSERVED", "observation_id": request["observation_id"],
                     "catalog": {"schema": SCHEMA, "process": asdict(self.catalog_process),
                                 "inventory_complete": True, "source": "IN_GAME_SAVE_INVENTORY",
                                 "scene": "MAIN_MENU", "capture_ref": "capture:menu",
-                                "observed_at_unix": time(), "saves": [
+                                "observed_at_unix": self.catalog_timestamp or time(), "saves": [
                                     save(4, "Older incomplete", roster=("Alpha",), played="2026-11-14T13:00:00Z"),
                                     save(6, "Chosen Lab", played="2026-11-16T13:00:00Z"),
                                 ]}}
@@ -70,7 +77,7 @@ class StartupFixture(startup_handoff.StartupBridge):
 
 
 class StartupHandoffTests(unittest.TestCase):
-    def run_play(self, bridge, *, mode="dev", fail_receipt_at=None):
+    def run_play(self, bridge, *, mode="dev", fail_receipt_at=None, restock=None, game=DISPATCHED):
         with TemporaryDirectory() as directory:
             root = Path(directory)
             context = root / "startup.json"
@@ -103,9 +110,95 @@ class StartupHandoffTests(unittest.TestCase):
                   patch.object(game_host, "navigate_startup_save", side_effect=record_dispatch) as navigate,
                   patch.object(launch_receipt, "write_result", side_effect=write_or_fail),
                   patch.object(lab_upgrade_parts, "save_navigation_listener", return_value=nullcontext("lease")),
+                  patch.object(lab_upgrade_parts, "NativeBridge", return_value=restock),
                   patch.object(startup_handoff, "StartupBridge", return_value=bridge)):
-                result = play.complete_play(mode, DISPATCHED, {}, context, receipt, {}, Mock())
+                selection = {"expected_save_name": "Chosen Lab", "required_members": ["Alpha", "Beta", "Gamma"]}
+                result = play.complete_play(mode, game, {}, context, receipt, {}, Mock(),
+                                            upgrade_parts=restock is not None,
+                                            selection=selection if restock is not None else None)
             return result, navigate.call_count, json.loads(receipt.read_text())
+
+    def semantic_restock_fixture(self):
+        catalog = StartupFixture()
+        catalog.catalog_only = True
+        restock = FixtureBridge()
+        restock.require_capabilities = Mock()
+        restock.digest = "b" * 64
+        restock.scope.update(process=asdict(GAME), run_id=RUN, save_id=catalog.save)
+        restock.frame.update(save_id=catalog.save, slot=catalog.slot, selected="sim:alpha")
+        for row, sim in zip(restock.frame["portraits"], ("sim:alpha", "sim:beta", "sim:gamma"), strict=True):
+            row["actor"] = sim
+        return catalog, restock
+
+    def test_named_restock_runs_from_catalog_through_one_responder_handoff(self):
+        catalog, restock = self.semantic_restock_fixture()
+        result, dispatches, receipt = self.run_play(catalog, restock=restock)
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(dispatches, 1)
+        self.assertEqual(catalog.operations, ["capabilities", "read_save_catalog"])
+        self.assertEqual(catalog.receipt_at_dispatch["startup_binding"]["catalog_capture"], "capture:menu")
+        self.assertEqual(catalog.receipt_at_dispatch["save_route"]["candidate_slot"], catalog.slot)
+        self.assertEqual(catalog.receipt_at_dispatch["save_route"]["candidate_save_name"], "Chosen Lab")
+        self.assertEqual(catalog.receipt_at_dispatch["restock_binding"], {
+            "scope": restock.scope, "sha256": restock.digest, "catalog_capture": "capture:menu"})
+        report = receipt["restock"]
+        self.assertEqual(report["state"], "RESTOCK_VERIFIED")
+        self.assertEqual(report["skipped"], {"sim:alpha": "AT_WORK"})
+        self.assertEqual(report["final_inventory"], dict.fromkeys(("sim:beta", "sim:gamma"), dict.fromkeys(PARTS, 99)))
+        self.assertEqual(report["handoff"]["state"], "NATIVE_RESPONDER_DECISION_OBSERVED")
+        self.assertEqual(sum(operation == "handoff_to_responder" for operation, _ in restock.effects), 1)
+
+    def test_named_restock_holds_wrong_slot_or_roster_before_portrait_effects(self):
+        for reason, changed_slot in (("RESTOCK_SLOT_DOES_NOT_MATCH_CATALOG", True),
+                                     ("RESTOCK_ROSTER_DOES_NOT_MATCH_CATALOG", False)):
+            with self.subTest(reason=reason):
+                catalog, restock = self.semantic_restock_fixture()
+                if changed_slot:
+                    restock.frame["slot"] = "Slot_00000004"
+                else:
+                    restock.frame["portraits"][-1]["actor"] = "sim:foreign"
+                result, _, _ = self.run_play(catalog, restock=restock)
+                self.assertEqual(result["reason"], reason)
+                self.assertEqual([op for op, _ in restock.effects], [] if changed_slot else [
+                    "claim_restock_control", "open_active_lot", "play_active_lot"])
+
+    def test_named_restock_preserves_existing_loaded_session(self):
+        catalog, restock = self.semantic_restock_fixture()
+        catalog.session_in_progress = True
+        existing_game = {**DISPATCHED, "state": "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH"}
+        result, dispatches, _ = self.run_play(catalog, restock=restock, game=existing_game)
+        self.assertEqual(result["reason"], "EXISTING_SESSION_PRESERVED")
+        self.assertEqual(catalog.operations, ["capabilities", "read_save_catalog"])
+        self.assertEqual(dispatches, 0)
+        self.assertEqual(restock.effects, [])
+
+    def test_named_restock_can_use_existing_main_menu(self):
+        catalog, restock = self.semantic_restock_fixture()
+        existing_game = {**DISPATCHED, "state": "GAME_ALREADY_RUNNING_NO_DUPLICATE_LAUNCH"}
+        result, dispatches, _ = self.run_play(catalog, restock=restock, game=existing_game)
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(dispatches, 1)
+
+    def test_named_restock_checkpoint_and_foreign_catalog_prevent_dispatch(self):
+        for foreign in (False, True):
+            with self.subTest(foreign=foreign):
+                catalog, restock = self.semantic_restock_fixture()
+                if foreign:
+                    catalog.catalog_process = REUSED_PID
+                result, dispatches, _ = self.run_play(catalog, restock=restock,
+                    fail_receipt_at=None if foreign else "dev_save_dispatch")
+                self.assertEqual(result["status"], "blocked")
+                self.assertEqual(dispatches, 0)
+                self.assertEqual(restock.effects, [])
+
+    def test_catalog_expiring_during_restock_capabilities_stops_save_dispatch(self):
+        catalog, restock = self.semantic_restock_fixture()
+        catalog.catalog_timestamp = time()
+        with patch.object(save_catalog, "time", side_effect=[catalog.catalog_timestamp, catalog.catalog_timestamp + 121]):
+            result, dispatches, _ = self.run_play(catalog, restock=restock)
+        self.assertEqual(result["reason"], "CURRENT_GAME_SAVE_CATALOG_REQUIRED")
+        self.assertEqual(dispatches, 0)
+        self.assertEqual(restock.effects, [])
 
     def test_both_modes_connect_current_catalog_to_native_decision(self):
         for mode in ("dev", "production"):

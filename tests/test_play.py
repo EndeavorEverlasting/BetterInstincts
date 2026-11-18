@@ -29,6 +29,22 @@ class PlayTests(unittest.TestCase):
         self.assertEqual(json.loads(text)["reason"], "WINDOWS_GAME_HOST_REQUIRED")
         which.assert_not_called()
 
+    def test_semantic_restock_cli_forwards_dev_selection(self):
+        with (tempfile.TemporaryDirectory() as tmp, patch.object(play, "play_on_windows") as host,
+              patch.object(play.shutil, "which") as which):
+            context = Path(tmp) / "startup.json"
+            context.touch()
+            host.return_value = {"status": "ok", "stage": "lab_upgrade_parts", "next_step": "verified"}
+            code, _, stderr = self.invoke(["--native-start", "--upgrade-parts", "--save-context", str(context),
+                                          "--save-name", "Fixture Lab", "--household-member", "Alpha",
+                                          "--household-member", "Beta", "--minimum-household-members", "3", "--json"])
+        self.assertEqual((code, stderr), (0, ""))
+        which.assert_not_called()
+        self.assertEqual(host.call_args.kwargs["mode"], "dev")
+        self.assertIs(host.call_args.kwargs["upgrade_parts"], True)
+        self.assertEqual(host.call_args.kwargs["selection"], {
+            "expected_save_name": "Fixture Lab", "required_members": ["Alpha", "Beta"], "minimum_members": 3})
+
     def test_plan_works_without_windows_or_git_and_never_calls_host(self):
         plan = play.startup_plan()
         with patch.object(play.shutil, "which", return_value="docker") as which, \

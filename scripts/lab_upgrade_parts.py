@@ -173,12 +173,13 @@ def _plan_portrait(frame, row, *, picker_open, cost=0, budget=0):
             "slack_minutes": plan["available_minutes"] - plan["total_upper_minutes"]}
 
 
-def run_restock(bridge, checkpoint):
+def run_restock(bridge, checkpoint, *, expected_slot=None, expected_roster=(), catalog_capture=None):
     """Drive only the selected lab scope, one verified native effect at a time."""
     parts = menu_catalog()["part_ids"]
     targets = dict.fromkeys(parts, TARGET)
     scope = bridge.scope
-    captures = set()
+    captures = {catalog_capture} if catalog_capture is not None else set()
+    expected_roster = frozenset(expected_roster)
     report = {"target_per_part": TARGET, "household_id": scope["household_id"],
               "spent": 0, "purchases": [], "pending": None,
               "planning": {"schema": PLANNING, "decisions": []}}
@@ -195,6 +196,8 @@ def run_restock(bridge, checkpoint):
         if (not isinstance(capture, str) or not CAPTURE.fullmatch(capture) or capture in captures
                 or frame.get("save_id") != scope["save_id"] or frame.get("scene") not in expected):
             raise RestockBlocked("FRESH_SAVE_AND_SCENE_READBACK_REQUIRED")
+        if expected_slot is not None and frame.get("slot") != expected_slot:
+            raise RestockBlocked("RESTOCK_SLOT_DOES_NOT_MATCH_CATALOG")
         captures.add(capture)
         return frame
 
@@ -235,10 +238,10 @@ def run_restock(bridge, checkpoint):
             raise RestockBlocked("ACTIVE_MAP_HOUSEHOLD_NOT_UNIQUE_OR_NOT_BOUND_TO_SAVE")
         return active[0]["lot_id"]
 
-    def live_roster(frame, lot):
+    def live_roster(frame, lot, *, require_paused=True):
         rows = frame.get("portraits")
         if (frame.get("household_id") != scope["household_id"] or frame.get("lot_id") != lot
-                or frame.get("paused") is not True or not isinstance(rows, list)
+                or (require_paused and frame.get("paused") is not True) or not isinstance(rows, list)
                 or not 1 <= len(rows) <= MAX_ROSTER):
             raise RestockBlocked("PAUSED_LIVE_HOUSEHOLD_READBACK_REQUIRED")
         roster = {}
@@ -250,6 +253,8 @@ def run_restock(bridge, checkpoint):
             roster[actor] = row
         if frame.get("selected") not in roster:
             raise RestockBlocked("ACTIVE_PORTRAIT_NOT_VERIFIED")
+        if expected_roster and roster.keys() != expected_roster:
+            raise RestockBlocked("RESTOCK_ROSTER_DOES_NOT_MATCH_CATALOG")
         return roster
 
     frame = observe(["WORLD_MAP", "NEIGHBORHOOD_MAP", "LOT_DETAILS"])
@@ -271,6 +276,8 @@ def run_restock(bridge, checkpoint):
     if (frame.get("household_id") != scope["household_id"] or frame.get("lot_id") != lot
             or type(frame.get("paused")) is not bool):
         raise RestockBlocked("LIVE_HOUSEHOLD_READBACK_REQUIRED")
+    if expected_roster:
+        live_roster(frame, lot, require_paused=False)
     clear_effect()
     if not frame["paused"]:
         frame = effect("pause_live", frame, ["LIVE"], lot_id=lot)

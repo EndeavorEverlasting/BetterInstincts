@@ -26,13 +26,14 @@ class StartupBridge(PinnedNativeBridge):
                          {"run_id": run, "startup_id": uuid4().hex},
                          protocol=PROTOCOL, label="STARTUP")
 
-    def read_save_catalog(self):
+    def read_save_catalog(self, *, catalog_only=False):
         capabilities = self.exchange("capabilities")
         operations = capabilities.get("operations")
+        required = {"read_save_catalog"} if catalog_only else OPERATIONS
         if (capabilities.get("state") != "NATIVE_BINDING_READY"
                 or not isinstance(operations, list)
                 or not all(isinstance(op, str) for op in operations)
-                or not OPERATIONS.issubset(operations)):
+                or not required.issubset(operations)):
             raise StartupBlocked("NATIVE_STARTUP_CAPABILITIES_INCOMPLETE")
         query = uuid4().hex
         response = self.exchange("read_save_catalog", observation_id=query)

@@ -32,6 +32,7 @@
     "agent_play": "py -3 -m scripts.play --json",
     "container_plan": "python -m scripts.play --plan --json",
     "windows_dev": "Start-BetterInstincts.cmd --dev PRIVATE_CONTEXT.json",
+    "windows_semantic_restock": "py -3 -m scripts.play --native-start --upgrade-parts --save-context PRIVATE_CONTEXT.json --save-name TITLE --json",
     "windows_production_context": "Start-BetterInstincts.cmd --prod PRIVATE_CONTEXT.json",
     "intervention": "python -m scripts.launch_receipt"
   },
@@ -98,6 +99,23 @@
       "production_context": "%LOCALAPPDATA%/BetterInstincts/runtime/startup/production.json",
       "input_authority": "EXISTING_SAVE_ADMISSION_AND_EXACT_BUILD_PLAYER_FIRST_NATIVE_EFFECTS",
       "on_uncertain_effect": "KEEP_PENDING_COMMAND_AND_OBSERVE_WITHOUT_REPLAY"
+    },
+    "semantic_restock": {
+      "owner": "scripts/lab_upgrade_parts.py",
+      "mode": "dev",
+      "catalog_operation": "read_save_catalog",
+      "binding_protocol": "betterinstincts.lab-upgrade-parts-native/v1",
+      "context_key": "native_upgrade_parts",
+      "authorization": "CURRENT_RUN_DISPOSABLE_REGISTRY_AND_CALIBRATED_SAVE_ADMISSION",
+      "readback": "INDEPENDENT_CURRENT_PROCESS_SLOT_HOUSEHOLD_AND_ROSTER",
+      "existing_loaded_game": "PRESERVE_AND_RECONCILE",
+      "terminal_proof": [
+        "RESTOCK_VERIFIED",
+        "RESPONDER_CONTROL_OBSERVED",
+        "NATIVE_RESPONDER_DECISION_OBSERVED"
+      ],
+      "no_available_portraits": "NO_AVAILABLE_PORTRAITS",
+      "on_uncertain_effect": "KEEP_PENDING_COMMAND_AND_OBSERVE_WITH_ORIGINAL_RESTOCK_BINDING"
     }
   },
   "receipts": {

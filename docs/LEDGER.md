@@ -1,3 +1,12 @@
+## 2026-11-18 — Semantic dev restock through native responder
+
+One dev launch can resolve an expected save title and roster, load the oldest
+authorized match and verify the slot and Live roster before restocking.
+The restock binding scope persists in the private receipt for read-only
+reconciliation. Source fixtures cover the composed route through the first
+native responder decision. Exact-build Windows binding and gameplay evidence
+remain pending. See the [semantic restock handoff](handoff/BI-OLDEST-LAB-RESTOCK.md#restock-a-named-dev-save).
+
 ## 2026-11-18 — Startup receipt recovery
 
 Standard Play persists the pinned bridge scope and catalog capture before save
