@@ -1,0 +1,54 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-STARTUP-RECEIPT-CLOSERS-20261118",
+  "base_commit": "9748be6011d4bd78ce89ad62b68831229b0de533",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Persist the verified startup bridge scope before save dispatch so a pending effect can be reconciled under its original startup identity.",
+  "affected_concepts": [
+    "GAME_PROCESS_INSTANCE",
+    "STARTUP_SAVE_TARGET",
+    "PROOF_RECEIPT",
+    "OBSERVATION",
+    "PLAYER_INTENT",
+    "NATIVE_RESPONDER_GAP"
+  ],
+  "relevant_canonical_owners": [
+    "scripts/play.py",
+    "scripts/startup_handoff.py",
+    "scripts/launch_receipt.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-048",
+    "BI-ONT-049",
+    "BI-ONT-052",
+    "BI-ONT-053",
+    "BI-ONT-054"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "STARTUP_RECEIPT_PERSISTENCE_AND_FIXTURES_ONLY",
+  "player_save_control_impact": "Receipt metadata only. Existing dispatch, save admission, player priority and no automatic replay continue to apply.",
+  "expected_outcome": "The local launch receipt identifies the bridge process, authorized run and startup attempt before a possible startup effect and retains them after a lost acknowledgement.",
+  "negative_tests": [
+    "A pending effect must not be replayed, and a receipt write failure must deny save dispatch."
+  ],
+  "rollback_path": "Revert the source commits. Earlier launch receipts remain readable.",
+  "unresolved_unknowns": [
+    "Local exact-build Windows Sims binding and live responder proof."
+  ],
+  "files_expected": [
+    "scripts/play.py",
+    "tests/test_startup_handoff.py",
+    "plans/active/BI-SEMANTIC-SAVE-LAUNCH.md",
+    "docs/LEDGER.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE"
+}
