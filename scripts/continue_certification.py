@@ -99,8 +99,20 @@ def build_handoff(root: Path = ROOT) -> str:
             and repeat.get("resolution_observed") is True):
         next_step = "RECONCILE_RECORDED_RESOLUTION_AND_PREFLIGHT_SUCCESSOR_HOUSEHOLD_SAVE"
     # The process observation and memo grant no screen effect or current dialog proof.
+    # Read only the bounded, app-owned Play receipt store. A blocked gate is
+    # an engineering recovery obligation, not permission to control the desktop.
+    try:
+        from bootstrap import paths as installation_paths
+        from scripts.seam_closure import latest_run_handoff
+
+        seam_closure = latest_run_handoff(installation_paths()["locks"].parent / "play-receipts")
+    except (OSError, ValueError) as error:
+        seam_closure = {"state": "PRIVATE_SEAM_RECEIPT_UNAVAILABLE",
+                        "reason_code": str(error) if str(error).isupper() else "RECOVERY_READ_FAILED",
+                        "effect_admission": "NOT_GRANTED"}
     summary = {"process_sample": process, "memo_route": memo_route,
                "historical_preference": historical_preference(root, memo),
+               "seam_closure": seam_closure,
                "next_step": next_step}
     return ("The operator launched the BetterInstincts live-certification handoff. "
             "Execute the scoped task below in this evidence checkout. "
