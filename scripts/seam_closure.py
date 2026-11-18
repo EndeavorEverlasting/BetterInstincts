@@ -151,3 +151,60 @@ def record(path: Path, receipt: dict) -> dict | None:
         "event_file": str(target), "current": observed,
         "effect_admission": "NOT_GRANTED",
     }
+
+
+def latest_run_handoff(folder: Path) -> dict:
+    """Identify the latest private Play run for an installed local agent.
+
+    Scans only the bounded, app-owned Play receipt store. The newest run may
+    supersede an earlier blocked run; never resurrect a stale gate as current.
+    The summary contains no paths, roster, slot or untrusted exception strings.
+    """
+    folder = Path(folder)
+    empty = {"schema": SCHEMA, "state": "NO_CURRENT_BLOCKED_RUN",
+             "effect_admission": "NOT_GRANTED"}
+    if not folder.exists():
+        return empty
+    if folder.is_symlink() or not folder.is_dir():
+        raise ValueError("SEAM_RUNTIME_STORE_UNSAFE")
+    candidates = []
+    entries = list(folder.iterdir())
+    if len(entries) > 128:
+        raise ValueError("SEAM_RUNTIME_STORE_FULL")
+    for directory in entries:
+        if not RUN.fullmatch(directory.name) or directory.is_symlink() or not directory.is_dir():
+            continue
+        path = directory / "launch.json"
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > 32_768:
+            continue
+        try:
+            receipt = json.loads(path.read_text(encoding="utf-8"))
+            if (not isinstance(receipt, dict)
+                    or receipt.get("schema") != "betterinstincts.play-launch-receipt/v1"
+                    or receipt.get("run_id") != directory.name):
+                continue
+            stamp = datetime.fromisoformat(receipt["started_at"])
+            if stamp.tzinfo is None:
+                continue
+            candidates.append((stamp, directory.name, receipt, path))
+        except (ValueError, KeyError, TypeError, UnicodeError):
+            continue
+    if not candidates:
+        return empty
+    _, run_id, latest, path = max(candidates, key=lambda x: (x[0], x[1]))
+    if latest.get("status") != "blocked":
+        return empty
+    events = read_events(path, run_id)
+    if not events:
+        return empty
+    return {
+        "schema": SCHEMA, "state": "BLOCKED_RUN_RECOVERABLE",
+        "run_id": run_id,
+        "stage": _safe_stage(latest.get("stage")),
+        "seams": [{key: entry[key] for key in (
+            "seam_id", "stage", "reason_code", "capability",
+            "canonical_owner", "resolution_state", "effect_admission",
+        )} for entry in events[-MAX_GAPS:]],
+        "proof_ceiling": "PRIVATE_LAUNCH_RECEIPT_ONLY_REOBSERVE_GAME_AND_SCOPE",
+        "effect_admission": "NOT_GRANTED",
+    }
