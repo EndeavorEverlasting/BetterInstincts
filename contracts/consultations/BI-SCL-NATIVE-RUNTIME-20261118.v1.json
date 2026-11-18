@@ -76,7 +76,8 @@
     "betterinstincts/runtime_seam.py",
     "betterinstincts/installed_player_runtime.py",
     "tests/test_runtime_seam.py",
-    "tests/test_installed_player_runtime.py"
+    "tests/test_installed_player_runtime.py",
+    "contracts/native-gameplay-decisions/BI-SCL-NATIVE-RUNTIME-20261118.v1.json"
   ],
   "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
   "next_gate": "Implement passive port and source regressions; exact-build host adapter and live-game installation remain gated under #171."
