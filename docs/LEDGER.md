@@ -1,3 +1,17 @@
+## 2026-11-18 — Seam Closure Loop: blocked runtime gate → durable repository capability
+
+The Play launcher now classifies automation_gaps into stable seam IDs and writes
+bounded private run events, with a sanitized latest-run summary passed to the
+existing certification agent. The operator-launched upgrade-parts product
+entrypoint prepares or reuses an isolated, clean official-main worktree instead
+of requiring manual Git worktree creation. No local agent Shell permission was
+widened, no original working tree was reset or stashed, and no protected user
+save was accessed. An absent exact-build native startup catalog/bridge still
+blocks effects; title→slot→roster and three portrait switches remain live
+unobserved. See docs/SEAM_CLOSURE.md and the consultation
+BI-SEAM-CLOSURE-LOOP-20261118. Source PR/CI and Windows game certification
+remain independent proof dimensions.
+
 ## 2026-11-18 — Semantic dev restock through native responder
 
 One dev launch can resolve an expected save title and roster, load the oldest
