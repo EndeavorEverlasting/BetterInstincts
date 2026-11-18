@@ -17,7 +17,7 @@ from uuid import uuid4
 
 SCHEMA = "betterinstincts.seam-closure/v1"
 MAX_EVENTS = 32
-MAX_BYTES = 16_384
+MAX_BYTES = 32_768
 MAX_GAPS = 8
 CODE = re.compile(r"^[A-Z][A-Z0-9_]{2,100}$")
 STAGE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
