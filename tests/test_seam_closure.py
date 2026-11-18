@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from scripts.launch_receipt import SCHEMA as LAUNCH_SCHEMA, gap, write_result
-from scripts.seam_closure import MAX_EVENTS, SCHEMA, identify, read_events
+from scripts.seam_closure import MAX_EVENTS, SCHEMA, identify, read_events, latest_run_handoff
 
 
 class SeamClosureTest(unittest.TestCase):
@@ -62,6 +62,26 @@ class SeamClosureTest(unittest.TestCase):
                                  "status": "ok", "stage": "complete", "automation_gaps": []})
         self.assertEqual(len(read_events(self.path, self.run_id)), 1)
         self.assertNotIn("seam_closure", json.loads(self.path.read_text()))
+
+
+    def test_latest_run_handoff_rehydrates_without_private_data(self):
+        older = self.blocked()
+        older["started_at"] = "2026-11-18T20:00:00+00:00"
+        write_result(self.path, older)
+        state = latest_run_handoff(Path(self.temp.name))
+        self.assertEqual(state["state"], "BLOCKED_RUN_RECOVERABLE")
+        self.assertEqual(state["seams"][0]["capability"], "PROCESS_BOUND_SAVE_CATALOG")
+        self.assertNotIn("event_file", state)
+        self.assertNotIn("Secret", json.dumps(state))
+        newer_id = "b" * 32
+        newer = Path(self.temp.name) / newer_id
+        newer.mkdir()
+        write_result(newer / "launch.json", {
+            "schema": LAUNCH_SCHEMA, "run_id": newer_id,
+            "started_at": "2026-11-18T20:01:00+00:00", "status": "ok",
+            "stage": "complete", "automation_gaps": [],
+        })
+        self.assertEqual(latest_run_handoff(Path(self.temp.name))["state"], "NO_CURRENT_BLOCKED_RUN")
 
     def test_symlink_event_store_is_denied(self):
         other = self.dir / "other.json"
