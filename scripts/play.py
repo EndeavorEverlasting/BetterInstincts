@@ -22,7 +22,7 @@ STARTUP_SOURCES = ("bootstrap.py", "scripts/play.py", "scripts/first_run.py",
                    "scripts/smart_start.py", "betterinstincts/first_run.py",
                    "scripts/game_host.py", "scripts/launch_save_route.py", "scripts/launch_receipt.py",
                    "scripts/lab_upgrade_parts.py", "scripts/save_candidate_priority.py",
-                   "scripts/save_catalog.py")
+                   "scripts/save_catalog.py", "scripts/startup_handoff.py")
 WIN_COMMAND = "py -3 -m scripts.play"
 SUCCESS_MESSAGES = {
     "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF":
@@ -222,7 +222,7 @@ def complete_play(
                            "scripts/play.py", actor="repository")
         try:
             semantic = context_path is not None and bool(
-                {"save_catalog", "selection"} & load_context(context_path).keys()
+                {"save_catalog", "selection", "native_startup"} & load_context(context_path).keys()
             )
         except (ValueError, OSError):
             semantic = False
@@ -251,6 +251,22 @@ def complete_play(
     route_options = {"active_map_household": True} if upgrade_parts else {}
     if selection:
         route_options["selection"] = selection
+    startup_bridge = None
+    try:
+        startup_context = load_context(context_path)
+        if not upgrade_parts and "native_startup" in startup_context:
+            from scripts.startup_handoff import StartupBridge
+
+            if (startup_context.get("schema") != "betterinstincts.startup-save-context/v1"
+                    or startup_context.get("startup_mode") != mode
+                    or startup_context.get("game_version") != process.game_version):
+                raise ValueError("NATIVE_STARTUP_CONTEXT_MODE_OR_BUILD_UNVERIFIED")
+            startup_bridge = StartupBridge(context_path, startup_context, process)
+            route_options["save_catalog"] = startup_bridge.read_save_catalog()
+    except (OSError, ValueError) as exc:
+        return pending("startup_catalog", str(exc),
+                       "Check the current Sims session and exact-build startup observation.",
+                       "scripts/startup_handoff.py", actor="repository")
     route = route_mode(mode, process, context_path, **route_options)
     result["save_route"] = route
     selected = route.get("candidate_save_id")
@@ -281,6 +297,8 @@ def complete_play(
 
     try:
         context = load_context(context_path)
+        if startup_bridge is not None and context != startup_context:
+            raise ValueError("NATIVE_STARTUP_CONTEXT_CHANGED")
         profile_name = context.get("navigation_profile")
         profiles = context.get("navigation_profiles")
         if isinstance(profiles, dict):
@@ -311,6 +329,10 @@ def complete_play(
                                "Bind the Windows EA observer and commands from the repository handoff.",
                                "scripts/lab_upgrade_parts.py", actor="repository")
             listener = save_navigation_listener()
+        elif startup_bridge is not None:
+            from scripts.lab_upgrade_parts import save_navigation_listener
+
+            listener = save_navigation_listener("native-startup-launch", note="Opt-in native startup")
         require_same_game_process(process)
         title = route.get("candidate_save_name")
         progress(f"Opening {title}." if title else "Opening the oldest eligible disposable save.")
@@ -331,6 +353,25 @@ def complete_play(
 
     result["save_state"] = ("PRODUCTION_SAVE_PLAY_DISPATCHED" if production_dispatch
                             else "DEV_SAVE_PLAY_DISPATCHED")
+    if startup_bridge is not None:
+        from scripts.startup_handoff import continue_startup
+
+        def startup_checkpoint(report):
+            result["startup_handoff"] = report
+            if report.get("save_readback"):
+                result["save_state"] = "SELECTED_SAVE_OBSERVED"
+            write_result(receipt_path, {**receipt, **result, "stage": "startup_handoff"})
+
+        try:
+            continue_startup(startup_bridge, route, route_options["save_catalog"]["capture_ref"],
+                             startup_checkpoint)
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            return pending("startup_handoff", str(exc),
+                           "Reconcile the current save, household or responder using this launch receipt.",
+                           "scripts/startup_handoff.py", actor="repository")
+        return {**result, "status": "ok", "stage": "complete",
+                "next_step": "The active household is in Live Mode and BetterInstincts is responding.",
+                "automation_gaps": []}
     if bridge is not None:
         from scripts.lab_upgrade_parts import run_restock
 
@@ -435,6 +476,10 @@ def main(argv: list[str] | None = None) -> int:
                 if args.save_context.is_symlink() or not args.save_context.is_file():
                     raise PlayBlocked("save_context", "LAB_RESTOCK_CONTEXT_UNAVAILABLE",
                                       "Restore the local restock binding documented in the repository handoff.")
+            elif args.mode == "production" and args.save_context is None:
+                configured = paths()["locks"].parent / "startup" / "production.json"
+                if configured.is_file() or configured.is_symlink():
+                    args.save_context = configured
             if args.checkout_head:
                 receipt["checkout_head"] = args.checkout_head
             if args.checkout_head or args.upgrade_parts:

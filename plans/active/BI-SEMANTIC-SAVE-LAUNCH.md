@@ -64,3 +64,60 @@ survives and verify the [microsystem handoff](BI-MICROSYSTEM-HANDOFF.md).
 For production, verify the newest title and independently observe the
 save that loaded. Record game dispatch, save readback, and portrait
 switch effect as separate milestones.
+
+## Native startup binding
+
+`scripts.play` can consume a fresh catalog and continue the same launch into
+Live Mode when the exact-build Windows binding is configured. Add
+`native_startup` to the private startup context with `bridge` (same-folder
+`.exe` filename), its `sha256`, exact `game_version`, and local `binding_ref`.
+Retain the current run's lab registry and calibrated chosen-save profile for
+the selected slot. The checked-in controller supplies a protocol for the
+local binding. Windows and the installed copy of The Sims 4 supply live
+evidence for that binding.
+
+The bridge accepts JSON on stdin and returns a bounded JSON response on
+stdout. Echo `protocol: betterinstincts.native-startup/v1` and `scope`
+on every response. Scope contains the full observed process identity,
+`run_id`, and a unique `startup_id`. Use exact-build, source-inspected EA
+ports, with local evidence for process attachment, observation and effects.
+The startup receipt and captures stay on the Windows host.
+
+| Operation | Native response |
+| --- | --- |
+| `capabilities` | `state: NATIVE_BINDING_READY` and all four operation names below. |
+| `read_save_catalog` | Echo `observation_id`. Wait within the request deadline for the current main-menu inventory. Return `MAIN_MENU_OBSERVED` with the `catalog` described above, or `EXISTING_SESSION_IN_PROGRESS` if the attached process is already in a loaded session. |
+| `observe` | Echo `observation_id` and return a fresh `frame` with a distinct `capture`, `save_id`, `slot`, `scene`, `player_idle_verified`, and `input_generation`. Map frames provide `active_households` with household and lot IDs. `LOT_DETAILS` adds `selected_lot_id`. Live frames provide `household_id`, `lot_id`, an ordered `roster` of stable Sim IDs and `selected` Sim. Effect readbacks correlate `applied_command_id`. |
+| `open_active_lot` | Verify the exact save, source map, household, lot, current capture and player input generation. Select the active lot once. |
+| `play_active_lot` | Check the lot card, exact household and player generation. Enter the lot once and release startup control to the installed native responder. |
+
+Before an effect, confirm fresh independent scene and idle evidence and
+atomically recheck scope and player priority at dispatch. Acknowledge with
+`command_id` and `status: APPLIED` only after an observed native effect.
+The launcher writes pending intent before dispatch and checks the matching
+transition in a subsequent observation. Keep uncertain intent for read-only
+reconciliation. A separate attempt cannot borrow the old startup ID or
+automatically replay a command. The launcher leaves an existing loaded
+session in place.
+
+The native responder observation has `behavior_owner: NATIVE_RESPONDER`,
+`playing: true`, and a `responder` with `registered: true`, the `startup_id`,
+and `entry_command_id` from the lot entry (null for direct Live Mode).
+Report `decision_state: DECISION_OBSERVED` only after the registered
+`InstalledPlayerRuntime.cycle` actually makes a normal decision in the
+startup scope. Supply its `decision_ref` and the current `decision_capture`.
+A normal decision can leave the game alone. Play independently records
+the selected save, Live household, responder control and a later decision.
+
+### Windows acceptance
+
+Start from the latest `main` on the Windows Sims host and run
+`py -3 -m scripts.play --mode dev --save-context PRIVATE_CONTEXT.json --json`.
+Use the oldest authorized matching save and the intended roster. Confirm the
+receipt reaches `NATIVE_RESPONDER_DECISION_OBSERVED` with distinct captures.
+Repeat production with an authorized newest lab candidate. Verify both
+player takeover during map entry and a production run with a protected
+newest candidate. Reconcile a pending command against the current game
+before any retry. The offline fixture for the chain is
+`python -m unittest tests.test_startup_handoff -v`. The local Windows binding,
+actual control transfer, and game callback decision require live validation.

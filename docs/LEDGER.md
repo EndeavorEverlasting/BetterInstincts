@@ -1,3 +1,11 @@
+## 2026-11-18 — Standard Play to native responder
+
+The calibrated Play route can request a fresh native save catalog, verify the
+selected save and active lot, enter Live Mode, and wait for an independently
+observed installed responder decision. The launch receipt retains uncertain
+commands. The [exact-build Windows trial](../plans/active/BI-SEMANTIC-SAVE-LAUNCH.md#native-startup-binding)
+is the next game gate.
+
 ## 2026-11-17 — Semantic household and save selection
 
 The launcher can join game-visible save titles and household rosters to

@@ -46,67 +46,76 @@ def _natural(value):
 
 
 @contextmanager
-def save_navigation_listener():
-    """Scope the existing save-menu lease to this explicit restock launch."""
+def save_navigation_listener(session_id="lab-upgrade-parts-launch", *, note="Opt-in lab upgrade-parts launch"):
+    """Scope the existing save-menu lease to one explicit launch."""
     from betterinstincts.host_listener import activate, deactivate
 
-    session_id = "lab-upgrade-parts-launch"
-    if activate(session_id, note="Opt-in lab upgrade-parts launch").get("state") != "ACTIVATED":
-        raise RestockBlocked("LAB_RESTOCK_STARTUP_LISTENER_ALREADY_ACTIVE")
+    if activate(session_id, note=note).get("state") != "ACTIVATED":
+        reason = ("LAB_RESTOCK_STARTUP_LISTENER_ALREADY_ACTIVE" if session_id == "lab-upgrade-parts-launch"
+                  else "STARTUP_LISTENER_ALREADY_ACTIVE")
+        raise RestockBlocked(reason)
     try:
         yield session_id
     finally:
         deactivate(session_id)
 
 
-class NativeBridge:
-    """A private, pinned Windows binding for independently inspected EA APIs."""
+class PinnedNativeBridge:
+    """Transport for a private, exact-build Windows binding."""
 
-    def __init__(self, context_path, context, process, route):
-        binding = context.get("native_upgrade_parts")
+    def __init__(self, context_path, binding, process, scope, *, protocol, label):
+        self.protocol = protocol
+        self.label = label
         if not isinstance(binding, dict) or not _opaque(binding.get("binding_ref")):
-            raise RestockBlocked("EXACT_BUILD_NATIVE_RESTOCK_BINDING_REQUIRED")
+            raise RestockBlocked(f"EXACT_BUILD_NATIVE_{label}_BINDING_REQUIRED")
         name, digest = binding.get("bridge"), binding.get("sha256")
         if (not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,70}\.exe", name)
                 or not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest)):
-            raise RestockBlocked("NATIVE_RESTOCK_BRIDGE_IDENTITY_INVALID")
-        if binding.get("game_version") != process.game_version:
-            raise RestockBlocked("NATIVE_RESTOCK_BINDING_BUILD_MISMATCH")
-        self.spend_cap = context.get("approved_spend_cap")
-        if not _natural(self.spend_cap):
-            raise RestockBlocked("LAB_RESTOCK_APPROVED_SPEND_CAP_REQUIRED")
+            raise RestockBlocked(f"NATIVE_{label}_BRIDGE_IDENTITY_INVALID")
+        if not process.game_version or binding.get("game_version") != process.game_version:
+            raise RestockBlocked(f"NATIVE_{label}_BINDING_BUILD_MISMATCH")
         self.path = Path(context_path).absolute().parent / name
         self.digest = digest
         self.process = process
-        self.scope = {"process": asdict(process), "run_id": route["successor_run_id"],
-                      "save_id": route["candidate_save_id"], "household_id": route["household_id"]}
+        self.scope = {"process": asdict(process), **scope}
         self._verify()
 
     def _verify(self):
         if (any(p.is_symlink() for p in (self.path, *self.path.parents))
                 or not self.path.is_file() or not 0 < self.path.stat().st_size <= 32 * 1024 * 1024):
-            raise RestockBlocked("NATIVE_RESTOCK_BRIDGE_UNAVAILABLE")
+            raise RestockBlocked(f"NATIVE_{self.label}_BRIDGE_UNAVAILABLE")
         with self.path.open("rb") as binary:
             if hashlib.file_digest(binary, "sha256").hexdigest() != self.digest:
-                raise RestockBlocked("NATIVE_RESTOCK_BRIDGE_HASH_MISMATCH")
+                raise RestockBlocked(f"NATIVE_{self.label}_BRIDGE_HASH_MISMATCH")
 
     def exchange(self, operation, **payload):
         require_same_game_process(self.process)
         self._verify()
-        request = {"protocol": PROTOCOL, "scope": self.scope, "operation": operation, **payload}
+        request = {"protocol": self.protocol, "scope": self.scope, "operation": operation, **payload}
         try:
             run = subprocess.run([str(self.path)], input=json.dumps(request), cwd=self.path.parent,
                                  encoding="utf-8", capture_output=True, timeout=35, check=True)
             if len(run.stdout) > MAX_REPLY:
-                raise RestockBlocked("NATIVE_RESTOCK_REPLY_TOO_LARGE")
+                raise RestockBlocked(f"NATIVE_{self.label}_REPLY_TOO_LARGE")
             result = json.loads(run.stdout)
         except (OSError, subprocess.SubprocessError, UnicodeError, json.JSONDecodeError) as exc:
-            raise RestockBlocked("NATIVE_RESTOCK_REPLY_UNAVAILABLE") from exc
+            raise RestockBlocked(f"NATIVE_{self.label}_REPLY_UNAVAILABLE") from exc
         require_same_game_process(self.process)
-        if (not isinstance(result, dict) or result.get("protocol") != PROTOCOL
+        if (not isinstance(result, dict) or result.get("protocol") != self.protocol
                 or result.get("scope") != self.scope):
-            raise RestockBlocked("NATIVE_RESTOCK_REPLY_SCOPE_MISMATCH")
+            raise RestockBlocked(f"NATIVE_{self.label}_REPLY_SCOPE_MISMATCH")
         return result
+
+
+class NativeBridge(PinnedNativeBridge):
+    def __init__(self, context_path, context, process, route):
+        self.spend_cap = context.get("approved_spend_cap")
+        if not _natural(self.spend_cap):
+            raise RestockBlocked("LAB_RESTOCK_APPROVED_SPEND_CAP_REQUIRED")
+        scope = {"run_id": route["successor_run_id"], "save_id": route["candidate_save_id"],
+                 "household_id": route["household_id"]}
+        super().__init__(context_path, context.get("native_upgrade_parts"), process, scope,
+                         protocol=PROTOCOL, label="RESTOCK")
 
     def require_capabilities(self):
         response = self.exchange("capabilities")

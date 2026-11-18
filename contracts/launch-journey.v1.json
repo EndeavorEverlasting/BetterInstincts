@@ -15,7 +15,11 @@
     "AUTOMATIC_LAUNCH_ADMITTED_OR_GAME_SELECTION_REQUIRED",
     "PID_OBSERVED_BY_READ_ONLY_PROCESS_INVENTORY",
     "MENU_STATE_NOT_OBSERVED_NO_AUTOMATED_SAVE",
-    "PLAYER_FIRST_SESSION_SKILL_ADVISORY"
+    "PLAYER_FIRST_SESSION_SKILL_ADVISORY",
+    "SAVE_OBSERVED",
+    "LIVE_HOUSEHOLD_OBSERVED",
+    "RESPONDER_CONTROL_OBSERVED",
+    "NATIVE_RESPONDER_DECISION_OBSERVED"
   ],
   "entrypoints": {
     "windows": "Start-BetterInstincts.cmd",
@@ -86,7 +90,15 @@
     "dispatch_pid_is_authority": false,
     "restart": "ABORT_AND_REOBSERVE_CURRENT_SCENE_AND_SAVE",
     "running_game": "PRESERVE_EXISTING_SESSION_UNLESS_FRESH_SEMANTIC_MAIN_MENU_HANDOFF",
-    "terminal_proof": "INDEPENDENT_CURRENT_INSTANCE_SAVE_AND_HOUSEHOLD_OBSERVATION"
+    "terminal_proof": "INDEPENDENT_CURRENT_INSTANCE_SAVE_HOUSEHOLD_RESPONDER_CONTROL_AND_DECISION",
+    "native_startup": {
+      "owner": "scripts/startup_handoff.py",
+      "binding_protocol": "betterinstincts.native-startup/v1",
+      "optional_context_key": "native_startup",
+      "production_context": "%LOCALAPPDATA%/BetterInstincts/runtime/startup/production.json",
+      "input_authority": "EXISTING_SAVE_ADMISSION_AND_EXACT_BUILD_PLAYER_FIRST_NATIVE_EFFECTS",
+      "on_uncertain_effect": "KEEP_PENDING_COMMAND_AND_OBSERVE_WITHOUT_REPLAY"
+    }
   },
   "receipts": {
     "owner": "scripts/launch_receipt.py",
