@@ -24,6 +24,8 @@ if not errorlevel 1 (
 )
 %PYTHON% -c "import sys;sys.exit(0 if sys.version_info >= (3,11) else 1)" >nul 2>nul
 if errorlevel 1 goto bad_python
+rem Explicitly launched restock owns safe current-main worktree preparation.
+if /I "%PLAYMODE%"=="upgrade-parts" if exist "%~dp0scripts\certification_checkout.py" goto isolated_upgrade
 if /I not "%PLAYMODE%"=="upgrade-parts" if exist "%~dp0scripts\play.py" if exist "%~dp0bootstrap.py" goto local_checkout
 where git.exe >nul 2>nul
 if errorlevel 1 goto missing_git
@@ -79,6 +81,11 @@ goto play_result
 goto play_result
 :play_upgrade_parts
 %PYTHON% -m scripts.play --native-start --mode dev --upgrade-parts --checkout-head "%CHECKOUT_HEAD%"
+goto play_result
+:isolated_upgrade
+cd /d "%~dp0"
+if errorlevel 1 goto blocked_existing
+%PYTHON% -m scripts.certification_checkout --run-play %*
 goto play_result
 :local_checkout
 cd /d "%~dp0"
