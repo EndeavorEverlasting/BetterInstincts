@@ -1,3 +1,12 @@
+## 2026-11-19 — Profile-driven Play
+
+The Windows launcher consumes the active installation profile and asks for a
+household only when the current verified catalog requires a choice or the
+player requests a change. Mode, idle interval and cheat permission share the
+existing private settings owner. The startup bridge can opt into exact native
+save and household selection. Independent Windows adapter and gameplay proof
+remain open under issue #171.
+
 ## 2026-11-18 — Seam Closure Loop: native cycle events, source-only
 
 The installed native runtime now supports an opt-in passive semantic notice

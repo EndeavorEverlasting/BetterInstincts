@@ -37,6 +37,7 @@ from betterinstincts.funds_inject import (
     subsidy_prompt,
     verify_funds_outcome,
 )
+from betterinstincts.installation_profiles import InstallationProfileError, require_cheats_enabled
 
 OUTPUT = ROOT / "dist" / "game-host"
 
@@ -287,6 +288,7 @@ def _execute_plan(
         require_execute_session(session_id, process_id)
     except HandoffError as exc:
         raise GateError(str(exc)) from exc
+    require_cheats_enabled()
 
     def verify_game_focus() -> None:
         observed = probe_windows(int(process_id))
@@ -317,11 +319,13 @@ def _execute_plan(
             if before_input is not None:
                 claim_path = before_input()  # Atomic single-use claim after admission.
             if console_open_method == "chord":
+                require_cheats_enabled()
                 effect_started = True
                 _open_console_chord()
                 time.sleep(0.55)
             for cmd in commands:
                 verify_game_focus()
+                require_cheats_enabled()
                 if verify_console_input is not None and verify_console_input() is not True:
                     raise GateError("LIVE_CONSOLE_INPUT_NOT_VERIFIED")
                 effect_started = True
@@ -413,6 +417,11 @@ def run_reserve_bailout(
             or expected_process.pid != process_id or expected_process.game_version is None
             or not callable(observe_current) or not callable(verify_console_input)):
         return {"state": "BAILOUT_LOCAL_SENSORS_REQUIRED", "dispatch_authorized": False}
+    try:
+        require_cheats_enabled()
+    except (InstallationProfileError, OSError) as exc:
+        return {"state": "BAILOUT_CHEATS_NOT_ALLOWED", "reason": str(exc),
+                "dispatch_authorized": False}
     result = dispatch_reserve_bailout(
         observation, capture_ref=capture_ref, claim_once=claim_once,
         observe_current=observe_current, submit_exact=submit_exact,

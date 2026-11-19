@@ -1,0 +1,20 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "id": "BI-PROFILE-DRIVEN-PLAY-20261119",
+  "files": [
+    {
+      "path": "betterinstincts/installation_profiles.py",
+      "route": "POLICY_ONLY",
+      "reason": "Applies locally saved preferences as additional policy gates for existing admitted ports. No new game or desktop action authority.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "reason": "Applies locally saved preferences as additional policy gates for existing admitted ports. No new game or desktop action authority.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}

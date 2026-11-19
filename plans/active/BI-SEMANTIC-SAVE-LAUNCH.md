@@ -94,11 +94,31 @@ The startup receipt and captures stay on the Windows host.
 
 | Operation | Native response |
 | --- | --- |
-| `capabilities` | `state: NATIVE_BINDING_READY` and all four operation names below for standard Play. For semantic restock, only `read_save_catalog` is required on this binding. |
+| `capabilities` | `state: NATIVE_BINDING_READY` and `read_save_catalog`, `observe`, `open_active_lot`, and `play_active_lot` for standard Play. For semantic restock, only `read_save_catalog` is required. Profile Play can use the two additional optional ports below. |
 | `read_save_catalog` | Echo `observation_id`. Wait within the request deadline for the current main-menu inventory. Return `MAIN_MENU_OBSERVED` with the `catalog` described above, or `EXISTING_SESSION_IN_PROGRESS` if the attached process is already in a loaded session. |
 | `observe` | Echo `observation_id` and return a fresh `frame` with a distinct `capture`, `save_id`, `slot`, `scene`, `player_idle_verified`, and `input_generation`. Map frames provide `active_households` with household and lot IDs. `LOT_DETAILS` adds `selected_lot_id`. Live frames provide `household_id`, `lot_id`, an ordered `roster` of stable Sim IDs and `selected` Sim. Effect readbacks correlate `applied_command_id`. |
 | `open_active_lot` | Verify the exact save, source map, household, lot, current capture and player input generation. Select the active lot once. |
 | `play_active_lot` | Check the lot card, exact household and player generation. Enter the lot once and release startup control to the installed native responder. |
+| `load_selected_save` | With the fresh main-menu `capture`, bound target, and `minimum_idle_ms`, recheck process, menu position, player-idle threshold and the exact target before issuing one native load. The first map or Live readback must correlate `applied_command_id` to this separate load command. |
+| `select_household` | Map observations add `selectable_households` with exact household and lot IDs. Recheck the map, target and input generation before selecting the one requested household. Readback must correlate the command and show that household and lot as active. |
+
+Profile Play refreshes the process-bound catalog after the chooser and
+inactivity wait. Production ranks the newest save globally and offers
+households in that save. Developer mode uses the oldest authorized disposable
+save matching the chosen household and any configured roster constraints. An
+exact household ID picked or remembered by the player supersedes an older
+household name in the private dev context. Its save-title and roster
+constraints still apply. Multiple households without a preference, or a
+remembered household missing from the catalog, open the picker. The
+existing calibrated load path remains available if the adapter lacks
+`load_selected_save`. A missing household-selection port or uncertain
+submitted effect leaves a typed hold on the current session.
+Profile-driven native effects use the shared input-owner lease and a fresh
+idle check with the chosen minimum. The adapter also receives
+`minimum_idle_ms` on each profile-driven native effect request. If a native
+load enters Live Mode directly, its command ID also anchors the responder's
+entry readback. The launch receipt carries the separate `native_save_load`
+observation and acknowledgement state.
 
 Before an effect, confirm fresh independent scene and idle evidence and
 atomically recheck scope and player priority at dispatch. Acknowledge with

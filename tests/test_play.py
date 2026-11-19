@@ -29,6 +29,22 @@ class PlayTests(unittest.TestCase):
         self.assertEqual(json.loads(text)["reason"], "WINDOWS_GAME_HOST_REQUIRED")
         which.assert_not_called()
 
+    def test_profile_entrypoint_uses_saved_mode_and_skips_container(self):
+        from betterinstincts import installation_profiles
+
+        profile = {"preferred_household_id": "household:fixture",
+                   "launch": {"mode": "dev", "idle_ms": 34000, "allow_cheats": False}}
+        with (patch.object(installation_profiles, "view", return_value=profile),
+              patch.object(play, "play_on_windows",
+                           return_value={"status": "ok", "next_step": "Observed fixture."}) as host,
+              patch.object(play.shutil, "which") as which):
+            code, _, stderr = self.invoke(["--profile-launch", "--choose-household", "--json"])
+        self.assertEqual((code, stderr), (0, ""))
+        self.assertEqual(host.call_args.kwargs["mode"], "dev")
+        self.assertIs(host.call_args.kwargs["launch_profile"], profile)
+        self.assertIs(host.call_args.kwargs["choose_household"], True)
+        which.assert_not_called()
+
     def test_semantic_restock_cli_forwards_dev_selection(self):
         with (tempfile.TemporaryDirectory() as tmp, patch.object(play, "play_on_windows") as host,
               patch.object(play.shutil, "which") as which):

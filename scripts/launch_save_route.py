@@ -360,18 +360,65 @@ def _semantic_dev(process, path, context, saves, launch_context, overrides):
             "household_member_ids": [sim_id for sim_id, _ in home.members]}
 
 
-def _semantic_production(process, path, context, packet, saves):
-    route = production_candidate(process, {
+def _rank_production_catalog(process, packet, saves):
+    return production_candidate(process, {
         **packet, "source": "IN_GAME_LAST_PLAYED", "candidates": [
             {"save_id": save.id, "last_played_utc": save.last_played} for save in saves.values()
         ],
     })
+
+
+def startup_household_choices(mode, process, packet, *, path, context):
+    """Return player-facing labels from a current catalog, restricted to the mode's scope."""
+    saves = read_catalog(process, packet)
+    if mode == "production":
+        route = _rank_production_catalog(process, packet, saves)
+        if route["state"] != "PRODUCTION_LATEST_PLAYED_CANDIDATE":
+            raise SavePolicyError(route["reason"])
+        winner = saves[route["candidate_save_id"]]
+        if winner.slot.casefold() == PROTECTED_SLOT:
+            raise SavePolicyError("LATEST_SLOT_REQUIRES_SEPARATE_AUTHORIZATION")
+        saves = {winner.id: winner}
+    elif mode == "dev":
+        registry = _startup_registry(path, context)
+        _, _, title, minimum, members = _selection(context, None)
+        choices = {}
+        for row in registry["entries"]:
+            if (not isinstance(row, dict) or row.get("classification") != "LAB_DISPOSABLE"
+                    or row.get("authorized_run_id") != context.get("run_id")
+                    or row.get("household_binding_confirmed") is not True):
+                continue
+            save_id, home_id = row.get("save_id"), row.get("household_id")
+            if not (isinstance(save_id, str) and isinstance(home_id, str) and HOUSEHOLD_ID.fullmatch(home_id)):
+                continue
+            save = saves.get(save_id)
+            if save is None or (title is not None and name_key(save.name) != name_key(title)):
+                continue
+            matching = matching_saves({save.id: save}, home_id, minimum, members)
+            if save.id in matching:
+                choices.setdefault(home_id, matching[save.id].name)
+        return choices
+    else:
+        raise SavePolicyError("UNKNOWN_STARTUP_MODE")
+    return household_choices(saves)
+
+
+def _semantic_production(process, path, context, packet, saves, selection=None):
+    route = _rank_production_catalog(process, packet, saves)
     if route["state"] != "PRODUCTION_LATEST_PLAYED_CANDIDATE":
         return route
     winner = saves[route["candidate_save_id"]]
     route.update(semantic_catalog=True, candidate_slot=winner.slot, candidate_save_name=winner.name)
     if winner.slot.casefold() == PROTECTED_SLOT:
         return {**route, "reason": "LATEST_SLOT_REQUIRES_SEPARATE_AUTHORIZATION"}
+    chosen_id = (selection or {}).get("household_id")
+    if chosen_id is not None:
+        home = next((home for home in winner.households if home.id == chosen_id), None)
+        if home is None:
+            return {**route, "state": "HOUSEHOLD_CHOICE_REQUIRED",
+                    "reason": "HOUSEHOLD_NOT_IN_LATEST_SAVE"}
+        route.update(household_id=home.id, household_name=home.name,
+                     household_member_ids=[sim_id for sim_id, _ in home.members])
     if not context.get("registry"):
         return {**route, "reason": "LATEST_SAVE_REQUIRES_PLAYER_LOAD"}
     registry = _startup_registry(path, context)
@@ -420,7 +467,7 @@ def route_mode(
             packet = save_catalog if save_catalog is not None else context["save_catalog"]
             saves = read_catalog(process, packet)
             if mode == "production":
-                return _semantic_production(process, context_path, context, packet, saves)
+                return _semantic_production(process, context_path, context, packet, saves, selection)
             return _semantic_dev(process, context_path, context, saves, launch_context, selection)
         if mode == "production":
             return production_candidate(process, context)

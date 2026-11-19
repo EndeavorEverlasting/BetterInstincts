@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from betterinstincts.installed_player_runtime import Frame, MANIFEST, start_installed
 from tests.test_activity_chain import row, route, snapshot
@@ -46,6 +46,17 @@ class InstalledRuntimeTests(unittest.TestCase):
     def event(self, kind, seq, **kwargs):
         return {"kind": kind, "sequence": seq, "run": "game-run", "household": "house-one",
                 "platform": "windows", **kwargs}
+
+    def test_saved_idle_window_reaches_native_policy(self):
+        from betterinstincts import installation_profiles
+
+        settings = self.root.parent / "settings.v1.json"
+        installation_profiles.set_launch_preferences({"idle_ms": 34000}, settings)
+        with patch.object(installation_profiles, "settings_path", return_value=settings):
+            runtime = self.start()
+        self.assertFalse(runtime._idle(self.frame(idle_seconds=33.999)))
+        self.assertTrue(runtime._idle(self.frame(idle_seconds=34)))
+        self.assertFalse(runtime._idle(self.frame(idle_seconds=60, player_active=True)))
 
     def test_restock_holds_native_decisions_until_released_and_rechecks_before_submit(self):
         self.start()

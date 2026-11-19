@@ -11,6 +11,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+from time import monotonic, sleep
 from typing import Callable
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -126,7 +127,8 @@ def play_on_windows(
     game_exe: Path | None, progress: Callable[[str], None], *,
     mode: str | None = None, save_context: Path | None = None, receipt_path: Path | None = None,
     receipt: dict | None = None, checkout: Path | None = None, upgrade_parts: bool = False,
-    selection: dict | None = None,
+    selection: dict | None = None, launch_profile: dict | None = None,
+    choose_household: bool = False,
 ) -> dict:
     from bootstrap import install, paths
     from scripts.first_run import requested_start
@@ -154,7 +156,8 @@ def play_on_windows(
 
         if mode is not None:
             return complete_play(mode, game, toolkit, save_context, receipt_path, receipt, progress,
-                                 upgrade_parts=upgrade_parts, selection=selection)
+                                 upgrade_parts=upgrade_parts, selection=selection,
+                                 launch_profile=launch_profile, choose_household=choose_household)
 
     if game["state"] in SUCCESS_MESSAGES:
         return {"status": "ok", "stage": "complete", "toolkit": toolkit, "game": game,
@@ -168,10 +171,60 @@ def play_on_windows(
 
 
 
+def profile_startup_selection(
+    mode: str, process, bridge, packet: dict, profile: dict, *, context_path: Path, context: dict,
+    force: bool, progress: Callable[[str], None],
+) -> tuple[str, dict]:
+    """Resolve the player choice, wait for handoff, then refresh before using it."""
+    from betterinstincts.control_handoff import decide
+    from betterinstincts.installation_profiles import set_preferred_household, view
+    from betterinstincts.player_presence import probe_windows
+    from scripts.instance_settings import choose_launch_household
+    from scripts.launch_save_route import startup_household_choices
+    from scripts.smart_start import require_same_game_process
+
+    choices = startup_household_choices(mode, process, packet, path=context_path, context=context)
+    if not choices:
+        raise ValueError("NO_HOUSEHOLD_IN_CURRENT_SAVE_CATALOG")
+    remembered = profile["preferred_household_id"]
+    if force or (remembered is not None and remembered not in choices) or (
+            remembered is None and len(choices) > 1):
+        chosen = choose_launch_household(choices)
+        if chosen not in choices:
+            raise ValueError("HOUSEHOLD_CHOICE_CANCELLED")
+    else:
+        chosen = remembered or next(iter(choices))
+
+    idle_ms = profile["launch"]["idle_ms"]
+    deadline = monotonic() + idle_ms / 1000 + 15
+    progress("Waiting for you to finish using the computer before continuing Play.")
+    while True:
+        require_same_game_process(process)
+        presence = decide(probe_windows(process.pid), session_active=True, idle_ms=idle_ms)
+        if presence["screen_control_allowed"]:
+            break
+        if presence["reason"] != "RECENT_HUMAN_INPUT" or monotonic() >= deadline:
+            raise ValueError("STARTUP_YIELD_TO_PLAYER:" + presence["reason"])
+        sleep(0.5)
+
+    refreshed = bridge.read_save_catalog()
+    if (refreshed.get("capture_ref") == packet.get("capture_ref")
+            or chosen not in startup_household_choices(
+                mode, process, refreshed, path=context_path, context=context)):
+        raise ValueError("CURRENT_HOUSEHOLD_CHOICE_REVALIDATION_FAILED")
+    if chosen != remembered:
+        profile = set_preferred_household(chosen, profile_id=profile["profile_id"],
+                                          expected_revision=profile["revision"])
+    if view()["revision"] != profile["revision"]:
+        raise ValueError("LAUNCH_PREFERENCES_CHANGED")
+    return chosen, refreshed
+
+
 def complete_play(
     mode: str, game: dict, toolkit: dict, context_path: Path | None,
     receipt_path: Path, receipt: dict, progress: Callable[[str], None],
     *, upgrade_parts: bool = False, selection: dict | None = None,
+    launch_profile: dict | None = None, choose_household: bool = False,
 ) -> dict:
     from scripts.game_host import navigate_startup_save, profile
     from scripts.launch_receipt import gap, write_result
@@ -226,7 +279,7 @@ def complete_play(
                            "Keep this session. Use the exact-build menu observer to admit an open main menu.",
                            "scripts/play.py", actor="repository")
         semantic = bool({"save_catalog", "selection", "native_startup"}.intersection(context_keys))
-        if not semantic and not selection:
+        if not semantic and not selection and not launch_profile:
             if mode == "production" and context_path is not None:
                 result["save_route"] = route_mode(mode, process, context_path)
             return {**result, "status": "ok", "stage": "existing_game",
@@ -240,6 +293,10 @@ def complete_play(
                        "Finish the existing certification before the oldest-save trial.",
                        "scripts/launch_save_route.py")
     if context_path is None:
+        if launch_profile:
+            return pending("save_context", "PROFILE_STARTUP_BINDING_REQUIRED",
+                           f"Keep this game open. Configure the private startup/{mode}.json binding.",
+                           "scripts/startup_handoff.py", actor="repository")
         if mode == "production":
             return pending("production_save", "LATEST_SAVE_OBSERVER_AND_LOADER_REQUIRED",
                            "Use Load Game to verify and open your most recently played save.",
@@ -254,6 +311,8 @@ def complete_play(
     startup_bridge = None
     try:
         startup_context = load_context(context_path)
+        if launch_profile and "native_startup" not in startup_context:
+            raise ValueError("PROFILE_STARTUP_BINDING_REQUIRED")
         if "native_startup" in startup_context:
             from scripts.startup_handoff import StartupBridge
 
@@ -266,7 +325,25 @@ def complete_play(
             write_result(receipt_path, {**receipt, **result, "stage": "startup_catalog"})
             route_options["save_catalog"] = (startup_bridge.read_save_catalog(catalog_only=True)
                                              if upgrade_parts else startup_bridge.read_save_catalog())
+            if launch_profile:
+                household, packet = profile_startup_selection(
+                    mode, process, startup_bridge, route_options["save_catalog"], launch_profile,
+                    context_path=context_path, context=startup_context,
+                    force=choose_household, progress=progress,
+                )
+                # The player's verified ID replaces any older household name in
+                # the private context. Title and roster constraints still apply.
+                route_options.update(save_catalog=packet,
+                                     selection={"household_id": household, "household_name": None})
     except (OSError, ValueError) as exc:
+        if launch_profile and str(exc) == "HOUSEHOLD_CHOICE_CANCELLED":
+            return pending("startup_catalog", str(exc),
+                           "Sims stays open. Use BetterInstincts Play again when you are ready to choose.",
+                           "scripts/instance_settings.py")
+        if launch_profile and str(exc) == "PROFILE_STARTUP_BINDING_REQUIRED":
+            return pending("save_context", str(exc),
+                           f"Keep this game open. Configure the private startup/{mode}.json binding.",
+                           "scripts/startup_handoff.py", actor="repository")
         return pending("startup_catalog", str(exc),
                        "Check the current Sims session and exact-build startup observation.",
                        "scripts/startup_handoff.py", actor="repository")
@@ -300,60 +377,74 @@ def complete_play(
         result["automatic_steps"].append(step)
         write_result(receipt_path, {**receipt, **result, "stage": dispatch_stage})
 
+    def native_load_checkpoint(report: dict) -> None:
+        result["native_save_load"] = report
+        write_result(receipt_path, {**receipt, **result, "stage": dispatch_stage})
+
+    native_load = None
     try:
         context = load_context(context_path)
         if (startup_bridge is not None or catalog_capture is not None) and context != startup_context:
             raise ValueError("NATIVE_STARTUP_CONTEXT_CHANGED")
-        profile_name = context.get("navigation_profile")
-        profiles = context.get("navigation_profiles")
-        if isinstance(profiles, dict):
-            profile_name = profiles.get(selected, profile_name)
-        if (not isinstance(profile_name, str) or Path(profile_name).name != profile_name
-                or not profile_name.endswith(".json")):
-            raise ValueError("CALIBRATED_DEV_PROFILE_REQUIRED")
-        p = context_path.parent / profile_name
-        if p.is_symlink() or not p.is_file() or p.stat().st_size > 16384:
-            raise ValueError("CALIBRATED_DEV_PROFILE_REQUIRED")
-        cfg, _ = profile(p, **({"mode": "production"} if production_dispatch else {}))
-        cfg["_profile_path"] = str(p.absolute())
-        if (cfg.get("selected_save_id") != selected or cfg.get("save_registry") != context.get("registry")
-                or cfg.get("game_version") != context.get("game_version")
-                or (route.get("semantic_catalog") is True and
-                    cfg.get("selected_slot") != route["candidate_slot"])):
-            raise ValueError("DEV_PROFILE_DOES_NOT_BIND_OLDEST_CANDIDATE")
         bridge = None
-        listener = nullcontext(context.get("session_id"))
-        if upgrade_parts:
-            from scripts.lab_upgrade_parts import NativeBridge, save_navigation_listener
+        if (launch_profile and startup_bridge
+                and "load_selected_save" in startup_bridge.supported_operations):
+            from scripts.startup_handoff import dispatch_profile_save
 
-            try:
-                bridge = NativeBridge(context_path, context, process, route)
-                bridge.require_capabilities()
-            except (OSError, ValueError) as exc:
-                return pending("native_restock_binding", str(exc),
-                               "Bind the Windows EA observer and commands from the repository handoff.",
-                               "scripts/lab_upgrade_parts.py", actor="repository")
-            if catalog_capture is not None:
-                result["restock_binding"] = {"scope": bridge.scope, "sha256": bridge.digest,
-                                             "catalog_capture": catalog_capture}
-            listener = save_navigation_listener()
-        elif startup_bridge is not None:
-            from scripts.lab_upgrade_parts import save_navigation_listener
-
-            listener = save_navigation_listener("native-startup-launch", note="Opt-in native startup")
-        if startup_bridge is not None:
             result["startup_binding"]["catalog_capture"] = catalog_capture
-        if startup_bridge is not None or catalog_capture is not None:
-            write_result(receipt_path, {**receipt, **result, "stage": dispatch_stage})
-        require_same_game_process(process)
-        title = route.get("candidate_save_name")
-        progress(f"Opening {title}." if title else "Opening the oldest eligible disposable save.")
-        with listener as session_id:
-            if catalog_capture is not None:
-                read_catalog(process, catalog)
-            navigate_startup_save(cfg, process, run_id=route["successor_run_id"],
-                                  session_id=session_id, checkpoint=checkpoint,
-                                  **({"mode": "production"} if production_dispatch else {}))
+            native_load = dispatch_profile_save(
+                startup_bridge, process, route, catalog, launch_profile["launch"]["idle_ms"], native_load_checkpoint)
+        else:
+            profile_name = context.get("navigation_profile")
+            profiles = context.get("navigation_profiles")
+            if isinstance(profiles, dict):
+                profile_name = profiles.get(selected, profile_name)
+            if (not isinstance(profile_name, str) or Path(profile_name).name != profile_name
+                    or not profile_name.endswith(".json")):
+                raise ValueError("CALIBRATED_DEV_PROFILE_REQUIRED")
+            p = context_path.parent / profile_name
+            if p.is_symlink() or not p.is_file() or p.stat().st_size > 16384:
+                raise ValueError("CALIBRATED_DEV_PROFILE_REQUIRED")
+            cfg, _ = profile(p, **({"mode": "production"} if production_dispatch else {}))
+            cfg["_profile_path"] = str(p.absolute())
+            if (cfg.get("selected_save_id") != selected or cfg.get("save_registry") != context.get("registry")
+                    or cfg.get("game_version") != context.get("game_version")
+                    or (route.get("semantic_catalog") is True and
+                        cfg.get("selected_slot") != route["candidate_slot"])):
+                raise ValueError("DEV_PROFILE_DOES_NOT_BIND_OLDEST_CANDIDATE")
+            listener = nullcontext(context.get("session_id"))
+            if upgrade_parts:
+                from scripts.lab_upgrade_parts import NativeBridge, save_navigation_listener
+
+                try:
+                    bridge = NativeBridge(context_path, context, process, route)
+                    bridge.require_capabilities()
+                except (OSError, ValueError) as exc:
+                    return pending("native_restock_binding", str(exc),
+                                   "Bind the Windows EA observer and commands from the repository handoff.",
+                                   "scripts/lab_upgrade_parts.py", actor="repository")
+                if catalog_capture is not None:
+                    result["restock_binding"] = {"scope": bridge.scope, "sha256": bridge.digest,
+                                                 "catalog_capture": catalog_capture}
+                listener = save_navigation_listener()
+            elif startup_bridge is not None:
+                from scripts.lab_upgrade_parts import save_navigation_listener
+
+                listener = save_navigation_listener("native-startup-launch", note="Opt-in native startup")
+            if startup_bridge is not None:
+                result["startup_binding"]["catalog_capture"] = catalog_capture
+            if startup_bridge is not None or catalog_capture is not None:
+                write_result(receipt_path, {**receipt, **result, "stage": dispatch_stage})
+            require_same_game_process(process)
+            title = route.get("candidate_save_name")
+            progress(f"Opening {title}." if title else "Opening the oldest eligible disposable save.")
+            with listener as session_id:
+                if catalog_capture is not None:
+                    read_catalog(process, catalog)
+                navigate_startup_save(cfg, process, run_id=route["successor_run_id"],
+                                      session_id=session_id, checkpoint=checkpoint,
+                                      **({"idle_ms": launch_profile["launch"]["idle_ms"]} if launch_profile else {}),
+                                      **({"mode": "production"} if production_dispatch else {}))
         require_same_game_process(process)
     except (OSError, ValueError, TypeError, KeyError) as exc:
         unchanged = not result["automatic_steps"]
@@ -374,10 +465,15 @@ def complete_play(
             result["startup_handoff"] = report
             if report.get("save_readback"):
                 result["save_state"] = "SELECTED_SAVE_OBSERVED"
+                if native_load:
+                    result["native_save_load"].update(state="OBSERVED", capture=report["save_readback"])
             write_result(receipt_path, {**receipt, **result, "stage": "startup_handoff"})
 
         try:
-            continue_startup(startup_bridge, route, catalog_capture, startup_checkpoint)
+            continue_startup(startup_bridge, route, catalog_capture, startup_checkpoint,
+                             **({"profile_idle_ms": launch_profile["launch"]["idle_ms"],
+                                 "expected_load_command": native_load}
+                                if launch_profile else {}))
         except (OSError, ValueError, KeyError, TypeError) as exc:
             return pending("startup_handoff", str(exc),
                            "Reconcile the current save, household or responder using this launch receipt.",
@@ -433,6 +529,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--minimum-household-members", type=int, help="Minimum roster size in dev mode")
     parser.add_argument("--household-member", action="append", help="Required Sim name, repeatable")
     parser.add_argument("--native-start", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--profile-launch", action="store_true",
+                        help="Use the current BetterInstincts profile and household picker")
+    parser.add_argument("--choose-household", action="store_true",
+                        help="Choose a different household from the current game catalog")
     parser.add_argument("--checkout-head", help=argparse.SUPPRESS)
     parser.add_argument("--json", action="store_true", help="Return one JSON result without prompts")
     args = parser.parse_args(argv)
@@ -443,6 +543,12 @@ def main(argv: list[str] | None = None) -> int:
         ("expected_save_name", args.save_name),
         ("minimum_members", args.minimum_household_members), ("required_members", args.household_member),
     ) if value is not None}
+    if args.choose_household and not args.profile_launch:
+        parser.error("--choose-household requires --profile-launch")
+    if args.profile_launch:
+        if args.mode or selection or args.upgrade_parts or args.plan or args.emit_plan:
+            parser.error("--profile-launch owns mode and household selection")
+        args.native_start = True
     if args.upgrade_parts:
         if args.mode == "production" or args.plan or args.emit_plan:
             parser.error("--upgrade-parts requires the Windows dev play route")
@@ -466,13 +572,19 @@ def main(argv: list[str] | None = None) -> int:
             print(message, flush=True)
 
     progress("Welcome to BetterInstincts.")
-    receipt_path, receipt = None, None
+    receipt_path, receipt, launch_profile = None, None, None
     try:
         if not args.plan and sys.platform != "win32":
-            command = "Start-BetterInstincts.cmd --upgrade-parts" if args.upgrade_parts else WIN_COMMAND
+            command = ("Start-BetterInstincts.cmd --upgrade-parts" if args.upgrade_parts else
+                       "Start-BetterInstincts.cmd" if args.profile_launch else WIN_COMMAND)
             next_step = ("Rerun this Play command with the same options on the Windows Sims host."
                          if selection or args.save_context else f"Run {command} on the PC with The Sims 4.")
             raise PlayBlocked("host", "WINDOWS_GAME_HOST_REQUIRED", next_step)
+        if args.profile_launch:
+            from betterinstincts.installation_profiles import view
+
+            launch_profile = view()
+            args.mode = launch_profile["launch"]["mode"]
         if args.mode:
             from bootstrap import paths
             from scripts.launch_receipt import begin, write_result
@@ -492,10 +604,15 @@ def main(argv: list[str] | None = None) -> int:
                 if args.save_context.is_symlink() or not args.save_context.is_file():
                     raise PlayBlocked("save_context", "LAB_RESTOCK_CONTEXT_UNAVAILABLE",
                                       "Restore the local restock binding documented in the repository handoff.")
-            elif args.mode == "production" and args.save_context is None:
-                configured = paths()["locks"].parent / "startup" / "production.json"
+            elif (launch_profile or args.mode == "production") and args.save_context is None:
+                runtime = paths()["locks"].parent
+                configured = runtime / "startup" / (args.mode + ".json")
                 if configured.is_file() or configured.is_symlink():
                     args.save_context = configured
+                elif launch_profile and args.mode == "dev":
+                    existing_lab = runtime / "lab-upgrade-parts" / "startup.json"
+                    if existing_lab.is_file() or existing_lab.is_symlink():
+                        args.save_context = existing_lab
             if args.checkout_head:
                 receipt["checkout_head"] = args.checkout_head
             if args.checkout_head or args.upgrade_parts:
@@ -513,6 +630,8 @@ def main(argv: list[str] | None = None) -> int:
             result = play_on_windows(args.game_exe, progress, mode=args.mode, receipt=receipt,
                                      save_context=args.save_context, receipt_path=receipt_path, checkout=ROOT,
                                      **({"upgrade_parts": True} if args.upgrade_parts else {}),
+                                     **({"launch_profile": launch_profile, "choose_household": args.choose_household}
+                                        if launch_profile else {}),
                                      **({"selection": selection} if selection else {}))
     except (PlayBlocked, OSError, ValueError) as exc:
         if not isinstance(exc, PlayBlocked):
