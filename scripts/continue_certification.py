@@ -116,6 +116,7 @@ def build_handoff(root: Path = ROOT) -> str:
                "next_step": next_step}
     return ("The operator launched the BetterInstincts live-certification handoff. "
             "Execute the scoped task below in this evidence checkout. "
+            "Carry out the current seam work order when present while preserving the certification next step. "
             "Compare the current PID, creation time and executable with this startup observation before any live action. "
             "A replacement process requires fresh save and scene observation. Startup observation: "
             + json.dumps(summary, sort_keys=True) + "\n\n"

@@ -2519,3 +2519,11 @@ requirements and overlapping samples before a switch or queue submission.
 Offline tests exercise both native callback paths and independent outcome
 reconciliation. The exact-build v2 producer and live proof remain under
 [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+
+## 2026-11-19 — Current Play seams become Codex work orders
+
+The selected blocked launch now identifies one current recovery action with
+its source owner and regression command where source work applies. See the
+[certification handoff](LIVE_CERTIFICATION_HANDOFF.md#execute-the-current-seam-work-order).
+Source proof comes from existing offline CI. Installed Windows and live
+Sims proof remain under [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).

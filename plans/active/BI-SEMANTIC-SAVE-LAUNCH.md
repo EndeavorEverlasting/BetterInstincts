@@ -189,3 +189,12 @@ newest candidate. Reconcile a pending command against the current game
 before any retry. The offline fixture for the chain is
 `python -m unittest tests.test_startup_handoff -v`. The local Windows binding,
 actual control transfer, and game callback decision require live validation.
+
+## Current seam recovery
+
+When Play stops, continue from the latest correlated primary failure in the
+[Codex work order](../../docs/LIVE_CERTIFICATION_HANDOFF.md#execute-the-current-seam-work-order).
+Complete authorized source work and its exact-head CI checks before live
+certification of the changed path. Reconcile any attempted save load before
+another input. A current native binding and protected control remain required
+for the Windows proof.

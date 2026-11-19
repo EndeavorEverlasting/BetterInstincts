@@ -489,3 +489,12 @@ EA events and record installed activation, independent per-action outcomes,
 player takeover, restart recovery and rollback. Follow the
 [active runtime sprint](../plans/active/BI-PS0241-ACTIVITY-RUNTIME.md).
 This is a sibling of BI-002 and the existing restock, ecology, needs and income lanes.
+
+## 2026-11-19 — Certify the local seam recovery loop
+
+On the authorized Windows Sims checkout, trigger a known missing-tool gate
+through Play and load its work order in local Codex. Bind the exact candidate,
+verify that Codex recovers or implements the operation, and capture independent
+outcome and protected-session evidence. Use the
+[certification handoff](LIVE_CERTIFICATION_HANDOFF.md#execute-the-current-seam-work-order)
+and record the host gate under [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).

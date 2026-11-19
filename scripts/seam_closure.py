@@ -33,6 +33,7 @@ ROUTES = {
     "save_context": ("PRIVATE_STARTUP_CONTEXT", "scripts/startup_handoff.py", "HOST_BINDING_REQUIRED"),
     "startup_catalog": ("PROCESS_BOUND_SAVE_CATALOG", "scripts/startup_handoff.py", "HOST_OBSERVATION_REQUIRED"),
     "dev_save_candidate": ("AUTHORIZED_LAB_REGISTRY", "scripts/launch_save_route.py", "PRIVATE_EVIDENCE_REQUIRED"),
+    "production_save": ("LATEST_SAVE_BINDING", "scripts/launch_save_route.py", "HOST_BINDING_REQUIRED"),
     "dev_calibration": ("EXACT_SLOT_MENU_CALIBRATION", "scripts/game_host.py", "HOST_OBSERVATION_REQUIRED"),
     "game_process": ("EXISTING_GAME_PROCESS", "scripts/smart_start.py", "HOST_OBSERVATION_REQUIRED"),
     "existing_game": ("PRESERVE_EXISTING_SESSION", "scripts/play.py", "HOST_OBSERVATION_REQUIRED"),
@@ -41,6 +42,8 @@ ROUTES = {
     "native_responder_handoff": ("NATIVE_RESPONDER_OUTCOME", "scripts/lab_upgrade_parts.py", "OBSERVE_BEFORE_RETRY"),
     "startup_handoff": ("STARTUP_RESPONDER_OUTCOME", "scripts/startup_handoff.py", "OBSERVE_BEFORE_RETRY"),
     "dev_save_dispatch": ("CURRENT_GAME_SAVE_IDENTITY", "scripts/game_host.py", "OBSERVE_BEFORE_RETRY"),
+    "production_save_dispatch": ("CURRENT_GAME_SAVE_IDENTITY", "scripts/game_host.py", "OBSERVE_BEFORE_RETRY"),
+    "save_readback": ("CURRENT_GAME_SAVE_IDENTITY", "scripts/game_host.py", "OBSERVE_BEFORE_RETRY"),
     "certification": ("ACTIVE_CERTIFICATION_CONTINUATION", "scripts/continue_certification.py", "PRESERVE_ACTIVE_SESSION"),
     "receipt": ("PRIVATE_RECEIPT_RECOVERY", "scripts/launch_receipt.py", "PRIVATE_STORAGE_REQUIRED"),
 }
@@ -49,6 +52,34 @@ POLICY_DENIALS = frozenset({
     "OPERATOR_DESKTOP_BOUNDARY", "UNADMITTED_DESKTOP_SHELL",
     "PROTECTED_SLOT", "CONTROL_PERMIT_DENIED",
 })
+CHOICE_GATES = {
+    ("startup_catalog", "HOUSEHOLD_CHOICE_CANCELLED"),
+    ("startup_catalog", "LATEST_SLOT_REQUIRES_SEPARATE_AUTHORIZATION"),
+    ("dev_save_candidate", "HOUSEHOLD_NAME_MISSING_OR_AMBIGUOUS"),
+    ("dev_save_candidate", "SLOT_REQUIRES_SEPARATE_AUTHORIZATION"),
+    ("production_save", "LATEST_SLOT_REQUIRES_SEPARATE_AUTHORIZATION"),
+    ("production_save", "HOUSEHOLD_NOT_IN_LATEST_SAVE"),
+}
+RESTOCK_TOOL_GAPS = {
+    "NATIVE_RESTOCK_PLANNING_EVIDENCE_CAPABILITY_REQUIRED",
+    "NATIVE_RESPONDER_HANDOFF_CAPABILITY_REQUIRED",
+}
+RECOVERY_ACTIONS = {
+    "IMPLEMENTATION_REQUIRED": "TRACE_UNREGISTERED_GATE",
+    "IMPLEMENTATION_OR_HOST_PROOF_REQUIRED": "RECOVER_HOST_BINDING",
+    "HOST_BINDING_REQUIRED": "RECOVER_HOST_BINDING",
+    "HOST_OBSERVATION_REQUIRED": "OBSERVE_CURRENT_HOST",
+    "HOST_RUNNER_REQUIRED": "RECOVER_HOST_RUNNER",
+    "POLICY_OR_HOST_HOLD": "RECOVER_ADMITTED_HOST_CONTEXT",
+    "PRIVATE_EVIDENCE_REQUIRED": "RECOVER_PRIVATE_EVIDENCE",
+    "PRIVATE_STORAGE_REQUIRED": "RECOVER_PRIVATE_RECEIPT",
+    "OBSERVE_BEFORE_RETRY": "RECONCILE_IN_FLIGHT_EFFECT",
+    "PRESERVE_ACTIVE_SESSION": "CONTINUE_EXISTING_CERTIFICATION",
+    "PLAYER_DECISION_REQUIRED": "WAIT_FOR_PLAYER_DECISION",
+    "PLAYER_LOAD_REQUIRED": "WAIT_FOR_AUTHORIZED_PLAYER_LOAD",
+    "POLICY_HOLD": "PRESERVE_POLICY_HOLD",
+}
+VERIFY_RECOVERY = "python -m unittest tests.test_seam_closure tests.test_continue_certification -v"
 
 
 def _reason_code(value: object) -> str:
@@ -70,6 +101,10 @@ def identify(gap: dict, run_id: str) -> dict:
     route = ROUTES.get(stage)
     if reason_code in POLICY_DENIALS:
         capability, handler, state = "EXPLICIT_DESKTOP_AUTHORITY", None, "POLICY_HOLD"
+    elif (stage, reason_code) in CHOICE_GATES:
+        capability, handler, state = "PLAYER_DECISION", None, "PLAYER_DECISION_REQUIRED"
+    elif (stage, reason_code) == ("production_save", "LATEST_SAVE_REQUIRES_PLAYER_LOAD"):
+        capability, handler, state = "PLAYER_SAVE_LOAD", None, "PLAYER_LOAD_REQUIRED"
     elif route is None:
         capability, handler, state = "UNREGISTERED_SEAM", None, "IMPLEMENTATION_REQUIRED"
     else:
@@ -83,6 +118,39 @@ def identify(gap: dict, run_id: str) -> dict:
         "resolution_state": state,
         "effect_admission": "NOT_GRANTED",
         "proof_ceiling": "CLASSIFIED_REPOSITORY_GATE_NOT_GAME_OBSERVATION",
+    }
+
+
+def _current_work_order(launch: dict, run_id: str) -> dict | None:
+    """Use the final blocked result's primary gap, never a past event row."""
+    gaps = launch.get("automation_gaps")
+    stage, reason = launch.get("stage"), launch.get("reason")
+    if not isinstance(gaps, list) or len(gaps) > MAX_GAPS or not isinstance(reason, str):
+        return None
+    current = [gap for gap in gaps if isinstance(gap, dict)
+               and (gap.get("stage"), gap.get("reason")) == (stage, reason)]
+    if not current:
+        return None
+    seam = identify(current[0], run_id)
+    resolution = seam["resolution_state"]
+    action = RECOVERY_ACTIONS[resolution]
+    if stage == "native_restock_binding" and reason in RESTOCK_TOOL_GAPS:
+        action = "VERIFY_AND_IMPLEMENT_MISSING_TOOL"
+    if resolution in {"POLICY_HOLD", "PLAYER_DECISION_REQUIRED", "PLAYER_LOAD_REQUIRED"}:
+        owner = None
+    elif resolution == "IMPLEMENTATION_REQUIRED":
+        owner = "scripts/seam_closure.py"
+    else:
+        owner = seam["canonical_owner"]
+    return {
+        "seam_id": seam["seam_id"],
+        "stage": seam["stage"],
+        "reason_code": seam["reason_code"],
+        "action": action,
+        "source_owner": owner,
+        "regression_command": VERIFY_RECOVERY if owner else None,
+        "effect_admission": "NOT_GRANTED",
+        "proof_ceiling": "CURRENT_LAUNCH_FAILURE_ONLY",
     }
 
 
@@ -289,6 +357,7 @@ def latest_run_handoff(folder: Path) -> dict:
         "schema": SCHEMA, "state": "BLOCKED_RUN_RECOVERABLE",
         "run_id": run_id,
         "stage": _safe_stage(latest.get("stage")),
+        "work_order": _current_work_order(latest, run_id),
         "seams": [{key: entry[key] for key in (
             "seam_id", "stage", "reason_code", "capability",
             "canonical_owner", "resolution_state", "effect_admission",
