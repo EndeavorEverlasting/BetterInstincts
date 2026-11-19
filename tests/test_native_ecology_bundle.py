@@ -337,9 +337,6 @@ assert PreferenceResponsePort().respond(enabled=True)["state"] == "NATIVE_ADAPTE
             self.build()
 
 
-if __name__ == "__main__":
-    unittest.main()
-
     def test_microsystem_bundle_requires_proof_and_imports_with_portrait_dependency(self):
         options = dict(python37=self.py37, source_path=self.source, hook_proof_path=self.proof,
                        output_dir=self.output, game_build=BUILD, installed_player_runtime=True,
@@ -361,12 +358,19 @@ if __name__ == "__main__":
                                                   MICROSYSTEM_MEMBER])
         installed = install_package(mods_dir=self.mod_dir, package_path=Path(built["package"]),
                                     manifest_path=Path(built["manifest"]), game_closed_confirmed=True)
+        runtime_contract = Path(__file__).resolve().parents[1] / "contracts/native-ecology-runtime.v1.json"
+        schema = json.loads(runtime_contract.read_text(encoding="utf-8"))["microsystem_handoff"]["packet"]
         result = subprocess.run(
             [sys.executable, "-I", "-c",
              "import sys; sys.path.insert(0, sys.argv[1]);"
-             "from betterinstincts.microsystem_handoff import PRIORITY;"
-             "assert PRIORITY == ('NEEDS', 'CAREER', 'CONTINGENCIES', 'SKILLS')",
-             installed["installed"]],
+             "from betterinstincts.microsystem_handoff import PRIORITY, SCHEMA;"
+             "assert PRIORITY == ('NEEDS', 'CAREER', 'CONTINGENCIES', 'SKILLS');"
+             "assert SCHEMA == sys.argv[2]",
+             installed["installed"], schema],
             cwd=self.root, capture_output=True, text=True, timeout=10,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
+
+
+if __name__ == "__main__":
+    unittest.main()

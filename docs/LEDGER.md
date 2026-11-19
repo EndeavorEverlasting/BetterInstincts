@@ -2490,3 +2490,14 @@ observed ownership and the first actual responder decision. The
 [canonical Windows handoff](handoff/BI-OLDEST-LAB-RESTOCK.md) carries the
 bridge contract and live acceptance. Exact-build gameplay remains unobserved
 in the offline fixtures.
+
+## 2026-11-19 — Active Portraits task evidence readiness
+
+The [installed microsystem handoff](../plans/active/BI-MICROSYSTEM-HANDOFF.md#evidence-readiness)
+classifies empty, partial and mature task evidence in the optional v2
+adapter. A held task cannot rank for queue work or clear its tier. Other
+qualified portraits can proceed. The second capture rechecks maturity,
+requirements and overlapping samples before a switch or queue submission.
+Offline tests exercise both native callback paths and independent outcome
+reconciliation. The exact-build v2 producer and live proof remain under
+[#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
