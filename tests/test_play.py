@@ -100,6 +100,13 @@ class PlayTests(unittest.TestCase):
                                        image])
         self.assertEqual(set(expected["sources"]), set(play.STARTUP_SOURCES))
 
+    def test_docker_context_is_the_exact_startup_source_allowlist(self):
+        rules = [line for line in (play.ROOT / ".dockerignore").read_text().splitlines()
+                 if line and not line.startswith("#")]
+        self.assertEqual(rules[0], "**")
+        self.assertCountEqual(rules[1:], ["!Dockerfile", "!.dockerignore",
+                                         *(f"!{path}" for path in play.STARTUP_SOURCES)])
+
     def test_altered_container_plan_never_reaches_host(self):
         def docker(command, **kwargs):
             wrong = play.startup_plan()

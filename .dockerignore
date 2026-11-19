@@ -2,9 +2,14 @@
 !Dockerfile
 !.dockerignore
 !bootstrap.py
-!scripts/
 !scripts/play.py
 !scripts/first_run.py
 !scripts/smart_start.py
-!betterinstincts/
+!scripts/game_host.py
+!scripts/launch_save_route.py
+!scripts/launch_receipt.py
+!scripts/lab_upgrade_parts.py
+!scripts/save_candidate_priority.py
+!scripts/save_catalog.py
+!scripts/startup_handoff.py
 !betterinstincts/first_run.py
