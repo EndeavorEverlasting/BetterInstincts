@@ -1,5 +1,10 @@
 ## 2026-11-19 — Seam Closure Loop closeout repairs
 
+PR #322 review follow-up preserves the original blocked launch result if the
+event store stays busy. The host can reconcile the pending event from the
+same receipt without replaying Play. The contention regression confirms the
+native writer met the held OS lock before startup releases it.
+
 The native ecology builder packages the runtime notice module for an
 explicitly bound seam adapter. The standalone archive regression invokes
 the registered callback outside the checkout. Startup and runtime writers

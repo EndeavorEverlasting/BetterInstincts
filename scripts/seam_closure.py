@@ -24,6 +24,8 @@ MAX_EVENTS = 32
 MAX_BYTES = 32_768
 MAX_GAPS = 8
 EVENT_LOCK_TIMEOUT = 2.0
+EVENT_APPEND_PENDING = "EVENT_APPEND_PENDING"
+EVENT_STORE_BUSY = "SEAM_RECEIPT_STORE_BUSY_RETRY"
 CODE = re.compile(r"^[A-Z][A-Z0-9_]{2,100}$")
 STAGE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 OWNER = re.compile(r"^(?:scripts|betterinstincts)/[A-Za-z0-9_/-]+\.py$|^Start-BetterInstincts\.cmd$")
@@ -54,6 +56,10 @@ POLICY_DENIALS = frozenset({
     "OPERATOR_DESKTOP_BOUNDARY", "UNADMITTED_DESKTOP_SHELL",
     "PROTECTED_SLOT", "CONTROL_PERMIT_DENIED",
 })
+
+
+class EventStoreBusy(ValueError):
+    """The bounded per-run writer lock could not be acquired."""
 
 
 def _reason_code(value: object) -> str:
@@ -157,14 +163,14 @@ def _event_writer_lock(target: Path):
                 if error.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK):
                     raise
                 if monotonic() >= deadline:
-                    raise ValueError("SEAM_RECEIPT_STORE_BUSY_RETRY") from error
+                    raise EventStoreBusy(EVENT_STORE_BUSY) from error
                 sleep(0.02)
         yield
     finally:
         os.close(fd)
 
 
-def _append_events(path: Path, run_id: str, observed: list[dict]) -> int:
+def _append_events(path: Path, run_id: str, observed: list[dict], *, observed_at: str | None = None) -> int:
     target = _event_file(path, run_id)
     with _event_writer_lock(target):
         if target.is_symlink():
@@ -177,7 +183,7 @@ def _append_events(path: Path, run_id: str, observed: list[dict]) -> int:
             if key not in known:
                 if len(events) >= MAX_EVENTS:
                     raise ValueError("SEAM_RECEIPT_STORE_FULL")
-                event["observed_at"] = datetime.now(timezone.utc).isoformat()
+                event["observed_at"] = observed_at or datetime.now(timezone.utc).isoformat()
                 events.append(event)
                 known.add(key)
         if len(events) != original_count:
@@ -185,7 +191,14 @@ def _append_events(path: Path, run_id: str, observed: list[dict]) -> int:
         return len(events)
 
 
-def record(path: Path, receipt: dict) -> dict | None:
+def _identify_gaps(receipt: dict, run_id: str) -> list[dict]:
+    gaps = receipt.get("automation_gaps")
+    if not isinstance(gaps, list) or not 0 < len(gaps) <= MAX_GAPS:
+        raise ValueError("SEAM_GAP_COUNT_INVALID")
+    return [identify(gap, run_id) for gap in gaps]
+
+
+def record(path: Path, receipt: dict, *, defer_if_busy: bool = False) -> dict | None:
     """Persist each distinct blocked gate before it is overwritten by a later stage.
 
     Safe on repeated write_result calls; source-only progress never closes live
@@ -196,18 +209,29 @@ def record(path: Path, receipt: dict) -> dict | None:
     run_id = receipt.get("run_id")
     if not isinstance(run_id, str) or not RUN.fullmatch(run_id):
         raise ValueError("SEAM_RUN_ID_INVALID")
-    gaps = receipt["automation_gaps"]
-    if not isinstance(gaps, list) or len(gaps) > MAX_GAPS:
-        raise ValueError("SEAM_GAP_COUNT_INVALID")
     path = Path(path)
     target = _event_file(path, run_id)
-    observed = [identify(gap, run_id) for gap in gaps]
-    event_count = _append_events(path, run_id, observed)
-    return {
-        "schema": SCHEMA, "state": "OPEN", "event_count": event_count,
+    observed = _identify_gaps(receipt, run_id)
+    observed_at = datetime.now(timezone.utc).isoformat()
+    previous = receipt.get("seam_closure")
+    if isinstance(previous, dict) and previous.get("state") == EVENT_APPEND_PENDING:
+        timestamp = previous.get("observed_at")
+        if not isinstance(timestamp, str) or datetime.fromisoformat(timestamp).tzinfo is None:
+            raise ValueError("SEAM_PENDING_OBSERVATION_TIME_INVALID")
+        observed_at = timestamp
+    closure = {
+        "schema": SCHEMA,
         "event_file": str(target), "current": observed,
         "effect_admission": "NOT_GRANTED",
     }
+    try:
+        event_count = _append_events(path, run_id, observed, observed_at=observed_at)
+    except EventStoreBusy:
+        if not defer_if_busy:
+            raise
+        return {**closure, "state": EVENT_APPEND_PENDING, "reason_code": EVENT_STORE_BUSY,
+                "observed_at": observed_at}
+    return {**closure, "state": "OPEN", "event_count": event_count}
 
 
 def record_native_notice(
@@ -319,6 +343,13 @@ def latest_run_handoff(folder: Path) -> dict:
             "proof_ceiling": "NATIVE_ADAPTER_NOTICE_NOT_CURRENT_GAME_PROOF",
             "effect_admission": "NOT_GRANTED",
         }
+    append_status = {}
+    closure = latest.get("seam_closure")
+    if isinstance(closure, dict) and closure.get("state") == EVENT_APPEND_PENDING:
+        pending = {(row["type"], row["seam_id"]): row for row in _identify_gaps(latest, run_id)}
+        events = [row for row in events if (row.get("type"), row.get("seam_id")) not in pending]
+        events.extend(pending.values())
+        append_status = {"event_append_state": EVENT_APPEND_PENDING}
     if not events:
         return empty
     return {
@@ -331,4 +362,5 @@ def latest_run_handoff(folder: Path) -> dict:
         )} for entry in events[-MAX_GAPS:]],
         "proof_ceiling": "PRIVATE_LAUNCH_RECEIPT_ONLY_REOBSERVE_GAME_AND_SCOPE",
         "effect_admission": "NOT_GRANTED",
+        **append_status,
     }

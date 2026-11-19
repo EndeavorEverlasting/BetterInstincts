@@ -1,5 +1,5 @@
 """Container/host startup handshake and first-failure routing."""
-from contextlib import nullcontext, redirect_stderr, redirect_stdout
+from contextlib import ExitStack, nullcontext, redirect_stderr, redirect_stdout
 from io import StringIO
 import json
 from pathlib import Path
@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import bootstrap
-from scripts import first_run, play
+from scripts import first_run, launch_receipt, play, seam_closure
 
 
 class PlayTests(unittest.TestCase):
@@ -65,6 +65,35 @@ class PlayTests(unittest.TestCase):
         self.assertEqual((receipt["stage"], receipt["reason"]), ("container_build", "DOCKER_NOT_FOUND"))
         self.assertIn("Docker", receipt["next_step"])
         host.assert_not_called()
+
+    def test_blocked_play_persists_during_contention_and_receipt_cli_recovers(self):
+        with (tempfile.TemporaryDirectory() as tmp,
+              patch.object(bootstrap, "paths", return_value={"locks": Path(tmp) / "locks"}),
+              patch.object(play.sys, "platform", "win32"),
+              patch.object(seam_closure, "EVENT_LOCK_TIMEOUT", 0),
+              patch.object(play, "play_on_windows") as host):
+            with ExitStack() as held:
+                def block_after_checkpoint(*args, receipt, receipt_path, **kwargs):
+                    launch_receipt.write_result(receipt_path, {**receipt, "status": "ok"})
+                    held.enter_context(seam_closure._event_writer_lock(
+                        receipt_path.with_name("seam-events.json")))
+                    raise play.PlayBlocked("startup_catalog", "CURRENT_GAME_SAVE_CATALOG_REQUIRED",
+                                           "Observe the current save catalog.")
+
+                host.side_effect = block_after_checkpoint
+                with redirect_stdout(StringIO()) as output:
+                    self.assertEqual(play.main(["--native-start", "--json"]), 2)
+                result = json.loads(output.getvalue())
+                path = Path(result["receipt"])
+                self.assertEqual(json.loads(path.read_text()), result)
+                self.assertEqual((result["status"], result["stage"]), ("blocked", "startup_catalog"))
+                self.assertEqual(result["seam_closure"]["state"], seam_closure.EVENT_APPEND_PENDING)
+
+            with redirect_stdout(StringIO()) as output:
+                self.assertEqual(launch_receipt.main(["--reconcile-seam", result["run_id"]]), 0)
+            self.assertEqual(Path(output.getvalue().strip()), path)
+            self.assertEqual(len(seam_closure.read_events(path, result["run_id"])), 1)
+            host.assert_called_once()
 
     def test_startup_receipt_contains_source_identity_and_runs_without_host_access(self):
         expected = play.startup_plan()

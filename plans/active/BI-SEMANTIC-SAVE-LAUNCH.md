@@ -59,6 +59,9 @@ For a locally reviewed adapter that reports runtime seam notices, use the
 [native ecology bundle option](../../docs/SEAM_CLOSURE.md#passive-native-runtime-notice-port-source-ready-installation-unverified).
 The Windows trial still starts from the current process and catalog evidence
 and verifies the original portrait, purchase and responder acceptance gates.
+For a launch receipt with a pending event append, use the
+[receipt-only recovery command](../../docs/SEAM_CLOSURE.md#receipt-contract)
+with its original run ID before resuming from fresh game evidence.
 
 ## Proof and continuation
 

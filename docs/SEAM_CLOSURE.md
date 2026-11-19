@@ -29,9 +29,24 @@ The private startup context needs a process-bound complete MAIN_MENU save catalo
 The private app-owned play-receipts/<run-id>/launch.json and seam-events.json bind each event to an existing run. The separate event record omits raw exception text, private context paths, save titles, Sim names, images and game file contents. The latest-run handoff uses only the most recent owned run; it cannot revive an older blocked run after a newer success. Unknown stages classify as UNREGISTERED_SEAM, denied desktop tools as POLICY_HOLD; every event states effect_admission=NOT_GRANTED.
 
 Startup and native notice writers share a per-run host lock while reading,
-deduplicating and atomically replacing the event file. A busy store returns
-`SEAM_RECEIPT_STORE_BUSY_RETRY`. Retry the receipt append from the host with
-the original observation. The lock is released when its owning handle closes.
+deduplicating and atomically replacing the event file. If the lock stays busy,
+Play saves the original blocked result in `launch.json` with
+`seam_closure.state = EVENT_APPEND_PENDING`. The installed handoff can read the
+blocked gate and pending state immediately. Native notice writers continue to
+return `SEAM_RECEIPT_STORE_BUSY_RETRY` to the host adapter on contention.
+
+On the host, use the original launch receipt's `run_id` to finish the pending
+append after the lock holder releases its handle.
+
+```powershell
+py -3 -m scripts.launch_receipt --reconcile-seam RUN_ID
+```
+
+This command uses the existing private receipt store and saved observation.
+Repeat it safely if the store is still busy. A successful reconciliation
+changes the append state to `OPEN` and adds the event at most once with its
+original observation time.
+Continue game work from fresh evidence in the existing session.
 
 A seam closes only after code repair, regression proof and a runtime outcome appropriate to that gate. Committed code, green CI or a Play return alone cannot certify portrait switches or a native responder decision.
 
