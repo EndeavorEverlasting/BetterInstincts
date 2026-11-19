@@ -393,6 +393,11 @@
       "definition": "Reusable, sourced outcome for a past mechanic/choice/build/profile. Provides evidence for a current decision without satisfying current-offer proof.",
       "canonical_owner": "contracts/experience-recall.v1.json"
     },
+    "INSTALLATION_LAUNCH_PREFERENCE": {
+      "kind": "context",
+      "definition": "Installation-local player choice of launch mode, inactivity threshold, optional cheats permission and preferred household. It requests behavior but cannot admit a save, a game effect or desktop input.",
+      "canonical_owner": "contracts/installation-profiles.v1.json"
+    },
     "HOUSEHOLD_PREFERENCE": {
       "kind": "context",
       "definition": "Installation-local explicit player choice of household identity. Resolved against fresh available households before routing and conveys no control permit.",
@@ -904,6 +909,11 @@
       "from": "HISTORICAL_EXPERIENCE",
       "predicate": "INFORMS_CURRENT_DECISION",
       "to": "ACTION_PROPOSAL"
+    },
+    {
+      "from": "INSTALLATION_LAUNCH_PREFERENCE",
+      "predicate": "DOES_NOT_GRANT_AUTHORITY",
+      "to": "CONTROL_PERMIT"
     },
     {
       "from": "HOUSEHOLD_PREFERENCE",

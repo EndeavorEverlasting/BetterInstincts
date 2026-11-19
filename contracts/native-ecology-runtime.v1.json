@@ -81,7 +81,7 @@
     "requires_installed_portrait_handoff": true,
     "require_binding_proof": "installed_microsystem_handoff_binding_ref",
     "owner": "betterinstincts/microsystem_handoff.py",
-    "packet": "betterinstincts.microsystem-handoff/v1",
+    "packet": "betterinstincts.microsystem-handoff/v2",
     "priority_order": ["NEEDS", "CAREER", "CONTINGENCIES", "SKILLS"],
     "within_tier_score": "URGENCY_TIMES_BENEFIT_PER_EXPECTED_SIM_MINUTE",
     "adapter_ports": [
@@ -91,7 +91,7 @@
     ],
     "dispatch": "ONE_PORTRAIT_OR_QUEUE_EFFECT_PER_CALLBACK",
     "queue_placement": "TAIL_OR_BEFORE_TRAILING_OWNED_LOWER_PRIORITY_PENDING_ACTIONS",
-    "evidence": "CURRENT_SCOPE_AND_QUEUE_REVALIDATION_THEN_CORRELATED_INDEPENDENT_READBACK",
+    "evidence": "QUALIFIED_TASK_OR_CLEARANCE_WINDOW_AND_CURRENT_QUEUE_THEN_CORRELATED_INDEPENDENT_READBACK",
     "desktop_fallback": false
   },
   "lab_restock_handoff": {

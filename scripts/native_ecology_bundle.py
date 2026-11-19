@@ -21,8 +21,9 @@ MOD_FILE = "BetterInstincts_Ecology.ts4script"
 MANIFEST_FILE = "BetterInstincts_Ecology.ownership.json"
 MODULE_PYC = "BetterInstincts_Ecology.pyc"
 RUNTIME_MODULES = ("__init__", "installed_player_runtime", "player_learning",
-                   "judgment_learning", "priority")
-RUNTIME_MEMBERS = tuple(f"betterinstincts/{name}.pyc" for name in RUNTIME_MODULES)
+                   "judgment_learning", "priority", "installation_profiles")
+LAUNCH_PROFILE_CATALOG = "betterinstincts/installation-profiles.v1.json"
+RUNTIME_MEMBERS = tuple(f"betterinstincts/{name}.pyc" for name in RUNTIME_MODULES) + (LAUNCH_PROFILE_CATALOG,)
 TRAIT_MODULES = ("preference_prompts", "preference_native_map", "preference_response_port")
 TRAIT_CATALOG = "betterinstincts/preference-prompts.v1.json"
 TRAIT_MEMBERS = tuple(f"betterinstincts/{name}.pyc" for name in TRAIT_MODULES) + (TRAIT_CATALOG,)
@@ -143,6 +144,7 @@ def build_package(
         root = Path(__file__).resolve().parents[1] / "betterinstincts"
         for name, member in zip(RUNTIME_MODULES, RUNTIME_MEMBERS):
             modules[member] = _compile_py37(python37, root / (name + ".py"))
+        modules[LAUNCH_PROFILE_CATALOG] = (root.parent / "contracts" / "installation-profiles.v1.json").read_bytes()
         if installed_trait_responder:
             for name, member in zip(TRAIT_MODULES, TRAIT_MEMBERS):
                 modules[member] = _compile_py37(python37, root / (name + ".py"))
@@ -224,7 +226,9 @@ def _check_archive(path: Path, installed_runtime: bool, installed_trait: bool = 
                 *([MICROSYSTEM_MEMBER] if installed_microsystem_handoff else []),
                 *([RUNTIME_SEAM_MEMBER] if installed_runtime_seam_port else [])]
     with zipfile.ZipFile(path) as archive:
-        if archive.namelist() != expected:
+        members = archive.namelist()
+        legacy = [member for member in expected if member not in RUNTIME_MEMBERS[-2:]]
+        if members != expected and members != legacy:
             raise NativeEcologyPackageError("PACKAGE_CONTENT_INVALID")
 
 

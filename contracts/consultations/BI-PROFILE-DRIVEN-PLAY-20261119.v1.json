@@ -1,0 +1,97 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PROFILE-DRIVEN-PLAY-20261119",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "7956c3c69b2c520cd0fdbca1ba3f34fe693738b6",
+  "proposed_capability": "Use typed per-installation preferences and a current catalog chooser through the existing BetterInstincts Play and Settings surfaces.",
+  "operator_correction": "BetterInstincts owns launch and remembered household choice. Give the player a configurable nonzero idle window, optional cheats denial and production/developer route choice.",
+  "repository_situation": "Managed Play currently uses mode flags; installation settings and native save catalog already exist but the default shortcut does not join them.",
+  "competing_theses": [
+    {
+      "thesis": "Separate browser server and settings store",
+      "disposition": "REJECT",
+      "evidence": "Existing local Settings UI and store already handle preference changes."
+    },
+    {
+      "thesis": "Infer household and save from disk",
+      "disposition": "REJECT",
+      "evidence": "The authoritative in-game catalog binds current process, slot, household and observed chronology."
+    },
+    {
+      "thesis": "Extend existing Settings and Play owners",
+      "disposition": "SELECT",
+      "evidence": "They already expose private revisions, current catalog and protected save routing without a parallel launcher."
+    }
+  ],
+  "affected_concepts": [
+    "INSTALLATION_LAUNCH_PREFERENCE",
+    "HOUSEHOLD_PREFERENCE",
+    "GAME_PROCESS_INSTANCE",
+    "STARTUP_SAVE_TARGET",
+    "PLAYER_PRESENCE",
+    "CONTROL_PERMIT",
+    "SAVE_SLOT",
+    "HOST_SESSION",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "contracts/installation-profiles.v1.json",
+    "scripts/play.py",
+    "scripts/launch_save_route.py",
+    "scripts/startup_handoff.py",
+    "contracts/control-handoff.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_PROFILE_LAUNCH_AND_ADAPTER_PROTOCOL_ONLY",
+  "player_save_control_impact": "Persist player choices locally and apply additional denial gates. Existing protected slots, save identity, exact-build binding, playback proof and window leases remain required.",
+  "expected_outcome": "Double-click Play consumes local preferences, asks for verified human choice as necessary, and routes through guarded launch; no silent retarget or cheat acceptance.",
+  "negative_tests": [
+    "Zero and below-floor idle windows rejected",
+    "Protected save and stale catalog hold",
+    "Wrong family in newest production save does not retarget or silently use an older save",
+    "Disabled cheats never enter the guarded host cheat sender",
+    "Unknown native selection capability holds instead of issuing a guess",
+    "Legacy profile and explicit Play flags still load"
+  ],
+  "rollback_path": "Revert code and clear its new launch option overrides using the settings UI before rolling back. Do not delete installation preferences, game files or saves.",
+  "unresolved_unknowns": [
+    "Live Windows catalog, calibrated map and exact-build native adapters require independent observation."
+  ],
+  "files_expected": [
+    "Start-BetterInstincts.cmd",
+    "bootstrap.py",
+    "contracts/installation-profiles.v1.json",
+    "betterinstincts/installation_profiles.py",
+    "betterinstincts/installed_player_runtime.py",
+    "betterinstincts/screen_admit.py",
+    "betterinstincts/workflow_interop.py",
+    "scripts/instance_settings.py",
+    "scripts/play.py",
+    "scripts/launch_save_route.py",
+    "scripts/game_host.py",
+    "scripts/startup_handoff.py",
+    "scripts/native_ecology_bundle.py",
+    "scripts/funds_inject.py",
+    "scripts/diy_skill_force.py",
+    "tests/test_installation_profiles.py",
+    "tests/test_play.py",
+    "tests/test_startup_handoff.py",
+    "tests/test_installed_player_runtime.py",
+    "tests/test_funds_inject.py",
+    "tests/test_diy_skill_force.py",
+    "tests/test_native_ecology_bundle.py",
+    "contracts/native-gameplay-decisions/BI-PROFILE-DRIVEN-PLAY-20261119.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "next_gate": "Run isolated profile/routing/UI tests and exact-build Windows adapter acceptance separately."
+}

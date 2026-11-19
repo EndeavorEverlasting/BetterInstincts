@@ -1,3 +1,21 @@
+## 2026-11-19 — Reuse the containerized CLI for profile Play
+
+The Windows shortcut and Settings Play delegate to `scripts.play`.
+Both use its existing Docker startup check for normal profile Play.
+The container sees only the startup source allowlist. Windows owns
+the private profile, picker and game. The existing `--native-start`
+option supports an explicit launch without Docker. Live Windows
+verification remains under issue #171.
+
+## 2026-11-19 — Profile-driven Play
+
+The Windows launcher consumes the active installation profile and asks for a
+household only when the current verified catalog requires a choice or the
+player requests a change. Mode, idle interval and cheat permission share the
+existing private settings owner. The startup bridge can opt into exact native
+save and household selection. Independent Windows adapter and gameplay proof
+remain open under issue #171.
+
 ## 2026-11-19 — Seam Closure Loop closeout repairs
 
 PR #322 review follow-up preserves the original blocked launch result if the
@@ -2505,3 +2523,14 @@ observed ownership and the first actual responder decision. The
 [canonical Windows handoff](handoff/BI-OLDEST-LAB-RESTOCK.md) carries the
 bridge contract and live acceptance. Exact-build gameplay remains unobserved
 in the offline fixtures.
+
+## 2026-11-19 — Active Portraits task evidence readiness
+
+The [installed microsystem handoff](../plans/active/BI-MICROSYSTEM-HANDOFF.md#evidence-readiness)
+classifies empty, partial and mature task evidence in the optional v2
+adapter. A held task cannot rank for queue work or clear its tier. Other
+qualified portraits can proceed. The second capture rechecks maturity,
+requirements and overlapping samples before a switch or queue submission.
+Offline tests exercise both native callback paths and independent outcome
+reconciliation. The exact-build v2 producer and live proof remain under
+[#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).

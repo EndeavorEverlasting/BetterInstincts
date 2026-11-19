@@ -1,3 +1,14 @@
+## 2026-11-19 — Certify the profile-driven Play shortcut
+
+Verify the Settings and Play entrypoints on the exact Windows Sims build.
+Observe the shared Docker startup check before the Windows launch and confirm
+that the explicit native path retains the same Windows game guards.
+Use a fresh catalog for a multi-household choice, then a repeat launch with a
+remembered household. Verify production's newest authorized save, developer's
+oldest authorized disposable save, idle and cheat denial, player interruption,
+and one verified native responder decision. Preserve the existing dedicated
+restock and protected-slot acceptance gates.
+
 ## 2026-11-18 — Reuse the Seam Closure Loop during live certification
 
 The product-launched restock route now owns isolated official-main checkout
@@ -29,10 +40,10 @@ actual map and Live Mode readback. See [the save selection sprint](../plans/acti
 
 ## 2026-11-17 — Live microsystem handoff verification
 
-Under #171, wire the four existing domain evaluations to the
+Under #171, wire the four existing domain evaluations and their task evidence to the
 [household queue adapter](../plans/active/BI-MICROSYSTEM-HANDOFF.md), then
-verify actual queue placement, portrait switching, takeover and rollback on
-the exact EA build in an admitted disposable save.
+verify evidence maturity, native queue placement, portrait switching,
+takeover and rollback on the exact EA build in an admitted disposable save.
 
 ## 2026-11-16 — Launch through household parts restock
 

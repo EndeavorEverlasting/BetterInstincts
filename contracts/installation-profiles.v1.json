@@ -15,6 +15,27 @@
     "privacy.local_evaluation_receipts": false,
     "learning.semantic_vae": false
   },
+  "launch_options": {
+    "mode": {
+      "label": "Startup mode",
+      "control": "choice",
+      "default": "production",
+      "choices": ["production", "dev"],
+      "labels": ["Production — newest save", "Developer — oldest authorized lab save"]
+    },
+    "idle_ms": {
+      "label": "Wait for inactivity",
+      "control": "slider",
+      "default": 15000,
+      "choices": [15000, 21000, 34000, 55000, 89000, 120000],
+      "labels": ["15 seconds", "21 seconds", "34 seconds", "55 seconds", "89 seconds", "120 seconds"]
+    },
+    "allow_cheats": {
+      "label": "Allow BetterInstincts to run cheat commands",
+      "control": "toggle",
+      "default": false
+    }
+  },
   "bounds": {
     "max_profiles": 16,
     "max_file_bytes": 32768,

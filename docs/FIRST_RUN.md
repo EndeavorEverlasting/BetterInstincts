@@ -17,14 +17,40 @@ copy of the launcher still provisions or fast-forwards the canonical checkout
 with Git. It preserves existing games and local changes. If a prerequisite, checkout
 or game selection needs attention, the launcher prints the next step.
 
-From an existing checkout on the Sims PC, use the container-backed CLI
-with Docker in Linux-container mode. The container verifies source and
-the Windows host owns the game lifecycle.
+The launcher uses the active local profile. Open its desktop settings with
+`Start-BetterInstincts.cmd --settings` or the installer's **Preferences**
+button. The **Play** tab controls startup mode, inactivity and cheat permission.
+Use **Save and choose household in Play** to change a remembered household, or
+run `Start-BetterInstincts.cmd --choose-household`. The chooser is populated
+from the running game's current verified menu catalog. A sole or remembered
+household routes directly, and a missing choice opens the picker. Cancelling
+leaves Sims open on its current screen.
+
+The desktop inactivity slider offers **15, 21, 34, 55, 89 and 120 seconds**.
+Saving the setting also applies it to the native responder the next time
+the game imports the updated runtime. Untuned legacy native sessions retain
+their existing threshold. Player input still takes precedence. Cheats start
+off for BetterInstincts' funds and skill dispatchers. Turning them on makes
+those routes eligible subject to their normal checks. Your own game commands
+remain under your control.
+
+To roll back to a version earlier than these Play settings, select each
+changed profile and click **Restore defaults** on the Play tab first. This
+removes its launch options while retaining household preferences and feature
+toggles.
+
+The shortcut and Settings Play use the same CLI, which checks startup
+and profile source with Docker in Linux-container mode. Windows reads
+your profile, displays the household picker and runs the game. The
+container runs without network access or access to your personal files.
 
 ```powershell
-py -3 -m scripts.play --json
+py -3 -m scripts.play --profile-launch --json
 py -3 -m scripts.play --game-exe "C:\path\to\The Sims 4\Game\Bin\TS4_x64.exe" --json
 ```
+
+For a deliberate profile launch without Docker, run
+`py -3 -m scripts.play --profile-launch --native-start` from the Windows checkout.
 
 For development with a calibrated private context, use either entry point.
 
@@ -51,10 +77,14 @@ and provides the observed `process` from the launch receipt, source
 and `candidates` containing `save_id` and UTC `last_played_utc`.
 
 With a locally installed exact-build `native_startup` binding, Play requests
-the current menu catalog itself and continues into the active household. To
-use it from the Windows double-click launcher, place the production context at
-`%LOCALAPPDATA%\BetterInstincts\runtime\startup\production.json` or pass it
-with `--prod`. See the [startup binding and Windows trial](../plans/active/BI-SEMANTIC-SAVE-LAUNCH.md#native-startup-binding).
+the current menu catalog itself and continues into the chosen household. The
+double-click launcher reads `production.json` or `dev.json` from
+`%LOCALAPPDATA%\BetterInstincts\runtime\startup`. Developer Play can also use
+the existing `runtime\lab-upgrade-parts\startup.json` when it supports standard
+Play. Automatic entry still requires current save authorization and the
+adapter's load or calibrated navigation route. A protected or unapproved
+newest production save stays available for the player to open in Sims.
+See the [startup binding and Windows trial](../plans/active/BI-SEMANTIC-SAVE-LAUNCH.md#native-startup-binding).
 
 The launcher treats a dispatch PID and a game PID independently. A
 replacement or reused PID invalidates the in-flight action. The receipt
@@ -63,7 +93,8 @@ For a configured native startup, `NATIVE_RESPONDER_DECISION_OBSERVED` in
 `startup_handoff.state` records completion. A legacy launch can also exit 0
 when it preserves an existing session. Exit 2 names the remaining gate.
 Check `launch_state` to see whether dispatch already happened.
-Use `python -m scripts.play --plan --json` for the Docker check without
+Use `python -m scripts.play --plan --profile-launch --json` to check the
+profile startup container on a Docker host without loading local settings or
 launching Sims.
 
 ## Record any intervention

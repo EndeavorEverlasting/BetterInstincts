@@ -29,6 +29,39 @@ class PlayTests(unittest.TestCase):
         self.assertEqual(json.loads(text)["reason"], "WINDOWS_GAME_HOST_REQUIRED")
         which.assert_not_called()
 
+    def test_profile_entrypoint_checks_container_before_using_saved_mode_on_host(self):
+        from betterinstincts import installation_profiles
+
+        profile = {"preferred_household_id": "household:fixture",
+                   "launch": {"mode": "dev", "idle_ms": 34000, "allow_cheats": False}}
+        calls = Mock()
+        with (patch.object(installation_profiles, "view", return_value=profile),
+              patch.object(play, "play_on_windows", calls.host),
+              patch.object(play, "docker_plan", calls.container),
+              patch.object(play.shutil, "which", return_value="docker")):
+            calls.host.return_value = {"status": "ok", "next_step": "Observed fixture."}
+            code, _, stderr = self.invoke(["--profile-launch", "--choose-household", "--json"])
+        self.assertEqual((code, stderr), (0, ""))
+        self.assertEqual([call[0] for call in calls.mock_calls], ["container", "host"])
+        self.assertEqual(calls.container.call_args.args[0], "docker")
+        self.assertEqual(calls.container.call_args.kwargs, {"profile_launch": True})
+        self.assertEqual(calls.host.call_args.kwargs["mode"], "dev")
+        self.assertIs(calls.host.call_args.kwargs["launch_profile"], profile)
+        self.assertIs(calls.host.call_args.kwargs["choose_household"], True)
+
+    def test_profile_entrypoint_can_explicitly_use_native_start(self):
+        from betterinstincts import installation_profiles
+
+        profile = {"launch": {"mode": "production"}, "preferred_household_id": None}
+        with (patch.object(installation_profiles, "view", return_value=profile),
+              patch.object(play.shutil, "which") as which,
+              patch.object(play, "play_on_windows",
+                           return_value={"status": "ok", "next_step": "Observed fixture."}) as host):
+            code, _, stderr = self.invoke(["--profile-launch", "--native-start", "--json"])
+        self.assertEqual((code, stderr), (0, ""))
+        self.assertIs(host.call_args.kwargs["launch_profile"], profile)
+        which.assert_not_called()
+
     def test_semantic_restock_cli_forwards_dev_selection(self):
         with (tempfile.TemporaryDirectory() as tmp, patch.object(play, "play_on_windows") as host,
               patch.object(play.shutil, "which") as which):
@@ -56,17 +89,75 @@ class PlayTests(unittest.TestCase):
         which.assert_called_once_with("docker")
         host.assert_not_called()
 
-    def test_missing_docker_returns_actionable_error_before_install(self):
-        with patch.object(play.shutil, "which", return_value=None), \
-             patch.object(play, "play_on_windows") as host:
-            code, text, stderr = self.invoke(["--json"])
-        self.assertEqual((code, stderr), (2, ""))
-        receipt = json.loads(text)
-        self.assertEqual((receipt["stage"], receipt["reason"]), ("container_build", "DOCKER_NOT_FOUND"))
-        self.assertIn("Docker", receipt["next_step"])
+    def test_profile_plan_on_linux_matches_image_emitter_without_reading_local_profile(self):
+        from betterinstincts import installation_profiles
+
+        emitted = subprocess.check_output(
+            [play.sys.executable, "-I", str(play.ROOT / "scripts/play.py"),
+             "--emit-plan", "--profile-launch"], text=True,
+        )
+        commands = []
+
+        def docker(command, **kwargs):
+            commands.append(command)
+            return subprocess.CompletedProcess(command, 0, stdout=emitted)
+
+        with (patch.object(installation_profiles, "view") as view,
+              patch.object(play.shutil, "which", return_value="docker"),
+              patch.object(play.subprocess, "run", side_effect=docker),
+              patch.object(play, "play_on_windows") as host):
+            code, text, stderr = self.invoke(["--plan", "--profile-launch", "--json"], "linux")
+        self.assertEqual((code, stderr), (0, ""))
+        result = json.loads(text)
+        self.assertEqual(set(result["plan"]["sources"]),
+                         set(play.STARTUP_SOURCES + play.PROFILE_SOURCES))
+        self.assertIn("--profile-launch", result["next_step"])
+        self.assertEqual(commands[1], ["docker", "run", "--rm", "--pull=never", "--network=none",
+                                       "--read-only", "--cap-drop=ALL", "--security-opt=no-new-privileges",
+                                       "betterinstincts-startup:local", "--profile-launch"])
+        view.assert_not_called()
         host.assert_not_called()
 
+    def test_missing_docker_returns_actionable_error_before_install(self):
+        from betterinstincts import installation_profiles
+
+        profile = {"launch": {"mode": "production"}, "preferred_household_id": None}
+        for options in ([], ["--profile-launch"]):
+            with (self.subTest(options=options),
+                  patch.object(installation_profiles, "view", return_value=profile),
+                  patch.object(play.shutil, "which", return_value=None),
+                  patch.object(play, "play_on_windows") as host):
+                code, text, stderr = self.invoke([*options, "--json"])
+                self.assertEqual((code, stderr), (2, ""))
+                receipt = json.loads(text)
+                self.assertEqual((receipt["stage"], receipt["reason"]), ("container_build", "DOCKER_NOT_FOUND"))
+                self.assertIn("Docker", receipt["next_step"])
+                host.assert_not_called()
+
+    def test_shortcut_has_one_container_backed_profile_command(self):
+        shortcut = (play.ROOT / "Start-BetterInstincts.cmd").read_text()
+        commands = [line for line in shortcut.splitlines()
+                    if "-m scripts.play" in line and "--profile-launch" in line]
+        self.assertEqual(len(commands), 1)
+        self.assertNotIn("--native-start", commands[0])
+        self.assertIn("%CHOOSER_ARG%", commands[0])
+        self.assertIn("%CHECKOUT_ARG%", commands[0])
+
     def test_blocked_play_persists_during_contention_and_receipt_cli_recovers(self):
+        self.assert_blocked_play_receipt_recovers("--native-start")
+
+    def test_blocked_container_profile_play_recovers_the_same_receipt(self):
+        from betterinstincts import installation_profiles
+
+        profile = {"launch": {"mode": "production"}, "preferred_household_id": None}
+        with (patch.object(installation_profiles, "view", return_value=profile),
+              patch.object(play.shutil, "which", return_value="docker"),
+              patch.object(play, "docker_plan", return_value={}) as container):
+            self.assert_blocked_play_receipt_recovers("--profile-launch")
+        self.assertEqual(container.call_count, 1)
+        self.assertEqual(container.call_args.kwargs, {"profile_launch": True})
+
+    def assert_blocked_play_receipt_recovers(self, launch_arg):
         with (tempfile.TemporaryDirectory() as tmp,
               patch.object(bootstrap, "paths", return_value={"locks": Path(tmp) / "locks"}),
               patch.object(play.sys, "platform", "win32"),
@@ -82,7 +173,7 @@ class PlayTests(unittest.TestCase):
 
                 host.side_effect = block_after_checkpoint
                 with redirect_stdout(StringIO()) as output:
-                    self.assertEqual(play.main(["--native-start", "--json"]), 2)
+                    self.assertEqual(play.main([launch_arg, "--json"]), 2)
                 result = json.loads(output.getvalue())
                 path = Path(result["receipt"])
                 self.assertEqual(json.loads(path.read_text()), result)
@@ -112,6 +203,30 @@ class PlayTests(unittest.TestCase):
                                        "--read-only", "--cap-drop=ALL", "--security-opt=no-new-privileges",
                                        image])
         self.assertEqual(set(expected["sources"]), set(play.STARTUP_SOURCES))
+
+    def test_docker_context_is_the_exact_startup_source_allowlist(self):
+        rules = [line for line in (play.ROOT / ".dockerignore").read_text().splitlines()
+                 if line and not line.startswith("#")]
+        self.assertEqual(rules[0], "**")
+        self.assertCountEqual(rules[1:], ["!Dockerfile", "!.dockerignore",
+                                         *(f"!{path}" for path in play.STARTUP_SOURCES + play.PROFILE_SOURCES)])
+
+    def test_profile_plan_mismatch_blocks_the_game_route(self):
+        from betterinstincts import installation_profiles
+
+        def docker(command, **kwargs):
+            legacy = play.startup_plan()
+            return subprocess.CompletedProcess(command, 0, stdout=json.dumps(legacy))
+
+        profile = {"launch": {"mode": "production"}, "preferred_household_id": None}
+        with (patch.object(installation_profiles, "view", return_value=profile),
+              patch.object(play.shutil, "which", return_value="docker"),
+              patch.object(play.subprocess, "run", side_effect=docker),
+              patch.object(play, "play_on_windows") as host):
+            code, text, _ = self.invoke(["--profile-launch", "--json"])
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(text)["reason"], "DOCKER_STARTUP_PLAN_FAILED")
+        host.assert_not_called()
 
     def test_altered_container_plan_never_reaches_host(self):
         def docker(command, **kwargs):

@@ -48,7 +48,7 @@ class InstalledPlayerRuntime:
 
     def __init__(self, adapter, *, build: str, owned_dir: Path, clock=monotonic,
                  trait_response=None, fairy_dust=None, fame=None, portraits=None,
-                 activity_chain=None, microsystems=None):
+                 activity_chain=None, microsystems=None, idle_seconds=IDLE_SECONDS):
         self.adapter = adapter
         self.build = build
         self.path = owned_dir / "player-learning.sqlite3"
@@ -59,6 +59,9 @@ class InstalledPlayerRuntime:
         self.attempts = set()
         self.unresolved = None
         self.clock = clock
+        if type(idle_seconds) not in (int, float) or not IDLE_SECONDS <= idle_seconds <= 120:
+            raise ValueError("NATIVE_IDLE_THRESHOLD_OUT_OF_RANGE")
+        self.idle_seconds = idle_seconds
         self.trait_response = trait_response
         self.fairy_dust = fairy_dust
         self.dust_attempts = {}
@@ -110,7 +113,7 @@ class InstalledPlayerRuntime:
                 _, current = self._portrait_choice(fresh)
             else:
                 _, refreshed = self._microsystem_choice(fresh)
-                current = refreshed.selection if refreshed == microsystem_decision else None
+                current = refreshed.selection if microsystem_decision.reconfirmed_by(refreshed) else None
         except Exception:
             return "PORTRAIT_EVIDENCE_UNQUALIFIED"
         if current != selection or not self._idle(fresh):
@@ -171,7 +174,7 @@ class InstalledPlayerRuntime:
                 and frame.player_active is False and frame.player_queue is False
                 and type(frame.input_generation) is int and frame.input_generation >= 0
                 and type(frame.idle_seconds) in (int, float)
-                and IDLE_SECONDS <= frame.idle_seconds < float("inf"))
+                and self.idle_seconds <= frame.idle_seconds < float("inf"))
 
     def observe(self, frame, event, needs):
         """Use the same semantic learner as the host listener while the player plays."""
@@ -475,13 +478,13 @@ class InstalledPlayerRuntime:
                 or fresh.playing is not True or fresh.modal_open is not False):
             return "YIELD_TO_PLAYER"
         _, current = self._microsystem_choice(fresh)
-        if decision != current or not self._idle(fresh):
+        if not decision.reconfirmed_by(current) or not self._idle(fresh):
             return "MICROSYSTEM_REOBSERVE_WINNER"
-        identity = decision.identity(fresh)
+        identity = current.identity(fresh)
 
         def submit():
-            self.microsystem_pending = (decision, first.capture, fresh)
-            return self.adapter.submit_microsystem_if_current(decision, fresh)
+            self.microsystem_pending = (current, first.capture, fresh)
+            return self.adapter.submit_microsystem_if_current(current, fresh)
 
         result = self._dispatch(identity, submit)
         if result == "NO_EFFECT":
@@ -725,10 +728,13 @@ def start_installed(adapter, *, exact_build: str, owned_dir: Path,
         if portraits is None or not all(callable(getattr(adapter, name, None))
                                        for name in microsystems.PORTS):
             raise ValueError("NATIVE_MICROSYSTEM_HANDOFF_PORTS_REQUIRED")
+    from betterinstincts.installation_profiles import view
+
+    idle_seconds = view()["launch_overrides"].get("idle_ms", IDLE_SECONDS * 1000) / 1000
     runtime = InstalledPlayerRuntime(adapter, build=exact_build, owned_dir=root, clock=clock,
                                      trait_response=trait_response, fairy_dust=fairy_dust, fame=fame,
                                      portraits=portraits, activity_chain=activity_chain,
-                                     microsystems=microsystems)
+                                     microsystems=microsystems, idle_seconds=idle_seconds)
     if not all(callable(getattr(adapter, name, None))
                for name in ("register", "frame", "analyze", "submit", "reconcile")):
         raise ValueError("NATIVE_CALLBACK_PORTS_REQUIRED")

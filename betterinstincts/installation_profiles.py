@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import pkgutil
 import re
 import stat
 import sys
@@ -28,20 +29,50 @@ class InstallationProfileError(ValueError):
 CATALOG_PATH = Path(__file__).resolve().parents[1] / "contracts" / "installation-profiles.v1.json"
 
 
-def _catalog_defaults() -> dict[str, bool]:
-    # The versioned catalog is the sole default value owner (P124).
-    if CATALOG_PATH.is_symlink() or not CATALOG_PATH.is_file() or CATALOG_PATH.stat().st_size > MAX_BYTES:
+def _catalog() -> dict:
+    if CATALOG_PATH.is_symlink() or (CATALOG_PATH.is_file() and CATALOG_PATH.stat().st_size > MAX_BYTES):
         raise InstallationProfileError("SETTINGS_CATALOG_UNSAFE")
-    data = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    # A standalone native archive carries the same tracked catalog as a package resource.
+    raw = (CATALOG_PATH.read_bytes() if CATALOG_PATH.is_file()
+           else pkgutil.get_data(__package__, "installation-profiles.v1.json"))
+    if raw is None or len(raw) > MAX_BYTES:
+        raise InstallationProfileError("SETTINGS_CATALOG_UNSAFE")
+    data = json.loads(raw)
     values = data.get("defaults")
     if data.get("schema") != "betterinstincts.installation-profiles-catalog/v1" or not isinstance(values, dict):
         raise InstallationProfileError("SETTINGS_CATALOG_INVALID")
     if not values or len(values) > 64 or any(not isinstance(k, str) or not k or type(v) is not bool for k, v in values.items()):
         raise InstallationProfileError("SETTINGS_CATALOG_INVALID")
-    return values
+    launch = data.get("launch_options")
+    if not isinstance(launch, dict) or not {"mode", "idle_ms", "allow_cheats"} <= launch.keys():
+        raise InstallationProfileError("LAUNCH_OPTIONS_CATALOG_INVALID")
+    for key, option in launch.items():
+        if (not PROFILE_ID.fullmatch(key) or not isinstance(option, dict)
+                or not isinstance(option.get("label"), str)
+                or not _launch_value_valid(option, option.get("default"))):
+            raise InstallationProfileError("LAUNCH_OPTIONS_CATALOG_INVALID")
+        if option["control"] in ("choice", "slider") and (
+                not isinstance(option.get("labels"), list)
+                or len(option["labels"]) != len(option["choices"])
+                or not all(isinstance(label, str) for label in option["labels"])):
+            raise InstallationProfileError("LAUNCH_OPTIONS_LABELS_INVALID")
+    return data
 
 
-DEFAULTS = _catalog_defaults()
+def _launch_value_valid(option: dict, value: object) -> bool:
+    control = option.get("control")
+    if control == "toggle":
+        return type(value) is bool
+    expected = {"choice": str, "slider": int}.get(control)
+    choices = option.get("choices")
+    return (expected is not None and type(value) is expected and isinstance(choices, list)
+            and bool(choices) and all(type(item) is expected for item in choices)
+            and value in choices)
+
+
+_CATALOG = _catalog()
+DEFAULTS = _CATALOG["defaults"]
+LAUNCH_OPTIONS = _CATALOG["launch_options"]
 
 
 def settings_path(*, home: Path | None = None, platform: str | None = None,
@@ -84,7 +115,8 @@ def _safe_path(path: Path) -> None:
 def _validate(document: dict) -> dict:
     required = {"schema", "revision", "active_profile", "profiles"}
     if (not isinstance(document, dict) or not required.issubset(document)
-            or set(document) - required - {"preferred_households"} or document["schema"] != SCHEMA):
+            or set(document) - required - {"preferred_households", "launch_preferences"}
+            or document["schema"] != SCHEMA):
         raise InstallationProfileError("SETTINGS_SCHEMA_INVALID")
     revision = document["revision"]
     if type(revision) is not int or not 0 <= revision <= 2**31 - 1:
@@ -92,7 +124,8 @@ def _validate(document: dict) -> dict:
     profiles = document["profiles"]
     if not isinstance(profiles, dict) or not 1 <= len(profiles) <= MAX_PROFILES:
         raise InstallationProfileError("PROFILE_COUNT_INVALID")
-    if "default" not in profiles or document["active_profile"] not in profiles:
+    if ("default" not in profiles or not isinstance(document["active_profile"], str)
+            or document["active_profile"] not in profiles):
         raise InstallationProfileError("ACTIVE_OR_DEFAULT_PROFILE_MISSING")
     for name, overrides in profiles.items():
         if not isinstance(name, str) or not PROFILE_ID.fullmatch(name):
@@ -108,6 +141,14 @@ def _validate(document: dict) -> dict:
         for key, value in household_choices.items()
     ):
         raise InstallationProfileError("HOUSEHOLD_PREFERENCES_INVALID")
+    launch_preferences = document.get("launch_preferences", {})
+    if not isinstance(launch_preferences, dict) or any(
+        profile not in profiles or not isinstance(overrides, dict) or any(
+            key not in LAUNCH_OPTIONS or not _launch_value_valid(LAUNCH_OPTIONS[key], value)
+            for key, value in overrides.items())
+        for profile, overrides in launch_preferences.items()
+    ):
+        raise InstallationProfileError("LAUNCH_PREFERENCES_INVALID")
     return document
 
 
@@ -129,6 +170,7 @@ def view(path: Path | None = None, *, profile_id: str | None = None) -> dict:
     if selected not in document["profiles"]:
         raise InstallationProfileError("PROFILE_NOT_FOUND")
     overrides = document["profiles"][selected]
+    launch = document.get("launch_preferences", {}).get(selected, {})
     return {
         "schema": SCHEMA,
         "state": "PROFILE_READ_ONLY",
@@ -139,6 +181,8 @@ def view(path: Path | None = None, *, profile_id: str | None = None) -> dict:
         "settings": {**DEFAULTS, **overrides},
         "overrides": dict(overrides),
         "preferred_household_id": document.get("preferred_households", {}).get(selected),
+        "launch": {**{key: option["default"] for key, option in LAUNCH_OPTIONS.items()}, **launch},
+        "launch_overrides": dict(launch),
         "game_control_permit": None,
         "proof_ceiling": "LOCAL_PROFILE_PREFERENCE_ONLY",
     }
@@ -212,13 +256,16 @@ def choose_profile(profile_id: str, path: Path | None = None) -> dict:
 
 
 def set_preferred_household(household_id: str | None, path: Path | None = None,
-                            *, profile_id: str | None = None) -> dict:
+                            *, profile_id: str | None = None,
+                            expected_revision: int | None = None) -> dict:
     """Persist an explicit player choice for one installation profile."""
     if household_id is not None and (not isinstance(household_id, str)
                                      or not HOUSEHOLD_ID.fullmatch(household_id)):
         raise InstallationProfileError("HOUSEHOLD_ID_INVALID")
 
     def change(document: dict) -> None:
+        if expected_revision is not None and document["revision"] != expected_revision:
+            raise InstallationProfileError("LAUNCH_PREFERENCES_CHANGED")
         selected = profile_id if profile_id is not None else document["active_profile"]
         if selected not in document["profiles"]:
             raise InstallationProfileError("PROFILE_NOT_FOUND")
@@ -230,6 +277,45 @@ def set_preferred_household(household_id: str | None, path: Path | None = None,
                 del document["preferred_households"]
 
     return _mutation(path, change)
+
+
+def set_launch_preferences(values: dict, path: Path | None = None, *,
+                           expected_revision: int | None = None) -> dict:
+    if not isinstance(values, dict) or any(
+        key not in LAUNCH_OPTIONS or not _launch_value_valid(LAUNCH_OPTIONS[key], value)
+        for key, value in values.items()
+    ):
+        raise InstallationProfileError("LAUNCH_PREFERENCES_INVALID")
+
+    def change(document: dict) -> None:
+        if expected_revision is not None and document["revision"] != expected_revision:
+            raise InstallationProfileError("LAUNCH_PREFERENCES_CHANGED")
+        profile = document["active_profile"]
+        current = document.get("launch_preferences", {}).get(profile, {})
+        updated = {**current, **values}
+        if updated != current:
+            document.setdefault("launch_preferences", {})[profile] = updated
+
+    return _mutation(path, change)
+
+
+def reset_launch_preferences(path: Path | None = None, *,
+                             expected_revision: int | None = None) -> dict:
+    def change(document: dict) -> None:
+        if expected_revision is not None and document["revision"] != expected_revision:
+            raise InstallationProfileError("LAUNCH_PREFERENCES_CHANGED")
+        launch = document.get("launch_preferences")
+        if launch is not None:
+            launch.pop(document["active_profile"], None)
+            if not launch:
+                del document["launch_preferences"]
+
+    return _mutation(path, change)
+
+
+def require_cheats_enabled(path: Path | None = None) -> None:
+    if view(path)["launch"]["allow_cheats"] is not True:
+        raise InstallationProfileError("CHEATS_DISABLED_IN_LOCAL_SETTINGS")
 
 
 def set_toggle(key: str, enabled: bool, path: Path | None = None,

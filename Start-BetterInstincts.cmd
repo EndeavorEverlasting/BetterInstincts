@@ -2,12 +2,14 @@
 setlocal EnableExtensions DisableDelayedExpansion
 title BetterInstincts - Play The Sims 4
 echo Welcome to BetterInstincts.
-echo Opening your game...
-set "PLAYMODE=production"
+set "PLAYMODE=profile"
 set "BI_BOOTSTRAP_GAP="
 set "PROD_CONTEXT="
 if /I "%~1"=="--upgrade-parts" set "PLAYMODE=upgrade-parts"
 if /I "%~1"=="--dev" set "PLAYMODE=dev"
+if /I "%~1"=="--prod" set "PLAYMODE=production"
+if /I "%~1"=="--settings" set "PLAYMODE=settings"
+if /I "%~1"=="--choose-household" set "PLAYMODE=choose-household"
 if /I "%~1"=="--prod" if not "%~2"=="" set "PROD_CONTEXT=%~f2"
 if /I "%PLAYMODE%"=="dev" if "%~2"=="" goto missing_context
 if /I "%PLAYMODE%"=="dev" set "DEV_CONTEXT=%~f2"
@@ -68,20 +70,7 @@ for /f "delims=" %%G in ('git rev-parse HEAD') do set "CHECKOUT_HEAD=%%G"
 for /f "delims=" %%G in ('git rev-parse refs/remotes/origin/main') do set "UPSTREAM_HEAD=%%G"
 if not defined CHECKOUT_HEAD goto blocked_update
 if /I not "%CHECKOUT_HEAD%"=="%UPSTREAM_HEAD%" goto blocked_update
-if /I "%PLAYMODE%"=="upgrade-parts" goto play_upgrade_parts
-if /I "%PLAYMODE%"=="dev" goto play_dev
-if defined PROD_CONTEXT goto play_prod_context
-%PYTHON% -m scripts.play --native-start --mode production --checkout-head "%CHECKOUT_HEAD%"
-goto play_result
-:play_prod_context
-%PYTHON% -m scripts.play --native-start --mode production --checkout-head "%CHECKOUT_HEAD%" --save-context "%PROD_CONTEXT%"
-goto play_result
-:play_dev
-%PYTHON% -m scripts.play --native-start --mode dev --checkout-head "%CHECKOUT_HEAD%" --save-context "%DEV_CONTEXT%"
-goto play_result
-:play_upgrade_parts
-%PYTHON% -m scripts.play --native-start --mode dev --upgrade-parts --checkout-head "%CHECKOUT_HEAD%"
-goto play_result
+goto dispatch_checkout
 :isolated_upgrade
 cd /d "%~dp0"
 if errorlevel 1 goto blocked_existing
@@ -90,15 +79,34 @@ goto play_result
 :local_checkout
 cd /d "%~dp0"
 if errorlevel 1 goto blocked_existing
-if /I "%PLAYMODE%"=="dev" goto local_dev
-if defined PROD_CONTEXT goto local_prod_context
-%PYTHON% -m scripts.play --native-start --mode production
+set "CHECKOUT_HEAD="
+:dispatch_checkout
+set "CHECKOUT_ARG="
+rem CHECKOUT_HEAD is set only after verifying the installed checkout against origin/main.
+if defined CHECKOUT_HEAD set "CHECKOUT_ARG=--checkout-head %CHECKOUT_HEAD%"
+if /I "%PLAYMODE%"=="settings" goto play_settings
+if /I "%PLAYMODE%"=="upgrade-parts" goto play_upgrade_parts
+if /I "%PLAYMODE%"=="dev" goto play_dev
+if /I "%PLAYMODE%"=="production" goto play_prod
+set "CHOOSER_ARG="
+if /I "%PLAYMODE%"=="choose-household" set "CHOOSER_ARG=--choose-household"
+%PYTHON% -m scripts.play --profile-launch %CHOOSER_ARG% %CHECKOUT_ARG%
 goto play_result
-:local_prod_context
-%PYTHON% -m scripts.play --native-start --mode production --save-context "%PROD_CONTEXT%"
+:play_prod
+if defined PROD_CONTEXT goto play_prod_context
+%PYTHON% -m scripts.play --native-start --mode production %CHECKOUT_ARG%
 goto play_result
-:local_dev
-%PYTHON% -m scripts.play --native-start --mode dev --save-context "%DEV_CONTEXT%"
+:play_prod_context
+%PYTHON% -m scripts.play --native-start --mode production %CHECKOUT_ARG% --save-context "%PROD_CONTEXT%"
+goto play_result
+:play_dev
+%PYTHON% -m scripts.play --native-start --mode dev %CHECKOUT_ARG% --save-context "%DEV_CONTEXT%"
+goto play_result
+:play_upgrade_parts
+%PYTHON% -m scripts.play --native-start --mode dev --upgrade-parts %CHECKOUT_ARG%
+goto play_result
+:play_settings
+%PYTHON% -m scripts.instance_settings gui
 :play_result
 if errorlevel 1 goto blocked_launcher
 exit /b 0

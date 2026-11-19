@@ -287,7 +287,7 @@ def navigate(run_id: str, cfg: dict, digest: str, execute: bool,
 
 def navigate_startup_save(
     cfg: dict, process: GameProcess, *, run_id: str, session_id: str, checkpoint,
-    mode: str = "dev",
+    mode: str = "dev", idle_ms: int = 15000,
 ) -> None:
     """Use the calibrated chosen-save adapter under existing lab authorization."""
     if sys.platform != "win32":
@@ -301,7 +301,7 @@ def navigate_startup_save(
     if mode == "dev" and classification != "LAB_DISPOSABLE":
         raise GateError("DEV_REQUIRES_DISPOSABLE_SAVE")
     dispatch_navigation(cfg, process_id=process.pid, session_id=session_id,
-                        timeout=15, idle_ms=15000, checkpoint=checkpoint, process=process)
+                        timeout=15, idle_ms=idle_ms, checkpoint=checkpoint, process=process)
 
 
 def dispatch_navigation(

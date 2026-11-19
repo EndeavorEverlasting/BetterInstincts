@@ -1,8 +1,10 @@
 """Continue an authorized Play launch with exact-build native observations."""
 from __future__ import annotations
 
+from contextlib import nullcontext
 from uuid import uuid4
 
+from betterinstincts.control_handoff import exclusive_screen_owner
 from betterinstincts.player_learning import ACTOR
 from betterinstincts.save_policy import RUN_ID_RE
 from scripts.lab_upgrade_parts import PinnedNativeBridge, _natural, _opaque
@@ -25,6 +27,7 @@ class StartupBridge(PinnedNativeBridge):
         super().__init__(context_path, context.get("native_startup"), process,
                          {"run_id": run, "startup_id": uuid4().hex},
                          protocol=PROTOCOL, label="STARTUP")
+        self.supported_operations = frozenset()
 
     def read_save_catalog(self, *, catalog_only=False):
         capabilities = self.exchange("capabilities")
@@ -35,6 +38,7 @@ class StartupBridge(PinnedNativeBridge):
                 or not all(isinstance(op, str) for op in operations)
                 or not required.issubset(operations)):
             raise StartupBlocked("NATIVE_STARTUP_CAPABILITIES_INCOMPLETE")
+        self.supported_operations = frozenset(operations)
         query = uuid4().hex
         response = self.exchange("read_save_catalog", observation_id=query)
         if response.get("observation_id") != query:
@@ -47,7 +51,41 @@ class StartupBridge(PinnedNativeBridge):
         return catalog
 
 
-def continue_startup(bridge, route, catalog_capture, checkpoint):
+def _require_profile_idle(process, idle_ms):
+    from betterinstincts.control_handoff import confirm
+    from betterinstincts.player_presence import probe_windows
+
+    if not confirm(lambda: probe_windows(process.pid), session_active=True,
+                   idle_ms=idle_ms)["screen_control_allowed"]:
+        raise StartupBlocked("STARTUP_YIELD_TO_PLAYER")
+
+
+def dispatch_profile_save(bridge, process, route, catalog, idle_ms, checkpoint) -> str:
+    """Ask the reviewed native port to load one already-admitted save."""
+    from scripts.save_catalog import read_catalog
+
+    command = uuid4().hex
+    target = {"save_id": route["candidate_save_id"], "slot": route["candidate_slot"],
+              "household_id": route["household_id"]}
+    with exclusive_screen_owner(process.pid):
+        read_catalog(process, catalog)
+        receipt = {"operation": "load_selected_save", "command_id": command, "target": target,
+                   "menu_capture": catalog["capture_ref"]}
+        checkpoint({**receipt, "state": "PENDING_BEFORE_DISPATCH"})
+        _require_profile_idle(process, idle_ms)
+        # The adapter matches the same menu capture and revalidates the player/target
+        # immediately before its single native submission.
+        read_catalog(process, catalog)
+        reply = bridge.exchange("load_selected_save", command_id=command, target=target,
+                                capture=catalog["capture_ref"], minimum_idle_ms=idle_ms)
+        if reply.get("command_id") != command or reply.get("status") != "APPLIED":
+            raise StartupBlocked("STARTUP_EFFECT_RECONCILIATION_REQUIRED")
+        checkpoint({**receipt, "state": "ACKNOWLEDGED_AWAITING_READBACK"})
+    return command
+
+
+def continue_startup(bridge, route, catalog_capture, checkpoint, *,
+                     profile_idle_ms=None, expected_load_command=None):
     """Enter one scoped household and independently observe the installed responder."""
     save = route["candidate_save_id"]
     target = {"save_id": save, "slot": route["candidate_slot"],
@@ -91,27 +129,58 @@ def continue_startup(bridge, route, catalog_capture, checkpoint):
         return frame["input_generation"]
 
     frame = observe((*MAP_SCENES, "LIVE"))
+    if expected_load_command and frame.get("applied_command_id") != expected_load_command:
+        raise StartupBlocked("STARTUP_NATIVE_SAVE_LOAD_RECONCILIATION_REQUIRED")
+    if expected_load_command:
+        report["save_load_command_id"] = expected_load_command
     report.update(state="SAVE_OBSERVED", save_readback=frame["capture"])
     checkpoint(report)
-    household, lot = identity(frame)
     generation = idle(frame)
+    household, lot = target["household_id"], None
 
-    def effect(operation, before, scene):
+    def effect(operation, before, *scenes):
         command = uuid4().hex
         effect_target = {**target, "household_id": household, "lot_id": lot}
         report["pending"] = {"operation": operation, "command_id": command, "capture": before["capture"],
                              "target": effect_target}
-        checkpoint(report)
-        ack = bridge.exchange(operation, command_id=command, capture=before["capture"],
-                              target=effect_target, input_generation=generation)
-        if ack.get("command_id") != command or ack.get("status") != "APPLIED":
-            raise StartupBlocked("STARTUP_EFFECT_RECONCILIATION_REQUIRED")
-        after = observe((scene,))
+        lease = (exclusive_screen_owner(bridge.process.pid)
+                 if profile_idle_ms is not None else nullcontext())
+        with lease:
+            policy = {}
+            if profile_idle_ms is not None:
+                _require_profile_idle(bridge.process, profile_idle_ms)
+                policy["minimum_idle_ms"] = profile_idle_ms
+            checkpoint(report)
+            ack = bridge.exchange(operation, command_id=command, capture=before["capture"],
+                                  target=effect_target, input_generation=generation, **policy)
+            if ack.get("command_id") != command or ack.get("status") != "APPLIED":
+                raise StartupBlocked("STARTUP_EFFECT_RECONCILIATION_REQUIRED")
+            after = observe(scenes)
         if after.get("applied_command_id") != command:
             raise StartupBlocked("STARTUP_EFFECT_RECONCILIATION_REQUIRED")
         if idle(after) != generation or identity(after) != (household, lot):
             raise StartupBlocked("STARTUP_CONTROL_OR_TARGET_CHANGED")
         return after
+
+    try:
+        household, lot = identity(frame)
+    except StartupBlocked:
+        if profile_idle_ms is None or frame["scene"] not in MAP_SCENES or household is None:
+            raise
+        if "select_household" not in getattr(bridge, "supported_operations", ()):
+            raise StartupBlocked("NATIVE_STARTUP_HOUSEHOLD_SELECTION_REQUIRED")
+        choices = frame.get("selectable_households")
+        if not isinstance(choices, list) or not 1 <= len(choices) <= 150:
+            raise StartupBlocked("STARTUP_MAP_HOUSEHOLD_TARGET_UNVERIFIED")
+        matches = [row for row in choices if isinstance(row, dict)
+                   and row.get("household_id") == household]
+        if len(matches) != 1 or not _opaque(matches[0].get("lot_id")):
+            raise StartupBlocked("STARTUP_MAP_HOUSEHOLD_TARGET_UNVERIFIED")
+        lot = matches[0]["lot_id"]
+        frame = effect("select_household", frame, *MAP_SCENES)
+        report.update(state="SELECTED_HOUSEHOLD_OBSERVED", pending=None,
+                      household_selection_capture=frame["capture"])
+        checkpoint(report)
 
     if frame["scene"] in MAP_SCENES:
         if frame["scene"] != "LOT_DETAILS":
@@ -132,7 +201,7 @@ def continue_startup(bridge, route, catalog_capture, checkpoint):
         return tuple(roster)
 
     roster = live_roster(frame)
-    entry_command = report["pending"]["command_id"] if report["pending"] else None
+    entry_command = report["pending"]["command_id"] if report["pending"] else expected_load_command
     report.update(state="LIVE_HOUSEHOLD_OBSERVED", household_id=household, lot_id=lot,
                   household_readback=frame["capture"], entry_command_id=entry_command, pending=None)
     checkpoint(report)
