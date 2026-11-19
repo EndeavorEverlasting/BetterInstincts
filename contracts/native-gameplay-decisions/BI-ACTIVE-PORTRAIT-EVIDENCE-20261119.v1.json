@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/microsystem_handoff.py",
+      "route": "POLICY_ONLY",
+      "reason": "Classify exact-scope observation windows before queue ranking or releasing domain priority.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    },
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "reason": "Recheck scope, readiness requirements and capture continuity before using existing atomic native ports.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 171
+    }
+  ]
+}
