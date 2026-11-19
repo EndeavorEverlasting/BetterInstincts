@@ -163,7 +163,9 @@ class NativeEcologyPackageTests(unittest.TestCase):
             [sys.executable, "-I", "-c",
              "import sys; sys.path.insert(0, sys.argv[1]);"
              "from betterinstincts.installed_player_runtime import IDLE_SECONDS;"
-             "assert IDLE_SECONDS == 5", installed["installed"]],
+             "from betterinstincts.installation_profiles import LAUNCH_OPTIONS;"
+             "assert IDLE_SECONDS == 5 and LAUNCH_OPTIONS['idle_ms']['default'] == 15000",
+             installed["installed"]],
             cwd=self.root, capture_output=True, text=True, timeout=10,
         )
         self.assertEqual(process.returncode, 0, process.stderr)

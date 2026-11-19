@@ -8,6 +8,7 @@ from time import time
 import unittest
 from unittest.mock import Mock, patch
 
+from betterinstincts import installation_profiles, player_presence
 from scripts import game_host, lab_upgrade_parts, launch_receipt, play, save_catalog, smart_start, startup_handoff
 from scripts.save_catalog import SCHEMA
 from tests.test_lab_upgrade_parts import FixtureBridge, PARTS
@@ -26,6 +27,7 @@ class StartupFixture(startup_handoff.StartupBridge):
         self.slot = "Slot_00000006"
         self.generation = 5
         self.catalog_process = GAME
+        self.process = GAME
         self.operations = []
         self.command = None
         self.capture_count = 0
@@ -35,28 +37,39 @@ class StartupFixture(startup_handoff.StartupBridge):
         self.catalog_only = False
         self.session_in_progress = False
         self.catalog_timestamp = None
+        self.profile_ports = False
+        self.catalog_reads = 0
+        self.second_household = False
 
     def exchange(self, operation, **request):
         self.operations.append(operation)
         if operation == "capabilities":
-            return {"state": "NATIVE_BINDING_READY", "operations": (
-                ["read_save_catalog"] if self.catalog_only else list(startup_handoff.OPERATIONS))}
+            operations = ["read_save_catalog"] if self.catalog_only else list(startup_handoff.OPERATIONS)
+            if self.profile_ports:
+                operations.extend(("load_selected_save", "select_household"))
+            return {"state": "NATIVE_BINDING_READY", "operations": operations}
         if operation == "read_save_catalog":
             if self.session_in_progress:
                 return {"state": "EXISTING_SESSION_IN_PROGRESS", "observation_id": request["observation_id"]}
+            newest = save(6, "Chosen Lab", played="2026-11-16T13:00:00Z")
+            if self.second_household:
+                newest["households"].extend(save(6, "unused", home=OTHER)["households"])
+            self.catalog_reads += 1
+            capture = "capture:menu" if self.catalog_reads == 1 else f"capture:menu-{self.catalog_reads}"
             return {"state": "MAIN_MENU_OBSERVED", "observation_id": request["observation_id"],
                     "catalog": {"schema": SCHEMA, "process": asdict(self.catalog_process),
                                 "inventory_complete": True, "source": "IN_GAME_SAVE_INVENTORY",
-                                "scene": "MAIN_MENU", "capture_ref": "capture:menu",
+                                "scene": "MAIN_MENU", "capture_ref": capture,
                                 "observed_at_unix": self.catalog_timestamp or time(), "saves": [
                                     save(4, "Older incomplete", roster=("Alpha",), played="2026-11-14T13:00:00Z"),
-                                    save(6, "Chosen Lab", played="2026-11-16T13:00:00Z"),
+                                    newest,
                                 ]}}
         if operation == "observe":
             self.capture_count += 1
             capture = f"capture:frame-{self.capture_count}"
             frame = {"capture": capture, "save_id": self.save, "slot": self.slot, "scene": self.scene,
                      "active_households": [{"household_id": self.household, "lot_id": "lot:fixture"}],
+                     "selectable_households": [{"household_id": HOUSE, "lot_id": "lot:fixture"}],
                      "selected_lot_id": "lot:fixture", "household_id": self.household,
                      "lot_id": "lot:fixture", "player_idle_verified": True,
                      "input_generation": self.generation, "applied_command_id": self.command,
@@ -68,16 +81,24 @@ class StartupFixture(startup_handoff.StartupBridge):
                                    "decision_ref": "decision:fixture", "decision_capture": capture}}
             frame.update(self.frame_changes.get(self.capture_count, {}))
             return {"observation_id": request["observation_id"], "frame": frame}
-        assert operation in {"open_active_lot", "play_active_lot"}
+        if operation == "load_selected_save":
+            assert request["minimum_idle_ms"] == 21000
+            self.command = request["command_id"]
+            return {"command_id": self.command, "status": "APPLIED"}
+        assert operation in {"open_active_lot", "play_active_lot", "select_household"}
         assert request["target"]["lot_id"] == "lot:fixture"
         assert request["input_generation"] == self.generation
-        self.scene = "LIVE" if operation == "play_active_lot" else "LOT_DETAILS"
+        if operation == "select_household":
+            self.household = request["target"]["household_id"]
+        else:
+            self.scene = "LIVE" if operation == "play_active_lot" else "LOT_DETAILS"
         self.command = request["command_id"]
         return {"command_id": self.command, "status": "UNKNOWN" if self.lose_ack == operation else "APPLIED"}
 
 
 class StartupHandoffTests(unittest.TestCase):
-    def run_play(self, bridge, *, mode="dev", fail_receipt_at=None, restock=None, game=DISPATCHED):
+    def run_play(self, bridge, *, mode="dev", fail_receipt_at=None, restock=None, game=DISPATCHED,
+                 use_profile=False, pick=HOUSE, remembered=None, lease_error=None):
         with TemporaryDirectory() as directory:
             root = Path(directory)
             context = root / "startup.json"
@@ -104,7 +125,13 @@ class StartupHandoffTests(unittest.TestCase):
             def record_dispatch(*args, **kwargs):
                 bridge.receipt_at_dispatch = json.loads(receipt.read_text())
 
-            with (patch.object(smart_start, "observe_launched_process", return_value=GAME),
+            with (patch.object(installation_profiles, "settings_path", return_value=root / "settings.v1.json"),
+                  patch.object(player_presence, "probe_windows", return_value=player_presence.PresenceProbe(
+                      True, True, last_input_age_ms=24000)),
+                  patch("scripts.instance_settings.choose_launch_household", return_value=pick) as picker,
+                  patch.object(startup_handoff, "exclusive_screen_owner",
+                               side_effect=lease_error, return_value=nullcontext()),
+                  patch.object(smart_start, "observe_launched_process", return_value=GAME),
                   patch.object(smart_start, "require_same_game_process"),
                   patch.object(game_host, "profile", return_value=(selected, "digest")),
                   patch.object(game_host, "navigate_startup_save", side_effect=record_dispatch) as navigate,
@@ -113,10 +140,88 @@ class StartupHandoffTests(unittest.TestCase):
                   patch.object(lab_upgrade_parts, "NativeBridge", return_value=restock),
                   patch.object(startup_handoff, "StartupBridge", return_value=bridge)):
                 selection = {"expected_save_name": "Chosen Lab", "required_members": ["Alpha", "Beta", "Gamma"]}
+                profile = None
+                if use_profile:
+                    installation_profiles.set_launch_preferences({"idle_ms": 21000, "mode": mode})
+                    profile = installation_profiles.set_preferred_household(remembered)
                 result = play.complete_play(mode, game, {}, context, receipt, {}, Mock(),
                                             upgrade_parts=restock is not None,
-                                            selection=selection if restock is not None else None)
+                                            selection=selection if restock is not None else None,
+                                            launch_profile=profile)
+                bridge.remembered = installation_profiles.view()["preferred_household_id"]
+                bridge.picker_calls = picker.call_args_list
             return result, navigate.call_count, json.loads(receipt.read_text())
+
+    def test_profile_play_chooses_current_household_and_loads_without_template_dispatch(self):
+        bridge = StartupFixture()
+        bridge.profile_ports = bridge.second_household = True
+        bridge.household = OTHER
+        result, template_loads, receipt = self.run_play(bridge, mode="production", use_profile=True)
+        self.assertEqual((result["status"], template_loads), ("ok", 0))
+        self.assertEqual(bridge.catalog_reads, 2)
+        self.assertEqual(bridge.picker_calls[0].args, ({HOUSE: "Test Household", OTHER: "Other"},))
+        self.assertEqual(bridge.remembered, HOUSE)
+        self.assertEqual(bridge.operations.count("load_selected_save"), 1)
+        self.assertEqual(bridge.operations.count("select_household"), 1)
+        self.assertEqual(receipt["startup_handoff"]["household_id"], HOUSE)
+        self.assertEqual(receipt["startup_handoff"]["state"], "NATIVE_RESPONDER_DECISION_OBSERVED")
+
+    def test_profile_cancel_and_unconfirmed_native_load_never_dispatch_more(self):
+        bridge = StartupFixture()
+        bridge.second_household = True
+        result, loads, _ = self.run_play(bridge, mode="production", use_profile=True, pick=None)
+        self.assertEqual((result["reason"], loads), ("HOUSEHOLD_CHOICE_CANCELLED", 0))
+        self.assertIsNone(bridge.remembered)
+        self.assertNotIn("load_selected_save", bridge.operations)
+
+        bridge = StartupFixture()
+        bridge.profile_ports = True
+        bridge.frame_changes[1] = {"applied_command_id": "unrelated-command"}
+        result, loads, _ = self.run_play(bridge, mode="production", use_profile=True, remembered=HOUSE)
+        self.assertEqual((result["reason"], loads), ("STARTUP_NATIVE_SAVE_LOAD_RECONCILIATION_REQUIRED", 0))
+        self.assertEqual(bridge.picker_calls, [])
+        self.assertEqual(bridge.operations.count("load_selected_save"), 1)
+        self.assertNotIn("open_active_lot", bridge.operations)
+
+    def test_saved_household_outside_latest_requires_a_choice(self):
+        bridge = StartupFixture()
+        bridge.profile_ports = True
+        result, loads, _ = self.run_play(bridge, mode="production", use_profile=True,
+                                        pick=None, remembered=OTHER)
+        self.assertEqual((result["reason"], loads), ("HOUSEHOLD_CHOICE_CANCELLED", 0))
+        self.assertEqual(bridge.remembered, OTHER)
+        self.assertEqual(bridge.picker_calls[0].args, ({HOUSE: "Test Household"},))
+        self.assertNotIn("load_selected_save", bridge.operations)
+
+    def test_dev_profile_uses_oldest_authorized_match_without_unbound_household_choice(self):
+        bridge = StartupFixture()
+        bridge.profile_ports = bridge.second_household = True
+        result, template_loads, _ = self.run_play(bridge, use_profile=True)
+        self.assertEqual((result["status"], template_loads), ("ok", 0))
+        self.assertEqual(result["save_route"]["candidate_slot"], "Slot_00000006")
+        self.assertEqual(bridge.remembered, HOUSE)
+        self.assertEqual(bridge.picker_calls, [])
+
+    def test_profile_native_load_respects_existing_desktop_owner(self):
+        from betterinstincts.control_handoff import HandoffError
+
+        bridge = StartupFixture()
+        bridge.profile_ports = True
+        result, loads, _ = self.run_play(bridge, mode="production", use_profile=True,
+                                        remembered=HOUSE, lease_error=HandoffError("FIXTURE_SCREEN_BUSY"))
+        self.assertEqual((result["reason"], loads), ("FIXTURE_SCREEN_BUSY", 0))
+        self.assertNotIn("load_selected_save", bridge.operations)
+
+    def test_profile_native_load_directly_into_live_keeps_entry_command(self):
+        bridge = StartupFixture()
+        bridge.profile_ports = True
+        bridge.scene = "LIVE"
+        result, loads, receipt = self.run_play(bridge, mode="production", use_profile=True, remembered=HOUSE)
+        self.assertEqual((result["status"], loads), ("ok", 0))
+        self.assertEqual(receipt["native_save_load"]["state"], "OBSERVED")
+        self.assertEqual(receipt["startup_handoff"]["entry_command_id"],
+                         receipt["native_save_load"]["command_id"])
+        self.assertNotIn("open_active_lot", bridge.operations)
 
     def semantic_restock_fixture(self):
         catalog = StartupFixture()

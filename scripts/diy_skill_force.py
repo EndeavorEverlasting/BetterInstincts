@@ -53,6 +53,7 @@ from betterinstincts.installation_profiles import (
     InstallationProfileError,
     household_ledger_path,
     household_skills_export_path,
+    require_cheats_enabled,
     view as view_installation_profile,
 )
 from betterinstincts.diy_skill_force import (
@@ -557,6 +558,7 @@ def _execute_plan(
         require_execute_session(session_id, process_id)
     except HandoffError as exc:
         raise GateError(str(exc)) from exc
+    require_cheats_enabled()
     idle_wait = _wait_for_input_idle(
         int(process_id),
         idle_ms=idle_ms,
@@ -800,6 +802,7 @@ def _type_cheat_line(cmd: str, *, refocus_strip: bool = True) -> None:
     """
     from scripts.win32_input import type_text
 
+    require_cheats_enabled()
     if refocus_strip:
         _refocus_cheat_console()
     line = str(cmd).rstrip("\r\n")
@@ -1367,6 +1370,8 @@ def execute_force_gaps(
             raise GateError("CONSOLE_STRIP_REQUIRED_BEFORE_FORCE_GAPS")
 
     rows = list((plan.get("gaps") or {}).get("rows") or []) if may_type else []
+    if rows:
+        require_cheats_enabled()
     if may_type and not rows:
         return {
             "state": "FORCE_GAPS_EMPTY",
@@ -1419,9 +1424,11 @@ def execute_force_gaps(
             }
         _keybd_tap(0x4C)  # close L before console
         time.sleep(0.2)
+        require_cheats_enabled()
         _toggle_cheat_console(process_id=int(process_id), restore_operator=False)
         _refocus_cheat_console()
         time.sleep(0.12)
+        require_cheats_enabled()
         type_text("testingcheats true\n")
         time.sleep(0.4)
         for row in rows:
@@ -1429,6 +1436,7 @@ def execute_force_gaps(
             cmd = str(row["command"])
             times = 2 if sid in {"photography", "writing", "media_production"} else 1
             for _ in range(times):
+                require_cheats_enabled()
                 type_text(cmd + "\n")
                 time.sleep(0.34)
             typed.append(cmd)

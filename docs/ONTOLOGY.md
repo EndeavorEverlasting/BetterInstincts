@@ -40,6 +40,7 @@ P141 routed the selected seam to **P95**; P124 preserves clear ownership; P78 ke
 6. **Orchestration:** situation, open-domain capabilities, continuing goal threads, activities, resource claims, time windows, contingencies, interruptions, resumption and game-native/extension paths.
 
 ## High-value disambiguations
+- **Launch preference and control authority:** A local profile expresses the player's desired mode, household, inactivity interval and cheat permission. The live catalog, slot authorization, player presence and effect-specific checks determine what Play may actually do. Production ranks newest played. Developer mode ranks the oldest authorized disposable save for the chosen household.
 - **Scene vs viewport:** a dark Copperdale Build/Buy catalog and a black Live viewport are not the same thing; classify chrome, HUD, mode and capture quality separately.
 - **Opportunity vs feasible action:** an attractive Sim goal is not an available interaction until the correct lot, object, modal, game patch and player-ownership gates are observed.
 - **Proposal vs authority:** successful offline scoring or learned action confidence cannot turn into SendInput permission.

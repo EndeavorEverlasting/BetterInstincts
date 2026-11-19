@@ -17,6 +17,28 @@ copy of the launcher still provisions or fast-forwards the canonical checkout
 with Git. It preserves existing games and local changes. If a prerequisite, checkout
 or game selection needs attention, the launcher prints the next step.
 
+The launcher uses the active local profile. Open its desktop settings with
+`Start-BetterInstincts.cmd --settings` or the installer's **Preferences**
+button. The **Play** tab controls startup mode, inactivity and cheat permission.
+Use **Save and choose household in Play** to change a remembered household, or
+run `Start-BetterInstincts.cmd --choose-household`. The chooser is populated
+from the running game's current verified menu catalog. A sole or remembered
+household routes directly, and a missing choice opens the picker. Cancelling
+leaves Sims open on its current screen.
+
+The desktop inactivity slider offers **15, 21, 34, 55, 89 and 120 seconds**.
+Saving the setting also applies it to the native responder the next time
+the game imports the updated runtime. Untuned legacy native sessions retain
+their existing threshold. Player input still takes precedence. Cheats start
+off for BetterInstincts' funds and skill dispatchers. Turning them on makes
+those routes eligible subject to their normal checks. Your own game commands
+remain under your control.
+
+To roll back to a version earlier than these Play settings, select each
+changed profile and click **Restore defaults** on the Play tab first. This
+removes its launch options while retaining household preferences and feature
+toggles.
+
 From an existing checkout on the Sims PC, use the container-backed CLI
 with Docker in Linux-container mode. The container verifies source and
 the Windows host owns the game lifecycle.
@@ -51,10 +73,14 @@ and provides the observed `process` from the launch receipt, source
 and `candidates` containing `save_id` and UTC `last_played_utc`.
 
 With a locally installed exact-build `native_startup` binding, Play requests
-the current menu catalog itself and continues into the active household. To
-use it from the Windows double-click launcher, place the production context at
-`%LOCALAPPDATA%\BetterInstincts\runtime\startup\production.json` or pass it
-with `--prod`. See the [startup binding and Windows trial](../plans/active/BI-SEMANTIC-SAVE-LAUNCH.md#native-startup-binding).
+the current menu catalog itself and continues into the chosen household. The
+double-click launcher reads `production.json` or `dev.json` from
+`%LOCALAPPDATA%\BetterInstincts\runtime\startup`. Developer Play can also use
+the existing `runtime\lab-upgrade-parts\startup.json` when it supports standard
+Play. Automatic entry still requires current save authorization and the
+adapter's load or calibrated navigation route. A protected or unapproved
+newest production save stays available for the player to open in Sims.
+See the [startup binding and Windows trial](../plans/active/BI-SEMANTIC-SAVE-LAUNCH.md#native-startup-binding).
 
 The launcher treats a dispatch PID and a game PID independently. A
 replacement or reused PID invalidates the in-flight action. The receipt

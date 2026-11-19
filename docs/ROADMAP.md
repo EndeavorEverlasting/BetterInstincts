@@ -1,3 +1,12 @@
+## 2026-11-19 — Certify the profile-driven Play shortcut
+
+Verify the Settings and Play entrypoints on the exact Windows Sims build.
+Use a fresh catalog for a multi-household choice, then a repeat launch with a
+remembered household. Verify production's newest authorized save, developer's
+oldest authorized disposable save, idle and cheat denial, player interruption,
+and one verified native responder decision. Preserve the existing dedicated
+restock and protected-slot acceptance gates.
+
 ## 2026-11-18 — Reuse the Seam Closure Loop during live certification
 
 The product-launched restock route now owns isolated official-main checkout

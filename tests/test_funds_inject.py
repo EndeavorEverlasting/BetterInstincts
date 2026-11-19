@@ -131,6 +131,7 @@ class ReserveBailoutTests(unittest.TestCase):
             learn_reviewed([review], prior=model, **profile)
 
     def test_windows_adapter_reserves_and_persists_before_allowing_replay(self):
+        from betterinstincts import installation_profiles
         from scripts import funds_inject as host
         from scripts.smart_start import GameProcess
 
@@ -142,6 +143,8 @@ class ReserveBailoutTests(unittest.TestCase):
         )
         with TemporaryDirectory() as folder:
             output = Path(folder) / "game-host"
+            settings = Path(folder) / "settings.v1.json"
+            installation_profiles.set_launch_preferences({"allow_cheats": True}, settings)
 
             def execute(plan, *, before_input, verify_console_input, **kwargs):
                 before_input()
@@ -152,6 +155,7 @@ class ReserveBailoutTests(unittest.TestCase):
                 return {"dispatch_ref": "dispatch:local"}
 
             with patch.object(host.sys, "platform", "win32"), patch.object(host, "OUTPUT", output), \
+                 patch.object(installation_profiles, "settings_path", return_value=settings), \
                  patch("scripts.smart_start.require_same_game_process") as process_check, \
                  patch.object(host, "_execute_plan", side_effect=execute) as sender:
                 process = GameProcess(123, "12345678901234567", r"c:\game\bin\ts4_x64.exe", "1.121.361.1020")
@@ -170,6 +174,33 @@ class ReserveBailoutTests(unittest.TestCase):
 
 
 class FundsInjectTests(unittest.TestCase):
+    def setUp(self):
+        from betterinstincts import installation_profiles
+
+        temp = TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        local = Path(temp.name) / "settings.v1.json"
+        installation_profiles.set_launch_preferences({"allow_cheats": True}, local)
+        use_local = patch.object(installation_profiles, "settings_path", return_value=local)
+        use_local.start()
+        self.addCleanup(use_local.stop)
+
+    def test_disabled_local_cheats_hold_before_console_or_focus(self):
+        from betterinstincts import installation_profiles
+        from scripts import funds_inject as host
+
+        installation_profiles.set_launch_preferences({"allow_cheats": False})
+        with (patch.object(host.sys, "platform", "win32"),
+              patch.object(host, "_open_console_chord") as chord,
+              patch.object(host, "_focus") as focus,
+              patch.object(host, "_type_text") as type_text):
+            with self.assertRaisesRegex(installation_profiles.InstallationProfileError, "CHEATS_DISABLED"):
+                host._execute_plan(plan_inject(funds_observed=38, amount=1000000, game_mode="live"),
+                                   process_id=123, session_id="session")
+        chord.assert_not_called()
+        focus.assert_not_called()
+        type_text.assert_not_called()
+
     def test_contract_ea_exact_money_first(self):
         cfg = load_contract()
         seq = cfg["inject_sequence"]

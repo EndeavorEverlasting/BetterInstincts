@@ -7,11 +7,61 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
+import sys
 
 from betterinstincts.installation_profiles import (
-    DEFAULTS, InstallationProfileError, choose_profile, create_profile,
-    reset_toggle, set_preferred_household, set_toggle, view,
+    DEFAULTS, LAUNCH_OPTIONS, InstallationProfileError, choose_profile, create_profile,
+    reset_launch_preferences, reset_toggle, set_launch_preferences, set_preferred_household,
+    set_toggle, view,
 )
+
+
+def choose_launch_household(choices: dict[str, str]) -> str | None:
+    """Ask for one exact identity from the launcher's current verified catalog."""
+    try:
+        import tkinter as tk
+        from tkinter import ttk
+    except ImportError as exc:
+        raise InstallationProfileError("HOUSEHOLD_PICKER_UNAVAILABLE") from exc
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        raise InstallationProfileError("HOUSEHOLD_PICKER_UNAVAILABLE") from exc
+    root.title("BetterInstincts · Choose a household")
+    frame = ttk.Frame(root, padding=22)
+    frame.pack(fill="both", expand=True)
+    ttk.Label(frame, text="Which household do you want to play?",
+              font=("Segoe UI", 15, "bold")).pack(anchor="w")
+    ttk.Label(frame, text="BetterInstincts will remember this choice for your profile.").pack(
+        anchor="w", pady=(5, 16))
+    rows = sorted(choices.items(), key=lambda item: (item[1].casefold(), item[0]))
+    from collections import Counter
+
+    name_counts = Counter(name.casefold() for _, name in rows)
+    select = ttk.Combobox(frame, state="readonly", width=44, values=[
+        f"{name} ({identity})" if name_counts[name.casefold()] > 1 else name
+        for identity, name in rows
+    ])
+    select.pack(fill="x")
+    selected = None
+
+    def accept() -> None:
+        nonlocal selected
+        index = select.current()
+        if index >= 0:
+            selected = rows[index][0]
+            root.destroy()
+
+    buttons = ttk.Frame(frame)
+    buttons.pack(fill="x", pady=(18, 0))
+    ttk.Button(buttons, text="Cancel", command=root.destroy).pack(side="right")
+    ttk.Button(buttons, text="Play household", command=accept).pack(side="right", padx=8)
+    root.bind("<Escape>", lambda _event: root.destroy())
+    root.after(90_000, root.destroy)
+    select.focus_set()
+    root.mainloop()
+    return selected
 
 
 def gui() -> int:
@@ -27,7 +77,7 @@ def gui() -> int:
         raise InstallationProfileError("SETTINGS_GUI_UNAVAILABLE") from exc
 
     root.title("BetterInstincts · Local Profiles")
-    root.geometry("630x560")
+    root.geometry("660x620")
     root.resizable(True, True)
     frame = ttk.Frame(root, padding=16)
     frame.pack(fill="both", expand=True)
@@ -39,8 +89,12 @@ def gui() -> int:
     profile_var = tk.StringVar()
     profile_choice = ttk.Combobox(controls, textvariable=profile_var, state="readonly", width=28)
     profile_choice.pack(side="left", padx=(0, 8))
-    settings_frame = ttk.Frame(frame)
-    settings_frame.pack(fill="both", expand=True, pady=(12, 0))
+    notebook = ttk.Notebook(frame)
+    notebook.pack(fill="both", expand=True, pady=(12, 0))
+    launch_frame = ttk.Frame(notebook, padding=14)
+    settings_frame = ttk.Frame(notebook, padding=14)
+    notebook.add(launch_frame, text="Play")
+    notebook.add(settings_frame, text="Features")
     state = ttk.Label(frame, text="Read-only until you change a preference.")
     state.pack(anchor="w")
 
@@ -52,6 +106,67 @@ def gui() -> int:
         data = view()
         profile_choice["values"] = data["profiles"]
         profile_var.set(data["active_profile"])
+        for widget in launch_frame.winfo_children():
+            widget.destroy()
+        editors = {}
+        for key, option in LAUNCH_OPTIONS.items():
+            value = data["launch"][key]
+            if option["control"] == "toggle":
+                variable = tk.BooleanVar(value=value)
+                ttk.Checkbutton(launch_frame, text=option["label"], variable=variable).pack(anchor="w", pady=8)
+                editors[key] = variable.get
+                continue
+            ttk.Label(launch_frame, text=option["label"]).pack(anchor="w", pady=(8, 3))
+            index = option["choices"].index(value)
+            if option["control"] == "slider":
+                label = ttk.Label(launch_frame, text=option["labels"][index])
+                label.pack(anchor="w")
+                slider = tk.Scale(launch_frame, from_=0, to=len(option["choices"]) - 1,
+                                  showvalue=False, orient="horizontal",
+                                  command=lambda v, label=label, option=option:
+                                      label.configure(text=option["labels"][int(float(v))]))
+                slider.set(index)
+                slider.pack(fill="x")
+                editors[key] = lambda slider=slider, option=option: option["choices"][int(slider.get())]
+            else:
+                box = ttk.Combobox(launch_frame, state="readonly", values=option["labels"], width=45)
+                box.current(index)
+                box.pack(anchor="w")
+                editors[key] = lambda box=box, option=option: option["choices"][box.current()]
+        ttk.Label(launch_frame, text=("Household remembered for this profile." if data["preferred_household_id"]
+                                     else "Choose your household from the game catalog during Play.")).pack(
+            anchor="w", pady=(14, 8))
+
+        def save(*, play=False) -> None:
+            try:
+                set_launch_preferences({key: read() for key, read in editors.items()},
+                                       expected_revision=data["revision"])
+                if play:
+                    subprocess.Popen([sys.executable, "-m", "scripts.play",
+                                      "--profile-launch", "--choose-household"], close_fds=True)
+                    root.destroy()
+                else:
+                    refresh()
+                    state.configure(text="Play settings saved.")
+            except (InstallationProfileError, OSError) as exc:
+                error(exc)
+                refresh()
+
+        actions = ttk.Frame(launch_frame)
+        actions.pack(anchor="w")
+        ttk.Button(actions, text="Save settings", command=save).pack(side="left")
+        ttk.Button(actions, text="Save and choose household in Play",
+                   command=lambda: save(play=True)).pack(side="left", padx=8)
+        def reset_play() -> None:
+            try:
+                reset_launch_preferences(expected_revision=data["revision"])
+                refresh()
+                state.configure(text="Play defaults restored.")
+            except (InstallationProfileError, OSError) as exc:
+                error(exc)
+                refresh()
+
+        ttk.Button(actions, text="Restore defaults", command=reset_play).pack(side="left")
         for widget in settings_frame.winfo_children():
             widget.destroy()
         for key, enabled in data["settings"].items():
@@ -59,6 +174,7 @@ def gui() -> int:
             def set_value(name: str = key, var: object = item) -> None:
                 try:
                     set_toggle(name, var.get())
+                    refresh()
                     state.configure(text="Saved locally: " + name)
                 except (InstallationProfileError, OSError) as exc:
                     error(exc)
@@ -120,6 +236,7 @@ def main(argv: list[str] | None = None) -> int:
     household.add_argument("household_id")
     household.add_argument("--profile")
     sub.add_parser("gui", help="Open the local Tk settings panel (explicit action only)")
+    sub.add_parser("reset-play", help="Restore Play defaults for the active profile")
     args = p.parse_args(argv)
     try:
         if args.command == "gui":
@@ -136,6 +253,8 @@ def main(argv: list[str] | None = None) -> int:
             result = choose_profile(args.profile_id)
         elif args.command == "choose-household":
             result = set_preferred_household(args.household_id, profile_id=args.profile)
+        elif args.command == "reset-play":
+            result = reset_launch_preferences()
         elif args.command == "set":
             result = set_toggle(args.key, args.value == "true", profile_id=args.profile)
         else:

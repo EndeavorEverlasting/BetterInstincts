@@ -140,6 +140,36 @@ class InstallationProfilesTests(unittest.TestCase):
         self.assertEqual(catalog["defaults"], DEFAULTS)
         self.assertTrue(all(type(value) is bool for value in DEFAULTS.values()))
 
+    def test_launch_options_are_typed_private_and_revision_guarded(self):
+        from betterinstincts.installation_profiles import (
+            read_document, require_cheats_enabled, reset_launch_preferences, set_launch_preferences,
+        )
+
+        start = view(self.path)
+        self.assertEqual(start["launch"], {"mode": "production", "idle_ms": 15000,
+                                           "allow_cheats": False})
+        for invalid in (0, 500, 14999, 120001, True, "21000"):
+            with self.subTest(invalid=invalid), self.assertRaises(InstallationProfileError):
+                set_launch_preferences({"idle_ms": invalid}, self.path)
+        with self.assertRaisesRegex(InstallationProfileError, "CHEATS_DISABLED"):
+            require_cheats_enabled(self.path)
+        self.assertFalse(self.path.exists())
+
+        updated = set_launch_preferences({"idle_ms": 21000, "mode": "dev", "allow_cheats": True},
+                                         self.path, expected_revision=start["revision"])
+        self.assertEqual(updated["launch"], {"mode": "dev", "idle_ms": 21000, "allow_cheats": True})
+        require_cheats_enabled(self.path)
+        with self.assertRaisesRegex(InstallationProfileError, "LAUNCH_PREFERENCES_CHANGED"):
+            set_launch_preferences({"mode": "production"}, self.path, expected_revision=start["revision"])
+        create_profile("regular", self.path)
+        choose_profile("regular", self.path)
+        self.assertFalse(view(self.path)["launch"]["allow_cheats"])
+        self.assertEqual(view(self.path, profile_id="default")["launch"]["idle_ms"], 21000)
+        choose_profile("default", self.path)
+        restored = reset_launch_preferences(self.path)
+        self.assertEqual(restored["launch"], start["launch"])
+        self.assertNotIn("launch_preferences", read_document(self.path))
+
     def test_hover_cli_profile_opt_in_does_not_bypass_explicit_session_gate(self):
         from io import StringIO
         from contextlib import redirect_stdout

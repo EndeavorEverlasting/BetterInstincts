@@ -2,12 +2,14 @@
 setlocal EnableExtensions DisableDelayedExpansion
 title BetterInstincts - Play The Sims 4
 echo Welcome to BetterInstincts.
-echo Opening your game...
-set "PLAYMODE=production"
+set "PLAYMODE=profile"
 set "BI_BOOTSTRAP_GAP="
 set "PROD_CONTEXT="
 if /I "%~1"=="--upgrade-parts" set "PLAYMODE=upgrade-parts"
 if /I "%~1"=="--dev" set "PLAYMODE=dev"
+if /I "%~1"=="--prod" set "PLAYMODE=production"
+if /I "%~1"=="--settings" set "PLAYMODE=settings"
+if /I "%~1"=="--choose-household" set "PLAYMODE=choose-household"
 if /I "%~1"=="--prod" if not "%~2"=="" set "PROD_CONTEXT=%~f2"
 if /I "%PLAYMODE%"=="dev" if "%~2"=="" goto missing_context
 if /I "%PLAYMODE%"=="dev" set "DEV_CONTEXT=%~f2"
@@ -70,6 +72,9 @@ if not defined CHECKOUT_HEAD goto blocked_update
 if /I not "%CHECKOUT_HEAD%"=="%UPSTREAM_HEAD%" goto blocked_update
 if /I "%PLAYMODE%"=="upgrade-parts" goto play_upgrade_parts
 if /I "%PLAYMODE%"=="dev" goto play_dev
+if /I "%PLAYMODE%"=="settings" goto local_settings
+if /I "%PLAYMODE%"=="profile" goto play_profile
+if /I "%PLAYMODE%"=="choose-household" goto local_choose
 if defined PROD_CONTEXT goto play_prod_context
 %PYTHON% -m scripts.play --native-start --mode production --checkout-head "%CHECKOUT_HEAD%"
 goto play_result
@@ -91,6 +96,9 @@ goto play_result
 cd /d "%~dp0"
 if errorlevel 1 goto blocked_existing
 if /I "%PLAYMODE%"=="dev" goto local_dev
+if /I "%PLAYMODE%"=="settings" goto local_settings
+if /I "%PLAYMODE%"=="profile" goto local_profile
+if /I "%PLAYMODE%"=="choose-household" goto local_choose
 if defined PROD_CONTEXT goto local_prod_context
 %PYTHON% -m scripts.play --native-start --mode production
 goto play_result
@@ -99,6 +107,18 @@ goto play_result
 goto play_result
 :local_dev
 %PYTHON% -m scripts.play --native-start --mode dev --save-context "%DEV_CONTEXT%"
+goto play_result
+:play_profile
+%PYTHON% -m scripts.play --profile-launch --checkout-head "%CHECKOUT_HEAD%"
+goto play_result
+:local_profile
+%PYTHON% -m scripts.play --profile-launch
+goto play_result
+:local_choose
+%PYTHON% -m scripts.play --profile-launch --choose-household
+goto play_result
+:local_settings
+%PYTHON% -m scripts.instance_settings gui
 :play_result
 if errorlevel 1 goto blocked_launcher
 exit /b 0
