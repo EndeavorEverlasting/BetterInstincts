@@ -32,7 +32,11 @@ class EvidenceWindow:
         if current.samples[-1][1] < self.samples[-1][1]:
             return False
         previous = dict(self.samples)
-        return all(previous.get(capture, second) == second for capture, second in current.samples)
+        shared = [(capture, second) for capture, second in current.samples if capture in previous]
+        minimum_samples, _ = self.requirement
+        return (minimum_samples == 1 or bool(shared)) and all(
+            previous[capture] == second for capture, second in shared
+        )
 
 
 @dataclass(frozen=True)

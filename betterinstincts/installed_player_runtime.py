@@ -477,11 +477,11 @@ class InstalledPlayerRuntime:
         _, current = self._microsystem_choice(fresh)
         if not decision.reconfirmed_by(current) or not self._idle(fresh):
             return "MICROSYSTEM_REOBSERVE_WINNER"
-        identity = decision.identity(fresh)
+        identity = current.identity(fresh)
 
         def submit():
-            self.microsystem_pending = (decision, first.capture, fresh)
-            return self.adapter.submit_microsystem_if_current(decision, fresh)
+            self.microsystem_pending = (current, first.capture, fresh)
+            return self.adapter.submit_microsystem_if_current(current, fresh)
 
         result = self._dispatch(identity, submit)
         if result == "NO_EFFECT":

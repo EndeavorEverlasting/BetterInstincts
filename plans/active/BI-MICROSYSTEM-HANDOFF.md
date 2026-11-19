@@ -22,9 +22,9 @@ prerequisite. The native callback serializes effects.
 - Recompute from two separate fresh observations before one effect. A
   different queue revision, winning proposal, evidence requirement, actor,
   save, input generation or player takeover withdraws admission. An
-  active-clock regression or changed timestamp for a shared capture also
-  withdraws admission. When the winner is on a
-  different portrait, the existing portrait transaction switches first
+  active-clock regression, changed timestamp for a shared capture or
+  completely replaced multi-sample window also withdraws admission. When
+  the winner is on a different portrait, the existing transaction switches first
   and requires a separate selection readback and a fresh decision.
 - Enqueue at the tail unless a contiguous trailing segment of pending,
   lower-priority BetterInstincts actions allows earlier insertion. Running

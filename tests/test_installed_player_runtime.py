@@ -432,6 +432,7 @@ class InstalledRuntimeTests(unittest.TestCase):
         self.assertEqual(runtime.cycle(), "QUEUED")
         decision, frame = self.adapter.submit_microsystem_if_current.call_args.args
         self.assertEqual((decision.actor, decision.work, frame), (OTHER, "food", enqueue))
+        self.assertEqual(decision.evidence_path[-1].samples[-1][0], enqueue.capture)
         self.adapter.submit_portrait_if_current.assert_called_once()
 
     def test_microsystem_portrait_switch_rechecks_target_queue_revision(self):
@@ -466,6 +467,8 @@ class InstalledRuntimeTests(unittest.TestCase):
              3, "MICROSYSTEM_REOBSERVE_WINNER"),
             (SIM, [("capture:baseline", 0), (fresh.capture, 10)], 2, "MICROSYSTEM_REOBSERVE_WINNER"),
             (OTHER, [("capture:baseline", 0), (fresh.capture, 101)], 2, "PORTRAIT_SELECTION_REOBSERVE"),
+            (SIM, [("capture:reset", 0), (fresh.capture, 101)], 2, "MICROSYSTEM_REOBSERVE_WINNER"),
+            (OTHER, [("capture:reset", 0), (fresh.capture, 101)], 2, "PORTRAIT_SELECTION_REOBSERVE"),
         )
         for actor, samples, fresh_minimum, expected in cases:
             with self.subTest(actor=actor, samples=samples, minimum=fresh_minimum):
@@ -483,6 +486,28 @@ class InstalledRuntimeTests(unittest.TestCase):
                 self.assertEqual(runtime.cycle(), expected)
         self.adapter.submit_portrait_if_current.assert_not_called()
         self.adapter.submit_microsystem_if_current.assert_not_called()
+
+    def test_microsystem_preserves_shared_capture_when_mature_window_slides(self):
+        from tests.test_microsystem_handoff import SIM, evidence, lane, member, option, packet
+
+        runtime = self.enable_microsystem_handoff()
+        first = self.frame(actor=SIM)
+        fresh = replace(first, capture="capture:recheck")
+        self.adapter.frame.side_effect = [first, fresh]
+
+        def read(frame):
+            report = option("career-report")
+            samples = ([("capture:baseline", 90), (first.capture, 100)] if frame == first
+                       else [(first.capture, 100), (fresh.capture, 110)])
+            report["evidence"] = evidence(frame, SIM, "CAREER", report["work"],
+                                          minimum=2, seconds=10, samples=samples)
+            return packet(frame, {SIM: member(frame, CAREER=lane(frame, report))})
+
+        self.adapter.read_microsystem_handoff.side_effect = read
+        self.assertEqual(runtime.cycle(), "QUEUED")
+        decision, frame = self.adapter.submit_microsystem_if_current.call_args.args
+        self.assertEqual((decision.evidence_path[-1].samples, frame),
+                         (((first.capture, 100), (fresh.capture, 110)), fresh))
 
     def test_microsystem_rechecks_clearance_used_to_reach_the_winning_tier(self):
         from tests.test_microsystem_handoff import SIM, evidence, lane, member, option, packet
