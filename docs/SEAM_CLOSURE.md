@@ -65,4 +65,3 @@ intake are source-tested, not installed on the Windows Sims build. The actual
 EA-backed adapter and game execution remain owned by #171. A connected SCL
 notice alone cannot satisfy the three portrait switches or a responder
 decision; both require independently correlated game evidence.
-
