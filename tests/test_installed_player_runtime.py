@@ -501,4 +501,3 @@ class InstalledRuntimeTests(unittest.TestCase):
         for _ in range(2 * (MAX_EMISSIONS_PER_SESSION + 3)):
             runtime.cycle_with_seam()
         self.assertEqual(self.adapter.report_runtime_seam.call_count, MAX_EMISSIONS_PER_SESSION)
-
