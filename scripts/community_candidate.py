@@ -162,7 +162,8 @@ def _strict_json(pairs: list) -> dict:
 def _read_json(path: Path, cap: int) -> dict:
     if path.is_symlink() or not path.is_file() or path.stat().st_size > cap:
         raise CandidateError("UNSAFE_OR_OVERSIZED_INPUT")
-    raw = path.read_bytes()
+    with path.open("rb") as source:
+        raw = source.read(cap + 1)
     if len(raw) > cap:
         raise CandidateError("OVERSIZED_INPUT")
     try:
@@ -182,14 +183,9 @@ def read_candidate(path: Path) -> dict:
     return result
 
 
-def _holdout(path: Path) -> list[list[int]]:
-    value = _read_json(path, MAX_HOLDOUT_BYTES)
-    if not isinstance(value, dict) or set(value) != {"schema", "vectors"}:
-        raise CandidateError("HOLDOUT_SCHEMA_INVALID")
-    rows = value["vectors"]
-    if (value["schema"] != HOLDOUT_SCHEMA or not isinstance(rows, list)
-            or not 8 <= len(rows) <= 64):
-        raise CandidateError("HOLDOUT_COUNT_OR_KIND_INVALID")
+def _validated_holdout_vectors(rows: object, *, count_error: str) -> list[list[int]]:
+    if not isinstance(rows, list) or not 8 <= len(rows) <= 64:
+        raise CandidateError(count_error)
     for row in rows:
         if (not isinstance(row, list) or len(row) != 75
                 or any(type(cell) is not int or cell not in (0, 1) for cell in row)):
@@ -197,22 +193,34 @@ def _holdout(path: Path) -> list[list[int]]:
     return rows
 
 
+def _holdout(path: Path) -> list[list[int]]:
+    value = _read_json(path, MAX_HOLDOUT_BYTES)
+    if not isinstance(value, dict) or set(value) != {"schema", "vectors"}:
+        raise CandidateError("HOLDOUT_SCHEMA_INVALID")
+    if value["schema"] != HOLDOUT_SCHEMA:
+        raise CandidateError("HOLDOUT_COUNT_OR_KIND_INVALID")
+    return _validated_holdout_vectors(
+        value["vectors"], count_error="HOLDOUT_COUNT_OR_KIND_INVALID",
+    )
+
+
 def research_benchmark(candidate: dict, cohorts: tuple[list, list]) -> dict:
-    """Non-executable offline screening; dataset independence is NOT attested."""
+    """Non-executable offline screening with disjoint, provenance-unattested cohorts."""
     validate_candidate(candidate)
     if len(cohorts) != 2:
         raise CandidateError("TWO_REVIEWER_COHORTS_REQUIRED")
-    if cohorts[0] == cohorts[1]:
+    first, second = (
+        _validated_holdout_vectors(rows, count_error="HOLDOUT_COUNT_INVALID")
+        for rows in cohorts
+    )
+    if first == second:
         raise CandidateError("IDENTICAL_HOLDOUT_COHORTS")
+    if not {tuple(row) for row in first}.isdisjoint(tuple(row) for row in second):
+        raise CandidateError("OVERLAPPING_HOLDOUT_COHORTS")
     results = []
-    for rows in cohorts:
-        if not isinstance(rows, list) or not 8 <= len(rows) <= 64:
-            raise CandidateError("HOLDOUT_COUNT_INVALID")
+    for rows in (first, second):
         total = 0.0
         for row in rows:
-            if (not isinstance(row, list) or len(row) != 75
-                    or any(type(n) is not int or n not in (0, 1) for n in row)):
-                raise CandidateError("HOLDOUT_VECTOR_INVALID")
             *_, reconstruction, kl = _forward(candidate["weights"], row, [0.0] * 4)
             total += reconstruction + BETA * kl
         mean = total / len(rows)

@@ -5,7 +5,9 @@ import copy
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 from scripts.community_candidate import CandidateError
 from scripts.community_cases import (
@@ -70,6 +72,40 @@ class CommunityCasesTests(unittest.TestCase):
             build_bundle([source("capture:aa1"), source("capture:aa2")])
         with self.assertRaisesRegex(CandidateError, "MIXED_GAME_VERSION"):
             build_bundle([source(), source(version="1.119.0.1000")])
+
+    def test_local_observation_replay_rejected_even_when_label_differs(self):
+        with self.assertRaisesRegex(CandidateError, "DUPLICATE_OBSERVATION_IN_BATCH"):
+            build_bundle([source(), source(outcome="harmful")])
+
+    def test_repository_rejects_bundle_replay_but_reports_repeated_coarse_cases(self):
+        shared_case = source("capture:shared")
+        first = build_bundle([shared_case])
+        second = build_bundle([shared_case, source("capture:another", outcome="harmful")])
+        with tempfile.TemporaryDirectory() as folder:
+            submissions = Path(folder)
+            export_to(submissions / "first.json", first)
+            export_to(submissions / "second.json", second)
+            with patch("scripts.community_cases.SUBMISSIONS", submissions):
+                report = audit_repo()
+                self.assertEqual(report["bundles"], 2)
+                self.assertEqual(report["repeated_semantic_cases"], 1)
+                self.assertFalse(report["safe_to_promote"])
+                export_to(submissions / "copy.json", first)
+                with self.assertRaisesRegex(CandidateError, "COMMUNITY_SUBMISSION_BUNDLE_REPLAY"):
+                    audit_repo()
+
+    def test_repository_bounds_enumeration_before_auditing_paths(self):
+        def oversized_directory():
+            for index in range(258):
+                yield SimpleNamespace(path=f"{index}.json")
+            self.fail("audit read beyond the first directory entry over the cap")
+
+        with tempfile.TemporaryDirectory() as folder:
+            with patch("scripts.community_cases.SUBMISSIONS", Path(folder)):
+                with patch("scripts.community_cases.os.scandir") as scandir:
+                    scandir.return_value.__enter__.return_value = oversized_directory()
+                    with self.assertRaisesRegex(CandidateError, "COMMUNITY_SUBMISSIONS_CAP"):
+                        audit_repo()
 
     def test_digest_replay_and_unknown_fields_rejected(self):
         b = build_bundle([source()])

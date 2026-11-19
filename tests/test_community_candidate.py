@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import copy
+import io
 import json
 import math
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.community_candidate import (
     CandidateError, HOLDOUT_SCHEMA, _holdout, _read_json,
@@ -36,10 +38,9 @@ def local_model() -> dict:
 
 
 def two_cohorts() -> tuple[list[list[int]], list[list[int]]]:
-    zeros = [[0] * 75 for _ in range(8)]
-    mostly_zeros = [[0] * 75 for _ in range(8)]
-    mostly_zeros[0][0] = 1
-    return zeros, mostly_zeros
+    first = [[int(i == offset) for i in range(75)] for offset in range(8)]
+    second = [[int(i == offset) for i in range(75)] for offset in range(8, 16)]
+    return first, second
 
 
 class CommunityCandidateTests(unittest.TestCase):
@@ -116,6 +117,17 @@ class CommunityCandidateTests(unittest.TestCase):
                 with self.assertRaises(CandidateError):
                     _read_json(path, 40_000)
 
+    def test_json_read_stays_bounded_if_file_grows_after_stat(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidate.json"
+            path.write_text("{}", encoding="utf-8")
+            with patch.object(Path, "open", return_value=io.BytesIO(b"x" * 100)) as opened:
+                with patch.object(opened.return_value, "read",
+                                  wraps=opened.return_value.read) as read:
+                    with self.assertRaisesRegex(CandidateError, "^OVERSIZED_INPUT$"):
+                        _read_json(path, 8)
+                    read.assert_called_once_with(9)
+
     def test_structural_pass_does_not_replace_two_cohort_review(self):
         candidate = build_candidate(local_model())
         report = research_benchmark(candidate, two_cohorts())
@@ -127,6 +139,15 @@ class CommunityCandidateTests(unittest.TestCase):
         self.assertTrue(report["privacy_review_required"])
         with self.assertRaisesRegex(CandidateError, "IDENTICAL_HOLDOUT_COHORTS"):
             research_benchmark(candidate, (two_cohorts()[0], two_cohorts()[0]))
+
+    def test_reordered_and_partially_overlapping_cohorts_are_rejected(self):
+        candidate = build_candidate(local_model())
+        first, second = two_cohorts()
+        partial = [first[0], *second[1:]]
+        for variant, other in (("reordered", first[::-1]), ("partial", partial)):
+            with self.subTest(variant=variant):
+                with self.assertRaisesRegex(CandidateError, "OVERLAPPING_HOLDOUT_COHORTS"):
+                    research_benchmark(candidate, (first, other))
 
     def test_adversarial_cross_host_dataset_fails(self):
         candidate = build_candidate(local_model())

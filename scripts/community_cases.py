@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from itertools import islice
 import json
 import os
 from pathlib import Path
@@ -23,6 +24,7 @@ POLICY = "UNTRUSTED_REVIEW_ONLY_NO_GAME_OR_OS_EFFECT"
 MAX_CASES = 128
 MAX_INPUT = 150_000
 MAX_BUNDLE = 65_536
+MAX_SUBMISSION_ENTRIES = 257
 
 
 def _canonical(value: object) -> bytes:
@@ -44,7 +46,9 @@ def build_bundle(examples: object) -> dict:
     """Emit only enumerated semantics from explicitly reviewed local examples."""
     if not isinstance(examples, list) or not 1 <= len(examples) <= MAX_CASES:
         raise CandidateError("REVIEWED_CASE_BATCH_LIMIT")
-    rows, seen = [], set()
+    rows = []
+    seen_cases = set()
+    seen_observations = set()
     version, platform = None, None
     for supplied in examples:
         try:
@@ -55,11 +59,15 @@ def build_bundle(examples: object) -> dict:
             version, platform = event["game_version"], event["platform"]
         if (event["game_version"], event["platform"]) != (version, platform):
             raise CandidateError("MIXED_GAME_VERSION_OR_PLATFORM")
+        observation = supplied["observation_ref"]
+        if observation in seen_observations:
+            raise CandidateError("DUPLICATE_OBSERVATION_IN_BATCH")
+        seen_observations.add(observation)
         row = {key: event[key] for key in ("context", "action", "outcome")}
         row["case_sha256"] = _case_digest(version, platform, row)
-        if row["case_sha256"] in seen:
+        if row["case_sha256"] in seen_cases:
             raise CandidateError("DUPLICATE_SEMANTIC_CASE")
-        seen.add(row["case_sha256"])
+        seen_cases.add(row["case_sha256"])
         rows.append(row)
     rows.sort(key=lambda row: row["case_sha256"])
     bundle = {"schema": SCHEMA, "game_version": version,
@@ -154,20 +162,29 @@ def audit_repo() -> dict:
     """Bounded CI check: validate manual, data-only PR submissions. No imports."""
     if SUBMISSIONS.is_symlink() or not SUBMISSIONS.is_dir():
         raise CandidateError("COMMUNITY_SUBMISSIONS_DIRECTORY_UNSAFE")
-    files = list(SUBMISSIONS.iterdir())
-    if len(files) > 257:
+    with os.scandir(SUBMISSIONS) as entries:
+        files = [Path(entry.path) for entry in islice(entries, MAX_SUBMISSION_ENTRIES + 1)]
+    if len(files) > MAX_SUBMISSION_ENTRIES:
         raise CandidateError("COMMUNITY_SUBMISSIONS_CAP")
-    accepted = 0
+    bundle_digests = set()
+    case_digests = set()
+    case_count = 0
     for path in files:
         if path.name == "README.md":
             continue
         if path.is_symlink() or not path.is_file() or path.suffix != ".json":
             raise CandidateError("COMMUNITY_SUBMISSION_UNEXPECTED_FILE")
-        read_bundle(path)
-        accepted += 1
+        bundle = read_bundle(path)
+        digest = bundle["bundle_sha256"]
+        if digest in bundle_digests:
+            raise CandidateError("COMMUNITY_SUBMISSION_BUNDLE_REPLAY")
+        bundle_digests.add(digest)
+        case_digests.update(row["case_sha256"] for row in bundle["cases"])
+        case_count += len(bundle["cases"])
     return {"state": "REPOSITORY_STRUCTURAL_AUDIT_PASS",
-            "bundles": accepted, "execute_allowed": False,
-            "safe_to_promote": False}
+            "bundles": len(bundle_digests),
+            "repeated_semantic_cases": case_count - len(case_digests),
+            "execute_allowed": False, "safe_to_promote": False}
 
 
 def run(argv: list[str] | None = None) -> dict:
