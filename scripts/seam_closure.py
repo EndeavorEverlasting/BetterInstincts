@@ -7,18 +7,23 @@ as permission to run Shell, read saves, open a protected slot, or click the game
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import datetime, timezone
+import errno
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
+from stat import S_ISREG
+from time import monotonic, sleep
 from uuid import uuid4
 
 SCHEMA = "betterinstincts.seam-closure/v1"
 MAX_EVENTS = 32
 MAX_BYTES = 32_768
 MAX_GAPS = 8
+EVENT_LOCK_TIMEOUT = 2.0
 CODE = re.compile(r"^[A-Z][A-Z0-9_]{2,100}$")
 STAGE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 OWNER = re.compile(r"^(?:scripts|betterinstincts)/[A-Za-z0-9_/-]+\.py$|^Start-BetterInstincts\.cmd$")
@@ -124,6 +129,62 @@ def _save_events(path: Path, run_id: str, events: list[dict]) -> Path:
     return target
 
 
+@contextmanager
+def _event_writer_lock(target: Path):
+    """Serialize host writes across processes, including after a writer exits."""
+    lock = target.with_suffix(".lock")
+    if lock.is_symlink():
+        raise ValueError("SEAM_RECEIPT_STORE_UNSAFE")
+    flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+    fd = os.open(lock, flags, 0o600)
+    try:
+        if not S_ISREG(os.fstat(fd).st_mode):
+            raise ValueError("SEAM_RECEIPT_STORE_UNSAFE")
+        deadline = monotonic() + EVENT_LOCK_TIMEOUT
+        while True:
+            try:
+                if os.name == "nt":
+                    import msvcrt
+
+                    # An open handle owns the first byte even in an empty lock file.
+                    msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError as error:
+                if error.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK):
+                    raise
+                if monotonic() >= deadline:
+                    raise ValueError("SEAM_RECEIPT_STORE_BUSY_RETRY") from error
+                sleep(0.02)
+        yield
+    finally:
+        os.close(fd)
+
+
+def _append_events(path: Path, run_id: str, observed: list[dict]) -> int:
+    target = _event_file(path, run_id)
+    with _event_writer_lock(target):
+        if target.is_symlink():
+            raise ValueError("SEAM_RECEIPT_STORE_UNSAFE")
+        events = read_events(path, run_id)
+        known = {(row.get("type"), row.get("seam_id")) for row in events}
+        original_count = len(events)
+        for event in observed:
+            key = (event["type"], event["seam_id"])
+            if key not in known:
+                if len(events) >= MAX_EVENTS:
+                    raise ValueError("SEAM_RECEIPT_STORE_FULL")
+                event["observed_at"] = datetime.now(timezone.utc).isoformat()
+                events.append(event)
+                known.add(key)
+        if len(events) != original_count:
+            _save_events(path, run_id, events)
+        return len(events)
+
+
 def record(path: Path, receipt: dict) -> dict | None:
     """Persist each distinct blocked gate before it is overwritten by a later stage.
 
@@ -140,23 +201,10 @@ def record(path: Path, receipt: dict) -> dict | None:
         raise ValueError("SEAM_GAP_COUNT_INVALID")
     path = Path(path)
     target = _event_file(path, run_id)
-    if target.is_symlink():
-        raise ValueError("SEAM_RECEIPT_STORE_UNSAFE")
-    events = read_events(path, run_id)
-    known = {row.get("seam_id") for row in events}
-    observed = []
-    for gap in gaps:
-        event = identify(gap, run_id)
-        observed.append(event)
-        if event["seam_id"] not in known:
-            if len(events) >= MAX_EVENTS:
-                raise ValueError("SEAM_RECEIPT_STORE_FULL")
-            event["observed_at"] = datetime.now(timezone.utc).isoformat()
-            events.append(event)
-            known.add(event["seam_id"])
-    _save_events(path, run_id, events)
+    observed = [identify(gap, run_id) for gap in gaps]
+    event_count = _append_events(path, run_id, observed)
     return {
-        "schema": SCHEMA, "state": "OPEN", "event_count": len(events),
+        "schema": SCHEMA, "state": "OPEN", "event_count": event_count,
         "event_file": str(target), "current": observed,
         "effect_admission": "NOT_GRANTED",
     }
@@ -201,29 +249,17 @@ def record_native_notice(
     )
     if expected is None or notice != expected or notice.get("session_tag") is None:
         raise ValueError("SEAM_NATIVE_NOTICE_UNCORRELATED")
-    target = _event_file(path, run_id)
-    if target.is_symlink():
-        raise ValueError("SEAM_RECEIPT_STORE_UNSAFE")
-    events = read_events(path, run_id)
-    if not any(x.get("seam_id") == notice["seam_id"] and x.get("type") == "NATIVE_RUNTIME_SEAM"
-               for x in events):
-        if len(events) >= MAX_EVENTS:
-            raise ValueError("SEAM_RECEIPT_STORE_FULL")
-        # A hash of game-run identity supports correlation without publishing
-        # private household names, save titles, slot numbers or raw error text.
-        event = {
-            "schema": SCHEMA, "type": "NATIVE_RUNTIME_SEAM",
-            "run_id": run_id, "seam_id": notice["seam_id"],
-            "stage": notice["stage"], "reason_code": notice["reason_code"],
-            "capability": notice["capability"],
-            "resolution_state": notice["resolution_state"],
-            "canonical_owner": notice["canonical_owner"],
-            "effect_admission": "NOT_GRANTED",
-            "proof_ceiling": "CORRELATED_ADAPTER_NOTICE_NOT_GAME_CERTIFICATION",
-            "observed_at": datetime.now(timezone.utc).isoformat(),
-        }
-        events.append(event)
-        _save_events(path, run_id, events)
+    # Correlation tags and private launch fields stay out of the event log.
+    event = {
+        "schema": SCHEMA, "type": "NATIVE_RUNTIME_SEAM",
+        "run_id": run_id, "seam_id": notice["seam_id"],
+        "stage": notice["stage"], "reason_code": notice["reason_code"],
+        "capability": notice["capability"], "resolution_state": notice["resolution_state"],
+        "canonical_owner": notice["canonical_owner"],
+        "effect_admission": "NOT_GRANTED",
+        "proof_ceiling": "CORRELATED_ADAPTER_NOTICE_NOT_GAME_CERTIFICATION",
+    }
+    _append_events(path, run_id, [event])
     return {"schema": SCHEMA, "state": "NATIVE_NOTICE_RECORDED",
             "run_id": run_id, "seam_id": notice["seam_id"],
             "effect_admission": "NOT_GRANTED"}

@@ -1,10 +1,15 @@
 """Source-only regression tests for the private seam closure loop."""
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from threading import Event
 import unittest
+from unittest.mock import patch
+
+from scripts import seam_closure
 
 from scripts.launch_receipt import SCHEMA as LAUNCH_SCHEMA, gap, write_result
 from scripts.seam_closure import MAX_EVENTS, SCHEMA, identify, read_events, latest_run_handoff, record_native_notice
@@ -121,6 +126,47 @@ class SeamClosureTest(unittest.TestCase):
             record_native_notice(self.path, notice, observed_process=wrong,
                                  observed_session="game-run")
         self.assertFalse((self.dir / "seam-events.json").exists())
+
+    def test_concurrent_startup_and_native_writers_keep_both_events(self):
+        process = {"pid": 1234, "creation_ticks": "1001234",
+                   "executable": "TS4_x64.exe", "game_version": "1.121.361.1020"}
+        write_result(self.path, {"schema": LAUNCH_SCHEMA, "run_id": self.run_id,
+                                 "status": "ok", "game_process": process})
+        notice = notice_for("NATIVE_SESSION_REBIND_REQUIRED",
+                            game_build=process["game_version"], session="game-run")
+        startup_ready, release_startup, native_started, native_done = (
+            Event(), Event(), Event(), Event()
+        )
+        save_events = seam_closure._save_events
+
+        def pause_startup_save(path, run_id, events):
+            if events[-1]["type"] == "BLOCKED_GATE":
+                startup_ready.set()
+                self.assertTrue(release_startup.wait(5))
+            return save_events(path, run_id, events)
+
+        def submit_native():
+            native_started.set()
+            try:
+                return record_native_notice(self.path, notice, observed_process=process,
+                                            observed_session="game-run")
+            finally:
+                native_done.set()
+
+        with patch.object(seam_closure, "_save_events", side_effect=pause_startup_save):
+            with ThreadPoolExecutor(2) as pool:
+                startup = pool.submit(write_result, self.path, {**self.blocked(), "game_process": process})
+                try:
+                    self.assertTrue(startup_ready.wait(5))
+                    native = pool.submit(submit_native)
+                    self.assertTrue(native_started.wait(5))
+                    native_done.wait(0.25)
+                finally:
+                    release_startup.set()
+                startup.result(timeout=5)
+                self.assertEqual(native.result(timeout=5)["state"], "NATIVE_NOTICE_RECORDED")
+        self.assertCountEqual([row["type"] for row in read_events(self.path, self.run_id)],
+                              ["BLOCKED_GATE", "NATIVE_RUNTIME_SEAM"])
 
     def test_symlink_event_store_is_denied(self):
         other = self.dir / "other.json"
