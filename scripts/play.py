@@ -24,6 +24,8 @@ STARTUP_SOURCES = ("bootstrap.py", "scripts/play.py", "scripts/first_run.py",
                    "scripts/game_host.py", "scripts/launch_save_route.py", "scripts/launch_receipt.py",
                    "scripts/lab_upgrade_parts.py", "scripts/save_candidate_priority.py",
                    "scripts/save_catalog.py", "scripts/startup_handoff.py")
+PROFILE_SOURCES = ("scripts/instance_settings.py", "betterinstincts/installation_profiles.py",
+                   "contracts/installation-profiles.v1.json")
 WIN_COMMAND = "py -3 -m scripts.play"
 SUCCESS_MESSAGES = {
     "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF":
@@ -53,17 +55,21 @@ class PlayBlocked(ValueError):
         self.detail = detail
 
 
-def startup_plan() -> dict:
+def startup_plan(*, profile_launch: bool = False) -> dict:
     sources = {}
-    for name in STARTUP_SOURCES:
+    names = STARTUP_SOURCES + PROFILE_SOURCES if profile_launch else STARTUP_SOURCES
+    for name in names:
         # Universal newlines give the same source identity in Windows and Docker.
         source = (ROOT / name).read_text(encoding="utf-8")
-        compile(source, name, "exec")
+        if name.endswith(".json"):
+            json.loads(source)
+        else:
+            compile(source, name, "exec")
         sources[name] = hashlib.sha256(source.encode("utf-8")).hexdigest()
     return {**PLAN, "sources": sources}
 
 
-def docker_plan(docker: str, progress: Callable[[str], None]) -> dict:
+def docker_plan(docker: str, progress: Callable[[str], None], *, profile_launch: bool = False) -> dict:
     progress("Preparing the BetterInstincts startup container. The first build may take a minute.")
     image = "betterinstincts-startup:local"
     try:
@@ -79,10 +85,11 @@ def docker_plan(docker: str, progress: Callable[[str], None]) -> dict:
         ) from exc
 
     try:
-        expected = startup_plan()
+        expected = startup_plan(profile_launch=profile_launch)
+        plan_args = ["--profile-launch"] if profile_launch else []
         result = subprocess.run(
             [docker, "run", "--rm", "--pull=never", "--network=none", "--read-only",
-             "--cap-drop=ALL", "--security-opt=no-new-privileges", image],
+             "--cap-drop=ALL", "--security-opt=no-new-privileges", image, *plan_args],
             check=True, capture_output=True, encoding="utf-8", errors="replace", timeout=30,
         )
         if len(result.stdout) > 4096 or json.loads(result.stdout) != expected:
@@ -545,10 +552,10 @@ def main(argv: list[str] | None = None) -> int:
     ) if value is not None}
     if args.choose_household and not args.profile_launch:
         parser.error("--choose-household requires --profile-launch")
-    if args.profile_launch:
-        if args.mode or selection or args.upgrade_parts or args.plan or args.emit_plan:
-            parser.error("--profile-launch owns mode and household selection")
-        args.native_start = True
+    if args.choose_household and (args.plan or args.emit_plan):
+        parser.error("--choose-household is for playing on the Windows host")
+    if args.profile_launch and (args.mode or selection or args.upgrade_parts):
+        parser.error("--profile-launch owns mode and household selection")
     if args.upgrade_parts:
         if args.mode == "production" or args.plan or args.emit_plan:
             parser.error("--upgrade-parts requires the Windows dev play route")
@@ -562,7 +569,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.checkout_head and not re.fullmatch(r"[a-f0-9]{40}", args.checkout_head):
         parser.error("invalid verified checkout SHA")
     if args.emit_plan:
-        print(json.dumps(startup_plan()))
+        print(json.dumps(startup_plan(profile_launch=args.profile_launch)))
         return 0
     if not args.plan:
         args.mode = args.mode or "production"
@@ -580,7 +587,7 @@ def main(argv: list[str] | None = None) -> int:
             next_step = ("Rerun this Play command with the same options on the Windows Sims host."
                          if selection or args.save_context else f"Run {command} on the PC with The Sims 4.")
             raise PlayBlocked("host", "WINDOWS_GAME_HOST_REQUIRED", next_step)
-        if args.profile_launch:
+        if args.profile_launch and not args.plan:
             from betterinstincts.installation_profiles import view
 
             launch_profile = view()
@@ -622,10 +629,11 @@ def main(argv: list[str] | None = None) -> int:
             if docker is None:
                 raise PlayBlocked("container_build", "DOCKER_NOT_FOUND",
                                   "Install or start Docker, then rerun from the BetterInstincts checkout.")
-            plan = docker_plan(docker, progress)
+            plan = docker_plan(docker, progress, profile_launch=args.profile_launch)
         if args.plan:
+            command = f"{WIN_COMMAND} --profile-launch" if args.profile_launch else WIN_COMMAND
             result = {"status": "ok", "stage": "container_plan", "plan": plan,
-                      "next_step": f"Startup container is ready. On your Sims PC, run {WIN_COMMAND}."}
+                      "next_step": f"Startup container is ready. On your Sims PC, run {command}."}
         else:
             result = play_on_windows(args.game_exe, progress, mode=args.mode, receipt=receipt,
                                      save_context=args.save_context, receipt_path=receipt_path, checkout=ROOT,

@@ -13,3 +13,6 @@
 !scripts/save_catalog.py
 !scripts/startup_handoff.py
 !betterinstincts/first_run.py
+!scripts/instance_settings.py
+!betterinstincts/installation_profiles.py
+!contracts/installation-profiles.v1.json
