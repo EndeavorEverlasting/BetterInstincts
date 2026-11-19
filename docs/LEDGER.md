@@ -1,3 +1,13 @@
+## 2026-11-19 — Seam Closure Loop closeout repairs
+
+The native ecology builder packages the runtime notice module for an
+explicitly bound seam adapter. The standalone archive regression invokes
+the registered callback outside the checkout. Startup and runtime writers
+now share one locked append path for the private event history. The
+interleaving regression verifies that both event types survive. The
+Windows exact-build adapter, saved household and responder outcome still
+require the live trial in [the restock handoff](handoff/BI-OLDEST-LAB-RESTOCK.md).
+
 ## 2026-11-18 — Seam Closure Loop: native cycle events, source-only
 
 The installed native runtime now supports an opt-in passive semantic notice

@@ -55,6 +55,11 @@ the target and hands the session to the native responder after settlement.
 The standard semantic dev command below ends at the responder's first
 observed decision without buying parts.
 
+For a locally reviewed adapter that reports runtime seam notices, use the
+[native ecology bundle option](../../docs/SEAM_CLOSURE.md#passive-native-runtime-notice-port-source-ready-installation-unverified).
+The Windows trial still starts from the current process and catalog evidence
+and verifies the original portrait, purchase and responder acceptance gates.
+
 ## Proof and continuation
 
 Sixth Gear selected one semantic admission layer in the existing launcher.
