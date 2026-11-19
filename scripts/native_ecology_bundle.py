@@ -32,6 +32,7 @@ PORTRAIT_MEMBER = "betterinstincts/portrait_handoff.pyc"
 ACTIVITY_CHAIN_MODULES = ("activity_chain", "household_funds")
 ACTIVITY_CHAIN_MEMBERS = tuple(f"betterinstincts/{name}.pyc" for name in ACTIVITY_CHAIN_MODULES)
 MICROSYSTEM_MEMBER = "betterinstincts/microsystem_handoff.pyc"
+RUNTIME_SEAM_MEMBER = "betterinstincts/runtime_seam.pyc"
 MAX_SOURCE_BYTES = 250_000
 MAX_PYC_BYTES = 1_000_000
 
@@ -100,6 +101,7 @@ def build_package(
     installed_trait_responder: bool = False, installed_fairy_dust: bool = False,
     installed_fame: bool = False, installed_portrait_handoff: bool = False,
     installed_activity_chain: bool = False, installed_microsystem_handoff: bool = False,
+    installed_runtime_seam_port: bool = False,
 ) -> dict:
     """Compile an independently inspected hook, never arbitrary host policy."""
     if source_path.name != "BetterInstincts_Ecology.py":
@@ -133,6 +135,9 @@ def build_package(
     if installed_microsystem_handoff and (not installed_portrait_handoff
             or not _ref(proof.get("installed_microsystem_handoff_binding_ref"))):
         raise NativeEcologyPackageError("INSTALLED_MICROSYSTEM_HANDOFF_BINDING_PROOF_REQUIRED")
+    if installed_runtime_seam_port and (not installed_player_runtime
+            or not _ref(proof.get("installed_runtime_seam_port_binding_ref"))):
+        raise NativeEcologyPackageError("INSTALLED_RUNTIME_SEAM_PORT_BINDING_PROOF_REQUIRED")
     modules = {MODULE_PYC: _compile_py37(python37, source_path)}
     if installed_player_runtime:
         root = Path(__file__).resolve().parents[1] / "betterinstincts"
@@ -153,6 +158,8 @@ def build_package(
                 modules[member] = _compile_py37(python37, root / (name + ".py"))
         if installed_microsystem_handoff:
             modules[MICROSYSTEM_MEMBER] = _compile_py37(python37, root / "microsystem_handoff.py")
+        if installed_runtime_seam_port:
+            modules[RUNTIME_SEAM_MEMBER] = _compile_py37(python37, root / "runtime_seam.py")
     if output_dir.is_symlink():
         raise NativeEcologyPackageError("OUTPUT_SYMLINK_DENIED")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -167,7 +174,8 @@ def build_package(
                 archive.writestr(member, bytecode)
         _check_archive(tmp, installed_player_runtime, installed_trait_responder,
                        installed_fairy_dust, installed_fame, installed_portrait_handoff,
-                       installed_activity_chain, installed_microsystem_handoff)
+                       installed_activity_chain, installed_microsystem_handoff,
+                       installed_runtime_seam_port)
         package = tmp.read_bytes()
     receipt = {
         "schema": "betterinstincts.native-ecology-ownership/v1",
@@ -193,6 +201,8 @@ def build_package(
         receipt["installed_activity_chain"] = True
     if installed_microsystem_handoff:
         receipt["installed_microsystem_handoff"] = True
+    if installed_runtime_seam_port:
+        receipt["installed_runtime_seam_port"] = True
     package_path.write_bytes(package)
     receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     return {"package": str(package_path), "manifest": str(receipt_path),
@@ -203,14 +213,16 @@ def build_package(
 def _check_archive(path: Path, installed_runtime: bool, installed_trait: bool = False,
                    installed_fairy_dust: bool = False, installed_fame: bool = False,
                    installed_portrait_handoff: bool = False, installed_activity_chain: bool = False,
-                   installed_microsystem_handoff: bool = False) -> None:
+                   installed_microsystem_handoff: bool = False,
+                   installed_runtime_seam_port: bool = False) -> None:
     expected = [MODULE_PYC, *(RUNTIME_MEMBERS if installed_runtime else ()),
                 *(TRAIT_MEMBERS if installed_trait else ()),
                 *([FAIRY_DUST_MEMBER] if installed_fairy_dust else []),
                 *([FAME_MEMBER] if installed_fame else []),
                 *([PORTRAIT_MEMBER] if installed_portrait_handoff else []),
                 *(ACTIVITY_CHAIN_MEMBERS if installed_activity_chain else ()),
-                *([MICROSYSTEM_MEMBER] if installed_microsystem_handoff else [])]
+                *([MICROSYSTEM_MEMBER] if installed_microsystem_handoff else []),
+                *([RUNTIME_SEAM_MEMBER] if installed_runtime_seam_port else [])]
     with zipfile.ZipFile(path) as archive:
         if archive.namelist() != expected:
             raise NativeEcologyPackageError("PACKAGE_CONTENT_INVALID")
@@ -222,7 +234,8 @@ def _read_manifest(path: Path) -> dict:
             or data.get("schema") != "betterinstincts.native-ecology-ownership/v1"
             or (any(data.get(key) is True for key in
                     ("installed_trait_responder", "installed_fairy_dust", "installed_fame",
-                     "installed_portrait_handoff", "installed_activity_chain"))
+                     "installed_portrait_handoff", "installed_activity_chain",
+                     "installed_runtime_seam_port"))
                 and data.get("installed_player_runtime") is not True)
             or (data.get("installed_microsystem_handoff") is True
                 and data.get("installed_portrait_handoff") is not True)
@@ -253,7 +266,8 @@ def install_package(
                    receipt.get("installed_fairy_dust") is True, receipt.get("installed_fame") is True,
                    receipt.get("installed_portrait_handoff") is True,
                    receipt.get("installed_activity_chain") is True,
-                   receipt.get("installed_microsystem_handoff") is True)
+                   receipt.get("installed_microsystem_handoff") is True,
+                   receipt.get("installed_runtime_seam_port") is True)
     owned = mods_dir / "BetterInstincts"
     if owned.is_symlink() or (owned.exists() and any(
         not (item.name == "player-learning.sqlite3" and item.is_file() and not item.is_symlink()
@@ -316,6 +330,8 @@ def main(argv: list[str] | None = None) -> int:
                        help="Include the activity planner for a source-proven native chain binding")
     build.add_argument("--installed-microsystem-handoff", action="store_true",
                        help="Include household queue arbitration for a source-proven native binding")
+    build.add_argument("--installed-runtime-seam-port", action="store_true",
+                       help="Include advisory runtime notices for a source-proven adapter port")
     install = commands.add_parser("install")
     for flag in ("mods-dir", "package", "manifest"):
         install.add_argument("--" + flag, required=True)
@@ -335,6 +351,7 @@ def main(argv: list[str] | None = None) -> int:
                 installed_portrait_handoff=args.installed_portrait_handoff,
                 installed_activity_chain=args.installed_activity_chain,
                 installed_microsystem_handoff=args.installed_microsystem_handoff,
+                installed_runtime_seam_port=args.installed_runtime_seam_port,
             )
         elif args.command == "install":
             result = install_package(
