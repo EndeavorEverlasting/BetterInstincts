@@ -105,6 +105,28 @@ class ContinueCertificationTests(unittest.TestCase):
             self.assertIn("PRESERVE_RUNNING_CERTIFICATION_SESSION", handoff.build_handoff(self.root))
         self.assertEqual(before, (memo.read_bytes(), memo.stat().st_mtime_ns))
 
+    def test_current_play_failure_gives_codex_an_executable_source_task(self):
+        from scripts.launch_receipt import SCHEMA, gap, write_result
+
+        runtime = self.root / "runtime"
+        run_id = "e" * 32
+        receipt = runtime / "play-receipts" / run_id / "launch.json"
+        receipt.parent.mkdir(parents=True)
+        stage = "native_restock_binding"
+        reason = "NATIVE_RESPONDER_HANDOFF_CAPABILITY_REQUIRED"
+        write_result(receipt, {
+            "schema": SCHEMA, "run_id": run_id, "status": "blocked",
+            "started_at": "2026-11-19T20:00:00+00:00", "stage": stage, "reason": reason,
+            "automation_gaps": [gap(stage, reason, "private failure details", "scripts/lab_upgrade_parts.py")],
+        })
+        with (patch("bootstrap.paths", return_value={"locks": runtime / "locks"}),
+              patch.object(handoff, "read_game_processes", return_value=(process(53),))):
+            prompt = handoff.build_handoff(self.root)
+        self.assertIn('"action": "VERIFY_AND_IMPLEMENT_MISSING_TOOL"', prompt)
+        self.assertIn('"source_owner": "scripts/lab_upgrade_parts.py"', prompt)
+        self.assertIn('"next_step": "OBSERVE_CURRENT_SESSION_AND_RECOVER_EXISTING_RECEIPTS"', prompt)
+        self.assertNotIn("private failure details", prompt)
+
     def test_ambiguous_and_unavailable_processes_are_distinct_observations(self):
         with patch.object(handoff, "read_game_processes",
                           return_value=(process(17, "TS4.exe"), process(53))):

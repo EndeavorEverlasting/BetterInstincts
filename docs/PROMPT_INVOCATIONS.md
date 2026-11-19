@@ -712,3 +712,12 @@ runtime follow-up are in [Horizon](HORIZON.md#robotics-craft-and-sale-economics)
 ## 2026-11-16 — MoonWake Sixth Gear for household Eco-Upgrade Part sourcing
 
 The current deterministic resolver and Sixth Gear walker resolved P141 → P95 → P82 → P08 → P07 → P124. The selected design reused the current career and eco owners and added an optional source observation to preserve legacy behavior. P82 exercised scoped balances, source ranking, one-action reconciliation and the stock-only catalog route. P08 recorded BLOCKED_LOCAL_GAME_ACCESS in the Linux source workspace. Repository validation and integration proceed independently, with exact-build EA runtime and rollback tracked in #171.
+
+## 2026-11-19 — P112 then Sixth Gear for Play seam recovery
+
+P112 established the existing unittest and GitHub Actions floor on the current
+base and exercised a deliberately wrong catalog route locally. The canonical
+walk then scoped **P141 → P95 → P82 → P08 → P07 → P124** to current-failure
+recovery. P08 reached the Windows-host boundary. The source owner, regression
+tests, and remaining installed-host proof are in the
+[certification handoff](LIVE_CERTIFICATION_HANDOFF.md#execute-the-current-seam-work-order).

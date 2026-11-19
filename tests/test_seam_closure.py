@@ -84,6 +84,56 @@ class SeamClosureTest(unittest.TestCase):
         })
         self.assertEqual(latest_run_handoff(Path(self.temp.name))["state"], "NO_CURRENT_BLOCKED_RUN")
 
+    def test_work_order_follows_current_failure_over_same_stage_history(self):
+        stage = "native_restock_binding"
+        reason = "NATIVE_RESTOCK_PLANNING_EVIDENCE_CAPABILITY_REQUIRED"
+        first = self.blocked(stage, reason)
+        first["started_at"] = "2026-11-18T20:00:00+00:00"
+        write_result(self.path, first)
+        folder = Path(self.temp.name)
+        work = latest_run_handoff(folder)["work_order"]
+        self.assertEqual(work["action"], "VERIFY_AND_IMPLEMENT_MISSING_TOOL")
+        self.assertEqual(work["source_owner"], "scripts/lab_upgrade_parts.py")
+        self.assertIn("tests.test_seam_closure", work["regression_command"])
+        self.assertEqual(work["effect_admission"], "NOT_GRANTED")
+        self.assertEqual(work["proof_ceiling"], "CURRENT_LAUNCH_FAILURE_ONLY")
+
+        current = self.blocked(stage, "EXACT_BUILD_NATIVE_RESTOCK_BINDING_REQUIRED")
+        current["started_at"] = first["started_at"]
+        write_result(self.path, current)
+        state = latest_run_handoff(folder)
+        self.assertEqual(len(state["seams"]), 2)
+        self.assertEqual(state["work_order"]["action"], "RECOVER_HOST_BINDING")
+        self.assertNotEqual(state["work_order"]["seam_id"], work["seam_id"])
+
+        current["reason"] = "UNRELATED_RESULT"
+        write_result(self.path, current)
+        self.assertIsNone(latest_run_handoff(folder)["work_order"])
+
+    def test_work_order_respects_choice_policy_and_in_flight_effects(self):
+        cases = (
+            ("startup_catalog", "HOUSEHOLD_CHOICE_CANCELLED", "WAIT_FOR_PLAYER_DECISION", None),
+            ("startup_catalog", "LATEST_SLOT_REQUIRES_SEPARATE_AUTHORIZATION", "WAIT_FOR_PLAYER_DECISION", None),
+            ("dev_save_candidate", "SLOT_REQUIRES_SEPARATE_AUTHORIZATION", "WAIT_FOR_PLAYER_DECISION", None),
+            ("dev_save_candidate", "HOUSEHOLD_NAME_MISSING_OR_AMBIGUOUS", "WAIT_FOR_PLAYER_DECISION", None),
+            ("production_save", "LATEST_SAVE_REQUIRES_PLAYER_LOAD", "WAIT_FOR_AUTHORIZED_PLAYER_LOAD", None),
+            ("checkout", "OPERATOR_DESKTOP_BOUNDARY", "PRESERVE_POLICY_HOLD", None),
+            ("save_readback", "NATIVE_SAVE_READBACK_MISSING", "RECONCILE_IN_FLIGHT_EFFECT",
+             "scripts/game_host.py"),
+            ("made_up", "MISSING_TOOL", "TRACE_UNREGISTERED_GATE", "scripts/seam_closure.py"),
+        )
+        for stage, reason, action, owner in cases:
+            with self.subTest(stage=stage):
+                receipt = self.blocked(stage, reason)
+                receipt["started_at"] = "2026-11-18T20:00:00+00:00"
+                write_result(self.path, receipt)
+                work = latest_run_handoff(Path(self.temp.name))["work_order"]
+                self.assertEqual((work["action"], work["source_owner"]), (action, owner))
+                self.assertEqual(work["effect_admission"], "NOT_GRANTED")
+                self.assertNotIn("Secret", json.dumps(work))
+                if owner is None:
+                    self.assertIsNone(work["regression_command"])
+
     def test_native_runtime_notice_joins_exact_process_and_existing_run(self):
         process = {"pid": 1234, "creation_ticks": "1001234",
                    "executable": r"C:\Games\TS4_x64.exe", "game_version": "1.121.361.1020"}

@@ -28,6 +28,42 @@ Load the ranked slot through the normal guarded path once review and
 attestation are complete. After admission, verify the resulting slot and
 household before resuming the hunger trial.
 
+### Execute the current seam work order
+
+Use `seam_closure.work_order` from the handoff alongside the certification
+`next_step`. `scripts/seam_closure.py` projects it from the primary failure in
+the latest blocked Play receipt. Use `seam_id` to keep one work item per
+distinct gate. Earlier events can inform diagnosis.
+
+- `VERIFY_AND_IMPLEMENT_MISSING_TOOL` directs you to the source owner. Trace
+  both sides of the missing operation, verify whether the capability is
+  implemented and available in the current checkout, and reproduce the gap.
+  On a confirmed source gap, consult the ontology, implement the smallest
+  repair in an authorized isolated worktree, add a regression, and run the
+  supplied command. Carry the exact candidate through the existing PR and
+  main CI gates. If the operation already exists, recover the binding on the
+  current host.
+- `TRACE_UNREGISTERED_GATE` directs you to the receipt classifier. Follow the
+  current call site, register its verified owner and next action, and test
+  that route. A receipt path is a clue and must be verified against the
+  checkout before use.
+- Host, binding and private-evidence actions use the existing read-only
+  observers and already authorized evidence. Continue independent source
+  work while a real host dependency is pending. For an in-flight effect,
+  reconcile fresh readback before a retry. Keep an active certification
+  session in place.
+- A player decision or policy hold stays with its existing authority. Ask
+  only if a player decision, physical action or missing permission actually
+  blocks the next authorized step. Respect a canceled choice.
+
+Track avoidable operator requests per distinct unresolved seam. Source gaps
+with an admitted tool path require zero operator requests. Keep local
+receipt contents private. CI exercises the recovery route on push to
+`main` and on pull requests. Close the source gate with a passing exact
+revision and the live gate with fresh Windows evidence for that revision,
+including the repaired trigger, outcome and a protected control. A work
+order grants no control permit.
+
 ## 1. Adopt the running session and recover the work already done
 
 Start in this checkout. Read AGENTS.md and the owners it names. Identify the existing checkout, game process, listener/session and reviewer state. Read the original ignored `dist/live-cert` and `dist/game-host` evidence from the worktree that actually ran the trial if this is a different checkout. Keep active/dirtied branches and ignored artifacts intact. Use the existing local agent or tool session when it owns registered game control. Use a fresh observation to bind any input to the current game. A replacement PID leaves historical mechanic evidence valid. Recover missing run context from existing receipts and host state. If the game is already open, keep it open and preserve its current save and prompt. If it is absent, only an independently validated pin for this certification may be considered, per `scripts.launch_save_route`.

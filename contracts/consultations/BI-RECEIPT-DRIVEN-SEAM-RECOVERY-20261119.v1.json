@@ -1,0 +1,83 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-RECEIPT-DRIVEN-SEAM-RECOVERY-20261119",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "7956c3c69b2c520cd0fdbca1ba3f34fe693738b6",
+  "proposed_capability": "Project the current private Play failure into one repository-owned Codex recovery work order with an isolated source and regression path, next proof gate, and explicit effect ceiling.",
+  "operator_correction": "A missing tool is a repair opportunity for authorized local Codex work. When possible, build, verify in CI and certify on the actual host without another operator relay.",
+  "repository_situation": "At 97d3c17, Play emits automation_gaps and the seam owner persists bounded private events. The handoff reports a slice of history but does not isolate the current primary failure or route it to source work. Open #322 owns receipt writer concurrency and bundle packaging. Open #326 owns the runtime selection.",
+  "competing_theses": [
+    {
+      "thesis": "Document missing tools for the operator",
+      "disposition": "REJECT",
+      "evidence": "Cannot distinguish stale history or prove a source fix."
+    },
+    {
+      "thesis": "Dispatch automatic repair from hosted CI",
+      "disposition": "REJECT",
+      "evidence": "Hosted jobs cannot own private Windows evidence or certify the current game."
+    },
+    {
+      "thesis": "Project the current Play failure in the existing Codex handoff and reuse ordinary CI",
+      "disposition": "SELECT",
+      "evidence": "The launch result owns the current stage and reason. The existing agent can work without transferring private receipts."
+    }
+  ],
+  "affected_concepts": [
+    "HOST_SESSION",
+    "OBSERVATION",
+    "INCIDENT",
+    "PROOF_RECEIPT",
+    "RESUME_CONDITION",
+    "NATIVE_RESPONDER_GAP",
+    "CONTROL_PERMIT"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "docs/LIVE_CERTIFICATION_HANDOFF.md",
+    "scripts/seam_closure.py",
+    "scripts/launch_receipt.py",
+    "scripts/continue_certification.py",
+    "contracts/operator-desktop-boundary.v1.json"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SOURCE_AND_OFFLINE_TESTS_ONLY_NOT_GAME",
+  "player_save_control_impact": "Read-only projection of selected app-owned Play receipts. No game, save, desktop, process, release, or access changes. Existing checks still admit each live effect.",
+  "expected_outcome": "One work order for the current blocked launch gate, with verified source routing and a scoped regression command. Historical or superseded evidence can never start a repair or repeat an effect by itself.",
+  "negative_tests": [
+    "stale event in the same run and same stage does not become an active source repair",
+    "success supersedes prior failures",
+    "authorization and player choice never become source defects",
+    "missing result correlation routes to observation",
+    "unknown owner hints do not authorize file edits",
+    "readback after dispatch never yields replay"
+  ],
+  "rollback_path": "Revert the source PR. Existing private records and live artifacts retain their schemas and meaning.",
+  "unresolved_unknowns": [
+    "Windows Codex tool admission on the installed checkout",
+    "native Sims exact-build observer, authorized slot and outcome evidence"
+  ],
+  "files_expected": [
+    "scripts/seam_closure.py",
+    "scripts/continue_certification.py",
+    "tests/test_seam_closure.py",
+    "tests/test_continue_certification.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "next_gate": "Use the current Play receipt to reproduce and fix an admitted gap, run exact-head offline CI, then certify the changed path on the Windows Sims host."
+}
