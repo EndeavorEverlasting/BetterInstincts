@@ -1,0 +1,55 @@
+{
+  "schema": "betterinstincts.p05-ordered-sprint-pack/v1",
+  "id": "BI-P05-HOME-QUEUE-NEEDS-HOMEWORK-20261109",
+  "created_utc": "2026-11-09T23:52:00Z",
+  "prompt": {
+    "id": "P05",
+    "name": "[SERIALIZED] Ordered Sprint Plan Pack Generator",
+    "source_blob": "848728632c1243ebba023fa0012292a2ad33cada"
+  },
+  "parent_outcome": "Durable host logic that, when Charlee (or any home Sim) is on the home lot after school, proposes/queues critical needs recovery then homework without fighting an operator who is currently queuing those actions by hand; Send Alone calibrate only when the dialog appears; never claim skill PASS from DISPATCHED.",
+  "operator_screen": {
+    "owner": "OPERATOR",
+    "belay": true,
+    "note": "Operator queues needs + homework live; agents build host logic offline and only take Send Alone / later P08 when screen is free or dialog blocks."
+  },
+  "floor": {
+    "origin_main": "553e2fa33d0c0dd0d075fb91304509f5eb5ed4cb",
+    "canonical_checkout_observed_stale": "C:/Users/CheeksMcClappeth/dev/BetterInstincts @ bb580c5",
+    "this_worktree": "C:/Users/CheeksMcClappeth/dev/.worktrees/BetterInstincts/servo-evil-escape-regression-20261109 @ 018523b"
+  },
+  "existing_owners_reuse": [
+    "betterinstincts/instincts_host.py",
+    "betterinstincts/teen_homework.py",
+    "betterinstincts/career_service.py",
+    "betterinstincts/school_day.py",
+    "betterinstincts/host_stack.py",
+    "betterinstincts/host_listener.py",
+    "betterinstincts/school_attend_click.py",
+    "contracts/teen-homework.v1.json",
+    "contracts/needs.v1.json"
+  ],
+  "gap": "Host evaluates needs and homework in isolation; missing a durable HOME_AFTER_SCHOOL (or home-lot) tandem that orders survival needs → hygiene/fun as policy allows → homework enqueue, with PLAYER_FIRST yield while operator queues, and a receipt that distinguishes OPERATOR_QUEUED vs HOST_PROPOSED.",
+  "launch_order": [
+    "S1-FLOOR-CANONICAL-MAIN",
+    "S2-HOME-QUEUE-HOST-LOGIC",
+    "S3-SEND-ALONE-CALIBRATE-ON-DIALOG",
+    "S4-P08-PARITY-AFTER-OPERATOR",
+    "S5-FIFTH-GEAR-SKILL-CERT-RESUME"
+  ],
+  "parallel_groups": [
+    {
+      "after": "S1-FLOOR-CANONICAL-MAIN",
+      "lanes": ["S2-HOME-QUEUE-HOST-LOGIC"],
+      "waiting": ["S3-SEND-ALONE-CALIBRATE-ON-DIALOG"],
+      "note": "S3 only when Join/Send Alone dialog is visible; otherwise idle."
+    }
+  ],
+  "runtime_partition": {
+    "host": "LOCAL_AGENT_RUNTIME",
+    "provider_routes": ["GITHUB_ORIGIN"],
+    "this_chat": "CURRENT_CHAT_RUNTIME_PACK_ONLY",
+    "note": "Pack authored here; FS/shell/P07/P08 belong to local agent chats. Serialized != local."
+  },
+  "proof_ceiling": "P05_PACK_AND_OFFLINE_OWNER_PLAN_NOT_LIVE_QUEUE_OR_SKILL_CERT"
+}
