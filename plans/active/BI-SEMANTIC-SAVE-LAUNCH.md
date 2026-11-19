@@ -106,7 +106,10 @@ Profile Play refreshes the process-bound catalog after the chooser and
 inactivity wait. Production ranks the newest save globally and offers
 households in that save. Developer mode uses the oldest authorized disposable
 save matching the chosen household and any configured roster constraints. An
-ambiguous or absent remembered preference requires an explicit choice. The
+exact household ID picked or remembered by the player supersedes an older
+household name in the private dev context. Its save-title and roster
+constraints still apply. Multiple households without a preference, or a
+remembered household missing from the catalog, open the picker. The
 existing calibrated load path remains available if the adapter lacks
 `load_selected_save`. A missing household-selection port or uncertain
 submitted effect leaves a typed hold on the current session.

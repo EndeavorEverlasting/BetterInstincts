@@ -98,7 +98,8 @@ class StartupFixture(startup_handoff.StartupBridge):
 
 class StartupHandoffTests(unittest.TestCase):
     def run_play(self, bridge, *, mode="dev", fail_receipt_at=None, restock=None, game=DISPATCHED,
-                 use_profile=False, pick=HOUSE, remembered=None, lease_error=None):
+                 use_profile=False, pick=HOUSE, remembered=None, lease_error=None,
+                 legacy_household_name=None):
         with TemporaryDirectory() as directory:
             root = Path(directory)
             context = root / "startup.json"
@@ -106,7 +107,8 @@ class StartupHandoffTests(unittest.TestCase):
                                            "startup_mode": mode, "game_version": PATCH, "run_id": RUN,
                                            "registry": "registry.json", "native_startup": {},
                                            "navigation_profile": "profile.json",
-                                           "selection": {"household_id": HOUSE, "minimum_members": 3}}))
+                                           "selection": {"household_id": HOUSE, "minimum_members": 3,
+                                                         "household_name": legacy_household_name}}))
             (root / "profile.json").touch()
             (root / "registry.json").write_text(json.dumps(register(*(
                 {**lab(n, day), "household_id": HOUSE, "household_binding_confirmed": True}
@@ -201,6 +203,14 @@ class StartupHandoffTests(unittest.TestCase):
         self.assertEqual(result["save_route"]["candidate_slot"], "Slot_00000006")
         self.assertEqual(bridge.remembered, HOUSE)
         self.assertEqual(bridge.picker_calls, [])
+
+    def test_dev_profile_household_choice_replaces_a_legacy_name_hint(self):
+        bridge = StartupFixture()
+        bridge.profile_ports = bridge.second_household = True
+        result, template_loads, _ = self.run_play(bridge, use_profile=True,
+                                                 legacy_household_name="Other")
+        self.assertEqual((result["status"], template_loads), ("ok", 0))
+        self.assertEqual(result["save_route"]["household_id"], HOUSE)
 
     def test_profile_native_load_respects_existing_desktop_owner(self):
         from betterinstincts.control_handoff import HandoffError

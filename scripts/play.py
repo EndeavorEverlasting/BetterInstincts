@@ -331,7 +331,10 @@ def complete_play(
                     context_path=context_path, context=startup_context,
                     force=choose_household, progress=progress,
                 )
-                route_options.update(save_catalog=packet, selection={"household_id": household})
+                # The player's verified ID replaces any older household name in
+                # the private context. Title and roster constraints still apply.
+                route_options.update(save_catalog=packet,
+                                     selection={"household_id": household, "household_name": None})
     except (OSError, ValueError) as exc:
         if launch_profile and str(exc) == "HOUSEHOLD_CHOICE_CANCELLED":
             return pending("startup_catalog", str(exc),
