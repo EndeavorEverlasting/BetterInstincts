@@ -1,0 +1,75 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-CONTAINER-PROFILE-PLAY-CLOSERS-20261119",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "7956c3c69b2c520cd0fdbca1ba3f34fe693738b6",
+  "base_commit": "7137a8c19bcbb9604536b79782e725c334df0e19",
+  "proposed_capability": "Converge profile-driven Play and the Windows launcher on the existing container-backed CLI. Keep the Docker context exactly scoped to startup source and keep private settings and live Sims on Windows.",
+  "affected_concepts": [
+    "INSTALLATION_LAUNCH_PREFERENCE",
+    "GAME_PROCESS_INSTANCE",
+    "HOST_SESSION",
+    "PLAYER_INTENT",
+    "SAVE_SLOT",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "contracts/launch-journey.v1.json",
+    "scripts/play.py",
+    "Dockerfile",
+    ".dockerignore",
+    "Start-BetterInstincts.cmd",
+    "docs/FIRST_RUN.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-046"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "DOCKER_STARTUP_SOURCE_PLAN_AND_OFFLINE_WINDOWS_HOST_INTEGRATION_ONLY",
+  "player_save_control_impact": "Only portable source validation is done in Docker without mounts. No new game, desktop, save or profile authority.",
+  "expected_outcome": "Normal profile Play uses the existing Docker startup validation before handing off to the same guarded Windows host. CMD translates launcher options and delegates to that CLI. Explicit native Play and certification routes remain available.",
+  "negative_tests": [
+    "Container context allows exactly the startup source files and Docker controls",
+    "Profile plan passes only launch kind to Docker, not local paths or settings",
+    "Missing Docker or mismatched profile plan prevents host launch",
+    "Explicit native Play remains explicit and reaches the existing host guards",
+    "Settings and existing certification routes retain their owning entrypoints"
+  ],
+  "rollback_path": "Revert the relevant launcher and packaging commits. No user preferences, saves, installation manifests or game files are migrated.",
+  "unresolved_unknowns": [
+    "Live exact-build Windows Sims and local Docker Desktop handoff require the authorized game host."
+  ],
+  "files_expected": [
+    ".dockerignore",
+    "Dockerfile",
+    "Start-BetterInstincts.cmd",
+    "scripts/play.py",
+    "tests/test_play.py",
+    ".github/workflows/ci.yml",
+    "contracts/launch-journey.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "sprint": {
+    "runtime": "Linux source workspace, no local Docker daemon or Windows game",
+    "branch": "fix/container-profile-play",
+    "scope": "Existing container/Play/CMD startup seam, regression, CI and existing handoff docs",
+    "collisions": "PR #324 merged; preserve unrelated receipt PR #322, settings and native Sims ownership",
+    "validation": [
+      "semantic_preflight",
+      "focused Play, bootstrap and certification tests",
+      "full offline suite",
+      "both exact-head hosted plan checks",
+      "main readback"
+    ],
+    "next_parent_gate": "Live profile route on authorized Windows Sims host"
+  }
+}
