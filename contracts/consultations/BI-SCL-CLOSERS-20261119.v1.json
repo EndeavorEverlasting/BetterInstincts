@@ -1,0 +1,72 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SCL-CLOSERS-20261119",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Package the opt-in runtime notice module through the existing native ecology builder, and serialize the two host writers to the same private seam event log.",
+  "operator_correction": "Carry the merged Seam Closure Loop through the first unproven gate for the live household certification.",
+  "repository_situation": "PR #321 review identified an omitted module in the standalone native archive and a lost-update race between startup and native receipt writers.",
+  "competing_theses": [
+    {
+      "thesis": "Require the source checkout inside the game import path",
+      "disposition": "REJECT",
+      "evidence": "The native ecology archive is intended to import standalone."
+    },
+    {
+      "thesis": "Create separate event stores and join on read",
+      "disposition": "REJECT",
+      "evidence": "The existing per-run limit, deduplication and handoff assume one history."
+    },
+    {
+      "thesis": "Extend the native archive option and serialize writes to the existing event store",
+      "disposition": "SELECT",
+      "evidence": "The bundle builder owns manifest and archive checks. Both writers already converge on the per-run event store."
+    }
+  ],
+  "affected_concepts": [
+    "HOST_SESSION",
+    "PROOF_RECEIPT",
+    "NATIVE_RESPONDER_GAP",
+    "OBSERVATION",
+    "CONTROL_PERMIT",
+    "RESUME_CONDITION"
+  ],
+  "relevant_canonical_owners": [
+    "docs/SEAM_CLOSURE.md",
+    "scripts/native_ecology_bundle.py",
+    "scripts/seam_closure.py",
+    "betterinstincts/installed_player_runtime.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_ARCHIVE_CALLBACK_AND_CONCURRENT_PRIVATE_RECEIPT_REGRESSION",
+  "player_save_control_impact": "Packaging and host receipt storage only. No game, desktop, save, or installation effects are admitted.",
+  "expected_outcome": "The opt-in standalone callback loads and returns its result. Concurrent writers retain both valid events within the existing limits. Legacy archives and receipts remain readable.",
+  "negative_tests": [
+    "Standalone callback imports without the repository checkout",
+    "Opt-in package refuses missing adapter binding evidence",
+    "Startup and native writes cannot erase one another",
+    "Legacy archive install and rollback still pass"
+  ],
+  "rollback_path": "Revert the repair commits. The existing per-run receipt JSON keeps the same schema and no game or save data is migrated.",
+  "unresolved_unknowns": [
+    "Exact-build Windows adapter and live save, portrait, restock, and responder evidence."
+  ],
+  "files_expected": [
+    "scripts/native_ecology_bundle.py",
+    "tests/test_native_ecology_bundle.py",
+    "scripts/seam_closure.py",
+    "tests/test_seam_closure.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "next_gate": "Verify standalone archive and concurrent host receipts in source tests, then observe the exact-build adapter and selected Play run on Windows."
+}
