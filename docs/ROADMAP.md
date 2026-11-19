@@ -497,4 +497,5 @@ through Play and load its work order in local Codex. Bind the exact candidate,
 verify that Codex recovers or implements the operation, and capture independent
 outcome and protected-session evidence. Use the
 [certification handoff](LIVE_CERTIFICATION_HANDOFF.md#execute-the-current-seam-work-order)
-and record the host gate under [#171](https://github.com/EndeavorEverlasting/BetterInstincts/issues/171).
+and use the open [restock live gate #213](https://github.com/EndeavorEverlasting/BetterInstincts/issues/213)
+for the representative missing native tool.
