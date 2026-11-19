@@ -33,6 +33,7 @@
     "container_plan": "python -m scripts.play --plan --json",
     "profile_play": "py -3 -m scripts.play --profile-launch",
     "profile_plan": "python -m scripts.play --plan --profile-launch --json",
+    "podman_profile_plan": "python -m scripts.play --plan --profile-launch --container-engine podman --json",
     "native_profile_play": "py -3 -m scripts.play --profile-launch --native-start",
     "windows_dev": "Start-BetterInstincts.cmd --dev PRIVATE_CONTEXT.json",
     "windows_semantic_restock": "py -3 -m scripts.play --native-start --upgrade-parts --save-context PRIVATE_CONTEXT.json --save-name TITLE --json",
@@ -56,7 +57,20 @@
     "first_session": "Goal/context/planned skill focus is player-supplied; six observed needs outrank optional practice, income/funds constrain paid equipment, player preferences outrank goal defaults; no claim to have observed outcomes",
     "manual_launch": "GUI and explicit CLI launch use the same bounded read-only Windows process snapshots and unique validated Game/Bin install admission as the double-click auto path; block/withhold dispatch on unknown processes and never start a duplicate Sims process",
     "manual_installed_exe_selection": "When TS4.exe and TS4_x64.exe share one valid Game/Bin root, GUI picks x64; distinct roots stay ambiguous until player explicitly selects one",
-    "container_play": "The shortcut and Settings Play delegate to the shared Play CLI. Normal profile Play verifies startup and profile source identity in an offline, read-only container without host mounts before the native Windows game handoff. Windows owns local profiles, household selection and game effects. Report the first blocked stage. Profile Play without Docker requires explicit native-start."
+    "container_play": "The shortcut and Settings Play delegate to the shared Play CLI. Normal profile Play verifies startup and profile source identity in an offline, read-only container without host mounts before the native Windows game handoff. Windows owns local profiles, household selection and game effects. Report the first blocked stage. Profile Play without a container check requires explicit native-start."
+  },
+  "container_engine": {
+    "owner": "scripts/play.py",
+    "default_cli_lookup_order": ["docker", "podman"],
+    "explicit_cli_selection": "--container-engine",
+    "fallback_scope": "MISSING_DEFAULT_CLI_ONLY",
+    "podman_readiness": "CLI_REPORTS_REACHABLE_LINUX_ENGINE",
+    "desktop_role": "OPTIONAL_OPERATOR_SETUP_AND_VISUAL_INSPECTION",
+    "automatic_machine_lifecycle": false,
+    "build_context": "STAGED_STARTUP_SOURCE_ALLOWLIST",
+    "json_engine_field": "container_engine",
+    "native_game_owner": "WINDOWS_HOST",
+    "orchestration_scope": "SEPARATE_FROM_PLAY"
   },
   "limitations": [
     "Read-only bounded default install discovery may require manual path selection",

@@ -2,9 +2,10 @@
 
 The profile shortcut and Settings Play delegate to the existing `scripts.play`
 CLI. Run `python -m scripts.play --plan --profile-launch --json` to verify
-startup source in Docker. Only the Windows host reads the local profile and
-uses the picker and native startup binding. Verify the actual Docker-to-game
-handoff on the Windows trial host.
+startup source. Add `--container-engine podman` for a Podman trial. Only the
+Windows host reads the local profile and uses the picker and native startup
+binding. Record the container plan and the game handoff independently on the
+Windows trial host.
 
 ## Private startup context
 
