@@ -119,14 +119,29 @@ class PlayTests(unittest.TestCase):
         host.assert_not_called()
 
     def test_missing_docker_returns_actionable_error_before_install(self):
-        with patch.object(play.shutil, "which", return_value=None), \
-             patch.object(play, "play_on_windows") as host:
-            code, text, stderr = self.invoke(["--json"])
-        self.assertEqual((code, stderr), (2, ""))
-        receipt = json.loads(text)
-        self.assertEqual((receipt["stage"], receipt["reason"]), ("container_build", "DOCKER_NOT_FOUND"))
-        self.assertIn("Docker", receipt["next_step"])
-        host.assert_not_called()
+        from betterinstincts import installation_profiles
+
+        profile = {"launch": {"mode": "production"}, "preferred_household_id": None}
+        for options in ([], ["--profile-launch"]):
+            with (self.subTest(options=options),
+                  patch.object(installation_profiles, "view", return_value=profile),
+                  patch.object(play.shutil, "which", return_value=None),
+                  patch.object(play, "play_on_windows") as host):
+                code, text, stderr = self.invoke([*options, "--json"])
+                self.assertEqual((code, stderr), (2, ""))
+                receipt = json.loads(text)
+                self.assertEqual((receipt["stage"], receipt["reason"]), ("container_build", "DOCKER_NOT_FOUND"))
+                self.assertIn("Docker", receipt["next_step"])
+                host.assert_not_called()
+
+    def test_shortcut_has_one_container_backed_profile_command(self):
+        shortcut = (play.ROOT / "Start-BetterInstincts.cmd").read_text()
+        commands = [line for line in shortcut.splitlines()
+                    if "-m scripts.play" in line and "--profile-launch" in line]
+        self.assertEqual(len(commands), 1)
+        self.assertNotIn("--native-start", commands[0])
+        self.assertIn("%CHOOSER_ARG%", commands[0])
+        self.assertIn("%CHECKOUT_ARG%", commands[0])
 
     def test_startup_receipt_contains_source_identity_and_runs_without_host_access(self):
         expected = play.startup_plan()

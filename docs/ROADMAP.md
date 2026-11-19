@@ -1,6 +1,8 @@
 ## 2026-11-19 — Certify the profile-driven Play shortcut
 
 Verify the Settings and Play entrypoints on the exact Windows Sims build.
+Observe the shared Docker startup check before the Windows launch and confirm
+that the explicit native path retains the same Windows game guards.
 Use a fresh catalog for a multi-household choice, then a repeat launch with a
 remembered household. Verify production's newest authorized save, developer's
 oldest authorized disposable save, idle and cheat denial, player interruption,

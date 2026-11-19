@@ -39,14 +39,18 @@ changed profile and click **Restore defaults** on the Play tab first. This
 removes its launch options while retaining household preferences and feature
 toggles.
 
-From an existing checkout on the Sims PC, use the container-backed CLI
-with Docker in Linux-container mode. The container verifies source and
-the Windows host owns the game lifecycle.
+The shortcut and Settings Play use the same CLI, which checks startup
+and profile source with Docker in Linux-container mode. Windows reads
+your profile, displays the household picker and runs the game. The
+container runs without network access or access to your personal files.
 
 ```powershell
-py -3 -m scripts.play --json
+py -3 -m scripts.play --profile-launch --json
 py -3 -m scripts.play --game-exe "C:\path\to\The Sims 4\Game\Bin\TS4_x64.exe" --json
 ```
+
+For a deliberate profile launch without Docker, run
+`py -3 -m scripts.play --profile-launch --native-start` from the Windows checkout.
 
 For development with a calibrated private context, use either entry point.
 
@@ -89,7 +93,8 @@ For a configured native startup, `NATIVE_RESPONDER_DECISION_OBSERVED` in
 `startup_handoff.state` records completion. A legacy launch can also exit 0
 when it preserves an existing session. Exit 2 names the remaining gate.
 Check `launch_state` to see whether dispatch already happened.
-Use `python -m scripts.play --plan --json` for the Docker check without
+Use `python -m scripts.play --plan --profile-launch --json` to check the
+profile startup container on a Docker host without loading local settings or
 launching Sims.
 
 ## Record any intervention

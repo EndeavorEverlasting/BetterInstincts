@@ -70,23 +70,7 @@ for /f "delims=" %%G in ('git rev-parse HEAD') do set "CHECKOUT_HEAD=%%G"
 for /f "delims=" %%G in ('git rev-parse refs/remotes/origin/main') do set "UPSTREAM_HEAD=%%G"
 if not defined CHECKOUT_HEAD goto blocked_update
 if /I not "%CHECKOUT_HEAD%"=="%UPSTREAM_HEAD%" goto blocked_update
-if /I "%PLAYMODE%"=="upgrade-parts" goto play_upgrade_parts
-if /I "%PLAYMODE%"=="dev" goto play_dev
-if /I "%PLAYMODE%"=="settings" goto local_settings
-if /I "%PLAYMODE%"=="profile" goto play_profile
-if /I "%PLAYMODE%"=="choose-household" goto local_choose
-if defined PROD_CONTEXT goto play_prod_context
-%PYTHON% -m scripts.play --native-start --mode production --checkout-head "%CHECKOUT_HEAD%"
-goto play_result
-:play_prod_context
-%PYTHON% -m scripts.play --native-start --mode production --checkout-head "%CHECKOUT_HEAD%" --save-context "%PROD_CONTEXT%"
-goto play_result
-:play_dev
-%PYTHON% -m scripts.play --native-start --mode dev --checkout-head "%CHECKOUT_HEAD%" --save-context "%DEV_CONTEXT%"
-goto play_result
-:play_upgrade_parts
-%PYTHON% -m scripts.play --native-start --mode dev --upgrade-parts --checkout-head "%CHECKOUT_HEAD%"
-goto play_result
+goto dispatch_checkout
 :isolated_upgrade
 cd /d "%~dp0"
 if errorlevel 1 goto blocked_existing
@@ -95,29 +79,33 @@ goto play_result
 :local_checkout
 cd /d "%~dp0"
 if errorlevel 1 goto blocked_existing
-if /I "%PLAYMODE%"=="dev" goto local_dev
-if /I "%PLAYMODE%"=="settings" goto local_settings
-if /I "%PLAYMODE%"=="profile" goto local_profile
-if /I "%PLAYMODE%"=="choose-household" goto local_choose
-if defined PROD_CONTEXT goto local_prod_context
-%PYTHON% -m scripts.play --native-start --mode production
+set "CHECKOUT_HEAD="
+:dispatch_checkout
+set "CHECKOUT_ARG="
+rem CHECKOUT_HEAD is set only after verifying the installed checkout against origin/main.
+if defined CHECKOUT_HEAD set "CHECKOUT_ARG=--checkout-head %CHECKOUT_HEAD%"
+if /I "%PLAYMODE%"=="settings" goto play_settings
+if /I "%PLAYMODE%"=="upgrade-parts" goto play_upgrade_parts
+if /I "%PLAYMODE%"=="dev" goto play_dev
+if /I "%PLAYMODE%"=="production" goto play_prod
+set "CHOOSER_ARG="
+if /I "%PLAYMODE%"=="choose-household" set "CHOOSER_ARG=--choose-household"
+%PYTHON% -m scripts.play --profile-launch %CHOOSER_ARG% %CHECKOUT_ARG%
 goto play_result
-:local_prod_context
-%PYTHON% -m scripts.play --native-start --mode production --save-context "%PROD_CONTEXT%"
+:play_prod
+if defined PROD_CONTEXT goto play_prod_context
+%PYTHON% -m scripts.play --native-start --mode production %CHECKOUT_ARG%
 goto play_result
-:local_dev
-%PYTHON% -m scripts.play --native-start --mode dev --save-context "%DEV_CONTEXT%"
+:play_prod_context
+%PYTHON% -m scripts.play --native-start --mode production %CHECKOUT_ARG% --save-context "%PROD_CONTEXT%"
 goto play_result
-:play_profile
-%PYTHON% -m scripts.play --profile-launch --checkout-head "%CHECKOUT_HEAD%"
+:play_dev
+%PYTHON% -m scripts.play --native-start --mode dev %CHECKOUT_ARG% --save-context "%DEV_CONTEXT%"
 goto play_result
-:local_profile
-%PYTHON% -m scripts.play --profile-launch
+:play_upgrade_parts
+%PYTHON% -m scripts.play --native-start --mode dev --upgrade-parts %CHECKOUT_ARG%
 goto play_result
-:local_choose
-%PYTHON% -m scripts.play --profile-launch --choose-household
-goto play_result
-:local_settings
+:play_settings
 %PYTHON% -m scripts.instance_settings gui
 :play_result
 if errorlevel 1 goto blocked_launcher

@@ -1,3 +1,12 @@
+## 2026-11-19 — Reuse the containerized CLI for profile Play
+
+The Windows shortcut and Settings Play delegate to `scripts.play`.
+Both use its existing Docker startup check for normal profile Play.
+The container sees only the startup source allowlist. Windows owns
+the private profile, picker and game. The existing `--native-start`
+option supports an explicit launch without Docker. Live Windows
+verification remains under issue #171.
+
 ## 2026-11-19 — Profile-driven Play
 
 The Windows launcher consumes the active installation profile and asks for a
