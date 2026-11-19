@@ -162,10 +162,18 @@ the selected save, Live household, responder control and a later decision.
 
 Check the existing certification checkout against current official `main`.
 For a stale checkout, use the [isolated checkout procedure](../../docs/handoff/BI-OLDEST-LAB-RESTOCK.md#recover-a-stale-or-locally-modified-checkout)
-through its clean worktree check. Use the semantic dev command below from
-that checkout. Carry forward the already selected title, household and
-roster from private run context or the operator's prior instruction. The
-live catalog must independently verify which slot and Sims match them.
+through its clean worktree check. For a pre-merge trial of PR #322, verify
+the official origin and fetch `git fetch --no-tags origin refs/pull/322/head`.
+Verify `FETCH_HEAD` equals the reviewed PR head and create the clean
+detached worktree at that commit. Run the Python entrypoint from that
+worktree and pass its verified SHA as `--checkout-head`. Use that checkout
+for the [named dev restock](../../docs/handoff/BI-OLDEST-LAB-RESTOCK.md#restock-a-named-dev-save)
+so its receipt identifies the actual code under trial.
+
+Use the semantic dev command below for the ordinary mainline trial.
+Carry forward the already selected title, household and roster from
+private run context or the operator's prior instruction. The live catalog
+must independently verify which slot and Sims match them.
 
 If the agent receives `OPERATOR_DESKTOP_BOUNDARY`, use its permitted
 read-only diagnostics and hand the single blocking Windows launch to the
