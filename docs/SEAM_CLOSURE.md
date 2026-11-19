@@ -35,3 +35,33 @@ A seam closes only after code repair, regression proof and a runtime outcome app
 python -m unittest tests.test_seam_closure tests.test_certification_checkout -v
 
 Mandatory branch ontology consultation and semantic preflight still apply. The current named-save restock needs a fresh catalog-bound save identity and three separately observed portrait switches. Windows runtime and live-game certification are not asserted by these source changes.
+
+## Passive native-runtime notice port (source-ready, installation unverified)
+
+The existing InstalledPlayerRuntime may additionally emit a bounded, sanitized
+missing-capability notice during an already registered game callback. This is
+opt-in: only an ownership manifest with installed_runtime_seam_port=true and
+an exact-build adapter implementing report_runtime_seam(notice) changes the
+callback to cycle_with_seam. Existing installations retain the original
+cycle callback. Normal YIELD_TO_PLAYER, queued/waiting actions and transient
+portrait reobservation do not emit gap reports. Known unqualified native
+frames, session rebinds, missing portrait evidence and invalid proposal
+identities can emit at most 16 notifications per installed runtime instance,
+deduplicated across consecutive repeats. Sink errors leave the original
+game callback result unchanged. The native callback itself does no file I/O.
+
+The Windows adapter's report_runtime_seam port must independently match the
+selected private Play launch, current PID + creation time + executable +
+game version and game-run session before calling the repository-owned
+scripts.seam_closure.record_native_notice. A matching advisory event appends
+to the original private seam-events.json and appears in the existing Codex
+certification handoff as HISTORICAL_NATIVE_NOTICES_REOBSERVE. It does not mean
+the condition remains active; the host must reobserve before retry. Unknown
+or unbound processes or session tags deny recording. No raw household, Sim
+names, save titles or local paths are written to these events.
+
+**Proof ceiling:** Native port contract, passive callback and host-side receipt
+intake are source-tested, not installed on the Windows Sims build. The actual
+EA-backed adapter and game execution remain owned by #171. A connected SCL
+notice alone cannot satisfy the three portrait switches or a responder
+decision; both require independently correlated game evidence.

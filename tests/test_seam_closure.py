@@ -7,7 +7,8 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from scripts.launch_receipt import SCHEMA as LAUNCH_SCHEMA, gap, write_result
-from scripts.seam_closure import MAX_EVENTS, SCHEMA, identify, read_events, latest_run_handoff
+from scripts.seam_closure import MAX_EVENTS, SCHEMA, identify, read_events, latest_run_handoff, record_native_notice
+from betterinstincts.runtime_seam import notice_for
 
 
 class SeamClosureTest(unittest.TestCase):
@@ -82,6 +83,44 @@ class SeamClosureTest(unittest.TestCase):
             "stage": "complete", "automation_gaps": [],
         })
         self.assertEqual(latest_run_handoff(Path(self.temp.name))["state"], "NO_CURRENT_BLOCKED_RUN")
+
+    def test_native_runtime_notice_joins_exact_process_and_existing_run(self):
+        process = {"pid": 1234, "creation_ticks": "1001234",
+                   "executable": r"C:\Games\TS4_x64.exe", "game_version": "1.121.361.1020"}
+        self.assertTrue(self.run_id)
+        launch = {"schema": LAUNCH_SCHEMA, "run_id": self.run_id,
+                  "started_at": "2026-11-18T20:00:00+00:00",
+                  "status": "ok", "stage": "complete",
+                  "game_process": process, "automation_gaps": []}
+        write_result(self.path, launch)
+        notice = notice_for("NATIVE_SESSION_REBIND_REQUIRED",
+                            game_build=process["game_version"], session="game-run")
+        joined = record_native_notice(self.path, notice, observed_process=process,
+                                      observed_session="game-run")
+        self.assertEqual(joined["state"], "NATIVE_NOTICE_RECORDED")
+        self.assertEqual(joined["effect_admission"], "NOT_GRANTED")
+        record_native_notice(self.path, notice, observed_process=process, observed_session="game-run")
+        self.assertEqual(len(read_events(self.path, self.run_id)), 1)
+        self.assertNotIn("Games", (self.dir / "seam-events.json").read_text())
+        adopted = latest_run_handoff(Path(self.temp.name))
+        self.assertEqual(adopted["state"], "HISTORICAL_NATIVE_NOTICES_REOBSERVE")
+        self.assertEqual(adopted["seams"][0]["stage"], "native_runtime")
+
+    def test_native_runtime_notice_rejects_unbound_session_or_process(self):
+        process = {"pid": 1234, "creation_ticks": "1001234",
+                   "executable": r"C:\Games\TS4_x64.exe", "game_version": "1.121.361.1020"}
+        write_result(self.path, {"schema": LAUNCH_SCHEMA, "run_id": self.run_id,
+                                 "status": "ok", "game_process": process})
+        notice = notice_for("NATIVE_FRAME_UNQUALIFIED",
+                            game_build=process["game_version"], session="game-run")
+        with self.assertRaisesRegex(ValueError, "SEAM_NATIVE_NOTICE_UNCORRELATED"):
+            record_native_notice(self.path, notice, observed_process=process,
+                                 observed_session="another-run")
+        wrong = {**process, "creation_ticks": "1001235"}
+        with self.assertRaisesRegex(ValueError, "SEAM_NATIVE_PROCESS_NOT_BOUND"):
+            record_native_notice(self.path, notice, observed_process=wrong,
+                                 observed_session="game-run")
+        self.assertFalse((self.dir / "seam-events.json").exists())
 
     def test_symlink_event_store_is_denied(self):
         other = self.dir / "other.json"

@@ -1,0 +1,91 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SCL-NATIVE-RUNTIME-20261118",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Expose passive, bounded, explicitly registered native runtime recovery notices from InstalledPlayerRuntime.cycle to a supplied exact-build adapter port; classify only known missing evidence/implementation states, not normal player yields; preserve existing game control and source-vs-runtime proof. Host adapter correlates notices with private SCL receipt separately. Add a verified host-side receipt intake for opt-in native notices so local adapters can append the same app-owned SCL event history only after matching process identity, session tag and selected private Play run. Preserve historical notices even after later successful launch without promoting them to active gameplay failures.",
+  "operator_correction": "Runtime SCL must detect missing handoffs while mod is running, not solely when the startup Play process blocks.",
+  "repository_situation": "PR #320 merged and added private SCL Play receipts; installed_player_runtime.py registers cycle callbacks but returns plain status string and has no opt-in runtime recovery event sink.",
+  "competing_theses": [
+    {
+      "thesis": "Log every game tick and send all statuses to a new daemon",
+      "disposition": "REJECT",
+      "evidence": "Per-frame writes, private data exposure and unbounded work."
+    },
+    {
+      "thesis": "Invoke agent Shell automatically from game callbacks",
+      "disposition": "REJECT",
+      "evidence": "Violates OPERATOR_DESKTOP_BOUNDARY and player-first policy."
+    },
+    {
+      "thesis": "Opt-in, event-driven, deduplicated semantic recovery notice port with no effects",
+      "disposition": "SELECT",
+      "evidence": "Existing installed callback provides bounded semantic status while attached exact-build adapter owns storage."
+    }
+  ],
+  "affected_concepts": [
+    "HOST_SESSION",
+    "PROOF_RECEIPT",
+    "NATIVE_RESPONDER_GAP",
+    "OBSERVATION",
+    "CONTROL_PERMIT",
+    "RESUME_CONDITION"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/ONTOLOGY.md",
+    "docs/DOCTRINE.md",
+    "docs/LEDGER.md",
+    "docs/PROMPT_INVOCATIONS.md",
+    "betterinstincts/installed_player_runtime.py",
+    "scripts/seam_closure.py",
+    "docs/SEAM_CLOSURE.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SOURCE_AND_OFFLINE_REGRESSION_NOT_INSTALLED_NATIVE_BINDING",
+  "player_save_control_impact": "Passive status classifier; no game/desktop effect, no raw save, roster, names, screenshot, file path, screenshot storage or thread. Adapter sink must be explicitly installed exact-build and remain subject to game callback constraints.",
+  "expected_outcome": "Native cycle outcome returns unchanged while selected discrete gap statuses emit bounded deduplicated sanitized semantic notices to an explicitly supplied same-build adapter port; no port means legacy callback unchanged. Host can join runtime notice with owned Play receipt only after independent process/run correlation.",
+  "negative_tests": [
+    "ordinary YIELD_TO_PLAYER produces no recovery notice",
+    "unknown status produces none",
+    "no installed capability flag preserves original cycle callback",
+    "installed capability flag without adapter port holds",
+    "repeated same gap emits once",
+    "different game run allows new observation",
+    "failing passive sink never grants effect or changes result",
+    "notice excludes save title, Sim names and raw error strings",
+    "host process mismatch refuses native notice",
+    "native notice session hash mismatch refuses",
+    "native events remain historical after successful Play",
+    "duplicate native notice does not multiply",
+    "no uncorrelated event can be written to unrelated run"
+  ],
+  "rollback_path": "Revert PR, existing game callbacks/port remain original, no user save or game files changed.",
+  "unresolved_unknowns": [
+    "Which exact-build EA module will supply installed native callback port",
+    "How host app binds runtime notices to a selected Play receipt run",
+    "Actual installed game and three portrait switches"
+  ],
+  "files_expected": [
+    "betterinstincts/runtime_seam.py",
+    "betterinstincts/installed_player_runtime.py",
+    "tests/test_runtime_seam.py",
+    "tests/test_installed_player_runtime.py",
+    "contracts/native-gameplay-decisions/BI-SCL-NATIVE-RUNTIME-20261118.v1.json",
+    "scripts/seam_closure.py",
+    "tests/test_seam_closure.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "next_gate": "Implement passive port and source regressions; exact-build host adapter and live-game installation remain gated under #171."
+}
