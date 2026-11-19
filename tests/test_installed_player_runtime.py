@@ -452,6 +452,60 @@ class InstalledRuntimeTests(unittest.TestCase):
         self.adapter.submit_portrait_if_current.assert_not_called()
         self.adapter.submit_microsystem_if_current.assert_not_called()
 
+    def test_microsystem_rechecks_evidence_before_switch_or_submission(self):
+        from tests.test_microsystem_handoff import SIM, OTHER, evidence, lane, member, option, packet
+
+        runtime = self.enable_microsystem_handoff()
+        first = self.frame(actor=SIM)
+        fresh = replace(first, capture="capture:recheck")
+        cases = (
+            (SIM, [], 2, "MICROSYSTEM_REOBSERVE_WINNER"),
+            (OTHER, [(fresh.capture, 101)], 2, "PORTRAIT_SELECTION_REOBSERVE"),
+            (SIM, [("capture:baseline", 90), (fresh.capture, 101)], 3, "MICROSYSTEM_REOBSERVE_WINNER"),
+            (SIM, [("capture:another", 80), ("capture:baseline", 90), (fresh.capture, 101)],
+             3, "MICROSYSTEM_REOBSERVE_WINNER"),
+            (SIM, [("capture:baseline", 0), (fresh.capture, 10)], 2, "MICROSYSTEM_REOBSERVE_WINNER"),
+            (OTHER, [("capture:baseline", 0), (fresh.capture, 101)], 2, "PORTRAIT_SELECTION_REOBSERVE"),
+        )
+        for actor, samples, fresh_minimum, expected in cases:
+            with self.subTest(actor=actor, samples=samples, minimum=fresh_minimum):
+                def read(frame):
+                    report = option("career-report")
+                    report["evidence"] = evidence(
+                        frame, actor, "CAREER", report["work"], seconds=10,
+                        minimum=2 if frame == first else fresh_minimum,
+                        samples=[("capture:baseline", 90), (first.capture, 100)] if frame == first else samples,
+                    )
+                    return packet(frame, {actor: member(frame, CAREER=lane(frame, report))})
+
+                self.adapter.frame.side_effect = [first, fresh]
+                self.adapter.read_microsystem_handoff.side_effect = read
+                self.assertEqual(runtime.cycle(), expected)
+        self.adapter.submit_portrait_if_current.assert_not_called()
+        self.adapter.submit_microsystem_if_current.assert_not_called()
+
+    def test_microsystem_rechecks_clearance_used_to_reach_the_winning_tier(self):
+        from tests.test_microsystem_handoff import SIM, evidence, lane, member, option, packet
+
+        runtime = self.enable_microsystem_handoff()
+        first = self.frame(actor=SIM)
+        fresh = replace(first, capture="capture:recheck")
+        self.adapter.frame.side_effect = [first, fresh]
+
+        def read(frame):
+            needs = lane(frame)
+            needs["review"] = {
+                "work": "needs-review",
+                "evidence": evidence(frame, SIM, "NEEDS", "needs-review",
+                                     samples=[(frame.capture, 100 if frame == first else 10)]),
+            }
+            return packet(frame, {SIM: member(frame, NEEDS=needs,
+                                              CAREER=lane(frame, option("career-report")))})
+
+        self.adapter.read_microsystem_handoff.side_effect = read
+        self.assertEqual(runtime.cycle(), "MICROSYSTEM_REOBSERVE_WINNER")
+        self.adapter.submit_microsystem_if_current.assert_not_called()
+
 
     def enable_runtime_seam_port(self):
         config = json.loads(self.manifest.read_text())

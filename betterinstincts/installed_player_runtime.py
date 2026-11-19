@@ -110,7 +110,7 @@ class InstalledPlayerRuntime:
                 _, current = self._portrait_choice(fresh)
             else:
                 _, refreshed = self._microsystem_choice(fresh)
-                current = refreshed.selection if refreshed == microsystem_decision else None
+                current = refreshed.selection if microsystem_decision.reconfirmed_by(refreshed) else None
         except Exception:
             return "PORTRAIT_EVIDENCE_UNQUALIFIED"
         if current != selection or not self._idle(fresh):
@@ -475,7 +475,7 @@ class InstalledPlayerRuntime:
                 or fresh.playing is not True or fresh.modal_open is not False):
             return "YIELD_TO_PLAYER"
         _, current = self._microsystem_choice(fresh)
-        if decision != current or not self._idle(fresh):
+        if not decision.reconfirmed_by(current) or not self._idle(fresh):
             return "MICROSYSTEM_REOBSERVE_WINNER"
         identity = decision.identity(fresh)
 
