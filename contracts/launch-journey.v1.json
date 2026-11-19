@@ -31,6 +31,9 @@
     "container_play": "py -3 -m scripts.play",
     "agent_play": "py -3 -m scripts.play --json",
     "container_plan": "python -m scripts.play --plan --json",
+    "profile_play": "py -3 -m scripts.play --profile-launch",
+    "profile_plan": "python -m scripts.play --plan --profile-launch --json",
+    "native_profile_play": "py -3 -m scripts.play --profile-launch --native-start",
     "windows_dev": "Start-BetterInstincts.cmd --dev PRIVATE_CONTEXT.json",
     "windows_semantic_restock": "py -3 -m scripts.play --native-start --upgrade-parts --save-context PRIVATE_CONTEXT.json --save-name TITLE --json",
     "windows_production_context": "Start-BetterInstincts.cmd --prod PRIVATE_CONTEXT.json",
@@ -53,7 +56,7 @@
     "first_session": "Goal/context/planned skill focus is player-supplied; six observed needs outrank optional practice, income/funds constrain paid equipment, player preferences outrank goal defaults; no claim to have observed outcomes",
     "manual_launch": "GUI and explicit CLI launch use the same bounded read-only Windows process snapshots and unique validated Game/Bin install admission as the double-click auto path; block/withhold dispatch on unknown processes and never start a duplicate Sims process",
     "manual_installed_exe_selection": "When TS4.exe and TS4_x64.exe share one valid Game/Bin root, GUI picks x64; distinct roots stay ambiguous until player explicitly selects one",
-    "container_play": "Verify startup source identity in an offline, read-only container without host mounts before the native Windows install and game handoff. Report the first blocked stage. Existing game, save and effect authority stay with their current owners."
+    "container_play": "The shortcut and Settings Play delegate to the shared Play CLI. Normal profile Play verifies startup and profile source identity in an offline, read-only container without host mounts before the native Windows game handoff. Windows owns local profiles, household selection and game effects. Report the first blocked stage. Profile Play without Docker requires explicit native-start."
   },
   "limitations": [
     "Read-only bounded default install discovery may require manual path selection",
