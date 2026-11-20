@@ -37,14 +37,14 @@ class PlayTests(unittest.TestCase):
         calls = Mock()
         with (patch.object(installation_profiles, "view", return_value=profile),
               patch.object(play, "play_on_windows", calls.host),
-              patch.object(play, "docker_plan", calls.container),
+              patch.object(play, "container_plan", calls.container),
               patch.object(play.shutil, "which", return_value="docker")):
             calls.host.return_value = {"status": "ok", "next_step": "Observed fixture."}
             code, _, stderr = self.invoke(["--profile-launch", "--choose-household", "--json"])
         self.assertEqual((code, stderr), (0, ""))
         self.assertEqual([call[0] for call in calls.mock_calls], ["container", "host"])
         self.assertEqual(calls.container.call_args.args[0], "docker")
-        self.assertEqual(calls.container.call_args.kwargs, {"profile_launch": True})
+        self.assertEqual(calls.container.call_args.kwargs, {"engine": "docker", "profile_launch": True})
         self.assertEqual(calls.host.call_args.kwargs["mode"], "dev")
         self.assertIs(calls.host.call_args.kwargs["launch_profile"], profile)
         self.assertIs(calls.host.call_args.kwargs["choose_household"], True)
@@ -81,11 +81,12 @@ class PlayTests(unittest.TestCase):
     def test_plan_works_without_windows_or_git_and_never_calls_host(self):
         plan = play.startup_plan()
         with patch.object(play.shutil, "which", return_value="docker") as which, \
-             patch.object(play, "docker_plan", return_value=plan), \
+             patch.object(play, "container_plan", return_value=plan), \
              patch.object(play, "play_on_windows") as host:
             code, text, stderr = self.invoke(["--plan", "--json"], "linux")
         self.assertEqual((code, stderr), (0, ""))
         self.assertEqual(json.loads(text)["plan"], plan)
+        self.assertEqual(json.loads(text)["container_engine"], "docker")
         which.assert_called_once_with("docker")
         host.assert_not_called()
 
@@ -143,23 +144,105 @@ class PlayTests(unittest.TestCase):
         self.assertIn("%CHOOSER_ARG%", commands[0])
         self.assertIn("%CHECKOUT_ARG%", commands[0])
 
-    def test_startup_receipt_contains_source_identity_and_runs_without_host_access(self):
-        expected = play.startup_plan()
-        image = "betterinstincts-startup:local"
+    def test_engines_share_source_identity_and_do_not_receive_the_checkout(self):
+        expected = play.startup_plan(profile_launch=True)
+        allowed = {"Dockerfile", ".dockerignore", *play.STARTUP_SOURCES, *play.PROFILE_SOURCES}
+        for engine in play.CONTAINER_ENGINES:
+            with self.subTest(engine=engine):
+                commands = []
+                image = ("localhost/" if engine == "podman" else "") + "betterinstincts-startup:local"
+
+                def execute(command, **kwargs):
+                    self.assertTrue(kwargs["check"])
+                    commands.append(command)
+                    if command[1] == "info":
+                        return subprocess.CompletedProcess(command, 0, stdout="linux\n")
+                    if command[1] == "build":
+                        context = Path(command[-1])
+                        self.assertEqual(command[:-1], [engine, "build", "--tag", image])
+                        self.assertNotEqual(context, play.ROOT)
+                        self.assertEqual({path.relative_to(context).as_posix()
+                                          for path in context.rglob("*") if path.is_file()}, allowed)
+                    return subprocess.CompletedProcess(command, 0, stdout=json.dumps(expected))
+
+                with patch.object(play.subprocess, "run", side_effect=execute):
+                    self.assertEqual(play.container_plan(engine, Mock(), engine=engine, profile_launch=True), expected)
+                self.assertEqual([command[1] for command in commands],
+                                 ["info", "build", "run"] if engine == "podman" else ["build", "run"])
+                self.assertEqual(commands[-1], [
+                    engine, "run", "--rm", "--pull=never", "--network=none", "--read-only",
+                    "--cap-drop=ALL", "--security-opt=no-new-privileges", image, "--profile-launch",
+                ])
+
+    def test_engine_selection_defaults_and_explicit_selection(self):
+        for args, installed, selected, lookups in (
+            ([], {"docker", "podman"}, "docker", ["docker"]),
+            ([], {"podman"}, "podman", ["docker", "podman"]),
+            (["--container-engine", "podman"], {"docker", "podman"}, "podman", ["podman"]),
+        ):
+            with (self.subTest(args=args, installed=installed),
+                  patch.object(play.shutil, "which", side_effect=lambda name: name if name in installed else None) as which,
+                  patch.object(play, "container_plan", return_value=play.startup_plan()) as plan,
+                  patch.object(play, "play_on_windows") as host):
+                code, output, stderr = self.invoke(["--plan", "--json", *args], "linux")
+                self.assertEqual((code, stderr, json.loads(output)["container_engine"]), (0, "", selected))
+                self.assertEqual([call.args[0] for call in which.call_args_list], lookups)
+                plan.assert_called_once_with(selected, unittest.mock.ANY, engine=selected, profile_launch=False)
+                host.assert_not_called()
+
+    def test_explicit_missing_podman_does_not_try_docker_or_desktop(self):
+        with (patch.object(play.shutil, "which", side_effect=lambda name: "docker" if name == "docker" else None) as which,
+              patch.object(play.subprocess, "run") as run,
+              patch.object(play, "play_on_windows") as host):
+            code, output, _ = self.invoke(["--container-engine", "podman", "--json"])
+        self.assertEqual((code, json.loads(output)["reason"]), (2, "PODMAN_NOT_FOUND"))
+        which.assert_called_once_with("podman")
+        run.assert_not_called()
+        host.assert_not_called()
+
+    def test_unavailable_or_non_linux_podman_stops_before_build_and_host(self):
+        for response in (
+            subprocess.CalledProcessError(1, "podman info", stderr="Machine is stopped"),
+            subprocess.CompletedProcess("podman info", 0, stdout="windows\n"),
+        ):
+            with (self.subTest(response=response),
+                  patch.object(play.shutil, "which", side_effect=lambda name: name) as which,
+                  patch.object(play.subprocess, "run", side_effect=[response]) as run,
+                  patch.object(play, "play_on_windows") as host):
+                code, output, _ = self.invoke(["--container-engine", "podman", "--json"])
+                result = json.loads(output)
+                self.assertEqual((code, result["stage"], result["reason"], result["container_engine"]),
+                                 (2, "container_engine", "PODMAN_ENGINE_NOT_READY", "podman"))
+                which.assert_called_once_with("podman")
+                run.assert_called_once()
+                self.assertEqual(run.call_args.args[0], ["podman", "info", "--format", "{{.Host.OS}}"])
+                host.assert_not_called()
+
+    def test_running_podman_with_bad_plan_does_not_fall_through_to_docker_or_host(self):
         commands = []
 
-        def docker(command, **kwargs):
-            self.assertTrue(kwargs["check"])
-            commands.append(command)
-            return subprocess.CompletedProcess(command, 0, stdout=json.dumps(expected))
+        def podman(command, **kwargs):
+            commands.append(command[:2])
+            output = "linux\n" if command[1] == "info" else "{}"
+            return subprocess.CompletedProcess(command, 0, stdout=output)
 
-        with patch.object(play.subprocess, "run", side_effect=docker):
-            self.assertEqual(play.docker_plan("docker", Mock()), expected)
-        self.assertEqual(commands[0], ["docker", "build", "--tag", image, str(play.ROOT)])
-        self.assertEqual(commands[1], ["docker", "run", "--rm", "--pull=never", "--network=none",
-                                       "--read-only", "--cap-drop=ALL", "--security-opt=no-new-privileges",
-                                       image])
-        self.assertEqual(set(expected["sources"]), set(play.STARTUP_SOURCES))
+        with (patch.object(play.shutil, "which", side_effect=lambda name: name) as which,
+              patch.object(play.subprocess, "run", side_effect=podman),
+              patch.object(play, "play_on_windows") as host):
+            code, output, _ = self.invoke(["--container-engine", "podman", "--json"])
+        self.assertEqual((code, json.loads(output)["reason"]), (2, "PODMAN_STARTUP_PLAN_FAILED"))
+        self.assertEqual(commands, [["podman", step] for step in ("info", "build", "run")])
+        which.assert_called_once_with("podman")
+        host.assert_not_called()
+
+    def test_native_start_cannot_also_select_podman(self):
+        with (patch.object(play.shutil, "which") as which,
+              patch.object(play, "play_on_windows") as host,
+              self.assertRaises(SystemExit) as raised):
+            self.invoke(["--native-start", "--container-engine", "podman"])
+        self.assertEqual(raised.exception.code, 2)
+        which.assert_not_called()
+        host.assert_not_called()
 
     def test_docker_context_is_the_exact_startup_source_allowlist(self):
         rules = [line for line in (play.ROOT / ".dockerignore").read_text().splitlines()
@@ -236,7 +319,7 @@ class PlayTests(unittest.TestCase):
 
     def test_default_cli_runs_container_then_game_and_prints_welcome(self):
         with patch.object(play.shutil, "which", side_effect=lambda name: name), \
-             patch.object(play, "docker_plan", return_value=play.startup_plan()) as container, \
+             patch.object(play, "container_plan", return_value=play.startup_plan()) as container, \
              patch.object(play, "play_on_windows",
                           return_value={"status": "ok", "next_step": "Launch requested."}) as host:
             code, text, stderr = self.invoke([])

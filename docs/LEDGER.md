@@ -1,3 +1,14 @@
+## 2026-11-19 — Route Podman and Docker through the existing Play CLI
+
+The Play CLI accepts an explicit engine. Default detection uses Docker
+when present and Podman when Docker is absent. Podman CLI readiness
+requires a reachable Linux engine. The selected route is reported in JSON
+and does not switch engines after failure. Both engines receive a staged
+startup-source allowlist. Podman Desktop is optional operator tooling.
+Windows retains profile and gameplay ownership. See
+[First run](FIRST_RUN.md#choose-a-container-engine) and consultation
+`BI-PLAY-PODMAN-RUNTIME-20261119`.
+
 ## 2026-11-19 — Reuse the containerized CLI for profile Play
 
 The Windows shortcut and Settings Play delegate to `scripts.play`.

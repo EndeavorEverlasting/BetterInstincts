@@ -1,0 +1,77 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-PLAY-PODMAN-RUNTIME-20261119",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "7956c3c69b2c520cd0fdbca1ba3f34fe693738b6",
+  "base_commit": "97d3c17dec53e596758e5ca1966abd17a303f771",
+  "proposed_capability": "Resolve Docker or Podman CLI for the one existing Play startup-source plan. Treat Podman Desktop as optional operator tooling and Windows game execution as a separate authority.",
+  "affected_concepts": [
+    "INSTALLATION_LAUNCH_PREFERENCE",
+    "GAME_PROCESS_INSTANCE",
+    "HOST_SESSION",
+    "PLAYER_INTENT",
+    "SAVE_SLOT",
+    "CONTROL_PERMIT",
+    "PROOF_RECEIPT"
+  ],
+  "relevant_canonical_owners": [
+    "contracts/launch-journey.v1.json",
+    "scripts/play.py",
+    "Dockerfile",
+    ".dockerignore",
+    "Start-BetterInstincts.cmd",
+    "docs/FIRST_RUN.md"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012",
+    "BI-ONT-046"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SOURCE_TESTS_AND_CONTAINER_PLAN_ONLY_NO_WINDOWS_SIMS_SCENE",
+  "player_save_control_impact": "The engine sees only staged startup source. No profile or save paths, mounts, game input, Desktop UI, machine provisioning or settings are passed to either engine.",
+  "expected_outcome": "Default to Docker when its CLI is present, otherwise use Podman when available. Explicit engine requests are binding. For Podman check Linux engine readiness ahead of build. Retain native Windows routing and require source-plan equality before entering it.",
+  "negative_tests": [
+    "A missing requested engine never falls through to another engine.",
+    "An installed but unreachable or non-Linux Podman engine stops before build or game launch.",
+    "Neither engine receives unlisted files, including any alternate local Containerfile or ignore file.",
+    "A mismatched plan stops the launch and a plan-only request never opens the game or loads a profile.",
+    "Native-only start rejects an explicit container CLI selection."
+  ],
+  "rollback_path": "Revert this tracked launcher change. No profiles, game files or platform configuration are migrated.",
+  "unresolved_unknowns": [
+    "Podman Machine and authorized Sims launch on the Windows game host require separate local observation."
+  ],
+  "files_expected": [
+    "scripts/play.py",
+    "Dockerfile",
+    "tests/test_play.py",
+    "contracts/launch-journey.v1.json",
+    "README.md",
+    "docs/FIRST_RUN.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "docs/LEDGER.md",
+    "docs/ROADMAP.md",
+    "plans/active/BI-SEMANTIC-SAVE-LAUNCH.md"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "sprint": {
+    "runtime": "Linux source workspace; Windows game host unavailable",
+    "branch": "feat/play-podman-runtime",
+    "scope": "Existing Play CLI engine selection, bounded build context, tests and current setup and agent routing",
+    "collisions": "Extend merged #325; preserve #322 native receipt code and existing desktop, save and process owners",
+    "validation": [
+      "semantic_preflight",
+      "focused Play and adjacent regressions",
+      "full offline suite",
+      "engine smoke where available"
+    ],
+    "next_parent_gate": "Observe the actual configured Podman Machine with the plan-only CLI, then observe the Windows profile Play handoff independently."
+  }
+}

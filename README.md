@@ -8,8 +8,8 @@ An experimental, community-oriented autonomy mod project for **The Sims 4**. Mak
 ## Play from the command line
 
 On the Windows PC where you already play The Sims 4, start Docker in Linux
-container mode and run this from your BetterInstincts checkout. You'll need
-Git and Python 3.11 or newer.
+container mode or start a configured Podman machine. Run this from your
+BetterInstincts checkout with Git and Python 3.11 or newer.
 
 ```powershell
 py -3 -m scripts.play
@@ -18,7 +18,7 @@ py -3 -m scripts.play
 The launcher sets up the pre-alpha toolkit and opens The Sims 4 when it finds
 one installation. If the game is already running, keep playing in that session.
 Choose your save or start a new game in Sims. See the [first-run guide](docs/FIRST_RUN.md)
-for install selection, Docker-only checks, and the JSON command agents can use.
+for install selection, container engine selection, and the JSON command agents can use.
 
 ## Download the Windows launcher
 

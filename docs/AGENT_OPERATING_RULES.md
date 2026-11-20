@@ -99,8 +99,14 @@ For an authorized startup on the Windows game host, run
 `py -3 -m scripts.play --json` from the checkout. Use the receipt's first failed
 stage and next step before using a lower-level installer or launcher. If it
 reports a launch request or an existing process, observe that session before
-considering another launch. For a Docker-only check use
-`python -m scripts.play --plan --json`. See [First run](FIRST_RUN.md#play-from-the-command-line).
+considering another launch. For portable startup verification use
+`python -m scripts.play --plan --profile-launch --json`. For a Podman lab or
+an explicit Podman request add `--container-engine podman`. Route automation
+through the CLI and use Desktop for operator-led setup or visual inspection.
+If the requested engine is missing or unreachable, follow the receipt's
+first gate. Engine checks confer no authority to provision or start a VM,
+switch engines after a failure, exercise Windows game controls, or start
+service orchestration. See [First run](FIRST_RUN.md#play-from-the-command-line).
 
 ## Completion contract
 

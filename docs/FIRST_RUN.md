@@ -39,17 +39,44 @@ changed profile and click **Restore defaults** on the Play tab first. This
 removes its launch options while retaining household preferences and feature
 toggles.
 
+## Play from the command line
+
 The shortcut and Settings Play use the same CLI, which checks startup
-and profile source with Docker in Linux-container mode. Windows reads
-your profile, displays the household picker and runs the game. The
-container runs without network access or access to your personal files.
+and profile source with a Linux container. Windows reads your profile, displays
+the household picker and runs the game. Both engines receive only the staged
+startup source. The container runs without network access or host mounts.
 
 ```powershell
 py -3 -m scripts.play --profile-launch --json
 py -3 -m scripts.play --game-exe "C:\path\to\The Sims 4\Game\Bin\TS4_x64.exe" --json
 ```
 
-For a deliberate profile launch without Docker, run
+### Choose a container engine
+
+- **Podman CLI** is the runtime interface used by Play and agents. Install
+  the Windows amd64 MSI on an Intel or AMD x64 PC, or use the ARM64
+  installer on Windows ARM64. In a new PowerShell window, run
+  `podman --version`, `podman machine list`, and `podman info` to
+  distinguish an installed CLI from a reachable Linux engine. If you already
+  have a Podman machine, use it for the lab.
+- **Podman Desktop** is optional for operator-led setup and visual inspection
+  of containers, pods, and logs. Play works with a reachable CLI engine with
+  Desktop closed. Any Compose or pod orchestration belongs to a separate lab task.
+- **Default selection** uses Docker when its CLI is present and Podman when
+  Docker is absent. Use `--container-engine podman` when you want Podman
+  specifically, even with Docker installed. A selected engine failure
+  stops the flow and reports its stage and `container_engine` in JSON.
+  Play leaves installation and VM lifecycle to the operator.
+
+Run a plan-only Podman check before opening the game. Once it passes, run
+profile Play on the Windows Sims host if you intend to launch the game.
+
+```powershell
+py -3 -m scripts.play --plan --profile-launch --container-engine podman --json
+py -3 -m scripts.play --profile-launch --container-engine podman --json
+```
+
+For a deliberate profile launch without a container check, run
 `py -3 -m scripts.play --profile-launch --native-start` from the Windows checkout.
 
 For development with a calibrated private context, use either entry point.
@@ -94,8 +121,7 @@ For a configured native startup, `NATIVE_RESPONDER_DECISION_OBSERVED` in
 when it preserves an existing session. Exit 2 names the remaining gate.
 Check `launch_state` to see whether dispatch already happened.
 Use `python -m scripts.play --plan --profile-launch --json` to check the
-profile startup container on a Docker host without loading local settings or
-launching Sims.
+profile startup container without loading local settings or launching Sims.
 
 ## Record any intervention
 

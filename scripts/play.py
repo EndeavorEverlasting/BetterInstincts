@@ -11,6 +11,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+from tempfile import TemporaryDirectory
 from time import monotonic, sleep
 from typing import Callable
 
@@ -27,6 +28,7 @@ STARTUP_SOURCES = ("bootstrap.py", "scripts/play.py", "scripts/first_run.py",
 PROFILE_SOURCES = ("scripts/instance_settings.py", "betterinstincts/installation_profiles.py",
                    "contracts/installation-profiles.v1.json")
 WIN_COMMAND = "py -3 -m scripts.play"
+CONTAINER_ENGINES = ("docker", "podman")
 SUCCESS_MESSAGES = {
     "GAME_LAUNCH_DISPATCHED_SAVE_HANDOFF":
         "The Sims 4 launch was requested. Choose your save or start a new game in Sims.",
@@ -69,18 +71,46 @@ def startup_plan(*, profile_launch: bool = False) -> dict:
     return {**PLAN, "sources": sources}
 
 
-def docker_plan(docker: str, progress: Callable[[str], None], *, profile_launch: bool = False) -> dict:
+def container_plan(cli: str, progress: Callable[[str], None], *, engine: str,
+                   profile_launch: bool = False) -> dict:
+    name = {"docker": "Docker", "podman": "Podman"}[engine]
+    if engine == "podman":
+        try:
+            info = subprocess.run(
+                [cli, "info", "--format", "{{.Host.OS}}"],
+                check=True, capture_output=True, encoding="utf-8", errors="replace", timeout=15,
+            )
+            if info.stdout.strip() != "linux":
+                raise ValueError("Podman did not report a Linux container host")
+        except (OSError, ValueError, subprocess.SubprocessError) as exc:
+            raise PlayBlocked(
+                "container_engine", "PODMAN_ENGINE_NOT_READY",
+                "Check podman info. On Windows or macOS, inspect podman machine list and "
+                "start your configured machine if needed.",
+                detail=str(getattr(exc, "stderr", None) or exc)[-1200:].strip(),
+            ) from exc
+
     progress("Preparing the BetterInstincts startup container. The first build may take a minute.")
-    image = "betterinstincts-startup:local"
+    image = ("localhost/" if engine == "podman" else "") + "betterinstincts-startup:local"
     try:
-        subprocess.run(
-            [docker, "build", "--tag", image, str(ROOT)],
-            check=True, capture_output=True, encoding="utf-8", errors="replace", timeout=600,
-        )
-    except (OSError, subprocess.SubprocessError) as exc:
+        with TemporaryDirectory(prefix="betterinstincts-startup-") as temp:
+            context = Path(temp)
+            for file in ("Dockerfile", ".dockerignore", *STARTUP_SOURCES, *PROFILE_SOURCES):
+                source = ROOT / file
+                if not source.is_file() or source.resolve() != source:
+                    raise ValueError(f"Startup source must be a regular checkout file: {file}")
+                target = context / file
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, target)
+            subprocess.run(
+                [cli, "build", "--tag", image, str(context)],
+                check=True, capture_output=True, encoding="utf-8", errors="replace", timeout=600,
+            )
+    except (OSError, ValueError, subprocess.SubprocessError) as exc:
+        guidance = ("Start Docker in Linux container mode and check access to Docker Hub, then rerun."
+                    if engine == "docker" else "Check the Podman build details and access to Docker Hub, then rerun.")
         raise PlayBlocked(
-            "container_build", "DOCKER_BUILD_FAILED",
-            "Start Docker in Linux container mode and check access to Docker Hub, then rerun.",
+            "container_build", f"{engine.upper()}_BUILD_FAILED", guidance,
             detail=str(getattr(exc, "stderr", None) or exc)[-1200:].strip(),
         ) from exc
 
@@ -88,7 +118,7 @@ def docker_plan(docker: str, progress: Callable[[str], None], *, profile_launch:
         expected = startup_plan(profile_launch=profile_launch)
         plan_args = ["--profile-launch"] if profile_launch else []
         result = subprocess.run(
-            [docker, "run", "--rm", "--pull=never", "--network=none", "--read-only",
+            [cli, "run", "--rm", "--pull=never", "--network=none", "--read-only",
              "--cap-drop=ALL", "--security-opt=no-new-privileges", image, *plan_args],
             check=True, capture_output=True, encoding="utf-8", errors="replace", timeout=30,
         )
@@ -96,8 +126,8 @@ def docker_plan(docker: str, progress: Callable[[str], None], *, profile_launch:
             raise ValueError("Unexpected startup plan")
     except (OSError, SyntaxError, ValueError, subprocess.SubprocessError) as exc:
         raise PlayBlocked(
-            "container_plan", "DOCKER_STARTUP_PLAN_FAILED",
-            "Check Docker and rerun from the current BetterInstincts checkout.",
+            "container_plan", f"{engine.upper()}_STARTUP_PLAN_FAILED",
+            f"Check {name} and rerun from the current BetterInstincts checkout.",
             detail=str(getattr(exc, "stderr", None) or exc)[-1200:].strip(),
         ) from exc
     return expected
@@ -529,9 +559,11 @@ def complete_play(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--plan", action="store_true", help="Check the container on any Docker host")
+    mode.add_argument("--plan", action="store_true", help="Check only the portable startup container")
     mode.add_argument("--game-exe", type=Path, help="Choose an installed Sims executable")
     mode.add_argument("--emit-plan", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--container-engine", choices=CONTAINER_ENGINES,
+                        help="Select a CLI explicitly (default: Docker if present, otherwise Podman)")
     parser.add_argument("--mode", choices=("dev", "prod", "production"),
                         help="Choose the oldest disposable lab or latest-played production route")
     parser.add_argument("--upgrade-parts", action="store_true",
@@ -550,6 +582,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--checkout-head", help=argparse.SUPPRESS)
     parser.add_argument("--json", action="store_true", help="Return one JSON result without prompts")
     args = parser.parse_args(argv)
+    if args.container_engine and (args.native_start or args.emit_plan):
+        parser.error("--container-engine requires a container-backed Play command")
     if args.mode == "prod":
         args.mode = "production"
     selection = {key: value for key, value in (
@@ -587,6 +621,7 @@ def main(argv: list[str] | None = None) -> int:
 
     progress("Welcome to BetterInstincts.")
     receipt_path, receipt, launch_profile = None, None, None
+    container_engine = None
     try:
         if not args.plan and sys.platform != "win32":
             command = ("Start-BetterInstincts.cmd --upgrade-parts" if args.upgrade_parts else
@@ -632,11 +667,20 @@ def main(argv: list[str] | None = None) -> int:
             if args.checkout_head or args.upgrade_parts:
                 write_result(receipt_path, receipt)
         if not args.native_start:
-            docker = shutil.which("docker")
-            if docker is None:
-                raise PlayBlocked("container_build", "DOCKER_NOT_FOUND",
-                                  "Install or start Docker, then rerun from the BetterInstincts checkout.")
-            plan = docker_plan(docker, progress, profile_launch=args.profile_launch)
+            container_engine = args.container_engine or "docker"
+            cli = shutil.which(container_engine)
+            if cli is None and args.container_engine is None:
+                cli = shutil.which("podman")
+                if cli is not None:
+                    container_engine = "podman"
+            if cli is None:
+                if container_engine == "podman":
+                    raise PlayBlocked("container_engine", "PODMAN_NOT_FOUND",
+                                      "Install the Podman CLI for this host architecture and reopen the terminal.")
+                guidance = ("Install Docker and reopen the terminal." if args.container_engine else
+                            "Install Docker or the Podman CLI and reopen the terminal.")
+                raise PlayBlocked("container_build", "DOCKER_NOT_FOUND", guidance)
+            plan = container_plan(cli, progress, engine=container_engine, profile_launch=args.profile_launch)
         if args.plan:
             command = f"{WIN_COMMAND} --profile-launch" if args.profile_launch else WIN_COMMAND
             result = {"status": "ok", "stage": "container_plan", "plan": plan,
@@ -658,6 +702,8 @@ def main(argv: list[str] | None = None) -> int:
         if exc.detail:
             result["detail"] = exc.detail
 
+    if container_engine is not None:
+        result["container_engine"] = container_engine
     if args.mode:
         from scripts.launch_receipt import gap, write_result
 
