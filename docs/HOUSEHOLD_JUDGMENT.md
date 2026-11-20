@@ -5,7 +5,8 @@
 In **BetterInstincts Settings → Play**, choose **Household skill to max with
 cheats** and enable **Allow BetterInstincts to run cheat commands**. Existing
 profiles default to **None** until a skill is selected. This route requires the
-matching installed native runtime and a verified disposable lab save.
+matching installed native runtime, household microsystem arbitration, and a
+verified disposable lab save.
 Upgrade the installed native package before saving a skill choice. Older
 archives use the original launch-settings catalog and reject the new preference.
 
@@ -14,8 +15,9 @@ It skips Sims observed at their cap or explicitly ineligible. For each
 remaining Sim in stable roster order, it confirms the active portrait,
 requests the native stat change, and waits for independent cap readback
 before advancing. Planning keeps simulation time paused and uses only the
-direct skill effect and its portrait handoff. The normal queue and any
-higher-priority work retain their admission rules.
+direct skill effect and its portrait handoff. Higher-priority household work
+and an installed activity chain take precedence. The normal queue retains
+its admission rules.
 
 The native adapter follows
 [`household_skill_max`](../contracts/native-ecology-runtime.v1.json).

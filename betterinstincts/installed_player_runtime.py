@@ -170,8 +170,8 @@ class InstalledPlayerRuntime:
             self.portrait_readback = frame
         return state
 
-    def _read_skill_max_turn(self, frame, planned=None):
-        if (not self._idle(frame) or type(frame.playing) is not bool
+    def _read_skill_max_turn(self, frame):
+        if (self.microsystems is None or not self._idle(frame) or type(frame.playing) is not bool
                 or frame.modal_open is not False or self.unresolved is not None
                 or self.dust_attempts or self.fame_attempts or self.fame_streams):
             return None, None
@@ -183,30 +183,31 @@ class InstalledPlayerRuntime:
             if (launch["allow_cheats"] is not True or launch["household_skill"] == "none"
                     or frame.idle_seconds * 1000 < launch["idle_ms"]):
                 return None, None
-            if planned is None:
-                planned, _, _ = self.adapter.analyze(frame)
+            planned, _, _ = self.adapter.analyze(frame)
             if not isinstance(planned, Mapping) or planned:
                 return None, None
-            if self.microsystems is not None:
-                state, _ = self._microsystem_choice(frame)
-                if (state != "MICROSYSTEM_NO_ADMISSIBLE_WORK" or not self.microsystem_dispositions
-                        or any(state not in ("NO_OPEN_WORK", "PORTRAIT_UNAVAILABLE")
-                               for state in self.microsystem_dispositions.values())):
-                    return None, None
+            if not self._household_priority_clear(frame):
+                return None, None
+            if self.activity_chain is not None:
+                state, self.activity_plan, _ = self._read_activity_chain(frame)
+                if state != "NO_ACTIVITY_GOAL":
+                    return state, None
             state, turn = self.skill_max.choose_turn(
                 frame, self.adapter.read_household_skill(frame, launch["household_skill"]), profile,
             )
-            if turn is not None and self.microsystems is not None and set(turn.roster) != set(
-                    self.microsystem_dispositions):
+            if turn is not None and (set(turn.roster) != set(self.microsystem_dispositions)
+                                     or self.microsystem_dispositions[turn.actor] != "NO_OPEN_WORK"):
                 return "SKILL_MAX_EVIDENCE_UNQUALIFIED", None
             return state, turn
         except Exception:
             return "SKILL_MAX_EVIDENCE_UNQUALIFIED", None
 
-    def _cycle_skill_max(self, first, planned=None):
+    def _cycle_skill_max(self, first):
         previous_state = self.skill_max_state
-        self.skill_max_state, turn = self._read_skill_max_turn(first, planned)
+        self.skill_max_state, turn = self._read_skill_max_turn(first)
         if turn is None:
+            if self.activity_plan is not None:
+                return self.skill_max_state
             if self.skill_max_state == self.skill_max.COMPLETE and previous_state != self.skill_max.COMPLETE:
                 return self.skill_max.COMPLETE
             return None
@@ -517,7 +518,7 @@ class InstalledPlayerRuntime:
             # A missing or malformed native observation is never work to execute.
             return "ACTIVITY_EVIDENCE_UNQUALIFIED", None, None
 
-    def _cycle_activity_chain(self, first):
+    def _cycle_activity_chain(self, first, *, require_household_clearance=False):
         state, self.activity_plan, candidate = self._read_activity_chain(first)
         if state == "NO_ACTIVITY_GOAL":
             return None
@@ -529,6 +530,8 @@ class InstalledPlayerRuntime:
             return "YIELD_TO_PLAYER"
         planned, _, _ = self.adapter.analyze(fresh)
         if not isinstance(planned, Mapping) or planned:
+            return "ACTIVITY_REOBSERVE_DOMAIN_PRIORITY"
+        if require_household_clearance and not self._household_priority_clear(fresh):
             return "ACTIVITY_REOBSERVE_DOMAIN_PRIORITY"
         _, self.activity_plan, current = self._read_activity_chain(fresh)
         if current != candidate or not self._idle(fresh):
@@ -544,16 +547,31 @@ class InstalledPlayerRuntime:
             self.activity_admission = None
         return result
 
-    def _microsystem_choice(self, frame):
+    def _microsystem_choice(self, frame, *, require_current_absences=False):
         try:
+            observed = self.adapter.read_microsystem_handoff(frame)
             state, candidate, dispositions = self.microsystems.decide(
-                frame, self.adapter.read_microsystem_handoff(frame),
-                attempted=self.attempts | self.microsystem_denied_switches,
+                frame, observed, attempted=self.attempts | self.microsystem_denied_switches,
             )
+            if require_current_absences:
+                for actor, disposition in dispositions.items():
+                    if disposition != "PORTRAIT_UNAVAILABLE":
+                        continue
+                    row = observed["members"].get(actor)
+                    if (not isinstance(row, Mapping) or row.get("capture") != frame.capture
+                            or row.get("available") is not False):
+                        state, candidate = "MICROSYSTEM_EVIDENCE_UNAVAILABLE", None
+                        break
         except Exception:
             state, candidate, dispositions = "MICROSYSTEM_EVIDENCE_UNAVAILABLE", None, {}
         self.microsystem_dispositions = dispositions
         return state, candidate
+
+    def _household_priority_clear(self, frame):
+        state, _ = self._microsystem_choice(frame, require_current_absences=True)
+        return (state == "MICROSYSTEM_NO_ADMISSIBLE_WORK" and bool(self.microsystem_dispositions)
+                and all(state in ("NO_OPEN_WORK", "PORTRAIT_UNAVAILABLE")
+                        for state in self.microsystem_dispositions.values()))
 
     def _cycle_microsystems(self, first):
         if not self._idle(first) or first.playing is not True:
@@ -682,6 +700,15 @@ class InstalledPlayerRuntime:
             result = self._cycle_microsystems(first)
             if (self.skill_max is not None
                     and result in ("MICROSYSTEM_NO_ADMISSIBLE_WORK", "YIELD_TO_PLAYER")):
+                if (self.activity_chain is not None and type(first.playing) is bool
+                        and self._idle(first) and self.unresolved is None
+                        and not self.dust_attempts and not self.fame_attempts and not self.fame_streams
+                        and self._household_priority_clear(first)):
+                    planned, _, _ = self.adapter.analyze(first)
+                    if isinstance(planned, Mapping) and not planned:
+                        activity = self._cycle_activity_chain(first, require_household_clearance=True)
+                        if activity is not None:
+                            return activity
                 return self._cycle_skill_max(first) or result
             return result
         fame_observation = fame_track = fame_result = None
@@ -708,10 +735,6 @@ class InstalledPlayerRuntime:
             if result is not None:
                 return result
         if first.playing is not True:
-            if self.skill_max is not None and first.playing is False and isinstance(planned, Mapping) and not planned:
-                result = self._cycle_skill_max(first, planned)
-                if result is not None:
-                    return result
             if (first.playing is False and self.activity_chain is not None
                     and isinstance(planned, Mapping) and not planned):
                 result = self._cycle_activity_chain(first)
@@ -740,10 +763,6 @@ class InstalledPlayerRuntime:
                     return fame_result
                 result = self._cycle_fame(first, fame_observation, fame_track)
                 if result != "NO_FAME_GOAL":
-                    return result
-            if self.skill_max is not None and isinstance(planned, Mapping):
-                result = self._cycle_skill_max(first, planned)
-                if result is not None:
                     return result
             if (self.activity_chain is not None and isinstance(planned, Mapping)
                     and not self.dust_attempts and not self.fame_attempts):
@@ -836,8 +855,8 @@ def start_installed(adapter, *, exact_build: str, owned_dir: Path,
     if installed.get("installed_household_skill_max") is True:
         from betterinstincts import household_skill_max as skill_max
 
-        if portraits is None or not all(callable(getattr(adapter, name, None))
-                                       for name in skill_max.PORTS):
+        if microsystems is None or not all(callable(getattr(adapter, name, None))
+                                          for name in skill_max.PORTS):
             raise ValueError("NATIVE_HOUSEHOLD_SKILL_MAX_PORTS_REQUIRED")
     from betterinstincts.installation_profiles import view
 

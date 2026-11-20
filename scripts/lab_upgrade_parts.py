@@ -173,7 +173,8 @@ def _plan_portrait(frame, row, *, picker_open, cost=0, budget=0):
             "slack_minutes": plan["available_minutes"] - plan["total_upper_minutes"]}
 
 
-def run_restock(bridge, checkpoint, *, expected_slot=None, expected_roster=(), catalog_capture=None):
+def run_restock(bridge, checkpoint, *, expected_slot=None, expected_roster=(),
+                catalog_capture=None, expected_load_command=None):
     """Drive only the selected lab scope, one verified native effect at a time."""
     parts = menu_catalog()["part_ids"]
     targets = dict.fromkeys(parts, TARGET)
@@ -181,7 +182,7 @@ def run_restock(bridge, checkpoint, *, expected_slot=None, expected_roster=(), c
     captures = {catalog_capture} if catalog_capture is not None else set()
     expected_roster = frozenset(expected_roster)
     report = {"target_per_part": TARGET, "household_id": scope["household_id"],
-              "spent": 0, "purchases": [], "pending": None,
+              "spent": 0, "purchases": [], "pending": None, "verified_portrait_switches": 0,
               "planning": {"schema": PLANNING, "decisions": []}}
 
     def observe(expected):
@@ -258,8 +259,13 @@ def run_restock(bridge, checkpoint, *, expected_slot=None, expected_roster=(), c
         return roster
 
     frame = observe(["WORLD_MAP", "NEIGHBORHOOD_MAP", "LOT_DETAILS"])
-    report["save_readback"] = frame["capture"]
+    if expected_load_command is not None and frame.get("applied_command_id") != expected_load_command:
+        raise RestockBlocked("NATIVE_RESTOCK_SAVE_LOAD_RECONCILIATION_REQUIRED")
     lot = map_lot(frame)
+    report["save_readback"] = frame["capture"]
+    if expected_load_command is not None:
+        report["save_load_command_id"] = expected_load_command
+        checkpoint(report)
     frame = effect("claim_restock_control", frame, [frame["scene"]], lot_id=lot)
     if map_lot(frame) != lot:
         raise RestockBlocked("ACTIVE_MAP_LOT_CHANGED")
@@ -343,6 +349,7 @@ def run_restock(bridge, checkpoint, *, expected_slot=None, expected_roster=(), c
             if frame.get("selected") != actor or tuple(live_roster(frame, lot)) != roster_ids:
                 raise RestockBlocked("PORTRAIT_CHANGE_NOT_OBSERVED")
             decision["selected_capture"] = frame["capture"]
+            report["verified_portrait_switches"] += 1
             clear_effect()
         frame = _restock_selected(frame, actor, lot, roster_ids, parts, targets, effect,
                                   live_roster, clear_effect, report, bridge.spend_cap)

@@ -130,7 +130,7 @@ def build_package(
     if installed_portrait_handoff and (not installed_player_runtime
             or not _ref(proof.get("installed_portrait_handoff_binding_ref"))):
         raise NativeEcologyPackageError("INSTALLED_PORTRAIT_HANDOFF_BINDING_PROOF_REQUIRED")
-    if installed_household_skill_max and (not installed_portrait_handoff
+    if installed_household_skill_max and (not installed_portrait_handoff or not installed_microsystem_handoff
             or not _ref(proof.get("installed_household_skill_max_binding_ref"))):
         raise NativeEcologyPackageError("INSTALLED_HOUSEHOLD_SKILL_MAX_BINDING_PROOF_REQUIRED")
     if installed_activity_chain and (not installed_player_runtime
@@ -243,7 +243,7 @@ def _read_manifest(path: Path) -> dict:
             or (data.get("installed_microsystem_handoff") is True
                 and data.get("installed_portrait_handoff") is not True)
             or (data.get("installed_household_skill_max") is True
-                and data.get("installed_portrait_handoff") is not True)
+                and data.get("installed_microsystem_handoff") is not True)
             or data.get("game_certified") is not False
             or data.get("live_activation_observed") is not False
             or not isinstance(data.get("package_sha256"), str)

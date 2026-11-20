@@ -30,6 +30,7 @@ class HouseholdSkillMaxTests(unittest.TestCase):
         self.adapter.read_portrait_outcome.side_effect = self.portrait_outcome
         self.adapter.read_household_skill.side_effect = self.observation
         self.adapter.read_skill_max_outcome.side_effect = self.skill_outcome
+        self.adapter.read_microsystem_handoff.side_effect = self.clear_microsystems
         self.levels = {ANNA: (1, 5), BEA: (2, 3), CAM: (5, 5)}
         self.runtime = self.start()
 
@@ -41,7 +42,8 @@ class HouseholdSkillMaxTests(unittest.TestCase):
         (self.root / MANIFEST).write_text(json.dumps({
             "schema": "betterinstincts.native-ecology-ownership/v1",
             "game_build": frame(1).game_build, "installed_player_runtime": True,
-            "installed_portrait_handoff": True, "installed_household_skill_max": True, **flags,
+            "installed_portrait_handoff": True, "installed_household_skill_max": True,
+            "installed_microsystem_handoff": True, **flags,
         }), encoding="utf-8")
         return start_installed(self.adapter, exact_build=frame(1).game_build, owned_dir=self.root,
                                clock=lambda: 10.7, learning_opt_in=True)
@@ -65,6 +67,9 @@ class HouseholdSkillMaxTests(unittest.TestCase):
                 for sim, value in self.levels.items()
             },
         }
+
+    def clear_microsystems(self, current):
+        return packet(current, {actor: member(current) for actor in ROSTER}, roster=ROSTER)
 
     def skill_outcome(self, attempt, current):
         return {"status": "APPLIED", "actor": attempt.turn.actor, "skill": attempt.turn.skill,
@@ -197,8 +202,10 @@ class HouseholdSkillMaxTests(unittest.TestCase):
         self.assertEqual(self.adapter.submit_skill_max_if_current.call_count, 2)
 
     def test_optional_binding_requires_shared_portrait_support(self):
-        with self.assertRaisesRegex(ValueError, "NATIVE_HOUSEHOLD_SKILL_MAX_PORTS_REQUIRED"):
+        with self.assertRaisesRegex(ValueError, "NATIVE_MICROSYSTEM_HANDOFF_PORTS_REQUIRED"):
             self.start(installed_portrait_handoff=False)
+        with self.assertRaisesRegex(ValueError, "NATIVE_HOUSEHOLD_SKILL_MAX_PORTS_REQUIRED"):
+            self.start(installed_microsystem_handoff=False)
         self.adapter.submit_skill_max_if_current = None
         with self.assertRaisesRegex(ValueError, "NATIVE_HOUSEHOLD_SKILL_MAX_PORTS_REQUIRED"):
             self.start()
@@ -220,3 +227,50 @@ class HouseholdSkillMaxTests(unittest.TestCase):
         self.assertEqual(self.cycle(self.current(2), self.current(3)), "SKILL_MAX_AWAITING_READBACK")
         self.adapter.submit_skill_max_if_current.assert_called_once()
         self.adapter.submit_microsystem_if_current.assert_not_called()
+
+    def test_missing_remote_priority_cannot_be_treated_as_an_absent_sim(self):
+        self.adapter.read_microsystem_handoff.side_effect = lambda current: packet(
+            current, {ANNA: member(current)}, roster=ROSTER)
+        self.assertEqual(self.cycle(self.current(1)), "YIELD_TO_PLAYER")
+        self.adapter.submit_skill_max_if_current.assert_not_called()
+        self.adapter.read_household_skill.assert_not_called()
+
+        self.levels[BEA] = None
+        self.adapter.read_microsystem_handoff.side_effect = lambda current: packet(
+            current, {ANNA: member(current), BEA: {**member(current), "available": False},
+                      CAM: member(current)}, roster=ROSTER)
+        self.assertEqual(self.cycle(self.current(2), self.current(3)), "SKILL_MAX_AWAITING_READBACK")
+
+    def test_planning_activity_preview_takes_precedence_over_skill_max(self):
+        from tests.test_installed_player_runtime import InstalledRuntimeTests
+
+        self.runtime = self.start(installed_activity_chain=True)
+        self.adapter.read_activity_chain.side_effect = lambda f: InstalledRuntimeTests.activity_packet(self, f)
+        self.assertEqual(self.cycle(self.current(1)), "PLAN_STAGED")
+        self.assertIsNotNone(self.runtime.activity_plan)
+        self.adapter.read_household_skill.assert_not_called()
+        self.adapter.submit_skill_max_if_current.assert_not_called()
+        self.adapter.submit.assert_not_called()
+
+    def test_activity_chain_in_play_rechecks_household_priority_before_submitting(self):
+        from tests.test_installed_player_runtime import InstalledRuntimeTests
+
+        self.runtime = self.start(installed_activity_chain=True)
+        self.adapter.read_activity_chain.side_effect = lambda f: InstalledRuntimeTests.activity_packet(self, f)
+
+        def arbitration(current):
+            members = {actor: member(current) for actor in ROSTER}
+            if current.capture == self.current(2).capture:
+                members[BEA] = member(current, NEEDS=lane(current, option("food")))
+            return packet(current, members, roster=ROSTER)
+
+        self.adapter.read_microsystem_handoff.side_effect = arbitration
+        self.assertEqual(self.cycle(self.current(1, playing=True), self.current(2, playing=True)),
+                         "ACTIVITY_REOBSERVE_DOMAIN_PRIORITY")
+        self.adapter.submit.assert_not_called()
+        self.adapter.submit_skill_max_if_current.assert_not_called()
+
+        self.adapter.submit.return_value = "QUEUED"
+        fresh = self.current(4, playing=True)
+        self.assertEqual(self.cycle(self.current(3, playing=True), fresh), "QUEUED")
+        self.adapter.submit.assert_called_once_with("buy-material", fresh)

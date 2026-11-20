@@ -97,6 +97,7 @@
   "lab_restock_handoff": {
     "protocol": "betterinstincts.lab-restock-responder-handoff/v1",
     "bootstrap_owner": "scripts/lab_upgrade_parts.py",
+    "native_save_load": "FRESH_MAP_READBACK_BOUND_TO_STARTUP_COMMAND_BEFORE_RESTOCK",
     "native_hold": "FRAME_RESTOCK_HAS_CONTROL_TRUE_OR_UNVERIFIED",
     "transition": "NATIVE_EXACT_SCOPE_ATOMIC_PLAY_AND_RELEASE",
     "decision_proof": "DISTINCT_CURRENT_CAPTURE_CORRELATED_TO_HANDOFF_AND_REGISTERED_CALLBACK",
@@ -106,6 +107,7 @@
     "owner": "betterinstincts/household_skill_max.py",
     "bundle_flag": "--installed-household-skill-max",
     "requires_installed_portrait_handoff": true,
+    "requires_installed_microsystem_handoff": true,
     "require_binding_proof": "installed_household_skill_max_binding_ref",
     "profile_options": ["allow_cheats", "household_skill", "idle_ms"],
     "packet": "betterinstincts.household-skill-max/v1",
@@ -116,6 +118,7 @@
     ],
     "save_scope": "VERIFIED_LAB_DISPOSABLE",
     "mode": "PLANNING_OR_PLAY_DIRECT_NATIVE_SET_NO_UNPAUSE",
+    "priority": "CURRENT_HOUSEHOLD_CLEARANCE_AND_INSTALLED_ACTIVITY_CHAIN_PRECEDENCE",
     "dispatch": "ONE_CURRENT_STAT_OR_EXISTING_PORTRAIT_EFFECT_PER_CALLBACK",
     "completion": "INDEPENDENT_CURRENT_PER_SIM_CAP_READBACK_FOR_ALL_ELIGIBLE_MEMBERS",
     "replay": "ONE_STAT_REQUEST_PER_BUILD_RUN_SAVE_HOUSEHOLD_SKILL_ACTOR_PROFILE_REVISION",

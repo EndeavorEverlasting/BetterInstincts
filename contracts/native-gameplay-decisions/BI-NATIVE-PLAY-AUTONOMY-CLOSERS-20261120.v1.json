@@ -1,0 +1,12 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "reason": "Require current household and activity priority before the existing source-proven native effect ports.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 328
+    }
+  ]
+}

@@ -2535,3 +2535,12 @@ disposable household. It rechecks Allow Cheats and the active portrait at
 each effect, skips observed caps, and waits for independent readback before
 advancing. The [skill handoff](HOUSEHOLD_JUDGMENT.md#max-one-household-skill-in-planning-or-play)
 owns source, settings, and live-proof routing.
+
+## 2026-11-20 — Close the native startup-to-autonomy source path
+
+The explicit one-click lab restock now uses the exact selected native save
+loader when the adapter advertises it. The restock bridge must correlate its
+first map observation to the same command before either selecting portraits
+or buying. The skill callback now requires current household priority and
+preserves installed activity-chain priority. See the
+[restock handoff](handoff/BI-OLDEST-LAB-RESTOCK.md#verify-the-full-handoff).

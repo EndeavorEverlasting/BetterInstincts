@@ -394,13 +394,28 @@ def complete_play(
         if (startup_bridge is not None or catalog_capture is not None) and context != startup_context:
             raise ValueError("NATIVE_STARTUP_CONTEXT_CHANGED")
         bridge = None
-        if (launch_profile and startup_bridge
+        if upgrade_parts:
+            from scripts.lab_upgrade_parts import NativeBridge
+
+            try:
+                bridge = NativeBridge(context_path, context, process, route)
+                bridge.require_capabilities()
+            except (OSError, ValueError, KeyError, TypeError) as exc:
+                return pending("native_restock_binding", str(exc),
+                               "Bind the Windows EA observer and commands from the repository handoff.",
+                               "scripts/lab_upgrade_parts.py", actor="repository")
+            if catalog_capture is not None:
+                result["restock_binding"] = {"scope": bridge.scope, "sha256": bridge.digest,
+                                             "catalog_capture": catalog_capture}
+        if ((launch_profile or upgrade_parts) and startup_bridge and catalog_capture is not None
                 and "load_selected_save" in startup_bridge.supported_operations):
+            from betterinstincts.installation_profiles import view
             from scripts.startup_handoff import dispatch_profile_save
 
             result["startup_binding"]["catalog_capture"] = catalog_capture
+            idle_ms = (launch_profile if launch_profile is not None else view())["launch"]["idle_ms"]
             native_load = dispatch_profile_save(
-                startup_bridge, process, route, catalog, launch_profile["launch"]["idle_ms"], native_load_checkpoint)
+                startup_bridge, process, route, catalog, idle_ms, native_load_checkpoint)
         else:
             profile_name = context.get("navigation_profile")
             profiles = context.get("navigation_profiles")
@@ -421,18 +436,8 @@ def complete_play(
                 raise ValueError("DEV_PROFILE_DOES_NOT_BIND_OLDEST_CANDIDATE")
             listener = nullcontext(context.get("session_id"))
             if upgrade_parts:
-                from scripts.lab_upgrade_parts import NativeBridge, save_navigation_listener
+                from scripts.lab_upgrade_parts import save_navigation_listener
 
-                try:
-                    bridge = NativeBridge(context_path, context, process, route)
-                    bridge.require_capabilities()
-                except (OSError, ValueError) as exc:
-                    return pending("native_restock_binding", str(exc),
-                                   "Bind the Windows EA observer and commands from the repository handoff.",
-                                   "scripts/lab_upgrade_parts.py", actor="repository")
-                if catalog_capture is not None:
-                    result["restock_binding"] = {"scope": bridge.scope, "sha256": bridge.digest,
-                                                 "catalog_capture": catalog_capture}
                 listener = save_navigation_listener()
             elif startup_bridge is not None:
                 from scripts.lab_upgrade_parts import save_navigation_listener
@@ -495,13 +500,15 @@ def complete_play(
             result["restock"] = report
             if report.get("save_readback"):
                 result["save_state"] = "DEV_SAVE_MAP_OBSERVED"
+                if native_load:
+                    result["native_save_load"].update(state="OBSERVED", capture=report["save_readback"])
             write_result(receipt_path, {**receipt, **result, "stage": "lab_upgrade_parts"})
 
         try:
             progress("Restocking upgrade parts for each available Sim.")
             report = run_restock(bridge, restock_checkpoint, expected_slot=route.get("candidate_slot"),
                                  expected_roster=route.get("household_member_ids", ()),
-                                 catalog_capture=catalog_capture)
+                                 catalog_capture=catalog_capture, expected_load_command=native_load)
         except (OSError, ValueError, KeyError, TypeError) as exc:
             if result.get("restock", {}).get("state") in ("RESTOCK_VERIFIED", "NO_AVAILABLE_PORTRAITS"):
                 return pending("native_responder_handoff", str(exc),

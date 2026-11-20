@@ -40,6 +40,8 @@ class StartupFixture(startup_handoff.StartupBridge):
         self.profile_ports = False
         self.catalog_reads = 0
         self.second_household = False
+        self.minimum_load_idle_ms = 21000
+        self.native_load_observer = None
 
     def exchange(self, operation, **request):
         self.operations.append(operation)
@@ -82,8 +84,10 @@ class StartupFixture(startup_handoff.StartupBridge):
             frame.update(self.frame_changes.get(self.capture_count, {}))
             return {"observation_id": request["observation_id"], "frame": frame}
         if operation == "load_selected_save":
-            assert request["minimum_idle_ms"] == 21000
+            assert request["minimum_idle_ms"] == self.minimum_load_idle_ms
             self.command = request["command_id"]
+            if self.native_load_observer:
+                self.native_load_observer(self.command)
             return {"command_id": self.command, "status": "APPLIED"}
         assert operation in {"open_active_lot", "play_active_lot", "select_household"}
         assert request["target"]["lot_id"] == "lot:fixture"
@@ -262,6 +266,41 @@ class StartupHandoffTests(unittest.TestCase):
         self.assertEqual(report["final_inventory"], dict.fromkeys(("sim:beta", "sim:gamma"), dict.fromkeys(PARTS, 99)))
         self.assertEqual(report["handoff"]["state"], "NATIVE_RESPONDER_DECISION_OBSERVED")
         self.assertEqual(sum(operation == "handoff_to_responder" for operation, _ in restock.effects), 1)
+
+    def test_native_restock_load_joins_catalog_purchases_and_responder(self):
+        catalog, restock = self.semantic_restock_fixture()
+        catalog.profile_ports = True
+        catalog.minimum_load_idle_ms = 15000
+        catalog.native_load_observer = lambda command: restock.frame.update(applied_command_id=command)
+        result, template_loads, receipt = self.run_play(catalog, restock=restock)
+
+        self.assertEqual((result["status"], template_loads), ("ok", 0))
+        self.assertEqual(catalog.operations, ["capabilities", "read_save_catalog", "load_selected_save"])
+        self.assertEqual(catalog.picker_calls, [])
+        self.assertEqual(receipt["native_save_load"]["state"], "OBSERVED")
+        report = receipt["restock"]
+        self.assertEqual(report["save_load_command_id"], receipt["native_save_load"]["command_id"])
+        self.assertEqual(report["save_readback"], receipt["native_save_load"]["capture"])
+        self.assertEqual(report["verified_portrait_switches"], 2)
+        self.assertEqual(report["final_inventory"], dict.fromkeys(("sim:beta", "sim:gamma"), dict.fromkeys(PARTS, 99)))
+        self.assertEqual(report["handoff"]["state"], "NATIVE_RESPONDER_DECISION_OBSERVED")
+        self.assertEqual([op for op, _ in restock.effects].count("handoff_to_responder"), 1)
+
+    def test_native_restock_holds_unbound_controller_or_unmatched_load_readback(self):
+        for binding_missing in (False, True):
+            with self.subTest(binding_missing=binding_missing):
+                catalog, restock = self.semantic_restock_fixture()
+                catalog.profile_ports = True
+                catalog.minimum_load_idle_ms = 15000
+                restock.frame["applied_command_id"] = "old-native-command"
+                if binding_missing:
+                    restock.require_capabilities.side_effect = ValueError("NATIVE_RESTOCK_CAPABILITIES_INCOMPLETE")
+                result, template_loads, _ = self.run_play(catalog, restock=restock)
+                expected = ("NATIVE_RESTOCK_CAPABILITIES_INCOMPLETE" if binding_missing
+                            else "NATIVE_RESTOCK_SAVE_LOAD_RECONCILIATION_REQUIRED")
+                self.assertEqual((result["reason"], template_loads), (expected, 0))
+                self.assertEqual("load_selected_save" in catalog.operations, not binding_missing)
+                self.assertEqual(restock.effects, [])
 
     def test_named_restock_holds_wrong_slot_or_roster_before_portrait_effects(self):
         for reason, changed_slot in (("RESTOCK_SLOT_DOES_NOT_MATCH_CATALOG", True),

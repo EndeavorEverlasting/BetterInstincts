@@ -508,3 +508,13 @@ Windows save, observe the profile-selected skill reaching each eligible
 Sim's cap, including in Planning while paused, with player takeover and
 rollback controls. Keep ordinary queue behavior and hunger certification
 under their existing gates.
+
+## 2026-11-20 — Run the joined Windows startup and autonomy proof
+
+Start the authorized disposable run through the
+[existing one-click restock launch](handoff/BI-OLDEST-LAB-RESTOCK.md).
+Verify map and Live roster, real portrait switches, inventory readback, and
+ownership transfer. Observe the configured skill effect after transfer on
+the same save. [#213](https://github.com/EndeavorEverlasting/BetterInstincts/issues/213)
+and [#328](https://github.com/EndeavorEverlasting/BetterInstincts/issues/328)
+own the corresponding exact-build native evidence.

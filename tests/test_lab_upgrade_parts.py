@@ -106,6 +106,7 @@ class LabUpgradePartsTests(unittest.TestCase):
         self.assertEqual(result["verified_available"], list(ACTORS[1:]))
         self.assertEqual(result["skipped"], {ACTORS[0]: "AT_WORK"})
         self.assertEqual(result["spent"], 1000)
+        self.assertEqual(result["verified_portrait_switches"], 2)
         self.assertEqual([op for op, _ in bridge.effects],
                          ["claim_restock_control", "open_active_lot", "play_active_lot", "pause_live"] +
                          ["select_portrait", "open_upgrade_parts", "buy_upgrade_parts"] * 2 +

@@ -376,9 +376,11 @@ assert PreferenceResponsePort().respond(enabled=True)["state"] == "NATIVE_ADAPTE
     def test_skill_max_bundle_requires_native_proof_and_packages_profile_and_portrait(self):
         options = dict(python37=self.py37, source_path=self.source, hook_proof_path=self.proof,
                        output_dir=self.output, game_build=BUILD, installed_player_runtime=True,
-                       installed_portrait_handoff=True, installed_household_skill_max=True)
+                       installed_portrait_handoff=True, installed_household_skill_max=True,
+                       installed_microsystem_handoff=True)
         proof = {**hook_proof(), "installed_player_runtime_binding_ref": "local:verified:binding",
-                 "installed_portrait_handoff_binding_ref": "local:verified:portrait"}
+                 "installed_portrait_handoff_binding_ref": "local:verified:portrait",
+                 "installed_microsystem_handoff_binding_ref": "local:verified:microsystem"}
         self.proof.write_text(json.dumps(proof))
         with self.assertRaisesRegex(NativeEcologyPackageError, "HOUSEHOLD_SKILL_MAX_BINDING"):
             build_package(**options)
@@ -386,11 +388,13 @@ assert PreferenceResponsePort().respond(enabled=True)["state"] == "NATIVE_ADAPTE
         self.proof.write_text(json.dumps(proof))
         with self.assertRaisesRegex(NativeEcologyPackageError, "HOUSEHOLD_SKILL_MAX_BINDING"):
             build_package(**{**options, "installed_portrait_handoff": False})
+        with self.assertRaisesRegex(NativeEcologyPackageError, "HOUSEHOLD_SKILL_MAX_BINDING"):
+            build_package(**{**options, "installed_microsystem_handoff": False})
         with patch("scripts.native_ecology_bundle._compile_py37", side_effect=self.compile_for_test):
             built = build_package(**options)
         with zipfile.ZipFile(built["package"]) as archive:
             self.assertEqual(archive.namelist(), [MODULE_PYC, *RUNTIME_MEMBERS, PORTRAIT_MEMBER,
-                                                  SKILL_MAX_MEMBER])
+                                                  SKILL_MAX_MEMBER, MICROSYSTEM_MEMBER])
         installed = install_package(mods_dir=self.mod_dir, package_path=Path(built["package"]),
                                     manifest_path=Path(built["manifest"]), game_closed_confirmed=True)
         result = subprocess.run(
