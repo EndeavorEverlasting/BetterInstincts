@@ -1,0 +1,19 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/household_skill_max.py",
+      "route": "POLICY_ONLY",
+      "reason": "Require matching independently observed full roster before classifying or executing skill policy.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 328
+    },
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "reason": "Require matching independently observed full roster before classifying or executing skill policy.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 328
+    }
+  ]
+}

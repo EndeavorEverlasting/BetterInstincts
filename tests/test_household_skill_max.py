@@ -162,6 +162,19 @@ class HouseholdSkillMaxTests(unittest.TestCase):
         self.adapter.submit_skill_max_if_current.assert_not_called()
         self.adapter.submit_portrait_if_current.assert_not_called()
 
+    def test_maxed_subset_of_the_household_cannot_certify_completion(self):
+        self.levels = {ANNA: (5, 5)}
+        self.adapter.read_household_skill.side_effect = lambda current, skill: {
+            **self.observation(current, skill), "roster": [ANNA],
+        }
+        self.assertEqual(self.cycle(self.current(1)), "YIELD_TO_PLAYER")
+        self.assertEqual(self.runtime.skill_max_state, "SKILL_MAX_EVIDENCE_UNQUALIFIED")
+        self.adapter.submit_skill_max_if_current.assert_not_called()
+
+        self.levels.update({BEA: (3, 3), CAM: (5, 5)})
+        self.adapter.read_household_skill.side_effect = self.observation
+        self.assertEqual(self.cycle(self.current(2)), "HOUSEHOLD_SKILL_MAX_VERIFIED")
+
     def test_uncertain_submit_never_repeats_and_wrong_scope_cannot_clear_it(self):
         self.adapter.submit_skill_max_if_current.side_effect = RuntimeError("lost native acknowledgement")
         self.assertEqual(self.cycle(self.current(1, playing=True), self.current(2, playing=True)),
