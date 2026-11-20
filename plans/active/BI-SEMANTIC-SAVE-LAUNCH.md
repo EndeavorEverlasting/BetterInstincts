@@ -198,3 +198,12 @@ Complete authorized source work and its exact-head CI checks before live
 certification of the changed path. Reconcile any attempted save load before
 another input. A current native binding and protected control remain required
 for the Windows proof.
+
+## Bootstrap through restock and native skill continuation
+
+Run `Start-BetterInstincts.cmd --upgrade-parts` against the existing authorized
+local context. Use the [full handoff evidence](../../docs/handoff/BI-OLDEST-LAB-RESTOCK.md#verify-the-full-handoff)
+to confirm one native save command and fresh map scope, exact eligible roster,
+actual portrait switches, settled inventory, then responder control and its
+first decision. Follow the selected skill using the same session under
+[#328](https://github.com/EndeavorEverlasting/BetterInstincts/issues/328).

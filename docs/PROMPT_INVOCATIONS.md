@@ -730,3 +730,10 @@ already-maxed Sims, and revalidation during player takeover. P08 reached
 the Windows-host boundary. The
 [skill handoff](HOUSEHOLD_JUDGMENT.md#max-one-household-skill-in-planning-or-play)
 holds the binding and next proof.
+
+## 2026-11-20 — Closers for bootstrap through Play and household autonomy
+
+P83 → P03 → P141 → P124 → P04 reconciles #329 against independent review
+and closes the source owner gaps in native save load and skill priority.
+Continue with the executable [lab restock handoff](handoff/BI-OLDEST-LAB-RESTOCK.md#verify-the-full-handoff)
+and exact-build Windows proof under #213 and #328.

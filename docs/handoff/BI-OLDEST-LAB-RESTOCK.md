@@ -78,9 +78,25 @@ restock mode `native_startup` only needs `capabilities` and
 `read_save_catalog`. It can admit an already-running game at the main menu.
 A loaded session stays in place. The catalog ties the title and roster to the
 current process and slot. The expected title must match the oldest authorized
-disposable candidate for the requested household and roster. The calibrated
-save-menu path opens that slot. The restock bridge verifies the actual slot
-and Live roster against the catalog before switching portraits or purchasing.
+disposable candidate for the requested household and roster. Play checks
+restock capabilities before loading. When the startup adapter advertises
+`load_selected_save`, Play uses it and requires the restock bridge to return
+the same command ID in a fresh map observation of the authorized slot and
+active household. The calibrated save-menu route remains available to
+existing observers without the native loader. The restock bridge verifies
+the Live roster against the catalog before switching portraits or purchasing.
+
+### Verify the full handoff
+
+Use the installed exact-build ports tracked in [#213](https://github.com/EndeavorEverlasting/BetterInstincts/issues/213)
+and [#328](https://github.com/EndeavorEverlasting/BetterInstincts/issues/328).
+For the same loaded save, retain the process and catalog binding, map
+readback, `verified_portrait_switches`, five per-Sim pocket counts after the
+purchase, and the distinct first native decision. For the selected skill,
+also keep a fresh per-Sim cap readback after the native responder takes over.
+When the trial calls for three observed switches, count independent
+successful selections and report the observed count. Record absent Sims
+separately. Keep the private source receipts on the Windows host.
 
 Read the first failed `stage` and `reason` from the private launch receipt.
 Keep the existing session and reconcile any pending command. If the project
