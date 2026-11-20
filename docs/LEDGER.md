@@ -2544,3 +2544,7 @@ first map observation to the same command before either selecting portraits
 or buying. The skill callback now requires current household priority and
 preserves installed activity-chain priority. See the
 [restock handoff](handoff/BI-OLDEST-LAB-RESTOCK.md#verify-the-full-handoff).
+
+The follow-up requires the skill snapshot and the current household priority
+snapshot to list the same full roster before they can prove completion.
+A maxed subset holds for fresh evidence.

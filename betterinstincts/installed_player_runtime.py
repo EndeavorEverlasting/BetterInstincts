@@ -194,9 +194,9 @@ class InstalledPlayerRuntime:
                     return state, None
             state, turn = self.skill_max.choose_turn(
                 frame, self.adapter.read_household_skill(frame, launch["household_skill"]), profile,
+                expected_roster=self.microsystem_dispositions,
             )
-            if turn is not None and (set(turn.roster) != set(self.microsystem_dispositions)
-                                     or self.microsystem_dispositions[turn.actor] != "NO_OPEN_WORK"):
+            if turn is not None and self.microsystem_dispositions[turn.actor] != "NO_OPEN_WORK":
                 return "SKILL_MAX_EVIDENCE_UNQUALIFIED", None
             return state, turn
         except Exception:

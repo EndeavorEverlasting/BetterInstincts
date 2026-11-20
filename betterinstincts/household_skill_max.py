@@ -37,7 +37,7 @@ class Attempt:
     dispatch: object
 
 
-def choose_turn(frame, packet, profile):
+def choose_turn(frame, packet, profile, *, expected_roster):
     """Use per-Sim native caps and the existing skill-first portrait order."""
     skill = profile["launch"]["household_skill"]
     if (not isinstance(packet, Mapping) or packet.get("schema") != SCHEMA
@@ -51,7 +51,7 @@ def choose_turn(frame, packet, profile):
         return "SKILL_MAX_EVIDENCE_UNQUALIFIED", None
     roster = _roster(packet.get("roster"))
     members = packet.get("members")
-    if (frame.actor not in roster or not isinstance(members, Mapping)
+    if (frame.actor not in roster or set(roster) != set(expected_roster) or not isinstance(members, Mapping)
             or set(members) != set(roster)):
         return "SKILL_MAX_EVIDENCE_UNQUALIFIED", None
     states, levels = {}, {}
