@@ -28,6 +28,26 @@ The private startup context needs a process-bound complete MAIN_MENU save catalo
 
 The private app-owned play-receipts/<run-id>/launch.json and seam-events.json bind each event to an existing run. The separate event record omits raw exception text, private context paths, save titles, Sim names, images and game file contents. The latest-run handoff uses only the most recent owned run; it cannot revive an older blocked run after a newer success. Unknown stages classify as UNREGISTERED_SEAM, denied desktop tools as POLICY_HOLD; every event states effect_admission=NOT_GRANTED.
 
+Startup and native notice writers share a per-run host lock while reading,
+deduplicating and atomically replacing the event file. If the lock stays busy,
+Play saves the original blocked result in `launch.json` with
+`seam_closure.state = EVENT_APPEND_PENDING`. The installed handoff can read the
+blocked gate and pending state immediately. Native notice writers continue to
+return `SEAM_RECEIPT_STORE_BUSY_RETRY` to the host adapter on contention.
+
+On the host, use the original launch receipt's `run_id` to finish the pending
+append after the lock holder releases its handle.
+
+```powershell
+py -3 -m scripts.launch_receipt --reconcile-seam RUN_ID
+```
+
+This command uses the existing private receipt store and saved observation.
+Repeat it safely if the store is still busy. A successful reconciliation
+changes the append state to `OPEN` and adds the event at most once with its
+original observation time.
+Continue game work from fresh evidence in the existing session.
+
 A seam closes only after code repair, regression proof and a runtime outcome appropriate to that gate. Committed code, green CI or a Play return alone cannot certify portrait switches or a native responder decision.
 
 ## Targeted source verification
@@ -42,8 +62,12 @@ The existing InstalledPlayerRuntime may additionally emit a bounded, sanitized
 missing-capability notice during an already registered game callback. This is
 opt-in: only an ownership manifest with installed_runtime_seam_port=true and
 an exact-build adapter implementing report_runtime_seam(notice) changes the
-callback to cycle_with_seam. Existing installations retain the original
-cycle callback. Normal YIELD_TO_PLAYER, queued/waiting actions and transient
+callback to cycle_with_seam. The native ecology builder writes the opt-in and
+includes the module when `--installed-runtime-seam-port` is supplied with
+`--installed-player-runtime` and a source-bound
+`installed_runtime_seam_port_binding_ref` in the hook proof. The installer
+checks that the archive and ownership manifest agree. Normal YIELD_TO_PLAYER,
+queued/waiting actions and transient
 portrait reobservation do not emit gap reports. Known unqualified native
 frames, session rebinds, missing portrait evidence and invalid proposal
 identities can emit at most 16 notifications per installed runtime instance,

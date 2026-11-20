@@ -176,6 +176,51 @@ class NativeEcologyPackageTests(unittest.TestCase):
                         manifest_path=Path(built["manifest"]), game_closed_confirmed=True)
         self.assertEqual(retained_learning.read_bytes(), b"retained")
 
+    def test_standalone_runtime_emits_opted_in_seam_notice(self):
+        proof = {**hook_proof(), "installed_player_runtime_binding_ref": "local:verified:binding"}
+        self.proof.write_text(json.dumps(proof))
+        options = dict(python37=self.py37, source_path=self.source, hook_proof_path=self.proof,
+                       output_dir=self.output, game_build=BUILD, installed_player_runtime=True,
+                       installed_runtime_seam_port=True)
+        with patch("scripts.native_ecology_bundle._compile_py37", side_effect=self.compile_for_test):
+            with self.assertRaisesRegex(NativeEcologyPackageError, "RUNTIME_SEAM_PORT_BINDING_PROOF_REQUIRED"):
+                build_package(**options)
+            proof["installed_runtime_seam_port_binding_ref"] = "local:verified:seam-port"
+            self.proof.write_text(json.dumps(proof))
+            with self.assertRaisesRegex(NativeEcologyPackageError, "RUNTIME_SEAM_PORT_BINDING_PROOF_REQUIRED"):
+                build_package(**{**options, "installed_player_runtime": False})
+            built = build_package(**options)
+        installed = install_package(
+            mods_dir=self.mod_dir, package_path=Path(built["package"]),
+            manifest_path=Path(built["manifest"]), game_closed_confirmed=True,
+        )
+        probe = """
+import sys
+from pathlib import Path
+from unittest.mock import Mock
+
+package = Path(sys.argv[1])
+sys.path.insert(0, str(package))
+from betterinstincts.installed_player_runtime import start_installed
+
+adapter = Mock(game_build=sys.argv[2])
+adapter.register.return_value = True
+adapter.frame.return_value = None
+start_installed(adapter, exact_build=sys.argv[2], owned_dir=package.parent, learning_opt_in=True)
+cycle = adapter.register.call_args.kwargs["cycle"]
+assert cycle() == "NATIVE_FRAME_UNQUALIFIED"
+assert cycle() == "NATIVE_FRAME_UNQUALIFIED"
+adapter.report_runtime_seam.assert_called_once()
+notice = adapter.report_runtime_seam.call_args.args[0]
+assert notice["reason_code"] == "NATIVE_FRAME_UNQUALIFIED"
+assert notice["effect_admission"] == "NOT_GRANTED"
+"""
+        process = subprocess.run(
+            [sys.executable, "-I", "-c", probe, installed["installed"], BUILD],
+            cwd=self.root, capture_output=True, text=True, timeout=10,
+        )
+        self.assertEqual(process.returncode, 0, process.stderr)
+
     def test_installed_trait_archive_imports_policy_without_checkout(self):
         options = dict(python37=self.py37, source_path=self.source, hook_proof_path=self.proof,
                        output_dir=self.output, game_build=BUILD, installed_player_runtime=True,

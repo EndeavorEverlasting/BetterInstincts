@@ -1,0 +1,71 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-SCL-RECEIPT-RECOVERY-20261119",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "16dc09beb58d393933b23019d354814b2cf73298",
+  "proposed_capability": "Persist the original blocked Play outcome during event-store contention and reconcile the existing private receipt without invoking Play.",
+  "operator_correction": "Fix both PR #322 review findings before merge approval; preserve the exact-build Windows trial and protected save.",
+  "repository_situation": "CodeRabbit reproduced the stale launch status on writer timeout and found that the existing race regression can pass without serialization.",
+  "competing_theses": [
+    {
+      "thesis": "Wait longer for the event lock",
+      "disposition": "REJECT",
+      "evidence": "Any finite wait can still expire before the native writer releases the lock."
+    },
+    {
+      "thesis": "Replace the two receipt files with transactional storage",
+      "disposition": "REJECT",
+      "evidence": "A format migration is unnecessary for one privately scoped terminal Play receipt and a bounded append-only history."
+    },
+    {
+      "thesis": "Persist a blocked launch receipt with an explicit pending event append",
+      "disposition": "SELECT",
+      "evidence": "The existing launch snapshot and per-run event lock can recover the same original observation without re-entering the launcher."
+    }
+  ],
+  "affected_concepts": [
+    "HOST_SESSION",
+    "PROOF_RECEIPT",
+    "NATIVE_RESPONDER_GAP",
+    "OBSERVATION",
+    "CONTROL_PERMIT",
+    "RESUME_CONDITION"
+  ],
+  "relevant_canonical_owners": [
+    "docs/SEAM_CLOSURE.md",
+    "scripts/launch_receipt.py",
+    "scripts/seam_closure.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "OFFLINE_HOST_RECEIPT_PERSISTENCE_RECONCILIATION_AND_LOCK_CONTENTION",
+  "player_save_control_impact": "The repair writes only to the selected private receipt run. No game, desktop, save, or installation effect is admitted.",
+  "expected_outcome": "The original blocked gate remains current during store contention and becomes a single event after receipt-only retry. Native event appends preserve both writers.",
+  "negative_tests": [
+    "Busy receipt reconciliation keeps the saved blocked result",
+    "Reconciliation does not launch Play or duplicate history",
+    "Removing writer locking makes the contention regression fail",
+    "Existing native notices and legacy launch receipts remain readable"
+  ],
+  "rollback_path": "Revert the repair commits. Existing receipt schemas and the bounded history are retained. No game or save data is migrated.",
+  "unresolved_unknowns": [
+    "Exact-build Windows adapter and live save, portrait, restock, and responder evidence."
+  ],
+  "files_expected": [
+    "scripts/launch_receipt.py",
+    "scripts/seam_closure.py",
+    "tests/test_seam_closure.py",
+    "tests/test_play.py"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "next_gate": "Review the offline repairs on PR #322; run the independent Windows named-save trial on the authorized host."
+}

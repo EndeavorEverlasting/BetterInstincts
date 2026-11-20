@@ -51,13 +51,13 @@ def has_reached_capacity(paths, limit: int) -> bool:
     return any(index >= limit for index, _ in enumerate(paths, start=1))
 
 
-def write_result(path: Path, receipt: dict) -> None:
+def write_result(path: Path, receipt: dict, *, defer_seam_if_busy: bool = True) -> None:
     # Every blocked Play gate becomes a stable, private, machine-readable seam.
     # This only records source recovery obligations; it never grants effects.
     if receipt.get("schema") == SCHEMA and receipt.get("status") == "blocked" and receipt.get("automation_gaps"):
         from scripts.seam_closure import record
 
-        closure = record(path, receipt)
+        closure = record(path, receipt, defer_if_busy=defer_seam_if_busy)
         if closure is not None:
             receipt["seam_closure"] = closure
     raw = json.dumps(receipt, sort_keys=True, indent=2) + "\n"
@@ -75,6 +75,30 @@ def write_result(path: Path, receipt: dict) -> None:
 def gap(stage: str, reason: str, step: str, owner: str, *, actor: str = "human_or_agent") -> dict:
     return {"kind": "MISSING_REPOSITORY_LOGIC", "stage": stage, "reason": reason,
             "required_actor": actor, "required_step": step, "repository_owner": owner}
+
+
+def reconcile_seam(folder: Path, run_id: str) -> Path:
+    """Reconcile the selected run's saved blocked observation using receipt I/O only."""
+    from scripts.seam_closure import EVENT_APPEND_PENDING, RUN, SCHEMA as SEAM_SCHEMA
+
+    if not RUN.fullmatch(run_id):
+        raise ValueError("SEAM_RUN_ID_INVALID")
+    path = folder / run_id / "launch.json"
+    if (folder.is_symlink() or path.parent.is_symlink() or path.is_symlink()
+            or not path.is_file() or path.stat().st_size > LIMIT):
+        raise ValueError("UNSAFE_PLAY_RECEIPT")
+    receipt = json.loads(path.read_text(encoding="utf-8"))
+    if (not isinstance(receipt, dict) or receipt.get("schema") != SCHEMA
+            or receipt.get("run_id") != run_id):
+        raise ValueError("INVALID_PLAY_RECEIPT")
+    closure = receipt.get("seam_closure")
+    if (receipt.get("status") != "blocked" or not receipt.get("automation_gaps")
+            or not isinstance(closure, dict) or closure.get("schema") != SEAM_SCHEMA
+            or closure.get("state") not in (EVENT_APPEND_PENDING, "OPEN")):
+        raise ValueError("SEAM_RECEIPT_NO_PENDING_EVENT")
+    if closure["state"] == EVENT_APPEND_PENDING:
+        write_result(path, receipt, defer_seam_if_busy=False)
+    return path
 
 
 def record_assistance(path: Path, *, actor: str, stage: str, step: str, owner: str,
@@ -115,12 +139,30 @@ def record_assistance(path: Path, *, actor: str, stage: str, step: str, owner: s
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--receipt", required=True, type=Path)
-    parser.add_argument("--actor", required=True, choices=("human", "agent"))
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--receipt", type=Path)
+    mode.add_argument("--reconcile-seam", metavar="RUN_ID",
+                      help="Reconcile a pending event in the existing private Play run")
+    parser.add_argument("--actor", choices=("human", "agent"))
     for field in ("stage", "step", "owner", "before", "during", "after"):
-        parser.add_argument("--" + field, required=True)
+        parser.add_argument("--" + field)
     args = vars(parser.parse_args(argv))
     path = args.pop("receipt")
+    run_id = args.pop("reconcile_seam")
+    if run_id is not None:
+        if any(value is not None for value in args.values()):
+            parser.error("--reconcile-seam takes only a run ID")
+        from bootstrap import paths
+
+        try:
+            print(reconcile_seam(paths()["locks"].parent / "play-receipts", run_id))
+        except (ValueError, OSError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        return 0
+    missing = [f"--{name}" for name, value in args.items() if value is None]
+    if missing:
+        parser.error("the following arguments are required with --receipt: " + ", ".join(missing))
     try:
         print(record_assistance(path, **args))
     except (ValueError, OSError) as exc:

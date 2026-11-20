@@ -13,7 +13,11 @@ restock and protected-slot acceptance gates.
 
 The product-launched restock route now owns isolated official-main checkout
 recovery and emits typed, bounded private seam receipts for missing native
-catalog, calibration, registry or responder capabilities. The installed
+catalog, calibration, registry or responder capabilities. The native ecology
+builder supports the opt-in seam port, and the same receipt store preserves
+concurrent startup and native notice events. If event storage is busy, the
+blocked launch remains readable and its event can be reconciled without a
+new Play run. The installed
 certification agent consumes the latest blocked run as a source-recovery
 handoff. This does not override player/desktop authority or complete a live
 save binding. The next actual game gate remains fresh title→slot→household
