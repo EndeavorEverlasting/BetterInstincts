@@ -1,0 +1,87 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-NATIVE-PLAY-AUTONOMY-CLOSERS-20261120",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "7956c3c69b2c520cd0fdbca1ba3f34fe693738b6",
+  "proposed_capability": "Close the exact startup-to-restock handoff and retain household and activity priority before optional installed skill maximization.",
+  "operator_correction": "The local agent should run one bootstrap: launch Sims, open the correct verified save, settle purchases across the portraits, and hand off to continuing native decisions and opted-in skills.",
+  "repository_situation": "Main 824ddac with PRs #327 and #329, source/CI proven only. After-merge review identifies priority leaks. Restock only selected the calibrated save-loader even when the pinned native load operation was advertised. Linux source validation and one isolated branch; #322 is separately approved.",
+  "competing_theses": [
+    {
+      "thesis": "Duplicate launcher and low-level effects",
+      "disposition": "REJECT",
+      "evidence": "Existing starter, semantic route and approved spend controller are canonical."
+    },
+    {
+      "thesis": "Broaden auto-loading protected paths or auto-buy in production",
+      "disposition": "REJECT",
+      "evidence": "Violates existing selection authority and approved spend."
+    },
+    {
+      "thesis": "Connect verified native load and its readback to the opted-in restock route and keep household priority before skills",
+      "disposition": "SELECT",
+      "evidence": "Reuses the existing exact native operations, control leases and protected launch entrypoint."
+    }
+  ],
+  "affected_concepts": [
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "CONTROL_PERMIT",
+    "OBSERVATION",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "GAME_BUILD",
+    "GAME_SCENE",
+    "HOUSEHOLD_BOUND_LAB_SAVE",
+    "NATIVE_RESPONDER_GAP"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "contracts/workflow-interoperability.v1.json",
+    "contracts/native-ecology-runtime.v1.json",
+    "betterinstincts/installed_player_runtime.py",
+    "scripts/play.py",
+    "scripts/startup_handoff.py",
+    "scripts/lab_upgrade_parts.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SOURCE_AND_OFFLINE_TESTS_ONLY_NOT_GAME",
+  "player_save_control_impact": "Only pre-authorized lab save and existing approved spend cap. Validate one native request and same scope before progressing. No sibling PR merges, personal saves, OS input or launch setting changes.",
+  "expected_outcome": "A reviewed native load may flow directly into matching-map restock, and a lost or mismatched load acknowledgement never starts purchases. Skill max requires verified household and activity priority clearance.",
+  "negative_tests": [
+    "without skill prerequisites package cannot arm",
+    "higher-priority remote work vetoes skill turn",
+    "active or unqualified activity preview holds effect",
+    "wrong native load command prevents all restock effects",
+    "protected save routing and legacy tool fallback retained"
+  ],
+  "rollback_path": "Revert the source PR. Future P08 uses a disposable session and a separately verified reversible test package.",
+  "unresolved_unknowns": [
+    "Exact installed Windows EA bindings, live startup, roster outcomes and installed native activity evidence"
+  ],
+  "files_expected": [
+    "betterinstincts/installed_player_runtime.py",
+    "scripts/native_ecology_bundle.py",
+    "contracts/native-ecology-runtime.v1.json",
+    "scripts/play.py",
+    "scripts/lab_upgrade_parts.py",
+    "tests/test_household_skill_max.py",
+    "tests/test_native_ecology_bundle.py",
+    "tests/test_startup_handoff.py",
+    "tests/test_lab_upgrade_parts.py",
+    "contracts/native-gameplay-decisions/BI-NATIVE-PLAY-AUTONOMY-CLOSERS-20261120.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "next_gate": "Validate full synthetic bootstrap, exact-head CI, then dispatch the Windows handoff only through an installed Windows Sims host."
+}
