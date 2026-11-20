@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 from scripts.native_ecology_bundle import (
     ACTIVITY_CHAIN_MEMBERS, FAIRY_DUST_MEMBER, FAME_MEMBER, MICROSYSTEM_MEMBER, MOD_FILE, MANIFEST_FILE,
-    MODULE_PYC, RUNTIME_MEMBERS, TRAIT_MEMBERS,
+    MODULE_PYC, RUNTIME_MEMBERS, SKILL_MAX_MEMBER, TRAIT_MEMBERS,
     NativeEcologyPackageError, PORTRAIT_MEMBER,
     build_package, install_package, uninstall_package, verify_hook_proof,
 )
@@ -370,6 +370,36 @@ assert PreferenceResponsePort().respond(enabled=True)["state"] == "NATIVE_ADAPTE
              "assert SCHEMA == sys.argv[2]",
              installed["installed"], schema],
             cwd=self.root, capture_output=True, text=True, timeout=10,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_skill_max_bundle_requires_native_proof_and_packages_profile_and_portrait(self):
+        options = dict(python37=self.py37, source_path=self.source, hook_proof_path=self.proof,
+                       output_dir=self.output, game_build=BUILD, installed_player_runtime=True,
+                       installed_portrait_handoff=True, installed_household_skill_max=True)
+        proof = {**hook_proof(), "installed_player_runtime_binding_ref": "local:verified:binding",
+                 "installed_portrait_handoff_binding_ref": "local:verified:portrait"}
+        self.proof.write_text(json.dumps(proof))
+        with self.assertRaisesRegex(NativeEcologyPackageError, "HOUSEHOLD_SKILL_MAX_BINDING"):
+            build_package(**options)
+        proof["installed_household_skill_max_binding_ref"] = "local:verified:native-skill"
+        self.proof.write_text(json.dumps(proof))
+        with self.assertRaisesRegex(NativeEcologyPackageError, "HOUSEHOLD_SKILL_MAX_BINDING"):
+            build_package(**{**options, "installed_portrait_handoff": False})
+        with patch("scripts.native_ecology_bundle._compile_py37", side_effect=self.compile_for_test):
+            built = build_package(**options)
+        with zipfile.ZipFile(built["package"]) as archive:
+            self.assertEqual(archive.namelist(), [MODULE_PYC, *RUNTIME_MEMBERS, PORTRAIT_MEMBER,
+                                                  SKILL_MAX_MEMBER])
+        installed = install_package(mods_dir=self.mod_dir, package_path=Path(built["package"]),
+                                    manifest_path=Path(built["manifest"]), game_closed_confirmed=True)
+        result = subprocess.run(
+            [sys.executable, "-I", "-c",
+             "import sys; sys.path.insert(0, sys.argv[1]);"
+             "from betterinstincts.household_skill_max import PORTS;"
+             "from betterinstincts.installation_profiles import LAUNCH_OPTIONS;"
+             "assert len(PORTS) == 3 and LAUNCH_OPTIONS['household_skill']['default'] == 'none'",
+             installed["installed"]], cwd=self.root, capture_output=True, text=True, timeout=10,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 

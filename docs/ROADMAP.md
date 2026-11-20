@@ -499,3 +499,12 @@ outcome and protected-session evidence. Use the
 [certification handoff](LIVE_CERTIFICATION_HANDOFF.md#execute-the-current-seam-work-order)
 and use the open [restock live gate #213](https://github.com/EndeavorEverlasting/BetterInstincts/issues/213)
 for the representative missing native tool.
+
+## 2026-11-20 — Native household skill max certification
+
+Use [#328](https://github.com/EndeavorEverlasting/BetterInstincts/issues/328)
+to bind exact-build EA stat and portrait APIs. On the authorized disposable
+Windows save, observe the profile-selected skill reaching each eligible
+Sim's cap, including in Planning while paused, with player takeover and
+rollback controls. Keep ordinary queue behavior and hunger certification
+under their existing gates.

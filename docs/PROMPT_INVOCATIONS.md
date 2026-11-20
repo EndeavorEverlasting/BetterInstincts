@@ -721,3 +721,12 @@ walk then scoped **P141 → P95 → P82 → P08 → P07 → P124** to current-fa
 recovery. P08 reached the Windows-host boundary. The source owner, regression
 tests, and remaining installed-host proof are in the
 [certification handoff](LIVE_CERTIFICATION_HANDOFF.md#execute-the-current-seam-work-order).
+
+## 2026-11-20 — Sixth Gear for household skill max
+
+P141 → P95 → P82 → P08 → P07 → P124 selected the native callback and existing
+portrait owner. Focused fixtures check Planning, different skill caps,
+already-maxed Sims, and revalidation during player takeover. P08 reached
+the Windows-host boundary. The
+[skill handoff](HOUSEHOLD_JUDGMENT.md#max-one-household-skill-in-planning-or-play)
+holds the binding and next proof.

@@ -2527,3 +2527,11 @@ its source owner and regression command where source work applies. See the
 [certification handoff](LIVE_CERTIFICATION_HANDOFF.md#execute-the-current-seam-work-order).
 Source proof comes from existing offline CI. The representative Windows
 restock gate is [#213](https://github.com/EndeavorEverlasting/BetterInstincts/issues/213).
+
+## 2026-11-20 — Household skill max in Planning and Play
+
+The installed callback routes the profile's chosen skill across the current
+disposable household. It rechecks Allow Cheats and the active portrait at
+each effect, skips observed caps, and waits for independent readback before
+advancing. The [skill handoff](HOUSEHOLD_JUDGMENT.md#max-one-household-skill-in-planning-or-play)
+owns source, settings, and live-proof routing.

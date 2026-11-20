@@ -146,3 +146,11 @@ a second portrait remains eligible. Include a paused interval and an
 independent queue or selection readback. On that host use
 `python -m scripts.continue_certification --print-handoff` to resume the
 repository-owned certification.
+
+## Profile-selected household skill max
+
+The [native skill route](../../docs/HOUSEHOLD_JUDGMENT.md#max-one-household-skill-in-planning-or-play)
+uses the existing portrait handoff and a direct native stat change while
+Planning or Play is admitted. Ordinary Planning queue work remains paused.
+Use [#328](https://github.com/EndeavorEverlasting/BetterInstincts/issues/328)
+for the independent Windows proof.

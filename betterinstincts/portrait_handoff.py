@@ -146,6 +146,7 @@ class Attempt:
     initial_capture: str
     submit_capture: str
     observed_at: float
+    skill_profile: tuple | None = None
 
 
 def outcome_state(frame, attempt, outcome):

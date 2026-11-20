@@ -30,6 +30,7 @@ TRAIT_MEMBERS = tuple(f"betterinstincts/{name}.pyc" for name in TRAIT_MODULES) +
 FAIRY_DUST_MEMBER = "betterinstincts/fairy_dust.pyc"
 FAME_MEMBER = "betterinstincts/fame.pyc"
 PORTRAIT_MEMBER = "betterinstincts/portrait_handoff.pyc"
+SKILL_MAX_MEMBER = "betterinstincts/household_skill_max.pyc"
 ACTIVITY_CHAIN_MODULES = ("activity_chain", "household_funds")
 ACTIVITY_CHAIN_MEMBERS = tuple(f"betterinstincts/{name}.pyc" for name in ACTIVITY_CHAIN_MODULES)
 MICROSYSTEM_MEMBER = "betterinstincts/microsystem_handoff.pyc"
@@ -100,6 +101,7 @@ def build_package(
     output_dir: Path, game_build: str, installed_player_runtime: bool = False,
     installed_trait_responder: bool = False, installed_fairy_dust: bool = False,
     installed_fame: bool = False, installed_portrait_handoff: bool = False,
+    installed_household_skill_max: bool = False,
     installed_activity_chain: bool = False, installed_microsystem_handoff: bool = False,
 ) -> dict:
     """Compile an independently inspected hook, never arbitrary host policy."""
@@ -128,6 +130,9 @@ def build_package(
     if installed_portrait_handoff and (not installed_player_runtime
             or not _ref(proof.get("installed_portrait_handoff_binding_ref"))):
         raise NativeEcologyPackageError("INSTALLED_PORTRAIT_HANDOFF_BINDING_PROOF_REQUIRED")
+    if installed_household_skill_max and (not installed_portrait_handoff
+            or not _ref(proof.get("installed_household_skill_max_binding_ref"))):
+        raise NativeEcologyPackageError("INSTALLED_HOUSEHOLD_SKILL_MAX_BINDING_PROOF_REQUIRED")
     if installed_activity_chain and (not installed_player_runtime
             or not _ref(proof.get("installed_activity_chain_binding_ref"))):
         raise NativeEcologyPackageError("INSTALLED_ACTIVITY_CHAIN_BINDING_PROOF_REQUIRED")
@@ -150,6 +155,8 @@ def build_package(
             modules[FAME_MEMBER] = _compile_py37(python37, root / "fame.py")
         if installed_portrait_handoff:
             modules[PORTRAIT_MEMBER] = _compile_py37(python37, root / "portrait_handoff.py")
+        if installed_household_skill_max:
+            modules[SKILL_MAX_MEMBER] = _compile_py37(python37, root / "household_skill_max.py")
         if installed_activity_chain:
             for name, member in zip(ACTIVITY_CHAIN_MODULES, ACTIVITY_CHAIN_MEMBERS):
                 modules[member] = _compile_py37(python37, root / (name + ".py"))
@@ -167,7 +174,8 @@ def build_package(
         with zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             for member, bytecode in modules.items():
                 archive.writestr(member, bytecode)
-        _check_archive(tmp, installed_player_runtime, installed_trait_responder,
+        _check_archive(tmp, installed_player_runtime, installed_household_skill_max,
+                       installed_trait_responder,
                        installed_fairy_dust, installed_fame, installed_portrait_handoff,
                        installed_activity_chain, installed_microsystem_handoff)
         package = tmp.read_bytes()
@@ -191,6 +199,8 @@ def build_package(
         receipt["installed_fame"] = True
     if installed_portrait_handoff:
         receipt["installed_portrait_handoff"] = True
+    if installed_household_skill_max:
+        receipt["installed_household_skill_max"] = True
     if installed_activity_chain:
         receipt["installed_activity_chain"] = True
     if installed_microsystem_handoff:
@@ -202,7 +212,8 @@ def build_package(
             "proof": "BUILD_ONLY_NOT_NATIVE_GAME_ACTIVATION"}
 
 
-def _check_archive(path: Path, installed_runtime: bool, installed_trait: bool = False,
+def _check_archive(path: Path, installed_runtime: bool, installed_household_skill_max: bool,
+                   installed_trait: bool = False,
                    installed_fairy_dust: bool = False, installed_fame: bool = False,
                    installed_portrait_handoff: bool = False, installed_activity_chain: bool = False,
                    installed_microsystem_handoff: bool = False) -> None:
@@ -211,12 +222,13 @@ def _check_archive(path: Path, installed_runtime: bool, installed_trait: bool = 
                 *([FAIRY_DUST_MEMBER] if installed_fairy_dust else []),
                 *([FAME_MEMBER] if installed_fame else []),
                 *([PORTRAIT_MEMBER] if installed_portrait_handoff else []),
+                *([SKILL_MAX_MEMBER] if installed_household_skill_max else []),
                 *(ACTIVITY_CHAIN_MEMBERS if installed_activity_chain else ()),
                 *([MICROSYSTEM_MEMBER] if installed_microsystem_handoff else [])]
     with zipfile.ZipFile(path) as archive:
         members = archive.namelist()
         legacy = [member for member in expected if member not in RUNTIME_MEMBERS[-2:]]
-        if members != expected and members != legacy:
+        if members != expected and (installed_household_skill_max or members != legacy):
             raise NativeEcologyPackageError("PACKAGE_CONTENT_INVALID")
 
 
@@ -229,6 +241,8 @@ def _read_manifest(path: Path) -> dict:
                      "installed_portrait_handoff", "installed_activity_chain"))
                 and data.get("installed_player_runtime") is not True)
             or (data.get("installed_microsystem_handoff") is True
+                and data.get("installed_portrait_handoff") is not True)
+            or (data.get("installed_household_skill_max") is True
                 and data.get("installed_portrait_handoff") is not True)
             or data.get("game_certified") is not False
             or data.get("live_activation_observed") is not False
@@ -253,6 +267,7 @@ def install_package(
     if _hash(package) != receipt["package_sha256"]:
         raise NativeEcologyPackageError("PACKAGE_HASH_MISMATCH")
     _check_archive(package_path, receipt.get("installed_player_runtime") is True,
+                   receipt.get("installed_household_skill_max") is True,
                    receipt.get("installed_trait_responder") is True,
                    receipt.get("installed_fairy_dust") is True, receipt.get("installed_fame") is True,
                    receipt.get("installed_portrait_handoff") is True,
@@ -316,6 +331,8 @@ def main(argv: list[str] | None = None) -> int:
                        help="Include the exact-build, adapter-bound Fame microsystem")
     build.add_argument("--installed-portrait-handoff", action="store_true",
                        help="Include shared portrait selection for a source-proven native binding")
+    build.add_argument("--installed-household-skill-max", action="store_true",
+                       help="Include selected household skill max for a source-proven native binding")
     build.add_argument("--installed-activity-chain", action="store_true",
                        help="Include the activity planner for a source-proven native chain binding")
     build.add_argument("--installed-microsystem-handoff", action="store_true",
@@ -337,6 +354,7 @@ def main(argv: list[str] | None = None) -> int:
                 installed_trait_responder=args.installed_trait_responder,
                 installed_fairy_dust=args.installed_fairy_dust, installed_fame=args.installed_fame,
                 installed_portrait_handoff=args.installed_portrait_handoff,
+                installed_household_skill_max=args.installed_household_skill_max,
                 installed_activity_chain=args.installed_activity_chain,
                 installed_microsystem_handoff=args.installed_microsystem_handoff,
             )

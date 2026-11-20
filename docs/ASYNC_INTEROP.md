@@ -68,6 +68,11 @@ await queue.drain(max_checks=120)
 
 Existing `host_listener` / `host_tandem` own game observations and Live/Buy/Build context. The waiter owns only **computer-input resource admission**, not need evaluation, Sim goals, lesson plans, or mode classification. Live needs actions must still be blocked in Buy/Build or unknown mode. Cooperative adapter adoption is required per executor: wrapping only one entrypoint does **not** retrofit other Playwright instances or legacy Sims action callbacks. Do not cancel an actual player-directed Sims queue to pause BetterInstincts. If a long in-flight callback cannot cooperate at effect checkpoints, reconcile it explicitly; do not promise an instantaneous OS-level interruption.
 
+The optional [household skill max](HOUSEHOLD_JUDGMENT.md#max-one-household-skill-in-planning-or-play)
+is a scoped direct native effect. In Planning it requires the same fresh
+player-idle, active-portrait, save, and outcome checks as in Play, and leaves
+ordinary queue actions paused.
+
 ## P92 portable canonical location and lifecycle
 
 `bootstrap.py` is a **stdlib-only, inspectable, user-scoped bootstrapper**. It never installs a mod package into Sims or changes a machine-wide service. Profiles:
