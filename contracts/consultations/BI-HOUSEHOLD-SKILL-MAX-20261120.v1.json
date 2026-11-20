@@ -1,0 +1,91 @@
+{
+  "schema": "betterinstincts.ontology-consultation/v1",
+  "id": "BI-HOUSEHOLD-SKILL-MAX-20261120",
+  "ontology": "contracts/ontology.v1.json",
+  "ontology_blob_sha": "7956c3c69b2c520cd0fdbca1ba3f34fe693738b6",
+  "proposed_capability": "Optional exact-build native callback to max the one profile-selected skill per verified household portrait. A dedicated direct set/readback operation is eligible while paused, within shared interoperability.",
+  "operator_correction": "With Allow Cheats enabled, BetterInstincts should level each eligible Sim to the chosen skill maximum and rotate until verified complete, including Planning mode.",
+  "repository_situation": "Current main a43d491; Linux build/proof only and one owned feature worktree. Existing installed player runtime and portrait handoff expose atomic ports; the paused cycle does not allow ordinary queue submits. Existing console tooling is lab-only. PR #322 owns separate bundle and receipt work and is not part of this merge.",
+  "competing_theses": [
+    {
+      "thesis": "Reuse console typing for automatic household effects",
+      "disposition": "REJECT",
+      "evidence": "The existing desktop skill tool is a diagnostic and does not have native per-turn outcome proof."
+    },
+    {
+      "thesis": "Allow ordinary queue automation while paused",
+      "disposition": "REJECT",
+      "evidence": "Changes Planning policy and can release unrelated actions."
+    },
+    {
+      "thesis": "Compose a direct native stat operation with existing profile and portrait policy",
+      "disposition": "SELECT",
+      "evidence": "One exact admission, bounded roster, one in-flight effect, observed cap and independent readback."
+    }
+  ],
+  "affected_concepts": [
+    "PLAYER_INTENT",
+    "PLAYER_PRESENCE",
+    "CONTROL_PERMIT",
+    "OBSERVATION",
+    "OUTCOME",
+    "PROOF_RECEIPT",
+    "GAME_BUILD",
+    "GAME_SCENE",
+    "HOUSEHOLD_BOUND_LAB_SAVE",
+    "NATIVE_RESPONDER_GAP"
+  ],
+  "relevant_canonical_owners": [
+    "AGENTS.md",
+    "docs/AGENT_OPERATING_RULES.md",
+    "contracts/workflow-interoperability.v1.json",
+    "contracts/installation-profiles.v1.json",
+    "contracts/diy-skill-force.v1.json",
+    "betterinstincts/installed_player_runtime.py",
+    "betterinstincts/portrait_handoff.py",
+    "scripts/native_ecology_bundle.py"
+  ],
+  "invariants_checked": [
+    "BI-ONT-001",
+    "BI-ONT-002",
+    "BI-ONT-003",
+    "BI-ONT-005",
+    "BI-ONT-006",
+    "BI-ONT-008",
+    "BI-ONT-010",
+    "BI-ONT-012"
+  ],
+  "game_build_scope": "REPOSITORY_OFFLINE_ONLY",
+  "evidence_ceiling": "SOURCE_AND_OFFLINE_TESTS_ONLY_NOT_GAME",
+  "player_save_control_impact": "Offline semantic and packaged source validation only. Native port must attest the eligible disposable save, current selected recipient, exact skill/cap, profile opt-in and idle generation at each effect. Keep game paused, preserve player control and existing ordinary queue behavior.",
+  "expected_outcome": "Skip independently observed caps, follow one stable household roster, select and confirm a portrait before maxing it, reconcile lost acknowledgements without replay, and declare completion only with fresh covered roster evidence.",
+  "negative_tests": [
+    "toggle off or changed revision",
+    "unknown or protected save",
+    "stale scope or actor",
+    "human activity and queue ownership",
+    "changed mode, cap or roster",
+    "modal/unsettled skill effect",
+    "unavailable or unknown progress",
+    "incomplete or late readback"
+  ],
+  "rollback_path": "Revert the source PR. Future P08 uses a disposable session and a separately verified reversible test package.",
+  "unresolved_unknowns": [
+    "Source proof of the exact-build EA stat setter and adapters. Actual Windows Planning and Play effects and rollback."
+  ],
+  "files_expected": [
+    "betterinstincts/household_skill_max.py",
+    "betterinstincts/installed_player_runtime.py",
+    "scripts/native_ecology_bundle.py",
+    "tests/test_household_skill_max.py",
+    "tests/test_native_ecology_bundle.py",
+    "tests/test_installation_profiles.py",
+    "betterinstincts/portrait_handoff.py",
+    "betterinstincts/installation_profiles.py",
+    "contracts/installation-profiles.v1.json",
+    "contracts/native-ecology-runtime.v1.json",
+    "contracts/native-gameplay-decisions/BI-HOUSEHOLD-SKILL-MAX-20261120.v1.json"
+  ],
+  "decision": "ADMIT_FOR_OFFLINE_PROTOTYPE",
+  "next_gate": "Run pure decision and installed callback integration fixtures, package guard, interoperability and exact hosted CI. Then run the native exact-build disposable Windows trial."
+}

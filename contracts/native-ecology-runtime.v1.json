@@ -102,5 +102,25 @@
     "decision_proof": "DISTINCT_CURRENT_CAPTURE_CORRELATED_TO_HANDOFF_AND_REGISTERED_CALLBACK",
     "desktop_fallback": false
   },
+  "household_skill_max": {
+    "owner": "betterinstincts/household_skill_max.py",
+    "bundle_flag": "--installed-household-skill-max",
+    "requires_installed_portrait_handoff": true,
+    "require_binding_proof": "installed_household_skill_max_binding_ref",
+    "profile_options": ["allow_cheats", "household_skill", "idle_ms"],
+    "packet": "betterinstincts.household-skill-max/v1",
+    "adapter_ports": [
+      "read_household_skill",
+      "submit_skill_max_if_current",
+      "read_skill_max_outcome"
+    ],
+    "save_scope": "VERIFIED_LAB_DISPOSABLE",
+    "mode": "PLANNING_OR_PLAY_DIRECT_NATIVE_SET_NO_UNPAUSE",
+    "dispatch": "ONE_CURRENT_STAT_OR_EXISTING_PORTRAIT_EFFECT_PER_CALLBACK",
+    "completion": "INDEPENDENT_CURRENT_PER_SIM_CAP_READBACK_FOR_ALL_ELIGIBLE_MEMBERS",
+    "replay": "ONE_STAT_REQUEST_PER_BUILD_RUN_SAVE_HOUSEHOLD_SKILL_ACTOR_PROFILE_REVISION",
+    "desktop_fallback": false,
+    "native_successor": 328
+  },
   "native_successor": 171
 }

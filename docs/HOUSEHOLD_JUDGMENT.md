@@ -1,5 +1,40 @@
 # Fixed-roster household skill judgment — Fifth Gear (2026-11-09)
 
+## Max one household skill in Planning or Play
+
+In **BetterInstincts Settings → Play**, choose **Household skill to max with
+cheats** and enable **Allow BetterInstincts to run cheat commands**. Existing
+profiles default to **None** until a skill is selected. This route requires the
+matching installed native runtime and a verified disposable lab save.
+Upgrade the installed native package before saving a skill choice. Older
+archives use the original launch-settings catalog and reject the new preference.
+
+The app checks the selected skill against each Sim's currently observed cap.
+It skips Sims observed at their cap or explicitly ineligible. For each
+remaining Sim in stable roster order, it confirms the active portrait,
+requests the native stat change, and waits for independent cap readback
+before advancing. Planning keeps simulation time paused and uses only the
+direct skill effect and its portrait handoff. The normal queue and any
+higher-priority work retain their admission rules.
+
+The native adapter follows
+[`household_skill_max`](../contracts/native-ecology-runtime.v1.json).
+`read_household_skill(frame, skill)` supplies the exact build, run, save,
+household, selected actor, capture, eligible roster and per-member levels and
+caps. Both effects recheck the current profile revision, cheat preference,
+skill, idle generation, exact scene and save immediately before the native
+call. The stat request also checks the target actor's current level and cap.
+`read_skill_max_outcome(attempt, frame)` reports the correlated request with
+a new observation of the actor and exact cap. Keep unsettled operations
+latched across player takeover and reconcile before any retry.
+After verified no effect, a new profile revision is required to try the same
+Sim and skill again in that game run.
+
+The app callback requires an exact-build EA adapter and an approved
+game-thread event that runs while paused. The Windows binding and its
+Planning, takeover and rollback evidence are tracked in
+[#328](https://github.com/EndeavorEverlasting/BetterInstincts/issues/328).
+
 **Goal:** Level requested skills on the original N portraits, without creating characters, going online or competing for desktop control.
 
 ## Algorithm

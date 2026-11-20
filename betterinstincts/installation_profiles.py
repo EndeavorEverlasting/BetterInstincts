@@ -293,6 +293,9 @@ def set_launch_preferences(values: dict, path: Path | None = None, *,
         profile = document["active_profile"]
         current = document.get("launch_preferences", {}).get(profile, {})
         updated = {**current, **values}
+        if updated.get("household_skill") == "none":
+            # Ordinary settings saves must stay readable by older packages.
+            del updated["household_skill"]
         if updated != current:
             document.setdefault("launch_preferences", {})[profile] = updated
 

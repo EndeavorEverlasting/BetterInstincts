@@ -34,6 +34,31 @@
       "label": "Allow BetterInstincts to run cheat commands",
       "control": "toggle",
       "default": false
+    },
+    "household_skill": {
+      "label": "Household skill to max with cheats",
+      "control": "choice",
+      "default": "none",
+      "choices": [
+        "none", "acting", "apothecary", "archaeology", "baking", "charisma",
+        "comedy", "cooking", "dancing", "dj_mixing", "equestrian", "fabrication",
+        "fishing", "fitness", "flower_arranging", "gardening", "gourmet_cooking", "guitar",
+        "handiness", "herbalism", "logic", "media_production", "mischief", "mixology",
+        "natural_living", "nectar_making", "painting", "parenting", "pet_training", "photography",
+        "piano", "pipe_organ", "programming", "research_debate", "robotics", "rock_climbing",
+        "rocket_science", "selvadoradian_culture", "singing", "skiing", "snowboarding", "vampire_lore",
+        "veterinary", "video_gaming", "violin", "wellness", "writing"
+      ],
+      "labels": [
+        "None", "Acting", "Apothecary", "Archaeology", "Baking", "Charisma",
+        "Comedy", "Cooking", "Dancing", "DJ Mixing", "Equestrian", "Fabrication",
+        "Fishing", "Fitness", "Flower Arranging", "Gardening", "Gourmet Cooking", "Guitar",
+        "Handiness", "Herbalism", "Logic", "Media Production", "Mischief", "Mixology",
+        "Natural Living", "Nectar Making", "Painting", "Parenting", "Pet Training", "Photography",
+        "Piano", "Pipe Organ", "Programming", "Research & Debate", "Robotics", "Rock Climbing",
+        "Rocket Science", "Selvadoradian Culture", "Singing", "Skiing", "Snowboarding", "Vampire Lore",
+        "Veterinary", "Video Gaming", "Violin", "Wellness", "Writing"
+      ]
     }
   },
   "bounds": {

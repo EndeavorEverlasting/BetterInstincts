@@ -147,7 +147,7 @@ class InstallationProfilesTests(unittest.TestCase):
 
         start = view(self.path)
         self.assertEqual(start["launch"], {"mode": "production", "idle_ms": 15000,
-                                           "allow_cheats": False})
+                                           "allow_cheats": False, "household_skill": "none"})
         for invalid in (0, 500, 14999, 120001, True, "21000"):
             with self.subTest(invalid=invalid), self.assertRaises(InstallationProfileError):
                 set_launch_preferences({"idle_ms": invalid}, self.path)
@@ -155,20 +155,42 @@ class InstallationProfilesTests(unittest.TestCase):
             require_cheats_enabled(self.path)
         self.assertFalse(self.path.exists())
 
-        updated = set_launch_preferences({"idle_ms": 21000, "mode": "dev", "allow_cheats": True},
+        updated = set_launch_preferences({"idle_ms": 21000, "mode": "dev", "allow_cheats": True,
+                                          "household_skill": "handiness"},
                                          self.path, expected_revision=start["revision"])
-        self.assertEqual(updated["launch"], {"mode": "dev", "idle_ms": 21000, "allow_cheats": True})
+        self.assertEqual(updated["launch"], {"mode": "dev", "idle_ms": 21000, "allow_cheats": True,
+                                             "household_skill": "handiness"})
         require_cheats_enabled(self.path)
         with self.assertRaisesRegex(InstallationProfileError, "LAUNCH_PREFERENCES_CHANGED"):
             set_launch_preferences({"mode": "production"}, self.path, expected_revision=start["revision"])
         create_profile("regular", self.path)
         choose_profile("regular", self.path)
         self.assertFalse(view(self.path)["launch"]["allow_cheats"])
+        self.assertEqual(view(self.path)["launch"]["household_skill"], "none")
         self.assertEqual(view(self.path, profile_id="default")["launch"]["idle_ms"], 21000)
         choose_profile("default", self.path)
         restored = reset_launch_preferences(self.path)
         self.assertEqual(restored["launch"], start["launch"])
         self.assertNotIn("launch_preferences", read_document(self.path))
+
+    def test_household_skill_choices_match_the_existing_skill_catalog(self):
+        from betterinstincts.diy_skill_force import load_contract
+        from betterinstincts.installation_profiles import LAUNCH_OPTIONS, set_launch_preferences
+
+        option = LAUNCH_OPTIONS["household_skill"]
+        self.assertEqual(dict(zip(option["choices"][1:], option["labels"][1:])),
+                         {row["id"]: row["display_name"] for row in load_contract()["skill_catalog"]})
+        with self.assertRaises(InstallationProfileError):
+            set_launch_preferences({"household_skill": "unknown_skill"}, self.path)
+
+    def test_unchosen_household_skill_keeps_launch_settings_legacy_readable(self):
+        from betterinstincts.installation_profiles import read_document, set_launch_preferences
+
+        set_launch_preferences({"idle_ms": 21000, "household_skill": "none"}, self.path)
+        self.assertEqual(read_document(self.path)["launch_preferences"]["default"], {"idle_ms": 21000})
+        set_launch_preferences({"household_skill": "robotics"}, self.path)
+        set_launch_preferences({"household_skill": "none"}, self.path)
+        self.assertEqual(read_document(self.path)["launch_preferences"]["default"], {"idle_ms": 21000})
 
     def test_hover_cli_profile_opt_in_does_not_bypass_explicit_session_gate(self):
         from io import StringIO

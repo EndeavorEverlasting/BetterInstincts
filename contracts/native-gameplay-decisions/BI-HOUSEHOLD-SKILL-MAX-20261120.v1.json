@@ -1,0 +1,32 @@
+{
+  "schema": "betterinstincts.native-gameplay-decision/v1",
+  "files": [
+    {
+      "path": "betterinstincts/household_skill_max.py",
+      "route": "POLICY_ONLY",
+      "reason": "Evaluate scoped per-Sim native cap evidence and distinguish observed effect from submission.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 328
+    },
+    {
+      "path": "betterinstincts/installed_player_runtime.py",
+      "route": "POLICY_ONLY",
+      "reason": "Arbitrate one optional native stat or portrait turn within source-proven adapter and current player authority.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 328
+    },
+    {
+      "path": "betterinstincts/portrait_handoff.py",
+      "route": "POLICY_ONLY",
+      "reason": "Carry the current skill profile preference revision to the atomic existing portrait adapter.",
+      "game_effect_claim": "NONE",
+      "successor_issue": 328
+    },
+    {
+      "path": "betterinstincts/installation_profiles.py",
+      "route": "NON_GAMEPLAY",
+      "reason": "Keep the new optional preference absent from the persisted file until the player selects a skill.",
+      "game_effect_claim": "NONE"
+    }
+  ]
+}

@@ -48,7 +48,7 @@ class InstalledPlayerRuntime:
 
     def __init__(self, adapter, *, build: str, owned_dir: Path, clock=monotonic,
                  trait_response=None, fairy_dust=None, fame=None, portraits=None,
-                 activity_chain=None, microsystems=None, idle_seconds=IDLE_SECONDS):
+                 activity_chain=None, microsystems=None, skill_max=None, idle_seconds=IDLE_SECONDS):
         self.adapter = adapter
         self.build = build
         self.path = owned_dir / "player-learning.sqlite3"
@@ -83,6 +83,9 @@ class InstalledPlayerRuntime:
         self.microsystem_pending = None
         self.microsystem_denied_switches = set()
         self.microsystem_dispositions = {}
+        self.skill_max = skill_max
+        self.skill_max_pending = None
+        self.skill_max_state = None
         self.runtime_seam_enabled = False
         self._seam_last_signal = None
         self._seam_emissions = 0
@@ -90,8 +93,10 @@ class InstalledPlayerRuntime:
     def _portrait_choice(self, frame):
         return self.portraits.choose_selection(frame, self.adapter.read_portrait_handoff(frame))
 
-    def _select_portrait(self, first, *, microsystem_decision=None):
-        if microsystem_decision is None:
+    def _select_portrait(self, first, *, microsystem_decision=None, skill_turn=None):
+        if skill_turn is not None:
+            selection = skill_turn.selection
+        elif microsystem_decision is None:
             try:
                 state, selection = self._portrait_choice(first)
             except Exception:
@@ -106,7 +111,10 @@ class InstalledPlayerRuntime:
                 or fresh.playing is not first.playing):
             return "YIELD_TO_PLAYER"
         try:
-            if microsystem_decision is None:
+            if skill_turn is not None:
+                _, refreshed = self._read_skill_max_turn(fresh)
+                current = refreshed.selection if refreshed == skill_turn else None
+            elif microsystem_decision is None:
                 planned, _, _ = self.adapter.analyze(fresh)
                 if not isinstance(planned, Mapping) or planned:
                     return "PORTRAIT_SELECTION_REOBSERVE"
@@ -119,8 +127,11 @@ class InstalledPlayerRuntime:
         if current != selection or not self._idle(fresh):
             return "PORTRAIT_SELECTION_REOBSERVE"
 
+        profile = (skill_turn.profile, skill_turn.revision, skill_turn.skill) if skill_turn else None
         identity = selection.identity(fresh)
-        if microsystem_decision is not None:
+        if profile is not None:
+            identity = (identity, profile, fresh.input_generation)
+        elif microsystem_decision is not None:
             # Verified selection is not consumption of the target's work.
             # Count every request toward the session limit, but allow a later
             # turn to return to this portrait if the work still wins.
@@ -131,7 +142,7 @@ class InstalledPlayerRuntime:
             return "NATIVE_SESSION_ATTEMPT_LIMIT"
         attempt = self.portraits.Attempt(selection, fresh.run, fresh.household,
                                          fresh.input_generation, first.capture, fresh.capture,
-                                         fresh.observed_at)
+                                         fresh.observed_at, skill_profile=profile)
         # Retain the attempt before the native call. An exception can occur
         # after EA accepts the request, so no return value clears the latch.
         self.portrait_pending = attempt
@@ -144,7 +155,8 @@ class InstalledPlayerRuntime:
 
     def _reconcile_portrait(self, frame):
         attempt = self.portrait_pending
-        if attempt.selection.purpose == "MICROSYSTEM" and frame.save_ref != attempt.selection.save:
+        if (attempt.selection.purpose in ("MICROSYSTEM", "SKILL_MAX")
+                and frame.save_ref != attempt.selection.save):
             return "PORTRAIT_SWITCH_RECONCILE"
         try:
             outcome = self.adapter.read_portrait_outcome(attempt, frame)
@@ -156,6 +168,84 @@ class InstalledPlayerRuntime:
                 self.microsystem_denied_switches.add(attempt.selection.identity(frame))
             self.portrait_pending = None
             self.portrait_readback = frame
+        return state
+
+    def _read_skill_max_turn(self, frame, planned=None):
+        if (not self._idle(frame) or type(frame.playing) is not bool
+                or frame.modal_open is not False or self.unresolved is not None
+                or self.dust_attempts or self.fame_attempts or self.fame_streams):
+            return None, None
+        from betterinstincts.installation_profiles import view
+
+        try:
+            profile = view()
+            launch = profile["launch"]
+            if (launch["allow_cheats"] is not True or launch["household_skill"] == "none"
+                    or frame.idle_seconds * 1000 < launch["idle_ms"]):
+                return None, None
+            if planned is None:
+                planned, _, _ = self.adapter.analyze(frame)
+            if not isinstance(planned, Mapping) or planned:
+                return None, None
+            if self.microsystems is not None:
+                state, _ = self._microsystem_choice(frame)
+                if (state != "MICROSYSTEM_NO_ADMISSIBLE_WORK" or not self.microsystem_dispositions
+                        or any(state not in ("NO_OPEN_WORK", "PORTRAIT_UNAVAILABLE")
+                               for state in self.microsystem_dispositions.values())):
+                    return None, None
+            state, turn = self.skill_max.choose_turn(
+                frame, self.adapter.read_household_skill(frame, launch["household_skill"]), profile,
+            )
+            if turn is not None and self.microsystems is not None and set(turn.roster) != set(
+                    self.microsystem_dispositions):
+                return "SKILL_MAX_EVIDENCE_UNQUALIFIED", None
+            return state, turn
+        except Exception:
+            return "SKILL_MAX_EVIDENCE_UNQUALIFIED", None
+
+    def _cycle_skill_max(self, first, planned=None):
+        previous_state = self.skill_max_state
+        self.skill_max_state, turn = self._read_skill_max_turn(first, planned)
+        if turn is None:
+            if self.skill_max_state == self.skill_max.COMPLETE and previous_state != self.skill_max.COMPLETE:
+                return self.skill_max.COMPLETE
+            return None
+        if turn.selection is not None:
+            return self._select_portrait(first, skill_turn=turn)
+        fresh = self.adapter.frame()
+        if (not self._fresh_idle_after(first, fresh) or fresh.playing is not first.playing):
+            return "YIELD_TO_PLAYER"
+        _, current = self._read_skill_max_turn(fresh)
+        if current != turn or not self._idle(fresh):
+            return "SKILL_MAX_REOBSERVE"
+        identity = turn.identity(first)
+        if identity in self.attempts:
+            return "DUPLICATE_SKILL_MAX_REQUEST"
+        if len(self.attempts) >= MAX_ATTEMPTS_PER_RUN:
+            return "NATIVE_SESSION_ATTEMPT_LIMIT"
+        attempt = self.skill_max.Attempt(turn, first.capture, fresh)
+        self.skill_max_pending = attempt
+        self.attempts.add(identity)
+        try:
+            self.adapter.submit_skill_max_if_current(attempt, fresh)
+        except Exception:
+            # The native request might already have been applied.
+            pass
+        return self.skill_max.RECONCILE
+
+    def _reconcile_skill_max(self, frame):
+        attempt = self.skill_max_pending
+        if not self.skill_max.can_read_outcome(frame, attempt):
+            return self.skill_max.RECONCILE
+        try:
+            state = self.skill_max.outcome_state(
+                frame, attempt, self.adapter.read_skill_max_outcome(attempt, frame),
+            )
+        except Exception:
+            return self.skill_max.RECONCILE
+        if state != self.skill_max.RECONCILE:
+            self.skill_max_pending = None
+            self.skill_max_state = state
         return state
 
     def _fresh_live(self, frame):
@@ -566,6 +656,8 @@ class InstalledPlayerRuntime:
             return "NATIVE_SESSION_REBIND_REQUIRED"
         if self.portrait_pending is not None:
             return self._reconcile_portrait(first)
+        if self.skill_max_pending is not None:
+            return self._reconcile_skill_max(first)
         readback = self.portrait_readback
         if readback is not None:
             if (type(first.input_generation) is not int or first.capture == readback.capture
@@ -587,7 +679,11 @@ class InstalledPlayerRuntime:
         if self.microsystem_pending is not None:
             return self._reconcile_microsystem(first)
         if self.microsystems is not None:
-            return self._cycle_microsystems(first)
+            result = self._cycle_microsystems(first)
+            if (self.skill_max is not None
+                    and result in ("MICROSYSTEM_NO_ADMISSIBLE_WORK", "YIELD_TO_PLAYER")):
+                return self._cycle_skill_max(first) or result
+            return result
         fame_observation = fame_track = fame_result = None
         if self.fame is not None:
             fame_observation, fame_track = self._read_fame(first)
@@ -612,6 +708,10 @@ class InstalledPlayerRuntime:
             if result is not None:
                 return result
         if first.playing is not True:
+            if self.skill_max is not None and first.playing is False and isinstance(planned, Mapping) and not planned:
+                result = self._cycle_skill_max(first, planned)
+                if result is not None:
+                    return result
             if (first.playing is False and self.activity_chain is not None
                     and isinstance(planned, Mapping) and not planned):
                 result = self._cycle_activity_chain(first)
@@ -640,6 +740,10 @@ class InstalledPlayerRuntime:
                     return fame_result
                 result = self._cycle_fame(first, fame_observation, fame_track)
                 if result != "NO_FAME_GOAL":
+                    return result
+            if self.skill_max is not None and isinstance(planned, Mapping):
+                result = self._cycle_skill_max(first, planned)
+                if result is not None:
                     return result
             if (self.activity_chain is not None and isinstance(planned, Mapping)
                     and not self.dust_attempts and not self.fame_attempts):
@@ -728,13 +832,20 @@ def start_installed(adapter, *, exact_build: str, owned_dir: Path,
         if portraits is None or not all(callable(getattr(adapter, name, None))
                                        for name in microsystems.PORTS):
             raise ValueError("NATIVE_MICROSYSTEM_HANDOFF_PORTS_REQUIRED")
+    skill_max = None
+    if installed.get("installed_household_skill_max") is True:
+        from betterinstincts import household_skill_max as skill_max
+
+        if portraits is None or not all(callable(getattr(adapter, name, None))
+                                       for name in skill_max.PORTS):
+            raise ValueError("NATIVE_HOUSEHOLD_SKILL_MAX_PORTS_REQUIRED")
     from betterinstincts.installation_profiles import view
 
     idle_seconds = view()["launch_overrides"].get("idle_ms", IDLE_SECONDS * 1000) / 1000
     runtime = InstalledPlayerRuntime(adapter, build=exact_build, owned_dir=root, clock=clock,
                                      trait_response=trait_response, fairy_dust=fairy_dust, fame=fame,
                                      portraits=portraits, activity_chain=activity_chain,
-                                     microsystems=microsystems, idle_seconds=idle_seconds)
+                                     microsystems=microsystems, skill_max=skill_max, idle_seconds=idle_seconds)
     if not all(callable(getattr(adapter, name, None))
                for name in ("register", "frame", "analyze", "submit", "reconcile")):
         raise ValueError("NATIVE_CALLBACK_PORTS_REQUIRED")
